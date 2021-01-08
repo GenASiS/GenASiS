@@ -30,13 +30,10 @@ contains
 
     if ( UseDevice ) then
 
-      !$OMP OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 2 ) &
-      !$OMP OMP_TARGET_DISTRIBUTE_SCHEDULE &  
-      !$OMP private ( iAM, iE )
       do iE  =  1, nE
         do iAM  =  1, nAM
 
-          !$OMP parallel do collapse ( 3 ) &
+          !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
           !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
           !$OMP private ( iR, iT, iP, RM_R_C, RM_I_C ) &
           !$OMP firstprivate ( iE, iAM )
@@ -62,11 +59,11 @@ contains
               end do !-- iR
             end do !-- iT
           end do !-- iP
-          !$OMP  end parallel do      
+          !$OMP  end OMP_TARGET_DIRECTIVE parallel do      
 
         end do !-- iAM
       end do !-- iE
-
+      
     else  !-- use host
 
       !-- The iAM loop at least must be separated to avoid an OMP reduction

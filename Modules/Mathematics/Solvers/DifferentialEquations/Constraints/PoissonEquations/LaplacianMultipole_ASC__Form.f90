@@ -271,15 +271,17 @@ contains
 
       if ( L % UseDevice ) then
 
-        call  dSA % AllocateDevice ( )
-        call   AF % AllocateDevice ( )
-        call dR33 % AllocateDevice ( )
-        call RF_R % AllocateDevice ( )
-        call RF_I % AllocateDevice ( )
+        call  dSA % AllocateDevice ( AssociateVariablesOption = .false. )
+        call   AF % AllocateDevice ( AssociateVariablesOption = .false. )
+        call dR33 % AllocateDevice ( AssociateVariablesOption = .false. )
+        call   CF % AllocateDevice ( AssociateVariablesOption = .false. )
+        call RF_R % AllocateDevice ( AssociateVariablesOption = .false. )
+        call RF_I % AllocateDevice ( AssociateVariablesOption = .false. )
 
         call  dSA % UpdateDevice ( )
         call   AF % UpdateDevice ( )
         call dR33 % UpdateDevice ( )
+        call   CF % UpdateDevice ( )
         call RF_R % UpdateDevice ( )
         call RF_I % UpdateDevice ( )
 

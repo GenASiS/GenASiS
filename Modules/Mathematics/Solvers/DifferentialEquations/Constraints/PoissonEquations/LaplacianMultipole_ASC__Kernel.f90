@@ -34,9 +34,12 @@ contains
       do iE  =  1, nE
         do iAM  =  1, nAM
           do iR  =  1,  nC ( 1 )
-
+            
+            MyAME = 0.0_KDR
+             
             !$OMP  parallel do collapse ( 2 ) &
             !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
+            !$OMP& firstprivate ( iR, iAM, iE ) &
             !$OMP& reduction ( + : MyAME )
             do iP  =  1,  nC ( 3 )
               do iT  =  1,  nC ( 2 )
@@ -50,12 +53,14 @@ contains
 
               end do !-- iT
             end do !-- iP
+            !$OMP end parallel do
 
             MyAM ( oR + iR, iAM, iE )  =  MyAME
 
           end do !-- iR
         end do !-- iAM
       end do !-- iE
+      !$OMP end OMP_TARGET_DISTRIBUTE_DIRECTIVE
 
     else  !-- use host
 

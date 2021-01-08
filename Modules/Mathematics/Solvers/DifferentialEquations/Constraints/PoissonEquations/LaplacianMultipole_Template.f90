@@ -383,7 +383,7 @@ contains
       end do  !-- iL
     end do  !-- iM
     if ( L % UseDevice ) then
-      call DF % AllocateDevice ( )
+      call DF % AllocateDevice ( AssociateVariablesOption = .false. )
       call DF % UpdateDevice ( )
     end if
     end associate !-- DF
@@ -445,10 +445,10 @@ contains
                VariableOption = L % MomentName, &
                PinnedOption = L % UseDevice )
     if ( L % UseDevice ) then
-      call   AM % AllocateDevice ( )
-      call MyAM % AllocateDevice ( )
-      call RM_R % AllocateDevice ( )
-      call RM_I % AllocateDevice ( )
+      call   AM % AllocateDevice ( AssociateVariablesOption = .false. )
+      call MyAM % AllocateDevice ( AssociateVariablesOption = .false. )
+      call RM_R % AllocateDevice ( AssociateVariablesOption = .false. )
+      call RM_I % AllocateDevice ( AssociateVariablesOption = .false. )
     end if
 
     call Clear ( MyAM % Value, UseDeviceOption = L % UseDevice )
@@ -477,7 +477,7 @@ contains
              L % RadialFunctions_I % Value, L % d_Radius_3_3 % Value ( :, 1 ), &
              L % nEquations, L % nAngularMoments, L % nRadialCells, &
              UseDeviceOption = L % UseDevice )
-
+    
   end subroutine ComputeRadialMoments
 
 
