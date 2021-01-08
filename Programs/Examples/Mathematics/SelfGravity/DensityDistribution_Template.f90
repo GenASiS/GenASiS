@@ -75,7 +75,7 @@ contains
     !-- Atlas
     
     allocate ( DD % Atlas )
-    associate ( A => DD % Atlas )
+    associate ( A  => DD % Atlas )
     call A % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call A % CreateChart_CC ( RadiusMaxOption = RadiusMax )
     call A % SetGeometry ( UsePinnedMemoryOption = .true. )
@@ -178,8 +178,7 @@ contains
     associate ( PH => PROGRAM_HEADER )
 !    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
     call PH % GetParameter ( nSolve, 'nSolve' )
-    end associate !-- PH
-
+    
     call Show ( 'Solving Poisson equation' )
     call Show ( nSolve, 'nSolve' )
     do iS = 1, nSolve
@@ -195,20 +194,22 @@ contains
     call Show ( 'Computing error' )
     call ComputeError ( DD, NormalizeSolution ) 
 
-    call PROGRAM_HEADER % ShowStatistics &
+    !call PROGRAM_HEADER % ShowStatistics &
+    call PH % ShowStatistics &
            ( CONSOLE % INFO_1, &
-             CommunicatorOption = PROGRAM_HEADER % Communicator )
+             CommunicatorOption = PH % Communicator )
 
     !-- Write
 
     call Show ( 'Writing results' )
 
     OutputDirectory = '../Output/'
-    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
+    !call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
+    call PH % GetParameter ( OutputDirectory, 'OutputDirectory' )
 
     allocate ( DD % Stream )
     call DD % Stream % Initialize &
-           ( A % Name, CommunicatorOption = PROGRAM_HEADER % Communicator, &
+           ( A % Name, CommunicatorOption = PH % Communicator, &
              WorkingDirectoryOption = OutputDirectory )    
     associate ( GIS => DD % Stream )
 
@@ -221,7 +222,8 @@ contains
     end associate !-- GIS
 
     !-- Cleanup
-
+    
+    end associate !-- PH
     end associate !-- P
     end associate !-- A
 
