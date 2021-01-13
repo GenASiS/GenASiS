@@ -382,7 +382,7 @@ contains
 
   subroutine SetBrick &
                ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick, &
-                 nBricksOption )
+                 nBricksOption, nBricksCompatibleOption )
 
     integer ( KDI ), dimension ( : ), intent ( inout ) :: &
       nCells
@@ -395,11 +395,14 @@ contains
       nBricks, &
       iaBrick
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      nBricksOption
+      nBricksOption, &
+      nBricksCompatibleOption
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
       CommunicatorSizeRoot
+    integer ( KDI ), dimension ( size ( nBricks ) ) :: &
+      nBricksCompatible
 
     CommunicatorSizeRoot &
       = Communicator % Size ** ( 1.0_KDR / C % nDimensions ) + 0.5_KDR
@@ -411,6 +414,18 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( nBricks ( : C % nDimensions ), 'nBricks' )
     
+    nBricksCompatible = nBricks
+    if ( present ( nBricksCompatibleOption ) ) &
+      nBricksCompatible  =  nBricksCompatibleOption 
+    call PROGRAM_HEADER % GetParameter &
+           ( nBricksCompatible ( : C % nDimensions ), 'nBricksCompatible' )
+
+    if ( any ( nBricksCompatible /= nBricks ) ) then
+      call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
+      call Show ( nBricks, 'nBricks', CONSOLE % INFO_1 )
+      call Show ( nBricksCompatible, 'nBricksCompatible', CONSOLE % INFO_1 )
+    end if
+
     if ( product ( nBricks ) /= Communicator % Size ) then
       call Show ( 'The total number of bricks must equal ' &
                   // 'the number of MPI processes', CONSOLE % ERROR )
@@ -424,13 +439,15 @@ contains
     end if
 
     do iD = 1, C % nDimensions
-      if ( mod ( nCells ( iD ), nBricks ( iD ) ) /= 0 ) then
-        call Show ( 'nBricks in each dimension must divide evenly into ' &
-                    // 'nCells in each dimension', CONSOLE % WARNING )
+      if ( mod ( nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
+        call Show ( 'nBricksCompatible in each dimension must divide evenly ' &
+                    // 'into nCells in each dimension', CONSOLE % WARNING )
         call Show ( iD, 'iDimension', CONSOLE % WARNING )
-        call Show ( nBricks ( iD ), 'nBricks', CONSOLE % WARNING )
+        call Show ( nBricksCompatible ( iD ), 'nBricksCompatible', &
+                    CONSOLE % WARNING )
         call Show ( nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
-        nCells ( iD ) = ( nCells ( iD ) / nBricks ( iD ) ) * nBricks ( iD )
+        nCells ( iD ) = ( nCells ( iD ) / nBricksCompatible ( iD ) ) &
+                        * nBricksCompatible ( iD )
         call Show ( nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
         call Show ( 'SetBrick', 'subroutine', CONSOLE % WARNING )
         call Show ( 'Chart_Template', 'module', CONSOLE % WARNING )
