@@ -1,5 +1,9 @@
 PATH_GENASIS = ../../../../..
 
+#-- Do not link to HDF5 or Lapack
+HDF5_DIR = 
+LAPACK_DIR = 
+
 all: SineWaveAdvection SawtoothWaveAdvection RiemannProblem
 
 include $(PATH_GENASIS)/Build/Makefile_Build
