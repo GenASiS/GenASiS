@@ -214,10 +214,18 @@ contains
     
     !-- FIXME: Hardcoded filename for now
     Filename = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
-        
-    call h5open_f(error)
 
-    call h5fopen_f (trim(adjustl(Filename)), H5F_ACC_RDONLY_F, file_id, error)
+    call h5open_f ( error )
+
+    call h5fopen_f ( trim(adjustl(Filename)), H5F_ACC_RDONLY_F, file_id, error )
+    if ( error /= 0 ) then
+      call Show ( 'Error opening file', CONSOLE % ERROR )
+      call Show ( error, 'H5 error', CONSOLE % ERROR )
+      call Show ( Filename, 'Filename', CONSOLE % ERROR )
+      call Show ( 'EOS_P_HN_OConnorOtt__Form.f90', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     associate &
       ( nrho          => E % nDensity, &
