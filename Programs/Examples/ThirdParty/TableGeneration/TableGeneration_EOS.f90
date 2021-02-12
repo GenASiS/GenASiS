@@ -1,5 +1,6 @@
 program TableGeneration_EOS
 
+  use HDF5
   use GenASiS
   implicit none
 
@@ -68,9 +69,11 @@ contains
         MaxLogD  =>  EOS_Out % MaxLogDensity, &
         MinLogT  =>  EOS_Out % MinLogTemperature, &
         MaxLogT  =>  EOS_Out % MaxLogTemperature, &
-          MinY  =>  EOS_Out % MinElectronFraction, &
-          MaxY  =>  EOS_Out % MaxElectronFraction, &
+           MinY  =>  EOS_Out % MinElectronFraction, &
+           MaxY  =>  EOS_Out % MaxElectronFraction, &
              nV  =>  EOS_Out % N_VARIABLES )
+
+    EOS_Out % EnergyShift  =  EOS_In % EnergyShift
 
     DensityFactor  =  2
     call PROGRAM_HEADER % GetParameter ( DensityFactor, 'DensityFactor' )
@@ -180,6 +183,38 @@ contains
     type ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ), allocatable :: &
       EOS_Out, &
       EOS_In
+
+    integer ( KDI ) :: &
+      error, &
+      accerr
+    integer ( HID_T ) :: &
+      file_id, &
+      dset_id, dspace_id
+    integer ( HSIZE_T ), dimension ( 1 ) :: &
+      dims1
+    integer ( HSIZE_T ), dimension ( 3 ) :: &
+      dims3
+    character ( LDF ) :: &
+      Filename
+
+    Filename = '../Parameters/LS_Coarse.h5'
+
+    call Show ( 'Writing coarsened table' )
+    call Show ( Filename, 'Filename' )
+
+    call h5open_f ( error )
+
+    call h5fcreate_f ( trim ( adjustl ( Filename ) ), H5F_ACC_TRUNC_F, &
+                       file_id, error )
+
+    associate &
+      ( nrho          => EOS_Out % nDensity, &
+        ntemp         => EOS_Out % nTemperature, &
+        nye           => EOS_Out % nElectronFraction, &
+        nvars         => EOS_Out % N_VARIABLES, &
+        energy_shift  => EOS_Out % EnergyShift )
+
+    end associate !-- nrho, etc.
 
     deallocate ( EOS_Out )
     deallocate ( EOS_In )
