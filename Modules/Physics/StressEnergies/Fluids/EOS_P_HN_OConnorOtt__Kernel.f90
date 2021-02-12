@@ -146,7 +146,9 @@ contains
       !$OMP&          dxi, dyi, dzi, dxyi, dxzi, dyzi, dxyzi, E_Shift )
       do  iValue = 1, nValues
         do iS = 1, size ( ia_E )
-          
+
+!call Show ( iValue, '>>> iValue' )
+!call Show ( iS, '>>> iS' )          
           if ( F ( iValue, ia_F_I ( 1 ) ) == 0.0_KDR ) &
             cycle
           

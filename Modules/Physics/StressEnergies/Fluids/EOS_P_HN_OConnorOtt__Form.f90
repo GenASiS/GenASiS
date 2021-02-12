@@ -30,15 +30,15 @@ module EOS_P_HN_OConnorOtt__Form
       GAMMA                     = 19, &
       N_VARIABLES               = 19
     integer ( KDI ) :: &
-      nDensity, nTemperature, nElectronFraction, &
-      MinDensity, MaxDensity, &
-      MinElectronFraction, MaxElectronFraction, &
-      MinTemperature, MaxTemperature
+      nDensity, nTemperature, nElectronFraction
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaFluidOutput, &
       iaSelected, &
       Error
     real ( KDR ) :: & 
+      MinLogDensity, MaxLogDensity, &
+      MinLogTemperature, MaxLogTemperature, &
+      MinElectronFraction, MaxElectronFraction, &
       EnergyShift
     real ( KDR ), dimension ( : ), allocatable :: &
       LogDensity, &
@@ -260,7 +260,7 @@ contains
     
     associate ( alltables => E % Table )
     
-    call Show ( shape ( E % Table ), 'Table Shape' ) 
+    call Show ( shape ( E % Table ), 'Table shape' ) 
     
     dims3(1)=nrho
     dims3(2)=ntemp
@@ -353,6 +353,8 @@ contains
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, E % LogDensity, dims1, error)
     call h5dclose_f(dset_id,error)
     accerr=accerr+error
+    E % MinLogDensity  =  E % LogDensity ( 1 )
+    E % MaxLogDensity  =  E % LogDensity ( E % nDensity )
 
     allocate ( E % LogTemperature ( E % nTemperature ) )
     dims1(1)=ntemp
@@ -360,6 +362,8 @@ contains
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, E % LogTemperature, dims1, error)
     call h5dclose_f(dset_id,error)
     accerr=accerr+error
+    E % MinLogTemperature  =  E % LogTemperature ( 1 )
+    E % MaxLogTemperature  =  E % LogTemperature ( E % nTemperature )
 
     allocate ( E % ElectronFraction ( E % nElectronFraction ) )
     dims1(1)=nye
@@ -367,6 +371,8 @@ contains
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, E % ElectronFraction, dims1, error)
     call h5dclose_f(dset_id,error)
     accerr=accerr+error
+    E % MinElectronFraction  =  E % ElectronFraction ( 1 )
+    E % MaxElectronFraction  =  E % ElectronFraction ( E % nElectronFraction )
 
     call h5dopen_f(file_id, "energy_shift", dset_id, error)
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, energy_shift, dims1, error)
@@ -379,7 +385,7 @@ contains
 
     end associate !-- alltables
     end associate !-- logrho, etc
-      
+
   end subroutine Initialize
   
   

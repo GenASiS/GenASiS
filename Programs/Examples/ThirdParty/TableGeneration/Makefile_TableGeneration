@@ -1,23 +1,34 @@
 PATH_GENASIS = ../../../../..
 
-all: TableGeneration_NuLib
+all: TableGeneration_NuLib TableGeneration_EOS
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 TableGeneration_NuLib: ThirdParty.a GenASiS.a TableGeneration_NuLib.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
            -o TableGeneration_NuLib_$(MACHINE) \
            TableGeneration_NuLib.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+TableGeneration_EOS: ThirdParty.a GenASiS.a TableGeneration_EOS.o
+	$(LINK) $(FLAGS) \
+           -o TableGeneration_EOS_$(MACHINE) \
+           TableGeneration_EOS.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
 clean: clean_ThirdParty
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f TableGeneration_NuLib_*
+	find . -type f -executable -name 'TableGeneration_NuLib_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'TableGeneration_EOS_*' -exec rm -f '{}' \;
 
 TableGeneration_NuLib.o: \
   GenASiS.o \
   TableGeneration_NuLib.f90
+
+TableGeneration_EOS.o: \
+  GenASiS.o \
+  TableGeneration_EOS.f90
