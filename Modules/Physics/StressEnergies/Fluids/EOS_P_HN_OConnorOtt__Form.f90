@@ -196,10 +196,12 @@ module EOS_P_HN_OConnorOtt__Form
 contains
 
   
-  subroutine Initialize ( E )
+  subroutine Initialize ( E, Filename )
   
     class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
       E
+    character ( * ), intent ( in ) :: &
+      Filename
     
     integer ( KDI ) :: &
       error, &
@@ -211,11 +213,6 @@ contains
       dims1
     integer ( HSIZE_T ), dimension ( 3 ) :: &
       dims3
-    character ( LDF ) :: &
-      Filename
-    
-    !-- FIXME: Hardcoded filename for now
-    Filename = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
     
     E % Filename = Filename
 

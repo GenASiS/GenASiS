@@ -370,6 +370,8 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaFluidOutput, &
       iaSelected_EOS
+    character ( LDF ) :: &
+      EOS_Filename
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
@@ -397,7 +399,9 @@ contains
     
     call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
     
-    call F % EOS % Initialize ( )
+    EOS_Filename = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
+    call PROGRAM_HEADER % GetParameter ( EOS_Filename, 'EOS_Filename' )
+    call F % EOS % Initialize ( EOS_Filename )
     
     allocate ( iaFluidOutput ( 12 ) )
     allocate ( iaSelected_EOS ( 12 ) )

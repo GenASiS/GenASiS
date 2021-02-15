@@ -28,11 +28,18 @@ contains
       i
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaSelected
+    character ( LDF ) :: &
+      EOS_Filename
 
     call Show ( 'Reading original table' )
 
     allocate ( EOS_In )
-    call EOS_In % Initialize ( )
+    
+    EOS_Filename &
+      = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
+    call PROGRAM_HEADER % GetParameter ( EOS_Filename, 'EOS_Filename' )
+
+    call EOS_In % Initialize ( EOS_Filename )
 
     allocate ( iaSelected ( EOS_In % N_VARIABLES ) )
     iaSelected = [ ( i, i = 1, size ( iaSelected ) ) ]
