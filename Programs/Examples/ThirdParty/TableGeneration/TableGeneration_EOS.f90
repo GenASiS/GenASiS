@@ -123,19 +123,22 @@ contains
     do iD = 1, nD
       LogD ( iD )  =  MinLogD + dble ( iD - 1 ) * dLogD
     end do
-    call Show ( LogD, 'Table densities' )
+    call Show ( LogD, 'Table densities', &
+                IgnorabilityOption = CONSOLE % INFO_3 )
 
     dLogT = ( MaxLogT - MinLogT ) / dble ( nT - 1 )
     do iT = 1, nT
       LogT ( iT )  =  MinLogT + dble ( iT - 1 ) * dLogT
     end do
-    call Show ( LogT, 'Table temperatures' )
+    call Show ( LogT, 'Table temperatures', &
+                IgnorabilityOption = CONSOLE % INFO_3 )
 
     dY = ( MaxY - MinY ) / dble ( nY - 1 )
     do iY = 1, nY
       Y ( iY )  =  MinY + dble ( iY - 1 ) * dY
     end do
-    call Show ( Y, 'Table electron fractions' )
+    call Show ( Y, 'Table electron fractions', &
+               IgnorabilityOption = CONSOLE % INFO_3 )
 
     allocate ( EOS_Out % Table ( nD, nT, nY, nV ) )
 
@@ -185,41 +188,190 @@ contains
       EOS_In
 
     integer ( KDI ) :: &
-      error, &
-      accerr
+      iC, &   !-- iCharacter
+      iV, &   !-- iVariable
+      Error, &
+      DataRank
     integer ( HID_T ) :: &
-      file_id, &
-      dset_id, dspace_id
-    integer ( HSIZE_T ), dimension ( 1 ) :: &
-      dims1
-    integer ( HSIZE_T ), dimension ( 3 ) :: &
-      dims3
+      FileHandle
+      
     character ( LDF ) :: &
       Filename
-
-    Filename = '../Parameters/LS_Coarse.h5'
+    character ( LDL ) :: &
+      nD_String, &
+      nT_String, &
+      nYe_String
+    character ( LDL ), dimension ( 17 ) :: &
+      VariableName
+      
+    iC = index ( EOS_In % Filename, '_' )
+    
+    write ( nD_String,  fmt = '( i3 )' ) EOS_Out % nDensity
+    write ( nT_String,  fmt = '( i3 )' ) EOS_Out % nTemperature
+    write ( nYe_String, fmt = '( i3 )' ) EOS_Out % nElectronFraction
+    
+    Filename = EOS_In % Filename ( 1 : iC ) // 'Coarsen_'  &
+               // trim ( adjustl ( nD_String ) ) // 'r_'  &
+               // trim ( adjustl ( nT_String ) ) // 't_'  &
+               // trim ( adjustl ( nYe_String ) ) // 'y.h5'
+    
+    EOS_Out % Filename = Filename
 
     call Show ( 'Writing coarsened table' )
     call Show ( Filename, 'Filename' )
 
-    call h5open_f ( error )
+    call H5OPEN_F ( Error )
 
-    call h5fcreate_f ( trim ( adjustl ( Filename ) ), H5F_ACC_TRUNC_F, &
-                       file_id, error )
-
-    associate &
-      ( nrho          => EOS_Out % nDensity, &
-        ntemp         => EOS_Out % nTemperature, &
-        nye           => EOS_Out % nElectronFraction, &
-        nvars         => EOS_Out % N_VARIABLES, &
-        energy_shift  => EOS_Out % EnergyShift )
-
-    end associate !-- nrho, etc.
+    call H5FCREATE_F ( trim ( adjustl ( Filename ) ), H5F_ACC_TRUNC_F, &
+                      FileHandle, error )
+    
+    call WriteVariable_0D_HDF5 &
+           ( EOS_Out % nDensity, 'pointsrho', FileHandle, Error )
+    call WriteVariable_0D_HDF5 &
+           ( EOS_Out % nTemperature, 'pointstemp', FileHandle, Error )
+    call WriteVariable_0D_HDF5 &
+           ( EOS_Out % nElectronFraction, 'pointsye', FileHandle, Error )
+    
+    call WriteVariable_0D_HDF5 &
+           ( EOS_Out % EnergyShift, 'energy_shift', FileHandle, Error )
+        
+    call WriteVariable_1D_HDF5 &
+           ( EOS_Out % LogDensity, 'logrho', FileHandle, Error )
+    call WriteVariable_1D_HDF5 &
+           ( EOS_Out % LogTemperature, 'logtemp', FileHandle, Error )
+    call WriteVariable_1D_HDF5 &
+           ( EOS_Out % ElectronFraction, 'ye', FileHandle, Error )
+           
+    VariableName = [ 'logpress                       ', & 
+                     'logenergy                      ', &
+                     'entropy                        ', &
+                     'munu                           ', &
+                     'cs2                            ', &
+                     'dedt                           ', &
+                     'dpdrhoe                        ', &
+                     'dpderho                        ', &
+                     'muhat                          ', &
+                     'mu_e                           ', &
+                     'mu_p                           ', &
+                     'mu_n                           ', &
+                     'Xa                             ', &
+                     'Xh                             ', &
+                     'Xn                             ', &
+                     'Xp                             ', &
+                     'gamma                          ' ]
+    
+    do iV = 1, size ( VariableName )
+      if ( iV == size ( VariableName ) ) then
+        !-- Some variable in EOS is skipped / not used
+        call WriteVariable_3D_HDF5 &
+             ( EOS_Out % Table ( :, :, :,  19 ), &
+               trim ( VariableName ( iV ) ), FileHandle, Error )
+      else
+        call WriteVariable_3D_HDF5 &
+             ( EOS_Out % Table ( :, :, :,  iV ), &
+               trim ( VariableName ( iV ) ), FileHandle, Error )
+      end if
+    end do
+    
+    
+    call H5FCLOSE_F ( FileHandle, Error )
+    call H5CLOSE_F ( Error )
 
     deallocate ( EOS_Out )
     deallocate ( EOS_In )
 
   end subroutine WriteTable
+  
+  
+  subroutine WriteVariable_0D_HDF5 ( Value, Name, Location, Error )
+  
+    class ( * ), intent ( in ), target :: &
+      Value
+    character ( * ), intent ( in ) :: &
+      Name
+    integer ( HID_T ), intent ( in ) :: &
+      Location
+    integer ( KDI ) , intent ( out ) :: &
+      Error
+      
+    integer ( HID_T ) :: &
+      Set_ID, &
+      Space_ID
+    integer ( HSIZE_T ), dimension ( rank ( Value ) ) :: &
+      Dimensions
+      
+    Dimensions = shape ( Value )
+    call H5SCREATE_SIMPLE_F ( rank ( Value ), Dimensions, Space_ID, Error )
+    call H5DCREATE_F ( Location, trim ( Name ), H5T_NATIVE_DOUBLE, &
+                       Space_ID, Set_ID, Error )
+    
+    select type ( Value )
+    type is ( real ( KDR ) )
+      call H5DWRITE_F ( Set_ID, H5T_NATIVE_DOUBLE, Value, Dimensions, Error )
+    type is ( integer ( KDI ) )
+      call H5DWRITE_F ( Set_ID, H5T_NATIVE_INTEGER, Value, Dimensions, Error )
+    end select
+     
+    call H5DCLOSE_F ( Set_ID, Error )
+    call H5SCLOSE_F ( Space_ID, Error )
+  
+  end subroutine WriteVariable_0D_HDF5
+  
+  
+  subroutine WriteVariable_1D_HDF5 ( Value, Name, Location, Error )
+  
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      Value
+    character ( * ), intent ( in ) :: &
+      Name
+    integer ( HID_T ), intent ( in ) :: &
+      Location
+    integer ( KDI ) , intent ( out ) :: &
+      Error
+      
+    integer ( HID_T ) :: &
+      Set_ID, &
+      Space_ID
+    integer ( HSIZE_T ), dimension ( rank ( Value ) ) :: &
+      Dimensions
+      
+    Dimensions = shape ( Value )
+    call H5SCREATE_SIMPLE_F ( rank ( Value ), Dimensions, Space_ID, Error )
+    call H5DCREATE_F ( Location, trim ( Name ), H5T_NATIVE_DOUBLE, &
+                       Space_ID, Set_ID, Error )
+    call H5DWRITE_F ( Set_ID, H5T_NATIVE_DOUBLE, Value, Dimensions, Error )
+    call H5DCLOSE_F ( Set_ID, Error )
+    call H5SCLOSE_F ( Space_ID, Error )
+  
+  end subroutine WriteVariable_1D_HDF5
+  
+  
+  subroutine WriteVariable_3D_HDF5 ( Value, Name, Location, Error )
+  
+    real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
+      Value
+    character ( * ), intent ( in ) :: &
+      Name
+    integer ( HID_T ), intent ( in ) :: &
+      Location
+    integer ( KDI ) , intent ( out ) :: &
+      Error
+      
+    integer ( HID_T ) :: &
+      Set_ID, &
+      Space_ID
+    integer ( HSIZE_T ), dimension ( rank ( Value ) ) :: &
+      Dimensions
+      
+    Dimensions = shape ( Value )
+    call H5SCREATE_SIMPLE_F ( rank ( Value ), Dimensions, Space_ID, Error )
+    call H5DCREATE_F ( Location, trim ( Name ), H5T_NATIVE_DOUBLE, &
+                       Space_ID, Set_ID, Error )
+    call H5DWRITE_F ( Set_ID, H5T_NATIVE_DOUBLE, Value, Dimensions, Error )
+    call H5DCLOSE_F ( Set_ID, Error )
+    call H5SCLOSE_F ( Space_ID, Error )
+  
+  end subroutine WriteVariable_3D_HDF5
 
 
 end program TableGeneration_EOS

@@ -48,6 +48,8 @@ module EOS_P_HN_OConnorOtt__Form
       Table
     logical ( KDL ) :: &
       AllocatedDevice
+    character ( LDF ) :: &
+      Filename
   contains
     procedure, public, pass :: &
       Initialize
@@ -214,6 +216,8 @@ contains
     
     !-- FIXME: Hardcoded filename for now
     Filename = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
+    
+    E % Filename = Filename
 
     call h5open_f ( error )
 
