@@ -22,8 +22,8 @@ clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	find . -type f -executable -name 'TableGeneration_NuLib_*' -exec rm -f '{}' \;
 	find . -type f -executable -name 'TableGeneration_EOS_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'TableGeneration_NuLib_*' -exec rm -f '{}' \;
 
 TableGeneration_NuLib.o: \
   GenASiS.o \

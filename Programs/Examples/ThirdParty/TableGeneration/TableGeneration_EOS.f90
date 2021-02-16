@@ -176,12 +176,12 @@ contains
       do iT  =  1, nT
         do iD  =  1, nD
           iF  =  iF + 1
-          !-- Variable 1: log ( energy + e_shift )
+          !-- Variable 1: log pressure
           EOS_Out % Table ( iD, iT, iY, 1 )  &
-            =  log10 ( Fluid % Value ( iF, 1 ) + E_Shift )
-          !-- Variable 2: log pressure
+            =  log10 ( Fluid % Value ( iF, 1 ) )
+          !-- Variable 2: log ( energy + e_shift )
           EOS_Out % Table ( iD, iT, iY, 2 )  &
-            =  log10 ( Fluid % Value ( iF, 2 ) )
+            =  log10 ( Fluid % Value ( iF, 2 ) + E_Shift )
           !-- All other variables
           do iV = 3, nV
             EOS_Out % Table ( iD, iT, iY, iV )  &
