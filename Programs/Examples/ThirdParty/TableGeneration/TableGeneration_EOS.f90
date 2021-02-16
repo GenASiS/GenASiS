@@ -69,7 +69,8 @@ contains
     allocate ( EOS_Out )
 
     associate &
-      (      nD  =>  EOS_Out % nDensity, &
+      (      nV  =>  EOS_Out % N_VARIABLES, &  !-- Automatically defined
+             nD  =>  EOS_Out % nDensity, &
              nT  =>  EOS_Out % nTemperature, &
              nY  =>  EOS_Out % nElectronFraction, &
         MinLogD  =>  EOS_Out % MinLogDensity, &
@@ -78,9 +79,9 @@ contains
         MaxLogT  =>  EOS_Out % MaxLogTemperature, &
            MinY  =>  EOS_Out % MinElectronFraction, &
            MaxY  =>  EOS_Out % MaxElectronFraction, &
-             nV  =>  EOS_Out % N_VARIABLES )
+        E_Shift  =>  EOS_Out % EnergyShift )
 
-    EOS_Out % EnergyShift  =  EOS_In % EnergyShift
+    E_Shift  =  EOS_In % EnergyShift
 
     DensityFactor  =  2
     call PROGRAM_HEADER % GetParameter ( DensityFactor, 'DensityFactor' )
@@ -93,8 +94,8 @@ contains
     MaxLogD  =  EOS_In % MaxLogDensity
     MinLogT  =  EOS_In % MinLogTemperature
     MaxLogT  =  EOS_In % MaxLogTemperature
-      MinY  =  EOS_In % MinElectronFraction
-      MaxY  =  EOS_In % MaxElectronFraction
+       MinY  =  EOS_In % MinElectronFraction
+       MaxY  =  EOS_In % MaxElectronFraction
 
     call Show ( 'Original table' )
     call Show ( EOS_In % nDensity, 'nDensity' )
@@ -175,8 +176,17 @@ contains
       do iT  =  1, nT
         do iD  =  1, nD
           iF  =  iF + 1
-          EOS_Out % Table ( iD, iT, iY, 1 : nV )  &
-            =  Fluid % Value ( iF, 1 : nV )
+          !-- Variable 1: log ( energy + e_shift )
+          EOS_Out % Table ( iD, iT, iY, 1 )  &
+            =  log10 ( Fluid % Value ( iF, 1 ) + E_Shift )
+          !-- Variable 2: log pressure
+          EOS_Out % Table ( iD, iT, iY, 2 )  &
+            =  log10 ( Fluid % Value ( iF, 2 ) )
+          !-- All other variables
+          do iV = 3, nV
+            EOS_Out % Table ( iD, iT, iY, iV )  &
+              =  Fluid % Value ( iF, iV )
+          end do !-- iV
         end do !-- iD
       end do !-- iT
     end do !-- iY

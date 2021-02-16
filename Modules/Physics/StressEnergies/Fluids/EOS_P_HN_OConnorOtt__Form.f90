@@ -387,6 +387,8 @@ contains
     end associate !-- alltables
     end associate !-- logrho, etc
 
+    call Show ( E % EnergyShift, 'EnergyShift' )
+
   end subroutine Initialize
   
   
