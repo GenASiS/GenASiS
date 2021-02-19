@@ -34,6 +34,8 @@ module IncrementDivergence_FV__Form
       BoundaryFluence_CSL => null ( )
     logical ( KDL ) :: &
       UseIncrementStream
+    character ( LDL ) :: &
+      ReconstructionType
     character ( LDF ) :: &
       Name = ''
     type ( StorageForm ), dimension ( : ), allocatable :: &
@@ -85,11 +87,13 @@ module IncrementDivergence_FV__Form
       ComputeFluxes
 
       private :: &
-        ComputeReconstruction_CSL, &
+        ComputeReconstructionLinear_CSL, &
+        ComputeReconstructionParabolic_CSL, &
         ComputeIncrement_CSL
 
         private :: &
-          ComputeReconstruction_CSL_Kernel, &
+          ComputeReconstructionLinear_CSL_Kernel, &
+          ComputeReconstructionParabolic_CSL_Kernel, &
           ComputeLogDerivative_CSL_Kernel, &
           ComputeIncrement_CSL_Kernel, &
           RecordBoundaryFluence_CSL
@@ -109,7 +113,7 @@ module IncrementDivergence_FV__Form
     
   interface
   
-    module subroutine ComputeReconstruction_CSL_Kernel &
+    module subroutine ComputeReconstructionLinear_CSL_Kernel &
                  ( V, dVdX, dX_L, dX_R, iD, oV, V_IL, V_IR, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -123,7 +127,25 @@ module IncrementDivergence_FV__Form
         V_IL, V_IR
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeReconstruction_CSL_Kernel
+    end subroutine ComputeReconstructionLinear_CSL_Kernel
+
+    module subroutine ComputeReconstructionParabolic_CSL_Kernel &
+                 ( V, X, dX_L, dX_R, XA, X2A, iD, oV, V_IL, V_IR, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        V, &
+        X, &
+        dX_L, dX_R, &
+        XA, X2A
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV   
+      real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+        V_IL, V_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeReconstructionParabolic_CSL_Kernel
 
     module subroutine ComputeLogDerivative_CSL_Kernel &
                  ( A_I, V, iD, oV, dLVdX, UseDeviceOption )
@@ -208,11 +230,15 @@ contains
     !        ( '__FromPrimitive', I % iTimerFromPrimitive )
 
     ! ! call PROGRAM_HEADER % AddTimer &
-    ! !        ( 'ComputeReconstruction_CSL', I % iTimerReconstruction_CSL )
+    ! !        ( 'ComputeReconstructionLinear_CSL', I % iTimerReconstruction_CSL )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( 'Gradient', I % iTimerGradient )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( 'ReconstructionKernel', I % iTimerReconstructionKernel )
+
+    I % ReconstructionType = 'LINEAR'
+    call PROGRAM_HEADER % GetParameter &
+           ( I % ReconstructionType, 'ReconstructionType' )
 
     I % UseIncrementStream = .false.
     call PROGRAM_HEADER % GetParameter &
@@ -603,12 +629,28 @@ contains
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'ComputeReconstructionLinear', 'subroutine', CONSOLE % ERROR )
     end select !-- A
 
     select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-      call ComputeReconstruction_CSL ( I, Reconstructed, Chart, iDimension )
+      select case ( trim ( I % ReconstructionType ) )
+      case ( 'LINEAR' )
+        call ComputeReconstructionLinear_CSL &
+               ( I, Reconstructed, Chart, iDimension )
+      case ( 'PARABOLIC' )
+        call ComputeReconstructionParabolic_CSL &
+               ( I, Reconstructed, Chart, iDimension )
+!call Show ( '>>> Stopping after Reconstruction', CONSOLE % WARNING )
+!call PROGRAM_HEADER % Abort ( )
+      case default
+        call Show ( 'ReconstructionType not recognized', CONSOLE % ERROR )
+        call Show ( I % ReconstructionType, 'ReconstructionType', &
+                    CONSOLE % ERROR )
+        call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- ReconstructionType
     end select !-- Grid
 
     if ( trim ( C % ReconstructedType ) == 'PRIMITIVE' ) then
@@ -691,7 +733,8 @@ contains
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeReconstruction_CSL ( I, Reconstructed, CSL, iDimension )
+  subroutine ComputeReconstructionLinear_CSL &
+               ( I, Reconstructed, CSL, iDimension )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
@@ -765,7 +808,7 @@ contains
              ( C_IL % Value ( :, iaR ( iF ) ), V_IL )
       call CSL % SetVariablePointer &
              ( C_IR % Value ( :, iaR ( iF ) ), V_IR )
-      call ComputeReconstruction_CSL_Kernel &
+      call ComputeReconstructionLinear_CSL_Kernel &
              ( V, dVdX, dX_L, dX_R, iDimension, &
                CSL % nGhostLayers ( iDimension ), V_IL, V_IR, &
                UseDeviceOption = C % AllocatedDevice )
@@ -798,7 +841,85 @@ contains
 !    call Timer % Stop
 !    end associate !-- Timer
   
-  end subroutine ComputeReconstruction_CSL
+  end subroutine ComputeReconstructionLinear_CSL
+
+
+  subroutine ComputeReconstructionParabolic_CSL &
+               ( I, Reconstructed, CSL, iDimension )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+    class ( StorageForm ), intent ( in ) :: &
+      Reconstructed
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      X, &
+      dX_L, dX_R, &
+      XA, X2A, &
+      V, &
+      V_IL, &
+      V_IR, &
+      A_I, &
+      dLVdX
+
+    associate &
+      ( C    => I % Current, &
+        G    => I % Geometry, &
+        C_IL => I % Storage % Current_IL, &
+        C_IR => I % Storage % Current_IR, &
+        G_I  => I % Storage % Geometry_I )
+
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % CENTER_U ( iDimension ) ), X )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), dX_L )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH_RIGHT_U ( iDimension ) ), dX_R )
+
+    !-- Reconstruct Current
+
+    associate ( iaR => C % iaReconstructed )
+    do iF = 1, C % N_RECONSTRUCTED
+      call CSL % SetVariablePointer &
+             ( C % Value ( :, iaR ( iF ) ), V )
+      call CSL % SetVariablePointer &
+             ( C_IL % Value ( :, iaR ( iF ) ), V_IL )
+      call CSL % SetVariablePointer &
+             ( C_IR % Value ( :, iaR ( iF ) ), V_IR )
+      call ComputeReconstructionParabolic_CSL_Kernel &
+             ( V, X, dX_L, dX_R, X, X ** 2, iDimension, &
+               CSL % nGhostLayers ( iDimension ), V_IL, V_IR, &
+               UseDeviceOption = C % AllocatedDevice )
+    end do !-- iF
+    end associate !-- iaR
+
+    !-- VolumeJacobian derivative
+
+    if ( associated ( I % dLogVolumeJacobian_dX ) ) then
+      if ( size ( I % dLogVolumeJacobian_dX ) >= iDimension ) then
+        call CSL % SetVariablePointer &
+               ( G % Value ( :, G % VOLUME ), V )
+        call CSL % SetVariablePointer &
+               ( G % Value ( :, G % AREA_INNER_D ( iDimension ) ), A_I )
+        call CSL % SetVariablePointer &
+               ( I % dLogVolumeJacobian_dX ( iDimension ) % Value, dLVdX )
+        call ComputeLogDerivative_CSL_Kernel &
+               ( A_I, V, iDimension, CSL % nGhostLayers ( iDimension ), &
+                 dLVdX, UseDeviceOption = G % AllocatedDevice )
+      end if
+    end if
+
+    nullify ( X, dX_L, dX_R, XA, X2A, V, V_IL, V_IR, A_I, dLVdX )
+
+    end associate !-- C, etc.
+
+  end subroutine ComputeReconstructionParabolic_CSL
 
 
   subroutine ComputeIncrement_CSL &
