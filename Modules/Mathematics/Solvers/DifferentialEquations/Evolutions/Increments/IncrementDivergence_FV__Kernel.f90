@@ -8,7 +8,7 @@ submodule ( IncrementDivergence_FV__Form ) IncrementDivergence_FV__Kernel
   
 contains
 
-  module procedure ComputeReconstruction_CSL_Kernel
+  module procedure ComputeReconstructionLinear_CSL_Kernel
 
     integer ( KDI ) :: &
       iV, jV, kV
@@ -91,7 +91,192 @@ contains
       
     end if
         
-  end procedure ComputeReconstruction_CSL_Kernel
+  end procedure ComputeReconstructionLinear_CSL_Kernel
+
+
+  module procedure ComputeReconstructionParabolic_CSL_Kernel
+
+    integer ( KDI ) :: &
+      iV, jV, kV  !-- iValue, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &         !-- iaShift
+      iaVP, iaVM, &  !-- iaValuePlus, iaValueMinus
+      lV, uV         !-- lowerValue, upperValue
+    real ( KDR ) :: &
+        vM,   vC,   vP, &  !-- V_Minus, V_Center, V_Plus
+        xM,   xC,   xP, &
+       xAM,  xAC,  xAP, & 
+      x2AM, x2AC, x2AP, &
+      xI, xO, &            !-- X_Inner, X_Outer
+      D, &                 !-- Denominator / Determinant
+      c0, c1, c2, &        !-- Parabola coefficients
+      xE                   !-- X_Extremum
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    lV = 1
+    where ( shape ( V ) > 1 )
+      lV = oV
+    end where
+    
+    uV = 1
+    where ( shape ( V ) > 1 )
+      uV = shape ( V ) - oV
+    end where
+    uV ( iD ) = size ( V, dim = iD ) - oV + 1 
+      
+    iaS = 0
+    iaS ( iD ) = 1
+    
+    if ( UseDevice ) then
+    
+    else
+              
+!call Show ( '>>> New variable' )
+      !$OMP parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP private ( iV, jV, kV, iaVP, iaVM, vM, vC, vP ) &
+      !$OMP private ( xM, xC, xP, xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
+      !$OMP private ( D, c0, c1, c2, xE ) 
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+!call Show ( [ iV, jV, kV ], '>>> iV, jV, kV' )
+            iaVP = [ iV, jV, kV ] + iaS
+            iaVM = [ iV, jV, kV ] - iaS
+
+            vM  =  V ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+            vC  =  V ( iV, jV, kV )
+            vP  =  V ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+!call Show ( [ vM, vC, vP ], '>>> vM, vC, vP' )
+
+            xM  =  X ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+            xC  =  X ( iV, jV, kV )
+            xP  =  X ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+            xAM  =  XA ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+            xAC  =  XA ( iV, jV, kV )
+            xAP  =  XA ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+            x2AM  =  X2A ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+            x2AC  =  X2A ( iV, jV, kV )
+            x2AP  =  X2A ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+            xI  =  X ( iV, jV, kV )  -  dX_L ( iV, jV, kV )
+            xO  =  X ( iV, jV, kV )  +  dX_R ( iV, jV, kV )
+
+            !-- Local extremum of central values? 
+            !   Then reconstruction is constant.
+            if ( ( vC - vM ) * ( vP - vC )  <=  0.0_KDR ) then
+
+              V_IR (         iV,         jV,         kV )  =  vC
+              V_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  =  vC
+
+!call Show ( '>>> Local extremum' )
+            else  !-- Parabolic reconstruction
+               
+              !-- First parabola
+
+              D  =   ( x2AM - x2AP ) * xAC  &
+                   + ( x2AP - x2AC ) * xAM  &
+                   + ( x2AC - x2AM ) * xAP
+
+              c0  =   (   vP * ( x2AM * xAC  -  x2AC * xAM )  &
+                        + vM * ( x2AC * xAP  -  x2AP * xAC )  &
+                        + vC * ( x2AP * xAM  -  x2AM * xAP ) )  /  D
+
+              c1  =  (   vP * ( x2AC - x2AM )  &
+                       + vC * ( x2AM - x2AP )  &
+                       + vM * ( x2AP - x2AC ) )  /  D
+
+              c2  =  (   vP * ( xAM - xAC )  &
+                       + vM * ( xAC - xAP )  &
+                       + vC * ( xAP - xAM ) )  /  D
+
+              xE  =  - c1 / ( 2.0_KDR * c2 )
+
+              !-- Check for and eliminate local extrema in first parabola
+              if ( xE > xM .and. xE <= xC ) then
+! call Show ( '>>> Left extremum 1' )
+! call Show ( [ vM, vC, vP ], '>>> vM, vC, vP' )
+! call Show ( [ xM, xC, xP ], '>>> xM, xC, xP' )
+! call Show ( xE, '>>> xE' )
+! call Show ( xI, '>>> xI' )
+! call Show ( [ c0, c1, c2 ], '>>> Old c0, c1, c2' )
+! call Show (  c0  +  c1 * xI  +  c2 * xI**2, '>>> Old V_IR' )
+! call Show (  c0  +  c1 * xE  +  c2 * xE**2, '>>> Old V_Extremum' )
+
+                D  =  ( x2AC - x2AP ) + 2 * ( xAP - xAC ) * xM
+
+                c0  =  (          vP * x2AC  -  vC * x2AP  &
+                         +  2 * ( vC * xAP   -  vP * xAC  ) * xM )  /  D
+
+                c1  =  ( 2 * ( vP - vC ) * xM )  /  D
+
+                c2  =  ( vC - vP )  /  D
+
+! call Show ( [ c0, c1, c2 ], '>>> New c0, c1, c2' )
+! call Show (  c0  +  c1 * xI  +  c2 * xI**2, '>>> New V_IR' )
+! call Show (  - c1 / ( 2.0_KDR * c2 ), '>>> New xE' )
+! call Show (  c0  +  c1 * xM  +  c2 * xM**2, '>>> New V_Extremum' )
+! call Show ( c1 + 2 * c2 * xM, '>>> c1 + 2 * c2 * xM' )
+! call Show (  c0  +  c1 * xAC  +  c2 * x2AC, '>>> c0  +  c1 * xAC  +  c2 * x2AC' )
+! call Show (  c0  +  c1 * xAP  +  c2 * x2AP, '>>> c0  +  c1 * xAP  +  c2 * x2AP' )
+! call PROGRAM_HEADER % Abort ( )
+              else if ( xE > xC .and. xE < xP ) then
+! call Show ( '>>> Right extremum 1' )
+! call Show ( [ vM, vC, vP ], '>>> vM, vC, vP' )
+! call Show ( [ xM, xC, xP ], '>>> xM, xC, xP' )
+! call Show ( xE, '>>> xE' )
+! call Show ( xO, '>>> xO' )
+! call Show ( [ c0, c1, c2 ], '>>> Old c0, c1, c2' )
+! call Show (  c0  +  c1 * xO  +  c2 * xO**2, '>>> Old V_IL_P' )
+! call Show (  c0  +  c1 * xE  +  c2 * xE**2, '>>> Old V_Extremum' )
+
+                D  =  ( x2AM - x2AC ) + 2 * ( xAC - xAM ) * xP
+
+                c0  =  ( ( vC * x2AM - vM * x2AC )  &
+                         + 2 * ( vM * xAC - vC * xAM ) * xP )  /  D
+
+                c1  =  ( 2 * ( vC - vM ) * xP ) / D
+
+                c2  =  ( vM - vC ) / D
+
+! call Show ( [ c0, c1, c2 ], '>>> New c0, c1, c2' )
+! call Show (  c0  +  c1 * xO  +  c2 * xO**2, '>>> New V_IL_P' )
+! call Show (  - c1 / ( 2.0_KDR * c2 ), '>>> New xE' )
+! call Show (  c0  +  c1 * xP  +  c2 * xP**2, '>>> New V_Extremum' )
+! call Show ( c1 + 2 * c2 * xP, '>>> c1 + 2 * c2 * xP' )
+! call Show (  c0  +  c1 * xAM  +  c2 * x2AM, '>>> c0  +  c1 * xAM  +  c2 * x2AM' )
+! call Show (  c0  +  c1 * xAC  +  c2 * x2AC, '>>> c0  +  c1 * xAC  +  c2 * x2AC' )
+! call PROGRAM_HEADER % Abort ( )
+              end if  !-- Local extrema in first parabola
+
+              V_IR (         iV,         jV,         kV )  &
+                =  c0  +  c1 * xI  +  c2 * xI**2
+
+              V_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  &
+                =  c0  +  c1 * xO  +  c2 * xO**2
+
+!call Show ( '>>> Parabola' )
+            end if
+
+!call Show ( V_IR (         iV,         jV,         kV ), '>>> V_IR_M' )
+!call Show ( V_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) ), '>>> V_IL_P' ) 
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end parallel do
+      
+    end if
+        
+  end procedure ComputeReconstructionParabolic_CSL_Kernel
 
 
   module procedure ComputeLogDerivative_CSL_Kernel
