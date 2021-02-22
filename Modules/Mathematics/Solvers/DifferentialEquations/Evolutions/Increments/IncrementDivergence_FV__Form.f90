@@ -639,8 +639,10 @@ contains
         call ComputeReconstructionLinear_CSL &
                ( I, Reconstructed, Chart, iDimension )
       case ( 'PARABOLIC' )
+!call Show ( '>>> 1' )
         call ComputeReconstructionParabolic_CSL &
                ( I, Reconstructed, Chart, iDimension )
+!call Show ( '>>> 2' )
 !call Show ( '>>> Stopping after Reconstruction', CONSOLE % WARNING )
 !call PROGRAM_HEADER % Abort ( )
       case default
@@ -654,8 +656,11 @@ contains
     end select !-- Grid
 
     if ( trim ( C % ReconstructedType ) == 'PRIMITIVE' ) then
+!call Show ( '>>> 3' )
       call C % ComputeFromPrimitive ( C_IL, G, G_I )
+!call Show ( '>>> 4' )
       call C % ComputeFromPrimitive ( C_IR, G, G_I )
+!call Show ( '>>> 5' )
     else if ( trim ( C % ReconstructedType ) == 'CONSERVED' ) then
       call C % ComputeFromConserved ( C_IL, G, G_I )
       call C % ComputeFromConserved ( C_IR, G, G_I )
@@ -885,6 +890,8 @@ contains
     !-- Reconstruct Current
 
     associate ( iaR => C % iaReconstructed )
+!call Show ( '>>> 1.1' )
+!call Show ( C % N_RECONSTRUCTED, '>>> N_RECONSTRUCTED' )
     do iF = 1, C % N_RECONSTRUCTED
       call CSL % SetVariablePointer &
              ( C % Value ( :, iaR ( iF ) ), V )
@@ -892,10 +899,12 @@ contains
              ( C_IL % Value ( :, iaR ( iF ) ), V_IL )
       call CSL % SetVariablePointer &
              ( C_IR % Value ( :, iaR ( iF ) ), V_IR )
+!call Show ( iF, '>>> iF' )
       call ComputeReconstructionParabolic_CSL_Kernel &
              ( V, X, dX_L, dX_R, X, X ** 2, iDimension, &
                CSL % nGhostLayers ( iDimension ), V_IL, V_IR, &
                UseDeviceOption = C % AllocatedDevice )
+!call Show ( '>>> 1.2' )
     end do !-- iF
     end associate !-- iaR
 
