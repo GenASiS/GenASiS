@@ -896,9 +896,11 @@ contains
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
 
+!call Show ( '>>> 3.1' )
     call C % Apply_EOS_PrologueKernel &
            ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
     
+!call Show ( '>>> 3.2' )
     call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
     call C % EOS % ComputeFromEnergy &
            ( Storage_C, &
@@ -907,26 +909,33 @@ contains
              iSolve = C % INTERNAL_ENERGY )
     call Storage_C % ReassociateHost ( AssociateVariablesOption = .true. )
     
+!call Show ( '>>> 3.3' )
     call C % Apply_EOS_EpilogueKernel &
            ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
              UseDeviceOption = C % AllocatedDevice )
     
+!call Show ( '>>> 3.4' )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
              UseDeviceOption = C % AllocatedDevice )
+!call Show ( '>>> 3.5' )
     call C % Compute_G_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
              UseDeviceOption = C % AllocatedDevice )
+!call Show ( '>>> 3.6' )
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
+!call Show ( '>>> 3.7' )
     call C % Compute_DE_G_Kernel &
            ( DE, N, YE, UseDeviceOption = C % AllocatedDevice )
 
+!call Show ( '>>> 3.8' )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
     
+!call Show ( '>>> 3.9' )
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end select !-- FF
