@@ -37,10 +37,19 @@ contains
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
-    call GA % ComputeGravity &
-           ( S % Current_ASC, &
-             iBaryonMass = F % BARYON_MASS, &
-             iBaryonDensity = F % COMOVING_BARYON_DENSITY )
+    select type ( F )
+    class is ( Fluid_P_Template )
+      call GA % ComputeGravity &
+             ( S % Current_ASC, &
+               iBaryonMass = F % BARYON_MASS, &
+               iBaryonDensity = F % COMOVING_BARYON_DENSITY, &
+               iPressureOption = F % PRESSURE )
+    class default
+      call GA % ComputeGravity &
+             ( S % Current_ASC, &
+               iBaryonMass = F % BARYON_MASS, &
+               iBaryonDensity = F % COMOVING_BARYON_DENSITY )
+    end select
 
     ! select type ( G )
     ! class is ( Geometry_N_S_Form )
