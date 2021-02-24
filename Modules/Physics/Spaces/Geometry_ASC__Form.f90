@@ -322,7 +322,8 @@ contains
   end function Geometry_N_CSL
 
 
-  subroutine ComputeGravity ( GA, FA, iBaryonMass, iBaryonDensity )
+  subroutine ComputeGravity &
+               ( GA, FA, iBaryonMass, iBaryonDensity, iPressureOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
@@ -331,6 +332,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &
       iBaryonDensity
+    integer ( KDI ), intent ( in ), optional :: &
+      iPressureOption
 
     select case ( trim ( GA % GeometryType ) )
     case ( 'NEWTONIAN', 'NEWTONIAN_STRESS' )
@@ -341,7 +344,8 @@ contains
     case ( 'CENTRAL_MASS' )
       call ComputeGravityCentralMass ( GA )
     case ( 'MULTIPOLE', 'MULTIPOLE_OLD_2', 'MULTIPOLE_OLD_1' )
-      call ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
+      call ComputeGravityMultipole &
+             ( GA, FA, iBaryonMass, iBaryonDensity, iPressureOption )
     case default
       call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
       call Show ( GA % GravitySolverType, 'GravitySolverType', &
@@ -473,7 +477,8 @@ contains
   end subroutine ComputeGravityCentralMass
 
 
-  subroutine ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
+  subroutine ComputeGravityMultipole &
+               ( GA, FA, iBaryonMass, iBaryonDensity, iPressureOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
@@ -482,6 +487,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &
       iBaryonDensity
+    integer ( KDI ), intent ( in ), optional :: &
+      iPressureOption
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
@@ -489,7 +496,12 @@ contains
     logical ( KDL ) :: &
       ComputeForce
     type ( StorageForm ), pointer :: &
-      S
+      S, &
+      S_P
+    type ( Storage_ASC_Form ) :: &
+      Storage_ASC_Pressure
+    type ( GradientForm ) :: &
+      GradientPressure
     class ( Geometry_N_Form ), pointer :: &
       G
     class ( CurrentTemplate ), pointer :: &
@@ -539,11 +551,40 @@ contains
                   G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
                   UseDeviceOption = G % AllocatedDevice )
     end do !-- iD
-    
+
+    if ( present ( iPressureOption ) ) then
+
+      !-- Pressure gradient
+
+      associate &
+        ( SA_P => Storage_ASC_Pressure, &
+          Grad_P => GradientPressure )
+
+      call SA_P % Initialize &
+             ( FA, NameShort = 'PressureStorage', &
+               iaSelectedOption = [ iPressureOption ], &
+               IgnorabilityOption = CONSOLE % INFO_3 )
+
+      call Grad_P % Initialize &
+             ( 'PressureGradient', [ F % nValues, 1 ] )
+
+      S_P  =>  SA_P % Storage ( )
+
+      do iD = 1, C % nDimensions
+        call Grad_P % Compute ( C, S_P, iDimension = iD )
+        call Copy ( Grad_P % Output % Value ( :, 1 ), &
+                    G % Value ( :, G % PRESSURE_GRADIENT_D ( iD ) ), &
+                    UseDeviceOption = G % AllocatedDevice )
+      end do !-- iD
+
+      end associate !-- SA_P, etc.
+
+    end if !-- iPressureOption
+
     end associate !-- PA, etc.v
     end select !-- C
     end select !-- A
-    nullify ( S, G, F )
+    nullify ( S, S_P, G, F )
 
   end subroutine ComputeGravityMultipole
 

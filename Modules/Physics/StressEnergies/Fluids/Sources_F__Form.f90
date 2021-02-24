@@ -9,8 +9,8 @@ module Sources_F__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_F  = 14, &
-      N_VECTORS_F = 4
+      N_FIELDS_F  = 17, &
+      N_VECTORS_F = 5
 
   type, public, extends ( Sources_C_Form ) :: Sources_F_Form
     integer ( KDI ) :: &
@@ -22,9 +22,10 @@ module Sources_F__Form
       RADIATION_DE     = 0, &
       RADIATION_TIME   = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      CURVILINEAR_S_D   = 0, &
-      GRAVITATIONAL_S_D = 0, &
-      RADIATION_S_D     = 0
+      CURVILINEAR_S_D     = 0, &
+      GRAVITATIONAL_S_D   = 0, &
+      RADIATION_S_D       = 0, &
+      PRESSURE_GRADIENT_D = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_SF
@@ -157,14 +158,15 @@ contains
     if ( SF % N_FIELDS == 0 ) &
       SF % N_FIELDS = oF + SF % N_FIELDS_F
 
-    SF % GRAVITATIONAL_G    =  oF + 1
-    SF % RADIATION_G        =  oF + 2
-    SF % RADIATION_DS       =  oF + 3
-    SF % RADIATION_DE       =  oF + 4
-    SF % RADIATION_TIME     =  oF + 5
-    SF % CURVILINEAR_S_D    =  oF + [  6,  7,  8 ]
-    SF % GRAVITATIONAL_S_D  =  oF + [  9, 10, 11 ]
-    SF % RADIATION_S_D      =  oF + [ 12, 13, 14 ]
+    SF % GRAVITATIONAL_G      =  oF + 1
+    SF % RADIATION_G          =  oF + 2
+    SF % RADIATION_DS         =  oF + 3
+    SF % RADIATION_DE         =  oF + 4
+    SF % RADIATION_TIME       =  oF + 5
+    SF % CURVILINEAR_S_D      =  oF + [  6,  7,  8 ]
+    SF % GRAVITATIONAL_S_D    =  oF + [  9, 10, 11 ]
+    SF % RADIATION_S_D        =  oF + [ 12, 13, 14 ]
+    SF % PRESSURE_GRADIENT_D  =  oF + [ 15, 16, 17 ]
 
     !-- variable names 
 
@@ -177,20 +179,23 @@ contains
     end if
 
     Variable ( oF + 1 : oF + SF % N_FIELDS_F ) &
-      = [ 'Gravitational_G    ', &
-          'Radiation_G        ', &
-          'Radiation_DS       ', &
-          'Radiation_DE       ', &
-          'RadiationTime      ', &
-          'Curvilinear_S_D_1  ', &
-          'Curvilinear_S_D_2  ', &
-          'Curvilinear_S_D_3  ', &
-          'Gravitational_S_D_1', &
-          'Gravitational_S_D_2', &
-          'Gravitational_S_D_3', &
-          'Radiation_S_D_1    ', &
-          'Radiation_S_D_2    ', &
-          'Radiation_S_D_3    ' ]
+      = [ 'Gravitational_G     ', &
+          'Radiation_G         ', &
+          'Radiation_DS        ', &
+          'Radiation_DE        ', &
+          'RadiationTime       ', &
+          'Curvilinear_S_D_1   ', &
+          'Curvilinear_S_D_2   ', &
+          'Curvilinear_S_D_3   ', &
+          'Gravitational_S_D_1 ', &
+          'Gravitational_S_D_2 ', &
+          'Gravitational_S_D_3 ', &
+          'Radiation_S_D_1     ', &
+          'Radiation_S_D_2     ', &
+          'Radiation_S_D_3     ', &
+          'PressureGradient_D_1', &
+          'PressureGradient_D_2', &
+          'PressureGradient_D_3' ]
           
     !-- units
     
@@ -217,10 +222,11 @@ contains
     end if
 
     Vector ( oV + 1 : oV + SF % N_VECTORS_F ) &
-      = [ 'Div_F_S_D        ', &
-          'Curvilinear_S_D  ', &
-          'Gravitational_S_D', &
-          'Radiation_S_D    ' ]
+      = [ 'Div_F_S_D         ', &
+          'Curvilinear_S_D   ', &
+          'Gravitational_S_D ', &
+          'Radiation_S_D     ', &
+          'PressureGradient_D' ]
 
     !-- vector indices
 
@@ -242,6 +248,7 @@ contains
     call VectorIndices ( oV + 2 ) % Initialize ( SF % CURVILINEAR_S_D )
     call VectorIndices ( oV + 3 ) % Initialize ( SF % GRAVITATIONAL_S_D )
     call VectorIndices ( oV + 4 ) % Initialize ( SF % RADIATION_S_D )
+    call VectorIndices ( oV + 5 ) % Initialize ( SF % PRESSURE_GRADIENT_D )
 
   end subroutine InitializeBasics
 
@@ -280,6 +287,8 @@ contains
       VariableUnit ( SF % GRAVITATIONAL_S_D ( iD ) )  &
         =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
       VariableUnit ( SF % RADIATION_S_D ( iD ) )  &
+        =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
+      VariableUnit ( SF % PRESSURE_GRADIENT_D ( iD ) )  &
         =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
     end do
 
