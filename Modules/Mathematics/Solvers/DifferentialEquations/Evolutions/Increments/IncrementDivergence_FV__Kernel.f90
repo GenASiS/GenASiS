@@ -486,7 +486,102 @@ contains
 
               end if  !-- Local extrema in first parabola
 
-           end if !-- Local extremum of cell average values
+              !-- Second parabola
+!call Show ( '>>> Second parabola' )
+!call Show ( [ vI, vC, vO ], '>>> vI, vC, vO' )
+!call Show ( [ xI, xC, xO ], '>>> xI, xC, xO' )
+
+              D  =  ( xI - xO ) * ( x2AC  +  xI * xO  -  xAC * ( xI + xO ) )
+
+              c0  =  (    vO * xI * ( x2AC  -  xAC * xI )  &
+                       +  vC * xI * xO * ( xI  -  xO )  &
+                       +  vI * xO * ( xAC * xO  -  x2AC ) )  /  D
+
+              c1  =  (    vO * ( xI**2 -  x2AC )  &
+                       +  vI * (  x2AC - xO**2 )  &
+                       +  vC * ( xO**2 - xI**2 ) )  /  D
+
+              c2  =  (    vO * ( xAC -  xI )  &
+                       +  vC * (  xI -  xO )  &
+                       +  vI * (  xO - xAC ) )  /  D
+!call Show ( [ c0, c1, c2 ], '>>> c0, c1, c2' )
+
+              c2_Safe =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
+!call Show ( c2_Safe, '>>> c2_Safe' )
+                  xE  =  - c1 / ( 2.0_KDR * c2_Safe )
+!call Show ( xE, '>>> xE' ) 
+
+              vI  =  c0  +  c1 * xI  +  c2 * xI**2
+              vO  =  c0  +  c1 * xO  +  c2 * xO**2
+
+!call Show ( c0  +  c1 * xI  +  c2 * xI**2, '>>> vI ?' )
+!call Show ( vI, '>>> vI New' )
+!call Show ( c0  +  c1 * xAC  +  c2 * x2AC, '>>> vC ?' )
+!call Show ( vO, '>>> vO New' )
+!call Show ( c0  +  c1 * xO  +  c2 * xO**2, '>>> vO ?' )
+!call PROGRAM_HEADER % Abort ( )
+
+              !-- Check for local extremum in second parabola, 
+              !   and adjust vI or vO accordingly
+              if ( xE > xI .and. xE <= xC ) then
+!call Show ( '>>> Left extremum 2' )
+!call Show ( [ vI, vC, vO ], '>>> vI, vC, vO' )
+!call Show ( [ xI, xC, xO ], '>>> xI, xC, xO' )
+!call Show ( xE, '>>> xE' )
+
+                 D  =  ( x2AC - xO**2 )  +  2 * xI * ( xO - xAC )
+
+                c0  =  (    ( vO * x2AC  -  vC * xO**2 )  &
+                         +  2 * xI * ( vC * xO  -  vO * xAC ) )  /  D
+
+                c1  =  -2 * ( vC - vO ) * xI  /  D
+
+                c2  =  ( vC - vO )  /  D
+!call Show ( [ c0, c1, c2 ], '>>> c0, c1, c2' )
+
+                c2_Safe =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
+!call Show ( c2_Safe, '>>> c2_Safe' )
+                    xE  =  - c1 / ( 2.0_KDR * c2_Safe )
+!call Show ( xE, '>>> xE New' ) 
+
+                vI  =  c0  +  c1 * xI  +  c2 * xI**2
+!call Show (        c1        +  2 * c2 * xI, '>>> d vI / dx == 0 ?' )
+!call Show ( vI, '>>> vI New' )
+!call Show ( c0  +  c1 * xAC  +  c2 * x2AC, '>>> vC ?' )
+!call Show ( c0  +  c1 * xO  +      c2 * xO**2, '>>> vO ?' )
+!call PROGRAM_HEADER % Abort ( )
+
+              else if ( xE > xC .and. xE < xO ) then
+!call Show ( '>>> Right extremum 2' )
+!call Show ( [ vI, vC, vO ], '>>> vI, vC, vO' )
+!call Show ( [ xI, xC, xO ], '>>> xI, xC, xO' )
+!call Show ( xE, '>>> xE' )
+
+                 D  =  ( x2AC - xI**2 )  +  2 * xO * ( xI - xAC )
+
+                c0  =  (    ( vI * x2AC  -  vC * xI**2 )  &
+                         +  2 * xO * ( vC * xI  -  vI * xAC ) )  /  D
+
+                c1  =  -2 * ( vC - vI ) * xO  /  D
+
+                c2  =  ( vC - vI )  /  D
+!call Show ( [ c0, c1, c2 ], '>>> c0, c1, c2' )
+
+                c2_Safe =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
+!call Show ( c2_Safe, '>>> c2_Safe' )
+                    xE  =  - c1 / ( 2.0_KDR * c2_Safe )
+!call Show ( xE, '>>> xE New' ) 
+
+                vO  =  c0  +  c1 * xO  +  c2 * xO**2
+!call Show ( c0  +  c1 * xI  +      c2 * xI**2, '>>> vI ?' )
+!call Show ( c0  +  c1 * xAC  +  c2 * x2AC, '>>> vC ?' )
+!call Show ( vO, '>>> vO New' )
+!call Show (        c1        +  2 * c2 * xO, '>>> d vO / dx == 0 ?' )
+!call PROGRAM_HEADER % Abort ( )
+
+              end if  !-- Local extrema in second parabola
+
+            end if !-- Local extremum of cell average values
 
             V_IR (         iV,         jV,         kV )  =  vI
             V_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  =  vO
