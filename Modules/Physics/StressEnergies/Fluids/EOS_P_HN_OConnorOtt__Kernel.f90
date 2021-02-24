@@ -381,8 +381,8 @@ contains
           L_T_1 = L_T
           L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
 if ( L_T == T_L_T_Min ) then
-call Show ( '>>> T_Min' )
-call Show ( iV, '>>> iV' )
+call Show ( '>>> T_Min E', CONSOLE % WARNING )
+call Show ( iV, '>>> iV', CONSOLE % WARNING )
   cycle Value_Host
 end if
           SV_1  = SV_R
@@ -610,6 +610,11 @@ end if
           L_DT  = - ( SV_R - SV_0 ) / D2
           L_T_1 = L_T
           L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
+if ( L_T == T_L_T_Min ) then
+call Show ( '>>> T_Min E,S', CONSOLE % WARNING )
+call Show ( iV, '>>> iV', CONSOLE % WARNING )
+  cycle Value_Host
+end if
           SV_1  = SV_R
           
           call InterpolateTableKernel &
