@@ -86,7 +86,7 @@ contains
 
   subroutine InitializeClone &
                ( SA_Target, FA_Source, NameShort, UsePinnedMemoryOption, &
-                 iaSelectedOption )
+                 iaSelectedOption, IgnorabilityOption )
 
     class ( Storage_ASC_Form ), intent ( inout ) :: &
       SA_Target
@@ -98,6 +98,8 @@ contains
       UsePinnedMemoryOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
     
     logical ( KDL ) :: &
       UsePinnedMemory
@@ -115,15 +117,32 @@ contains
       allocate ( Storage_CSL_Form :: SA_Target % Chart )
       select type ( SC => SA_Target % Chart )
       type is ( Storage_CSL_Form )
-      call SC % Initialize &
-             ( FC, NameShort, UsePinnedMemory, &
-               iaSelectedOption = iaSelectedOption )
-      end select !-- SC
 
-      call SA_Target % InitializeTemplate_ASC &
-             ( FA_Source % Atlas, NameShort, &
-               UsePinnedMemoryOption = UsePinnedMemory, &
-               IgnorabilityOption = FA_Source % IGNORABILITY )
+      if ( present ( IgnorabilityOption ) ) then
+
+        call SC % Initialize &
+               ( FC, NameShort, UsePinnedMemory, &
+                 iaSelectedOption = iaSelectedOption, &
+                 IgnorabilityOption = IgnorabilityOption )        
+        call SA_Target % InitializeTemplate_ASC &
+               ( FA_Source % Atlas, NameShort, &
+                 UsePinnedMemoryOption = UsePinnedMemory, &
+                 IgnorabilityOption = IgnorabilityOption )
+
+      else
+
+        call SC % Initialize &
+               ( FC, NameShort, UsePinnedMemory, &
+                 iaSelectedOption = iaSelectedOption, &
+                 IgnorabilityOption = FA_Source % IGNORABILITY + 1 )
+        call SA_Target % InitializeTemplate_ASC &
+               ( FA_Source % Atlas, NameShort, &
+                 UsePinnedMemoryOption = UsePinnedMemory, &
+                 IgnorabilityOption = FA_Source % IGNORABILITY )
+
+      end if
+
+      end select !-- SC
 
     class default
       call Show ( 'Field Chart type not recognized', CONSOLE % ERROR )

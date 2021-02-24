@@ -84,7 +84,7 @@ contains
 
   subroutine InitializeClone &
                ( SC_Target, FC_Source, NameShort, UsePinnedMemory, &
-                  iaSelectedOption )
+                  iaSelectedOption, IgnorabilityOption )
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       SC_Target
@@ -96,6 +96,8 @@ contains
       UsePinnedMemory
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( SC_Target % Type == '' ) &
       SC_Target % Type = 'a Storage_CSL' 
@@ -105,9 +107,15 @@ contains
     call F % Initialize &
            ( FC_Source % Field, NameOption = NameShort, &
              iaSelectedOption = iaSelectedOption )
-    call SC_Target % InitializeTemplate_CSL &
-           ( FC_Source % Chart, NameShort, UsePinnedMemory, F % nValues, &
-             IgnorabilityOption = FC_Source % IGNORABILITY )
+    if ( present ( IgnorabilityOption ) ) then
+      call SC_Target % InitializeTemplate_CSL &
+             ( FC_Source % Chart, NameShort, UsePinnedMemory, F % nValues, &
+               IgnorabilityOption = IgnorabilityOption )
+    else
+      call SC_Target % InitializeTemplate_CSL &
+             ( FC_Source % Chart, NameShort, UsePinnedMemory, F % nValues, &
+               IgnorabilityOption = FC_Source % IGNORABILITY )
+    end if
 
     end associate !-- F
 
