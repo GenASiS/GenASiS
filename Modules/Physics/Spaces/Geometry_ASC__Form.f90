@@ -552,34 +552,34 @@ contains
                   UseDeviceOption = G % AllocatedDevice )
     end do !-- iD
 
-    if ( present ( iPressureOption ) ) then
+    ! if ( present ( iPressureOption ) ) then
 
-      !-- Pressure gradient
+    !   !-- Pressure gradient
 
-      associate &
-        ( SA_P => Storage_ASC_Pressure, &
-          Grad_P => GradientPressure )
+    !   associate &
+    !     ( SA_P => Storage_ASC_Pressure, &
+    !       Grad_P => GradientPressure )
 
-      call SA_P % Initialize &
-             ( FA, NameShort = 'PressureStorage', &
-               iaSelectedOption = [ iPressureOption ], &
-               IgnorabilityOption = CONSOLE % INFO_3 )
+    !   call SA_P % Initialize &
+    !          ( FA, NameShort = 'PressureStorage', &
+    !            iaSelectedOption = [ iPressureOption ], &
+    !            IgnorabilityOption = CONSOLE % INFO_3 )
 
-      call Grad_P % Initialize &
-             ( 'PressureGradient', [ F % nValues, 1 ] )
+    !   call Grad_P % Initialize &
+    !          ( 'PressureGradient', [ F % nValues, 1 ] )
 
-      S_P  =>  SA_P % Storage ( )
+    !   S_P  =>  SA_P % Storage ( )
 
-      do iD = 1, C % nDimensions
-        call Grad_P % Compute ( C, S_P, iDimension = iD )
-        call Copy ( Grad_P % Output % Value ( :, 1 ), &
-                    G % Value ( :, G % PRESSURE_GRADIENT_D ( iD ) ), &
-                    UseDeviceOption = G % AllocatedDevice )
-      end do !-- iD
+    !   do iD = 1, C % nDimensions
+    !     call Grad_P % Compute ( C, S_P, iDimension = iD )
+    !     call Copy ( Grad_P % Output % Value ( :, 1 ), &
+    !                 G % Value ( :, G % PRESSURE_GRADIENT_D ( iD ) ), &
+    !                 UseDeviceOption = G % AllocatedDevice )
+    !   end do !-- iD
 
-      end associate !-- SA_P, etc.
+    !   end associate !-- SA_P, etc.
 
-    end if !-- iPressureOption
+    ! end if !-- iPressureOption
 
     end associate !-- PA, etc.v
     end select !-- C

@@ -15,6 +15,7 @@ module Fluid_P_HN__Form
 
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_HEAVY_NUCLEUS = 1, &
+!      N_PRIMITIVE_HEAVY_NUCLEUS = 2, &
       N_CONSERVED_HEAVY_NUCLEUS = 1, &
       N_FIELDS_HEAVY_NUCLEUS    = 11, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
@@ -497,6 +498,7 @@ contains
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_HEAVY_NUCLEUS ) &
       = [ C % ELECTRON_FRACTION ]
+!      = [ C % TEMPERATURE, C % ELECTRON_FRACTION ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_HEAVY_NUCLEUS
@@ -814,6 +816,9 @@ contains
       oV, &  !-- oValue
       nV     !-- nValues
       
+!    call ComputeFromTemperature &
+!           ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
+
     associate &
       ( FV => Storage_C % Value, &
         GV => Storage_G % Value )
