@@ -1,5 +1,9 @@
 PATH_ATLAS_BASICS = $(PATH_ATLASES)/AtlasBasics
+PATH_CHARTS       = $(PATH_ATLASES)/Charts
+
+include $(PATH_CHARTS)/Makefile_Path
 
 VPATH_ATLASES = \
   $(PATH_ATLAS_BASICS):\
+  $(VPATH_CHARTS):\
   $(PATH_ATLASES)
