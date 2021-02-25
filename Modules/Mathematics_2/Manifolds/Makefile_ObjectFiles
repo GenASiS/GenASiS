@@ -1,0 +1,4 @@
+include $(PATH_ATLASES)/Makefile_ObjectFiles
+
+MANIFOLDS = \
+  $(ATLASES)

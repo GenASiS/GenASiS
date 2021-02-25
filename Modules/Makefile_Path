@@ -1,5 +1,6 @@
 PATH_BASICS      = $(PATH_MODULES)/Basics
-PATH_MATHEMATICS = $(PATH_MODULES)/Mathematics
+#PATH_MATHEMATICS = $(PATH_MODULES)/Mathematics
+PATH_MATHEMATICS = $(PATH_MODULES)/Mathematics_2
 PATH_PHYSICS     = $(PATH_MODULES)/Physics
 
 include $(PATH_BASICS)/Makefile_Path

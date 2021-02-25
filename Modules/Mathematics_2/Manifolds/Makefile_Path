@@ -1,0 +1,7 @@
+PATH_ATLASES = $(PATH_MANIFOLDS)/Atlases
+
+include $(PATH_ATLASES)/Makefile_Path
+
+VPATH_MANIFOLDS = \
+  $(VPATH_ATLASES):\
+  $(PATH_MANIFOLDS)
