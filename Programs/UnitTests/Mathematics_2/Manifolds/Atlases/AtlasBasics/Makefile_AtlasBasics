@@ -3,7 +3,7 @@ PATH_GENASIS = ../../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  AtlasHeader_Form_Test
+  AtlasHeader_Form_Test FieldHeader_A__Form_Test
 
 AtlasHeader_Form_Test: Basics.a AtlasBasics.a AtlasHeader_Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -11,11 +11,18 @@ AtlasHeader_Form_Test: Basics.a AtlasBasics.a AtlasHeader_Form_Test.o
           AtlasHeader_Form_Test.o AtlasBasics.a \
           Basics.a $(LIBRARIES)
 
+FieldHeader_A__Form_Test: Basics.a AtlasBasics.a FieldHeader_A__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FieldHeader_A__Form_Test_$(MACHINE) \
+          FieldHeader_A__Form_Test.o AtlasBasics.a \
+          Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f AtlasHeader_Form_Test_*
+	rm -f FieldHeader_A__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_ATLAS_BASICS)/Makefile_Dependencies
@@ -24,3 +31,8 @@ AtlasHeader_Form_Test.o: \
   Basics.o \
   AtlasBasics.o \
   AtlasHeader_Form_Test.f90
+
+FieldHeader_A__Form_Test.o: \
+  Basics.o \
+  AtlasBasics.o \
+  FieldHeader_A__Form_Test.f90

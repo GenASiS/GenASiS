@@ -2,8 +2,14 @@ AtlasHeader_Form.o: \
   Basics.o \
   AtlasHeader_Form.f90
 
+FieldHeader_A__Form.o: \
+  Basics.o \
+  AtlasHeader_Form.o \
+  FieldHeader_A__Form.f90
+
 AtlasBasics.o: \
   AtlasHeader_Form.o \
+  FieldHeader_A__Form.o \
   AtlasBasics.f90
 
 AtlasBasics.a: $(ATLAS_BASICS)

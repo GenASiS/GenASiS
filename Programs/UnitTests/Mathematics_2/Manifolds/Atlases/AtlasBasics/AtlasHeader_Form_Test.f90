@@ -9,7 +9,7 @@ program AtlasHeader_Form_Test
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'AtlasHeader_Form_Test', DimensionalityOption = '3D_1D' )
+         ( 'AtlasHeader_Form_Test', DimensionalityOption = '2D_1D' )
 
   allocate ( AH_Base )
   associate ( A => AH_Base )
