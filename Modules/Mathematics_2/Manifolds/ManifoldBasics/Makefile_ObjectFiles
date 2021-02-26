@@ -1,4 +1,5 @@
 MANIFOLD_BASICS = \
   ManifoldBasics.o \
   FieldHeader_M__Form.o \
-  ManifoldHeader_Form.o
+  ManifoldHeader_Form.o \
+  MANIFOLD_Singleton.o
