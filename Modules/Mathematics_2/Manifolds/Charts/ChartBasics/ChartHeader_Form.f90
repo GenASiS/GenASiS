@@ -51,10 +51,15 @@ module ChartHeader_Form
       Show => Show_CH
     final :: &
       Finalize
+    procedure, public, pass ( C ) :: &
+      SetBrick
   end type ChartHeaderForm
 
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = MANIFOLD % MAX_DIMENSIONS
+
+    private :: &
+      BrickIndex
 
 
 contains
@@ -295,6 +300,119 @@ contains
     end if !-- AllocatedValues
 
   end subroutine Finalize
+
+
+  subroutine SetBrick &
+               ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick, &
+                 nBricksOption, nBricksCompatibleOption )
+
+    integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+      nCells
+    class ( ChartHeaderForm ), intent ( in ) :: &
+      C
+    type ( CommunicatorForm ), intent ( in ) :: &
+      Communicator
+    integer ( KDI ), dimension ( : ), intent ( out ) :: &
+      nCellsBrick, &
+      nBricks, &
+      iaBrick
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nBricksOption, &
+      nBricksCompatibleOption
+
+    integer ( KDI ) :: &
+      iD, &  !-- iDimension
+      SizeRoot
+    integer ( KDI ), dimension ( size ( nBricks ) ) :: &
+      nBricksCompatible
+
+    associate ( nD => C % nDimensions )
+
+    SizeRoot  =  Communicator % Size ** ( 1.0_KDR / nD ) + 0.5_KDR
+
+    nBricks = 1
+    nBricks ( : nD ) = SizeRoot
+    if ( present ( nBricksOption ) ) &
+      nBricks  =  nBricksOption 
+    call PROGRAM_HEADER % GetParameter ( nBricks ( : nD ), 'nBricks' )
+    
+    nBricksCompatible = nBricks
+    if ( present ( nBricksCompatibleOption ) ) &
+      nBricksCompatible  =  nBricksCompatibleOption 
+    call PROGRAM_HEADER % GetParameter &
+           ( nBricksCompatible ( : nD ), 'nBricksCompatible' )
+
+    if ( any ( nBricksCompatible /= nBricks ) ) then
+      call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
+      call Show ( nBricks, 'nBricks', CONSOLE % INFO_1 )
+      call Show ( nBricksCompatible, 'nBricksCompatible', CONSOLE % INFO_1 )
+    end if
+
+    if ( product ( nBricks ) /= Communicator % Size ) then
+      call Show ( 'The total number of bricks must equal ' &
+                  // 'the number of MPI processes', CONSOLE % ERROR )
+      call Show ( Communicator % Size, 'nProcesses', CONSOLE % ERROR )
+      call Show ( nBricks ( 1 : nD ), 'nBricks', CONSOLE % ERROR )
+      call Show ( product ( nBricks ), 'product ( nBricks )', CONSOLE % ERROR )
+      call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'SetBrick', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Communicator % Synchronize ( )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    do iD = 1, nD
+      if ( mod ( nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
+        call Show ( 'nBricksCompatible in each dimension must divide evenly ' &
+                    // 'into nCells in each dimension', CONSOLE % WARNING )
+        call Show ( iD, 'iDimension', CONSOLE % WARNING )
+        call Show ( nBricksCompatible ( iD ), 'nBricksCompatible', &
+                    CONSOLE % WARNING )
+        call Show ( nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
+        nCells ( iD ) = ( nCells ( iD ) / nBricksCompatible ( iD ) ) &
+                        * nBricksCompatible ( iD )
+        call Show ( nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
+        call Show ( 'SetBrick', 'subroutine', CONSOLE % WARNING )
+        call Show ( 'Chart_Template', 'module', CONSOLE % WARNING )
+      end if
+    end do
+    
+    nCellsBrick = nCells / nBricks
+    iaBrick = BrickIndex ( nBricks, nCells, Communicator % Rank )
+
+    end associate !-- nD
+
+  end subroutine SetBrick
+
+
+  function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
+
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nBricks, &
+      nCells
+    integer ( KDI ), intent ( in ) :: &
+      MyRank
+    integer ( KDI ) , dimension ( MAX_DIMENSIONS )  :: &
+      BI
+
+    associate ( nB => nBricks )
+
+    if ( nCells ( 3 ) > 1 ) then
+      BI ( 3 ) = ( MyRank / ( nB ( 1 ) * nB ( 2 ) ) ) + 1
+    else
+      BI ( 3 ) = 1
+    end if
+
+    if ( nCells ( 2 ) > 1 ) then
+      BI ( 2 ) = ( mod ( MyRank, nB ( 1 ) * nB ( 2 ) ) / nB ( 1 ) ) + 1
+    else
+      BI ( 2 ) = 1
+    end if
+
+    BI ( 1 ) = mod ( mod ( MyRank, nB ( 1 ) * nB ( 2 ) ), nB ( 1 ) ) + 1
+
+    end associate !-- nB
+
+  end function BrickIndex
 
 
 end module ChartHeader_Form
