@@ -105,7 +105,10 @@ contains
 
     nullify ( M % Communicator )
 
-    if ( M % Name == '' ) return
+    if ( .not. associated ( M % Name ) ) &
+      return
+    if ( M % Name == '' ) &
+      return
 
     call Show ( 'Finalizing ' // trim ( M % Type ), M % IGNORABILITY )
     call Show ( M % Name, 'Name', M % IGNORABILITY )
