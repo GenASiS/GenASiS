@@ -1,13 +1,13 @@
-!-- AtlasHeader handles metadata of an Atlas.
+!-- ManifoldHeader handles metadata of an Manifold.
 
-module AtlasHeader_Form
+module ManifoldHeader_Form
 
   use Basics
 
   implicit none
   private
 
-  type, public :: AtlasHeaderForm
+  type, public :: ManifoldHeaderForm
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nDimensions = 0
@@ -25,12 +25,12 @@ module AtlasHeader_Form
     generic, public :: &
       Initialize => InitializeBasic
     procedure, private, pass :: &
-      Show_AH
+      Show_MH
     generic, public :: &
-      Show => Show_AH
+      Show => Show_MH
     final :: &
       Finalize
-  end type AtlasHeaderForm
+  end type ManifoldHeaderForm
 
     private :: &
       SetDimensionality
@@ -40,11 +40,11 @@ contains
 
 
   subroutine InitializeBasic &
-               ( A, Name, CommunicatorOption, nDimensionsOption, &
+               ( M, Name, CommunicatorOption, nDimensionsOption, &
                  iDimensionalityOption )
 
-    class ( AtlasHeaderForm ), intent ( inout ) :: &
-      A
+    class ( ManifoldHeaderForm ), intent ( inout ) :: &
+      M
     character ( * ), intent ( in )  :: &
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
@@ -53,76 +53,76 @@ contains
       nDimensionsOption, &
       iDimensionalityOption
 
-    A % IGNORABILITY  =  CONSOLE % INFO_1
+    M % IGNORABILITY  =  CONSOLE % INFO_1
 
-    A % AllocatedValues  =  .true.
+    M % AllocatedValues  =  .true.
 
-    if ( .not. associated ( A % Type ) ) then
-      allocate ( A % Type )
-      A % Type  =  'an Atlas' 
+    if ( .not. associated ( M % Type ) ) then
+      allocate ( M % Type )
+      M % Type  =  'a Manifold' 
     end if
 
-    allocate ( A % Name )
-    A % Name  =  Name
+    allocate ( M % Name )
+    M % Name  =  Name
 
-    call Show ( 'Initializing ' // trim ( A % Type ), A % IGNORABILITY )
-    call Show ( A % Name, 'Name', A % IGNORABILITY )
+    call Show ( 'Initializing ' // trim ( M % Type ), M % IGNORABILITY )
+    call Show ( M % Name, 'Name', M % IGNORABILITY )
 
     if ( present ( CommunicatorOption ) ) then
-      A % IsDistributed  =   .true.
-      A % Communicator   =>  CommunicatorOption
+      M % IsDistributed  =   .true.
+      M % Communicator   =>  CommunicatorOption
     end if !-- present Communicator 
 
-    call SetDimensionality ( A, nDimensionsOption, iDimensionalityOption )
+    call SetDimensionality ( M, nDimensionsOption, iDimensionalityOption )
 
   end subroutine InitializeBasic
 
 
-  subroutine Show_AH ( A )
+  subroutine Show_MH ( M )
 
-    class ( AtlasHeaderForm ), intent ( inout ) :: &
-      A
+    class ( ManifoldHeaderForm ), intent ( inout ) :: &
+      M
 
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
-    call Split ( A % Type, ' ', TypeWord )
-    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', A % IGNORABILITY )
-    call Show ( A % Name, 'Name', A % IGNORABILITY )
+    call Split ( M % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', M % IGNORABILITY )
+    call Show ( M % Name, 'Name', M % IGNORABILITY )
 
-    call Show ( A % nDimensions, 'nDimensions', A % IGNORABILITY )
-    call Show ( A % IsDistributed, 'IsDistributed', A % IGNORABILITY )
+    call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
+    call Show ( M % IsDistributed, 'IsDistributed', M % IGNORABILITY )
 
-  end subroutine Show_AH
+  end subroutine Show_MH
 
 
-  impure elemental subroutine Finalize ( A )
+  impure elemental subroutine Finalize ( M )
 
-    type ( AtlasHeaderForm ), intent ( inout ) :: &
-      A
+    type ( ManifoldHeaderForm ), intent ( inout ) :: &
+      M
 
-    nullify ( A % Communicator )
+    nullify ( M % Communicator )
 
-    if ( A % Name == '' ) return
+    if ( M % Name == '' ) return
 
-    call Show ( 'Finalizing ' // trim ( A % Type ), A % IGNORABILITY )
-    call Show ( A % Name, 'Name', A % IGNORABILITY )
+    call Show ( 'Finalizing ' // trim ( M % Type ), M % IGNORABILITY )
+    call Show ( M % Name, 'Name', M % IGNORABILITY )
 
-    if ( A % AllocatedValues ) then
-      deallocate ( A % Name )
-      deallocate ( A % Type )
+    if ( M % AllocatedValues ) then
+      deallocate ( M % Name )
+      deallocate ( M % Type )
     else
-      nullify ( A % Name )
-      nullify ( A % Type )
+      nullify ( M % Name )
+      nullify ( M % Type )
     end if !-- AllocatedValues
 
   end subroutine Finalize
 
 
-  subroutine SetDimensionality ( A, nDimensionsOption, iDimensionalityOption )
+  subroutine SetDimensionality ( M, nDimensionsOption, iDimensionalityOption )
 
-    class ( AtlasHeaderForm ), intent ( inout ) :: &
-      A
+    class ( ManifoldHeaderForm ), intent ( inout ) :: &
+      M
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
       iDimensionalityOption
@@ -133,8 +133,8 @@ contains
       Dimensionality
 
     if ( present ( nDimensionsOption ) ) then
-      A % nDimensions = nDimensionsOption
-      call Show ( A % nDimensions, 'nDimensions', A % IGNORABILITY )
+      M % nDimensions = nDimensionsOption
+      call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
       return
     end if
 
@@ -149,30 +149,30 @@ contains
 
     if ( iDimensionality > size ( Dimensionality ) ) then
       call Show ( 'Too few dimensionalities specified', CONSOLE % ERROR )
-      call Show ( 'AtlasHeader_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ManifoldHeader_Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetDimensionality', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
     select case ( trim ( Dimensionality ( iDimensionality ) ) )
     case ( '1D' )
-      A % nDimensions = 1
+      M % nDimensions = 1
     case ( '2D' )
-      A % nDimensions = 2
+      M % nDimensions = 2
     case ( '3D' )
-      A % nDimensions = 3
+      M % nDimensions = 3
     case default
       call Show ( 'PROGRAM_HEADER % Dimensionality not recognized', &
                   CONSOLE % WARNING )
-      call Show ( 'AtlasHeader_Form', 'module', CONSOLE % WARNING )
+      call Show ( 'ManifoldHeader_Form', 'module', CONSOLE % WARNING )
       call Show ( 'SetDimensionality', 'subroutine', CONSOLE % WARNING )
       call Show ( 'Defaulting to 3D', CONSOLE % WARNING )
-      A % nDimensions = 3
+      M % nDimensions = 3
     end select !-- Dimensionality
 
-    call Show ( A % nDimensions, 'nDimensions', A % IGNORABILITY )
+    call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
 
   end subroutine SetDimensionality
 
 
-end module AtlasHeader_Form
+end module ManifoldHeader_Form

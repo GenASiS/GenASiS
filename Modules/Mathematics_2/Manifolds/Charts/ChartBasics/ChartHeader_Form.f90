@@ -4,7 +4,7 @@
 module ChartHeader_Form
 
   use Basics
-  use AtlasBasics
+  use ManifoldBasics
 
   implicit none
   private

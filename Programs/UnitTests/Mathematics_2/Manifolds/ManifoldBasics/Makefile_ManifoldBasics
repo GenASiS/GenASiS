@@ -1,0 +1,38 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  ManifoldHeader_Form_Test FieldHeader_M__Form_Test
+
+ManifoldHeader_Form_Test: Basics.a ManifoldBasics.a ManifoldHeader_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o ManifoldHeader_Form_Test_$(MACHINE) \
+          ManifoldHeader_Form_Test.o ManifoldBasics.a \
+          Basics.a $(LIBRARIES)
+
+FieldHeader_M__Form_Test: Basics.a ManifoldBasics.a FieldHeader_M__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FieldHeader_M__Form_Test_$(MACHINE) \
+          FieldHeader_M__Form_Test.o ManifoldBasics.a \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f ManifoldHeader_Form_Test_*
+	rm -f FieldHeader_M__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies
+
+ManifoldHeader_Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  ManifoldHeader_Form_Test.f90
+
+FieldHeader_M__Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  FieldHeader_M__Form_Test.f90

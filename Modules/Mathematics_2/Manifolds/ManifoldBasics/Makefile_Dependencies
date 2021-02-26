@@ -1,0 +1,16 @@
+ManifoldHeader_Form.o: \
+  Basics.o \
+  ManifoldHeader_Form.f90
+
+FieldHeader_M__Form.o: \
+  Basics.o \
+  ManifoldHeader_Form.o \
+  FieldHeader_M__Form.f90
+
+ManifoldBasics.o: \
+  ManifoldHeader_Form.o \
+  FieldHeader_M__Form.o \
+  ManifoldBasics.f90
+
+ManifoldBasics.a: $(MANIFOLD_BASICS)
+	ar r ManifoldBasics.a $(MANIFOLD_BASICS)

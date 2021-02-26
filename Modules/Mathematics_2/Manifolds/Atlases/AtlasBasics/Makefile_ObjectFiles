@@ -1,4 +1,0 @@
-ATLAS_BASICS = \
-  AtlasBasics.o \
-  FieldHeader_A__Form.o \
-  AtlasHeader_Form.o

@@ -1,0 +1,3 @@
+CHART_BASICS = \
+  ChartBasics.o \
+  ChartHeader_Form.o

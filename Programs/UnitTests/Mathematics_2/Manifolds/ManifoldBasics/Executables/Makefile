@@ -4,4 +4,4 @@ PURPOSE = DEBUG
 
 FFLAGS  = $(FORTRAN_$(PURPOSE))
 
-include ../Makefile_AtlasBasics
+include ../Makefile_ManifoldBasics

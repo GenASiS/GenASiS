@@ -1,16 +1,16 @@
-PATH_GENASIS = ../../../../../../../..
+PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
   ChartHeader_Form_Test
 
-ChartHeader_Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
+ChartHeader_Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
   ChartHeader_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o ChartHeader_Form_Test_$(MACHINE) \
-          ChartHeader_Form_Test.o ChartBasics.a \
-          AtlasBasics.a Basics.a $(LIBRARIES)
+          ChartHeader_Form_Test.o \
+          ManifoldBasics.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
@@ -19,12 +19,12 @@ clobber: clean
 	rm -f ChartHeader_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
-include $(PATH_ATLAS_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies
 include $(PATH_CHART_BASICS)/Makefile_Dependencies
 
 ChartHeader_Form_Test.o: \
   Basics.o \
-  AtlasBasics.o \
+  ManifoldBasics.o \
   ChartBasics.o \
   ChartHeader_Form_Test.f90
 

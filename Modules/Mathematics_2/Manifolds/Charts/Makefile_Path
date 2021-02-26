@@ -1,0 +1,5 @@
+PATH_CHART_BASICS        = $(PATH_CHARTS)/ChartBasics
+
+VPATH_CHARTS = \
+  $(PATH_CHART_BASICS):\
+  $(PATH_CHARTS)

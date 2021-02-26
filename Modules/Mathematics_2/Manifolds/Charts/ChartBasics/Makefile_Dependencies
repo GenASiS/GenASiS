@@ -1,0 +1,11 @@
+ChartHeader_Form.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  ChartHeader_Form.f90
+
+ChartBasics.o: \
+  ChartHeader_Form.o \
+  ChartBasics.f90
+
+ChartBasics.a: $(CHART_BASICS)
+	ar r ChartBasics.a $(CHART_BASICS)

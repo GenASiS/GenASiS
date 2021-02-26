@@ -1,0 +1,4 @@
+include $(PATH_CHART_BASICS)/Makefile_ObjectFiles
+
+CHARTS = \
+  $(CHART_BASICS)

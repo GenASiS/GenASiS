@@ -1,4 +1,0 @@
-include $(PATH_ATLAS_BASICS)/Makefile_ObjectFiles
-
-ATLASES = \
-  $(ATLAS_BASICS)
