@@ -10,7 +10,8 @@ module ManifoldHeader_Form
   type, public :: ManifoldHeaderForm
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      nDimensions = 0
+      nDimensions  = 0, &
+      nFields      = 0
     logical ( KDL ) :: &
       IsDistributed = .false., &
       AllocatedValues = .false.
@@ -80,7 +81,7 @@ contains
 
   subroutine Show_MH ( M )
 
-    class ( ManifoldHeaderForm ), intent ( inout ) :: &
+    class ( ManifoldHeaderForm ), intent ( in ) :: &
       M
 
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -90,8 +91,9 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', M % IGNORABILITY )
     call Show ( M % Name, 'Name', M % IGNORABILITY )
 
-    call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
     call Show ( M % IsDistributed, 'IsDistributed', M % IGNORABILITY )
+    call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
+    call Show ( M % nFields, 'nFields', M % IGNORABILITY )
 
   end subroutine Show_MH
 
@@ -169,8 +171,6 @@ contains
       call Show ( 'Defaulting to 3D', CONSOLE % WARNING )
       M % nDimensions = 3
     end select !-- Dimensionality
-
-    call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
 
   end subroutine SetDimensionality
 

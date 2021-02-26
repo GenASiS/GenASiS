@@ -9,7 +9,7 @@ ChartHeader_Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
   ChartHeader_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o ChartHeader_Form_Test_$(MACHINE) \
-          ChartHeader_Form_Test.o \
+          ChartHeader_Form_Test.o ChartBasics.a \
           ManifoldBasics.a Basics.a $(LIBRARIES)
 
 clean:
