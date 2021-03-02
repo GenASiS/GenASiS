@@ -4,15 +4,12 @@ program ChartHeader_Form_Test
   use ManifoldBasics
   use ChartBasics
 
-    real ( KDR ), dimension ( 3 ) :: &
-      Scale
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      CoordinateUnit
-    logical ( KDL ), dimension ( 3 ) :: &
-      IsPeriodic
-    character ( LDL ), dimension ( 3 ) :: &
-      Spacing
-
+  real ( KDR ) :: &
+    MinEnergy, &
+    MaxEnergy, &
+    MinWidthEnergy
+  logical ( KDL ), dimension ( 3 ) :: &
+    IsPeriodic
   type ( ManifoldHeaderForm ), allocatable :: &
     Base, &
     Fiber
@@ -26,7 +23,7 @@ program ChartHeader_Form_Test
 
   !-- Base
 
-  IsPeriodic = .true.
+  IsPeriodic  =  .true.
 
   allocate ( Base )
   allocate ( C_Base )
@@ -39,25 +36,23 @@ program ChartHeader_Form_Test
 
   !-- Fiber
 
-  IsPeriodic = .false.
+  IsPeriodic  =  .false.
 
-  Scale = 0.0_KDR
-  Scale ( 1 ) = 5.0_KDR * UNIT % MEGA_ELECTRON_VOLT
-
-  CoordinateUnit = UNIT % IDENTITY
-  CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
-
-  Spacing = ''
-  Spacing ( 1 ) = 'COMPACTIFIED'
+       MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+       MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+  MinWidthEnergy  =    0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
 
   allocate ( Fiber )
   allocate ( C_Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
   call C_Fiber % Initialize &
-         ( Fiber, IsPeriodic, iChart = 1, SpacingOption = Spacing, &
+         ( Fiber, IsPeriodic, iChart = 1, &
+           SpacingOption = [ 'GEOMETRIC' ], &
            CoordinateSystemOption = 'SPHERICAL', &
-           CoordinateUnitOption = CoordinateUnit, &
-           ScaleOption = Scale  )
+           CoordinateUnitOption = [ UNIT % MEGA_ELECTRON_VOLT ], &
+           MinCoordinateOption = [ MinEnergy ], &
+           MaxCoordinateOption = [ MaxEnergy ], &
+           ScaleOption = [ MinWidthEnergy ] )
   call Fiber % Show ( )
   call C_Fiber % Show ( )
 
