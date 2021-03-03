@@ -16,6 +16,9 @@ module ChartHeader_Form
       nDimensions  = 0, &
       nEqual       = 0, &
       nFields      = 0
+    integer ( KDI ), dimension ( : ), pointer :: &
+      nCells       => null ( ), &
+      nGhostLayers => null ( )
     real ( KDR ), dimension ( : ), pointer :: &
       MinCoordinate => null ( ), &
       MaxCoordinate => null ( ), &
@@ -58,22 +61,26 @@ module ChartHeader_Form
     procedure, public, pass ( C ) :: &
       SetBrick
     procedure, public, pass :: &
-      SetGeometryCell
+      SetCellValues
   end type ChartHeaderForm
 
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = MANIFOLD % MAX_DIMENSIONS
 
     private :: &
-      BrickIndex, &
-      SetEdgeEqual, &
-      ComputeGeometricRatio, &
-      SetEdgeGeometric, &
-      SetEdgeCompactified, &
-      SetEdgeProportional
+      SetCoordinates, &
+      SetCells
 
       private :: &
-        ZeroGeometricRatio
+        BrickIndex, &
+        SetEdgeEqual, &
+        ComputeGeometricRatio, &
+        SetEdgeGeometric, &
+        SetEdgeCompactified, &
+        SetEdgeProportional
+
+        private :: &
+          ZeroGeometricRatio
 
 
 contains
@@ -84,7 +91,8 @@ contains
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
                  MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nDimensionsOption, nEqualOption )
+                 nCellsOption, nGhostLayersOption, nDimensionsOption, &
+                 nEqualOption )
 
     class ( ChartHeaderForm ), intent ( inout ) :: &
       C
@@ -108,10 +116,15 @@ contains
       MaxCoordinateOption, &
       RatioOption, &
       ScaleOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nCellsOption, &
+      nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
       nEqualOption
 
+    integer ( KDI ) :: &
+      iD  !-- iDimension
     character ( 2 ) :: &
       ChartNumber
 
@@ -146,6 +159,177 @@ contains
     else
       C % nDimensions  =  M % nDimensions
     end if
+
+    associate ( nD => C % nDimensions )
+
+    call SetCoordinates &
+           ( C, IsPeriodic, SpacingOption, CoordinateLabelOption, &
+             CoordinateSystemOption, CoordinateUnitOption, &
+             MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+             ScaleOption, nEqualOption )
+
+    call SetCells ( C, nCellsOption, nGhostLayersOption )
+
+    do iD = 1, nD
+      call SetCellValues ( C, iD )
+    end do !-- iD
+
+    end associate !-- nD
+
+  end subroutine InitializeBasic
+
+
+  subroutine Show_CH ( C )
+
+    class ( ChartHeaderForm ), intent ( in ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( C % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', C % IGNORABILITY )
+    call Show ( C % Name, 'Name', C % IGNORABILITY )
+
+    associate ( nD => C % nDimensions )
+
+    call Show ( C % IsDistributed, 'IsDistributed', C % IGNORABILITY )
+    call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
+
+    call Show ( C % IsPeriodic ( : nD ), 'IsPeriodic', C % IGNORABILITY )
+
+    call Show ( C % MinCoordinate ( : nD ), C % CoordinateUnit ( : nD ), &
+                'MinCoordinate', C % IGNORABILITY )
+    call Show ( C % MaxCoordinate ( : nD ), C % CoordinateUnit ( : nD ), &
+                'MaxCoordinate', C % IGNORABILITY )
+
+    call Show ( C % nCells ( : nD ), 'nCells', C % IGNORABILITY )
+    call Show ( C % nGhostLayers ( : nD ), 'nGhostLayers', C % IGNORABILITY )
+
+    call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
+    call Show ( C % CoordinateLabel ( : nD ), 'CoordinateLabel', &
+                C % IGNORABILITY )
+
+    call Show ( C % Spacing ( : nD ), 'Spacing', C % IGNORABILITY )
+    if ( any ( C % Spacing == 'GEOMETRIC' ) &
+         .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
+      call Show ( C % Ratio ( : nD ), 'Ratio', C % IGNORABILITY )
+    if ( any ( C % Spacing == 'GEOMETRIC' ) &
+         .or. any ( C % Spacing == 'COMPACTIFIED' ) &
+         .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
+      call Show ( C % Scale ( : nD ), C % CoordinateUnit, 'Scale', &
+                  C % IGNORABILITY )
+    if ( any ( C % Spacing == 'PROPORTIONAL' ) ) &
+      call Show ( C % nEqual, 'nEqual', C % IGNORABILITY )
+
+    do iD = 1, nD
+      call Show ( iD, 'iDimension' )
+      call Show ( C % Edge ( iD ) % Value, C % CoordinateUnit ( iD ), &
+                  'Edge', C % IGNORABILITY + 1 )
+      call Show ( C % Center ( iD ) % Value, C % CoordinateUnit ( iD ), &
+                  'Center', C % IGNORABILITY + 1 )
+      call Show ( C % HalfWidth ( iD ) % Value, C % CoordinateUnit ( iD ), &
+                  'HalfWidth', C % IGNORABILITY + 1 )
+    end do !-- iD
+
+    call Show ( C % nFields, 'nFields', C % IGNORABILITY )
+
+    end associate !-- nD
+
+  end subroutine Show_CH
+
+
+  impure elemental subroutine Finalize ( C )
+
+    type ( ChartHeaderForm ), intent ( inout ) :: &
+      C
+
+    nullify ( C % Manifold )
+    nullify ( C % Communicator )
+
+    if ( .not. associated ( C % Name ) ) &
+      return
+    if ( C % Name == '' ) &
+      return
+
+    if ( C % AllocatedValues ) then
+
+      deallocate ( C % HalfWidth )
+      deallocate ( C % Center )
+      deallocate ( C % Edge )
+      deallocate ( C % Scale )
+      deallocate ( C % Ratio )
+      deallocate ( C % Spacing )
+      deallocate ( C % CoordinateLabel )
+      deallocate ( C % CoordinateSystem )
+      deallocate ( C % MaxCoordinate )
+      deallocate ( C % MinCoordinate )
+      deallocate ( C % CoordinateUnit )
+      deallocate ( C % IsPeriodic )
+
+      deallocate ( C % nGhostLayers )
+      deallocate ( C % nCells )
+
+    else
+
+      nullify ( C % HalfWidth )
+      nullify ( C % Center )
+      nullify ( C % Edge )
+      nullify ( C % Scale )
+      nullify ( C % Ratio )
+      nullify ( C % Spacing )
+      nullify ( C % CoordinateLabel )
+      nullify ( C % CoordinateSystem )
+      nullify ( C % MaxCoordinate )
+      nullify ( C % MinCoordinate )
+      nullify ( C % CoordinateUnit )
+      nullify ( C % IsPeriodic )
+
+      nullify ( C % nGhostLayers )
+      nullify ( C % nCells )
+
+    end if !-- AllocatedValues
+
+    call Show ( 'Finalizing ' // trim ( C % Type ), C % IGNORABILITY )
+    call Show ( C % Name, 'Name', C % IGNORABILITY )
+
+    if ( C % AllocatedValues ) then
+      deallocate ( C % Name )
+      deallocate ( C % Type )
+    else
+      nullify ( C % Name )
+      nullify ( C % Type )
+    end if !-- AllocatedValues
+
+  end subroutine Finalize
+
+
+  subroutine SetCoordinates &
+               ( C, IsPeriodic, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nEqualOption )
+
+    class ( ChartHeaderForm ), intent ( inout ) :: &
+      C
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsPeriodic
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      SpacingOption, &
+      CoordinateLabelOption
+    character ( * ), intent ( in ), optional :: &
+      CoordinateSystemOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnitOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption, &
+      RatioOption, &
+      ScaleOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nEqualOption
 
     associate ( nD => C % nDimensions )
 
@@ -218,112 +402,43 @@ contains
     if ( present ( nEqualOption ) ) &
       C % nEqual = nEqualOption
 
-    allocate ( C % Edge       ( MAX_DIMENSIONS ) )
-    allocate ( C % Center     ( MAX_DIMENSIONS ) )
-    allocate ( C % HalfWidth  ( MAX_DIMENSIONS ) )
+    allocate ( C % Edge      ( MAX_DIMENSIONS ) )
+    allocate ( C % Center    ( MAX_DIMENSIONS ) )
+    allocate ( C % HalfWidth ( MAX_DIMENSIONS ) )
 
     end associate !-- nD
 
-  end subroutine InitializeBasic
+  end subroutine SetCoordinates
 
 
-  subroutine Show_CH ( C )
+  subroutine SetCells ( C, nCellsOption, nGhostLayersOption )
 
-    class ( ChartHeaderForm ), intent ( in ) :: &
+    class ( ChartHeaderForm ), intent ( inout ) :: &
       C
-
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
-
-    call Split ( C % Type, ' ', TypeWord )
-    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', C % IGNORABILITY )
-    call Show ( C % Name, 'Name', C % IGNORABILITY )
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nCellsOption, &
+      nGhostLayersOption
 
     associate ( nD => C % nDimensions )
 
-    call Show ( C % IsDistributed, 'IsDistributed', C % IGNORABILITY )
-    call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
-    call Show ( C % nFields, 'nFields', C % IGNORABILITY )
+    allocate ( C % nCells ( MAX_DIMENSIONS ) )
+    C % nCells = 1
+    C % nCells ( : nD ) = 32
+    if ( present ( nCellsOption ) ) &
+      C % nCells ( : nD ) = nCellsOption ( : nD )
+    call PROGRAM_HEADER % GetParameter ( C % nCells ( : nD ), 'nCells' )
 
-    call Show ( C % IsPeriodic ( : nD ), 'IsPeriodic', C % IGNORABILITY )
-
-    call Show ( C % MinCoordinate ( : nD ), C % CoordinateUnit ( : nD ), &
-                'MinCoordinate', C % IGNORABILITY )
-    call Show ( C % MaxCoordinate ( : nD ), C % CoordinateUnit ( : nD ), &
-                'MaxCoordinate', C % IGNORABILITY )
-
-    call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
-
-    call Show ( C % Spacing ( : nD ), 'Spacing', C % IGNORABILITY )
-    if ( any ( C % Spacing == 'GEOMETRIC' ) &
-         .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
-      call Show ( C % Ratio ( : nD ), 'Ratio', C % IGNORABILITY )
-    if ( any ( C % Spacing == 'GEOMETRIC' ) &
-         .or. any ( C % Spacing == 'COMPACTIFIED' ) &
-         .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
-      call Show ( C % Scale ( : nD ), C % CoordinateUnit, 'Scale', &
-                  C % IGNORABILITY )
-    if ( any ( C % Spacing == 'PROPORTIONAL' ) ) &
-      call Show ( C % nEqual, 'nEqual', C % IGNORABILITY )
+    allocate ( C % nGhostLayers ( MAX_DIMENSIONS ) )
+    C % nGhostLayers = 0
+    C % nGhostLayers ( : nD ) = 2
+    if ( present ( nGhostLayersOption ) ) &
+      C % nGhostLayers ( : nD ) = nGhostLayersOption ( : nD )
+    call PROGRAM_HEADER % GetParameter &
+           ( C % nGhostLayers ( : nD ), 'nGhostLayers' )
 
     end associate !-- nD
 
-  end subroutine Show_CH
-
-
-  impure elemental subroutine Finalize ( C )
-
-    type ( ChartHeaderForm ), intent ( inout ) :: &
-      C
-
-    nullify ( C % Manifold )
-    nullify ( C % Communicator )
-
-    if ( .not. associated ( C % Name ) ) &
-      return
-    if ( C % Name == '' ) &
-      return
-
-    if ( C % AllocatedValues ) then
-      deallocate ( C % HalfWidth )
-      deallocate ( C % Center )
-      deallocate ( C % Edge )
-      deallocate ( C % Scale )
-      deallocate ( C % Ratio )
-      deallocate ( C % Spacing )
-      deallocate ( C % CoordinateLabel )
-      deallocate ( C % CoordinateSystem )
-      deallocate ( C % MaxCoordinate )
-      deallocate ( C % MinCoordinate )
-      deallocate ( C % CoordinateUnit )
-      deallocate ( C % IsPeriodic )
-    else
-      nullify ( C % HalfWidth )
-      nullify ( C % Center )
-      nullify ( C % Edge )
-      nullify ( C % Scale )
-      nullify ( C % Ratio )
-      nullify ( C % Spacing )
-      nullify ( C % CoordinateLabel )
-      nullify ( C % CoordinateSystem )
-      nullify ( C % MaxCoordinate )
-      nullify ( C % MinCoordinate )
-      nullify ( C % CoordinateUnit )
-      nullify ( C % IsPeriodic )
-    end if !-- AllocatedValues
-
-    call Show ( 'Finalizing ' // trim ( C % Type ), C % IGNORABILITY )
-    call Show ( C % Name, 'Name', C % IGNORABILITY )
-
-    if ( C % AllocatedValues ) then
-      deallocate ( C % Name )
-      deallocate ( C % Type )
-    else
-      nullify ( C % Name )
-      nullify ( C % Type )
-    end if !-- AllocatedValues
-
-  end subroutine Finalize
+  end subroutine SetCells
 
 
   subroutine SetBrick &
@@ -408,13 +523,11 @@ contains
   end subroutine SetBrick
 
 
-  subroutine SetGeometryCell ( C, nC, nGL, iD, EdgeValueOption )
+  subroutine SetCellValues ( C, iD, EdgeValueOption )
 
     class ( ChartHeaderForm ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
-      nC, &   !-- nCells
-      nGL, &  !-- nGhostLayers
       iD      !-- iDimension
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       EdgeValueOption
@@ -427,6 +540,10 @@ contains
 
     if ( .not. C % AllocatedValues ) &
       return
+
+    associate &
+      (  nC => C % nCells ( iD ), &
+        nGL => C % nGhostLayers ( iD ) )
 
     if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
       call C % Edge ( iD ) % Initialize &
@@ -510,8 +627,9 @@ contains
     end do !-- iC
     end associate !-- Edge, etc.
 
+    end associate !-- nC, etc.
 
-  end subroutine SetGeometryCell
+  end subroutine SetCellValues
 
 
   function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
