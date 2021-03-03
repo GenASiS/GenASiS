@@ -3,8 +3,15 @@ ChartHeader_Form.o: \
   ManifoldBasics.o \
   ChartHeader_Form.f90
 
+FieldHeader_C__Form.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  ChartHeader_Form.o \
+  FieldHeader_C__Form.f90
+
 ChartBasics.o: \
   ChartHeader_Form.o \
+  FieldHeader_C__Form.o \
   ChartBasics.f90
 
 ChartBasics.a: $(CHART_BASICS)

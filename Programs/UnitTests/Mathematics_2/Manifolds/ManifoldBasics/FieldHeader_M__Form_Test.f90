@@ -6,7 +6,7 @@ program FieldHeader_M__Form_Test
   type ( ManifoldHeaderForm ), allocatable :: &
     M
   type ( FieldHeader_M_Form ), allocatable :: &
-    F
+    FM
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -17,10 +17,10 @@ program FieldHeader_M__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call M % Show ( )
 
-  allocate ( F )
-  call F % Initialize ( M, 'Field' ) 
+  allocate ( FM )
+  call FM % Initialize ( M, 'Field' ) 
 
-  deallocate ( F )
+  deallocate ( FM )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 
