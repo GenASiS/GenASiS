@@ -322,9 +322,9 @@ contains
       deallocate ( C % nGhostLayers )
       deallocate ( C % IsProperCell )
       if ( C % IsDistributed ) then
-        allocate ( C % iaBrick ( MAX_DIMENSIONS ) )
-        allocate ( C % nCellsBrick ( MAX_DIMENSIONS ) )
-        allocate ( C % nBricks ( MAX_DIMENSIONS ) )
+        deallocate ( C % iaBrick )
+        deallocate ( C % nCellsBrick )
+        deallocate ( C % nBricks )
       end if
     else
       nullify ( C % iaFirst )

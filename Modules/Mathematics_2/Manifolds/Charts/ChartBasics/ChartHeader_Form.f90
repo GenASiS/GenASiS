@@ -19,8 +19,11 @@ module ChartHeader_Form
     integer ( KDI ), dimension ( : ), pointer :: &
       iaFirst      => null ( ), &
       iaLast       => null ( ), &
+      iaBrick      => null ( ), &
       nCells       => null ( ), &
-      nGhostLayers => null ( )
+      nGhostLayers => null ( ), &
+      nBricks      => null ( ), &
+      nCellsBrick  => null ( )
     real ( KDR ), dimension ( : ), pointer :: &
       MinCoordinate => null ( ), &
       MaxCoordinate => null ( ), &
@@ -60,8 +63,6 @@ module ChartHeader_Form
       Show => Show_CH
     final :: &
       Finalize
-    procedure, public, pass ( C ) :: &
-      SetBrick
     procedure, public, pass :: &
       SetCellValues
   end type ChartHeaderForm
@@ -71,10 +72,12 @@ module ChartHeader_Form
 
     private :: &
       SetCoordinates, &
-      SetCells
+      SetCells, &
+      SetDecomposition
 
       private :: &
         BrickIndex, &
+        SetFirstLast, &
         SetEdgeEqual, &
         ComputeGeometricRatio, &
         SetEdgeGeometric, &
@@ -93,8 +96,8 @@ contains
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
                  MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nCellsOption, nGhostLayersOption, nDimensionsOption, &
-                 nEqualOption )
+                 nCellsOption, nGhostLayersOption, nBricksOption, &
+                 nBricksCompatibleOption, nDimensionsOption, nEqualOption )
 
     class ( ChartHeaderForm ), intent ( inout ) :: &
       C
@@ -120,7 +123,9 @@ contains
       ScaleOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
-      nGhostLayersOption
+      nGhostLayersOption, &
+      nBricksOption, &
+      nBricksCompatibleOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
       nEqualOption
@@ -130,9 +135,9 @@ contains
     character ( 2 ) :: &
       ChartNumber
 
-    C % IGNORABILITY  =  M % IGNORABILITY
-    C % Manifold  =>  M
-    C % iChart  =  iChart
+    C % IGNORABILITY  =   M % IGNORABILITY
+        C % Manifold  =>  M
+          C % iChart  =   iChart
 
     C % AllocatedValues = .true.
 
@@ -148,21 +153,11 @@ contains
     call Show ( 'Initializing ' // trim ( C % Type ), C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
 
-    if ( present ( CommunicatorOption ) ) then
-      C % IsDistributed  =   .true.
-      C % Communicator   =>  CommunicatorOption
-    else
-      C % IsDistributed  =   M % IsDistributed
-      C % Communicator   =>  M % Communicator
-    end if !-- present Communicator 
-
     if ( present ( nDimensionsOption ) ) then
       C % nDimensions  =  nDimensionsOption
     else
       C % nDimensions  =  M % nDimensions
     end if
-
-    associate ( nD => C % nDimensions )
 
     call SetCoordinates &
            ( C, IsPeriodic, SpacingOption, CoordinateLabelOption, &
@@ -172,11 +167,12 @@ contains
 
     call SetCells ( C, nCellsOption, nGhostLayersOption )
 
-    do iD = 1, nD
+    call SetDecomposition &
+           ( C, M, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
+
+    do iD = 1, C % nDimensions
       call SetCellValues ( C, iD )
     end do !-- iD
-
-    end associate !-- nD
 
   end subroutine InitializeBasic
 
@@ -236,6 +232,15 @@ contains
                   'HalfWidth', C % IGNORABILITY + 1 )
     end do !-- iD
 
+    call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY )
+    call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY )
+
+    if ( C % IsDistributed ) then
+      call Show ( C % iaBrick, 'iaBrick', C % IGNORABILITY )
+      call Show ( C % nBricks, 'nBricks', C % IGNORABILITY )
+      call Show ( C % nCellsBrick, 'nCellsBrick', C % IGNORABILITY )
+    end if !-- IsDistributed
+
     call Show ( C % nFields, 'nFields', C % IGNORABILITY )
 
     end associate !-- nD
@@ -271,6 +276,11 @@ contains
       deallocate ( C % CoordinateUnit )
       deallocate ( C % IsPeriodic )
 
+      if ( C % IsDistributed ) then
+        deallocate ( C % nCellsBrick )
+        deallocate ( C % nBricks )
+        deallocate ( C % iaBrick )
+      end if
       deallocate ( C % nGhostLayers )
       deallocate ( C % nCells )
       deallocate ( C % iaLast )
@@ -291,6 +301,9 @@ contains
       nullify ( C % CoordinateUnit )
       nullify ( C % IsPeriodic )
 
+      nullify ( C % nCellsBrick )
+      nullify ( C % nBricks )
+      nullify ( C % iaBrick )
       nullify ( C % nGhostLayers )
       nullify ( C % nCells )
       nullify ( C % iaLast )
@@ -310,6 +323,115 @@ contains
     end if !-- AllocatedValues
 
   end subroutine Finalize
+
+
+  subroutine SetCellValues ( C, iD, EdgeValueOption )
+
+    class ( ChartHeaderForm ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iD      !-- iDimension
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      EdgeValueOption
+
+    integer ( KDI ) :: &
+      iC    !-- iCell
+    real ( KDL ) :: &
+      Width_IG, &
+      Width_OG
+
+    if ( .not. C % AllocatedValues ) &
+      return
+
+    associate &
+      (  nC => C % nCells ( iD ), &
+        nGL => C % nGhostLayers ( iD ) )
+
+    if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
+      call C % Edge ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL + 1, &
+               iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
+      call C % Center ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % HalfWidth ( iD ) % Value ) ) &
+      call C % HalfWidth ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+
+    !-- Edge, proper cells
+    if ( present ( EdgeValueOption ) ) then
+      C % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
+      C % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
+      C % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
+    else
+      select case ( trim ( C % Spacing ( iD ) ) )
+      case ( 'EQUAL' )
+        call SetEdgeEqual &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
+      case ( 'GEOMETRIC' )
+        if ( C % Scale ( iD ) > 0.0_KDR ) &
+          call ComputeGeometricRatio &
+                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
+                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
+                   C % Ratio ( iD ) )
+        call SetEdgeGeometric &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
+                 C % Ratio ( iD ), nC )
+      case ( 'COMPACTIFIED' )
+        call SetEdgeCompactified &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % Scale ( iD ), nC )
+        C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
+      case ( 'PROPORTIONAL' )
+        call SetEdgeProportional &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % Ratio ( iD ), &
+                 C % Scale ( iD ), nC, C % nEqual )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
+      case default
+        call Show ( 'Spacing not recognized', CONSOLE % ERROR )
+        call Show ( 'ChartHeader_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select
+    end if
+
+    !-- Edge, ghost cells
+    associate ( Edge => C % Edge ( iD ) % Value )
+    do iC = 1, nGL
+      Width_IG  =  Edge ( iC + 1 )       -  Edge ( iC )
+      Width_OG  =  Edge ( nC - iC + 2 )  -  Edge ( nC - iC + 1 )
+      Edge ( 1 - iC )       =  Edge ( 2 - iC )   -  Width_IG
+      Edge ( nC + 1 + iC )  =  Edge ( nC + iC )  +  Width_OG
+    end do !-- iC
+    end associate !-- Edge
+
+    !-- Center
+    associate &
+      (   Edge => C % Edge ( iD ) % Value, &
+        Center => C % Center ( iD ) % Value )
+    do iC = lbound ( Center, dim = 1 ), ubound ( Center, dim = 1 )
+      Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
+    end do !-- iC
+    end associate !-- Edge, etc.
+
+    !-- HalfWidth
+    associate &
+      ( Edge  => C % Edge ( iD ) % Value, &
+        HalfWidth => C % HalfWidth ( iD ) % Value )
+    do iC = lbound ( HalfWidth, dim = 1 ), ubound ( HalfWidth, dim = 1 )
+      HalfWidth ( iC )  =  0.5_KDR * ( Edge ( iC + 1 )  -  Edge ( iC ) )
+    end do !-- iC
+    end associate !-- Edge, etc.
+
+    end associate !-- nC, etc.
+
+  end subroutine SetCellValues
 
 
   subroutine SetCoordinates &
@@ -447,20 +569,24 @@ contains
   end subroutine SetCells
 
 
-  subroutine SetBrick &
-               ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick, &
-                 nBricksOption, nBricksCompatibleOption )
-
-    integer ( KDI ), dimension ( : ), intent ( inout ) :: &
-      nCells
-    class ( ChartHeaderForm ), intent ( in ) :: &
+  subroutine SetDecomposition &
+!               ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick, &
+!                 nBricksOption, nBricksCompatibleOption )
+                ( C, M, CommunicatorOption, nBricksOption, &
+                  nBricksCompatibleOption )
+               
+    class ( ChartHeaderForm ), intent ( inout ) :: &
       C
-    type ( CommunicatorForm ), intent ( in ) :: &
-      Communicator
-    integer ( KDI ), dimension ( : ), intent ( out ) :: &
-      nCellsBrick, &
-      nBricks, &
-      iaBrick
+    class ( ManifoldHeaderForm ), intent ( in ), target :: &
+      M
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
+    ! integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+    !   nCells
+    ! integer ( KDI ), dimension ( : ), intent ( out ) :: &
+    !   nCellsBrick, &
+    !   nBricks, &
+    !   iaBrick
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nBricksOption, &
       nBricksCompatibleOption
@@ -468,174 +594,90 @@ contains
     integer ( KDI ) :: &
       iD, &  !-- iDimension
       SizeRoot
-    integer ( KDI ), dimension ( size ( nBricks ) ) :: &
+    integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
       nBricksCompatible
 
-    associate ( nD => C % nDimensions )
-
-    SizeRoot  =  Communicator % Size ** ( 1.0_KDR / nD ) + 0.5_KDR
-
-    nBricks = 1
-    nBricks ( : nD ) = SizeRoot
-    if ( present ( nBricksOption ) ) &
-      nBricks  =  nBricksOption 
-    call PROGRAM_HEADER % GetParameter ( nBricks ( : nD ), 'nBricks' )
-    
-    nBricksCompatible = nBricks
-    if ( present ( nBricksCompatibleOption ) ) &
-      nBricksCompatible  =  nBricksCompatibleOption 
-    call PROGRAM_HEADER % GetParameter &
-           ( nBricksCompatible ( : nD ), 'nBricksCompatible' )
-
-    if ( any ( nBricksCompatible /= nBricks ) ) then
-      call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
-      call Show ( nBricks, 'nBricks', CONSOLE % INFO_1 )
-      call Show ( nBricksCompatible, 'nBricksCompatible', CONSOLE % INFO_1 )
-    end if
-
-    if ( product ( nBricks ) /= Communicator % Size ) then
-      call Show ( 'The total number of bricks must equal ' &
-                  // 'the number of MPI processes', CONSOLE % ERROR )
-      call Show ( Communicator % Size, 'nProcesses', CONSOLE % ERROR )
-      call Show ( nBricks ( 1 : nD ), 'nBricks', CONSOLE % ERROR )
-      call Show ( product ( nBricks ), 'product ( nBricks )', CONSOLE % ERROR )
-      call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
-      call Show ( 'SetBrick', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Communicator % Synchronize ( )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
-    do iD = 1, nD
-      if ( mod ( nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
-        call Show ( 'nBricksCompatible in each dimension must divide evenly ' &
-                    // 'into nCells in each dimension', CONSOLE % WARNING )
-        call Show ( iD, 'iDimension', CONSOLE % WARNING )
-        call Show ( nBricksCompatible ( iD ), 'nBricksCompatible', &
-                    CONSOLE % WARNING )
-        call Show ( nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
-        nCells ( iD ) = ( nCells ( iD ) / nBricksCompatible ( iD ) ) &
-                        * nBricksCompatible ( iD )
-        call Show ( nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
-        call Show ( 'SetBrick', 'subroutine', CONSOLE % WARNING )
-        call Show ( 'Chart_Template', 'module', CONSOLE % WARNING )
-      end if
-    end do
-    
-    nCellsBrick = nCells / nBricks
-    iaBrick = BrickIndex ( nBricks, nCells, Communicator % Rank )
-
-    end associate !-- nD
-
-  end subroutine SetBrick
-
-
-  subroutine SetCellValues ( C, iD, EdgeValueOption )
-
-    class ( ChartHeaderForm ), intent ( inout ) :: &
-      C
-    integer ( KDI ), intent ( in ) :: &
-      iD      !-- iDimension
-    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      EdgeValueOption
-
-    integer ( KDI ) :: &
-      iC    !-- iCell
-    real ( KDL ) :: &
-      Width_IG, &
-      Width_OG
-
-    if ( .not. C % AllocatedValues ) &
-      return
-
-    associate &
-      (  nC => C % nCells ( iD ), &
-        nGL => C % nGhostLayers ( iD ) )
-
-    if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
-      call C % Edge ( iD ) % Initialize &
-             ( nValues  =  nC  +  2 * nGL + 1, &
-               iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
-      call C % Center ( iD ) % Initialize &
-             ( nValues  =  nC  +  2 * nGL, &
-               iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( C % HalfWidth ( iD ) % Value ) ) &
-      call C % HalfWidth ( iD ) % Initialize &
-             ( nValues  =  nC  +  2 * nGL, &
-               iLowerBoundOption  =  1 - nGL )
-
-    !-- Edge, proper cells
-    if ( present ( EdgeValueOption ) ) then
-      C % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
-      C % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
-      C % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
+    if ( present ( CommunicatorOption ) ) then
+      C % IsDistributed  =   .true.
+      C % Communicator   =>  CommunicatorOption
     else
-      select case ( trim ( C % Spacing ( iD ) ) )
-      case ( 'EQUAL' )
-        call SetEdgeEqual &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
-      case ( 'GEOMETRIC' )
-        if ( C % Scale ( iD ) > 0.0_KDR ) &
-          call ComputeGeometricRatio &
-                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
-                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
-                   C % Ratio ( iD ) )
-        call SetEdgeGeometric &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
-                 C % Ratio ( iD ), nC )
-      case ( 'COMPACTIFIED' )
-        call SetEdgeCompactified &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % Scale ( iD ), nC )
-        C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
-        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
-      case ( 'PROPORTIONAL' )
-        call SetEdgeProportional &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % MinCoordinate ( iD ), C % Ratio ( iD ), &
-                 C % Scale ( iD ), nC, C % nEqual )
-        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
-      case default
-        call Show ( 'Spacing not recognized', CONSOLE % ERROR )
+      C % IsDistributed  =   M % IsDistributed
+      C % Communicator   =>  M % Communicator
+    end if !-- present Communicator 
+
+    if ( C % IsDistributed ) then
+
+      allocate ( C % iaBrick ( MAX_DIMENSIONS ) )
+      allocate ( C % nBricks ( MAX_DIMENSIONS ) )
+      allocate ( C % nCellsBrick ( MAX_DIMENSIONS ) )
+
+      associate ( nD => C % nDimensions )
+
+      SizeRoot  =  C % Communicator % Size ** ( 1.0_KDR / nD ) + 0.5_KDR
+
+      C % nBricks = 1
+      C % nBricks ( : nD ) = SizeRoot
+      if ( present ( nBricksOption ) ) &
+        C % nBricks  =  nBricksOption 
+      call PROGRAM_HEADER % GetParameter ( C % nBricks ( : nD ), 'nBricks' )
+    
+      nBricksCompatible = C % nBricks
+      if ( present ( nBricksCompatibleOption ) ) &
+        nBricksCompatible  =  nBricksCompatibleOption 
+      call PROGRAM_HEADER % GetParameter &
+             ( nBricksCompatible ( : nD ), 'nBricksCompatible' )
+
+      if ( any ( nBricksCompatible /= C % nBricks ) ) then
+        call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
+        call Show ( C % nBricks, 'nBricks', CONSOLE % INFO_1 )
+        call Show ( nBricksCompatible, 'nBricksCompatible', CONSOLE % INFO_1 )
+      end if
+
+      if ( product ( C % nBricks ) /= C % Communicator % Size ) then
+        call Show ( 'The total number of bricks must equal ' &
+                    // 'the number of MPI processes', CONSOLE % ERROR )
+        call Show ( C % Communicator % Size, 'nProcesses', CONSOLE % ERROR )
+        call Show ( C % nBricks ( 1 : nD ), 'nBricks', CONSOLE % ERROR )
+        call Show ( product ( C % nBricks ), 'product ( nBricks )', &
+                    CONSOLE % ERROR )
         call Show ( 'ChartHeader_Form', 'module', CONSOLE % ERROR )
-        call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'SetDecomposition', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
-      end select
-    end if
+      end if
 
-    !-- Edge, ghost cells
-    associate ( Edge => C % Edge ( iD ) % Value )
-    do iC = 1, nGL
-      Width_IG  =  Edge ( iC + 1 )       -  Edge ( iC )
-      Width_OG  =  Edge ( nC - iC + 2 )  -  Edge ( nC - iC + 1 )
-      Edge ( 1 - iC )       =  Edge ( 2 - iC )   -  Width_IG
-      Edge ( nC + 1 + iC )  =  Edge ( nC + iC )  +  Width_OG
-    end do !-- iC
-    end associate !-- Edge
+      do iD = 1, nD
+        if ( mod ( C % nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
+          call Show ( 'nBricksCompatible in each dimension must divide ' &
+                      // 'evenly into nCells in each dimension', &
+                      CONSOLE % WARNING )
+          call Show ( iD, 'iDimension', CONSOLE % WARNING )
+          call Show ( nBricksCompatible ( iD ), 'nBricksCompatible', &
+                      CONSOLE % WARNING )
+          call Show ( C % nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
+          C % nCells ( iD ) = ( C % nCells ( iD ) / nBricksCompatible ( iD ) ) &
+                          * nBricksCompatible ( iD )
+          call Show ( C % nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
+          call Show ( 'SetDecomposition', 'subroutine', CONSOLE % WARNING )
+          call Show ( 'ChartHeader_Form', 'module', CONSOLE % WARNING )
+        end if
+      end do
+    
+      C % nCellsBrick &
+        = C % nCells / C % nBricks
+      C % iaBrick &
+        = BrickIndex ( C % nBricks, C % nCells, C % Communicator % Rank )
 
-    !-- Center
-    associate &
-      (   Edge => C % Edge ( iD ) % Value, &
-        Center => C % Center ( iD ) % Value )
-    do iC = lbound ( Center, dim = 1 ), ubound ( Center, dim = 1 )
-      Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
-    end do !-- iC
-    end associate !-- Edge, etc.
+      end associate !-- nD
 
-    !-- HalfWidth
-    associate &
-      ( Edge  => C % Edge ( iD ) % Value, &
-        HalfWidth => C % HalfWidth ( iD ) % Value )
-    do iC = lbound ( HalfWidth, dim = 1 ), ubound ( HalfWidth, dim = 1 )
-      HalfWidth ( iC )  =  0.5_KDR * ( Edge ( iC + 1 )  -  Edge ( iC ) )
-    end do !-- iC
-    end associate !-- Edge, etc.
+      call SetFirstLast ( C, C % nCellsBrick )
 
-    end associate !-- nC, etc.
+    else  !-- not Distributed
 
-  end subroutine SetCellValues
+      call SetFirstLast ( C, C % nCells )
+
+    end if  !-- IsDistributed
+
+  end subroutine SetDecomposition
 
 
   function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
@@ -667,6 +709,31 @@ contains
     end associate !-- nB
 
   end function BrickIndex
+
+
+  subroutine SetFirstLast ( C, nCellsLocal )
+
+    class ( ChartHeaderForm ), intent ( inout ) :: &
+      C 
+    integer, dimension ( : ), intent ( in ) :: &
+      nCellsLocal
+
+    allocate ( C % iaFirst ( MAX_DIMENSIONS ) )
+    allocate ( C % iaLast ( MAX_DIMENSIONS ) )
+    C % iaFirst = 1
+    C % iaLast = 1
+    C % iaFirst ( 1 ) = 1 - C % nGhostLayers ( 1 )
+    C % iaLast  ( 1 ) = nCellsLocal ( 1 ) + C % nGhostLayers ( 1 )
+    if ( C % nDimensions > 1 ) then
+      C % iaFirst ( 2 ) = 1 - C % nGhostLayers ( 2 )
+      C % iaLast  ( 2 ) = nCellsLocal ( 2 ) + C % nGhostLayers ( 2 )
+    end if
+    if ( C % nDimensions > 2 ) then
+      C % iaFirst ( 3 ) = 1 - C % nGhostLayers ( 3 )
+      C % iaLast  ( 3 ) = nCellsLocal ( 3 ) + C % nGhostLayers ( 3 )
+    end if
+
+  end subroutine SetFirstLast
 
 
   subroutine SetEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nC )
