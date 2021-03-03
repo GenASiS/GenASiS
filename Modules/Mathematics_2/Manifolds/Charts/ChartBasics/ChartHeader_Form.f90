@@ -17,6 +17,8 @@ module ChartHeader_Form
       nEqual       = 0, &
       nFields      = 0
     integer ( KDI ), dimension ( : ), pointer :: &
+      iaFirst      => null ( ), &
+      iaLast       => null ( ), &
       nCells       => null ( ), &
       nGhostLayers => null ( )
     real ( KDR ), dimension ( : ), pointer :: &
@@ -271,6 +273,8 @@ contains
 
       deallocate ( C % nGhostLayers )
       deallocate ( C % nCells )
+      deallocate ( C % iaLast )
+      deallocate ( C % iaFirst )
 
     else
 
@@ -289,6 +293,8 @@ contains
 
       nullify ( C % nGhostLayers )
       nullify ( C % nCells )
+      nullify ( C % iaLast )
+      nullify ( C % iaFirst )
 
     end if !-- AllocatedValues
 
