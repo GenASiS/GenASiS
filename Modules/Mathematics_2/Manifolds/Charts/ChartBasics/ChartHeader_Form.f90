@@ -19,9 +19,10 @@ module ChartHeader_Form
     integer ( KDI ), dimension ( : ), pointer :: &
       iaFirst      => null ( ), &
       iaLast       => null ( ), &
-      iaBrick      => null ( ), &
       nCells       => null ( ), &
-      nGhostLayers => null ( ), &
+      nGhostLayers => null ( )
+    integer ( KDI ), dimension ( : ), pointer :: &
+      iaBrick      => null ( ), &
       nBricks      => null ( ), &
       nCellsBrick  => null ( )
     real ( KDR ), dimension ( : ), pointer :: &
@@ -42,8 +43,7 @@ module ChartHeader_Form
       IsPeriodic => null ( )
     character ( LDF ), pointer :: &
       Type => null ( ), &
-      Name => null ( )
-    character ( LDL ), pointer :: &
+      Name => null ( ), &
       CoordinateSystem => null ( )
     character ( LDL ), dimension ( : ), pointer :: &
       CoordinateLabel => null ( ), &   
@@ -263,24 +263,30 @@ contains
 
     if ( C % AllocatedValues ) then
 
+      deallocate ( C % Spacing )
+      deallocate ( C % CoordinateLabel )
+
+      deallocate ( C % CoordinateSystem )
+
+      deallocate ( C % IsPeriodic )
+
+      deallocate ( C % CoordinateUnit )
+
       deallocate ( C % HalfWidth )
       deallocate ( C % Center )
       deallocate ( C % Edge )
+
       deallocate ( C % Scale )
       deallocate ( C % Ratio )
-      deallocate ( C % Spacing )
-      deallocate ( C % CoordinateLabel )
-      deallocate ( C % CoordinateSystem )
       deallocate ( C % MaxCoordinate )
       deallocate ( C % MinCoordinate )
-      deallocate ( C % CoordinateUnit )
-      deallocate ( C % IsPeriodic )
 
       if ( C % IsDistributed ) then
         deallocate ( C % nCellsBrick )
         deallocate ( C % nBricks )
         deallocate ( C % iaBrick )
       end if
+
       deallocate ( C % nGhostLayers )
       deallocate ( C % nCells )
       deallocate ( C % iaLast )
@@ -288,22 +294,28 @@ contains
 
     else
 
+      nullify ( C % Spacing )
+      nullify ( C % CoordinateLabel )
+
+      nullify ( C % CoordinateSystem )
+
+      nullify ( C % IsPeriodic )
+
+      nullify ( C % CoordinateUnit )
+
       nullify ( C % HalfWidth )
       nullify ( C % Center )
       nullify ( C % Edge )
+
       nullify ( C % Scale )
       nullify ( C % Ratio )
-      nullify ( C % Spacing )
-      nullify ( C % CoordinateLabel )
-      nullify ( C % CoordinateSystem )
       nullify ( C % MaxCoordinate )
       nullify ( C % MinCoordinate )
-      nullify ( C % CoordinateUnit )
-      nullify ( C % IsPeriodic )
 
       nullify ( C % nCellsBrick )
       nullify ( C % nBricks )
       nullify ( C % iaBrick )
+
       nullify ( C % nGhostLayers )
       nullify ( C % nCells )
       nullify ( C % iaLast )
