@@ -2,13 +2,9 @@ program Geometry_F__Form_Test
 
   use Basics
 
-  character ( LDF ) :: &
-    GeometryName_1 = 'Geometry_F_Rectangular_1D', &
-    GeometryName_2 = 'Geometry_F_Cylindrical_1D', &
-    GeometryName_3 = 'Geometry_F_Spherical_1D'
-
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'Geometry_F__Form_Test' )
+  call PROGRAM_HEADER % Initialize &
+         ( 'Geometry_F__Form_Test', DimensionalityOption = '1D' )
 
   associate ( nP => PROGRAM_HEADER % Communicator % Size )
   if ( nP /= 1 ) then
@@ -19,19 +15,16 @@ program Geometry_F__Form_Test
   end if
   end associate !-- nP
 
-  call TestGeometry ( GeometryName_1, 'RECTANGULAR' )
-  call TestGeometry ( GeometryName_2, 'CYLINDRICAL' )
-
-  ! call TestGeometry ( GeometryName_7, 'SPHERICAL', 1 )
-  ! call TestGeometry ( GeometryName_8, 'SPHERICAL', 2 )
-  ! call TestGeometry ( GeometryName_9, 'SPHERICAL', 3 )
+  call TestGeometry ( 'RECTANGULAR' )
+  call TestGeometry ( 'CYLINDRICAL' )
+  call TestGeometry ( 'SPHERICAL' )
 
   deallocate ( PROGRAM_HEADER )
 
 end program Geometry_F__Form_Test
 
 
-subroutine TestGeometry ( Name, CoordinateSystem )
+subroutine TestGeometry ( CoordinateSystem )
 
   use Basics
   use ManifoldBasics
@@ -40,15 +33,15 @@ subroutine TestGeometry ( Name, CoordinateSystem )
   implicit none
 
   character ( * ), intent ( in ) :: &
-    Name, &
     CoordinateSystem
 
   integer ( KDI ) :: &
-    i, &
-    nCells = 32, &
-    nGhostLayers = 2, &
-    nEqual = 8
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    i
+  real ( KDR ) :: &
+    MinCoordinate, &
+    MaxCoordinate, &
+    MinWidth
+  type ( MeasuredValueForm ) :: &
     CoordinateUnit
   type ( ManifoldHeaderForm ) :: &
     M
@@ -62,52 +55,45 @@ subroutine TestGeometry ( Name, CoordinateSystem )
     G
 
   call M % Initialize &
-         ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
+         ( 'Manifold_' // trim ( CoordinateSystem ), &
+           CommunicatorOption = PROGRAM_HEADER % Communicator, &
+           nDimensionsOption = 1 )
+  call M % Show ( )
   call GM % Initialize ( M, 'Geometry' ) 
 
-  CoordinateUnit ( 1 )  =  UNIT % KILOMETER
+  MinCoordinate  =   0.0_KDR  *  UNIT % KILOMETER % Number
+  MaxCoordinate  =  10.0_KDR  *  UNIT % KILOMETER % Number
+       MinWidth  =   0.1_KDR  *  UNIT % KILOMETER % Number
+
+  CoordinateUnit  =  UNIT % KILOMETER
 
   select case ( trim ( CoordinateSystem ) )
   case ( 'RECTANGULAR' )
     call C % Initialize &
            ( M, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
              CoordinateSystemOption = CoordinateSystem, &
-             CoordinateUnitOption = CoordinateUnit, &
-             MinCoordinateOption &
-               = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ] * UNIT % KILOMETER % Number, &
-             MaxCoordinateOption &
-               = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ] * UNIT % KILOMETER % Number, &
-!             nCellsOption = nCells * [ 1, 1, 1 ], &
-!             nGhostLayersOption = nGhostLayers * [ 1, 1, 1 ], &
+             CoordinateUnitOption = [ CoordinateUnit ], &
+             MinCoordinateOption = [ MinCoordinate ], &
+             MaxCoordinateOption = [ MaxCoordinate ], &
              nDimensionsOption = 1 ) 
   case ( 'CYLINDRICAL' )
     call C % Initialize &
            ( M, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
              CoordinateSystemOption = CoordinateSystem, &
-             CoordinateUnitOption = CoordinateUnit, &
-             MinCoordinateOption &
-               = [  0.0_KDR  *  UNIT % KILOMETER % Number,  &
-                   -5.0_KDR  *  UNIT % KILOMETER % Number, &
-                    0.0_KDR  *  CONSTANT % PI ], &
-             MaxCoordinateOption &
-               = [ 10.0_KDR  *  UNIT % KILOMETER % Number,  &
-                    5.0_KDR  *  UNIT % KILOMETER % Number, &
-                    2.0_KDR  *  CONSTANT % PI ], &
+             CoordinateUnitOption = [ CoordinateUnit ], &
+             MinCoordinateOption = [ MinCoordinate ], &
+             MaxCoordinateOption = [ MaxCoordinate ], &
              nDimensionsOption = 1 ) 
-  ! case ( 'SPHERICAL' )
-  !   call PC % InitializeTemplate &
-  !          ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
-  !            SpacingOption = [ 'PROPORTIONAL', 'EQUAL       ', &
-  !                              'EQUAL       ' ], &
-  !            CoordinateSystemOption = CoordinateSystem, &
-  !            MinCoordinateOption &
-  !              = [ 0.0_KDR, 0.0_KDR, 0.0_KDR ], &
-  !            MaxCoordinateOption &
-  !              = [ 10.0_KDR, CONSTANT % PI, 2.0_KDR * CONSTANT % PI ], &
-  !            RatioOption = [ CONSTANT % PI / 3 * nEqual, 0.0_KDR, 0.0_KDR ], &
-  !            ScaleOption = [ 1.0_KDR, 0.0_KDR, 0.0_KDR ], &
-  !            nDimensionsOption = nDimensions, &
-  !            nEqualOption = nEqual ) 
+  case ( 'SPHERICAL' )
+    call C % Initialize &
+           ( M, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
+             SpacingOption = [ 'GEOMETRIC' ], &
+             CoordinateSystemOption = CoordinateSystem, &
+             CoordinateUnitOption = [ CoordinateUnit ], &
+             MinCoordinateOption = [ MinCoordinate ], &
+             MaxCoordinateOption = [ MaxCoordinate ], &
+             ScaleOption = [ MinWidth ], &
+             nDimensionsOption = 1 )
   end select
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
@@ -117,7 +103,8 @@ subroutine TestGeometry ( Name, CoordinateSystem )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
   call G % Initialize &
-         ( GC, nCells + 2 * nGhostLayers, NameOption = Name )
+         ( GC, nValues = C % nCells ( 1 ) + 2 * C % nGhostLayers ( 1 ), &
+           NameOption = 'Geometry_F' )
 
   !-- Set coordinate fields for 1D and 1 process
   associate &
