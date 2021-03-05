@@ -66,9 +66,10 @@ module Geometry_F__Form
       InitializeBasics, &
       SetUnits, &
       Compute_FV_R_Kernel, &
-      ! SetFiniteVolumeCylindricalKernel, &
+      Compute_FV_C_Kernel, &
       ! SetFiniteVolumeSphericalKernel, &
-      Compute_M_R_Kernel!, &
+      Compute_M_R_Kernel, &
+      Compute_M_C_Kernel!, &
       ! SetMetricCylindricalKernel, &
       ! SetMetricSphericalKernel, &
 
@@ -78,9 +79,10 @@ module Geometry_F__Form
                ( A_I_1, A_I_2, A_I_3, V, W_1, W_2, W_3, nD, nV, oV )
         !-- Compute_FiniteVolume_Rectangular_Kernel
         use Basics
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          V, &
-          A_I_1, A_I_2, A_I_3
+          A_I_1, A_I_2, A_I_3, &
+          V
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           W_1, W_2, W_3
         integer ( KDI ), intent ( in ) :: &
@@ -89,11 +91,29 @@ module Geometry_F__Form
           oV
       end subroutine Compute_FV_R_Kernel
 
+      module subroutine Compute_FV_C_Kernel &
+               ( A_I_1, A_I_2, A_I_3, V, W_1, W_2, W_3, RP_I, nD, nV, oV )
+        !-- Compute_FiniteVolume_Cylindrical_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          A_I_1, A_I_2, A_I_3, &
+          V
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          W_1, W_2, W_3, &
+          RP_I
+        integer ( KDI ), intent ( in ) :: &
+          nD, &
+          nV, &
+          oV
+      end subroutine Compute_FV_C_Kernel
+
       module subroutine Compute_M_R_Kernel &
                ( M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
                  nV, oV, UseDeviceOption )
         !-- Compute_Metric_Rectangular_Kernel
         use Basics
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           M_DD_11, M_DD_22, M_DD_33, &
           M_UU_11, M_UU_22, M_UU_33
@@ -103,6 +123,25 @@ module Geometry_F__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_M_R_Kernel
+
+      module subroutine Compute_M_C_Kernel &
+               ( M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 RP, nD, nV, oV, UseDeviceOption )
+        !-- Compute_Metric_Cylindrical_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M_DD_11, M_DD_22, M_DD_33, &
+          M_UU_11, M_UU_22, M_UU_33
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          RP
+        integer ( KDI ), intent ( in ) :: &
+          nD, &
+          nV, &
+          oV
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_M_C_Kernel
 
     end interface
 
@@ -214,6 +253,26 @@ contains
                G % Value ( :, G % METRIC_F_UU_22 ), &
                G % Value ( :, G % METRIC_F_UU_33 ), &
                nValues, oValue )
+    case ( 'CYLINDRICAL' )
+      call Compute_FV_C_Kernel &
+             ( G % Value ( :, G % AREA_I_D_1 ), &
+               G % Value ( :, G % AREA_I_D_2 ), &
+               G % Value ( :, G % AREA_I_D_3 ), &
+               G % Value ( :, G % VOLUME ), &
+               G % Value ( :, G % WIDTH_U_1 ), &
+               G % Value ( :, G % WIDTH_U_2 ), &
+               G % Value ( :, G % WIDTH_U_3 ), &
+               G % Value ( :, G % EDGE_I_U_1 ), &
+               nDimensions, nValues, oValue )
+      call Compute_M_C_Kernel &
+             ( G % Value ( :, G % METRIC_F_DD_11 ), &
+               G % Value ( :, G % METRIC_F_DD_22 ), &
+               G % Value ( :, G % METRIC_F_DD_33 ), &
+               G % Value ( :, G % METRIC_F_UU_11 ), &
+               G % Value ( :, G % METRIC_F_UU_22 ), &
+               G % Value ( :, G % METRIC_F_UU_33 ), &
+               G % Value ( :, G % CENTER_U_1 ), &
+               nDimensions, nValues, oValue )
     case default
       call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
       call Show ( G % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
@@ -221,7 +280,6 @@ contains
       call Show ( 'ComputeFromCoordinates', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
-
 
   end subroutine ComputeFromCoordinates
 

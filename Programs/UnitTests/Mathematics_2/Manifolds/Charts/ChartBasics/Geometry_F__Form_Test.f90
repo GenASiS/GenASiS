@@ -20,10 +20,7 @@ program Geometry_F__Form_Test
   end associate !-- nP
 
   call TestGeometry ( GeometryName_1, 'RECTANGULAR' )
-
-  ! call TestGeometry ( GeometryName_4, 'CYLINDRICAL', 1 )
-  ! call TestGeometry ( GeometryName_5, 'CYLINDRICAL', 2 )
-  ! call TestGeometry ( GeometryName_6, 'CYLINDRICAL', 3 )
+  call TestGeometry ( GeometryName_2, 'CYLINDRICAL' )
 
   ! call TestGeometry ( GeometryName_7, 'SPHERICAL', 1 )
   ! call TestGeometry ( GeometryName_8, 'SPHERICAL', 2 )
@@ -48,7 +45,6 @@ subroutine TestGeometry ( Name, CoordinateSystem )
 
   integer ( KDI ) :: &
     i, &
-    nDimensions = 1, &
     nCells = 32, &
     nGhostLayers = 2, &
     nEqual = 8
@@ -69,9 +65,10 @@ subroutine TestGeometry ( Name, CoordinateSystem )
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call GM % Initialize ( M, 'Geometry' ) 
 
+  CoordinateUnit ( 1 )  =  UNIT % KILOMETER
+
   select case ( trim ( CoordinateSystem ) )
   case ( 'RECTANGULAR' )
-    CoordinateUnit ( : nDimensions )  =  UNIT % KILOMETER
     call C % Initialize &
            ( M, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
              CoordinateSystemOption = CoordinateSystem, &
@@ -80,18 +77,23 @@ subroutine TestGeometry ( Name, CoordinateSystem )
                = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ] * UNIT % KILOMETER % Number, &
              MaxCoordinateOption &
                = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ] * UNIT % KILOMETER % Number, &
-             nCellsOption = nCells * [ 1, 1, 1 ], &
-             nGhostLayersOption = nGhostLayers * [ 1, 1, 1 ], &
-             nDimensionsOption = nDimensions ) 
-  ! case ( 'CYLINDRICAL' )
-  !   call PC % InitializeTemplate &
-  !          ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
-  !            CoordinateSystemOption = CoordinateSystem, &
-  !            MinCoordinateOption &
-  !              = [ 0.0_KDR, -5.0_KDR, 0.0_KDR ], &
-  !            MaxCoordinateOption &
-  !              = [ 10.0_KDR, 5.0_KDR, 2.0_KDR * CONSTANT % PI ], &
-  !            nDimensionsOption = nDimensions ) 
+!             nCellsOption = nCells * [ 1, 1, 1 ], &
+!             nGhostLayersOption = nGhostLayers * [ 1, 1, 1 ], &
+             nDimensionsOption = 1 ) 
+  case ( 'CYLINDRICAL' )
+    call C % Initialize &
+           ( M, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
+             CoordinateSystemOption = CoordinateSystem, &
+             CoordinateUnitOption = CoordinateUnit, &
+             MinCoordinateOption &
+               = [  0.0_KDR  *  UNIT % KILOMETER % Number,  &
+                   -5.0_KDR  *  UNIT % KILOMETER % Number, &
+                    0.0_KDR  *  CONSTANT % PI ], &
+             MaxCoordinateOption &
+               = [ 10.0_KDR  *  UNIT % KILOMETER % Number,  &
+                    5.0_KDR  *  UNIT % KILOMETER % Number, &
+                    2.0_KDR  *  CONSTANT % PI ], &
+             nDimensionsOption = 1 ) 
   ! case ( 'SPHERICAL' )
   !   call PC % InitializeTemplate &
   !          ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
