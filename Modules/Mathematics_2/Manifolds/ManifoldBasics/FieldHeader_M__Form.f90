@@ -15,7 +15,7 @@ module FieldHeader_M__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
     logical ( KDL ) :: &
-      UsePinnedMemory
+      Pinned
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
@@ -36,7 +36,7 @@ contains
 
 
   subroutine Initialize_H &
-               ( FM, M, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
+               ( FM, M, NameShort, PinnedOption, IgnorabilityOption )
 
     class ( FieldHeader_M_Form ), intent ( inout ) :: &
       FM
@@ -45,7 +45,7 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort
     logical ( KDL ), intent ( in ), optional :: &
-      UsePinnedMemoryOption
+      PinnedOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -56,9 +56,9 @@ contains
     if ( FM % Type == '' ) &
       FM % Type = 'a Field_M' 
     
-    FM % UsePinnedMemory = .false.
-    if ( present ( UsePinnedMemoryOption ) ) &
-      FM % UsePinnedMemory = UsePinnedMemoryOption
+    FM % Pinned = .false.
+    if ( present ( PinnedOption ) ) &
+      FM % Pinned = PinnedOption
     
     FM % Name = trim ( NameShort ) // '_' // trim ( M % Name ) 
 

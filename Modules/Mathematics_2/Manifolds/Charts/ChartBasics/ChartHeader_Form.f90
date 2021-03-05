@@ -32,8 +32,8 @@ module ChartHeader_Form
       Scale => null ( )
     class ( Real_1D_Form ), dimension ( : ), pointer :: &
       Edge, &
-      Center, &
-      HalfWidth
+      Width, &
+      Center
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
@@ -64,14 +64,14 @@ module ChartHeader_Form
     final :: &
       Finalize
     procedure, public, pass :: &
-      SetCellValues
+      SetCoordinateData
   end type ChartHeaderForm
 
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = MANIFOLD % MAX_DIMENSIONS
 
     private :: &
-      SetCoordinates, &
+      SetCoordinateMetadata, &
       SetCells, &
       SetDecomposition
 
@@ -159,7 +159,7 @@ contains
       C % nDimensions  =  M % nDimensions
     end if
 
-    call SetCoordinates &
+    call SetCoordinateMetadata &
            ( C, IsPeriodic, SpacingOption, CoordinateLabelOption, &
              CoordinateSystemOption, CoordinateUnitOption, &
              MinCoordinateOption, MaxCoordinateOption, RatioOption, &
@@ -171,7 +171,7 @@ contains
            ( C, M, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
 
     do iD = 1, C % nDimensions
-      call SetCellValues ( C, iD )
+      call SetCoordinateData ( C, iD )
     end do !-- iD
 
   end subroutine InitializeBasic
@@ -226,19 +226,19 @@ contains
       call Show ( iD, 'iDimension' )
       call Show ( C % Edge ( iD ) % Value, C % CoordinateUnit ( iD ), &
                   'Edge', C % IGNORABILITY + 1 )
+      call Show ( C % Width ( iD ) % Value, C % CoordinateUnit ( iD ), &
+                  'Width', C % IGNORABILITY + 1 )
       call Show ( C % Center ( iD ) % Value, C % CoordinateUnit ( iD ), &
                   'Center', C % IGNORABILITY + 1 )
-      call Show ( C % HalfWidth ( iD ) % Value, C % CoordinateUnit ( iD ), &
-                  'HalfWidth', C % IGNORABILITY + 1 )
     end do !-- iD
 
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY )
 
     if ( C % IsDistributed ) then
-      call Show ( C % iaBrick, 'iaBrick', C % IGNORABILITY )
-      call Show ( C % nBricks, 'nBricks', C % IGNORABILITY )
-      call Show ( C % nCellsBrick, 'nCellsBrick', C % IGNORABILITY )
+      call Show ( C % iaBrick ( : nD ), 'iaBrick', C % IGNORABILITY )
+      call Show ( C % nBricks ( : nD ), 'nBricks', C % IGNORABILITY )
+      call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', C % IGNORABILITY )
     end if !-- IsDistributed
 
     call Show ( C % nFields, 'nFields', C % IGNORABILITY )
@@ -272,8 +272,8 @@ contains
 
       deallocate ( C % CoordinateUnit )
 
-      deallocate ( C % HalfWidth )
       deallocate ( C % Center )
+      deallocate ( C % Width )
       deallocate ( C % Edge )
 
       deallocate ( C % Scale )
@@ -303,8 +303,8 @@ contains
 
       nullify ( C % CoordinateUnit )
 
-      nullify ( C % HalfWidth )
       nullify ( C % Center )
+      nullify ( C % Width )
       nullify ( C % Edge )
 
       nullify ( C % Scale )
@@ -337,7 +337,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetCellValues ( C, iD, EdgeValueOption )
+  subroutine SetCoordinateData ( C, iD, EdgeValueOption )
 
     class ( ChartHeaderForm ), intent ( inout ) :: &
       C
@@ -363,12 +363,12 @@ contains
       call C % Edge ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL + 1, &
                iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
-      call C % Center ( iD ) % Initialize &
+    if ( .not. allocated ( C % Width ( iD ) % Value ) ) &
+      call C % Width ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( C % HalfWidth ( iD ) % Value ) ) &
-      call C % HalfWidth ( iD ) % Initialize &
+    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
+      call C % Center ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
 
@@ -423,6 +423,15 @@ contains
     end do !-- iC
     end associate !-- Edge
 
+    !-- Width
+    associate &
+      ( Edge  => C % Edge ( iD ) % Value, &
+        Width => C % Width ( iD ) % Value )
+    do iC = lbound ( Width, dim = 1 ), ubound ( Width, dim = 1 )
+      Width ( iC )  =  Edge ( iC + 1 )  -  Edge ( iC )
+    end do !-- iC
+    end associate !-- Edge, etc.
+
     !-- Center
     associate &
       (   Edge => C % Edge ( iD ) % Value, &
@@ -432,21 +441,12 @@ contains
     end do !-- iC
     end associate !-- Edge, etc.
 
-    !-- HalfWidth
-    associate &
-      ( Edge  => C % Edge ( iD ) % Value, &
-        HalfWidth => C % HalfWidth ( iD ) % Value )
-    do iC = lbound ( HalfWidth, dim = 1 ), ubound ( HalfWidth, dim = 1 )
-      HalfWidth ( iC )  =  0.5_KDR * ( Edge ( iC + 1 )  -  Edge ( iC ) )
-    end do !-- iC
-    end associate !-- Edge, etc.
-
     end associate !-- nC, etc.
 
-  end subroutine SetCellValues
+  end subroutine SetCoordinateData
 
 
-  subroutine SetCoordinates &
+  subroutine SetCoordinateMetadata &
                ( C, IsPeriodic, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, CoordinateUnitOption, &
                  MinCoordinateOption, MaxCoordinateOption, RatioOption, &
@@ -542,13 +542,13 @@ contains
     if ( present ( nEqualOption ) ) &
       C % nEqual = nEqualOption
 
-    allocate ( C % Edge      ( MAX_DIMENSIONS ) )
-    allocate ( C % Center    ( MAX_DIMENSIONS ) )
-    allocate ( C % HalfWidth ( MAX_DIMENSIONS ) )
+    allocate ( C % Edge   ( MAX_DIMENSIONS ) )
+    allocate ( C % Width  ( MAX_DIMENSIONS ) )
+    allocate ( C % Center ( MAX_DIMENSIONS ) )
 
     end associate !-- nD
 
-  end subroutine SetCoordinates
+  end subroutine SetCoordinateMetadata
 
 
   subroutine SetCells ( C, nCellsOption, nGhostLayersOption )
