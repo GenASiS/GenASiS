@@ -1,9 +1,9 @@
-!-- FieldHeader_C__Form handles metadata for a set of related fields on 
+!-- FieldsHeader_C__Form handles metadata for a set of related fields on 
 !   a Chart.
 
-module FieldHeader_C__Form
+module FieldsHeader_C__Form
 
-  !-- FieldHeader_Chart__Form
+  !-- FieldsHeader_Chart__Form
 
   use Basics
   use ManifoldBasics
@@ -12,7 +12,7 @@ module FieldHeader_C__Form
   implicit none
   private
 
-  type, public :: FieldHeader_C_Form
+  type, public :: FieldsHeader_C_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
     logical ( KDL ) :: &
@@ -23,8 +23,8 @@ module FieldHeader_C__Form
       NameShort = ''
     class ( ChartHeaderForm ), pointer :: &
       Chart => null ( )
-    class ( FieldHeader_M_Form ), pointer :: &
-      Field_M => null ( )
+    class ( FieldsHeader_M_Form ), pointer :: &
+      Fields_M => null ( )
   contains
     procedure, private, pass :: &
       Initialize_H
@@ -32,19 +32,18 @@ module FieldHeader_C__Form
       Initialize => Initialize_H
     final :: &
       Finalize
-  end type FieldHeader_C_Form
+  end type FieldsHeader_C_Form
 
 
 contains
 
 
   subroutine Initialize_H &
-               ( FC, FM, C, NameShort, PinnedOption, &
-                 IgnorabilityOption )
+               ( FC, FM, C, NameShort, PinnedOption, IgnorabilityOption )
 
-    class ( FieldHeader_C_Form ), intent ( inout ) :: &
+    class ( FieldsHeader_C_Form ), intent ( inout ) :: &
       FC
-    class ( FieldHeader_M_Form ), intent ( in ), target :: &
+    class ( FieldsHeader_M_Form ), intent ( in ), target :: &
       FM
     class ( ChartHeaderForm ), intent ( in ), target :: &
       C
@@ -60,7 +59,7 @@ contains
       FC % IGNORABILITY = IgnorabilityOption
 
     if ( FC % Type == '' ) &
-      FC % Type = 'a Field_C' 
+      FC % Type = 'a Fields_C' 
     
     FC % Pinned = .false.
     if ( present ( PinnedOption ) ) &
@@ -75,17 +74,17 @@ contains
     call Show ( FC % NameShort, 'NameShort', FC % IGNORABILITY )
 
     FC % Chart    =>   C
-    FC % Field_M  =>  FM 
+    FC % Fields_M  =>  FM 
 
   end subroutine Initialize_H
 
 
   impure elemental subroutine Finalize ( FC )
 
-    type ( FieldHeader_C_Form ), intent ( inout ) :: &
+    type ( FieldsHeader_C_Form ), intent ( inout ) :: &
       FC
 
-    nullify ( FC % Field_M )
+    nullify ( FC % Fields_M )
     nullify ( FC % Chart )
 
     call Show ( 'Finalizing ' // trim ( FC % Type ), FC % IGNORABILITY )
@@ -94,4 +93,4 @@ contains
   end subroutine Finalize
 
 
-end module FieldHeader_C__Form
+end module FieldsHeader_C__Form

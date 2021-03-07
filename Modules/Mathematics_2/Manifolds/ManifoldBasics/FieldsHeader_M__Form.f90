@@ -1,9 +1,9 @@
-!-- FieldHeader_M__Form handles metadata for a set of related fields on 
+!-- FieldsHeader_M__Form handles metadata for a set of related fields on 
 !   a Manifold.
 
-module FieldHeader_M__Form
+module FieldsHeader_M__Form
 
-  !-- FieldHeader_Manifold__Form
+  !-- FieldsHeader_Manifold__Form
 
   use Basics
   use ManifoldHeader_Form
@@ -11,7 +11,7 @@ module FieldHeader_M__Form
   implicit none
   private
 
-  type, public :: FieldHeader_M_Form
+  type, public :: FieldsHeader_M_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
     logical ( KDL ) :: &
@@ -29,7 +29,7 @@ module FieldHeader_M__Form
       Initialize => Initialize_H
     final :: &
       Finalize
-  end type FieldHeader_M_Form
+  end type FieldsHeader_M_Form
 
 
 contains
@@ -38,7 +38,7 @@ contains
   subroutine Initialize_H &
                ( FM, M, NameShort, PinnedOption, IgnorabilityOption )
 
-    class ( FieldHeader_M_Form ), intent ( inout ) :: &
+    class ( FieldsHeader_M_Form ), intent ( inout ) :: &
       FM
     class ( ManifoldHeaderForm ), intent ( in ), target :: &
       M
@@ -54,7 +54,7 @@ contains
       FM % IGNORABILITY = IgnorabilityOption
 
     if ( FM % Type == '' ) &
-      FM % Type = 'a Field_M' 
+      FM % Type = 'a Fields_M' 
     
     FM % Pinned = .false.
     if ( present ( PinnedOption ) ) &
@@ -75,7 +75,7 @@ contains
 
   impure elemental subroutine Finalize ( FM )
 
-    type ( FieldHeader_M_Form ), intent ( inout ) :: &
+    type ( FieldsHeader_M_Form ), intent ( inout ) :: &
       FM
 
     nullify ( FM % Manifold )
@@ -86,4 +86,4 @@ contains
   end subroutine Finalize
 
 
-end module FieldHeader_M__Form
+end module FieldsHeader_M__Form

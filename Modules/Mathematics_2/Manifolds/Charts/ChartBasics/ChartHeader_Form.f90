@@ -14,8 +14,9 @@ module ChartHeader_Form
       IGNORABILITY = 0, &
       iChart       = 0, &
       nDimensions  = 0, &
+      nValues      = 0, &
       nEqual       = 0, &
-      nFields      = 0
+      nFieldSets   = 0
     integer ( KDI ), dimension ( : ), pointer :: &
       iaFirst      => null ( ), &
       iaLast       => null ( ), &
@@ -232,6 +233,8 @@ contains
                   'Center', C % IGNORABILITY + 1 )
     end do !-- iD
 
+    call Show ( C % nValues, 'nValues', C % IGNORABILITY )
+
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY )
 
@@ -241,7 +244,7 @@ contains
       call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', C % IGNORABILITY )
     end if !-- IsDistributed
 
-    call Show ( C % nFields, 'nFields', C % IGNORABILITY )
+    call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
 
     end associate !-- nD
 
@@ -681,9 +684,15 @@ contains
 
       end associate !-- nD
 
+      C % nValues  &
+        =  product ( C % nCellsBrick  +  2 * C % nGhostLayers )
+
       call SetFirstLast ( C, C % nCellsBrick )
 
     else  !-- not Distributed
+
+      C % nValues  &
+        =  product ( C % nCells  +  2 * C % nGhostLayers )
 
       call SetFirstLast ( C, C % nCells )
 

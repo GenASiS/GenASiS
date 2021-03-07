@@ -1,16 +1,16 @@
-program FieldHeader_M__Form_Test
+program FieldsHeader_M__Form_Test
 
   use Basics
   use ManifoldBasics
 
   type ( ManifoldHeaderForm ), allocatable :: &
     M
-  type ( FieldHeader_M_Form ), allocatable :: &
+  type ( FieldsHeader_M_Form ), allocatable :: &
     FM
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FieldHeader_M__Form_Test', DimensionalityOption = '2D' )
+         ( 'FieldsHeader_M__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( M )
   call M % Initialize &
@@ -18,10 +18,10 @@ program FieldHeader_M__Form_Test
   call M % Show ( )
 
   allocate ( FM )
-  call FM % Initialize ( M, 'Field' ) 
+  call FM % Initialize ( M, 'Fields' ) 
 
   deallocate ( FM )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 
-end program FieldHeader_M__Form_Test
+end program FieldsHeader_M__Form_Test

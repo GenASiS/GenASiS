@@ -1,4 +1,4 @@
-program FieldHeader_C__Form_Test
+program FieldsHeader_C__Form_Test
 
   use Basics
   use ManifoldBasics
@@ -8,16 +8,16 @@ program FieldHeader_C__Form_Test
     IsPeriodic
   type ( ChartHeaderForm ), allocatable :: &
     C
-  type ( FieldHeader_C_Form ), allocatable :: &
+  type ( FieldsHeader_C_Form ), allocatable :: &
     FC
   type ( ManifoldHeaderForm ), allocatable :: &
     M
-  type ( FieldHeader_M_Form ), allocatable :: &
+  type ( FieldsHeader_M_Form ), allocatable :: &
     FM
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FieldHeader_C__Form_Test', DimensionalityOption = '2D' )
+         ( 'FieldsHeader_C__Form_Test', DimensionalityOption = '2D' )
 
   IsPeriodic  =  .true.
 
@@ -32,11 +32,11 @@ program FieldHeader_C__Form_Test
 
   allocate ( FM )
   allocate ( FC )
-  call FM % Initialize ( M, 'Field' ) 
-  call FC % Initialize ( FM, C, 'Field' ) 
+  call FM % Initialize ( M, 'Fields' ) 
+  call FC % Initialize ( FM, C, 'Fields' ) 
 
   deallocate ( FM )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 
-end program FieldHeader_C__Form_Test
+end program FieldsHeader_C__Form_Test

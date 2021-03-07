@@ -4,7 +4,7 @@
 module Geometry_F__Form
   
   use Basics
-  use FieldHeader_C__Form
+  use FieldsHeader_C__Form
 
   implicit none
   private
@@ -48,7 +48,7 @@ module Geometry_F__Form
     character ( LDF ) :: &
       Type = '', &
       CoordinateSystem = ''
-    class ( FieldHeader_C_Form ), pointer :: &
+    class ( FieldsHeader_C_Form ), pointer :: &
       Geometry_C => null ( )
   contains
     procedure, private, pass :: &
@@ -191,7 +191,7 @@ contains
 
     class ( Geometry_F_Form ), intent ( inout ) :: &
       G
-    class ( FieldHeader_C_Form ), intent ( in ), target :: &
+    class ( FieldsHeader_C_Form ), intent ( in ), target :: &
       GC
     integer ( KDI ), intent ( in ) :: &
       nValues

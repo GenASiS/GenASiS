@@ -11,7 +11,7 @@ module ManifoldHeader_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nDimensions  = 0, &
-      nFields      = 0
+      nFieldSets   = 0
     logical ( KDL ) :: &
       IsDistributed = .false., &
       AllocatedValues = .false.
@@ -93,7 +93,7 @@ contains
 
     call Show ( M % IsDistributed, 'IsDistributed', M % IGNORABILITY )
     call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
-    call Show ( M % nFields, 'nFields', M % IGNORABILITY )
+    call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
 
   end subroutine Show_MH
 

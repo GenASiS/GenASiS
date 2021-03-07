@@ -1,0 +1,11 @@
+Fields_CSL__Form.o: \
+  Basics.o \
+  ChartBasics.o \
+  Fields_CSL__Form.f90
+
+SingleLevelCharts.o: \
+  Fields_CSL__Form.o \
+  SingleLevelCharts.f90
+
+SingleLevelCharts.a: $(SINGLE_LEVEL_CHARTS)
+	ar r SingleLevelCharts.a $(SINGLE_LEVEL_CHARTS)

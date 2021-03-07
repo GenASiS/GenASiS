@@ -45,11 +45,11 @@ subroutine TestGeometry ( CoordinateSystem )
     CoordinateUnit
   type ( ManifoldHeaderForm ) :: &
     M
-  type ( FieldHeader_M_Form ) :: &
+  type ( FieldsHeader_M_Form ) :: &
     GM
   type ( ChartHeaderForm ) :: &
     C
-  type ( FieldHeader_C_Form ) :: &
+  type ( FieldsHeader_C_Form ) :: &
     GC
   type ( Geometry_F_Form ) :: &
     G
@@ -103,8 +103,7 @@ subroutine TestGeometry ( CoordinateSystem )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
   call G % Initialize &
-         ( GC, nValues = C % nCells ( 1 ) + 2 * C % nGhostLayers ( 1 ), &
-           NameOption = 'Geometry_F' )
+         ( GC, nValues = C % nValues, NameOption = 'Geometry_F' )
 
   !-- Set coordinate fields for 1D and 1 process
   associate &
