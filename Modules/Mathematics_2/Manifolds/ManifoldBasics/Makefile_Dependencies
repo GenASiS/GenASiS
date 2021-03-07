@@ -11,10 +11,18 @@ FieldsHeader_M__Form.o: \
   ManifoldHeader_Form.o \
   FieldsHeader_M__Form.f90
 
+Manifold_Form.o: \
+  Basics.o \
+  MANIFOLD_Singleton.o \
+  ManifoldHeader_Form.o \
+  FieldsHeader_M__Form.o \
+  Manifold_Form.f90
+
 ManifoldBasics.o: \
   MANIFOLD_Singleton.o \
   ManifoldHeader_Form.o \
   FieldsHeader_M__Form.o \
+  Manifold_Form.o \
   ManifoldBasics.f90
 
 ManifoldBasics.a: $(MANIFOLD_BASICS)

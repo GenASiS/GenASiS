@@ -3,7 +3,8 @@ PATH_GENASIS = ../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  MANIFOLD_Singleton_Test ManifoldHeader_Form_Test FieldsHeader_M__Form_Test
+  MANIFOLD_Singleton_Test ManifoldHeader_Form_Test FieldsHeader_M__Form_Test \
+  Manifold_Form_Test
 
 MANIFOLD_Singleton_Test: Basics.a ManifoldBasics.a MANIFOLD_Singleton_Test.o
 	$(LINK) $(FLAGS) \
@@ -23,6 +24,12 @@ FieldsHeader_M__Form_Test: Basics.a ManifoldBasics.a FieldsHeader_M__Form_Test.o
           FieldsHeader_M__Form_Test.o ManifoldBasics.a \
           Basics.a $(LIBRARIES)
 
+Manifold_Form_Test: Basics.a ManifoldBasics.a Manifold_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Manifold_Form_Test_$(MACHINE) \
+          Manifold_Form_Test.o ManifoldBasics.a \
+          Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
@@ -30,6 +37,7 @@ clobber: clean
 	rm -f MANIFOLD_Singleton_Test_*
 	rm -f ManifoldHeader_Form_Test_*
 	rm -f FieldsHeader_M__Form_Test_*
+	rm -f Manifold_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies
@@ -48,3 +56,8 @@ FieldsHeader_M__Form_Test.o: \
   Basics.o \
   ManifoldBasics.o \
   FieldsHeader_M__Form_Test.f90
+
+Manifold_Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  Manifold_Form_Test.f90

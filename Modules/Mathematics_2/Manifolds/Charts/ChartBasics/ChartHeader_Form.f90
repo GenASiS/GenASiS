@@ -59,9 +59,9 @@ module ChartHeader_Form
     generic, public :: &
       Initialize => InitializeBasic
     procedure, private, pass :: &
-      Show_CH
+      Show_C
     generic, public :: &
-      Show => Show_CH
+      Show => Show_C
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -178,7 +178,7 @@ contains
   end subroutine InitializeBasic
 
 
-  subroutine Show_CH ( C )
+  subroutine Show_C ( C )
 
     class ( ChartHeaderForm ), intent ( in ) :: &
       C
@@ -248,7 +248,7 @@ contains
 
     end associate !-- nD
 
-  end subroutine Show_CH
+  end subroutine Show_C
 
 
   impure elemental subroutine Finalize ( C )

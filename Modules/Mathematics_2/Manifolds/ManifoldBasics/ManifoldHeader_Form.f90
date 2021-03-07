@@ -1,4 +1,4 @@
-!-- ManifoldHeader handles metadata of an Manifold.
+!-- ManifoldHeader_Form handles metadata of an Manifold.
 
 module ManifoldHeader_Form
 
@@ -10,8 +10,7 @@ module ManifoldHeader_Form
   type, public :: ManifoldHeaderForm
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      nDimensions  = 0, &
-      nFieldSets   = 0
+      nDimensions  = 0
     logical ( KDL ) :: &
       IsDistributed = .false., &
       AllocatedValues = .false.
@@ -26,9 +25,9 @@ module ManifoldHeader_Form
     generic, public :: &
       Initialize => InitializeBasic
     procedure, private, pass :: &
-      Show_MH
+      Show_M
     generic, public :: &
-      Show => Show_MH
+      Show => Show_M
     final :: &
       Finalize
   end type ManifoldHeaderForm
@@ -79,7 +78,7 @@ contains
   end subroutine InitializeBasic
 
 
-  subroutine Show_MH ( M )
+  subroutine Show_M ( M )
 
     class ( ManifoldHeaderForm ), intent ( in ) :: &
       M
@@ -93,9 +92,8 @@ contains
 
     call Show ( M % IsDistributed, 'IsDistributed', M % IGNORABILITY )
     call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
-    call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
 
-  end subroutine Show_MH
+  end subroutine Show_M
 
 
   impure elemental subroutine Finalize ( M )
