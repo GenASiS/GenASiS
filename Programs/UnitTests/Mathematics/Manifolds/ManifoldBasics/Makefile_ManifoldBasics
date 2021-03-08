@@ -1,0 +1,26 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  MANIFOLD_Singleton_Test
+
+MANIFOLD_Singleton_Test: Basics.a ManifoldBasics.a MANIFOLD_Singleton_Test.o
+	$(LINK) $(FLAGS) \
+          -o MANIFOLD_Singleton_Test_$(MACHINE) \
+          MANIFOLD_Singleton_Test.o ManifoldBasics.a \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f MANIFOLD_Singleton_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies
+
+MANIFOLD_Singleton_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  MANIFOLD_Singleton_Test.f90
