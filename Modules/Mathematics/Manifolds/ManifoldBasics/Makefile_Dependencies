@@ -1,0 +1,10 @@
+MANIFOLD_Singleton.o: \
+  Basics.o \
+  MANIFOLD_Singleton.f90
+
+ManifoldBasics.o: \
+  MANIFOLD_Singleton.o \
+  ManifoldBasics.f90
+
+ManifoldBasics.a: $(MANIFOLD_BASICS)
+	ar r ManifoldBasics.a $(MANIFOLD_BASICS)

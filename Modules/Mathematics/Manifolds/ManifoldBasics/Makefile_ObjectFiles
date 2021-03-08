@@ -1,0 +1,3 @@
+MANIFOLD_BASICS = \
+  ManifoldBasics.o \
+  MANIFOLD_Singleton.o
