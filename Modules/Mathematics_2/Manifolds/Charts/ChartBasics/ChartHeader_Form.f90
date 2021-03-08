@@ -15,8 +15,7 @@ module ChartHeader_Form
       iChart       = 0, &
       nDimensions  = 0, &
       nValues      = 0, &
-      nEqual       = 0, &
-      nFieldSets   = 0
+      nEqual       = 0
     integer ( KDI ), dimension ( : ), pointer :: &
       iaFirst      => null ( ), &
       iaLast       => null ( ), &
@@ -243,8 +242,6 @@ contains
       call Show ( C % nBricks ( : nD ), 'nBricks', C % IGNORABILITY )
       call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', C % IGNORABILITY )
     end if !-- IsDistributed
-
-    call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
 
     end associate !-- nD
 

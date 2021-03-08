@@ -3,7 +3,8 @@ PATH_GENASIS = ../../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  ChartHeader_Form_Test FieldsHeader_C__Form_Test Geometry_F__Form_Test
+  ChartHeader_Form_Test FieldsHeader_C__Form_Test Chart_Form_Test \
+  Geometry_F__Form_Test
 
 ChartHeader_Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
   ChartHeader_Form_Test.o
@@ -19,6 +20,13 @@ FieldsHeader_C__Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
           FieldsHeader_C__Form_Test.o ChartBasics.a \
           ManifoldBasics.a Basics.a $(LIBRARIES)
 
+Chart_Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
+  Chart_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_Form_Test_$(MACHINE) \
+          Chart_Form_Test.o ChartBasics.a \
+          ManifoldBasics.a Basics.a $(LIBRARIES)
+
 Geometry_F__Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
   Geometry_F__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -32,6 +40,7 @@ clean:
 clobber: clean
 	rm -f ChartHeader_Form_Test_*
 	rm -f FieldsHeader_C__Form_Test_*
+	rm -f Chart_Form_Test_*
 	rm -f Geometry_F__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -49,6 +58,12 @@ FieldsHeader_C__Form_Test.o: \
   ManifoldBasics.o \
   ChartBasics.o \
   FieldsHeader_C__Form_Test.f90
+
+Chart_Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  ChartBasics.o \
+  Chart_Form_Test.f90
 
 Geometry_F__Form_Test.o: \
   Basics.o \

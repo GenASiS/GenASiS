@@ -34,6 +34,11 @@ module FieldsHeader_C__Form
       Finalize
   end type FieldsHeader_C_Form
 
+  type, public :: FieldsHeader_C_Pointer
+    class ( FieldsHeader_C_Form ), pointer :: &
+      Pointer => null ( )
+  end type FieldsHeader_C_Pointer
+
 
 contains
 
