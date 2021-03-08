@@ -1,0 +1,4 @@
+CHART_BASICS = \
+  ChartBasics.o \
+  FieldSet_CH__Form.o \
+  ChartHeader_Form.o
