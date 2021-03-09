@@ -1,4 +1,6 @@
-module ChartHeader_Form
+module Chart_H__Form
+
+  !-- Chart_Header_Form
 
   use Basics
   use ManifoldBasics
@@ -6,7 +8,7 @@ module ChartHeader_Form
   implicit none
   private
 
-  type, public :: ChartHeaderForm
+  type, public :: Chart_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iChart       = 0, &
@@ -26,7 +28,7 @@ module ChartHeader_Form
       CoordinateLabel => null ( )
     type ( CommunicatorForm ), pointer :: &
       Communicator => null ( )
-    class ( ManifoldHeaderForm ), pointer :: &
+    class ( Manifold_H_Form ), pointer :: &
       Manifold => null ( )
   contains
     procedure, private, pass :: &
@@ -39,7 +41,7 @@ module ChartHeader_Form
       Show => Show_C
     final :: &
       Finalize
-  end type ChartHeaderForm
+  end type Chart_H_Form
 
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = MANIFOLD % MAX_DIMENSIONS
@@ -56,9 +58,9 @@ contains
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, nDimensionsOption )
 
-    class ( ChartHeaderForm ), intent ( inout ) :: &
+    class ( Chart_H_Form ), intent ( inout ) :: &
       C
-    class ( ManifoldHeaderForm ), intent ( in ), target :: &
+    class ( Manifold_H_Form ), intent ( in ), target :: &
       M
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsPeriodic
@@ -119,7 +121,7 @@ contains
 
   subroutine Show_C ( C )
 
-    class ( ChartHeaderForm ), intent ( in ) :: &
+    class ( Chart_H_Form ), intent ( in ) :: &
       C
 
    character ( LDL ), dimension ( : ), allocatable :: &
@@ -147,7 +149,7 @@ contains
 
   impure elemental subroutine Finalize ( C )
 
-    type ( ChartHeaderForm ), intent ( inout ) :: &
+    type ( Chart_H_Form ), intent ( inout ) :: &
       C
 
     nullify ( C % Manifold )
@@ -188,7 +190,7 @@ contains
                ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption )
 
-    class ( ChartHeaderForm ), intent ( inout ) :: &
+    class ( Chart_H_Form ), intent ( inout ) :: &
       C
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsPeriodic
@@ -235,4 +237,4 @@ contains
   end subroutine SetCoordinateSystem
 
 
-end module ChartHeader_Form
+end module Chart_H__Form

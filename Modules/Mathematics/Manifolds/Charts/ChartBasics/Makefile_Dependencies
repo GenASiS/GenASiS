@@ -1,12 +1,12 @@
-ChartHeader_Form.o: \
+Chart_H__Form.o: \
   Basics.o \
   ManifoldBasics.o \
-  ChartHeader_Form.f90
+  Chart_H__Form.f90
 
 FieldSet_CH__Form.o: \
   Basics.o \
   ManifoldBasics.o \
-  ChartHeader_Form.o \
+  Chart_H__Form.o \
   FieldSet_CH__Form.f90
 
 Geometry_F__Form.o: \
@@ -20,7 +20,7 @@ Geometry_F__Kernel.o: \
   Geometry_F__Kernel.f90
 
 ChartBasics.o: \
-  ChartHeader_Form.o \
+  Chart_H__Form.o \
   FieldSet_CH__Form.o \
   Geometry_F__Form.o \
   ChartBasics.f90

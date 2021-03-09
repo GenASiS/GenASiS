@@ -4,7 +4,7 @@ module FieldSet_CH__Form
 
   use Basics
   use ManifoldBasics
-  use ChartHeader_Form
+  use Chart_H__Form
 
   implicit none
   private
@@ -18,7 +18,7 @@ module FieldSet_CH__Form
       Name = '', &
       Type = '', &
       NameShort = ''
-    class ( ChartHeaderForm ), pointer :: &
+    class ( Chart_H_Form ), pointer :: &
       Chart => null ( )
     class ( FieldSet_MH_Form ), pointer :: &
       FieldSet_M => null ( )
@@ -47,7 +47,7 @@ contains
       FC
     class ( FieldSet_MH_Form ), intent ( in ), target :: &
       FM
-    class ( ChartHeaderForm ), intent ( in ), target :: &
+    class ( Chart_H_Form ), intent ( in ), target :: &
       C
     character ( * ), intent ( in ) :: &
       NameShort

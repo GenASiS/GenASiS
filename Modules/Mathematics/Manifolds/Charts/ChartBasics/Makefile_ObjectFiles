@@ -3,4 +3,4 @@ CHART_BASICS = \
   Geometry_F__Kernel.o \
   Geometry_F__Form.o \
   FieldSet_CH__Form.o \
-  ChartHeader_Form.o
+  Chart_H__Form.o

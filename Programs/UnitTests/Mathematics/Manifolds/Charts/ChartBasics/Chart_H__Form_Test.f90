@@ -1,4 +1,4 @@
-program ChartHeader_Form_Test
+program Chart_H__Form_Test
 
   use Basics
   use ManifoldBasics
@@ -6,16 +6,16 @@ program ChartHeader_Form_Test
 
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
-  type ( ManifoldHeaderForm ), allocatable :: &
+  type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber
-  type ( ChartHeaderForm ), allocatable :: &
+  type ( Chart_H_Form ), allocatable :: &
     C_Base, &
     C_Fiber
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'ChartHeader_Form_Test', DimensionalityOption = '2D_1D' )
+         ( 'Chart_H__Form_Test', DimensionalityOption = '2D_1D' )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
 
   !-- Base
@@ -27,7 +27,7 @@ program ChartHeader_Form_Test
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
-  call C_Base % Initialize ( Base, IsPeriodic, iChart = 1 )
+  call C_Base % Initialize_H ( Base, IsPeriodic, iChart = 1 )
 
   call Base % Show ( )
   call C_Base % Show ( )
@@ -39,7 +39,7 @@ program ChartHeader_Form_Test
   allocate ( Fiber )
   allocate ( C_Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
-  call C_Fiber % Initialize &
+  call C_Fiber % Initialize_H &
          ( Fiber, IsPeriodic, iChart = 1, &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL' )
@@ -53,4 +53,4 @@ program ChartHeader_Form_Test
   deallocate ( Base )
   deallocate ( PROGRAM_HEADER )
 
-end program ChartHeader_Form_Test
+end program Chart_H__Form_Test

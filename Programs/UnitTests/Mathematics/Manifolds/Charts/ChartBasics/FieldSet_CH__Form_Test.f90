@@ -6,11 +6,11 @@ program FieldSet_CH__Form_Test
 
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
-  type ( ChartHeaderForm ), allocatable :: &
+  type ( Chart_H_Form ), allocatable :: &
     C
   type ( FieldSet_CH_Form ), allocatable :: &
     FC
-  type ( ManifoldHeaderForm ), allocatable :: &
+  type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
     FM
@@ -25,7 +25,7 @@ program FieldSet_CH__Form_Test
   allocate ( C )
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
-  call C % Initialize &
+  call C % Initialize_H &
          ( M, IsPeriodic, iChart = 1 )
   call M % Show ( )
   call C % Show ( )
