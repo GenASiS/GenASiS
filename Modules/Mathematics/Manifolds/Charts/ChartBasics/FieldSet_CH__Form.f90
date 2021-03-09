@@ -1,6 +1,6 @@
 module FieldSet_CH__Form
 
-  !-- FieldsHeader_Chart__Form
+  !-- FieldSet_ChartHeader__Form
 
   use Basics
   use ManifoldBasics

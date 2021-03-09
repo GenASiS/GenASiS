@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: ChartHeader_Form_Test FieldSet_CH__Form_Test
+all: ChartHeader_Form_Test FieldSet_CH__Form_Test Geometry_F__Form_Test
 
 ChartHeader_Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
   ChartHeader_Form_Test.o
@@ -15,6 +15,13 @@ FieldSet_CH__Form_Test: Basics.a ManifoldBasics.a FieldSet_CH__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FieldSet_CH__Form_Test_$(MACHINE) \
           FieldSet_CH__Form_Test.o ChartBasics.a \
+          ManifoldBasics.a Basics.a $(LIBRARIES)
+
+Geometry_F__Form_Test: Basics.a ManifoldBasics.a ChartBasics.a \
+  Geometry_F__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Geometry_F__Form_Test_$(MACHINE) \
+          Geometry_F__Form_Test.o ChartBasics.a \
           ManifoldBasics.a Basics.a $(LIBRARIES)
 
 clean:

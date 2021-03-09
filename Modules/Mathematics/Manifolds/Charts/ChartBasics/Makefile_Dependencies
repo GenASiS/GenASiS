@@ -9,9 +9,20 @@ FieldSet_CH__Form.o: \
   ChartHeader_Form.o \
   FieldSet_CH__Form.f90
 
+Geometry_F__Form.o: \
+  Basics.o \
+  FieldSet_CH__Form.o \
+  Geometry_F__Form.f90
+
+Geometry_F__Kernel.o: \
+  Basics.o \
+  Geometry_F__Form.o \
+  Geometry_F__Kernel.f90
+
 ChartBasics.o: \
   ChartHeader_Form.o \
   FieldSet_CH__Form.o \
+  Geometry_F__Form.o \
   ChartBasics.f90
 
 ChartBasics.a: $(CHART_BASICS)

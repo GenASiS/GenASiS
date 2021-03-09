@@ -11,6 +11,8 @@ module ChartHeader_Form
       IGNORABILITY = 0, &
       iChart       = 0, &
       nDimensions  = 0
+    type ( MeasuredValueForm ), dimension ( : ), pointer :: &
+      CoordinateUnit => null ( )
     logical ( KDL ) :: &
       IsDistributed = .false., &
       AllocatedValues = .false.
@@ -52,7 +54,7 @@ contains
   subroutine InitializeBasic &
                ( C, M, IsPeriodic, iChart, CommunicatorOption, &
                  CoordinateLabelOption, CoordinateSystemOption, &
-                 nDimensionsOption )
+                 CoordinateUnitOption, nDimensionsOption )
 
     class ( ChartHeaderForm ), intent ( inout ) :: &
       C
@@ -68,6 +70,8 @@ contains
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption
 
@@ -107,7 +111,8 @@ contains
     end if
 
     call SetCoordinateSystem &
-           ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption )
+           ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption, &
+             CoordinateUnitOption )
 
   end subroutine InitializeBasic
 
@@ -157,10 +162,12 @@ contains
       deallocate ( C % CoordinateLabel )
       deallocate ( C % CoordinateSystem )
       deallocate ( C % IsPeriodic )
+      deallocate ( C % CoordinateUnit )
     else
       nullify ( C % CoordinateLabel )
       nullify ( C % CoordinateSystem )
       nullify ( C % IsPeriodic )
+      nullify ( C % CoordinateUnit )
     end if !-- AllocatedValues
 
     call Show ( 'Finalizing ' // trim ( C % Type ), C % IGNORABILITY )
@@ -178,7 +185,8 @@ contains
 
 
   subroutine SetCoordinateSystem &
-               ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption )
+               ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption, &
+                 CoordinateUnitOption )
 
     class ( ChartHeaderForm ), intent ( inout ) :: &
       C
@@ -188,6 +196,8 @@ contains
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnitOption
 
     associate ( nD => C % nDimensions )
 
@@ -214,6 +224,11 @@ contains
       C % CoordinateLabel ( : nD ) = CoordinateLabelOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
            ( C % CoordinateLabel ( : nD ), 'CoordinateLabel' )
+
+    allocate ( C % CoordinateUnit ( MAX_DIMENSIONS ) )
+    C % CoordinateUnit = [ UNIT % IDENTITY, UNIT % IDENTITY, UNIT % IDENTITY ]
+    if ( present ( CoordinateUnitOption ) ) &
+      C % CoordinateUnit ( : nD ) = CoordinateUnitOption ( : nD )
 
     end associate !-- nD
 

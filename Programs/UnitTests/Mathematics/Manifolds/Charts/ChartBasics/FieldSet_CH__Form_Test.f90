@@ -35,7 +35,9 @@ program FieldSet_CH__Form_Test
   call FM % Initialize ( M, 'Fields' ) 
   call FC % Initialize ( FM, C, 'Fields' ) 
 
+  deallocate ( FC )
   deallocate ( FM )
+  deallocate ( C )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 
