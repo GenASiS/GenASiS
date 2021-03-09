@@ -2,18 +2,18 @@ MANIFOLD_Singleton.o: \
   Basics.o \
   MANIFOLD_Singleton.f90
 
-ManifoldHeader_Form.o: \
+Manifold_H__Form.o: \
   Basics.o \
-  ManifoldHeader_Form.f90
+  Manifold_H__Form.f90
 
 FieldSet_MH__Form.o: \
   Basics.o \
-  ManifoldHeader_Form.o \
+  Manifold_H__Form.o \
   FieldSet_MH__Form.f90
 
 ManifoldBasics.o: \
   MANIFOLD_Singleton.o \
-  ManifoldHeader_Form.o \
+  Manifold_H__Form.o \
   FieldSet_MH__Form.o \
   ManifoldBasics.f90
 

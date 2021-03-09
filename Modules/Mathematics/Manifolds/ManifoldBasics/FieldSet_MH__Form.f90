@@ -3,7 +3,7 @@ module FieldSet_MH__Form
   !-- FieldSet_ManifoldHeader__Form
 
   use Basics
-  use ManifoldHeader_Form
+  use Manifold_H__Form
 
   implicit none
   private
@@ -17,7 +17,7 @@ module FieldSet_MH__Form
       Name = '', &
       Type = '', &
       NameShort = ''
-    class ( ManifoldHeaderForm ), pointer :: &
+    class ( Manifold_H_Form ), pointer :: &
       Manifold => null ( )
   contains
     procedure, private, pass :: &
@@ -42,7 +42,7 @@ contains
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FM
-    class ( ManifoldHeaderForm ), intent ( in ), target :: &
+    class ( Manifold_H_Form ), intent ( in ), target :: &
       M
     character ( * ), intent ( in ) :: &
       NameShort

@@ -1,15 +1,15 @@
-program ManifoldHeader_Form_Test
+program Manifold_H__Form_Test
 
   use Basics
   use ManifoldBasics
 
-  type ( ManifoldHeaderForm ), allocatable :: &
+  type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'ManifoldHeader_Form_Test', DimensionalityOption = '2D_1D' )
+         ( 'Manifold_H__Form_Test', DimensionalityOption = '2D_1D' )
 
   allocate ( Base )
   call Base % Initialize &
@@ -25,4 +25,4 @@ program ManifoldHeader_Form_Test
   deallocate ( Base )
   deallocate ( PROGRAM_HEADER )
 
-end program ManifoldHeader_Form_Test
+end program Manifold_H__Form_Test

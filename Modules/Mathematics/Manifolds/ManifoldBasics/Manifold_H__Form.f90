@@ -1,11 +1,13 @@
-module ManifoldHeader_Form
+module Manifold_H__Form
+
+  !-- Manifold_Header_Form
 
   use Basics
 
   implicit none
   private
 
-  type, public :: ManifoldHeaderForm
+  type, public :: Manifold_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nDimensions  = 0
@@ -28,7 +30,7 @@ module ManifoldHeader_Form
       Show => Show_M
     final :: &
       Finalize
-  end type ManifoldHeaderForm
+  end type Manifold_H_Form
 
     private :: &
       SetDimensionality
@@ -41,7 +43,7 @@ contains
                ( M, Name, CommunicatorOption, nDimensionsOption, &
                  iDimensionalityOption )
 
-    class ( ManifoldHeaderForm ), intent ( inout ) :: &
+    class ( Manifold_H_Form ), intent ( inout ) :: &
       M
     character ( * ), intent ( in )  :: &
       Name
@@ -78,7 +80,7 @@ contains
 
   subroutine Show_M ( M )
 
-    class ( ManifoldHeaderForm ), intent ( in ) :: &
+    class ( Manifold_H_Form ), intent ( in ) :: &
       M
 
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -96,7 +98,7 @@ contains
 
   impure elemental subroutine Finalize ( M )
 
-    type ( ManifoldHeaderForm ), intent ( inout ) :: &
+    type ( Manifold_H_Form ), intent ( inout ) :: &
       M
 
     nullify ( M % Communicator )
@@ -122,7 +124,7 @@ contains
 
   subroutine SetDimensionality ( M, nDimensionsOption, iDimensionalityOption )
 
-    class ( ManifoldHeaderForm ), intent ( inout ) :: &
+    class ( Manifold_H_Form ), intent ( inout ) :: &
       M
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
@@ -150,7 +152,7 @@ contains
 
     if ( iDimensionality > size ( Dimensionality ) ) then
       call Show ( 'Too few dimensionalities specified', CONSOLE % ERROR )
-      call Show ( 'ManifoldHeader_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Manifold_H__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetDimensionality', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -165,7 +167,7 @@ contains
     case default
       call Show ( 'PROGRAM_HEADER % Dimensionality not recognized', &
                   CONSOLE % WARNING )
-      call Show ( 'ManifoldHeader_Form', 'module', CONSOLE % WARNING )
+      call Show ( 'Manifold_H__Form', 'module', CONSOLE % WARNING )
       call Show ( 'SetDimensionality', 'subroutine', CONSOLE % WARNING )
       call Show ( 'Defaulting to 3D', CONSOLE % WARNING )
       M % nDimensions = 3
@@ -174,4 +176,4 @@ contains
   end subroutine SetDimensionality
 
 
-end module ManifoldHeader_Form
+end module Manifold_H__Form
