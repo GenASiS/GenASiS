@@ -30,9 +30,9 @@ module ChartHeader_Form
       Manifold => null ( )
   contains
     procedure, private, pass :: &
-      InitializeBasic
+      InitializeBasic_H
     generic, public :: &
-      Initialize => InitializeBasic
+      Initialize_H => InitializeBasic_H
     procedure, private, pass :: &
       Show_C
     generic, public :: &
@@ -51,7 +51,7 @@ module ChartHeader_Form
 contains
 
 
-  subroutine InitializeBasic &
+  subroutine InitializeBasic_H &
                ( C, M, IsPeriodic, iChart, CommunicatorOption, &
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, nDimensionsOption )
@@ -114,7 +114,7 @@ contains
            ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption, &
              CoordinateUnitOption )
 
-  end subroutine InitializeBasic
+  end subroutine InitializeBasic_H
 
 
   subroutine Show_C ( C )

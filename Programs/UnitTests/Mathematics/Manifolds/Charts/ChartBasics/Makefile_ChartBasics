@@ -30,6 +30,7 @@ clean:
 clobber: clean
 	rm -f ChartHeader_Form_Test_*
 	rm -f FieldSet_CH__Form_Test_*
+	rm -f Geometry_F__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies

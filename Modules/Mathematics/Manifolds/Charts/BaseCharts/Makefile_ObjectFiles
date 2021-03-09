@@ -1,0 +1,3 @@
+BASE_CHARTS = \
+  BaseCharts.o \
+  Chart_BH__Form.o

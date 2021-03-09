@@ -1,0 +1,30 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Chart_BH__Form_Test
+
+Chart_BH__Form_Test: Basics.a ManifoldBasics.a ChartBasics.a BaseCharts.a \
+  Chart_BH__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_BH__Form_Test_$(MACHINE) \
+          Chart_BH__Form_Test.o BaseCharts.a \
+          ChartBasics.a ManifoldBasics.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Chart_BH__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies
+include $(PATH_CHART_BASICS)/Makefile_Dependencies
+include $(PATH_BASE_CHARTS)/Makefile_Dependencies
+
+Chart_BH__Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  BaseCharts.o \
+  Chart_BH__Form_Test.f90
+
