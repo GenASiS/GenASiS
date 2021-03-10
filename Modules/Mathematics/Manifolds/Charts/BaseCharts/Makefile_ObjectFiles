@@ -1,3 +1,4 @@
 BASE_CHARTS = \
   BaseCharts.o \
+  Stream_CB__Form.o \
   Chart_BH__Form.o

@@ -175,7 +175,7 @@ contains
     end if !-- IsDistributed
 
     do iD = 1, nD
-      call Show ( iD, 'iDimension' )
+      call Show ( iD, 'iDimension', C % IGNORABILITY + 1 )
       call Show ( C % Edge ( iD ) % Value, C % CoordinateUnit ( iD ), &
                   'Edge', C % IGNORABILITY + 1 )
       call Show ( C % Width ( iD ) % Value, C % CoordinateUnit ( iD ), &

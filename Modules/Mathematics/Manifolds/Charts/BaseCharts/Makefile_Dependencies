@@ -4,8 +4,14 @@ Chart_BH__Form.o: \
   ChartBasics.o \
   Chart_BH__Form.f90
 
+Stream_CB__Form.o: \
+  Basics.o \
+  Chart_BH__Form.o \
+  Stream_CB__Form.f90
+
 BaseCharts.o: \
   Chart_BH__Form.o \
+  Stream_CB__Form.o \
   BaseCharts.f90
 
 BaseCharts.a: $(BASE_CHARTS)
