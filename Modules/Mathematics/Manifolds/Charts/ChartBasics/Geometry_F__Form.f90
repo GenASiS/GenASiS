@@ -55,6 +55,8 @@ module Geometry_F__Form
     generic, public :: &
       Initialize => InitializeAllocate_G_F
     procedure, public, pass :: &
+      SetOutput
+    procedure, public, pass :: &
       ComputeFromCoordinates
     final :: &  !-- FIXME: Intel doesn't like final procedure name to be the
                 !          same as the parent's final
@@ -242,6 +244,22 @@ contains
             VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_G_F
+
+
+  subroutine SetOutput ( G, Output )
+
+    class ( Geometry_F_Form ), intent ( inout ) :: &
+      G
+    class ( StorageForm ), intent ( inout ) :: &
+      Output
+
+    call Output % Initialize &
+           ( G, iaSelectedOption &
+                  = [ G % CENTER_U_1, G % CENTER_U_2, G % CENTER_U_3, &
+                      G % METRIC_F_DD_11, G % METRIC_F_DD_22, &
+                      G % METRIC_F_DD_33 ] )
+
+  end subroutine SetOutput
 
 
   subroutine ComputeFromCoordinates ( G, nValuesOption, oValueOption )
