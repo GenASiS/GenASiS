@@ -24,6 +24,8 @@ module Stream_CB__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AddFieldSet
     final :: &
       Finalize
   end type Stream_CB_Form
@@ -67,6 +69,22 @@ contains
     SC % Chart => Chart 
 
   end subroutine Initialize
+
+
+  subroutine AddFieldSet ( SC, S )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+    class ( StorageForm ), intent ( in ) :: &
+      S
+
+    if ( allocated ( SC % CurveImage ) ) then
+      call SC % CurveImage % AddStorage ( S )
+    else if ( allocated ( SC % GridImage ) ) then
+      call SC % GridImage % AddStorage ( S )
+    end if
+
+  end subroutine AddFieldSet
 
 
   impure elemental subroutine Finalize ( SC )
