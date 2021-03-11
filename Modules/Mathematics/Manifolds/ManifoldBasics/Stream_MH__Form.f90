@@ -74,6 +74,7 @@ contains
     
     integer ( KDI ) :: &
       iFS
+
     associate ( nFS  =>  SM % nFieldSets )
 
     do iFS  =  1, nFS

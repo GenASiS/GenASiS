@@ -9,6 +9,13 @@ FieldSet_CH__Form.o: \
   Chart_H__Form.o \
   FieldSet_CH__Form.f90
 
+Stream_CH__Form.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  Chart_H__Form.o \
+  FieldSet_CH__Form.o \
+  Stream_CH__Form.f90
+
 Geometry_F__Form.o: \
   Basics.o \
   FieldSet_CH__Form.o \
@@ -22,6 +29,7 @@ Geometry_F__Kernel.o: \
 ChartBasics.o: \
   Chart_H__Form.o \
   FieldSet_CH__Form.o \
+  Stream_CH__Form.o \
   Geometry_F__Form.o \
   ChartBasics.f90
 

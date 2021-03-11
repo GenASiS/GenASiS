@@ -41,12 +41,12 @@ contains
 
 
   subroutine Initialize_H &
-               ( FC, FM, C, NameShort, PinnedOption, IgnorabilityOption )
+               ( FC, FSM, C, NameShort, PinnedOption, IgnorabilityOption )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FC
     class ( FieldSet_MH_Form ), intent ( in ), target :: &
-      FM
+      FSM
     class ( Chart_H_Form ), intent ( in ), target :: &
       C
     character ( * ), intent ( in ) :: &
@@ -75,8 +75,8 @@ contains
     FC % NameShort = NameShort
     call Show ( FC % NameShort, 'NameShort', FC % IGNORABILITY )
 
-         FC % Chart  =>   C
-    FC % FieldSet_M  =>  FM 
+    FC % Chart       =>    C
+    FC % FieldSet_M  =>  FSM 
 
   end subroutine Initialize_H
 
