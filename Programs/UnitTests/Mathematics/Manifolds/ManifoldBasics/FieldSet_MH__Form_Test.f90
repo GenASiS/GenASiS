@@ -3,6 +3,8 @@ program FieldSet_MH__Form_Test
   use Basics
   use ManifoldBasics
 
+  implicit none
+
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &

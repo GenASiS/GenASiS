@@ -1,4 +1,5 @@
 BASE_CHARTS = \
   BaseCharts.o \
+  FieldSet_CB__Form.o \
   Stream_CB__Form.o \
   Chart_BH__Form.o

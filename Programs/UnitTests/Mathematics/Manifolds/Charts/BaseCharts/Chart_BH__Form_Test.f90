@@ -4,6 +4,8 @@ program Chart_BH__Form_Test
   use ManifoldBasics
   use BaseCharts
 
+  implicit none
+
   real ( KDR ) :: &
     MinEnergy, &
     MaxEnergy, &

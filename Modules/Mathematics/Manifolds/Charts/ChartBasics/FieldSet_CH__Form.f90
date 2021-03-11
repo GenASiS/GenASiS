@@ -13,7 +13,7 @@ module FieldSet_CH__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
     logical ( KDL ) :: &
-      Pinned
+      Pinned = .false.
     character ( LDF ) :: &
       Name = '', &
       Type = '', &

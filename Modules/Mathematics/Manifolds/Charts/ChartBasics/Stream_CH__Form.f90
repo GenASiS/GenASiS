@@ -32,6 +32,11 @@ module Stream_CH__Form
       Finalize
   end type Stream_CH_Form
 
+  type, public :: Stream_CH_Pointer
+    class ( Stream_CH_Form ), pointer :: &
+      Pointer => null ( )
+  end type Stream_CH_Pointer
+
     integer ( KDI ), private, parameter :: &
       MAX_FIELD_SETS = MANIFOLD % MAX_FIELD_SETS
 
@@ -84,7 +89,7 @@ contains
 
     do iFS  =  1, nFS
       if ( associated ( SC % FieldSet ( iFS ) % Pointer, FSC ) ) then
-        call Show ( 'FieldSet already added to a ' // SC % Type, &
+        call Show ( 'FieldSet already added to ' // SC % Type, &
                     CONSOLE % WARNING )
         call Show (  SC % Name, 'Stream',   CONSOLE % WARNING )
         call Show ( FSC % Name, 'FieldSet', CONSOLE % WARNING )
@@ -92,9 +97,9 @@ contains
       end if
     end do !-- iFS
 
-    nFS = nFS + 1
+    nFS  =  nFS + 1
     SC % FieldSet ( iFS ) % Pointer  =>  FSC
-    call Show ( 'Adding a FieldSet to a ' // trim ( SC % Type ), &
+    call Show ( 'Adding a FieldSet to ' // trim ( SC % Type ), &
                 SC % IGNORABILITY )
     call Show (  SC % Name, 'Stream',   SC % IGNORABILITY )
     call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY )

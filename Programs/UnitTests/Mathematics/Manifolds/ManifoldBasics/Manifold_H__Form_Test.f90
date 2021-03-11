@@ -3,6 +3,8 @@ program Manifold_H__Form_Test
   use Basics
   use ManifoldBasics
 
+  implicit none
+
   type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber

@@ -3,6 +3,8 @@ program Stream_MH__Form_Test
   use Basics
   use ManifoldBasics
 
+  implicit none
+
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Manifold_H_Form ), allocatable :: &

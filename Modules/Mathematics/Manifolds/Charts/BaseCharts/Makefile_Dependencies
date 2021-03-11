@@ -4,6 +4,12 @@ Chart_BH__Form.o: \
   ChartBasics.o \
   Chart_BH__Form.f90
 
+FieldSet_CB__Form.o: \
+  Basics.o \
+  ChartBasics.o \
+  Chart_BH__Form.o \
+  FieldSet_CB__Form.f90
+
 Stream_CB__Form.o: \
   Basics.o \
   Chart_BH__Form.o \
@@ -11,6 +17,7 @@ Stream_CB__Form.o: \
 
 BaseCharts.o: \
   Chart_BH__Form.o \
+  FieldSet_CB__Form.o \
   Stream_CB__Form.o \
   BaseCharts.f90
 

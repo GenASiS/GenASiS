@@ -5,6 +5,8 @@ program Stream_CB__Form_Test
   use ChartBasics
   use BaseCharts
 
+  implicit none
+
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
   type ( GridImageStreamForm ), allocatable :: &

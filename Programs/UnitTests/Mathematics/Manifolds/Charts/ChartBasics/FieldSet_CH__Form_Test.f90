@@ -4,6 +4,8 @@ program FieldSet_CH__Form_Test
   use ManifoldBasics
   use ChartBasics
 
+  implicit none
+
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
   type ( Chart_H_Form ), allocatable :: &

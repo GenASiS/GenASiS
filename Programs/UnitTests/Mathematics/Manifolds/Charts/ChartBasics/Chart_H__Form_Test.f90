@@ -4,6 +4,8 @@ program Chart_H__Form_Test
   use ManifoldBasics
   use ChartBasics
 
+  implicit none
+
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
   type ( Manifold_H_Form ), allocatable :: &
