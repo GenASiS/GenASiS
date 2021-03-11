@@ -48,6 +48,8 @@ program Stream_CB__Form_Test
   call G % Initialize &
          ( GC, nValues = C % nValues, NameOption = 'Geometry_F' )
 
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
+
   allocate ( GIS )
   call GIS % Initialize &
          ( PROGRAM_HEADER % Name, CommunicatorOption = C % Communicator )
@@ -57,6 +59,9 @@ program Stream_CB__Form_Test
 
   deallocate ( SC )
   deallocate ( GIS )
+
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
+
   deallocate ( G )
   deallocate ( GC )
   deallocate ( GM )

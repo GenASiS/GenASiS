@@ -34,14 +34,14 @@ module Stream_CB__Form
 contains
 
 
-  subroutine Initialize ( SC, Chart, GridImageStream, Name )
+  subroutine Initialize ( SC, C, GIS, Name )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
     class ( Chart_BH_Form ), intent ( in ), target :: &
-      Chart
+      C
     type ( GridImageStreamForm ), intent ( in ), target :: &
-      GridImageStream
+      GIS
     character ( * ), intent ( in ) :: &
       Name
 
@@ -51,22 +51,22 @@ contains
     call Show ( 'Initializing a Stream_CB', SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
-    SC % GridImageStream => GridImageStream
+    SC % GridImageStream  =>  GIS
+    SC % Chart            =>    C 
 
-    select case ( Chart % nDimensions )
+
+    select case ( C % nDimensions )
     case ( 1 ) 
       allocate ( SC % CurveImage )
       associate ( CI => SC % CurveImage )
-      call CI % Initialize ( GridImageStream )
+      call CI % Initialize ( GIS )
       end associate !-- CI
     case default
       allocate ( SC % GridImage )
       associate ( GI => SC % GridImage )
-      call GI % Initialize ( GridImageStream ) 
+      call GI % Initialize ( GIS ) 
       end associate !-- GI
     end select !-- nDimensions
-
-    SC % Chart => Chart 
 
   end subroutine Initialize
 

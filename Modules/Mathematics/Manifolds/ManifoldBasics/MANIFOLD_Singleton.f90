@@ -9,7 +9,7 @@ module MANIFOLD_Singleton
     integer ( KDI ) :: &
       MAX_DIMENSIONS = 3, &
       MAX_CHARTS     = 8, &
-      MAX_FIELDS     = 96, &
+      MAX_FIELD_SETS = 96, &
       MAX_STREAMS    = 8
   end type ManifoldSingleton
 

@@ -11,10 +11,18 @@ FieldSet_MH__Form.o: \
   Manifold_H__Form.o \
   FieldSet_MH__Form.f90
 
+Stream_MH__Form.o: \
+  Basics.o \
+  MANIFOLD_Singleton.o \
+  Manifold_H__Form.o \
+  FieldSet_MH__Form.o \
+  Stream_MH__Form.f90
+
 ManifoldBasics.o: \
   MANIFOLD_Singleton.o \
   Manifold_H__Form.o \
   FieldSet_MH__Form.o \
+  Stream_MH__Form.o \
   ManifoldBasics.f90
 
 ManifoldBasics.a: $(MANIFOLD_BASICS)

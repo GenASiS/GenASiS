@@ -38,10 +38,10 @@ contains
 
 
   subroutine Initialize_H &
-               ( FM, M, NameShort, PinnedOption, IgnorabilityOption )
+               ( FSM, M, NameShort, PinnedOption, IgnorabilityOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
-      FM
+      FSM
     class ( Manifold_H_Form ), intent ( in ), target :: &
       M
     character ( * ), intent ( in ) :: &
@@ -51,39 +51,39 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    FM % IGNORABILITY = M % IGNORABILITY
+    FSM % IGNORABILITY = M % IGNORABILITY
     if ( present ( IgnorabilityOption ) ) &
-      FM % IGNORABILITY = IgnorabilityOption
+      FSM % IGNORABILITY = IgnorabilityOption
 
-    if ( FM % Type == '' ) &
-      FM % Type = 'a FieldSet_M' 
+    if ( FSM % Type == '' ) &
+      FSM % Type = 'a FieldSet_M' 
     
-    FM % Pinned = .false.
+    FSM % Pinned = .false.
     if ( present ( PinnedOption ) ) &
-      FM % Pinned = PinnedOption
+      FSM % Pinned = PinnedOption
     
-    FM % Name = trim ( NameShort ) // '_' // trim ( M % Name ) 
+    FSM % Name = trim ( NameShort ) // '_' // trim ( M % Name ) 
 
-    call Show ( 'Initializing ' // trim ( FM % Type ), FM % IGNORABILITY )
-    call Show ( FM % Name, 'Name', FM % IGNORABILITY )
+    call Show ( 'Initializing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
+    call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
    
-    FM % NameShort = NameShort
-    call Show ( FM % NameShort, 'NameShort', FM % IGNORABILITY )
+    FSM % NameShort = NameShort
+    call Show ( FSM % NameShort, 'NameShort', FSM % IGNORABILITY )
 
-    FM % Manifold => M
+    FSM % Manifold => M
 
   end subroutine Initialize_H
 
 
-  impure elemental subroutine Finalize ( FM )
+  impure elemental subroutine Finalize ( FSM )
 
     type ( FieldSet_MH_Form ), intent ( inout ) :: &
-      FM
+      FSM
 
-    nullify ( FM % Manifold )
+    nullify ( FSM % Manifold )
 
-    call Show ( 'Finalizing ' // trim ( FM % Type ), FM % IGNORABILITY )
-    call Show ( FM % Name, 'Name', FM % IGNORABILITY )
+    call Show ( 'Finalizing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
+    call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
    
   end subroutine Finalize
 
