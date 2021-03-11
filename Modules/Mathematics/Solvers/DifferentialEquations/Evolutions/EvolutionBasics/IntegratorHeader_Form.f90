@@ -25,6 +25,7 @@ module IntegratorHeader_Form
       nWrite, &
       nTimeStepCandidates, &
       FinishCycle, &
+      CheckpointCycleInterval, &
       CheckpointDisplayInterval
     real ( KDR ) :: &
       StartTime, &
@@ -114,6 +115,10 @@ contains
       I % nWrite = nWriteOption
     call PROGRAM_HEADER % GetParameter ( I % nWrite, 'nWrite' )
 
+    I % CheckpointCycleInterval = huge ( 1 )
+    call PROGRAM_HEADER % GetParameter &
+           ( I % CheckpointCycleInterval, 'CheckpointCycleInterval' )
+    
     I % CheckpointDisplayInterval = 100
     call PROGRAM_HEADER % GetParameter &
            ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval' )
