@@ -6,6 +6,8 @@ module Device_C
   private
   
   public :: &
+    SetDevice, &
+    GetDevice, &
     OnTarget, &
     AllocateTargetInteger, &
     AllocateTargetDouble, &
@@ -21,7 +23,25 @@ module Device_C
     DeviceMemGetInfo
   
   interface 
-  
+    
+    integer ( c_int ) function SetDevice ( iDevice ) &
+                                 bind ( c, name = 'SetDevice' )
+      use iso_c_binding
+      implicit none
+      integer ( c_int ), value :: &
+        iDevice
+    end function SetDevice
+    
+
+    integer ( c_int ) function GetDevice ( iDevice ) &
+                                 bind ( c, name = 'GetDevice' )
+      use iso_c_binding
+      implicit none
+      integer ( c_int ) :: &
+        iDevice
+    end function GetDevice
+    
+    
     integer ( c_int ) function OnTarget ( Host ) &
                                  bind ( c, name = 'OnTarget_OMP' )
       use iso_c_binding
@@ -164,7 +184,6 @@ module Device_C
         Total
     end function DeviceMemGetInfo 
     
-
   end interface 
 
 end module Device_C

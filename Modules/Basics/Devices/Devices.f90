@@ -1,5 +1,7 @@
 module Devices
   
+  use SelectDevice_Command
+  use SelectedDevice_Function
   use AllocateDevice_Command
   use AssociateHost_Command
   use DeallocateDevice_Command
