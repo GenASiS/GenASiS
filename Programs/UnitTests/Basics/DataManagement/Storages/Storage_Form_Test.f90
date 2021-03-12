@@ -1,9 +1,7 @@
 program Storage_Form_Test
 
   use OMP_LIB
-  use MPI
   use Specifiers
-  use Devices
   use ArrayOperations
   use ArrayArrays
   use Storage_Form
@@ -11,10 +9,7 @@ program Storage_Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    i, &
-    MPI_Size, &
-    MPI_Rank, &
-    Error
+    i
   real ( KDR ) :: &
     StartTime, &
     TotalTime, &
@@ -31,121 +26,107 @@ program Storage_Form_Test
     VectorIndices
   type ( StorageForm ), dimension ( 6 ) :: &
     S
-    
-  call MPI_INIT ( Error )
-  call MPI_COMM_SIZE ( MPI_COMM_WORLD, MPI_Size, Error )
-  call MPI_COMM_RANK ( MPI_COMM_WORLD, MPI_Rank, Error )
-  
-  if ( OffloadEnabled ( ) ) &
-    call OMP_SET_DEFAULT_DEVICE ( 3 )
-    !call OMP_SET_DEFAULT_DEVICE ( mod ( MPI_Rank, GetNumberOfDevices ( ) ) )
-  
-  print*, 'Initial device', OMP_GET_DEFAULT_DEVICE ( )
 
-!  do i = 1, size ( VariableUnit ) 
-!    call VariableUnit ( i ) % Initialize &
-!           ( UnitString ( i ), UnitString ( i ), 1.0_KDR )
-!  end do
-!
-!  call VectorIndices ( 1 ) % Initialize ( [ 2, 3 ] )
-!
-!  !-- InitializeAllocate
-!  call S ( 1 ) % Initialize &
-!         ( ValueShape = [ 4, 6 ], VectorIndicesOption = VectorIndices, &
-!           UnitOption = VariableUnit, VectorOption = [ 'Vector_1' ], &
-!           VariableOption = Variable, NameOption = 'Storage_1')
-!  call PrintStorage ( S ( 1 ) )
-!
-!  !-- InitializeClone
-!  call S ( 2 ) % Initialize &
-!         ( S ( 1 ), NameOption = 'Storage_2', &
-!           iaSelectedOption = [ 1, 2, 3, 5 ] )
-!  call S ( 2 ) % AllocateDevice ( )
-!  call PrintStorage ( S ( 2 ) )
-!
-!  !-- InitializeClone, take 2
-!  call S ( 3 ) % Initialize &
-!         ( S ( 2 ), NameOption = 'Storage_3', &
-!           iaSelectedOption = [ 1, 3, 6 ] )
-!  call S ( 3 ) % AllocateDevice ( )
-!  call PrintStorage ( S ( 3 ) )
+  do i = 1, size ( VariableUnit ) 
+    call VariableUnit ( i ) % Initialize &
+           ( UnitString ( i ), UnitString ( i ), 1.0_KDR )
+  end do
+
+  call VectorIndices ( 1 ) % Initialize ( [ 2, 3 ] )
+
+  !-- InitializeAllocate
+  call S ( 1 ) % Initialize &
+         ( ValueShape = [ 4, 6 ], VectorIndicesOption = VectorIndices, &
+           UnitOption = VariableUnit, VectorOption = [ 'Vector_1' ], &
+           VariableOption = Variable, NameOption = 'Storage_1')
+  call PrintStorage ( S ( 1 ) )
+
+  !-- InitializeClone
+  call S ( 2 ) % Initialize &
+         ( S ( 1 ), NameOption = 'Storage_2', &
+           iaSelectedOption = [ 1, 2, 3, 5 ] )
+  call S ( 2 ) % AllocateDevice ( )
+  call PrintStorage ( S ( 2 ) )
+
+  !-- InitializeClone, take 2
+  call S ( 3 ) % Initialize &
+         ( S ( 2 ), NameOption = 'Storage_3', &
+           iaSelectedOption = [ 1, 3, 6 ] )
+  call S ( 3 ) % AllocateDevice ( )
+  call PrintStorage ( S ( 3 ) )
   
-!  do i = 1, S ( 3 ) % nVariables 
-!    call random_number ( S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) ) )
-!    print*, 'Host Initial', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
-!  end do
-!  call S ( 3 ) % UpdateDevice ( )
-!  
-!  call Clear ( S ( 3 ) % Value )
-!  do i = 1, S ( 3 ) % nVariables 
-!    print*, 'Host Cleared', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
-!  end do
-!  
-!  call S ( 3 ) % UpdateHost ( )
-!  do i = 1, S ( 3 ) % nVariables 
-!    print*, 'Host From Device', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
-!  end do
-!  
+  do i = 1, S ( 3 ) % nVariables 
+    call random_number ( S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) ) )
+    print*, 'Host Initial', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
+  end do
+  call S ( 3 ) % UpdateDevice ( )
+  
+  call Clear ( S ( 3 ) % Value )
+  do i = 1, S ( 3 ) % nVariables 
+    print*, 'Host Cleared', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
+  end do
+  
+  call S ( 3 ) % UpdateHost ( )
+  do i = 1, S ( 3 ) % nVariables 
+    print*, 'Host From Device', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
+  end do
+  
   call S ( 4 ) % Initialize &
          ( ValueShape = [ 256**3, 16 ], PinnedOption = .true. )
   call random_number ( S ( 4 ) % Value )
-  print*, 'Before allocate device', OMP_GET_DEFAULT_DEVICE ( )
   call S ( 4 ) % AllocateDevice ( )
-  print*, 'After allocate device', OMP_GET_DEFAULT_DEVICE ( )
-!         
-!  
-!  call S ( 5 ) % Initialize &
-!         ( S ( 4 ), &
-!           iaSelectedOption = [ 1, 3, 5, 7, 9, 11, 13, 15 ] )
-!  call S ( 5 ) % AllocateDevice ( )
-!  
-!  DataSize_GB = 1.0_KDR * S ( 4 ) % nValues * S ( 4 ) % nVariables * 8 &
-!                / 1.0e9_KDR 
-!  print*, 'Data size (GB)', DataSize_GB
-!  
-!  StartTime = OMP_GET_WTIME ( )
-!  call S ( 5 ) % UpdateDevice ( )
-!  TotalTime = OMP_GET_WTIME ( ) - StartTime
-!  print*, 'Overlay Storage Data Transfer'
-!  print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
-!  print*, 'Host-to-Device Time (s)        :', TotalTime
-!  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime / 2
-!  print*, ''
-!  
+         
+  
+  call S ( 5 ) % Initialize &
+         ( S ( 4 ), &
+           iaSelectedOption = [ 1, 3, 5, 7, 9, 11, 13, 15 ] )
+  call S ( 5 ) % AllocateDevice ( )
+  
+  DataSize_GB = 1.0_KDR * S ( 4 ) % nValues * S ( 4 ) % nVariables * 8 &
+                / 1.0e9_KDR 
+  print*, 'Data size (GB)', DataSize_GB
+  
   StartTime = OMP_GET_WTIME ( )
-  print*, 'Before update device', OMP_GET_DEFAULT_DEVICE ( )
+  call S ( 5 ) % UpdateDevice ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Overlay Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
+  print*, 'Host-to-Device Time (s)        :', TotalTime
+  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime / 2
+  print*, ''
+  
+  StartTime = OMP_GET_WTIME ( )
   call S ( 4 ) % UpdateDevice ( )
-  print*, 'After update device', OMP_GET_DEFAULT_DEVICE ( )
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Primary Storage Data Transfer'
   print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
   print*, 'Host-to-Device Time (s)        :', TotalTime
   print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
   print*, ''
-!  
-!  StartTime = OMP_GET_WTIME ( )
-!  call S ( 5 ) % UpdateHost ( )
-!  TotalTime = OMP_GET_WTIME ( ) - StartTime
-!  print*, 'Overlay Storage Data Transfer'
-!  print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
-!  print*, 'Device-to-Host Time (s)        :', TotalTime
-!  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime / 2
-!  print*, ''
-!
-!  StartTime = OMP_GET_WTIME ( )
-!  call S ( 4 ) % UpdateHost ( )
-!  TotalTime = OMP_GET_WTIME ( ) - StartTime
-!  print*, 'Primary Storage Data Transfer'
-!  print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
-!  print*, 'Device-to-Host Time (s)        :', TotalTime
-!  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
-!  print*, ''
-!  call PrintStorage ( S ( 4 ) )
-!  
-!  call S ( 4 ) % ReassociateHost ( AssociateVariablesOption = .false. )
-!  call PrintStorage ( S ( 4 ) )
-!  call S ( 4 ) % ReassociateHost ( AssociateVariablesOption = .true. )
-!  call PrintStorage ( S ( 4 ) )
+  
+  StartTime = OMP_GET_WTIME ( )
+  call S ( 5 ) % UpdateHost ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Overlay Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
+  print*, 'Device-to-Host Time (s)        :', TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime / 2
+  print*, ''
+
+  StartTime = OMP_GET_WTIME ( )
+  call S ( 4 ) % UpdateHost ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Primary Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
+  print*, 'Device-to-Host Time (s)        :', TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, ''
+  call PrintStorage ( S ( 4 ) )
+  
+  call S ( 4 ) % ReassociateHost ( AssociateVariablesOption = .false. )
+  call PrintStorage ( S ( 4 ) )
+  call S ( 4 ) % ReassociateHost ( AssociateVariablesOption = .true. )
+  call PrintStorage ( S ( 4 ) )
   
 !  !-- Re-initialize S ( 4 )
 !  call S ( 6 ) % Initialize &
@@ -169,9 +150,7 @@ program Storage_Form_Test
 !  print*, 'After UpdateHost:', S ( 6 ) % Value
 !  call PrintStorage ( S ( 6 ) )
   
-  
-  call MPI_FINALIZE ( Error )
-  
+
 contains
 
 

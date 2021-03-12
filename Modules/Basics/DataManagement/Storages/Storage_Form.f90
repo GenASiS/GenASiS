@@ -313,19 +313,16 @@ contains
       if ( present ( AssociateVariablesOption ) ) &
         AssociateVariables = AssociateVariablesOption
 
-      print*, 'Allocating'
       call AllocateDevice &
              ( S % nValues * S % nVariables, S % D_Selected ( 1 ) )
       
       if ( .not. c_associated ( S % D_Selected ( 1 ) ) ) &
         return
       
-      print*, 'Associating'
       call S % AssociateHost_S ( AssociateVariables )
       
       S % AllocatedDevice = .true.
       
-      print*, 'Clearing'
       if ( S % ClearRequested ) &
         call Clear ( S % Value, UseDeviceOption = .true. )
       
