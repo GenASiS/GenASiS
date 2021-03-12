@@ -1,7 +1,11 @@
 PATH_GENASIS = ../../../../..
 
-all: Difference_Form_Test Jacobi_Test JacobiAsync_Test Async_Test
+#-- Do not link to HDF5 or Lapack
+HDF5_DIR = 
+LAPACK_DIR = 
 
+all: Difference_Form_Test Jacobi_Test JacobiAsync_Test Async_Test \
+     GPU_Rank_Binding
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -13,6 +17,10 @@ Difference_Form_Test: Basics.a Difference_Form_Test.o
 Jacobi_Test: Basics.a Jacobi_Test.o
 	$(LINK) $(FLAGS) -o Jacobi_Test_$(MACHINE) \
           Jacobi_Test.o Basics.a $(LIBRARIES)
+
+GPU_Rank_Binding: Basics.a GPU_Rank_Binding.o
+	$(LINK) $(FLAGS) -o GPU_Rank_Binding_$(MACHINE) \
+          GPU_Rank_Binding.o Basics.a $(LIBRARIES)
 
 JacobiAsync_Test: Basics.a JacobiAsync_Test.o
 	$(LINK) $(FLAGS) -o JacobiAsync_Test_$(MACHINE) \
