@@ -1033,14 +1033,16 @@ contains
     
     !-- Set default device for offload based on MPI rank 
     nDevices = GetNumberOfDevices ( )
-    iDefaultDevice = mod ( PH % Communicator % Rank, nDevices )
-    call OMP_SET_DEFAULT_DEVICE ( iDefaultDevice )
+    if ( nDevices > 0 ) then
+      iDefaultDevice = mod ( PH % Communicator % Rank, nDevices )
+      call SelectDevice ( iDefaultDevice )
+    end if
     
     call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
     call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
     call Show ( nDevices, 'nDevices', CONSOLE % INFO_1 )
     call Show ( OffloadEnabled ( ), 'OffloadEnabled', CONSOLE % INFO_1 )
-    call Show ( OMP_GET_DEFAULT_DEVICE ( ), 'Default device', &
+    call Show ( SelectedDevice ( ), 'Selected device', &
                 CONSOLE % INFO_1 )
     call Show &
            ( adjustl ( adjustr ( OMP_ScheduleLabelPrefix ) &
