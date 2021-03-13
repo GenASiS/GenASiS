@@ -1011,7 +1011,7 @@ contains
       call OMP_SET_SCHEDULE ( OMP_SCHED_GUIDED, -1 )
     
     OMP_ScheduleLabelPrefix = ''
-    if ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 ) then  
+    if ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 ) then  
       !-- per Build/Preprocessor, hardcoded to "(static, 1)" for offload
       OMP_ScheduleKind = OMP_SCHED_STATIC
       OMP_ScheduleChunkSize = 1
@@ -1032,7 +1032,7 @@ contains
     end select
     
     !-- Set default device for offload based on MPI rank 
-    nDevices = GetNumberOfDevices ( )
+    nDevices = NumberOfDevices ( )
     if ( nDevices > 0 ) then
       iDefaultDevice = mod ( PH % Communicator % Rank, nDevices )
       call SelectDevice ( iDefaultDevice )

@@ -9,7 +9,7 @@ endif
 DEVICES = \
   Devices.o \
   GetDeviceMemoryInfo_Command.o \
-  GetNumberOfDevices_Function.o \
+  NumberOfDevices_Function.o \
   DeviceAddress_Function.o \
   OnDevice_Function.o \
   DeallocateHost_Command.o \
