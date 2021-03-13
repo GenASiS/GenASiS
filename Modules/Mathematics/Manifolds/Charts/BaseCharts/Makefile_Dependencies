@@ -12,7 +12,8 @@ FieldSet_CB__Form.o: \
 
 Stream_CB__Form.o: \
   Basics.o \
-  Chart_BH__Form.o \
+  ChartBasics.o \
+  FieldSet_CB__Form.o \
   Stream_CB__Form.f90
 
 BaseCharts.o: \

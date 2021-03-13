@@ -12,6 +12,8 @@ module Stream_CH__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nFieldSets   = 0
+    logical ( KDL ) :: &
+      Verbose = .false.
     character ( LDF ) :: &
       Name = '', &
       Type = ''
@@ -44,9 +46,9 @@ module Stream_CH__Form
 contains
 
 
-  subroutine Initialize ( SC, SM, C, GIS, Name )
+  subroutine Initialize ( SC, SM, C, GIS, Name, VerboseOption )
 
-    class ( Stream_CH_Form ), intent ( inout ), target :: &
+    class ( Stream_CH_Form ), intent ( inout ) :: &
       SC
     class ( Stream_MH_Form ), intent ( in ), target :: &
       SM
@@ -56,7 +58,16 @@ contains
       GIS
     character ( * ), intent ( in ) :: &
       Name
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseOption
 
+    logical ( KDL ) :: &
+      Verbose
+
+    Verbose = .false.
+    if ( present ( VerboseOption ) ) &
+      Verbose = VerboseOption
+    
     SC % IGNORABILITY  =  C % IGNORABILITY  +  1
     SC % Name          =  Name
 
@@ -65,6 +76,8 @@ contains
     
     call Show ( 'Initializing ' // trim ( SC % Type ), SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
+
+    SC % Verbose  =  Verbose
 
     SC % GridImageStream  =>  GIS
     SC % Chart            =>    C

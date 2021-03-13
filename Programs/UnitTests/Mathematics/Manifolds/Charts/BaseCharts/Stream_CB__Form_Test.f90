@@ -7,22 +7,24 @@ program Stream_CB__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    nFields = 5
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
   type ( GridImageStreamForm ), allocatable :: &
     GIS
+  type ( Chart_BH_Form ), allocatable :: &
+    C
+  type ( FieldSet_CB_Form ), allocatable :: &
+    FSC
+  type ( Stream_CB_Form ), allocatable :: &
+    SC
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
-    GM
-  type ( FieldSet_CH_Form ), allocatable :: &
-    GC
-  type ( Geometry_F_Form ), allocatable :: &
-    G
-  type ( Chart_BH_Form ), allocatable :: &
-    C
-  type ( Stream_CB_Form ), allocatable :: &
-    SC
+    FSM
+  type ( Stream_MH_Form ), allocatable :: &
+    SM
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -39,36 +41,27 @@ program Stream_CB__Form_Test
   call M % Show ( )
   call C % Show ( )
 
-  allocate ( GM )
-  allocate ( GC )
-  call GM % Initialize ( M, 'Geometry' ) 
-  call GC % Initialize ( GM, C, 'Geometry' ) 
-
-  call CONSOLE % SetVerbosity ( 'INFO_4' )
-
-  allocate ( G )
-  call G % Initialize &
-         ( GC, nValues = C % nValues, NameOption = 'Geometry_F' )
-
   call CONSOLE % SetVerbosity ( 'INFO_2' )
+
+  allocate ( FSM )
+  allocate ( FSC )
+  call FSM % Initialize ( M, 'Fields' ) 
+  call FSC % Initialize ( FSM, C, 'Fields', nFields ) 
 
   allocate ( GIS )
   call GIS % Initialize &
-         ( PROGRAM_HEADER % Name, CommunicatorOption = C % Communicator )
+         ( PROGRAM_HEADER % Name, CommunicatorOption = M % Communicator )
 
+  allocate ( SM )
   allocate ( SC )
-  call SC % Initialize ( C, GIS, 'Stream' )
+  call SM % Initialize ( M, GIS, 'Stream' )
+  call SC % Initialize ( SM, C, GIS, 'Stream' )
 
-  deallocate ( SC )
-  deallocate ( GIS )
+  call SM % AddFieldSet ( FSM )
+  call SC % AddFieldSet ( FSC )
 
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
+  call FSC % AddStream ( SC )
 
-  deallocate ( G )
-  deallocate ( GC )
-  deallocate ( GM )
-  deallocate ( C )
-  deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 
 end program Stream_CB__Form_Test

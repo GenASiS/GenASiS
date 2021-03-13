@@ -28,7 +28,7 @@ program FieldSet_CB__Form_Test
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FieldSet_CH__Form_Test', DimensionalityOption = '2D' )
+         ( 'FieldSet_CB__Form_Test', DimensionalityOption = '2D' )
 
   IsPeriodic  =  .true.
 

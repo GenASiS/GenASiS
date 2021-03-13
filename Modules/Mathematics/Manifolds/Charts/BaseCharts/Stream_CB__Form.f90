@@ -3,24 +3,18 @@ module Stream_CB__Form
   !-- Stream_ChartBase_Form
 
   use Basics
-  use Chart_BH__Form
+  use ManifoldBasics
+  use ChartBasics
+  use FieldSet_CB__Form
 
   implicit none
   private
 
-  type, public :: Stream_CB_Form
-    integer ( KDI ) :: &
-      IGNORABILITY = 0
-    character ( LDF ) :: &
-      Name = ''
-    type ( GridImageStreamForm ), pointer :: &
-      GridImageStream => null ( )
+  type, public, extends ( Stream_CH_Form ) :: Stream_CB_Form
     type ( CurveImageForm ), allocatable :: &
       CurveImage
     type ( StructuredGridImageForm ), allocatable :: &
       GridImage
-    class ( Chart_BH_Form ), pointer :: &
-      Chart => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -30,30 +24,32 @@ module Stream_CB__Form
       Finalize
   end type Stream_CB_Form
 
+    private :: &
+      AddStorage
+
 
 contains
 
 
-  subroutine Initialize ( SC, C, GIS, Name )
+  subroutine Initialize ( SC, SM, C, GIS, Name, VerboseOption )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
-    class ( Chart_BH_Form ), intent ( in ), target :: &
+    class ( Stream_MH_Form ), intent ( in ), target :: &
+      SM
+    class ( Chart_H_Form ), intent ( in ), target :: &
       C
     type ( GridImageStreamForm ), intent ( in ), target :: &
       GIS
     character ( * ), intent ( in ) :: &
       Name
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseOption
 
-    SC % IGNORABILITY = CONSOLE % INFO_4
-    SC % Name = Name
+    if ( SC % Type == '' ) &
+      SC % Type = 'a Stream_CB' 
 
-    call Show ( 'Initializing a Stream_CB', SC % IGNORABILITY )
-    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
-
-    SC % GridImageStream  =>  GIS
-    SC % Chart            =>    C 
-
+    call SC % Stream_CH_Form % Initialize ( SM, C, GIS, Name )
 
     select case ( C % nDimensions )
     case ( 1 ) 
@@ -71,18 +67,23 @@ contains
   end subroutine Initialize
 
 
-  subroutine AddFieldSet ( SC, S )
+  subroutine AddFieldSet ( SC, FSC )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
-    class ( StorageForm ), intent ( in ) :: &
-      S
+    class ( FieldSet_CH_Form ), intent ( in ), target :: &
+      FSC
 
-    if ( allocated ( SC % CurveImage ) ) then
-      call SC % CurveImage % AddStorage ( S )
-    else if ( allocated ( SC % GridImage ) ) then
-      call SC % GridImage % AddStorage ( S )
-    end if
+    call SC % Stream_CH_Form % AddFieldSet ( FSC )
+
+    select type ( FSC )
+    class is ( FieldSet_CB_Form )
+      if ( SC % Verbose ) then
+        call AddStorage ( SC, FSC % FieldSet )
+      else
+        call AddStorage ( SC, FSC % FieldSetStream )
+      end if
+    end select !-- FSC
 
   end subroutine AddFieldSet
 
@@ -97,15 +98,23 @@ contains
     if ( allocated ( SC % CurveImage ) ) &
       deallocate ( SC % CurveImage )
 
-    nullify ( SC % GridImageStream )
-    nullify ( SC % Chart )
-
-    if ( SC % Name == '' ) return
-
-    call Show ( 'Finalizing a Stream_CB', SC % IGNORABILITY )
-    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
-
   end subroutine Finalize
+
+
+  subroutine AddStorage ( SC, S )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+    class ( StorageForm ), intent ( in ) :: &
+      S
+
+    if ( allocated ( SC % CurveImage ) ) then
+      call SC % CurveImage % AddStorage ( S )
+    else if ( allocated ( SC % GridImage ) ) then
+      call SC % GridImage % AddStorage ( S )
+    end if
+
+  end subroutine AddStorage
 
 
 end module Stream_CB__Form
