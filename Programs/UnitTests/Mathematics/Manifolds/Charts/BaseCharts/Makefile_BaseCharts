@@ -41,6 +41,7 @@ include $(PATH_BASE_CHARTS)/Makefile_Dependencies
 Chart_BH__Form_Test.o: \
   Basics.o \
   ManifoldBasics.o \
+  ChartBasics.o \
   BaseCharts.o \
   Chart_BH__Form_Test.f90
 

@@ -38,12 +38,12 @@ module Chart_BH__Form
       InitializeBasic_BH
     generic, public :: &
       Initialize_BH => InitializeBasic_BH
+    procedure, public, pass :: &
+      ComputeGeometry
     procedure, private, pass :: &
       Show_C
     final :: &
       Finalize
-    procedure, public, pass :: &
-      SetCoordinateData
   end type Chart_BH_Form
 
     integer ( KDI ), private, parameter :: &
@@ -52,16 +52,17 @@ module Chart_BH__Form
     private :: &
       SetCoordinateMetadata, &
       SetCells, &
-      SetDecomposition
+      SetDecomposition, &
+      ComputeCoordinateData
 
       private :: &
         BrickIndex, &
         SetFirstLast, &
-        SetEdgeEqual, &
+        ComputeEdgeEqual, &
         ComputeGeometricRatio, &
-        SetEdgeGeometric, &
-        SetEdgeCompactified, &
-        SetEdgeProportional
+        ComputeEdgeGeometric, &
+        ComputeEdgeCompactified, &
+        ComputeEdgeProportional
 
         private :: &
           ZeroGeometricRatio
@@ -109,9 +110,6 @@ contains
       nDimensionsOption, &
       nEqualOption
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-
     call C % Chart_H_Form % Initialize_H &
            ( M, IsPeriodic, iChart, CommunicatorOption, &
              CoordinateLabelOption, CoordinateSystemOption, &
@@ -126,11 +124,26 @@ contains
     call SetDecomposition &
            ( C, M, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
 
+  end subroutine InitializeBasic_BH
+
+
+  subroutine ComputeGeometry ( C, G, EdgeOption )
+
+    class ( Chart_BH_Form ), intent ( inout ) :: &
+      C
+    class ( Geometry_F_Form ), intent ( inout ) :: &
+      G
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      EdgeOption
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
     do iD = 1, C % nDimensions
-      call SetCoordinateData ( C, iD )
+      call ComputeCoordinateData ( C, iD )
     end do !-- iD
 
-  end subroutine InitializeBasic_BH
+  end subroutine ComputeGeometry
 
 
   subroutine Show_C ( C )
@@ -244,115 +257,6 @@ contains
     end if !-- AllocatedValues
 
   end subroutine Finalize
-
-
-  subroutine SetCoordinateData ( C, iD, EdgeValueOption )
-
-    class ( Chart_BH_Form ), intent ( inout ) :: &
-      C
-    integer ( KDI ), intent ( in ) :: &
-      iD      !-- iDimension
-    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      EdgeValueOption
-
-    integer ( KDI ) :: &
-      iC    !-- iCell
-    real ( KDL ) :: &
-      Width_IG, &
-      Width_OG
-
-    if ( .not. C % AllocatedValues ) &
-      return
-
-    associate &
-      (  nC => C % nCells ( iD ), &
-        nGL => C % nGhostLayers ( iD ) )
-
-    if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
-      call C % Edge ( iD ) % Initialize &
-             ( nValues  =  nC  +  2 * nGL + 1, &
-               iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( C % Width ( iD ) % Value ) ) &
-      call C % Width ( iD ) % Initialize &
-             ( nValues  =  nC  +  2 * nGL, &
-               iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
-      call C % Center ( iD ) % Initialize &
-             ( nValues  =  nC  +  2 * nGL, &
-               iLowerBoundOption  =  1 - nGL )
-
-    !-- Edge, proper cells
-    if ( present ( EdgeValueOption ) ) then
-      C % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
-      C % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
-      C % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
-    else
-      select case ( trim ( C % Spacing ( iD ) ) )
-      case ( 'EQUAL' )
-        call SetEdgeEqual &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
-      case ( 'GEOMETRIC' )
-        if ( C % Scale ( iD ) > 0.0_KDR ) &
-          call ComputeGeometricRatio &
-                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
-                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
-                   C % Ratio ( iD ) )
-        call SetEdgeGeometric &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
-                 C % Ratio ( iD ), nC )
-      case ( 'COMPACTIFIED' )
-        call SetEdgeCompactified &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % Scale ( iD ), nC )
-        C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
-        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
-      case ( 'PROPORTIONAL' )
-        call SetEdgeProportional &
-               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 C % MinCoordinate ( iD ), C % Ratio ( iD ), &
-                 C % Scale ( iD ), nC, C % nEqual )
-        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
-      case default
-        call Show ( 'Spacing not recognized', CONSOLE % ERROR )
-        call Show ( 'ChartHeader_Form', 'module', CONSOLE % ERROR )
-        call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select
-    end if
-
-    !-- Edge, ghost cells
-    associate ( Edge => C % Edge ( iD ) % Value )
-    do iC = 1, nGL
-      Width_IG  =  Edge ( iC + 1 )       -  Edge ( iC )
-      Width_OG  =  Edge ( nC - iC + 2 )  -  Edge ( nC - iC + 1 )
-      Edge ( 1 - iC )       =  Edge ( 2 - iC )   -  Width_IG
-      Edge ( nC + 1 + iC )  =  Edge ( nC + iC )  +  Width_OG
-    end do !-- iC
-    end associate !-- Edge
-
-    !-- Width
-    associate &
-      ( Edge  => C % Edge ( iD ) % Value, &
-        Width => C % Width ( iD ) % Value )
-    do iC = lbound ( Width, dim = 1 ), ubound ( Width, dim = 1 )
-      Width ( iC )  =  Edge ( iC + 1 )  -  Edge ( iC )
-    end do !-- iC
-    end associate !-- Edge, etc.
-
-    !-- Center
-    associate &
-      (   Edge => C % Edge ( iD ) % Value, &
-        Center => C % Center ( iD ) % Value )
-    do iC = lbound ( Center, dim = 1 ), ubound ( Center, dim = 1 )
-      Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
-    end do !-- iC
-    end associate !-- Edge, etc.
-
-    end associate !-- nC, etc.
-
-  end subroutine SetCoordinateData
 
 
   subroutine SetCoordinateMetadata &
@@ -561,6 +465,115 @@ contains
   end subroutine SetDecomposition
 
 
+  subroutine ComputeCoordinateData ( C, iD, EdgeValueOption )
+
+    class ( Chart_BH_Form ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iD      !-- iDimension
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      EdgeValueOption
+
+    integer ( KDI ) :: &
+      iC    !-- iCell
+    real ( KDL ) :: &
+      Width_IG, &
+      Width_OG
+
+    if ( .not. C % AllocatedValues ) &
+      return
+
+    associate &
+      (  nC => C % nCells ( iD ), &
+        nGL => C % nGhostLayers ( iD ) )
+
+    if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
+      call C % Edge ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL + 1, &
+               iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % Width ( iD ) % Value ) ) &
+      call C % Width ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
+      call C % Center ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+
+    !-- Edge, proper cells
+    if ( present ( EdgeValueOption ) ) then
+      C % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
+      C % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
+      C % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
+    else
+      select case ( trim ( C % Spacing ( iD ) ) )
+      case ( 'EQUAL' )
+        call ComputeEdgeEqual &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
+      case ( 'GEOMETRIC' )
+        if ( C % Scale ( iD ) > 0.0_KDR ) &
+          call ComputeGeometricRatio &
+                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
+                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
+                   C % Ratio ( iD ) )
+        call ComputeEdgeGeometric &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
+                 C % Ratio ( iD ), nC )
+      case ( 'COMPACTIFIED' )
+        call ComputeEdgeCompactified &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % Scale ( iD ), nC )
+        C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
+      case ( 'PROPORTIONAL' )
+        call ComputeEdgeProportional &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % Ratio ( iD ), &
+                 C % Scale ( iD ), nC, C % nEqual )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
+      case default
+        call Show ( 'Spacing not recognized', CONSOLE % ERROR )
+        call Show ( 'ChartHeader_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeCoordinateData', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select
+    end if
+
+    !-- Edge, ghost cells
+    associate ( Edge => C % Edge ( iD ) % Value )
+    do iC = 1, nGL
+      Width_IG  =  Edge ( iC + 1 )       -  Edge ( iC )
+      Width_OG  =  Edge ( nC - iC + 2 )  -  Edge ( nC - iC + 1 )
+      Edge ( 1 - iC )       =  Edge ( 2 - iC )   -  Width_IG
+      Edge ( nC + 1 + iC )  =  Edge ( nC + iC )  +  Width_OG
+    end do !-- iC
+    end associate !-- Edge
+
+    !-- Width
+    associate &
+      ( Edge  => C % Edge ( iD ) % Value, &
+        Width => C % Width ( iD ) % Value )
+    do iC = lbound ( Width, dim = 1 ), ubound ( Width, dim = 1 )
+      Width ( iC )  =  Edge ( iC + 1 )  -  Edge ( iC )
+    end do !-- iC
+    end associate !-- Edge, etc.
+
+    !-- Center
+    associate &
+      (   Edge => C % Edge ( iD ) % Value, &
+        Center => C % Center ( iD ) % Value )
+    do iC = lbound ( Center, dim = 1 ), ubound ( Center, dim = 1 )
+      Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
+    end do !-- iC
+    end associate !-- Edge, etc.
+
+    end associate !-- nC, etc.
+
+  end subroutine ComputeCoordinateData
+
+
   function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
 
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -617,7 +630,7 @@ contains
   end subroutine SetFirstLast
 
 
-  subroutine SetEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nC )
+  subroutine ComputeEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nC )
 
     !-- Equal cell widths
 
@@ -641,7 +654,7 @@ contains
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
     end do
 
-  end subroutine SetEdgeEqual
+  end subroutine ComputeEdgeEqual
 
 
   subroutine ComputeGeometricRatio &
@@ -715,7 +728,7 @@ contains
   end subroutine ComputeGeometricRatio
 
 
-  subroutine SetEdgeGeometric &
+  subroutine ComputeEdgeGeometric &
                ( Edge, MinCoordinate, MaxCoordinate, Ratio, nC )
 
     !-- Each successive cell width is larger by Ratio
@@ -743,10 +756,10 @@ contains
       Width        =  Ratio * Width
     end do
 
-  end subroutine SetEdgeGeometric
+  end subroutine ComputeEdgeGeometric
 
 
-  subroutine SetEdgeCompactified ( Edge, Scale, nC )
+  subroutine ComputeEdgeCompactified ( Edge, Scale, nC )
 
     !-- Compactify the domain [ 0, Infinity ] to [ 0, 1 ] via the
     !   transformation Coordinate = Scale * S / ( 1 - S )
@@ -777,10 +790,10 @@ contains
       Width        =  Scale  *  dS / ( 1.0_KDR - S ) ** 2
     end do
 
-  end subroutine SetEdgeCompactified
+  end subroutine ComputeEdgeCompactified
 
 
-  subroutine SetEdgeProportional &
+  subroutine ComputeEdgeProportional &
                ( Edge, MinCoordinate, Ratio, Scale, nC, nEqual )
 
     !-- Width proportional to the inner edge coordinate of the cell
@@ -803,7 +816,7 @@ contains
     if ( nEqual == 0 ) then
       Edge ( 1 )  =  MinCoordinate
     else
-      call SetEdgeEqual ( Edge, MinCoordinate, Scale, nEqual )
+      call ComputeEdgeEqual ( Edge, MinCoordinate, Scale, nEqual )
     end if
     
     Width  =  Ratio  *  Edge ( nEqual + 1 )
@@ -813,7 +826,7 @@ contains
       Width        =  Ratio  *  Edge ( iC )
     end do
 
-  end subroutine SetEdgeProportional
+  end subroutine ComputeEdgeProportional
 
 
   function ZeroGeometricRatio &

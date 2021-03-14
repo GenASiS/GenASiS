@@ -2,6 +2,7 @@ program Chart_BH__Form_Test
 
   use Basics
   use ManifoldBasics
+  use ChartBasics
   use BaseCharts
 
   implicit none
@@ -15,6 +16,15 @@ program Chart_BH__Form_Test
   type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber
+  type ( FieldSet_MH_Form ), allocatable :: &
+    GM_Base, &
+    GM_Fiber
+  type ( FieldSet_CH_Form ), allocatable :: &
+    GC_Base, &
+    GC_Fiber
+  type ( Geometry_F_Form ), allocatable :: &
+    G_Base, &
+    G_Fiber
   type ( Chart_BH_Form ), allocatable :: &
     C_Base, &
     C_Fiber
@@ -29,11 +39,16 @@ program Chart_BH__Form_Test
   IsPeriodic  =  .true.
 
   allocate ( Base )
+  allocate ( GM_Base )
   allocate ( C_Base )
+  allocate ( GC_Base )
+  allocate ( G_Base )
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
+  call GM_Base % Initialize ( Base, 'Geometry' ) 
   call C_Base % Initialize_BH ( Base, IsPeriodic, iChart = 1 )
+  call GC_Base % Initialize ( GM_Base, C_Base, 'Geometry' ) 
 
   call Base % Show ( )
   call C_Base % Show ( )
@@ -47,8 +62,12 @@ program Chart_BH__Form_Test
   MinWidthEnergy  =    0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
 
   allocate ( Fiber )
+  allocate ( GM_Fiber )
   allocate ( C_Fiber )
+  allocate ( GC_Fiber )
+  allocate ( G_Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
+  call GM_Fiber % Initialize ( Fiber, 'GeometryFiber' ) 
   call C_Fiber % Initialize_BH &
          ( Fiber, IsPeriodic, iChart = 1, &
            SpacingOption = [ 'GEOMETRIC' ], &
@@ -60,13 +79,20 @@ program Chart_BH__Form_Test
            ScaleOption = [ MinWidthEnergy ], &
            nCellsOption = [ 16 ], &
            nGhostLayersOption = [ 0 ] )
+  call GC_Fiber % Initialize ( GM_Fiber, C_Fiber, 'Geometry' ) 
 
   call Fiber % Show ( )
   call C_Fiber % Show ( )
 
+  deallocate ( G_Fiber )
+  deallocate ( GC_Fiber )
   deallocate ( C_Fiber )
+  deallocate ( GM_Fiber )
   deallocate ( Fiber )
+  deallocate ( G_Base )
+  deallocate ( GC_Base )
   deallocate ( C_Base )
+  deallocate ( GM_Base )
   deallocate ( Base )
   deallocate ( PROGRAM_HEADER )
 
