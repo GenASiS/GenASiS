@@ -42,6 +42,10 @@ module Chart_BH__Form
       ComputeGeometry
     procedure, private, pass :: &
       Show_C
+    procedure, public, pass :: &
+      SetFieldPointer_1D_3D
+    generic, public :: &
+      SetFieldPointer => SetFieldPointer_1D_3D
     final :: &
       Finalize
   end type Chart_BH_Form
@@ -211,6 +215,24 @@ contains
   end subroutine Show_C
 
 
+  subroutine SetFieldPointer_1D_3D ( C, Field_1D, Field_3D )
+
+    class ( Chart_BH_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      Field_1D
+    real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
+      Field_3D
+
+    Field_3D &
+      ( C % iaFirst ( 1 ) : C % iaLast ( 1 ), &
+        C % iaFirst ( 2 ) : C % iaLast ( 2 ), &
+        C % iaFirst ( 3 ) : C % iaLast ( 3 ) ) &
+          => Field_1D
+    
+  end subroutine SetFieldPointer_1D_3D
+
+  
   impure elemental subroutine Finalize ( C )
 
     type ( Chart_BH_Form ), intent ( inout ) :: &
