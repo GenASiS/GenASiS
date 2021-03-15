@@ -46,9 +46,15 @@ program Chart_BH__Form_Test
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
-  call GM_Base % Initialize ( Base, 'Geometry' ) 
-  call C_Base % Initialize_BH ( Base, IsPeriodic, iChart = 1 )
-  call GC_Base % Initialize ( GM_Base, C_Base, 'Geometry' ) 
+  call GM_Base % Initialize &
+         ( Base, 'Geometry' ) 
+  call C_Base % Initialize_BH &
+         ( Base, IsPeriodic, iChart = 1 )
+  call GC_Base % Initialize &
+         ( GM_Base, C_Base, 'Geometry' ) 
+  call G_Base % Initialize &
+         ( GC_Base, nValues = C_Base % nValues, NameOption = 'Geometry' )
+  call C_Base % ComputeGeometry ( G_Base )
 
   call Base % Show ( )
   call C_Base % Show ( )
@@ -66,8 +72,10 @@ program Chart_BH__Form_Test
   allocate ( C_Fiber )
   allocate ( GC_Fiber )
   allocate ( G_Fiber )
-  call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
-  call GM_Fiber % Initialize ( Fiber, 'GeometryFiber' ) 
+  call Fiber % Initialize &
+         ( 'Fiber', iDimensionalityOption = 2 )
+  call GM_Fiber % Initialize &
+         ( Fiber, 'Geometry' ) 
   call C_Fiber % Initialize_BH &
          ( Fiber, IsPeriodic, iChart = 1, &
            SpacingOption = [ 'GEOMETRIC' ], &
@@ -79,7 +87,11 @@ program Chart_BH__Form_Test
            ScaleOption = [ MinWidthEnergy ], &
            nCellsOption = [ 16 ], &
            nGhostLayersOption = [ 0 ] )
-  call GC_Fiber % Initialize ( GM_Fiber, C_Fiber, 'Geometry' ) 
+  call GC_Fiber % Initialize &
+         ( GM_Fiber, C_Fiber, 'Geometry' ) 
+  call G_Fiber % Initialize &
+         ( GC_Fiber, nValues = C_Fiber % nValues, NameOption = 'Geometry' )
+  call C_Fiber % ComputeGeometry ( G_Fiber )
 
   call Fiber % Show ( )
   call C_Fiber % Show ( )

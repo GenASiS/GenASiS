@@ -53,7 +53,8 @@ module Chart_BH__Form
       SetCoordinateMetadata, &
       SetCells, &
       SetDecomposition, &
-      ComputeCoordinateData
+      ComputeCoordinateData, &
+      SetGeometryCoordinates
 
       private :: &
         BrickIndex, &
@@ -140,7 +141,15 @@ contains
       iD  !-- iDimension
 
     do iD = 1, C % nDimensions
-      call ComputeCoordinateData ( C, iD )
+
+      if ( present ( EdgeOption ) ) then
+        call ComputeCoordinateData &
+               ( C, iD, EdgeValueOption = EdgeOption ( iD ) % Value )
+      else
+        call ComputeCoordinateData &
+               ( C, iD )
+      end if
+
     end do !-- iD
 
   end subroutine ComputeGeometry
@@ -572,6 +581,29 @@ contains
     end associate !-- nC, etc.
 
   end subroutine ComputeCoordinateData
+
+
+  subroutine SetGeometryCoordinates ( C, iD )
+
+    class ( Chart_BH_Form ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iD      !-- iDimension
+
+    integer ( KDI ) :: &
+      iaF, iaL, &  !-- iaFirst, iaLast
+      oC           !-- oCell
+
+    iaF  =  1  -  C % nGhostLayers ( iD ) 
+    if ( C % IsDistributed ) then
+      iaL  =  C % nCellsBrick ( iD )  +  C % nGhostLayers ( iD )
+       oC  =  ( C % iaBrick ( iD )  -  1 )  *  C % nCellsBrick ( iD )
+    else
+      iaL  =  C % nCells ( iD )  +  C % nGhostLayers ( iD )
+       oC  =  0
+    end if
+
+  end subroutine SetGeometryCoordinates
 
 
   function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
