@@ -44,6 +44,11 @@ module Geometry_F__Form
       METRIC_F_UU_11 = 0, &
       METRIC_F_UU_22 = 0, &
       METRIC_F_UU_33 = 0
+    integer ( KDI ), dimension ( 3 ) :: &
+      EDGE_I_U, &
+      WIDTH_U, &
+      CENTER_U, &
+      AREA_I_D
     character ( LDF ) :: &
       Type = '', &
       CoordinateSystem = ''
@@ -445,6 +450,11 @@ contains
 
     if ( G % N_FIELDS == 0 ) &
       G % N_FIELDS = G % N_FIELDS_FLAT
+
+    G % EDGE_I_U  =  [ G % EDGE_I_U_1, G % EDGE_I_U_2, G % EDGE_I_U_3 ]
+    G % WIDTH_U   =  [ G % WIDTH_U_1,  G % WIDTH_U_2,  G % WIDTH_U_3  ]
+    G % CENTER_U  =  [ G % CENTER_U_1, G % CENTER_U_2, G % CENTER_U_3 ]
+    G % AREA_I_D  =  [ G % AREA_I_D_1, G % AREA_I_D_2, G % AREA_I_D_3 ]
 
     !-- variable names
 

@@ -11,6 +11,18 @@ program Chart_BH__Form_Test
     MinEnergy, &
     MaxEnergy, &
     MinWidthEnergy
+  real ( KDR ), dimension ( :, :, : ), pointer :: &
+    Edge_I_3D, &
+    Width_3D, &
+    Center_3D, &
+    Area_I_3D, &
+    Volume_3D, &
+    Metric_F_DD_11_3D, &
+    Metric_F_DD_22_3D, &
+    Metric_F_DD_33_3D, &
+    Metric_F_UU_11_3D, &
+    Metric_F_UU_22_3D, &
+    Metric_F_UU_33_3D
   logical ( KDL ), dimension ( 3 ) :: &
     IsPeriodic
   type ( Manifold_H_Form ), allocatable :: &
@@ -47,17 +59,18 @@ program Chart_BH__Form_Test
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
   call GM_Base % Initialize &
-         ( Base, 'Geometry' ) 
+         ( Base, 'GeometryBase' ) 
   call C_Base % Initialize_BH &
          ( Base, IsPeriodic, iChart = 1 )
   call GC_Base % Initialize &
-         ( GM_Base, C_Base, 'Geometry' ) 
+         ( GM_Base, C_Base, 'GeometryBase' ) 
   call G_Base % Initialize &
-         ( GC_Base, nValues = C_Base % nValues, NameOption = 'Geometry' )
+         ( GC_Base, nValues = C_Base % nValues, NameOption = 'GeometryBase' )
   call C_Base % ComputeGeometry ( G_Base )
 
   call Base % Show ( )
   call C_Base % Show ( )
+  call ShowGeometry ( G_Base )
 
   !-- Fiber
 
@@ -75,7 +88,7 @@ program Chart_BH__Form_Test
   call Fiber % Initialize &
          ( 'Fiber', iDimensionalityOption = 2 )
   call GM_Fiber % Initialize &
-         ( Fiber, 'Geometry' ) 
+         ( Fiber, 'GeometryFiber' ) 
   call C_Fiber % Initialize_BH &
          ( Fiber, IsPeriodic, iChart = 1, &
            SpacingOption = [ 'GEOMETRIC' ], &
@@ -88,13 +101,14 @@ program Chart_BH__Form_Test
            nCellsOption = [ 16 ], &
            nGhostLayersOption = [ 0 ] )
   call GC_Fiber % Initialize &
-         ( GM_Fiber, C_Fiber, 'Geometry' ) 
+         ( GM_Fiber, C_Fiber, 'GeometryFiber' ) 
   call G_Fiber % Initialize &
-         ( GC_Fiber, nValues = C_Fiber % nValues, NameOption = 'Geometry' )
+         ( GC_Fiber, nValues = C_Fiber % nValues, NameOption = 'GeometryFiber' )
   call C_Fiber % ComputeGeometry ( G_Fiber )
 
   call Fiber % Show ( )
   call C_Fiber % Show ( )
+  call ShowGeometry ( G_Fiber )
 
   deallocate ( G_Fiber )
   deallocate ( GC_Fiber )
@@ -107,5 +121,141 @@ program Chart_BH__Form_Test
   deallocate ( GM_Base )
   deallocate ( Base )
   deallocate ( PROGRAM_HEADER )
+
+contains
+
+
+  subroutine ShowGeometry ( G )
+
+    type ( Geometry_F_Form ), intent ( in ) :: &
+      G
+
+    call Show ( G % Name )
+
+    select type ( C  =>  G % Geometry_C % Chart )
+    class is ( Chart_BH_Form )
+
+    call Show ( 1, 'iDimension' )
+    call SetGeometryPointers ( G, iD = 1 )
+    call Show ( Edge_I_3D ( :, 1, 1 ), G % Unit ( G % EDGE_I_U ( 1 ) ), &
+                'Edge_I' )
+    call Show (  Width_3D ( :, 1, 1 ), G % Unit ( G % WIDTH_U  ( 1 ) ), &
+                 'Width' )
+    call Show ( Center_3D ( :, 1, 1 ), G % Unit ( G % CENTER_U ( 1 ) ), &
+                'Center' )
+    call Show ( Area_I_3D ( :, 1, 1 ), G % Unit ( G % AREA_I_D ( 1 ) ), &
+                'Area_I' )
+    call Show ( Volume_3D ( :, 1, 1 ), G % Unit ( G % VOLUME ), &
+                'Volume' )
+    call Show ( Metric_F_DD_11_3D ( :, 1, 1 ), &
+                G % Unit ( G % METRIC_F_DD_11 ), 'Metric_F_DD_11' )
+    call Show ( Metric_F_DD_22_3D ( :, 1, 1 ), &
+                G % Unit ( G % METRIC_F_DD_22 ), 'Metric_F_DD_22' )
+    call Show ( Metric_F_DD_33_3D ( :, 1, 1 ), &
+                G % Unit ( G % METRIC_F_DD_33 ), 'Metric_F_DD_33' )
+    call Show ( Metric_F_UU_11_3D ( :, 1, 1 ), &
+                G % Unit ( G % METRIC_F_UU_11 ), 'Metric_F_UU_11' )
+    call Show ( Metric_F_UU_22_3D ( :, 1, 1 ), &
+                G % Unit ( G % METRIC_F_UU_22 ), 'Metric_F_UU_22' )
+    call Show ( Metric_F_UU_33_3D ( :, 1, 1 ), &
+                G % Unit ( G % METRIC_F_UU_33 ), 'Metric_F_UU_33' )
+
+    if ( C % nDimensions > 1 ) then
+      call Show ( 2, 'iDimension' )
+      call SetGeometryPointers ( G, iD = 2 )
+      call Show ( Edge_I_3D ( 1, :, 1 ), G % Unit ( G % EDGE_I_U ( 2 ) ), &
+                  'Edge_I' )
+      call Show (  Width_3D ( 1, :, 1 ), G % Unit ( G % WIDTH_U  ( 2 ) ), &
+                   'Width' )
+      call Show ( Center_3D ( 1, :, 1 ), G % Unit ( G % CENTER_U ( 2 ) ), &
+                  'Center' )
+      call Show ( Area_I_3D ( 1, :, 1 ), G % Unit ( G % AREA_I_D ( 2 ) ), &
+                  'Area_I' )
+      call Show ( Volume_3D ( 1, :, 1 ), G % Unit ( G % VOLUME ), &
+                  'Volume' )
+      call Show ( Metric_F_DD_11_3D ( 1, :, 1 ), &
+                  G % Unit ( G % METRIC_F_DD_11 ), 'Metric_F_DD_11' )
+      call Show ( Metric_F_DD_22_3D ( 1, :, 1 ), &
+                  G % Unit ( G % METRIC_F_DD_22 ), 'Metric_F_DD_22' )
+      call Show ( Metric_F_DD_33_3D ( 1, :, 1 ), &
+                  G % Unit ( G % METRIC_F_DD_33 ), 'Metric_F_DD_33' )
+      call Show ( Metric_F_UU_11_3D ( 1, :, 1 ), &
+                  G % Unit ( G % METRIC_F_UU_11 ), 'Metric_F_UU_11' )
+      call Show ( Metric_F_UU_22_3D ( 1, :, 1 ), &
+                  G % Unit ( G % METRIC_F_UU_22 ), 'Metric_F_UU_22' )
+      call Show ( Metric_F_UU_33_3D ( 1, :, 1 ), &
+                  G % Unit ( G % METRIC_F_UU_33 ), 'Metric_F_UU_33' )
+    end if
+
+    if ( C % nDimensions > 2 ) then
+      call Show ( 3, 'iDimension' )
+      call SetGeometryPointers ( G, iD = 3 )
+      call Show ( Edge_I_3D ( 1, 1, : ), G % Unit ( G % EDGE_I_U ( 3 ) ), &
+                  'Edge_I' )
+      call Show (  Width_3D ( 1, 1, : ), G % Unit ( G % WIDTH_U  ( 3 ) ), &
+                   'Width' )
+      call Show ( Center_3D ( 1, 1, : ), G % Unit ( G % CENTER_U ( 3 ) ), &
+                  'Center' )
+      call Show ( Area_I_3D ( 1, 1, : ), G % Unit ( G % AREA_I_D ( 3 ) ), &
+                  'Area_I' )
+      call Show ( Volume_3D ( 1, 1, : ), G % Unit ( G % VOLUME ), &
+                  'Volume' )
+      call Show ( Metric_F_DD_11_3D ( 1, 1, : ), &
+                  G % Unit ( G % METRIC_F_DD_11 ), 'Metric_F_DD_11' )
+      call Show ( Metric_F_DD_22_3D ( 1, 1, : ), &
+                  G % Unit ( G % METRIC_F_DD_22 ), 'Metric_F_DD_22' )
+      call Show ( Metric_F_DD_33_3D ( 1, 1, : ), &
+                  G % Unit ( G % METRIC_F_DD_33 ), 'Metric_F_DD_33' )
+      call Show ( Metric_F_UU_11_3D ( 1, 1, : ), &
+                  G % Unit ( G % METRIC_F_UU_11 ), 'Metric_F_UU_11' )
+      call Show ( Metric_F_UU_22_3D ( 1, 1, : ), &
+                  G % Unit ( G % METRIC_F_UU_22 ), 'Metric_F_UU_22' )
+      call Show ( Metric_F_UU_33_3D ( 1, 1, : ), &
+                  G % Unit ( G % METRIC_F_UU_33 ), 'Metric_F_UU_33' )
+    end if
+
+
+    end select !-- C
+
+  end subroutine ShowGeometry
+
+
+  subroutine SetGeometryPointers ( G, iD )
+
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ) :: &
+      iD
+
+    select type ( C  =>  G % Geometry_C % Chart )
+    class is ( Chart_BH_Form )
+
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % EDGE_I_U ( iD ) ), Edge_I_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % WIDTH_U ( iD ) ),  Width_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % CENTER_U ( iD ) ), Center_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % AREA_I_D ( iD ) ), Area_I_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % VOLUME ), Volume_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % METRIC_F_DD_11 ), Metric_F_DD_11_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % METRIC_F_DD_22 ), Metric_F_DD_22_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % METRIC_F_DD_33 ), Metric_F_DD_33_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % METRIC_F_UU_11 ), Metric_F_UU_11_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % METRIC_F_UU_22 ), Metric_F_UU_22_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % METRIC_F_UU_33 ), Metric_F_UU_33_3D )
+
+    end select !-- C
+
+  end subroutine SetGeometryPointers
+
 
 end program Chart_BH__Form_Test

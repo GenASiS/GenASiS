@@ -154,6 +154,9 @@ contains
                ( C, iD )
       end if
 
+      call SetGeometryCoordinates ( C, G, iD )
+      call G % ComputeFromCoordinates ( )
+
     end do !-- iD
 
   end subroutine ComputeGeometry
@@ -605,16 +608,23 @@ contains
   end subroutine ComputeCoordinateData
 
 
-  subroutine SetGeometryCoordinates ( C, iD )
+  subroutine SetGeometryCoordinates ( C, G, iD )
 
     class ( Chart_BH_Form ), intent ( inout ) :: &
       C
+    class ( Geometry_F_Form ), intent ( inout ) :: &
+      G
     integer ( KDI ), intent ( in ) :: &
       iD      !-- iDimension
 
     integer ( KDI ) :: &
       iaF, iaL, &  !-- iaFirst, iaLast
+      iC, &        !-- iCell
       oC           !-- oCell
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Edge_I_3D, &
+      Width_3D, &
+      Center_3D
 
     iaF  =  1  -  C % nGhostLayers ( iD ) 
     if ( C % IsDistributed ) then
@@ -624,6 +634,35 @@ contains
       iaL  =  C % nCells ( iD )  +  C % nGhostLayers ( iD )
        oC  =  0
     end if
+
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % EDGE_I_U ( iD ) ), Edge_I_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % WIDTH_U ( iD ) ),  Width_3D )
+    call C % SetFieldPointer &
+           ( G % Value ( :, G % CENTER_U ( iD ) ), Center_3D )
+
+    associate &
+      (   Edge_1D  =>  C %   Edge ( iD ) % Value, &
+         Width_1D  =>  C %  Width ( iD ) % Value, &
+        Center_1D  =>  C % Center ( iD ) % Value )
+    do iC  =  iaF, iaL
+      select case ( iD )
+      case ( 1 )
+        Edge_I_3D ( iC, :, : )  =    Edge_1D ( oC + iC )
+         Width_3D ( iC, :, : )  =   Width_1D ( oC + iC )
+        Center_3D ( iC, :, : )  =  Center_1D ( oC + iC )
+      case ( 2 )
+        Edge_I_3D ( :, iC, : )  =    Edge_1D ( oC + iC )
+         Width_3D ( :, iC, : )  =   Width_1D ( oC + iC )
+        Center_3D ( :, iC, : )  =  Center_1D ( oC + iC )
+      case ( 3 )
+        Edge_I_3D ( :, :, iC )  =    Edge_1D ( oC + iC )
+         Width_3D ( :, :, iC )  =   Width_1D ( oC + iC )
+        Center_3D ( :, :, iC )  =  Center_1D ( oC + iC )
+      end select !-- iD
+    end do !-- iC
+    end associate !-- Edge_1D, etc.
 
   end subroutine SetGeometryCoordinates
 
