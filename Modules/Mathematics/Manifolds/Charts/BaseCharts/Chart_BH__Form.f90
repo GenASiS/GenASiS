@@ -31,6 +31,8 @@ module Chart_BH__Form
       Edge, &
       Width, &
       Center
+    logical ( KDL ), dimension ( : ), pointer :: &
+      ProperCell => null ( )
     character ( LDL ), dimension ( : ), pointer :: &
       Spacing => null ( )
   contains
@@ -63,6 +65,7 @@ module Chart_BH__Form
       private :: &
         BrickIndex, &
         SetFirstLast, &
+        SetProperCells, &
         ComputeEdgeEqual, &
         ComputeGeometricRatio, &
         ComputeEdgeGeometric, &
@@ -197,11 +200,11 @@ contains
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY )
 
-    if ( C % IsDistributed ) then
+    if ( C % Distributed ) then
       call Show ( C % iaBrick ( : nD ), 'iaBrick', C % IGNORABILITY )
       call Show ( C % nBricks ( : nD ), 'nBricks', C % IGNORABILITY )
       call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', C % IGNORABILITY )
-    end if !-- IsDistributed
+    end if !-- Distributed
 
     do iD = 1, nD
       call Show ( iD, 'iDimension', C % IGNORABILITY + 1 )
@@ -249,6 +252,7 @@ contains
     if ( C % AllocatedValues ) then
 
       deallocate ( C % Spacing )
+      deallocate ( C % ProperCell )
       deallocate ( C % Center )
       deallocate ( C % Width )
       deallocate ( C % Edge )
@@ -257,7 +261,7 @@ contains
       deallocate ( C % MaxCoordinate )
       deallocate ( C % MinCoordinate )
 
-      if ( C % IsDistributed ) then
+      if ( C % Distributed ) then
         deallocate ( C % nCellsBrick )
         deallocate ( C % nBricks )
         deallocate ( C % iaBrick )
@@ -271,6 +275,7 @@ contains
     else
 
       nullify ( C % Spacing )
+      nullify ( C % ProperCell )
       nullify ( C % Center )
       nullify ( C % Width )
       nullify ( C % Edge )
@@ -411,14 +416,14 @@ contains
       nBricksCompatible
 
     if ( present ( CommunicatorOption ) ) then
-      C % IsDistributed  =   .true.
+      C % Distributed  =   .true.
       C % Communicator   =>  CommunicatorOption
     else
-      C % IsDistributed  =   M % IsDistributed
+      C % Distributed  =   M % Distributed
       C % Communicator   =>  M % Communicator
     end if !-- present Communicator 
 
-    if ( C % IsDistributed ) then
+    if ( C % Distributed ) then
 
       allocate ( C % iaBrick ( MAX_DIMENSIONS ) )
       allocate ( C % nBricks ( MAX_DIMENSIONS ) )
@@ -494,7 +499,9 @@ contains
 
       call SetFirstLast ( C, C % nCells )
 
-    end if  !-- IsDistributed
+    end if  !-- Distributed
+
+    call SetProperCells ( C )
 
   end subroutine SetDecomposition
 
@@ -627,7 +634,7 @@ contains
       Center_3D
 
     iaF  =  1  -  C % nGhostLayers ( iD ) 
-    if ( C % IsDistributed ) then
+    if ( C % Distributed ) then
       iaL  =  C % nCellsBrick ( iD )  +  C % nGhostLayers ( iD )
        oC  =  ( C % iaBrick ( iD )  -  1 )  *  C % nCellsBrick ( iD )
     else
@@ -721,6 +728,51 @@ contains
     end if
 
   end subroutine SetFirstLast
+
+
+  subroutine SetProperCells ( C )
+
+    class ( Chart_BH_Form ), intent ( inout ) :: &
+      C 
+
+    integer ( KDI ) :: &
+      iC, jC, kC, &
+      iV
+    logical ( KDL ), dimension ( :, :, : ), pointer :: &
+      PC
+
+    allocate ( C % ProperCell ( C % nValues ) )
+    call Clear ( C % ProperCell )
+
+    associate &
+      ( iaF  =>  C % iaFirst, &
+        iaL  =>  C % iaLast, &
+        nGL  =>  C % nGhostLayers )
+
+    PC ( iaF ( 1 ) : iaL ( 1 ), &
+         iaF ( 2 ) : iaL ( 2 ), &
+         iaF ( 3 ) : iaL ( 3 ) )  &
+      =>  C % ProperCell
+
+    associate &
+      ( lB  =>  iaF + nGL, &
+        uB  =>  iaL - nGL )
+    !$OMP parallel do private collapse ( 3 )
+    do kC = lB ( 3 ), uB ( 3 )
+      do jC = lB ( 2 ), uB ( 2 )
+        do iC = lB ( 1 ), uB ( 1 )
+          PC ( iC, jC, kC )  =  .true.
+        end do
+      end do
+    end do
+    !$OMP end parallel do
+    end associate !-- lB, etc.
+
+    end associate !-- iaF, etc.
+
+    nullify ( PC )
+
+  end subroutine SetProperCells
 
 
   subroutine ComputeEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nC )

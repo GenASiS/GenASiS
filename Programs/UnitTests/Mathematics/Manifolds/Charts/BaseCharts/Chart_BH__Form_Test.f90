@@ -24,7 +24,7 @@ program Chart_BH__Form_Test
     Metric_F_UU_22_3D, &
     Metric_F_UU_33_3D
   logical ( KDL ), dimension ( 3 ) :: &
-    IsPeriodic
+    Periodic
   type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber
@@ -48,7 +48,7 @@ program Chart_BH__Form_Test
 
   !-- Base
 
-  IsPeriodic  =  .true.
+  Periodic  =  .true.
 
   allocate ( Base )
   allocate ( GM_Base )
@@ -61,7 +61,7 @@ program Chart_BH__Form_Test
   call GM_Base % Initialize &
          ( Base, 'GeometryBase' ) 
   call C_Base % Initialize_BH &
-         ( Base, IsPeriodic, iChart = 1 )
+         ( Base, Periodic, iChart = 1 )
   call GC_Base % Initialize &
          ( GM_Base, C_Base, 'GeometryBase' ) 
   call G_Base % Initialize &
@@ -70,11 +70,12 @@ program Chart_BH__Form_Test
 
   call Base % Show ( )
   call C_Base % Show ( )
+  call ShowProper ( C_Base )
   call ShowGeometry ( G_Base )
 
   !-- Fiber
 
-  IsPeriodic  =  .false.
+  Periodic  =  .false.
 
        MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
        MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
@@ -90,7 +91,7 @@ program Chart_BH__Form_Test
   call GM_Fiber % Initialize &
          ( Fiber, 'GeometryFiber' ) 
   call C_Fiber % Initialize_BH &
-         ( Fiber, IsPeriodic, iChart = 1, &
+         ( Fiber, Periodic, iChart = 1, &
            SpacingOption = [ 'GEOMETRIC' ], &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &
@@ -108,6 +109,7 @@ program Chart_BH__Form_Test
 
   call Fiber % Show ( )
   call C_Fiber % Show ( )
+  call ShowProper ( C_Fiber )
   call ShowGeometry ( G_Fiber )
 
   deallocate ( G_Fiber )
@@ -123,6 +125,43 @@ program Chart_BH__Form_Test
   deallocate ( PROGRAM_HEADER )
 
 contains
+
+
+  subroutine ShowProper ( C )
+
+    class ( Chart_BH_Form ), intent ( inout ) :: &
+      C
+
+    logical ( KDL ), dimension ( :, :, : ), pointer :: &
+      PC
+
+    call Show ( 'IsProper' )
+
+    associate &
+      ( iaF  =>  C % iaFirst, &
+        iaL  =>  C % iaLast )
+    PC ( iaF ( 1 ) : iaL ( 1 ), &
+         iaF ( 2 ) : iaL ( 2 ), &
+         iaF ( 3 ) : iaL ( 3 ) )  &
+      =>  C % ProperCell
+    end associate !-- iaF
+
+    call Show ( 1, 'iDimension' )
+    call Show ( PC ( :, 1, 1 ), 'ProperCell' )
+
+    if ( C % nDimensions > 1 ) then
+      call Show ( 2, 'iDimension' )
+      call Show ( PC ( 1, :, 1 ), 'ProperCell' )
+    end if
+
+    if ( C % nDimensions > 2 ) then
+      call Show ( 3, 'iDimension' )
+      call Show ( PC ( 1, 1, : ), 'ProperCell' )
+    end if
+
+    nullify ( PC )
+
+  end subroutine ShowProper
 
 
   subroutine ShowGeometry ( G )

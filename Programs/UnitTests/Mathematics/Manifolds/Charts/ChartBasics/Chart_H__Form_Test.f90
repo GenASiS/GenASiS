@@ -7,7 +7,7 @@ program Chart_H__Form_Test
   implicit none
 
   logical ( KDL ), dimension ( 3 ) :: &
-    IsPeriodic
+    Periodic
   type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber
@@ -22,27 +22,27 @@ program Chart_H__Form_Test
 
   !-- Base
 
-  IsPeriodic  =  .true.
+  Periodic  =  .true.
 
   allocate ( Base )
   allocate ( C_Base )
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
-  call C_Base % Initialize_H ( Base, IsPeriodic, iChart = 1 )
+  call C_Base % Initialize_H ( Base, Periodic, iChart = 1 )
 
   call Base % Show ( )
   call C_Base % Show ( )
 
   !-- Fiber
 
-  IsPeriodic  =  .false.
+  Periodic  =  .false.
 
   allocate ( Fiber )
   allocate ( C_Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
   call C_Fiber % Initialize_H &
-         ( Fiber, IsPeriodic, iChart = 1, &
+         ( Fiber, Periodic, iChart = 1, &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL' )
 

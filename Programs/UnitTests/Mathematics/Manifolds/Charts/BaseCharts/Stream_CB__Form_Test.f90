@@ -10,7 +10,7 @@ program Stream_CB__Form_Test
   integer ( KDI ) :: &
     nFields = 5
   logical ( KDL ), dimension ( 3 ) :: &
-    IsPeriodic
+    Periodic
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Chart_BH_Form ), allocatable :: &
@@ -30,14 +30,14 @@ program Stream_CB__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( 'Stream_CB__Form_Test', DimensionalityOption = '2D' )
 
-  IsPeriodic  =  .true.
+  Periodic  =  .true.
 
   allocate ( M )
   allocate ( C )
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_BH &
-         ( M, IsPeriodic, iChart = 1 )
+         ( M, Periodic, iChart = 1 )
   call M % Show ( )
   call C % Show ( )
 

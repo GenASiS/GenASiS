@@ -16,10 +16,10 @@ module Chart_H__Form
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
-      IsDistributed = .false., &
+      Distributed = .false., &
       AllocatedValues = .false.
     logical ( KDL ), dimension ( : ), pointer :: &
-      IsPeriodic => null ( )
+      Periodic => null ( )
     character ( LDF ), pointer :: &
       Type => null ( ), &
       Name => null ( ), &
@@ -54,7 +54,7 @@ contains
 
 
   subroutine InitializeBasic_H &
-               ( C, M, IsPeriodic, iChart, CommunicatorOption, &
+               ( C, M, Periodic, iChart, CommunicatorOption, &
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, nDimensionsOption )
 
@@ -63,7 +63,7 @@ contains
     class ( Manifold_H_Form ), intent ( in ), target :: &
       M
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsPeriodic
+      Periodic
     integer ( KDI ), intent ( in ) :: &
       iChart
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
@@ -99,10 +99,10 @@ contains
     call Show ( C % Name, 'Name', C % IGNORABILITY )
 
     if ( present ( CommunicatorOption ) ) then
-      C % IsDistributed  =   .true.
+      C % Distributed  =   .true.
       C % Communicator   =>  CommunicatorOption
     else
-      C % IsDistributed  =   M % IsDistributed
+      C % Distributed  =   M % Distributed
       C % Communicator   =>  M % Communicator
     end if !-- present Communicator 
 
@@ -113,7 +113,7 @@ contains
     end if
 
     call SetCoordinateSystem &
-           ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption, &
+           ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
              CoordinateUnitOption )
 
   end subroutine InitializeBasic_H
@@ -133,10 +133,10 @@ contains
 
     associate ( nD => C % nDimensions )
 
-    call Show ( C % IsDistributed, 'IsDistributed', C % IGNORABILITY )
+    call Show ( C % Distributed, 'Distributed', C % IGNORABILITY )
     call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
 
-    call Show ( C % IsPeriodic ( : nD ), 'IsPeriodic', C % IGNORABILITY )
+    call Show ( C % Periodic ( : nD ), 'Periodic', C % IGNORABILITY )
 
     call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
     call Show ( C % CoordinateLabel ( : nD ), 'CoordinateLabel', &
@@ -163,12 +163,12 @@ contains
     if ( C % AllocatedValues ) then
       deallocate ( C % CoordinateLabel )
       deallocate ( C % CoordinateSystem )
-      deallocate ( C % IsPeriodic )
+      deallocate ( C % Periodic )
       deallocate ( C % CoordinateUnit )
     else
       nullify ( C % CoordinateLabel )
       nullify ( C % CoordinateSystem )
-      nullify ( C % IsPeriodic )
+      nullify ( C % Periodic )
       nullify ( C % CoordinateUnit )
     end if !-- AllocatedValues
 
@@ -187,13 +187,13 @@ contains
 
 
   subroutine SetCoordinateSystem &
-               ( C, IsPeriodic, CoordinateLabelOption, CoordinateSystemOption, &
+               ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsPeriodic
+      Periodic
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
@@ -203,9 +203,9 @@ contains
 
     associate ( nD => C % nDimensions )
 
-    allocate ( C % IsPeriodic ( MAX_DIMENSIONS ) )
-    C % IsPeriodic = .false.
-    C % IsPeriodic ( : nD ) = IsPeriodic ( : nD )
+    allocate ( C % Periodic ( MAX_DIMENSIONS ) )
+    C % Periodic = .false.
+    C % Periodic ( : nD ) = Periodic ( : nD )
 
     allocate ( C % CoordinateSystem )
     C % CoordinateSystem = 'RECTANGULAR'

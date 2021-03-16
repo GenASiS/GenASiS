@@ -12,7 +12,7 @@ module Manifold_H__Form
       IGNORABILITY = 0, &
       nDimensions  = 0
     logical ( KDL ) :: &
-      IsDistributed = .false., &
+      Distributed = .false., &
       AllocatedValues = .false.
     character ( LDF ), pointer :: &
       Type => null ( ), &
@@ -69,7 +69,7 @@ contains
     call Show ( M % Name, 'Name', M % IGNORABILITY )
 
     if ( present ( CommunicatorOption ) ) then
-      M % IsDistributed  =   .true.
+      M % Distributed  =   .true.
       M % Communicator   =>  CommunicatorOption
     end if !-- present Communicator 
 
@@ -90,7 +90,7 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', M % IGNORABILITY )
     call Show ( M % Name, 'Name', M % IGNORABILITY )
 
-    call Show ( M % IsDistributed, 'IsDistributed', M % IGNORABILITY )
+    call Show ( M % Distributed, 'Distributed', M % IGNORABILITY )
     call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
 
   end subroutine Show_M
