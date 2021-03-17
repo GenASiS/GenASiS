@@ -61,9 +61,9 @@ module FieldSet_CB__Form
 
     private :: &
       StartExchangeFace, &
-      FinishExchangeFace!, &
-!      StartExchangeEdge, &
-!      FinishExchangeEdge
+      FinishExchangeFace, &
+      StartExchangeEdge, &
+      FinishExchangeEdge
 
       private :: &
         LoadMessage, &
@@ -376,9 +376,9 @@ contains
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
-    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
       IncomingFace
-    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ) :: &
       OutgoingFace
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive
@@ -453,6 +453,258 @@ contains
     nullify ( T )
 
   end subroutine FinishExchangeFace
+
+
+  subroutine StartExchangeEdge &
+               ( FSC, IncomingEdge, OutgoingEdge, PH, TagReceive, TagSend )
+
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
+      IncomingEdge
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
+      OutgoingEdge
+    type ( PortalHeaderForm ), intent ( in ) :: &
+      PH
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      TagReceive, &
+      TagSend
+    
+    integer ( KDI ) :: &
+      iD, jD, kD, &  !-- iDimension, etc.
+      kM  !-- kMessage
+    integer ( KDI ), dimension ( 3 ) :: &
+      oSend, &
+      nSend
+    logical ( KDL ), dimension ( 3 ) :: &
+      DimensionMask
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    associate &
+      ( Communicator  =>  C % Manifold % Communicator, &
+        nCB  =>  C % nCellsBrick, &
+        nGL  =>  C % nGhostLayers, &
+        nD   =>  C % nDimensions )
+        
+    select case ( nD )
+    case ( 1 ) 
+      return
+    case ( 2 )
+      DimensionMask = [ .true., .false., .false. ]
+    case ( 3 )
+      DimensionMask = [ .true., .true., .true. ]
+    end select !-- nD
+
+    !-- Allocate on First use
+    
+    if ( .not. allocated ( IncomingEdge ) &
+         .and. .not. allocated ( OutgoingEdge ) ) then
+    
+      allocate ( IncomingEdge )
+      allocate ( OutgoingEdge )
+      
+      !-- Post Receives
+
+      call IncomingEdge % Initialize &
+             ( Communicator, pack ( TagReceive, DimensionMask ), PH % Source, &
+               PH % nChunksFrom  *  FSC % nFields )           
+      call OutgoingEdge % Initialize &
+             ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
+               PH % nChunksTo  *  FSC % nFields )
+      
+      if ( FSC % UseDeviceExchangeGhost ) then
+        call IncomingEdge % AllocateDevice ( )
+        call OutgoingEdge % AllocateDevice ( )
+      end if
+    
+    end if  !-- allocated edges
+      
+    call T % Start ( )
+    call IncomingEdge % Receive ( )
+    call T % Stop ( )
+    
+    !-- Post Sends
+
+    do kD = 3, 1, -1
+
+      iD  =  mod ( kD, 3 ) + 1
+      jD  =  mod ( iD, 3 ) + 1
+
+      if ( iD > nD .or. jD > nD ) &
+        cycle
+
+      nSend ( iD )  =  nGL ( iD )
+      nSend ( jD )  =  nGL ( jD )
+      nSend ( kD )  =  nCB ( kD )
+
+      !-- In setting oSend, note Copy command does not inherit lbound
+      if ( TagSend ( kD )  ==  TAG_SEND_EDGE_RR ( kD ) ) then
+        oSend         =  nGL
+        oSend ( iD )  =  oSend ( iD ) + nCB ( iD ) - nGL ( iD )
+        oSend ( jD )  =  oSend ( jD ) + nCB ( jD ) - nGL ( jD )
+      else if ( TagSend ( kD )  ==  TAG_SEND_EDGE_LL ( kD ) ) then
+        oSend         =  nGL
+      else if ( TagSend ( kD )  ==  TAG_SEND_EDGE_RL ( kD ) ) then
+        oSend         =  nGL
+        oSend ( iD )  =  oSend ( iD ) + nCB ( iD ) - nGL ( iD )
+      else if ( TagSend ( kD )  ==  TAG_SEND_EDGE_LR ( kD ) ) then
+        oSend         =  nGL
+        oSend ( jD )  =  oSend ( jD ) + nCB ( jD ) - nGL ( jD )
+      else
+        call Show ( 'Tags not recognized', CONSOLE % ERROR )
+        call Show ( 'Field_CB__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'StartExchangeEdge', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if !-- TagSend
+
+      select case ( nD )
+      case ( 2 )
+        kM = 1
+      case ( 3 )
+        kM = kD
+      end select !-- nD
+
+      call LoadMessage &
+             ( FSC, OutgoingEdge % Message ( kM ), nSend, oSend )
+      
+      call T % Start ( )
+      call OutgoingEdge % Send ( kM )
+      call T % Stop ( )
+
+    end do  !-- kD
+
+    !-- Cleanup
+
+    end associate  !-- Communicator, etc.
+    end select  !-- C
+
+    nullify ( T )
+
+  end subroutine StartExchangeEdge
+
+
+  subroutine FinishExchangeEdge &
+               ( FSC, IncomingEdge, OutgoingEdge, TagReceive )
+
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
+      IncomingEdge
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ) :: &
+      OutgoingEdge
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      TagReceive
+
+    integer ( KDI ) :: &
+      kM, &   !-- kMessage
+      iD, jD  !-- iDimension, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      oReceive, &
+      nReceive
+    logical ( KDL ) :: &
+      AllFinished
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    associate &
+      ( nCB  =>  C % nCellsBrick, &
+        nGL  =>  C % nGhostLayers, &
+         nD  =>  C % nDimensions, &
+        iaB  =>  C % iaBrick, &
+         nB  =>  C % nBricks )
+
+    if ( nD == 1 ) &
+      return
+
+    !-- Wait for Receives
+
+    do 
+
+      call T % Start ( )
+      call IncomingEdge % Wait ( AllFinished, kM )
+      call T % Stop ( )
+      
+      if ( AllFinished ) exit
+
+      select case ( nD )
+      case ( 2 )
+        iD = 1
+        jD = 2
+      case ( 3 )
+        iD = mod ( kM, 3 ) + 1
+        jD = mod ( iD, 3 ) + 1
+      end select !-- nD
+
+      nReceive         =  nCB
+      nReceive ( iD )  =  nGL ( iD )
+      nReceive ( jD )  =  nGL ( jD )
+
+      !-- In setting oReceive, note Copy command does not inherit lbound
+      if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LL ( kM ) ) then
+        if ( iaB ( iD )  ==  1  .and.  iaB ( jD ) == 1  &
+             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
+          cycle
+        oReceive         =  nGL
+        oReceive ( iD )  =  oReceive ( iD )  -  nGL ( iD )
+        oReceive ( jD )  =  oReceive ( jD )  -  nGL ( jD )
+      else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RR ( kM ) ) then
+        if ( iaB ( iD )  ==  nB ( iD )  .and.  iaB ( jD )  ==  nB ( jD )  &
+             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
+          cycle
+        oReceive         =  nGL
+        oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
+        oReceive ( jD )  =  oReceive ( jD )  +  nCB ( jD )
+      else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LR ( kM ) ) then
+        if ( iaB ( iD )  ==  1  .and.  iaB ( jD )  ==  nB ( jD )  &
+             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
+          cycle
+        oReceive         =  nGL
+        oReceive ( iD )  =  oReceive ( iD )  -  nGL ( iD )
+        oReceive ( jD )  =  oReceive ( jD )  +  nCB ( jD )
+      else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RL ( kM ) ) then
+        if ( iaB ( iD )  ==  nB ( iD )  .and.  iaB ( jD )  ==  1  &
+             .and. .not. C % Periodic ( iD ) &
+             .and. .not. C % Periodic ( jD ) ) &
+          cycle
+        oReceive         =  nGL
+        oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
+        oReceive ( jD )  =  oReceive ( jD )  -  nGL ( jD )
+      else
+        call Show ( 'Tags not recognized', CONSOLE % ERROR )
+        call Show ( 'FieldSet_CB__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FinishExchangeEdge', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if !-- TagReceive
+
+      call StoreMessage &
+             ( FSC, IncomingEdge % Message ( kM ), nReceive, oReceive )
+
+    end do
+
+    !-- Wait for Sends
+    call T % Start ( )
+    call OutgoingEdge % Wait ( )
+    call T % Stop ( )
+
+    !-- Cleanup
+
+    end associate  !-- nCB, etc.
+    end select  !-- C
+    
+    nullify ( T )
+
+  end subroutine FinishExchangeEdge
 
 
   subroutine LoadMessage ( FSC, OutgoingMessage, nSend, oSend )
