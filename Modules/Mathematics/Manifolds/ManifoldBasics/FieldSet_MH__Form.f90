@@ -10,7 +10,8 @@ module FieldSet_MH__Form
 
   type, public :: FieldSet_MH_Form
     integer ( KDI ) :: &
-      IGNORABILITY = 0
+      IGNORABILITY = 0, &
+      iFieldSet    = 0
     logical ( KDL ) :: &
       Pinned
     character ( LDF ) :: &
@@ -38,7 +39,8 @@ contains
 
 
   subroutine Initialize_H &
-               ( FSM, M, NameShort, PinnedOption, IgnorabilityOption )
+               ( FSM, M, NameShort, iFieldSet, PinnedOption, &
+                 IgnorabilityOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -46,31 +48,36 @@ contains
       M
     character ( * ), intent ( in ) :: &
       NameShort
+    integer ( KDI ), intent ( in ) :: &
+      iFieldSet
     logical ( KDL ), intent ( in ), optional :: &
       PinnedOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    FSM % IGNORABILITY = M % IGNORABILITY
+    FSM % IGNORABILITY  =  M % IGNORABILITY
     if ( present ( IgnorabilityOption ) ) &
-      FSM % IGNORABILITY = IgnorabilityOption
+      FSM % IGNORABILITY  =  IgnorabilityOption
 
-    if ( FSM % Type == '' ) &
-      FSM % Type = 'a FieldSet_M' 
+    if ( FSM % Type  ==  '' ) &
+      FSM % Type  =  'a FieldSet_M' 
     
-    FSM % Pinned = .false.
+    FSM % Pinned  =  .false.
     if ( present ( PinnedOption ) ) &
-      FSM % Pinned = PinnedOption
+      FSM % Pinned  =  PinnedOption
     
-    FSM % Name = trim ( NameShort ) // '_' // trim ( M % Name ) 
+    FSM % Name  =  trim ( NameShort ) // '_' // trim ( M % Name ) 
 
     call Show ( 'Initializing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
    
-    FSM % NameShort = NameShort
+    FSM % NameShort  =  NameShort
     call Show ( FSM % NameShort, 'NameShort', FSM % IGNORABILITY )
 
-    FSM % Manifold => M
+    FSM % iFieldSet  =  iFieldSet
+    call Show ( FSM % iFieldSet, 'iFieldSet' )
+
+    FSM % Manifold  =>  M
 
   end subroutine Initialize_H
 

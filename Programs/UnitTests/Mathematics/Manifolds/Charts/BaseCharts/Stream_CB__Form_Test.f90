@@ -45,7 +45,7 @@ program Stream_CB__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', iFieldSet = 1 ) 
   call FSC % Initialize ( FSM, C, 'Fields', nFields ) 
 
   allocate ( GIS )

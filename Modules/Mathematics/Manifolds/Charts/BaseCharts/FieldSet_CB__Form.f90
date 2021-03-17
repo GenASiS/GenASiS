@@ -11,6 +11,8 @@ module FieldSet_CB__Form
   private
 
   type, public, extends ( FieldSet_CH_Form ) :: FieldSet_CB_Form
+    logical ( KDL ) :: &
+      ExchangeGhostUseDevice
     integer ( KDI ) :: &
       nValues  = 0, &
       nFields  = 0, &
@@ -77,6 +79,11 @@ contains
            ( FSM, C, NameShort, PinnedOption, IgnorabilityOption )
 
     call FSC % AllocateFieldSet ( )
+
+    FSC % ExchangeGhostUseDevice = .true.    
+    call PROGRAM_HEADER % GetParameter &
+           ( FSC % ExchangeGhostUseDevice, 'ExchangeGhostUseDevice', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
 
     allocate ( FSC % Stream ( MAX_STREAMS ) )
 

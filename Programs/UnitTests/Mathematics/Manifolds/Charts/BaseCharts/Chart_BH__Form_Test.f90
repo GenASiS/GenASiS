@@ -59,7 +59,7 @@ program Chart_BH__Form_Test
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
   call GM_Base % Initialize &
-         ( Base, 'GeometryBase' ) 
+         ( Base, 'GeometryBase', iFieldSet = 1 ) 
   call C_Base % Initialize_BH &
          ( Base, Periodic, iChart = 1 )
   call GC_Base % Initialize &
@@ -89,7 +89,7 @@ program Chart_BH__Form_Test
   call Fiber % Initialize &
          ( 'Fiber', iDimensionalityOption = 2 )
   call GM_Fiber % Initialize &
-         ( Fiber, 'GeometryFiber' ) 
+         ( Fiber, 'GeometryFiber', iFieldSet = 1 ) 
   call C_Fiber % Initialize_BH &
          ( Fiber, Periodic, iChart = 1, &
            SpacingOption = [ 'GEOMETRIC' ], &

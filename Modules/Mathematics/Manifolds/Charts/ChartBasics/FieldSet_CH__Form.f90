@@ -11,7 +11,8 @@ module FieldSet_CH__Form
 
   type, public :: FieldSet_CH_Form
     integer ( KDI ) :: &
-      IGNORABILITY = 0
+      IGNORABILITY = 0, &
+      iFieldSet    = 0
     logical ( KDL ) :: &
       Pinned = .false.
     character ( LDF ) :: &
@@ -41,10 +42,10 @@ contains
 
 
   subroutine Initialize_H &
-               ( FC, FSM, C, NameShort, PinnedOption, IgnorabilityOption )
+               ( FSC, FSM, C, NameShort, PinnedOption, IgnorabilityOption )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
-      FC
+      FSC
     class ( FieldSet_MH_Form ), intent ( in ), target :: &
       FSM
     class ( Chart_H_Form ), intent ( in ), target :: &
@@ -56,41 +57,44 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    FC % IGNORABILITY = C % IGNORABILITY
+    FSC % IGNORABILITY  =  C % IGNORABILITY
     if ( present ( IgnorabilityOption ) ) &
-      FC % IGNORABILITY = IgnorabilityOption
+      FSC % IGNORABILITY  =  IgnorabilityOption
 
-    if ( FC % Type == '' ) &
-      FC % Type = 'a FieldSet_C' 
+    if ( FSC % Type  ==  '' ) &
+      FSC % Type  =  'a FieldSet_C' 
     
-    FC % Pinned = .false.
+    FSC % Pinned  =  .false.
     if ( present ( PinnedOption ) ) &
-      FC % Pinned = PinnedOption
+      FSC % Pinned  =  PinnedOption
     
-    FC % Name = trim ( NameShort ) // '_' // trim ( C % Name ) 
+    FSC % Name  =  trim ( NameShort ) // '_' // trim ( C % Name ) 
 
-    call Show ( 'Initializing ' // trim ( FC % Type ), FC % IGNORABILITY )
-    call Show ( FC % Name, 'Name', FC % IGNORABILITY )
+    call Show ( 'Initializing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
+    call Show ( FSC % Name, 'Name', FSC % IGNORABILITY )
    
-    FC % NameShort = NameShort
-    call Show ( FC % NameShort, 'NameShort', FC % IGNORABILITY )
+    FSC % NameShort  =  NameShort
+    call Show ( FSC % NameShort, 'NameShort', FSC % IGNORABILITY )
 
-    FC % Chart       =>    C
-    FC % FieldSet_M  =>  FSM 
+    FSC % iFieldSet  =  FSM % iFieldSet
+    call Show ( FSC % iFieldSet, 'iFieldSet' )
+
+    FSC % Chart       =>    C
+    FSC % FieldSet_M  =>  FSM 
 
   end subroutine Initialize_H
 
 
-  impure elemental subroutine Finalize ( FC )
+  impure elemental subroutine Finalize ( FSC )
 
     type ( FieldSet_CH_Form ), intent ( inout ) :: &
-      FC
+      FSC
 
-    nullify ( FC % FieldSet_M )
-    nullify ( FC % Chart )
+    nullify ( FSC % FieldSet_M )
+    nullify ( FSC % Chart )
 
-    call Show ( 'Finalizing ' // trim ( FC % Type ), FC % IGNORABILITY )
-    call Show ( FC % Name, 'Name', FC % IGNORABILITY )
+    call Show ( 'Finalizing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
+    call Show ( FSC % Name, 'Name', FSC % IGNORABILITY )
    
   end subroutine Finalize
 

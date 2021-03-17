@@ -16,12 +16,16 @@ program FieldSet_CB__Form_Test
   type ( Chart_BH_Form ), allocatable :: &
     C
   type ( FieldSet_CB_Form ), allocatable :: &
+    GC, &
     FSC
   type ( Stream_CH_Form ), allocatable :: &
     SC
+  type ( Geometry_F_Form ), allocatable :: &
+    G
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
+    GM, &
     FSM
   type ( Stream_MH_Form ), allocatable :: &
     SM
@@ -33,11 +37,21 @@ program FieldSet_CB__Form_Test
   Periodic  =  .true.
 
   allocate ( M )
+  allocate ( GM )
   allocate ( C )
+  allocate ( GC )
+  allocate ( G )
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
+  call GM % Initialize &
+         ( M, 'Geometry', iFieldSet = 1 ) 
   call C % Initialize_BH &
          ( M, Periodic, iChart = 1 )
+  call GC % Initialize &
+         ( GM, C, 'Geometry' )
+  call G % Initialize &
+         ( GC, nValues = C % nValues, NameOption = 'GeometryBase' )
+  call C % ComputeGeometry ( G )
   call M % Show ( )
   call C % Show ( )
 
@@ -45,7 +59,7 @@ program FieldSet_CB__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', iFieldSet = 2 ) 
   call FSC % Initialize ( FSM, C, 'Fields', nFields ) 
 
   allocate ( GIS )

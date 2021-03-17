@@ -24,7 +24,7 @@ program Stream_MH__Form_Test
   call M % Show ( )
 
   allocate ( FSM )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', iFieldSet = 1 ) 
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
 

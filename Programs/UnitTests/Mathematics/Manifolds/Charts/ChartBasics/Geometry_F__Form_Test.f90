@@ -35,7 +35,7 @@ program Geometry_F__Form_Test
 
   allocate ( GM )
   allocate ( GC )
-  call GM % Initialize ( M, 'Geometry' ) 
+  call GM % Initialize ( M, 'Geometry', iFieldSet = 1 ) 
   call GC % Initialize ( GM, C, 'Geometry' ) 
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
