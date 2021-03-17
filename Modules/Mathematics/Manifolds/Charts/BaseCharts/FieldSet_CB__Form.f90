@@ -60,14 +60,14 @@ module FieldSet_CB__Form
   end type FieldSet_CB_Form
 
     private :: &
-      StartExchangeFace!, &
-!      FinishExchangeFace, &
+      StartExchangeFace, &
+      FinishExchangeFace!, &
 !      StartExchangeEdge, &
 !      FinishExchangeEdge
 
       private :: &
-        LoadMessage!, &
-!        StoreMessage
+        LoadMessage, &
+        StoreMessage
 
     integer ( KDI ), private, parameter :: &
       MAX_STREAMS = MANIFOLD % MAX_STREAMS
@@ -299,12 +299,13 @@ contains
     class is ( Chart_BH_Form )
 
     associate &
-      ( Communicator => C % Manifold % Communicator, &
-        nCB => C % nCellsBrick, &
-        nGL => C % nGhostLayers, &
-        nD  => C % nDimensions )
+      ( Communicator  =>  C % Manifold % Communicator, &
+        nCB  =>  C % nCellsBrick, &
+        nGL  =>  C % nGhostLayers, &
+        nD   =>  C % nDimensions )
 
     !-- Allocate on first use
+
     if ( .not. allocated ( IncomingFace ) &
          .and. .not. allocated ( OutgoingFace ) ) then
     
@@ -341,9 +342,9 @@ contains
       !-- In setting oSend, note Copy command does not inherit lbound
       if ( TagSend ( iD )  ==  TAG_SEND_FACE_R ( iD ) ) then
         oSend         =  nGL
-        oSend ( iD )  =  oSend ( iD ) + nCB ( iD ) - nGL ( iD )
+        oSend ( iD )  =  oSend ( iD )  +  nCB ( iD )  -  nGL ( iD )
       else if ( TagSend ( iD )  ==  TAG_SEND_FACE_L ( iD ) ) then
-        oSend = nGL
+        oSend  =  nGL
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'FieldSet_CB__Form', 'module', CONSOLE % ERROR )
@@ -360,6 +361,8 @@ contains
 
     end do !-- iD
 
+    !-- Cleanup
+
     end associate  !-- Communicator, etc.
     end select  !-- C
 
@@ -368,8 +371,91 @@ contains
   end subroutine StartExchangeFace
 
 
-  subroutine LoadMessage &
-               ( FSC, OutgoingMessage, nSend, oSend )
+  subroutine FinishExchangeFace &
+               ( FSC, IncomingFace, OutgoingFace, TagReceive )
+
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
+      IncomingFace
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
+      OutgoingFace
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      TagReceive
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+    integer ( KDI ), dimension ( 3 ) :: &
+      oReceive, &
+      nReceive
+    logical ( KDL ) :: &
+      AllFinished
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    associate &
+      ( nCB => C % nCellsBrick, &
+        nGL => C % nGhostLayers, &
+        iaB => C % iaBrick, &
+         nB => C % nBricks )
+
+    !-- Wait for Receives
+
+    do 
+
+      call T % Start ( )
+      call IncomingFace % Wait ( AllFinished, iD )
+      call T % Stop ( )
+      
+      if ( AllFinished ) exit
+
+      nReceive        = nCB
+      nReceive ( iD ) = nGL ( iD )
+
+      !-- In setting oReceive, note Copy command does not inherit lbound
+      if ( TagReceive ( iD )  ==  TAG_RECEIVE_FACE_L ( iD ) ) then
+        if ( iaB ( iD )  ==  1 .and. .not. C % Periodic ( iD ) ) &
+          cycle
+        oReceive        =  nGL
+        oReceive ( iD ) =  oReceive ( iD )  -  nGL ( iD )
+      else if ( TagReceive ( iD )  ==  TAG_RECEIVE_FACE_R ( iD ) ) then
+        if ( iaB ( iD )  ==  nB ( iD ) .and. .not. C % Periodic ( iD ) ) &
+          cycle
+        oReceive         =  nGL
+        oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
+      else
+        call Show ( 'Tags not recognized', CONSOLE % ERROR )
+        call Show ( 'FieldSet_CB__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FinishExchangeFace', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if !-- TagReceive
+
+      call StoreMessage &
+             ( FSC, IncomingFace % Message ( iD ), nReceive, oReceive )
+
+    end do
+
+    !-- Wait for Sends
+    call T % Start ( )
+    call OutgoingFace % Wait ( )
+    call T % Stop ( )
+
+    !-- Cleanup
+
+    end associate !-- nCB etc.
+    end select  !-- C
+    
+    nullify ( T )
+
+  end subroutine FinishExchangeFace
+
+
+  subroutine LoadMessage ( FSC, OutgoingMessage, nSend, oSend )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -384,7 +470,7 @@ contains
       iF, &  !-- iField
       oBuffer
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      F  !-- Variable
+      F  !-- Field
     type ( TimerForm ), pointer :: &
       T
 
@@ -413,6 +499,52 @@ contains
     nullify ( T )
 
   end subroutine LoadMessage
+
+
+  subroutine StoreMessage ( FSC, IncomingMessage, nReceive, oReceive )
+               
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+    type ( MessageIncoming_R_Form ), intent ( in ) :: &
+      IncomingMessage
+    integer ( KDI ), dimension ( 3 ), intent ( in )  :: &
+      nReceive, &
+      oReceive
+
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iF, &  !-- iField
+      oBuffer
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      F  !-- Field
+    type ( TimerForm ), pointer :: &
+      T
+    
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostPackUnpack )
+    call T % Start ( )
+    
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    associate ( FS  =>  FSC % FieldSet )
+
+    oBuffer = 0
+    do iS = 1, FS % nVariables          
+      iF = FS % iaSelected ( iS )
+      call C % SetFieldPointer ( FS % Value ( :, iF ), F )
+      call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, F, &
+                  UseDeviceOption = FSC % UseDeviceExchangeGhost )
+      oBuffer = oBuffer + product ( nReceive )
+    end do !-- iS
+    
+    end associate !-- FS
+    end select !-- C
+    nullify ( F )
+
+    call T % Stop ( )    
+    nullify ( T )
+
+  end subroutine StoreMessage
 
 
 end module FieldSet_CB__Form
