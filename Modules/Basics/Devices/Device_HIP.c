@@ -5,6 +5,38 @@
 #include <hip/hip_runtime_api.h>
 #endif
 
+int SetDevice ( int iDevice )
+  {
+  #ifdef ENABLE_OMP_OFFLOAD
+  hipError_t Status;
+  
+  Status = hipSetDevice ( iDevice );
+  if ( Status == hipSuccess )
+    return 0;
+  else
+    return -1;
+  #else
+  return -1;
+  #endif
+  }
+
+
+int getDevice ( int * iDevice )
+  {
+  #ifdef ENABLE_OMP_OFFLOAD
+  hipError_t Status;
+  
+  Status = hipGetDevice ( iDevice );
+  if ( Status == hipSuccess )
+    return 0;
+  else
+    return -1;
+  #else
+  return -1;
+  #endif
+  }
+
+
 void * AllocateHostDouble_Device ( int nValues )
   {
   void * Host;

@@ -9,6 +9,23 @@ Device_C_OMP.o: \
   $(Device_Interface).o \
   Device_C_OMP.f90
 
+OffloadEnabled_Function.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  OffloadEnabled_Function.f90
+
+SelectDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  OffloadEnabled_Function.o \
+  SelectDevice_Command.f90
+
+SelectedDevice_Function.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  OffloadEnabled_Function.o \
+  SelectedDevice_Function.f90
+
 AllocateDevice_Command.o: \
   Specifiers.o \
   Device_C_OMP.o \
@@ -49,11 +66,6 @@ DeallocateHost_Command.o: \
   Device_C_OMP.o \
   DeallocateHost_Command.f90
 
-OffloadEnabled_Function.o: \
-  Specifiers.o \
-  Device_C_OMP.o \
-  OffloadEnabled_Function.f90
-
 OnDevice_Function.o: \
   Specifiers.o \
   Device_C_OMP.o \
@@ -64,9 +76,9 @@ DeviceAddress_Function.o: \
   OnDevice_Function.o \
   DeviceAddress_Function.f90
 
-GetNumberOfDevices_Function.o: \
+NumberOfDevices_Function.o: \
   Specifiers.o \
-  GetNumberOfDevices_Function.f90
+  NumberOfDevices_Function.f90
 
 GetDeviceMemoryInfo_Command.o: \
   Specifiers.o \
@@ -74,6 +86,9 @@ GetDeviceMemoryInfo_Command.o: \
   GetDeviceMemoryInfo_Command.f90
 
 Devices.o: \
+  OffloadEnabled_Function.o \
+  SelectDevice_Command.o \
+  SelectedDevice_Function.o \
   AllocateDevice_Command.o \
   AssociateHost_Command.o \
   DeallocateDevice_Command.o \
@@ -82,10 +97,9 @@ Devices.o: \
   UpdateHost_Command.o \
   AllocateHost_Command.o \
   DeallocateHost_Command.o \
-  OffloadEnabled_Function.o \
   OnDevice_Function.o \
   DeviceAddress_Function.o \
-  GetNumberOfDevices_Function.o \
+  NumberOfDevices_Function.o \
   GetDeviceMemoryInfo_Command.o \
   Devices.f90
 

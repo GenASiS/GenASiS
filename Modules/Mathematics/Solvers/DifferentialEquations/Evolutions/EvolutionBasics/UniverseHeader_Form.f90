@@ -43,7 +43,7 @@ contains
 
     U % Name = Name
 
-    U % UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
+    U % UseDevice = ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 )
     call PROGRAM_HEADER % GetParameter ( U % UseDevice, 'UseDevice' )
 
     call Show ( 'Initializing ' // trim ( U % Type ), U % IGNORABILITY )
