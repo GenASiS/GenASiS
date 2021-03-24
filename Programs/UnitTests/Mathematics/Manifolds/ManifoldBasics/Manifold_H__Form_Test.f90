@@ -17,10 +17,11 @@ program Manifold_H__Form_Test
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
-  call Base % Show ( )
 
   allocate ( Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
+
+  call  Base % Show ( )
   call Fiber % Show ( )
 
   deallocate ( Fiber )

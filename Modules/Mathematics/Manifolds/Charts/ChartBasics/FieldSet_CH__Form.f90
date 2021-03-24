@@ -76,7 +76,8 @@ contains
     FSC % NameShort  =  NameShort
     call Show ( FSC % NameShort, 'NameShort', FSC % IGNORABILITY )
 
-    FSC % iFieldSet  =  FSM % iFieldSet
+      C % nFieldSets  =    M % nFieldSets
+    FSC % iFieldSet   =  FSM % iFieldSet
     call Show ( FSC % iFieldSet, 'iFieldSet' )
 
     FSC % Chart       =>    C

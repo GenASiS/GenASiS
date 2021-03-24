@@ -12,7 +12,7 @@ module FieldSet_CB__Form
 
   type, public, extends ( FieldSet_CH_Form ) :: FieldSet_CB_Form
     logical ( KDL ) :: &
-      UseDeviceExchangeGhost
+      UseDeviceGhost
     integer ( KDI ) :: &
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
@@ -128,9 +128,9 @@ contains
 
     call FSC % AllocateFieldSet ( )
 
-    FSC % UseDeviceExchangeGhost = .true.    
+    FSC % UseDeviceGhost = .true.    
     call PROGRAM_HEADER % GetParameter &
-           ( FSC % UseDeviceExchangeGhost, 'UseDeviceExchangeGhost', &
+           ( FSC % UseDeviceGhost, 'UseDeviceGhost', &
              IgnorabilityOption = CONSOLE % INFO_2 )
 
     allocate ( FSC % Stream ( MAX_STREAMS ) )
@@ -319,7 +319,7 @@ contains
              ( Communicator, TagSend ( : nD ), PH % Target, &
                PH % nChunksTo  *  FSC % nFields )
     
-      if ( FSC % UseDeviceExchangeGhost ) then
+      if ( FSC % UseDeviceGhost ) then
         call IncomingFace % AllocateDevice ( )
         call OutgoingFace % AllocateDevice ( )
       end if 
@@ -518,7 +518,7 @@ contains
              ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
                PH % nChunksTo  *  FSC % nFields )
       
-      if ( FSC % UseDeviceExchangeGhost ) then
+      if ( FSC % UseDeviceGhost ) then
         call IncomingEdge % AllocateDevice ( )
         call OutgoingEdge % AllocateDevice ( )
       end if
@@ -739,7 +739,7 @@ contains
       iF = FS % iaSelected ( iS )
       call C % SetFieldPointer ( FS % Value ( :, iF ), F )
       call Copy ( F, nSend, oSend, oBuffer, OutgoingMessage % Value, &
-                  UseDeviceOption = FSC % UseDeviceExchangeGhost )
+                  UseDeviceOption = FSC % UseDeviceGhost )
       oBuffer = oBuffer + product ( nSend )
     end do !-- iS
 
@@ -785,7 +785,7 @@ contains
       iF = FS % iaSelected ( iS )
       call C % SetFieldPointer ( FS % Value ( :, iF ), F )
       call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, F, &
-                  UseDeviceOption = FSC % UseDeviceExchangeGhost )
+                  UseDeviceOption = FSC % UseDeviceGhost )
       oBuffer = oBuffer + product ( nReceive )
     end do !-- iS
     

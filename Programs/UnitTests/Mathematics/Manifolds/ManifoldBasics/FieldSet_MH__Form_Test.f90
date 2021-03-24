@@ -17,10 +17,12 @@ program FieldSet_MH__Form_Test
   allocate ( M )
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
-  call M % Show ( )
 
   allocate ( FSM )
-  call FSM % Initialize ( M, 'Fields', iFieldSet = 1 ) 
+  call FSM % Initialize ( M, 'Fields' ) 
+
+  call   M % Show ( )
+  call FSM % Show ( )
 
   deallocate ( FSM )
   deallocate ( M )

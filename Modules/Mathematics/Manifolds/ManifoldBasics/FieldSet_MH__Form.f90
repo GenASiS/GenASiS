@@ -11,7 +11,8 @@ module FieldSet_MH__Form
   type, public :: FieldSet_MH_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iFieldSet    = 0
+      iFieldSet    = 0, &
+      nStreams     = 0
     logical ( KDL ) :: &
       Pinned
     character ( LDF ) :: &
@@ -25,6 +26,8 @@ module FieldSet_MH__Form
       Initialize_H
     generic, public :: &
       Initialize => Initialize_H
+    procedure, public, pass :: &
+      Show => Show_FSM
     final :: &
       Finalize
   end type FieldSet_MH_Form
@@ -39,17 +42,14 @@ contains
 
 
   subroutine Initialize_H &
-               ( FSM, M, NameShort, iFieldSet, PinnedOption, &
-                 IgnorabilityOption )
+               ( FSM, M, NameShort, PinnedOption, IgnorabilityOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
-    class ( Manifold_H_Form ), intent ( in ), target :: &
+    class ( Manifold_H_Form ), intent ( inout ), target :: &
       M
     character ( * ), intent ( in ) :: &
       NameShort
-    integer ( KDI ), intent ( in ) :: &
-      iFieldSet
     logical ( KDL ), intent ( in ), optional :: &
       PinnedOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -72,14 +72,32 @@ contains
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
    
     FSM % NameShort  =  NameShort
-    call Show ( FSM % NameShort, 'NameShort', FSM % IGNORABILITY )
 
-    FSM % iFieldSet  =  iFieldSet
-    call Show ( FSM % iFieldSet, 'iFieldSet' )
+      M % nFieldSets  =  M % nFieldSets  +  1
+    FSM % iFieldSet   =  M % nFieldSets
 
     FSM % Manifold  =>  M
 
   end subroutine Initialize_H
+
+
+  subroutine Show_FSM ( FSM )
+
+    class ( FieldSet_MH_Form ), intent ( in ) :: &
+      FSM
+
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( FSM % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', FSM % IGNORABILITY )
+
+    call Show ( FSM % Name,      'Name',      FSM % IGNORABILITY )
+    call Show ( FSM % NameShort, 'NameShort', FSM % IGNORABILITY )
+    call Show ( FSM % iFieldSet, 'iFieldSet', FSM % IGNORABILITY )
+    call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
+
+  end subroutine Show_FSM
 
 
   impure elemental subroutine Finalize ( FSM )

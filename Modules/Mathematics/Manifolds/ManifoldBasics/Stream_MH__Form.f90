@@ -11,6 +11,7 @@ module Stream_MH__Form
   type, public :: Stream_MH_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
+      iStream      = 0, &
       nFieldSets   = 0
     character ( LDF ) :: &
       Name = '', &
@@ -26,6 +27,8 @@ module Stream_MH__Form
       Initialize
     procedure, public, pass :: &
       AddFieldSet
+    procedure, public, pass :: &
+      Show => Show_SM
     final :: &
       Finalize
   end type Stream_MH_Form
@@ -41,14 +44,14 @@ contains
 
     class ( Stream_MH_Form ), intent ( inout ) :: &
       SM
-    class ( Manifold_H_Form ), intent ( in ), target :: &
+    class ( Manifold_H_Form ), intent ( inout ), target :: &
       M
     type ( GridImageStreamForm ), intent ( in ), target :: &
       GIS
     character ( * ), intent ( in ) :: &
       Name
 
-    SM % IGNORABILITY  =  M % IGNORABILITY  +  1
+    SM % IGNORABILITY  =  M % IGNORABILITY
     SM % Name          =  Name
 
     if ( SM % Type == '' ) &
@@ -56,6 +59,9 @@ contains
     
     call Show ( 'Initializing ' // trim ( SM % Type ), SM % IGNORABILITY )
     call Show ( SM % Name, 'Name', SM % IGNORABILITY )
+
+     M % nStreams  =  M % nStreams  +  1
+    SM % iStream   =  M % nStreams
 
     SM % GridImageStream  =>  GIS
     SM % Manifold         =>    M 
@@ -69,7 +75,7 @@ contains
 
     class ( Stream_MH_Form ), intent ( inout ) :: &
       SM
-    class ( FieldSet_MH_Form ), intent ( in ), target :: &
+    class ( FieldSet_MH_Form ), intent ( inout ), target :: &
       FSM
     
     integer ( KDI ) :: &
@@ -79,7 +85,7 @@ contains
 
     do iFS  =  1, nFS
       if ( associated ( SM % FieldSet ( iFS ) % Pointer, FSM ) ) then
-        call Show ( 'FieldSet already added to a ' // SM % Type, &
+        call Show ( 'FieldSet already added to ' // SM % Type, &
                     CONSOLE % WARNING )
         call Show (  SM % Name, 'Stream',   CONSOLE % WARNING )
         call Show ( FSM % Name, 'FieldSet', CONSOLE % WARNING )
@@ -89,14 +95,35 @@ contains
 
     nFS = nFS + 1
     SM % FieldSet ( iFS ) % Pointer  =>  FSM
-    call Show ( 'Adding a FieldSet to a ' // trim ( SM % Type ), &
-                SM % IGNORABILITY )
-    call Show (  SM % Name, 'Stream',   SM % IGNORABILITY )
-    call Show ( FSM % Name, 'FieldSet', SM % IGNORABILITY )
+    call Show ( 'Adding a FieldSet to ' // trim ( SM % Type ), &
+                SM % IGNORABILITY + 1 )
+    call Show (  SM % Name, 'Stream',   SM % IGNORABILITY + 1 )
+    call Show ( FSM % Name, 'FieldSet', SM % IGNORABILITY + 1 )
 
     end associate !-- nFS
 
   end subroutine AddFieldSet
+
+
+  subroutine Show_SM ( SM )
+
+    class ( Stream_MH_Form ), intent ( in ) :: &
+      SM
+
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( SM % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', SM % IGNORABILITY )
+
+    associate ( GIS  =>  SM % GridImageStream )
+    call Show (  SM % Name,             'Name', SM % IGNORABILITY )
+    call Show ( GIS % Name,  'GridImageStream', SM % IGNORABILITY )
+    call Show (  SM % iStream,       'iStream', SM % IGNORABILITY )
+    call Show (  SM % nFieldSets, 'nFieldSets', SM % IGNORABILITY )
+    end associate !-- GIS
+
+  end subroutine Show_SM
 
 
   impure elemental subroutine Finalize ( SM )

@@ -10,7 +10,9 @@ module Manifold_H__Form
   type, public :: Manifold_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      nDimensions  = 0
+      nDimensions  = 0, &
+      nFieldSets   = 0, &
+      nStreams     = 0
     logical ( KDL ) :: &
       Distributed = .false., &
       AllocatedValues = .false.
@@ -24,9 +26,7 @@ module Manifold_H__Form
       InitializeBasic
     generic, public :: &
       Initialize => InitializeBasic
-    procedure, private, pass :: &
-      Show_M
-    generic, public :: &
+    procedure, public, pass :: &
       Show => Show_M
     final :: &
       Finalize
@@ -88,10 +88,12 @@ contains
 
     call Split ( M % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', M % IGNORABILITY )
-    call Show ( M % Name, 'Name', M % IGNORABILITY )
 
+    call Show ( M % Name,        'Name',        M % IGNORABILITY )
     call Show ( M % Distributed, 'Distributed', M % IGNORABILITY )
     call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
+    call Show ( M % nFieldSets,  'nFieldSets',  M % IGNORABILITY )
+    call Show ( M % nStreams,    'nStreams',    M % IGNORABILITY )
 
   end subroutine Show_M
 
