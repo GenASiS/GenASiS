@@ -25,8 +25,6 @@ program Stream_MH__Form_Test
   allocate ( FSM )
   call FSM % Initialize ( M, 'Fields' ) 
 
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
-
   allocate ( GIS )
   call GIS % Initialize &
          ( PROGRAM_HEADER % Name, CommunicatorOption = M % Communicator )
@@ -34,8 +32,10 @@ program Stream_MH__Form_Test
   allocate ( SM )
   call SM % Initialize ( M, GIS, 'Stream' )
 
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call SM % AddFieldSet ( FSM )
   call SM % AddFieldSet ( FSM )  !-- Test the prevention of duplication
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   call   M % Show ( )
   call FSM % Show ( )
@@ -43,8 +43,6 @@ program Stream_MH__Form_Test
 
   deallocate ( SM )
   deallocate ( GIS )
-
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   deallocate ( FSM )
   deallocate ( M )

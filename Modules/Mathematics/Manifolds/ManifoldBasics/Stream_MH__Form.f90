@@ -40,7 +40,7 @@ module Stream_MH__Form
 contains
 
 
-  subroutine Initialize ( SM, M, GIS, Name )
+  subroutine Initialize ( SM, M, GIS, NameShort )
 
     class ( Stream_MH_Form ), intent ( inout ) :: &
       SM
@@ -49,14 +49,15 @@ contains
     type ( GridImageStreamForm ), intent ( in ), target :: &
       GIS
     character ( * ), intent ( in ) :: &
-      Name
+      NameShort
 
     SM % IGNORABILITY  =  M % IGNORABILITY
-    SM % Name          =  Name
 
     if ( SM % Type == '' ) &
       SM % Type = 'a Stream_M' 
     
+    SM % Name  =  trim ( NameShort ) // '_' // trim ( M % Name )
+
     call Show ( 'Initializing ' // trim ( SM % Type ), SM % IGNORABILITY )
     call Show ( SM % Name, 'Name', SM % IGNORABILITY )
 
@@ -110,6 +111,8 @@ contains
     class ( Stream_MH_Form ), intent ( in ) :: &
       SM
 
+    integer ( KDI ) :: &
+      iFS  !-- iFieldSet
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
@@ -121,6 +124,11 @@ contains
     call Show ( GIS % Name,  'GridImageStream', SM % IGNORABILITY )
     call Show (  SM % iStream,       'iStream', SM % IGNORABILITY )
     call Show (  SM % nFieldSets, 'nFieldSets', SM % IGNORABILITY )
+    do iFS  =  1, SM % nFieldSets
+      associate ( FS  =>  SM % FieldSet ( iFS ) % Pointer )
+      call Show ( FS % Name, 'FieldSet', SM % IGNORABILITY )
+      end associate !-- FS
+    end do !-- iFS
     end associate !-- GIS
 
   end subroutine Show_SM
