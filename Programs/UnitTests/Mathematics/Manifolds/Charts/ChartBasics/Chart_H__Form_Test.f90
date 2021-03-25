@@ -31,9 +31,6 @@ program Chart_H__Form_Test
            iDimensionalityOption = 1 )
   call C_Base % Initialize_H ( Base, Periodic, iChart = 1 )
 
-  call Base % Show ( )
-  call C_Base % Show ( )
-
   !-- Fiber
 
   Periodic  =  .false.
@@ -46,8 +43,23 @@ program Chart_H__Form_Test
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL' )
 
+  !-- Display and cleanup
+
+  call Base % Show ( )
+  call Show ( Base % nFieldSets, 'nFieldSets', Base % IGNORABILITY )
+  call Show ( Base % nStreams,   'nStreams',   Base % IGNORABILITY )
+
+  call C_Base % Show ( )
+  call Show ( C_Base % nFieldSets, 'nFieldSets', C_Base % IGNORABILITY )
+  call Show ( C_Base % nStreams,   'nStreams',   C_Base % IGNORABILITY )
+
   call Fiber % Show ( )
+  call Show ( Fiber % nFieldSets, 'nFieldSets', Fiber % IGNORABILITY )
+  call Show ( Fiber % nStreams,   'nStreams',   Fiber % IGNORABILITY )
+
   call C_Fiber % Show ( )
+  call Show ( C_Fiber % nFieldSets, 'nFieldSets', C_Fiber % IGNORABILITY )
+  call Show ( C_Fiber % nStreams,   'nStreams',   C_Fiber % IGNORABILITY )
 
   deallocate ( C_Fiber )
   deallocate ( Fiber )

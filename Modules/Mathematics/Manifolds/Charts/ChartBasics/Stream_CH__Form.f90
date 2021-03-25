@@ -11,12 +11,14 @@ module Stream_CH__Form
   type, public :: Stream_CH_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
+      iStream      = 0, &
       nFieldSets   = 0
     logical ( KDL ) :: &
       Verbose = .false.
     character ( LDF ) :: &
       Name = '', &
-      Type = ''
+      Type = '', &
+      NameShort = ''
     type ( GridImageStreamForm ), pointer :: &
       GridImageStream => null ( )
     class ( Chart_H_Form ), pointer :: &
@@ -30,6 +32,8 @@ module Stream_CH__Form
       Initialize
     procedure, public, pass :: &
       AddFieldSet
+    procedure, public, pass :: &
+      Show => Show_SC
     final :: &
       Finalize
   end type Stream_CH_Form
@@ -46,40 +50,32 @@ module Stream_CH__Form
 contains
 
 
-  subroutine Initialize ( SC, SM, C, GIS, Name, VerboseOption )
+  subroutine Initialize ( SC, C, SM )
 
     class ( Stream_CH_Form ), intent ( inout ) :: &
       SC
+    class ( Chart_H_Form ), intent ( inout ), target :: &
+      C
     class ( Stream_MH_Form ), intent ( in ), target :: &
       SM
-    class ( Chart_H_Form ), intent ( in ), target :: &
-      C
-    type ( GridImageStreamForm ), intent ( in ), target :: &
-      GIS
-    character ( * ), intent ( in ) :: &
-      Name
-    logical ( KDL ), intent ( in ), optional :: &
-      VerboseOption
 
-    logical ( KDL ) :: &
-      Verbose
-
-    Verbose = .false.
-    if ( present ( VerboseOption ) ) &
-      Verbose = VerboseOption
-    
-    SC % IGNORABILITY  =  C % IGNORABILITY  +  1
-    SC % Name          =  Name
+    SC % IGNORABILITY  =  C % IGNORABILITY
 
     if ( SC % Type == '' ) &
       SC % Type = 'a Stream_C' 
     
+    SC % Name  =  trim ( SM % NameShort ) // '_' // trim ( C % Name )
+
     call Show ( 'Initializing ' // trim ( SC % Type ), SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
-    SC % Verbose  =  Verbose
+     C % nStreams  =   C % Manifold % nStreams
+    SC % iStream   =  SM % iStream
 
-    SC % GridImageStream  =>  GIS
+    SC % NameShort  =  SM % NameShort
+    SC % Verbose    =  SM % Verbose
+
+    SC % GridImageStream  =>  SM % GridImageStream
     SC % Chart            =>    C
     SC % Stream_M         =>   SM
 
@@ -110,16 +106,37 @@ contains
       end if
     end do !-- iFS
 
-    nFS  =  nFS + 1
+    nFS  =  SC % Stream_M % nFieldSets
     SC % FieldSet ( iFS ) % Pointer  =>  FSC
     call Show ( 'Adding a FieldSet to ' // trim ( SC % Type ), &
-                SC % IGNORABILITY )
-    call Show (  SC % Name, 'Stream',   SC % IGNORABILITY )
-    call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY )
+                SC % IGNORABILITY  +  1 )
+    call Show (  SC % Name, 'Stream',   SC % IGNORABILITY  +  1 )
+    call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY  +  1 )
 
     end associate !-- nFS
 
   end subroutine AddFieldSet
+
+
+  subroutine Show_SC ( SC )
+
+    class ( Stream_CH_Form ), intent ( in ) :: &
+      SC
+
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( SC % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', SC % IGNORABILITY )
+
+    associate ( GIS  =>  SC % GridImageStream )
+    call Show (  SC % Name,             'Name', SC % IGNORABILITY )
+    call Show ( GIS % Name,  'GridImageStream', SC % IGNORABILITY )
+    call Show (  SC % iStream,       'iStream', SC % IGNORABILITY )
+    call Show (  SC % Verbose,       'Verbose', SC % IGNORABILITY )
+    end associate !-- GIS
+
+  end subroutine Show_SC
 
 
   impure elemental subroutine Finalize ( SC )

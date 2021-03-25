@@ -6,6 +6,8 @@ program Stream_CH__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    iFS  !-- iFieldSet
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( GridImageStreamForm ), allocatable :: &
@@ -35,15 +37,11 @@ program Stream_CH__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_H &
          ( M, Periodic, iChart = 1 )
-  call M % Show ( )
-  call C % Show ( )
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields', iFieldSet = 1 ) 
-  call FSC % Initialize ( FSM, C, 'Fields' ) 
-
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
+  call FSM % Initialize ( M, 'Fields' ) 
+  call FSC % Initialize ( C, FSM ) 
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -52,17 +50,47 @@ program Stream_CH__Form_Test
   allocate ( SM )
   allocate ( SC )
   call SM % Initialize ( M, GIS, 'Stream' )
-  call SC % Initialize ( SM, C, GIS, 'Stream' )
+  call SC % Initialize ( C, SM )
 
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call SM % AddFieldSet ( FSM )
   call SC % AddFieldSet ( FSC )
   call SC % AddFieldSet ( FSC )  !-- Test the prevention of duplication
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
+
+  call M % Show ( )
+  call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
+  call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
+
+  call FSM % Show ( )
+  call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
+
+  call SM % Show ( )
+  call Show ( SM % nFieldSets, 'nFieldSets', SM % IGNORABILITY )
+  do iFS  =  1, SM % nFieldSets
+    associate ( FS  =>  SM % FieldSet ( iFS ) % Pointer )
+    call Show ( FS % Name, 'FieldSet', SM % IGNORABILITY )
+    end associate !-- FS
+  end do !-- iFS
+
+  call C % Show ( )
+  call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
+  call Show ( C % nStreams,   'nStreams',   C % IGNORABILITY )
+
+  call FSC % Show ( )
+  call Show ( FSC % nStreams,  'nStreams',  FSC % IGNORABILITY )
+
+  call SC % Show ( )
+  call Show ( SC % nFieldSets, 'nFieldSets', SC % IGNORABILITY )
+  do iFS  =  1, SC % nFieldSets
+    associate ( FS  =>  SC % FieldSet ( iFS ) % Pointer )
+    call Show ( FS % Name, 'FieldSet', SC % IGNORABILITY )
+    end associate !-- FS
+  end do !-- iFS
 
   deallocate ( SC )
   deallocate ( SM )
   deallocate ( GIS )
-
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   deallocate ( FSC )
   deallocate ( FSM )

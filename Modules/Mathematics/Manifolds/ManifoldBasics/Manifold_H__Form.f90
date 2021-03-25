@@ -92,8 +92,6 @@ contains
     call Show ( M % Name,        'Name',        M % IGNORABILITY )
     call Show ( M % Distributed, 'Distributed', M % IGNORABILITY )
     call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
-    call Show ( M % nFieldSets,  'nFieldSets',  M % IGNORABILITY )
-    call Show ( M % nStreams,    'nStreams',    M % IGNORABILITY )
 
   end subroutine Show_M
 

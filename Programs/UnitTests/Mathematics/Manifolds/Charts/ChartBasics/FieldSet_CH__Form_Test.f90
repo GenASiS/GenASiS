@@ -29,13 +29,25 @@ program FieldSet_CH__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_H &
          ( M, Periodic, iChart = 1 )
-  call M % Show ( )
-  call C % Show ( )
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields', iFieldSet = 1 ) 
-  call FSC % Initialize ( FSM, C, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields' ) 
+  call FSC % Initialize ( C, FSM ) 
+
+  call M % Show ( )
+  call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
+  call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
+
+  call FSM % Show ( )
+  call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
+
+  call C % Show ( )
+  call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
+  call Show ( C % nStreams,   'nStreams',   C % IGNORABILITY )
+
+  call FSC % Show ( )
+  call Show ( FSC % nStreams,  'nStreams',  FSC % IGNORABILITY )
 
   deallocate ( FSC )
   deallocate ( FSM )

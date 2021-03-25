@@ -21,8 +21,13 @@ program Manifold_H__Form_Test
   allocate ( Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
 
-  call  Base % Show ( )
+  call Base % Show ( )
+  call Show ( Base % nFieldSets, 'nFieldSets', Base % IGNORABILITY )
+  call Show ( Base % nStreams,   'nStreams',   Base % IGNORABILITY )
+
   call Fiber % Show ( )
+  call Show ( Fiber % nFieldSets, 'nFieldSets', Fiber % IGNORABILITY )
+  call Show ( Fiber % nStreams,   'nStreams',   Fiber % IGNORABILITY )
 
   deallocate ( Fiber )
   deallocate ( Base )

@@ -13,9 +13,12 @@ module Stream_MH__Form
       IGNORABILITY = 0, &
       iStream      = 0, &
       nFieldSets   = 0
+    logical ( KDL ) :: &
+      Verbose = .false.
     character ( LDF ) :: &
       Name = '', &
-      Type = ''
+      Type = '', &
+      NameShort = ''
     type ( GridImageStreamForm ), pointer :: &
       GridImageStream => null ( )
     class ( Manifold_H_Form ), pointer :: &
@@ -40,7 +43,7 @@ module Stream_MH__Form
 contains
 
 
-  subroutine Initialize ( SM, M, GIS, NameShort )
+  subroutine Initialize ( SM, M, GIS, NameShort, VerboseOption )
 
     class ( Stream_MH_Form ), intent ( inout ) :: &
       SM
@@ -50,7 +53,16 @@ contains
       GIS
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseOption
 
+    logical ( KDL ) :: &
+      Verbose
+
+    Verbose = .false.
+    if ( present ( VerboseOption ) ) &
+      Verbose = VerboseOption
+    
     SM % IGNORABILITY  =  M % IGNORABILITY
 
     if ( SM % Type == '' ) &
@@ -63,6 +75,9 @@ contains
 
      M % nStreams  =  M % nStreams  +  1
     SM % iStream   =  M % nStreams
+
+    SM % NameShort  =  NameShort
+    SM % Verbose    =  Verbose
 
     SM % GridImageStream  =>  GIS
     SM % Manifold         =>    M 
@@ -94,12 +109,12 @@ contains
       end if
     end do !-- iFS
 
-    nFS = nFS + 1
+    nFS  =  nFS + 1
     SM % FieldSet ( iFS ) % Pointer  =>  FSM
     call Show ( 'Adding a FieldSet to ' // trim ( SM % Type ), &
-                SM % IGNORABILITY + 1 )
-    call Show (  SM % Name, 'Stream',   SM % IGNORABILITY + 1 )
-    call Show ( FSM % Name, 'FieldSet', SM % IGNORABILITY + 1 )
+                SM % IGNORABILITY  +  1 )
+    call Show (  SM % Name, 'Stream',   SM % IGNORABILITY  +  1 )
+    call Show ( FSM % Name, 'FieldSet', SM % IGNORABILITY  +  1 )
 
     end associate !-- nFS
 
@@ -111,8 +126,6 @@ contains
     class ( Stream_MH_Form ), intent ( in ) :: &
       SM
 
-    integer ( KDI ) :: &
-      iFS  !-- iFieldSet
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
@@ -123,12 +136,7 @@ contains
     call Show (  SM % Name,             'Name', SM % IGNORABILITY )
     call Show ( GIS % Name,  'GridImageStream', SM % IGNORABILITY )
     call Show (  SM % iStream,       'iStream', SM % IGNORABILITY )
-    call Show (  SM % nFieldSets, 'nFieldSets', SM % IGNORABILITY )
-    do iFS  =  1, SM % nFieldSets
-      associate ( FS  =>  SM % FieldSet ( iFS ) % Pointer )
-      call Show ( FS % Name, 'FieldSet', SM % IGNORABILITY )
-      end associate !-- FS
-    end do !-- iFS
+    call Show (  SM % Verbose,       'Verbose', SM % IGNORABILITY )
     end associate !-- GIS
 
   end subroutine Show_SM

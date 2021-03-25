@@ -21,8 +21,12 @@ program FieldSet_MH__Form_Test
   allocate ( FSM )
   call FSM % Initialize ( M, 'Fields' ) 
 
-  call   M % Show ( )
+  call M % Show ( )
+  call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
+  call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
+
   call FSM % Show ( )
+  call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
 
   deallocate ( FSM )
   deallocate ( M )

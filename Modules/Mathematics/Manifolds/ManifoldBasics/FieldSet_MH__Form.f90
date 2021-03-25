@@ -41,8 +41,7 @@ module FieldSet_MH__Form
 contains
 
 
-  subroutine Initialize_H &
-               ( FSM, M, NameShort, PinnedOption, IgnorabilityOption )
+  subroutine Initialize_H ( FSM, M, NameShort, PinnedOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -52,12 +51,8 @@ contains
       NameShort
     logical ( KDL ), intent ( in ), optional :: &
       PinnedOption
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
 
     FSM % IGNORABILITY  =  M % IGNORABILITY
-    if ( present ( IgnorabilityOption ) ) &
-      FSM % IGNORABILITY  =  IgnorabilityOption
 
     if ( FSM % Type  ==  '' ) &
       FSM % Type  =  'a FieldSet_M' 
@@ -71,10 +66,10 @@ contains
     call Show ( 'Initializing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
    
-    FSM % NameShort  =  NameShort
-
       M % nFieldSets  =  M % nFieldSets  +  1
     FSM % iFieldSet   =  M % nFieldSets
+
+    FSM % NameShort  =  NameShort
 
     FSM % Manifold  =>  M
 
@@ -95,7 +90,6 @@ contains
     call Show ( FSM % Name,      'Name',      FSM % IGNORABILITY )
     call Show ( FSM % NameShort, 'NameShort', FSM % IGNORABILITY )
     call Show ( FSM % iFieldSet, 'iFieldSet', FSM % IGNORABILITY )
-    call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
 
   end subroutine Show_FSM
 

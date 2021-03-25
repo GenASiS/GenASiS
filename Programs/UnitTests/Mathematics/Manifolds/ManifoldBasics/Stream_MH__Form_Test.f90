@@ -5,6 +5,8 @@ program Stream_MH__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    iFS  !-- iFieldSet
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Manifold_H_Form ), allocatable :: &
@@ -37,9 +39,20 @@ program Stream_MH__Form_Test
   call SM % AddFieldSet ( FSM )  !-- Test the prevention of duplication
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
-  call   M % Show ( )
+  call M % Show ( )
+  call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
+  call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
+
   call FSM % Show ( )
-  call  SM % Show ( )
+  call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
+
+  call SM % Show ( )
+  call Show ( SM % nFieldSets, 'nFieldSets', SM % IGNORABILITY )
+  do iFS  =  1, SM % nFieldSets
+    associate ( FS  =>  SM % FieldSet ( iFS ) % Pointer )
+    call Show ( FS % Name, 'FieldSet', SM % IGNORABILITY )
+    end associate !-- FS
+  end do !-- iFS
 
   deallocate ( SM )
   deallocate ( GIS )
