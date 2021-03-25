@@ -30,8 +30,6 @@ program Geometry_F__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_H &
          ( M, Periodic, iChart = 1 )
-  call M % Show ( )
-  call C % Show ( )
 
   allocate ( GM )
   allocate ( GC )
@@ -41,8 +39,23 @@ program Geometry_F__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_4' )
   allocate ( G )
   call G % Initialize ( GC, nValues = 10, NameOption = 'Geometry_F' )
-
   deallocate ( G )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
+
+  call M % Show ( )
+  call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
+  call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
+
+  call GM % Show ( )
+  call Show ( GM % nStreams,  'nStreams',  GM % IGNORABILITY )
+
+  call C % Show ( )
+  call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
+  call Show ( C % nStreams,   'nStreams',   C % IGNORABILITY )
+
+  call GC % Show ( )
+  call Show ( GC % nStreams,  'nStreams',  GC % IGNORABILITY )
+
   deallocate ( GC )
   deallocate ( GM )
   deallocate ( C )
