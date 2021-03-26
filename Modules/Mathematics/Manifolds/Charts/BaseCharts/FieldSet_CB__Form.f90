@@ -17,8 +17,7 @@ module FieldSet_CB__Form
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
       nValues  = 0, &
-      nFields  = 0, &
-      nStreams = 0
+      nFields  = 0
     character ( LDL ), dimension ( : ), allocatable :: &
       Field
     class ( StorageForm ), allocatable :: &
@@ -92,15 +91,15 @@ contains
 
 
   subroutine InitializeAllocate &
-               ( FSC, FSM, C, NameShort, nFields, FieldOption, PinnedOption, &
+               ( FSC, C, FSM, NameShort, nFields, FieldOption, PinnedOption, &
                  IgnorabilityOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
-    class ( FieldSet_MH_Form ), intent ( in ), target :: &
-      FSM
-    class ( Chart_BH_Form ), intent ( in ), target :: &
+    class ( Chart_BH_Form ), intent ( inout ) :: &
       C
+    class ( FieldSet_MH_Form ), intent ( in ) :: &
+      FSM
     character ( * ), intent ( in ) :: &
       NameShort
     integer ( KDI ), intent ( in ) :: &
@@ -123,8 +122,7 @@ contains
     if ( present ( FieldOption ) ) &
       FSC % Field = FieldOption   
 
-    call FSC % Initialize &
-           ( FSM, C, NameShort, PinnedOption, IgnorabilityOption )
+    call FSC % Initialize ( C, FSM )
 
     call FSC % AllocateFieldSet ( )
 

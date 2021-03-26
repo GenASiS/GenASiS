@@ -44,13 +44,13 @@ program FieldSet_CB__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call GM % Initialize &
-         ( M, 'Geometry', iFieldSet = 1 ) 
-  call C % Initialize_BH &
+         ( M, 'Geometry' ) 
+  call C % Initialize &
          ( M, Periodic, iChart = 1 )
   call GC % Initialize &
-         ( GM, C, 'Geometry' )
+         ( C, GM )
   call G % Initialize &
-         ( GC, nValues = C % nValues, NameOption = 'GeometryBase' )
+         ( GC, nValues = C % nValues )
   call C % ComputeGeometry ( G )
   call M % Show ( )
   call C % Show ( )
@@ -59,8 +59,8 @@ program FieldSet_CB__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields', iFieldSet = 2 ) 
-  call FSC % Initialize ( FSM, C, 'Fields', nFields ) 
+  call FSM % Initialize ( M, 'Fields' ) 
+  call FSC % Initialize ( C, FSM, 'Fields', nFields ) 
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -69,7 +69,7 @@ program FieldSet_CB__Form_Test
   allocate ( SM )
   allocate ( SC )
   call SM % Initialize ( M, GIS, 'Stream' )
-  call SC % Initialize ( SM, C, GIS, 'Stream' )
+  call SC % Initialize ( C, SM )
 
   call SM % AddFieldSet ( FSM )
   call SC % AddFieldSet ( FSC )

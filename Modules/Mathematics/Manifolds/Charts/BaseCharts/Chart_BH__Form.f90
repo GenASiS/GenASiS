@@ -46,7 +46,7 @@ module Chart_BH__Form
     procedure, private, pass :: &
       InitializeBasic_BH
     generic, public :: &
-      Initialize_BH => InitializeBasic_BH
+      Initialize => InitializeBasic_BH
     procedure, public, pass :: &
       ComputeGeometry
     procedure, private, pass :: &
@@ -97,13 +97,13 @@ contains
 
     class ( Chart_BH_Form ), intent ( inout ) :: &
       C
-    class ( Manifold_H_Form ), intent ( in ), target :: &
+    class ( Manifold_H_Form ), intent ( in ) :: &
       M
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsPeriodic
     integer ( KDI ), intent ( in ) :: &
       iChart
-    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+    type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       SpacingOption, &

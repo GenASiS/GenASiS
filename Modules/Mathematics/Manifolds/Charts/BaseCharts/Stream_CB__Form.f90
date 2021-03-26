@@ -31,26 +31,21 @@ module Stream_CB__Form
 contains
 
 
-  subroutine Initialize ( SC, SM, C, GIS, Name, VerboseOption )
+  subroutine Initialize ( SC, C, SM )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
+    class ( Chart_H_Form ), intent ( inout ), target :: &
+      C
     class ( Stream_MH_Form ), intent ( in ), target :: &
       SM
-    class ( Chart_H_Form ), intent ( in ), target :: &
-      C
-    type ( GridImageStreamForm ), intent ( in ), target :: &
-      GIS
-    character ( * ), intent ( in ) :: &
-      Name
-    logical ( KDL ), intent ( in ), optional :: &
-      VerboseOption
 
     if ( SC % Type == '' ) &
       SC % Type = 'a Stream_CB' 
 
-    call SC % Stream_CH_Form % Initialize ( SM, C, GIS, Name )
+    call SC % Stream_CH_Form % Initialize ( C, SM )
 
+    associate ( GIS  =>  SC % GridImageStream )
     select case ( C % nDimensions )
     case ( 1 ) 
       allocate ( SC % CurveImage )
@@ -63,6 +58,7 @@ contains
       call GI % Initialize ( GIS ) 
       end associate !-- GI
     end select !-- nDimensions
+    end associate !-- GIS
 
   end subroutine Initialize
 

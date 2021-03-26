@@ -36,7 +36,7 @@ program Stream_CB__Form_Test
   allocate ( C )
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
-  call C % Initialize_BH &
+  call C % Initialize &
          ( M, Periodic, iChart = 1 )
   call M % Show ( )
   call C % Show ( )
@@ -45,8 +45,8 @@ program Stream_CB__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields', iFieldSet = 1 ) 
-  call FSC % Initialize ( FSM, C, 'Fields', nFields ) 
+  call FSM % Initialize ( M, 'Fields' ) 
+  call FSC % Initialize ( C, FSM, 'Fields', nFields ) 
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -55,7 +55,7 @@ program Stream_CB__Form_Test
   allocate ( SM )
   allocate ( SC )
   call SM % Initialize ( M, GIS, 'Stream' )
-  call SC % Initialize ( SM, C, GIS, 'Stream' )
+  call SC % Initialize ( C, SM )
 
   call SM % AddFieldSet ( FSM )
   call SC % AddFieldSet ( FSC )
