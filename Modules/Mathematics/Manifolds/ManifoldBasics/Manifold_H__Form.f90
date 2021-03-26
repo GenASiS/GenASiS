@@ -54,8 +54,7 @@ contains
       nDimensionsOption, &
       iDimensionalityOption
 
-    M % IGNORABILITY  =  CONSOLE % INFO_1
-
+    M % IGNORABILITY     =  CONSOLE % INFO_1
     M % AllocatedValues  =  .true.
 
     if ( .not. associated ( M % Type ) ) then

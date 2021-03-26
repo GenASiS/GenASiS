@@ -19,8 +19,7 @@ module Stream_CH__Form
       Verbose = .false.
     character ( LDF ) :: &
       Name = '', &
-      Type = '', &
-      NameShort = ''
+      Type = ''
     type ( GridImageStreamForm ), pointer :: &
       GridImageStream => null ( )
     class ( Chart_H_Form ), pointer :: &
@@ -66,7 +65,7 @@ contains
     if ( SC % Type == '' ) &
       SC % Type = 'a Stream_C' 
     
-    SC % Name  =  trim ( SM % NameShort ) // '_' // trim ( C % Name )
+    SC % Name  =  SM % Name
 
     call Show ( 'Initializing ' // trim ( SC % Type ), SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
@@ -74,7 +73,6 @@ contains
      C % nStreams  =   C % Manifold % nStreams
     SC % iStream   =  SM % iStream
 
-    SC % NameShort  =  SM % NameShort
     SC % Verbose    =  SM % Verbose
 
     SC % GridImageStream  =>  SM % GridImageStream
@@ -131,11 +129,16 @@ contains
     call Split ( SC % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', SC % IGNORABILITY )
 
-    associate ( GIS  =>  SC % GridImageStream )
-    call Show (  SC % Name,             'Name', SC % IGNORABILITY )
-    call Show ( GIS % Name,  'GridImageStream', SC % IGNORABILITY )
-    call Show (  SC % iStream,       'iStream', SC % IGNORABILITY )
-    call Show (  SC % Verbose,       'Verbose', SC % IGNORABILITY )
+    associate &
+      ( GIS  =>  SC % GridImageStream, &
+          M  =>  SC % Chart % Manifold, &
+          C  =>  SC % Chart )
+    call Show (  SC % Name,    'Name',            SC % IGNORABILITY )
+    call Show ( GIS % Name,    'GridImageStream', SC % IGNORABILITY )
+    call Show (   M % Name,    'Manifold',        SC % IGNORABILITY )   
+    call Show (   C % Name,    'Chart',           SC % IGNORABILITY )   
+    call Show (  SC % iStream, 'iStream',         SC % IGNORABILITY )
+    call Show (  SC % Verbose, 'Verbose',         SC % IGNORABILITY )
     end associate !-- GIS
 
   end subroutine Show_SC

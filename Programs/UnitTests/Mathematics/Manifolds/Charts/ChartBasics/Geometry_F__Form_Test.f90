@@ -29,7 +29,7 @@ program Geometry_F__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_H &
-         ( M, Periodic, iChart = 1 )
+         ( M, 'Global', Periodic )
 
   allocate ( GM )
   allocate ( GC )

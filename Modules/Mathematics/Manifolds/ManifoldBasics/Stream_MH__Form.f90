@@ -17,8 +17,7 @@ module Stream_MH__Form
       Verbose = .false.
     character ( LDF ) :: &
       Name = '', &
-      Type = '', &
-      NameShort = ''
+      Type = ''
     type ( GridImageStreamForm ), pointer :: &
       GridImageStream => null ( )
     class ( Manifold_H_Form ), pointer :: &
@@ -43,7 +42,7 @@ module Stream_MH__Form
 contains
 
 
-  subroutine Initialize ( SM, M, GIS, NameShort, VerboseOption )
+  subroutine Initialize ( SM, M, GIS, Name, VerboseOption )
 
     class ( Stream_MH_Form ), intent ( inout ) :: &
       SM
@@ -52,7 +51,7 @@ contains
     type ( GridImageStreamForm ), intent ( in ), target :: &
       GIS
     character ( * ), intent ( in ) :: &
-      NameShort
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       VerboseOption
 
@@ -68,7 +67,7 @@ contains
     if ( SM % Type == '' ) &
       SM % Type = 'a Stream_M' 
     
-    SM % Name  =  trim ( NameShort ) // '_' // trim ( M % Name )
+    SM % Name  =  Name
 
     call Show ( 'Initializing ' // trim ( SM % Type ), SM % IGNORABILITY )
     call Show ( SM % Name, 'Name', SM % IGNORABILITY )
@@ -76,8 +75,7 @@ contains
      M % nStreams  =  M % nStreams  +  1
     SM % iStream   =  M % nStreams
 
-    SM % NameShort  =  NameShort
-    SM % Verbose    =  Verbose
+    SM % Verbose  =  Verbose
 
     SM % GridImageStream  =>  GIS
     SM % Manifold         =>    M 
@@ -132,12 +130,15 @@ contains
     call Split ( SM % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', SM % IGNORABILITY )
 
-    associate ( GIS  =>  SM % GridImageStream )
-    call Show (  SM % Name,             'Name', SM % IGNORABILITY )
-    call Show ( GIS % Name,  'GridImageStream', SM % IGNORABILITY )
-    call Show (  SM % iStream,       'iStream', SM % IGNORABILITY )
-    call Show (  SM % Verbose,       'Verbose', SM % IGNORABILITY )
-    end associate !-- GIS
+    associate &
+      ( GIS  =>  SM % GridImageStream, &
+          M  =>  SM % Manifold )
+    call Show (  SM % Name,    'Name',            SM % IGNORABILITY )
+    call Show ( GIS % Name,    'GridImageStream', SM % IGNORABILITY )
+    call Show (   M % Name,    'Manifold',        SM % IGNORABILITY )   
+    call Show (  SM % iStream, 'iStream',         SM % IGNORABILITY )
+    call Show (  SM % Verbose, 'Verbose',         SM % IGNORABILITY )
+    end associate !-- GIS, etc.
 
   end subroutine Show_SM
 

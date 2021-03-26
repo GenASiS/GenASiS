@@ -29,7 +29,7 @@ program Chart_H__Form_Test
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
-  call C_Base % Initialize_H ( Base, Periodic, iChart = 1 )
+  call C_Base % Initialize_H ( Base, 'Global', Periodic )
 
   !-- Fiber
 
@@ -39,13 +39,14 @@ program Chart_H__Form_Test
   allocate ( C_Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
   call C_Fiber % Initialize_H &
-         ( Fiber, Periodic, iChart = 1, &
+         ( Fiber, 'Global', Periodic, &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL' )
 
   !-- Display and cleanup
 
   call Base % Show ( )
+  call Show ( Base % nCharts,    'nCharts',    Base % IGNORABILITY )
   call Show ( Base % nFieldSets, 'nFieldSets', Base % IGNORABILITY )
   call Show ( Base % nStreams,   'nStreams',   Base % IGNORABILITY )
 
@@ -54,6 +55,7 @@ program Chart_H__Form_Test
   call Show ( C_Base % nStreams,   'nStreams',   C_Base % IGNORABILITY )
 
   call Fiber % Show ( )
+  call Show ( Fiber % nCharts,    'nCharts',    Fiber % IGNORABILITY )
   call Show ( Fiber % nFieldSets, 'nFieldSets', Fiber % IGNORABILITY )
   call Show ( Fiber % nStreams,   'nStreams',   Fiber % IGNORABILITY )
 

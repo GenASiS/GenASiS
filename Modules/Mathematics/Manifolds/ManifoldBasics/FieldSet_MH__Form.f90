@@ -17,8 +17,7 @@ module FieldSet_MH__Form
       Pinned
     character ( LDF ) :: &
       Name = '', &
-      Type = '', &
-      NameShort = ''
+      Type = ''
     class ( Manifold_H_Form ), pointer :: &
       Manifold => null ( )
   contains
@@ -41,14 +40,14 @@ module FieldSet_MH__Form
 contains
 
 
-  subroutine Initialize_H ( FSM, M, NameShort, PinnedOption )
+  subroutine Initialize_H ( FSM, M, Name, PinnedOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
     class ( Manifold_H_Form ), intent ( inout ), target :: &
       M
     character ( * ), intent ( in ) :: &
-      NameShort
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       PinnedOption
 
@@ -61,15 +60,13 @@ contains
     if ( present ( PinnedOption ) ) &
       FSM % Pinned  =  PinnedOption
     
-    FSM % Name  =  trim ( NameShort ) // '_' // trim ( M % Name ) 
+    FSM % Name  =  Name
 
     call Show ( 'Initializing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
    
       M % nFieldSets  =  M % nFieldSets  +  1
     FSM % iFieldSet   =  M % nFieldSets
-
-    FSM % NameShort  =  NameShort
 
     FSM % Manifold  =>  M
 
@@ -87,9 +84,11 @@ contains
     call Split ( FSM % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', FSM % IGNORABILITY )
 
+    associate ( M  =>  FSM % Manifold )
     call Show ( FSM % Name,      'Name',      FSM % IGNORABILITY )
-    call Show ( FSM % NameShort, 'NameShort', FSM % IGNORABILITY )
+    call Show (   M % Name,      'Manifold',  FSM % IGNORABILITY )
     call Show ( FSM % iFieldSet, 'iFieldSet', FSM % IGNORABILITY )
+    end associate  !-- M
 
   end subroutine Show_FSM
 

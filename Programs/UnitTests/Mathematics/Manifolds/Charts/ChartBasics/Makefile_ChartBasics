@@ -61,3 +61,9 @@ Stream_CH__Form_Test.o: \
   ManifoldBasics.o \
   ChartBasics.o \
   Stream_CH__Form_Test.f90
+
+Geometry_F__Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  ChartBasics.o \
+  Geometry_F__Form_Test.f90

@@ -56,18 +56,18 @@ contains
 
 
   subroutine InitializeBasic_H &
-               ( C, M, Periodic, iChart, CommunicatorOption, &
+               ( C, M, Name, Periodic, CommunicatorOption, &
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, nDimensionsOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
-    class ( Manifold_H_Form ), intent ( in ), target :: &
+    class ( Manifold_H_Form ), intent ( inout ), target :: &
       M
+    character ( * ), intent ( in )  :: &
+      Name    
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       Periodic
-    integer ( KDI ), intent ( in ) :: &
-      iChart
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -79,14 +79,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption
 
-    character ( 2 ) :: &
-      ChartNumber
-
-    C % IGNORABILITY  =   M % IGNORABILITY
-        C % Manifold  =>  M
-          C % iChart  =   iChart
-
-    C % AllocatedValues = .true.
+    C % IGNORABILITY     =   M % IGNORABILITY
+    C % AllocatedValues  =  .true.
 
     if ( .not. associated ( C % Type ) ) then
       allocate ( C % Type )
@@ -94,11 +88,13 @@ contains
     end if
 
     allocate ( C % Name )
-    write ( ChartNumber, fmt = '(i2.2)' ) iChart
-    C % Name = 'Chart_' // ChartNumber // '_' // trim ( M % Name ) 
+    C % Name  =  Name
 
     call Show ( 'Initializing ' // trim ( C % Type ), C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
+
+    M % nCharts  =  M % nCharts  +  1
+    C % iChart   =  M % nCharts
 
     if ( present ( CommunicatorOption ) ) then
       C % Distributed  =   .true.
@@ -113,6 +109,8 @@ contains
     else
       C % nDimensions  =  M % nDimensions
     end if
+
+    C % Manifold  =>  M
 
     call SetCoordinateSystem &
            ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
@@ -133,18 +131,22 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
 
-    associate ( nD => C % nDimensions )
+    associate &
+      (  M  =>  C % Manifold, & 
+        nD  =>  C % nDimensions )
 
-    call Show ( C % Distributed, 'Distributed', C % IGNORABILITY )
+    call Show ( M % Name,        'Manifold',    C % IGNORABILITY )
+    call Show ( C % iChart,      'iChart',      C % IGNORABILITY )
     call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
 
-    call Show ( C % Periodic ( : nD ), 'Periodic', C % IGNORABILITY )
+    call Show ( C % Distributed,       'Distributed', C % IGNORABILITY )
+    call Show ( C % Periodic ( : nD ), 'Periodic',    C % IGNORABILITY )
 
     call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
     call Show ( C % CoordinateLabel ( : nD ), 'CoordinateLabel', &
                 C % IGNORABILITY )
 
-    end associate !-- nD
+    end associate !-- M, etc.
 
   end subroutine Show_C
 

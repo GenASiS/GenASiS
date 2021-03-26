@@ -221,7 +221,7 @@ contains
     G % CoordinateSystem  =  GC % Chart % CoordinateSystem
 
     call InitializeBasics &
-           ( G, GC % NameShort, Variable, Vector, VariableUnit, VectorIndices, &
+           ( G, GC % Name, Variable, Vector, VariableUnit, VectorIndices, &
              VariableOption, VectorOption, UnitOption, VectorIndicesOption )
 
     call SetUnits ( VariableUnit, G, GC % Chart % CoordinateUnit )
@@ -229,7 +229,7 @@ contains
     call G % StorageForm % Initialize &
           ( [ nValues, G % N_FIELDS ], &
             VariableOption = Variable, VectorOption = Vector, &
-            NameOption = GC % NameShort, ClearOption = .true., &
+            NameOption = GC % Name, ClearOption = .true., &
             PinnedOption = GC % Pinned, &
             UnitOption = VariableUnit, &
             VectorIndicesOption = VectorIndices )
