@@ -40,6 +40,7 @@ program Stream_MH__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   call M % Show ( )
+  call Show ( M % nCharts,    'nCharts',    M % IGNORABILITY )
   call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
   call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
 

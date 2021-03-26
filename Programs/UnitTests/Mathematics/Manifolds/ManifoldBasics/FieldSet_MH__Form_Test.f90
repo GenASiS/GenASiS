@@ -22,6 +22,7 @@ program FieldSet_MH__Form_Test
   call FSM % Initialize ( M, 'Fields' ) 
 
   call M % Show ( )
+  call Show ( M % nCharts,    'nCharts',    M % IGNORABILITY )
   call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
   call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
 

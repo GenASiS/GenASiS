@@ -11,6 +11,7 @@ module Manifold_H__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nDimensions  = 0, &
+      nCharts      = 0, &
       nFieldSets   = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
