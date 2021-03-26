@@ -38,7 +38,7 @@ program Geometry_F__Form_Test
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
   allocate ( G )
-  call G % Initialize ( GC, nValues = 10, NameOption = 'Geometry_F' )
+  call G % Initialize ( GC, nValues = 10 )
   deallocate ( G )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 

@@ -192,8 +192,8 @@ contains
 
 
   subroutine InitializeAllocate_G_F &
-               ( G, GC, nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, PinnedOption, UnitOption, VectorIndicesOption )
+               ( G, GC, nValues, VariableOption, VectorOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( Geometry_F_Form ), intent ( inout ) :: &
       G
@@ -204,11 +204,6 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption, &
       VectorOption
-    character ( * ), intent ( in ), optional :: &
-      NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      ClearOption, &
-      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -218,33 +213,24 @@ contains
       VectorIndices
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       VariableUnit
-    character ( LDF ) :: &
-      Name 
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    logical ( KDL ) :: &
-      Clear
 
     G % Geometry_C  =>  GC
     G % CoordinateSystem  =  GC % Chart % CoordinateSystem
 
     call InitializeBasics &
-           ( G, Variable, Vector, Name, VariableUnit, VectorIndices, &
-             VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+           ( G, GC % NameShort, Variable, Vector, VariableUnit, VectorIndices, &
+             VariableOption, VectorOption, UnitOption, VectorIndicesOption )
 
     call SetUnits ( VariableUnit, G, GC % Chart % CoordinateUnit )
-
-    Clear = .true.
-    if ( present ( ClearOption ) ) &
-      Clear = ClearOption
 
     call G % StorageForm % Initialize &
           ( [ nValues, G % N_FIELDS ], &
             VariableOption = Variable, VectorOption = Vector, &
-            NameOption = Name, ClearOption = Clear, &
-            PinnedOption = PinnedOption, &
+            NameOption = GC % NameShort, ClearOption = .true., &
+            PinnedOption = GC % Pinned, &
             UnitOption = VariableUnit, &
             VectorIndicesOption = VectorIndices )
 
@@ -380,17 +366,17 @@ contains
 
 
   subroutine InitializeBasics &
-               ( G, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, &
-                 VariableUnitOption, VectorIndicesOption )
+               ( G, Name, Variable, Vector, VariableUnit, VectorIndices, &
+                 VariableOption, VectorOption, VariableUnitOption, &
+                 VectorIndicesOption )
 
     class ( Geometry_F_Form ), intent ( inout ) :: &
       G
+    character ( LDF ), intent ( in ) :: &
+      Name
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable, &
       Vector
-    character ( LDF ), intent ( out ) :: &
-      Name
     type ( MeasuredValueForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
@@ -404,8 +390,6 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption, &
       VectorOption
-    character ( * ), intent ( in ), optional :: &
-      NameOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
@@ -416,10 +400,6 @@ contains
 
     if ( G % Type == '' ) &
       G % Type = 'Geometry_F'
-
-    Name = 'Geometry'
-    if ( present ( NameOption ) ) &
-      Name = NameOption
 
     G % IGNORABILITY = CONSOLE % INFO_4
     call Show ( 'Initializing a ' // trim ( G % Type ), G % IGNORABILITY )
