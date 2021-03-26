@@ -302,15 +302,15 @@ contains
       return
 
     call Show ( 'Allocating a FieldSet',    FSC % IGNORABILITY + 1 )
-    call Show ( FSC % NameShort, 'Name',    FSC % IGNORABILITY + 1 )
-    call Show ( FSC % Field,     'Field',   FSC % IGNORABILITY + 1 )
-    call Show ( FSC % nFields,   'nFields', FSC % IGNORABILITY + 1 )
-    call Show ( FSC % nValues,   'nValues', FSC % IGNORABILITY + 1 )
+    call Show ( FSC % Name,    'Name',    FSC % IGNORABILITY + 1 )
+    call Show ( FSC % Field,   'Field',   FSC % IGNORABILITY + 1 )
+    call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY + 1 )
+    call Show ( FSC % nValues, 'nValues', FSC % IGNORABILITY + 1 )
     
     allocate ( FSC % FieldSet )
     call FSC % FieldSet % Initialize &
            ( [ FSC % nValues, FSC % nFields ], &
-             VariableOption = FSC % Field, NameOption = FSC % NameShort, &
+             VariableOption = FSC % Field, NameOption = FSC % Name, &
              PinnedOption = FSC % Pinned )
 
     allocate ( FSC % FieldSetStream )

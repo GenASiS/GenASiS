@@ -49,7 +49,7 @@ program FieldSet_CB__Form_Test
   call GM % Initialize &
          ( M, 'Geometry' ) 
   call C % Initialize &
-         ( M, Periodic, iChart = 1 )
+         ( M, 'Global', Periodic )
   call GC % Initialize &
          ( C, GM )
   call G % Initialize &

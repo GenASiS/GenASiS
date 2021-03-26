@@ -88,7 +88,7 @@ contains
 
 
   subroutine InitializeBasic_BH &
-               ( C, M, IsPeriodic, iChart, CommunicatorOption, SpacingOption, &
+               ( C, M, Name, Periodic, CommunicatorOption, SpacingOption, &
                  CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
                  MaxCoordinateOption, RatioOption, ScaleOption, &
@@ -97,12 +97,12 @@ contains
 
     class ( Chart_BH_Form ), intent ( inout ) :: &
       C
-    class ( Manifold_H_Form ), intent ( in ) :: &
+    class ( Manifold_H_Form ), intent ( inout ) :: &
       M
+    character ( * ), intent ( in )  :: &
+      Name    
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsPeriodic
-    integer ( KDI ), intent ( in ) :: &
-      iChart
+      Periodic
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -127,9 +127,8 @@ contains
       nEqualOption
 
     call C % Chart_H_Form % Initialize_H &
-           ( M, IsPeriodic, iChart, CommunicatorOption, &
-             CoordinateLabelOption, CoordinateSystemOption, &
-             CoordinateUnitOption, nDimensionsOption )
+           ( M, Name, Periodic, CommunicatorOption, CoordinateLabelOption, &
+             CoordinateSystemOption, CoordinateUnitOption, nDimensionsOption )
 
     call SetCoordinateMetadata &
            ( C, SpacingOption, MinCoordinateOption, MaxCoordinateOption, &
@@ -180,6 +179,8 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
+
+    call C % Chart_H_Form % Show ( )
 
     associate ( nD => C % nDimensions )
 

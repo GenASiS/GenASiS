@@ -37,7 +37,7 @@ program Stream_CB__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize &
-         ( M, Periodic, iChart = 1 )
+         ( M, 'Global', Periodic )
   call M % Show ( )
   call C % Show ( )
 

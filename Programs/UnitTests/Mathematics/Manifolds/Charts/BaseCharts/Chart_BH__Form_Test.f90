@@ -61,17 +61,12 @@ program Chart_BH__Form_Test
   call GM_Base % Initialize &
          ( Base, 'GeometryBase' ) 
   call C_Base % Initialize &
-         ( Base, Periodic, iChart = 1 )
+         ( Base, 'Global', Periodic )
   call GC_Base % Initialize &
          ( C_Base, GM_Base ) 
   call G_Base % Initialize &
          ( GC_Base, nValues = C_Base % nValues )
   call C_Base % ComputeGeometry ( G_Base )
-
-  call Base % Show ( )
-  call C_Base % Show ( )
-  call ShowProper ( C_Base )
-  call ShowGeometry ( G_Base )
 
   !-- Fiber
 
@@ -91,7 +86,7 @@ program Chart_BH__Form_Test
   call GM_Fiber % Initialize &
          ( Fiber, 'GeometryFiber' ) 
   call C_Fiber % Initialize &
-         ( Fiber, Periodic, iChart = 1, &
+         ( Fiber, 'Global', Periodic, &
            SpacingOption = [ 'GEOMETRIC' ], &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &
@@ -107,8 +102,29 @@ program Chart_BH__Form_Test
          ( GC_Fiber, nValues = C_Fiber % nValues )
   call C_Fiber % ComputeGeometry ( G_Fiber )
 
+  !-- Display and cleanup
+
+  call Base % Show ( )
+  call Show ( Base % nCharts,    'nCharts',    Base % IGNORABILITY )
+  call Show ( Base % nFieldSets, 'nFieldSets', Base % IGNORABILITY )
+  call Show ( Base % nStreams,   'nStreams',   Base % IGNORABILITY )
+
+  call C_Base % Show ( )
+  call Show ( C_Base % nFieldSets, 'nFieldSets', C_Base % IGNORABILITY )
+  call Show ( C_Base % nStreams,   'nStreams',   C_Base % IGNORABILITY )
+
+  call ShowProper ( C_Base )
+  call ShowGeometry ( G_Base )
+
   call Fiber % Show ( )
+  call Show ( Fiber % nCharts,    'nCharts',    Fiber % IGNORABILITY )
+  call Show ( Fiber % nFieldSets, 'nFieldSets', Fiber % IGNORABILITY )
+  call Show ( Fiber % nStreams,   'nStreams',   Fiber % IGNORABILITY )
+
   call C_Fiber % Show ( )
+  call Show ( C_Fiber % nFieldSets, 'nFieldSets', C_Fiber % IGNORABILITY )
+  call Show ( C_Fiber % nStreams,   'nStreams',   C_Fiber % IGNORABILITY )
+
   call ShowProper ( C_Fiber )
   call ShowGeometry ( G_Fiber )
 
