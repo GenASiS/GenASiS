@@ -21,7 +21,7 @@ int SetDevice ( int iDevice )
   }
 
 
-int getDevice ( int * iDevice )
+int GetDevice ( int * iDevice )
   {
   #ifdef ENABLE_OMP_OFFLOAD
   hipError_t Status;
