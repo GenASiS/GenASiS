@@ -92,7 +92,7 @@ contains
 
   subroutine InitializeAllocate &
                ( FSC, C, FSM, NameShort, nFields, FieldOption, PinnedOption, &
-                 IgnorabilityOption )
+                 UseDeviceGhostOption, IgnorabilityOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -107,7 +107,8 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     logical ( KDL ), intent ( in ), optional :: &
-      PinnedOption
+      PinnedOption, &
+      UseDeviceGhostOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -126,10 +127,9 @@ contains
 
     call FSC % AllocateFieldSet ( )
 
-    FSC % UseDeviceGhost = .true.    
-    call PROGRAM_HEADER % GetParameter &
-           ( FSC % UseDeviceGhost, 'UseDeviceGhost', &
-             IgnorabilityOption = CONSOLE % INFO_2 )
+    FSC % UseDeviceGhost  =  .false.
+    if ( present ( UseDeviceGhostOption ) )  &
+      FSC % UseDeviceGhost  =  UseDeviceGhostOption  
 
     allocate ( FSC % Stream ( MAX_STREAMS ) )
 
@@ -152,6 +152,33 @@ contains
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
 
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    !-- Start faces
+    call StartExchangeFace &
+           ( FSC, FSC % IncomingFace_L_R, FSC % OutgoingFace_L_R, &
+             C % PortalFace_L_R, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R )
+    call StartExchangeFace &
+           ( FSC, FSC % IncomingFace_R_L, FSC % OutgoingFace_R_L, &
+             C % PortalFace_R_L, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L )
+
+    !-- Start edges
+    call StartExchangeEdge &
+           ( FSC, FSC % IncomingEdge_LL_RR, FSC % OutgoingEdge_LL_RR, &
+             C % PortalEdge_LL_RR, TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR )
+    call StartExchangeEdge &
+           ( FSC, FSC % IncomingEdge_RR_LL, FSC % OutgoingEdge_RR_LL, &
+             C % PortalEdge_RR_LL, TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL )
+    call StartExchangeEdge &
+           ( FSC, FSC % IncomingEdge_LR_RL, FSC % OutgoingEdge_LR_RL, &
+             C % PortalEdge_LR_RL, TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL )
+    call StartExchangeEdge &
+           ( FSC, FSC % IncomingEdge_RL_LR, FSC % OutgoingEdge_RL_LR, &
+             C % PortalEdge_RL_LR, TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR )
+
+    end select  !-- C
+
   end subroutine StartGhostExchange
 
 
@@ -160,6 +187,30 @@ contains
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
 
+!  subroutine FinishExchangeFace &
+!               ( FSC, IncomingFace, OutgoingFace, TagReceive )
+    !-- Finish faces
+    call FinishExchangeFace &
+           ( FSC, FSC % IncomingFace_L_R, FSC % OutgoingFace_L_R, &
+             TAG_RECEIVE_FACE_L )
+    call FinishExchangeFace &
+           ( FSC, FSC % IncomingFace_R_L, FSC % OutgoingFace_R_L, &
+             TAG_RECEIVE_FACE_R )
+
+    !-- Finish edges
+    call FinishExchangeEdge &
+           ( FSC, FSC % IncomingEdge_LL_RR, FSC % OutgoingEdge_LL_RR, &
+             TAG_RECEIVE_EDGE_LL )
+    call FinishExchangeEdge &
+           ( FSC, FSC % IncomingEdge_RR_LL, FSC % OutgoingEdge_RR_LL, &
+             TAG_RECEIVE_EDGE_RR )
+    call FinishExchangeEdge &
+           ( FSC, FSC % IncomingEdge_LR_RL, FSC % OutgoingEdge_LR_RL, &
+             TAG_RECEIVE_EDGE_LR )
+    call FinishExchangeEdge &
+           ( FSC, FSC % IncomingEdge_RL_LR, FSC % OutgoingEdge_RL_LR, &
+             TAG_RECEIVE_EDGE_RL )
+    
   end subroutine FinishGhostExchange
 
 

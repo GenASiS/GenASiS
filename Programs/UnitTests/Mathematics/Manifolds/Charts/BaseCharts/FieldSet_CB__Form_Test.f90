@@ -9,6 +9,9 @@ program FieldSet_CB__Form_Test
 
   integer ( KDI ) :: &
     nFields = 5
+  logical ( KDL ) :: &
+    Pinned, &
+    UseDeviceGhost
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( GridImageStreamForm ), allocatable :: &
@@ -57,10 +60,22 @@ program FieldSet_CB__Form_Test
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
 
+  Pinned  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  call PROGRAM_HEADER % GetParameter ( Pinned, 'Pinned' )
+
+  UseDeviceGhost  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
+  call PROGRAM_HEADER % GetParameter ( UseDeviceGhost, 'UseDeviceGhost' )
+
+call Show ( Pinned, '>>> Pinned' )
+call Show ( UseDeviceGhost, '>>> UseDeviceGhost' )
+
   allocate ( FSM )
   allocate ( FSC )
   call FSM % Initialize ( M, 'Fields' ) 
-  call FSC % Initialize ( C, FSM, 'Fields', nFields ) 
+  call FSC % Initialize &
+         ( C, FSM, 'Fields', nFields, PinnedOption = Pinned, &
+           UseDeviceGhostOption = UseDeviceGhost ) 
+  call FSC % ExchangeGhostData ( )
 
   allocate ( GIS )
   call GIS % Initialize &
