@@ -11,8 +11,6 @@ module FieldSet_CB__Form
   private
 
   type, public, extends ( FieldSet_CH_Form ) :: FieldSet_CB_Form
-    logical ( KDL ) :: &
-      UseDeviceGhost
     integer ( KDI ) :: &
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
@@ -90,9 +88,7 @@ module FieldSet_CB__Form
 contains
 
 
-  subroutine InitializeAllocate &
-               ( FSC, C, FSM, NameShort, nFields, FieldOption, PinnedOption, &
-                 UseDeviceGhostOption, IgnorabilityOption )
+  subroutine InitializeAllocate ( FSC, C, FSM, nFields, FieldOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -100,17 +96,10 @@ contains
       C
     class ( FieldSet_MH_Form ), intent ( in ) :: &
       FSM
-    character ( * ), intent ( in ) :: &
-      NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
-    logical ( KDL ), intent ( in ), optional :: &
-      PinnedOption, &
-      UseDeviceGhostOption
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
 
     if ( FSC % Type == '' ) &
       FSC % Type = 'a FieldSet_CB' 
@@ -126,10 +115,6 @@ contains
     call FSC % Initialize ( C, FSM )
 
     call FSC % AllocateFieldSet ( )
-
-    FSC % UseDeviceGhost  =  .false.
-    if ( present ( UseDeviceGhostOption ) )  &
-      FSC % UseDeviceGhost  =  UseDeviceGhostOption  
 
     allocate ( FSC % Stream ( MAX_STREAMS ) )
 

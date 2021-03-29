@@ -14,7 +14,8 @@ module FieldSet_MH__Form
       iFieldSet    = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
-      Pinned
+      Pinned, &
+      UseDeviceGhost
     character ( LDF ) :: &
       Name = '', &
       Type = ''
@@ -40,7 +41,7 @@ module FieldSet_MH__Form
 contains
 
 
-  subroutine Initialize_H ( FSM, M, Name, PinnedOption )
+  subroutine Initialize_H ( FSM, M, Name, PinnedOption, UseDeviceGhostOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -49,7 +50,8 @@ contains
     character ( * ), intent ( in ) :: &
       Name
     logical ( KDL ), intent ( in ), optional :: &
-      PinnedOption
+      PinnedOption, &
+      UseDeviceGhostOption
 
     FSM % IGNORABILITY  =  M % IGNORABILITY
 
@@ -60,6 +62,10 @@ contains
     if ( present ( PinnedOption ) ) &
       FSM % Pinned  =  PinnedOption
     
+    FSM % UseDeviceGhost  =  .false.
+    if ( present ( UseDeviceGhostOption ) )  &
+      FSM % UseDeviceGhost  =  UseDeviceGhostOption  
+
     FSM % Name  =  Name
 
     call Show ( 'Initializing ' // trim ( FSM % Type ), FSM % IGNORABILITY )

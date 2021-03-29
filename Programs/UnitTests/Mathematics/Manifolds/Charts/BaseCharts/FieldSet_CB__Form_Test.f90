@@ -66,15 +66,13 @@ program FieldSet_CB__Form_Test
   UseDeviceGhost  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
   call PROGRAM_HEADER % GetParameter ( UseDeviceGhost, 'UseDeviceGhost' )
 
-call Show ( Pinned, '>>> Pinned' )
-call Show ( UseDeviceGhost, '>>> UseDeviceGhost' )
-
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields' ) 
-  call FSC % Initialize &
-         ( C, FSM, 'Fields', nFields, PinnedOption = Pinned, &
+  call FSM % Initialize &
+         ( M, 'Fields', PinnedOption = Pinned, &
            UseDeviceGhostOption = UseDeviceGhost ) 
+  call FSC % Initialize &
+         ( C, FSM, nFields ) 
   call FSC % ExchangeGhostData ( )
 
   allocate ( GIS )

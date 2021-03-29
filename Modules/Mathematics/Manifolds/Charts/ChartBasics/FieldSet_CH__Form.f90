@@ -15,7 +15,8 @@ module FieldSet_CH__Form
       iFieldSet    = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
-      Pinned = .false.
+      Pinned, &
+      UseDeviceGhost
     character ( LDF ) :: &
       Name = '', &
       Type = ''
@@ -57,7 +58,9 @@ contains
     if ( FSC % Type  ==  '' ) &
       FSC % Type  =  'a FieldSet_C' 
     
-    FSC % Pinned  =  FSM % Pinned    
+    FSC % Pinned          =  FSM % Pinned    
+    FSC % UseDeviceGhost  =  FSM % UseDeviceGhost    
+
     FSC % Name    =  FSM % Name
 
     call Show ( 'Initializing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
