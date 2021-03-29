@@ -14,10 +14,7 @@ module FieldSet_CB__Form
     integer ( KDI ) :: &
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
-      nValues  = 0, &
-      nFields  = 0
-    character ( LDL ), dimension ( : ), allocatable :: &
-      Field
+      nValues  = 0
     class ( StorageForm ), allocatable :: &
       FieldSet, &
       FieldSetStream
@@ -88,7 +85,7 @@ module FieldSet_CB__Form
 contains
 
 
-  subroutine InitializeAllocate ( FSC, C, FSM, nFields, FieldOption )
+  subroutine InitializeAllocate ( FSC, C, FSM )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -96,10 +93,6 @@ contains
       C
     class ( FieldSet_MH_Form ), intent ( in ) :: &
       FSM
-    integer ( KDI ), intent ( in ) :: &
-      nFields
-    character ( * ), dimension ( : ), intent ( in ), optional :: &
-      FieldOption
 
     if ( FSC % Type == '' ) &
       FSC % Type = 'a FieldSet_CB' 
@@ -271,9 +264,6 @@ contains
       deallocate ( FSC % FieldSetStream )
     if ( allocated ( FSC % FieldSet ) ) &
       deallocate ( FSC % FieldSet )
-
-    if ( allocated ( FSC % Field ) ) &
-      deallocate ( FSC % Field )
 
   end subroutine Finalize
 

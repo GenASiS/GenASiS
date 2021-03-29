@@ -12,6 +12,7 @@ module FieldSet_MH__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iFieldSet    = 0, &
+      nFields      = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
       Pinned, &
@@ -19,6 +20,8 @@ module FieldSet_MH__Form
     character ( LDF ) :: &
       Name = '', &
       Type = ''
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Field
     class ( Manifold_H_Form ), pointer :: &
       Manifold => null ( )
   contains
@@ -41,7 +44,9 @@ module FieldSet_MH__Form
 contains
 
 
-  subroutine Initialize_H ( FSM, M, Name, PinnedOption, UseDeviceGhostOption )
+  subroutine Initialize_H &
+               ( FSM, M, Name, nFields, FieldOption, PinnedOption, &
+                 UseDeviceGhostOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -49,9 +54,18 @@ contains
       M
     character ( * ), intent ( in ) :: &
       Name
+    integer ( KDI ), intent ( in ) :: &
+      nFields
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      FieldOption
     logical ( KDL ), intent ( in ), optional :: &
       PinnedOption, &
       UseDeviceGhostOption
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+    character ( 2 ) :: &
+      FieldNumber
 
     FSM % IGNORABILITY  =  M % IGNORABILITY
 
@@ -74,6 +88,19 @@ contains
       M % nFieldSets  =  M % nFieldSets  +  1
     FSM % iFieldSet   =  M % nFieldSets
 
+    associate ( nF  =>  FSM % nFields )
+    nF  =  nFields
+    allocate ( FSM % Field ( nF ) )
+    if ( present ( FieldOption ) ) then
+      FSM % Field  =  FieldOption
+    else
+      do iF  =  1, nF
+        write ( FieldNumber, fmt = '(i2.2)' ) iF
+        FSM % Field ( iF )  =  'Field_' // FieldNumber
+      end do  !-- iF
+    end if  !-- FieldOption
+    end associate  !-- nF
+
     FSM % Manifold  =>  M
 
   end subroutine Initialize_H
@@ -84,6 +111,8 @@ contains
     class ( FieldSet_MH_Form ), intent ( in ) :: &
       FSM
 
+    integer ( KDI ) :: &
+      iF  !-- iField
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
@@ -96,6 +125,14 @@ contains
     call Show ( FSM % iFieldSet, 'iFieldSet', FSM % IGNORABILITY )
     end associate  !-- M
 
+    call Show ( FSM % nFields, 'nFields', FSM % IGNORABILITY )
+    do iF  =  1, FSM % nFields
+      call Show ( FSM % Field ( iF ), 'Field', FSM % IGNORABILITY )
+    end do !-- iF
+    
+    call Show ( FSM % Pinned,         'Pinned',         FSM % IGNORABILITY )
+    call Show ( FSM % UseDeviceGhost, 'UseDeviceGhost', FSM % IGNORABILITY )
+
   end subroutine Show_FSM
 
 
@@ -105,6 +142,9 @@ contains
       FSM
 
     nullify ( FSM % Manifold )
+
+    if ( allocated ( FSM % Field ) ) &
+      deallocate ( FSM % Field )
 
     call Show ( 'Finalizing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )

@@ -7,7 +7,8 @@ program Stream_CH__Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    iFS  !-- iFieldSet
+    iFS, &  !-- iFieldSet
+    nFields = 5
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( GridImageStreamForm ), allocatable :: &
@@ -40,7 +41,7 @@ program Stream_CH__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', nFields ) 
   call FSC % Initialize ( C, FSM ) 
 
   allocate ( GIS )

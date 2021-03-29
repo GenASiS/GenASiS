@@ -6,7 +6,8 @@ program Stream_MH__Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    iFS  !-- iFieldSet
+    iFS, &  !-- iFieldSet
+    nFields = 5
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Manifold_H_Form ), allocatable :: &
@@ -25,7 +26,7 @@ program Stream_MH__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( FSM )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', nFields ) 
 
   allocate ( GIS )
   call GIS % Initialize &

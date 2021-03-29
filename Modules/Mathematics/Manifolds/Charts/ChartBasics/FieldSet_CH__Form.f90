@@ -13,6 +13,7 @@ module FieldSet_CH__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iFieldSet    = 0, &
+      nFields      = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
       Pinned, &
@@ -20,6 +21,8 @@ module FieldSet_CH__Form
     character ( LDF ) :: &
       Name = '', &
       Type = ''
+    character ( LDL ), dimension ( : ), pointer :: &
+      Field
     class ( Chart_H_Form ), pointer :: &
       Chart => null ( )
     class ( FieldSet_MH_Form ), pointer :: &
@@ -69,6 +72,9 @@ contains
       C % nFieldSets  =    C % Manifold % nFieldSets
     FSC % iFieldSet   =  FSM % iFieldSet
 
+    FSC % nFields  =   FSM % nFields    
+    FSC % Field    =>  FSM % Field
+
     FSC % Chart       =>    C
     FSC % FieldSet_M  =>  FSM 
 
@@ -80,6 +86,8 @@ contains
     class ( FieldSet_CH_Form ), intent ( in ) :: &
       FSC
 
+    integer ( KDI ) :: &
+      iF  !-- iField
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
@@ -95,6 +103,14 @@ contains
     call Show ( FSC % iFieldSet, 'iFieldSet', FSC % IGNORABILITY )
     end associate  !-- M, etc.
 
+    call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY )
+    do iF  =  1, FSC % nFields
+      call Show ( FSC % Field ( iF ), 'Field', FSC % IGNORABILITY )
+    end do !-- iF
+    
+    call Show ( FSC % Pinned,         'Pinned',         FSC % IGNORABILITY )
+    call Show ( FSC % UseDeviceGhost, 'UseDeviceGhost', FSC % IGNORABILITY )
+
   end subroutine Show_FSC
 
 
@@ -105,6 +121,7 @@ contains
 
     nullify ( FSC % FieldSet_M )
     nullify ( FSC % Chart )
+    nullify ( FSC % Field )
 
     call Show ( 'Finalizing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
     call Show ( FSC % Name, 'Name', FSC % IGNORABILITY )

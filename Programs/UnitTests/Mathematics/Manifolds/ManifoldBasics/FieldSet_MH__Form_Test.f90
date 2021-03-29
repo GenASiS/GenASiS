@@ -5,6 +5,8 @@ program FieldSet_MH__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    nFields = 5
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
@@ -19,7 +21,7 @@ program FieldSet_MH__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( FSM )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', nFields ) 
 
   call M % Show ( )
   call Show ( M % nCharts,    'nCharts',    M % IGNORABILITY )

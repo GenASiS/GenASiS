@@ -6,6 +6,8 @@ program FieldSet_CH__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    nFields = 5
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( Chart_H_Form ), allocatable :: &
@@ -32,7 +34,7 @@ program FieldSet_CH__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields' ) 
+  call FSM % Initialize ( M, 'Fields', nFields ) 
   call FSC % Initialize ( C, FSM ) 
 
   call M % Show ( )
