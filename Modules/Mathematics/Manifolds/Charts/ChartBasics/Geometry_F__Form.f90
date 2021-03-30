@@ -230,7 +230,7 @@ contains
           ( [ nValues, G % N_FIELDS ], &
             VariableOption = Variable, VectorOption = Vector, &
             NameOption = GC % Name, ClearOption = .true., &
-            PinnedOption = GC % Pinned, &
+            PinnedOption = GC % PinnedMemory, &
             UnitOption = VariableUnit, &
             VectorIndicesOption = VectorIndices )
 

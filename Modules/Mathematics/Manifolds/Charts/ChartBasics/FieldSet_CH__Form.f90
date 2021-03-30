@@ -16,8 +16,9 @@ module FieldSet_CH__Form
       nFields      = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
-      Pinned, &
-      UseDeviceGhost
+      DeviceMemory, &
+      PinnedMemory, &
+      DevicesCommunicate
     character ( LDF ) :: &
       Name = '', &
       Type = ''
@@ -29,9 +30,9 @@ module FieldSet_CH__Form
       FieldSet_M => null ( )
   contains
     procedure, private, pass :: &
-      Initialize_H
+      InitializeAllocate
     generic, public :: &
-      Initialize => Initialize_H
+      Initialize => InitializeAllocate
     procedure, public, pass :: &
       Show => Show_FSC
     final :: &
@@ -47,7 +48,7 @@ module FieldSet_CH__Form
 contains
 
 
-  subroutine Initialize_H ( FSC, C, FSM )
+  subroutine InitializeAllocate ( FSC, C, FSM )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC
@@ -61,8 +62,9 @@ contains
     if ( FSC % Type  ==  '' ) &
       FSC % Type  =  'a FieldSet_C' 
     
-    FSC % Pinned          =  FSM % Pinned    
-    FSC % UseDeviceGhost  =  FSM % UseDeviceGhost    
+    FSC % DeviceMemory        =  FSM % DeviceMemory    
+    FSC % PinnedMemory        =  FSM % PinnedMemory    
+    FSC % DevicesCommunicate  =  FSM % DevicesCommunicate    
 
     FSC % Name    =  FSM % Name
 
@@ -78,7 +80,7 @@ contains
     FSC % Chart       =>    C
     FSC % FieldSet_M  =>  FSM 
 
-  end subroutine Initialize_H
+  end subroutine InitializeAllocate
 
 
   subroutine Show_FSC ( FSC )
@@ -108,8 +110,12 @@ contains
       call Show ( FSC % Field ( iF ), 'Field', FSC % IGNORABILITY )
     end do !-- iF
     
-    call Show ( FSC % Pinned,         'Pinned',         FSC % IGNORABILITY )
-    call Show ( FSC % UseDeviceGhost, 'UseDeviceGhost', FSC % IGNORABILITY )
+    call Show ( FSC % DeviceMemory,       'DeviceMemory', &
+                FSC % IGNORABILITY )
+    call Show ( FSC % PinnedMemory,       'PinnedMemory', &
+                FSC % IGNORABILITY )
+    call Show ( FSC % DevicesCommunicate, 'DevicesCommunicate', &
+                FSC % IGNORABILITY )
 
   end subroutine Show_FSC
 

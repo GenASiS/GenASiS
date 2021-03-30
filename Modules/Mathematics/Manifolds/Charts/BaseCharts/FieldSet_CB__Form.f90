@@ -35,10 +35,8 @@ module FieldSet_CB__Form
     type ( Stream_CH_Pointer ), dimension ( : ), allocatable :: &
       Stream
   contains
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       InitializeAllocate
-    generic, public :: &
-      Initialize => InitializeAllocate
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -89,21 +87,18 @@ contains
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
-    class ( Chart_BH_Form ), intent ( inout ) :: &
+    class ( Chart_H_Form ), intent ( inout ), target :: &
       C
-    class ( FieldSet_MH_Form ), intent ( in ) :: &
+    class ( FieldSet_MH_Form ), intent ( in ), target :: &
       FSM
 
     if ( FSC % Type == '' ) &
       FSC % Type = 'a FieldSet_CB' 
 
-    FSC % nValues  =  C % nValues
-    FSC % nFields  =  nFields
-
-    allocate ( FSC % Field ( nFields ) )
-    FSC % Field = ''
-    if ( present ( FieldOption ) ) &
-      FSC % Field = FieldOption   
+    select type ( C )
+    class is ( Chart_BH_Form )
+      FSC % nValues  =  C % nValues
+    end select !-- C
 
     call FSC % Initialize ( C, FSM )
 
@@ -285,8 +280,7 @@ contains
     allocate ( FSC % FieldSet )
     call FSC % FieldSet % Initialize &
            ( [ FSC % nValues, FSC % nFields ], &
-             VariableOption = FSC % Field, NameOption = FSC % Name, &
-             PinnedOption = FSC % Pinned )
+             VariableOption = FSC % Field, NameOption = FSC % Name )
 
     allocate ( FSC % FieldSetStream )
     call FSC % FieldSetStream % Initialize ( FSC % FieldSet )
@@ -343,7 +337,7 @@ contains
              ( Communicator, TagSend ( : nD ), PH % Target, &
                PH % nChunksTo  *  FSC % nFields )
     
-      if ( FSC % UseDeviceGhost ) then
+      if ( FSC % DevicesCommunicate ) then
         call IncomingFace % AllocateDevice ( )
         call OutgoingFace % AllocateDevice ( )
       end if 
@@ -542,7 +536,7 @@ contains
              ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
                PH % nChunksTo  *  FSC % nFields )
       
-      if ( FSC % UseDeviceGhost ) then
+      if ( FSC % DevicesCommunicate ) then
         call IncomingEdge % AllocateDevice ( )
         call OutgoingEdge % AllocateDevice ( )
       end if
@@ -763,7 +757,7 @@ contains
       iF = FS % iaSelected ( iS )
       call C % SetFieldPointer ( FS % Value ( :, iF ), F )
       call Copy ( F, nSend, oSend, oBuffer, OutgoingMessage % Value, &
-                  UseDeviceOption = FSC % UseDeviceGhost )
+                  UseDeviceOption = FSC % DevicesCommunicate )
       oBuffer = oBuffer + product ( nSend )
     end do !-- iS
 
@@ -809,7 +803,7 @@ contains
       iF = FS % iaSelected ( iS )
       call C % SetFieldPointer ( FS % Value ( :, iF ), F )
       call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, F, &
-                  UseDeviceOption = FSC % UseDeviceGhost )
+                  UseDeviceOption = FSC % DevicesCommunicate )
       oBuffer = oBuffer + product ( nReceive )
     end do !-- iS
     

@@ -10,8 +10,9 @@ program FieldSet_CB__Form_Test
   integer ( KDI ) :: &
     nFields = 5
   logical ( KDL ) :: &
-    Pinned, &
-    UseDeviceGhost
+    DeviceMemory, &
+    PinnedMemory, &
+    DevicesCommunicate
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( GridImageStreamForm ), allocatable :: &
@@ -28,8 +29,9 @@ program FieldSet_CB__Form_Test
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
-    GM, &
     FSM
+  type ( Geometry_F_MH_Form ), allocatable :: &
+    GM
   type ( Stream_MH_Form ), allocatable :: &
     SM
 
@@ -47,7 +49,7 @@ program FieldSet_CB__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call GM % Initialize &
-         ( M, 'Geometry' ) 
+         ( M ) 
   call C % Initialize &
          ( M, 'Global', Periodic )
   call GC % Initialize &
@@ -60,19 +62,24 @@ program FieldSet_CB__Form_Test
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
 
-  Pinned  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
-  call PROGRAM_HEADER % GetParameter ( Pinned, 'Pinned' )
+  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
-  UseDeviceGhost  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
-  call PROGRAM_HEADER % GetParameter ( UseDeviceGhost, 'UseDeviceGhost' )
+  PinnedMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  call PROGRAM_HEADER % GetParameter ( PinnedMemory, 'PinnedMemory' )
+
+  DevicesCommunicate  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
+  call PROGRAM_HEADER % GetParameter &
+         ( DevicesCommunicate, 'DevicesCommunicate' )
 
   allocate ( FSM )
   allocate ( FSC )
   call FSM % Initialize &
-         ( M, 'Fields', PinnedOption = Pinned, &
-           UseDeviceGhostOption = UseDeviceGhost ) 
+         ( M, 'Fields', nFields, DeviceMemoryOption = DeviceMemory, &
+           PinnedMemoryOption = PinnedMemory, &
+           DevicesCommunicateOption = DevicesCommunicate ) 
   call FSC % Initialize &
-         ( C, FSM, nFields ) 
+         ( C, FSM ) 
   call FSC % ExchangeGhostData ( )
 
   allocate ( GIS )
@@ -99,6 +106,7 @@ program FieldSet_CB__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   deallocate ( C )
+  deallocate ( GM )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 

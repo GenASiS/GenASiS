@@ -28,7 +28,7 @@ program Chart_BH__Form_Test
   type ( Manifold_H_Form ), allocatable :: &
     Base, &
     Fiber
-  type ( FieldSet_MH_Form ), allocatable :: &
+  type ( Geometry_F_MH_Form ), allocatable :: &
     GM_Base, &
     GM_Fiber
   type ( FieldSet_CH_Form ), allocatable :: &
@@ -59,7 +59,7 @@ program Chart_BH__Form_Test
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
   call GM_Base % Initialize &
-         ( Base, 'GeometryBase' ) 
+         ( Base, NameOption = 'GeometryBase' ) 
   call C_Base % Initialize &
          ( Base, 'Global', Periodic )
   call GC_Base % Initialize &
@@ -84,7 +84,7 @@ program Chart_BH__Form_Test
   call Fiber % Initialize &
          ( 'Fiber', iDimensionalityOption = 2 )
   call GM_Fiber % Initialize &
-         ( Fiber, 'GeometryFiber' ) 
+         ( Fiber, NameOption = 'GeometryFiber' ) 
   call C_Fiber % Initialize &
          ( Fiber, 'Global', Periodic, &
            SpacingOption = [ 'GEOMETRIC' ], &
