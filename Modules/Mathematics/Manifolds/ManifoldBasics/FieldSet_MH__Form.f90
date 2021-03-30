@@ -15,8 +15,9 @@ module FieldSet_MH__Form
       nFields      = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
-      Pinned, &
-      UseDeviceGhost
+      DeviceMemory, &
+      PinnedMemory, &
+      DevicesCommunicate
     character ( LDF ) :: &
       Name = '', &
       Type = ''
@@ -45,8 +46,8 @@ contains
 
 
   subroutine Initialize_H &
-               ( FSM, M, Name, nFields, FieldOption, PinnedOption, &
-                 UseDeviceGhostOption )
+               ( FSM, M, Name, nFields, FieldOption, DeviceMemoryOption, &
+                 PinnedMemoryOption, DevicesCommunicateOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -59,8 +60,9 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     logical ( KDL ), intent ( in ), optional :: &
-      PinnedOption, &
-      UseDeviceGhostOption
+      DeviceMemoryOption, &
+      PinnedMemoryOption, &
+      DevicesCommunicateOption
 
     integer ( KDI ) :: &
       iF  !-- iField
@@ -72,13 +74,17 @@ contains
     if ( FSM % Type  ==  '' ) &
       FSM % Type  =  'a FieldSet_M' 
     
-    FSM % Pinned  =  .false.
-    if ( present ( PinnedOption ) ) &
-      FSM % Pinned  =  PinnedOption
+    FSM % DeviceMemory  =  .false.
+    if ( present ( DeviceMemoryOption ) ) &
+      FSM % DeviceMemory  =  DeviceMemoryOption
     
-    FSM % UseDeviceGhost  =  .false.
-    if ( present ( UseDeviceGhostOption ) )  &
-      FSM % UseDeviceGhost  =  UseDeviceGhostOption  
+    FSM % PinnedMemory  =  .false.
+    if ( present ( PinnedMemoryOption ) ) &
+      FSM % PinnedMemory  =  PinnedMemoryOption
+    
+    FSM % DevicesCommunicate  =  .false.
+    if ( present ( DevicesCommunicateOption ) )  &
+      FSM % DevicesCommunicate  =  DevicesCommunicateOption  
 
     FSM % Name  =  Name
 
@@ -130,8 +136,12 @@ contains
       call Show ( FSM % Field ( iF ), 'Field', FSM % IGNORABILITY )
     end do !-- iF
     
-    call Show ( FSM % Pinned,         'Pinned',         FSM % IGNORABILITY )
-    call Show ( FSM % UseDeviceGhost, 'UseDeviceGhost', FSM % IGNORABILITY )
+    call Show ( FSM % DeviceMemory,       'DeviceMemory', &
+                FSM % IGNORABILITY )
+    call Show ( FSM % DeviceMemory,       'DeviceMemory', &
+                FSM % IGNORABILITY )
+    call Show ( FSM % DevicesCommunicate, 'DevicesCommunicate', &
+                FSM % IGNORABILITY )
 
   end subroutine Show_FSM
 

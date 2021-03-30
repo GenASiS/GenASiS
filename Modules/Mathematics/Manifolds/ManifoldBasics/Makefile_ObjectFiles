@@ -1,5 +1,6 @@
 MANIFOLD_BASICS = \
   ManifoldBasics.o \
+  Geometry_F_MH__Form.o \
   Stream_MH__Form.o \
   FieldSet_MH__Form.o \
   Manifold_H__Form.o \
