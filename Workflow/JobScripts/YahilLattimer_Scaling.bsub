@@ -72,7 +72,7 @@ LaplacianReductionUseDevice=F \
 OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
 &> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out
 
-nCP=4096
+nCP=2048
 nBricks=48,16,32
 echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
 jsrun -n 24576 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
