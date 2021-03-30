@@ -13,6 +13,7 @@ module FieldSet_MH__Form
       IGNORABILITY = 0, &
       iFieldSet    = 0, &
       nFields      = 0, &
+      nVectors     = 0, &
       nStreams     = 0
     logical ( KDL ) :: &
       DeviceMemory, &
@@ -22,7 +23,8 @@ module FieldSet_MH__Form
       Name = '', &
       Type = ''
     character ( LDL ), dimension ( : ), allocatable :: &
-      Field
+      Field, &
+      Vector
     class ( Manifold_H_Form ), pointer :: &
       Manifold => null ( )
   contains
@@ -46,8 +48,9 @@ contains
 
 
   subroutine Initialize_H &
-               ( FSM, M, Name, nFields, FieldOption, DeviceMemoryOption, &
-                 PinnedMemoryOption, DevicesCommunicateOption )
+               ( FSM, M, Name, nFields, FieldOption, VectorOption, &
+                 DeviceMemoryOption, PinnedMemoryOption, &
+                 DevicesCommunicateOption, nVectorsOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -58,16 +61,21 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nFields
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      FieldOption
+      FieldOption, &
+      VectorOption
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nVectorsOption
 
     integer ( KDI ) :: &
-      iF  !-- iField
+      iF, &  !-- iField
+      iV     !-- iVector
     character ( 2 ) :: &
-      FieldNumber
+      FieldNumber, &
+      VectorNumber
 
     FSM % IGNORABILITY  =  M % IGNORABILITY
 
@@ -107,6 +115,23 @@ contains
     end if  !-- FieldOption
     end associate  !-- nF
 
+    associate ( nV  =>  FSM % nVectors )
+    if ( present ( nVectorsOption ) ) then
+      nV  =  nVectorsOption
+    else
+      nV  =  0
+    end if !-- nVectorsOption
+    allocate ( FSM % Vector ( nV ) )
+    if ( present ( VectorOption ) ) then
+      FSM % Vector  =  VectorOption
+    else
+      do iV  =  1, nV
+        write ( VectorNumber, fmt = '(i2.2)' ) iV
+        FSM % Vector ( iV )  =  'Vector_' // VectorNumber
+      end do  !-- iV
+    end if  !-- VectorOption 
+    end associate  !-- nV
+
     FSM % Manifold  =>  M
 
   end subroutine Initialize_H
@@ -132,10 +157,13 @@ contains
     end associate  !-- M
 
     call Show ( FSM % nFields, 'nFields', FSM % IGNORABILITY )
-    do iF  =  1, FSM % nFields
-      call Show ( FSM % Field ( iF ), 'Field', FSM % IGNORABILITY )
-    end do !-- iF
+    call Show ( FSM % Field, 'Fields', FSM % IGNORABILITY )
     
+    call Show ( FSM % nVectors, 'nVectors', FSM % IGNORABILITY )
+!    do iV  =  1, FSM % nVectors
+!      call Show ( FSM % Vector ( iF ), 
+!    end do !-- iV
+
     call Show ( FSM % DeviceMemory,       'DeviceMemory', &
                 FSM % IGNORABILITY )
     call Show ( FSM % DeviceMemory,       'DeviceMemory', &
@@ -153,6 +181,8 @@ contains
 
     nullify ( FSM % Manifold )
 
+    if ( allocated ( FSM % Vector ) ) &
+      deallocate ( FSM % Vector )
     if ( allocated ( FSM % Field ) ) &
       deallocate ( FSM % Field )
 

@@ -3,7 +3,7 @@ PATH_GENASIS = ../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: MANIFOLD_Singleton_Test Manifold_H__Form_Test FieldSet_MH__Form_Test \
-  Stream_MH__Form_Test
+  Stream_MH__Form_Test Geometry_F_MH__Form_Test
 
 MANIFOLD_Singleton_Test: Basics.a ManifoldBasics.a MANIFOLD_Singleton_Test.o
 	$(LINK) $(FLAGS) \
@@ -29,6 +29,12 @@ Stream_MH__Form_Test: Basics.a ManifoldBasics.a Stream_MH__Form_Test.o
           Stream_MH__Form_Test.o ManifoldBasics.a \
           Basics.a $(LIBRARIES)
 
+Geometry_F_MH__Form_Test: Basics.a ManifoldBasics.a Geometry_F_MH__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Geometry_F_MH__Form_Test_$(MACHINE) \
+          Geometry_F_MH__Form_Test.o ManifoldBasics.a \
+          Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
@@ -37,6 +43,7 @@ clobber: clean
 	rm -f Manifold_H__Form_Test_*
 	rm -f FieldSet_MH__Form_Test_*
 	rm -f Stream_MH__Form_Test_*
+	rm -f Geometry_F_MH__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLD_BASICS)/Makefile_Dependencies
@@ -60,3 +67,8 @@ Stream_MH__Form_Test.o: \
   Basics.o \
   ManifoldBasics.o \
   Stream_MH__Form_Test.f90
+
+Geometry_F_MH__Form_Test.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  Geometry_F_MH__Form_Test.f90
