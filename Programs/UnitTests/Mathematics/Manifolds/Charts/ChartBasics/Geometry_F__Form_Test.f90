@@ -35,8 +35,8 @@ program Geometry_F__Form_Test
 
   allocate ( GM )
   allocate ( GC )
-  call GM % Initialize ( M, 'Geometry', nFields = 19 ) 
-  call GC % Initialize ( C, GM ) 
+  call GM % Initialize ( M, 'Geometry' ) 
+  call GC % Initialize ( C, GM, nFields = 19 ) 
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
   allocate ( G )
@@ -52,9 +52,7 @@ program Geometry_F__Form_Test
   call Show ( GM % nStreams,  'nStreams',  GM % IGNORABILITY )
 
   call C % Show ( )
-
   call GC % Show ( )
-  call Show ( GC % nStreams,  'nStreams',  GC % IGNORABILITY )
 
   deallocate ( GC )
   deallocate ( GM )

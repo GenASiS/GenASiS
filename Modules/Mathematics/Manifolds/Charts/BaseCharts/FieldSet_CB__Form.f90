@@ -83,7 +83,9 @@ module FieldSet_CB__Form
 contains
 
 
-  subroutine InitializeAllocate ( FSC, C, FSM )
+  subroutine InitializeAllocate &
+               ( FSC, C, FSM, nFields, FieldOption, VectorOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -91,6 +93,15 @@ contains
       C
     class ( FieldSet_MH_Form ), intent ( in ), target :: &
       FSM
+    integer ( KDI ), intent ( in ) :: &
+      nFields
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      FieldOption, &
+      VectorOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      UnitOption
+    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
+      VectorIndicesOption
 
     if ( FSC % Type == '' ) &
       FSC % Type = 'a FieldSet_CB' 
@@ -100,7 +111,9 @@ contains
       FSC % nValues  =  C % nValues
     end select !-- C
 
-    call FSC % Initialize ( C, FSM )
+    call FSC % Initialize &
+           ( C, FSM, nFields, FieldOption, VectorOption, UnitOption, &
+             VectorIndicesOption  )
 
     call FSC % AllocateFieldSet ( )
 
@@ -197,7 +210,7 @@ contains
     integer ( KDI ) :: &
       iS
 
-    associate ( nS  =>  FSC % nStreams )
+    associate ( nS  =>  FSC % FieldSet_M % nStreams )
 
     do iS  =  1, nS
       if ( associated ( FSC % Stream ( iS ) % Pointer, SC ) ) then
@@ -337,7 +350,7 @@ contains
              ( Communicator, TagSend ( : nD ), PH % Target, &
                PH % nChunksTo  *  FSC % nFields )
     
-      if ( FSC % DevicesCommunicate ) then
+      if ( FSC % FieldSet_M % DevicesCommunicate ) then
         call IncomingFace % AllocateDevice ( )
         call OutgoingFace % AllocateDevice ( )
       end if 
@@ -536,7 +549,7 @@ contains
              ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
                PH % nChunksTo  *  FSC % nFields )
       
-      if ( FSC % DevicesCommunicate ) then
+      if ( FSC % FieldSet_M % DevicesCommunicate ) then
         call IncomingEdge % AllocateDevice ( )
         call OutgoingEdge % AllocateDevice ( )
       end if
@@ -757,7 +770,7 @@ contains
       iF = FS % iaSelected ( iS )
       call C % SetFieldPointer ( FS % Value ( :, iF ), F )
       call Copy ( F, nSend, oSend, oBuffer, OutgoingMessage % Value, &
-                  UseDeviceOption = FSC % DevicesCommunicate )
+                  UseDeviceOption = FSC % FieldSet_M % DevicesCommunicate )
       oBuffer = oBuffer + product ( nSend )
     end do !-- iS
 
@@ -803,7 +816,7 @@ contains
       iF = FS % iaSelected ( iS )
       call C % SetFieldPointer ( FS % Value ( :, iF ), F )
       call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, F, &
-                  UseDeviceOption = FSC % DevicesCommunicate )
+                  UseDeviceOption = FSC % FieldSet_M % DevicesCommunicate )
       oBuffer = oBuffer + product ( nReceive )
     end do !-- iS
     

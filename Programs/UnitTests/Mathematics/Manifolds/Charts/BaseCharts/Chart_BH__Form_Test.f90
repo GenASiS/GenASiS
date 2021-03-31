@@ -63,7 +63,7 @@ program Chart_BH__Form_Test
   call C_Base % Initialize &
          ( Base, 'Global', Periodic )
   call GC_Base % Initialize &
-         ( C_Base, GM_Base ) 
+         ( C_Base, GM_Base, nFields = 19 ) 
   call G_Base % Initialize &
          ( GC_Base, nValues = C_Base % nValues )
   call C_Base % ComputeGeometry ( G_Base )
@@ -97,7 +97,7 @@ program Chart_BH__Form_Test
            nCellsOption = [ 16 ], &
            nGhostLayersOption = [ 0 ] )
   call GC_Fiber % Initialize &
-         ( C_Fiber, GM_Fiber ) 
+         ( C_Fiber, GM_Fiber, nFields = 19 ) 
   call G_Fiber % Initialize &
          ( GC_Fiber, nValues = C_Fiber % nValues )
   call C_Fiber % ComputeGeometry ( G_Fiber )

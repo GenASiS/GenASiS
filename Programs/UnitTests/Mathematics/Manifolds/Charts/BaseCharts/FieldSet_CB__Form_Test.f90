@@ -53,7 +53,7 @@ program FieldSet_CB__Form_Test
   call C % Initialize &
          ( M, 'Global', Periodic )
   call GC % Initialize &
-         ( C, GM )
+         ( C, GM, nFields = 19 )
   call G % Initialize &
          ( GC, nValues = C % nValues )
   call C % ComputeGeometry ( G )
@@ -75,11 +75,12 @@ program FieldSet_CB__Form_Test
   allocate ( FSM )
   allocate ( FSC )
   call FSM % Initialize &
-         ( M, 'Fields', nFields, DeviceMemoryOption = DeviceMemory, &
+         ( M, 'Fields', &
+           DeviceMemoryOption = DeviceMemory, &
            PinnedMemoryOption = PinnedMemory, &
            DevicesCommunicateOption = DevicesCommunicate ) 
   call FSC % Initialize &
-         ( C, FSM ) 
+         ( C, FSM, nFields ) 
   call FSC % ExchangeGhostData ( )
 
   allocate ( GIS )

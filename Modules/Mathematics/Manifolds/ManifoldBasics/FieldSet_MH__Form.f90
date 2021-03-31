@@ -12,13 +12,7 @@ module FieldSet_MH__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iFieldSet    = 0, &
-      nFields      = 0, &
-      nVectors     = 0, &
       nStreams     = 0
-    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
-      VectorIndices
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
-      Unit
     logical ( KDL ) :: &
       DeviceMemory, &
       PinnedMemory, &
@@ -26,9 +20,6 @@ module FieldSet_MH__Form
     character ( LDF ) :: &
       Name = '', &
       Type = ''
-    character ( LDL ), dimension ( : ), allocatable :: &
-      Field, &
-      Vector
     class ( Manifold_H_Form ), pointer :: &
       Manifold => null ( )
   contains
@@ -52,9 +43,8 @@ contains
 
 
   subroutine Initialize_H &
-               ( FSM, M, Name, nFields, FieldOption, VectorOption, &
-                 DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption )
+               ( FSM, M, Name, DeviceMemoryOption, PinnedMemoryOption, &
+                 DevicesCommunicateOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -62,26 +52,10 @@ contains
       M
     character ( * ), intent ( in ) :: &
       Name
-    integer ( KDI ), intent ( in ) :: &
-      nFields
-    character ( * ), dimension ( : ), intent ( in ), optional :: &
-      FieldOption, &
-      VectorOption
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      UnitOption
-    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
-      VectorIndicesOption
-
-    integer ( KDI ) :: &
-      iF, &  !-- iField
-      iV     !-- iVector
-    character ( 2 ) :: &
-      FieldNumber, &
-      VectorNumber
 
     FSM % IGNORABILITY  =  M % IGNORABILITY
 
@@ -108,46 +82,6 @@ contains
       M % nFieldSets  =  M % nFieldSets  +  1
     FSM % iFieldSet   =  M % nFieldSets
 
-    associate ( nF  =>  FSM % nFields )
-    nF  =  nFields
-    allocate ( FSM % Field ( nF ) )
-    allocate ( FSM % Unit ( nF ) )
-    if ( present ( FieldOption ) ) then
-      FSM % Field  =  FieldOption
-    else
-      do iF  =  1, nF
-        write ( FieldNumber, fmt = '(i2.2)' ) iF
-        FSM % Field ( iF )  =  'Field_' // FieldNumber
-      end do  !-- iF
-    end if  !-- FieldOption
-    if ( present ( UnitOption ) ) &
-      FSM % Unit  =  UnitOption
-    end associate  !-- nF
-
-    if ( present ( VectorIndicesOption ) ) then
-
-      associate ( nV  =>  FSM % nVectors )
-      nV  =  size ( VectorIndicesOption )
-
-      allocate ( FSM % VectorIndices ( nV ) )
-      do iV  =  1, nV
-        call FSM % VectorIndices ( iV ) % Initialize &
-               ( VectorIndicesOption ( iV ) )
-      end do  !-- iV
-
-      allocate ( FSM % Vector ( nV ) )
-      if ( present ( VectorOption ) ) then
-        FSM % Vector  =  VectorOption
-      else
-        do iV  =  1, nV
-          write ( VectorNumber, fmt = '(i2.2)' ) iV
-          FSM % Vector ( iV )  =  'Vector_' // VectorNumber
-        end do  !-- iV
-      end if  !-- VectorOption 
-      end associate  !-- nV
-
-    end if  !-- VectorIndicesOption
-
     FSM % Manifold  =>  M
 
   end subroutine Initialize_H
@@ -158,9 +92,6 @@ contains
     class ( FieldSet_MH_Form ), intent ( in ) :: &
       FSM
 
-    integer ( KDI ) :: &
-      iF, &  !-- iField
-      iV     !-- iVector
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
@@ -172,21 +103,6 @@ contains
     call Show (   M % Name,      'Manifold',  FSM % IGNORABILITY )
     call Show ( FSM % iFieldSet, 'iFieldSet', FSM % IGNORABILITY )
     end associate  !-- M
-
-    call Show ( FSM % nFields, 'nFields', FSM % IGNORABILITY )
-    do iF  =  1, FSM % nFields
-      call Show ( FSM % Field ( iF ), 'Field',  FSM % IGNORABILITY )
-      call Show ( iF,                 'iField', FSM % IGNORABILITY ) 
-      call Show ( FSM % Unit ( iF ),  'Unit',   FSM % IGNORABILITY )
-    end do !-- iF
-    
-    call Show ( FSM % nVectors, 'nVectors', FSM % IGNORABILITY )
-    do iV  =  1, FSM % nVectors
-      call Show ( FSM % Vector ( iV ),                 'Vector', &
-                  FSM % IGNORABILITY )
-      call Show ( FSM % VectorIndices ( iV ) % Value, 'VectorIndices', &
-                  FSM % IGNORABILITY )
-    end do  !-- iV
 
     call Show ( FSM % DeviceMemory,       'DeviceMemory', &
                 FSM % IGNORABILITY )
@@ -204,15 +120,6 @@ contains
       FSM
 
     nullify ( FSM % Manifold )
-
-    if ( allocated ( FSM % Vector ) ) &
-      deallocate ( FSM % Vector )
-    if ( allocated ( FSM % Field ) ) &
-      deallocate ( FSM % Field )
-    if ( allocated ( FSM % Unit ) ) &
-      deallocate ( FSM % Unit )
-    if ( allocated ( FSM % VectorIndices ) ) &
-      deallocate ( FSM % VectorIndices )
 
     call Show ( 'Finalizing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )

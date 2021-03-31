@@ -130,7 +130,10 @@ contains
       (  M  =>  C % Manifold, & 
         nD  =>  C % nDimensions )
 
-    call Show ( M % Name,        'Manifold',    C % IGNORABILITY )
+    call Show ( M % Name, 'Manifold', C % IGNORABILITY )
+    if ( M % Distributed ) &
+      call Show ( C % Communicator % Name, 'Communicator', C % IGNORABILITY )
+
     call Show ( C % iChart,      'iChart',      C % IGNORABILITY )
     call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
 

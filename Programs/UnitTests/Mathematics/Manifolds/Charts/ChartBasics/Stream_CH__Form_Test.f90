@@ -41,8 +41,8 @@ program Stream_CH__Form_Test
 
   allocate ( FSM )
   allocate ( FSC )
-  call FSM % Initialize ( M, 'Fields', nFields ) 
-  call FSC % Initialize ( C, FSM ) 
+  call FSM % Initialize ( M, 'Fields' ) 
+  call FSC % Initialize ( C, FSM, nFields ) 
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -76,9 +76,7 @@ program Stream_CH__Form_Test
   end do !-- iFS
 
   call C % Show ( )
-
   call FSC % Show ( )
-  call Show ( FSC % nStreams,  'nStreams',  FSC % IGNORABILITY )
 
   call SC % Show ( )
   call Show ( SC % nFieldSets, 'nFieldSets', SC % IGNORABILITY )

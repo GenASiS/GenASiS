@@ -103,7 +103,7 @@ contains
     end if
 
     call GM % FieldSet_MH_Form % Initialize &
-           ( M, Name, nFields, FieldOption = Field, &
+           ( M, Name, &
              DeviceMemoryOption = DeviceMemoryOption, &
              PinnedMemoryOption = PinnedMemoryOption, &
              DevicesCommunicateOption = DevicesCommunicateOption )

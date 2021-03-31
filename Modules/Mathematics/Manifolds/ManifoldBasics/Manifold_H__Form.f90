@@ -89,9 +89,14 @@ contains
     call Split ( M % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', M % IGNORABILITY )
 
-    call Show ( M % Name,        'Name',        M % IGNORABILITY )
+    call Show ( M % Name, 'Name', M % IGNORABILITY )
+
     call Show ( M % Distributed, 'Distributed', M % IGNORABILITY )
+    if ( M % Distributed ) &
+      call Show ( M % Communicator % Name, 'Communicator', M % IGNORABILITY )
+
     call Show ( M % nDimensions, 'nDimensions', M % IGNORABILITY )
+
 
   end subroutine Show_M
 
