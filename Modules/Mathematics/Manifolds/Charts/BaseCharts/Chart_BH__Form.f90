@@ -209,7 +209,7 @@ contains
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY )
 
-    if ( C % Distributed ) then
+    if ( C % Manifold % Distributed ) then
 
       call Show ( C % iaBrick ( : nD ), 'iaBrick', C % IGNORABILITY )
       call Show ( C % nBricks ( : nD ), 'nBricks', C % IGNORABILITY )
@@ -275,7 +275,7 @@ contains
 
     if ( C % AllocatedValues ) then
 
-      if ( C % Distributed ) then
+      if ( C % Manifold % Distributed ) then
         deallocate ( C % PortalEdge_RL_LR )
         deallocate ( C % PortalEdge_LR_RL )
         deallocate ( C % PortalEdge_RR_LL )
@@ -294,7 +294,7 @@ contains
       deallocate ( C % MaxCoordinate )
       deallocate ( C % MinCoordinate )
 
-      if ( C % Distributed ) then
+      if ( C % Manifold % Distributed ) then
         deallocate ( C % nCellsBrick )
         deallocate ( C % nBricks )
         deallocate ( C % iaBrick )
@@ -455,15 +455,7 @@ contains
     integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
       nBricksCompatible
 
-    if ( present ( CommunicatorOption ) ) then
-      C % Distributed  =   .true.
-      C % Communicator   =>  CommunicatorOption
-    else
-      C % Distributed  =   M % Distributed
-      C % Communicator   =>  M % Communicator
-    end if !-- present Communicator 
-
-    if ( C % Distributed ) then
+    if ( C % Manifold % Distributed ) then
 
       allocate ( C % iaBrick ( MAX_DIMENSIONS ) )
       allocate ( C % nBricks ( MAX_DIMENSIONS ) )
@@ -675,7 +667,7 @@ contains
       Center_3D
 
     iaF  =  1  -  C % nGhostLayers ( iD ) 
-    if ( C % Distributed ) then
+    if ( C % Manifold % Distributed ) then
       iaL  =  C % nCellsBrick ( iD )  +  C % nGhostLayers ( iD )
        oC  =  ( C % iaBrick ( iD )  -  1 )  *  C % nCellsBrick ( iD )
     else

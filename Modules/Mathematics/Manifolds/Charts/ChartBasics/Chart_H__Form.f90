@@ -16,7 +16,6 @@ module Chart_H__Form
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
-      Distributed = .false., &
       AllocatedValues = .false.
     logical ( KDL ), dimension ( : ), pointer :: &
       Periodic => null ( )
@@ -95,10 +94,8 @@ contains
     C % iChart   =  M % nCharts
 
     if ( present ( CommunicatorOption ) ) then
-      C % Distributed  =   .true.
       C % Communicator   =>  CommunicatorOption
     else
-      C % Distributed  =   M % Distributed
       C % Communicator   =>  M % Communicator
     end if !-- present Communicator 
 
@@ -137,7 +134,6 @@ contains
     call Show ( C % iChart,      'iChart',      C % IGNORABILITY )
     call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
 
-    call Show ( C % Distributed,       'Distributed', C % IGNORABILITY )
     call Show ( C % Periodic ( : nD ), 'Periodic',    C % IGNORABILITY )
 
     call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
