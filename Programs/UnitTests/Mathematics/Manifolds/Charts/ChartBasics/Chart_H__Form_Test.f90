@@ -51,8 +51,6 @@ program Chart_H__Form_Test
   call Show ( Base % nStreams,   'nStreams',   Base % IGNORABILITY )
 
   call C_Base % Show ( )
-  call Show ( C_Base % nFieldSets, 'nFieldSets', C_Base % IGNORABILITY )
-  call Show ( C_Base % nStreams,   'nStreams',   C_Base % IGNORABILITY )
 
   call Fiber % Show ( )
   call Show ( Fiber % nCharts,    'nCharts',    Fiber % IGNORABILITY )
@@ -60,8 +58,6 @@ program Chart_H__Form_Test
   call Show ( Fiber % nStreams,   'nStreams',   Fiber % IGNORABILITY )
 
   call C_Fiber % Show ( )
-  call Show ( C_Fiber % nFieldSets, 'nFieldSets', C_Fiber % IGNORABILITY )
-  call Show ( C_Fiber % nStreams,   'nStreams',   C_Fiber % IGNORABILITY )
 
   deallocate ( C_Fiber )
   deallocate ( Fiber )

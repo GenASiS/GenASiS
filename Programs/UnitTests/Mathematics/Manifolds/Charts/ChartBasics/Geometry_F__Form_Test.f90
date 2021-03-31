@@ -52,8 +52,6 @@ program Geometry_F__Form_Test
   call Show ( GM % nStreams,  'nStreams',  GM % IGNORABILITY )
 
   call C % Show ( )
-  call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
-  call Show ( C % nStreams,   'nStreams',   C % IGNORABILITY )
 
   call GC % Show ( )
   call Show ( GC % nStreams,  'nStreams',  GC % IGNORABILITY )

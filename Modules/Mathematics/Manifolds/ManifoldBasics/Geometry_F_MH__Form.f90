@@ -29,7 +29,8 @@ contains
 
   subroutine Initialize_F &
                ( GM, M, FieldOption, NameOption, DeviceMemoryOption, &
-                 PinnedMemoryOption, DevicesCommunicateOption, nFieldsOption )
+                 PinnedMemoryOption, DevicesCommunicateOption, UnitOption, &
+                 nFieldsOption )
 
     class ( Geometry_F_MH_Form ), intent ( inout ) :: &
       GM
@@ -43,11 +44,15 @@ contains
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      UnitOption
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
 
     integer ( KDI ) :: &
       nFields
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+      Unit
     character ( LDL ) :: &
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -90,6 +95,12 @@ contains
           'Metric_F_UU_11', &
           'Metric_F_UU_22', &
           'Metric_F_UU_33' ]
+
+    if ( present ( UnitOption ) ) then
+      Unit  =  UnitOption
+    else
+      allocate ( Unit ( nFields ) )
+    end if
 
     call GM % FieldSet_MH_Form % Initialize &
            ( M, Name, nFields, FieldOption = Field, &

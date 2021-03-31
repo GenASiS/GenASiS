@@ -46,8 +46,6 @@ program FieldSet_CH__Form_Test
   call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
 
   call C % Show ( )
-  call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
-  call Show ( C % nStreams,   'nStreams',   C % IGNORABILITY )
 
   call FSC % Show ( )
   call Show ( FSC % nStreams,  'nStreams',  FSC % IGNORABILITY )

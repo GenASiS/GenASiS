@@ -71,7 +71,6 @@ contains
     call Show ( 'Initializing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
     call Show ( FSC % Name, 'Name', FSC % IGNORABILITY )
    
-      C % nFieldSets  =    C % Manifold % nFieldSets
     FSC % iFieldSet   =  FSM % iFieldSet
 
     FSC % nFields  =   FSM % nFields    

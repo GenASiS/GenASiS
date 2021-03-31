@@ -76,8 +76,6 @@ program Stream_CH__Form_Test
   end do !-- iFS
 
   call C % Show ( )
-  call Show ( C % nFieldSets, 'nFieldSets', C % IGNORABILITY )
-  call Show ( C % nStreams,   'nStreams',   C % IGNORABILITY )
 
   call FSC % Show ( )
   call Show ( FSC % nStreams,  'nStreams',  FSC % IGNORABILITY )

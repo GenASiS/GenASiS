@@ -70,7 +70,6 @@ contains
     call Show ( 'Initializing ' // trim ( SC % Type ), SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
-     C % nStreams  =   C % Manifold % nStreams
     SC % iStream   =  SM % iStream
 
     SC % Verbose    =  SM % Verbose

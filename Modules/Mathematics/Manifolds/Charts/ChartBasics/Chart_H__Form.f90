@@ -12,9 +12,7 @@ module Chart_H__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iChart       = 0, &
-      nDimensions  = 0, &
-      nFieldSets   = 0, &
-      nStreams     = 0
+      nDimensions  = 0
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
