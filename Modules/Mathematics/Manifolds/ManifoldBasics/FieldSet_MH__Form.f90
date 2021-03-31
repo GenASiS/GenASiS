@@ -15,6 +15,10 @@ module FieldSet_MH__Form
       nFields      = 0, &
       nVectors     = 0, &
       nStreams     = 0
+    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
+      VectorIndices
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+      Unit
     logical ( KDL ) :: &
       DeviceMemory, &
       PinnedMemory, &
@@ -50,7 +54,7 @@ contains
   subroutine Initialize_H &
                ( FSM, M, Name, nFields, FieldOption, VectorOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, nVectorsOption )
+                 DevicesCommunicateOption, UnitOption, VectorIndicesOption )
 
     class ( FieldSet_MH_Form ), intent ( inout ) :: &
       FSM
@@ -67,8 +71,10 @@ contains
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
-    integer ( KDI ), intent ( in ), optional :: &
-      nVectorsOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      UnitOption
+    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
+      VectorIndicesOption
 
     integer ( KDI ) :: &
       iF, &  !-- iField
@@ -105,6 +111,7 @@ contains
     associate ( nF  =>  FSM % nFields )
     nF  =  nFields
     allocate ( FSM % Field ( nF ) )
+    allocate ( FSM % Unit ( nF ) )
     if ( present ( FieldOption ) ) then
       FSM % Field  =  FieldOption
     else
@@ -113,24 +120,33 @@ contains
         FSM % Field ( iF )  =  'Field_' // FieldNumber
       end do  !-- iF
     end if  !-- FieldOption
+    if ( present ( UnitOption ) ) &
+      FSM % Unit  =  UnitOption
     end associate  !-- nF
 
-    associate ( nV  =>  FSM % nVectors )
-    if ( present ( nVectorsOption ) ) then
-      nV  =  nVectorsOption
-    else
-      nV  =  0
-    end if !-- nVectorsOption
-    allocate ( FSM % Vector ( nV ) )
-    if ( present ( VectorOption ) ) then
-      FSM % Vector  =  VectorOption
-    else
+    if ( present ( VectorIndicesOption ) ) then
+
+      associate ( nV  =>  FSM % nVectors )
+      nV  =  size ( VectorIndicesOption )
+
+      allocate ( FSM % VectorIndices ( nV ) )
       do iV  =  1, nV
-        write ( VectorNumber, fmt = '(i2.2)' ) iV
-        FSM % Vector ( iV )  =  'Vector_' // VectorNumber
+        call FSM % VectorIndices ( iV ) % Initialize &
+               ( VectorIndicesOption ( iV ) )
       end do  !-- iV
-    end if  !-- VectorOption 
-    end associate  !-- nV
+
+      allocate ( FSM % Vector ( nV ) )
+      if ( present ( VectorOption ) ) then
+        FSM % Vector  =  VectorOption
+      else
+        do iV  =  1, nV
+          write ( VectorNumber, fmt = '(i2.2)' ) iV
+          FSM % Vector ( iV )  =  'Vector_' // VectorNumber
+        end do  !-- iV
+      end if  !-- VectorOption 
+      end associate  !-- nV
+
+    end if  !-- VectorIndicesOption
 
     FSM % Manifold  =>  M
 
@@ -143,7 +159,8 @@ contains
       FSM
 
     integer ( KDI ) :: &
-      iF  !-- iField
+      iF, &  !-- iField
+      iV     !-- iVector
     character ( LDL ), dimension ( : ), allocatable :: &
       TypeWord
 
@@ -157,12 +174,19 @@ contains
     end associate  !-- M
 
     call Show ( FSM % nFields, 'nFields', FSM % IGNORABILITY )
-    call Show ( FSM % Field, 'Fields', FSM % IGNORABILITY )
+    do iF  =  1, FSM % nFields
+      call Show ( FSM % Field ( iF ), 'Field',  FSM % IGNORABILITY )
+      call Show ( iF,                 'iField', FSM % IGNORABILITY ) 
+      call Show ( FSM % Unit ( iF ),  'Unit',   FSM % IGNORABILITY )
+    end do !-- iF
     
     call Show ( FSM % nVectors, 'nVectors', FSM % IGNORABILITY )
-!    do iV  =  1, FSM % nVectors
-!      call Show ( FSM % Vector ( iF ), 
-!    end do !-- iV
+    do iV  =  1, FSM % nVectors
+      call Show ( FSM % Vector ( iV ),                 'Vector', &
+                  FSM % IGNORABILITY )
+      call Show ( FSM % VectorIndices ( iV ) % Value, 'VectorIndices', &
+                  FSM % IGNORABILITY )
+    end do  !-- iV
 
     call Show ( FSM % DeviceMemory,       'DeviceMemory', &
                 FSM % IGNORABILITY )
@@ -185,6 +209,10 @@ contains
       deallocate ( FSM % Vector )
     if ( allocated ( FSM % Field ) ) &
       deallocate ( FSM % Field )
+    if ( allocated ( FSM % Unit ) ) &
+      deallocate ( FSM % Unit )
+    if ( allocated ( FSM % VectorIndices ) ) &
+      deallocate ( FSM % VectorIndices )
 
     call Show ( 'Finalizing ' // trim ( FSM % Type ), FSM % IGNORABILITY )
     call Show ( FSM % Name, 'Name', FSM % IGNORABILITY )
