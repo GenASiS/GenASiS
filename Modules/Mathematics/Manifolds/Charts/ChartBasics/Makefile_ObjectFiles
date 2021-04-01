@@ -2,6 +2,7 @@ CHART_BASICS = \
   ChartBasics.o \
   Geometry_F__Kernel.o \
   Geometry_F__Form.o \
+  Geometry_F_CH__Kernel.o \
   Geometry_F_CH__Form.o \
   Stream_CH__Form.o \
   FieldSet_CH__Form.o \
