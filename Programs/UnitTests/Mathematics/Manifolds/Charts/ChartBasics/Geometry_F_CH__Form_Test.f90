@@ -1,6 +1,6 @@
-program Geometry_F__Form_Test
+program Geometry_F_CH__Form_Test
 
-  !-- Geometry_Flat_Form
+  !-- Geometry_Flat_ChartHeader_Form_Test
 
   use Basics
   use ManifoldBasics
@@ -12,32 +12,29 @@ program Geometry_F__Form_Test
     Periodic
   type ( Manifold_H_Form ), allocatable :: &
     M
-  type ( FieldSet_MH_Form ), allocatable :: &
+  type ( Geometry_F_MH_Form ), allocatable :: &
     GM
   type ( Chart_H_Form ), allocatable :: &
     C
-  type ( FieldSet_CH_Form ), allocatable :: &
+  type ( Geometry_F_CH_Form ), allocatable :: &
     GC
-  type ( Geometry_F_Form ), allocatable :: &
-    G
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'Geometry_F__Form_Test' )
+  call PROGRAM_HEADER % Initialize ( 'Geometry_F_CH__Form_Test' )
 
   Periodic  =  .true.
 
   allocate ( M )
-  allocate ( C )
+  allocate ( GM )
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
-  call C % Initialize_H &
-         ( M, 'Global', Periodic )
+  call GM % Initialize_F ( M ) 
 
-  call CONSOLE % SetVerbosity ( 'INFO_4' )
-  allocate ( G )
-  call G % Initialize ( GC, nValues = 10 )
-  deallocate ( G )
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
+  allocate ( C )
+  allocate ( GC )
+  call C % Initialize_H &
+        ( M, 'Global', Periodic )
+  call GC % Initialize ( C, GM ) 
 
   call M % Show ( )
   call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
@@ -50,9 +47,9 @@ program Geometry_F__Form_Test
   call GC % Show ( )
 
   deallocate ( GC )
-  deallocate ( GM )
   deallocate ( C )
+  deallocate ( GM )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
 
-end program Geometry_F__Form_Test
+end program Geometry_F_CH__Form_Test
