@@ -19,7 +19,7 @@ program Geometry_F_MH__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( GM )
-  call GM % Initialize ( M ) 
+  call GM % Initialize_F ( M ) 
 
   call M % Show ( )
   call Show ( M % nCharts,    'nCharts',    M % IGNORABILITY )

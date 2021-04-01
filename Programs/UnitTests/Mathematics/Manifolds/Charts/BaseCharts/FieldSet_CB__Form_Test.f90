@@ -93,7 +93,6 @@ program FieldSet_CB__Form_Test
   call SC % Initialize ( C, SM )
 
   call SM % AddFieldSet ( FSM )
-  call SC % AddFieldSet ( FSC )
 
   call FSC % AddStream ( SC )
   call FSC % AddStream ( SC )  !-- Test the prevention of duplication

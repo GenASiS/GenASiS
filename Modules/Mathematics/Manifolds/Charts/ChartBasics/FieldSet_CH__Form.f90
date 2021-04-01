@@ -39,10 +39,10 @@ module FieldSet_CH__Form
       Finalize
   end type FieldSet_CH_Form
 
-  type, public :: FieldSet_CH_Pointer
-    class ( FieldSet_CH_Form ), pointer :: &
-      Pointer => null ( )
-  end type FieldSet_CH_Pointer
+  ! type, public :: FieldSet_CH_Pointer
+  !   class ( FieldSet_CH_Form ), pointer :: &
+  !     Pointer => null ( )
+  ! end type FieldSet_CH_Pointer
 
 
 contains
@@ -80,7 +80,7 @@ contains
     if ( FSC % Type  ==  '' ) &
       FSC % Type  =  'a FieldSet_C' 
     
-    FSC % Name    =  FSM % Name
+    FSC % Name  =  FSM % Name
 
     call Show ( 'Initializing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
     call Show ( FSC % Name, 'Name', FSC % IGNORABILITY )
@@ -155,8 +155,8 @@ contains
 
     call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY )
     do iF  =  1, FSC % nFields
-      call Show ( FSC % Field ( iF ), 'Field',  FSC % IGNORABILITY )
       call Show ( iF,                 'iField', FSC % IGNORABILITY ) 
+      call Show ( FSC % Field ( iF ), 'Field',  FSC % IGNORABILITY )
       call Show ( FSC % Unit ( iF ),  'Unit',   FSC % IGNORABILITY )
     end do !-- iF
     

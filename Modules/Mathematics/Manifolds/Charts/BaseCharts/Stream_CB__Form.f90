@@ -45,7 +45,7 @@ contains
 
     call SC % Stream_CH_Form % Initialize ( C, SM )
 
-    associate ( GIS  =>  SC % GridImageStream )
+    associate ( GIS  =>  SC % Stream_M % GridImageStream )
     select case ( C % nDimensions )
     case ( 1 ) 
       allocate ( SC % CurveImage )
@@ -70,11 +70,9 @@ contains
     class ( FieldSet_CH_Form ), intent ( in ), target :: &
       FSC
 
-    call SC % Stream_CH_Form % AddFieldSet ( FSC )
-
     select type ( FSC )
     class is ( FieldSet_CB_Form )
-      if ( SC % Verbose ) then
+      if ( SC % Stream_M % Verbose ) then
         call AddStorage ( SC, FSC % FieldSet )
       else
         call AddStorage ( SC, FSC % FieldSetStream )

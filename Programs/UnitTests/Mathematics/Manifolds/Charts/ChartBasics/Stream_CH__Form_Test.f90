@@ -55,8 +55,6 @@ program Stream_CH__Form_Test
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call SM % AddFieldSet ( FSM )
-  call SC % AddFieldSet ( FSC )
-  call SC % AddFieldSet ( FSC )  !-- Test the prevention of duplication
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   call M % Show ( )
@@ -77,14 +75,7 @@ program Stream_CH__Form_Test
 
   call C % Show ( )
   call FSC % Show ( )
-
   call SC % Show ( )
-  call Show ( SC % nFieldSets, 'nFieldSets', SC % IGNORABILITY )
-  do iFS  =  1, SC % nFieldSets
-    associate ( FS  =>  SC % FieldSet ( iFS ) % Pointer )
-    call Show ( FS % Name, 'FieldSet', SC % IGNORABILITY )
-    end associate !-- FS
-  end do !-- iFS
 
   deallocate ( SC )
   deallocate ( SM )
