@@ -53,6 +53,8 @@ module Geometry_F_CH__Form
       Initialize_F
     generic, public :: &
       Initialize => Initialize_F
+    procedure, public, pass ( GC ) :: &
+      SetStream
     final :: &
       Finalize
   end type Geometry_F_CH_Form
@@ -170,6 +172,25 @@ contains
              UnitOption = Unit, VectorIndicesOption = VectorIndicesOption )
 
   end subroutine Initialize_F
+
+
+  subroutine SetStream ( G_Stream, GC, G_Source )
+
+    class ( StorageForm ), intent ( inout ) :: &
+      G_Stream
+    class ( Geometry_F_CH_Form ), intent ( in ) :: &
+      GC
+    class ( StorageForm ), intent ( in ) :: &
+      G_Source
+
+    call G_Stream % Initialize &
+           ( G_Source, &
+             iaSelectedOption &
+               =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3, &
+                    GC % METRIC_F_DD_11, GC % METRIC_F_DD_22, &
+                    GC % METRIC_F_DD_33 ] )
+
+  end subroutine SetStream
 
 
   impure elemental subroutine Finalize ( GC )
