@@ -49,7 +49,7 @@ module Geometry_F__Form
       WIDTH_U, &
       CENTER_U, &
       AREA_I_D
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       Type = '', &
       CoordinateSystem = ''
     class ( FieldSet_CH_Form ), pointer :: &

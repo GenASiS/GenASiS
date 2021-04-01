@@ -13,7 +13,7 @@ module Stream_CH__Form
   type, public :: Stream_CH_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       Name = '', &
       Type = ''
     class ( Chart_H_Form ), pointer :: &

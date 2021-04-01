@@ -17,7 +17,7 @@ module Manifold_H__Form
     logical ( KDL ) :: &
       Distributed = .false., &
       AllocatedValues = .false.
-    character ( LDF ), pointer :: &
+    character ( LDL ), pointer :: &
       Type => null ( ), &
       Name => null ( )
     type ( CommunicatorForm ), pointer :: &

@@ -17,7 +17,7 @@ module FieldSet_MH__Form
       DeviceMemory, &
       PinnedMemory, &
       DevicesCommunicate
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       Name = '', &
       Type = ''
     class ( Manifold_H_Form ), pointer :: &

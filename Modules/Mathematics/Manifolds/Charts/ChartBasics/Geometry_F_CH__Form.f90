@@ -57,6 +57,8 @@ module Geometry_F_CH__Form
       Finalize
   end type Geometry_F_CH_Form
 
+    private :: &
+      SetUnits
 
 contains
 
@@ -91,9 +93,38 @@ contains
     if ( GC % Type == '' ) &
       GC % Type = 'a Geometry_F_C'
 
+    !-- Field indices
+
+    GC % EDGE_I_U_1      =   1
+    GC % EDGE_I_U_2      =   2
+    GC % EDGE_I_U_3      =   3
+    GC % WIDTH_U_1       =   4
+    GC % WIDTH_U_2       =   5
+    GC % WIDTH_U_3       =   6
+    GC % CENTER_U_1      =   7
+    GC % CENTER_U_2      =   8
+    GC % CENTER_U_3      =   9
+    GC % AREA_I_D_1      =  10
+    GC % AREA_I_D_2      =  11
+    GC % AREA_I_D_3      =  12
+    GC % VOLUME          =  13
+    GC % METRIC_F_DD_11  =  14
+    GC % METRIC_F_DD_22  =  15
+    GC % METRIC_F_DD_33  =  16
+    GC % METRIC_F_UU_11  =  17
+    GC % METRIC_F_UU_22  =  18
+    GC % METRIC_F_UU_33  =  19
+
     nFields  =  GC % N_FIELDS_FLAT
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
+
+    GC % EDGE_I_U  =  [ GC % EDGE_I_U_1, GC % EDGE_I_U_2, GC % EDGE_I_U_3 ]
+    GC % WIDTH_U   =  [ GC % WIDTH_U_1,  GC % WIDTH_U_2,  GC % WIDTH_U_3  ]
+    GC % CENTER_U  =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3 ]
+    GC % AREA_I_D  =  [ GC % AREA_I_D_1, GC % AREA_I_D_2, GC % AREA_I_D_3 ]
+
+    !-- Field names
 
     if ( present ( FieldOption ) ) then
       Field  =  FieldOption
@@ -122,11 +153,17 @@ contains
           'Metric_F_UU_22', &
           'Metric_F_UU_33' ]
 
+    !-- Units
+
     if ( present ( UnitOption ) ) then
       Unit  =  UnitOption
     else
       allocate ( Unit ( nFields ) )
     end if
+
+    call SetUnits ( Unit, GC, C )
+
+    !-- Parent initialization
 
     call GC % FieldSet_CH_Form % Initialize &
            ( C, GM, nFields, FieldOption = Field, VectorOption = VectorOption, &
@@ -141,6 +178,80 @@ contains
       GC
 
   end subroutine Finalize
+
+  
+  subroutine SetUnits ( FieldUnit, GC, C )
+
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+      FieldUnit
+    class ( Geometry_F_CH_Form ), intent ( in ) :: &
+      GC
+    class ( Chart_H_Form ), intent ( in ) :: &
+      C
+
+    associate &
+      ( CoordinateUnit    =>  C % CoordinateUnit, &
+        CoordinateSystem  =>  C % CoordinateSystem )
+
+    FieldUnit ( GC % EDGE_I_U_1 : GC % EDGE_I_U_3 ) &
+      = CoordinateUnit
+    FieldUnit ( GC % WIDTH_U_1 : GC % WIDTH_U_3 ) &
+      = CoordinateUnit
+    FieldUnit ( GC % CENTER_U_1 : GC % CENTER_U_3 ) &
+      = CoordinateUnit
+
+    select case ( trim ( CoordinateSystem ) )
+    case ( 'RECTANGULAR' )
+      FieldUnit ( GC % VOLUME )  &
+        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )  &
+           *  CoordinateUnit ( 3 )
+      FieldUnit ( GC % AREA_I_D_1 )  &
+        =  CoordinateUnit ( 2 )  *  CoordinateUnit ( 3 )
+      FieldUnit ( GC % AREA_I_D_2 )  &
+        =  CoordinateUnit ( 3 )  *  CoordinateUnit ( 1 )
+      FieldUnit ( GC % AREA_I_D_3 )  &
+        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_33 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_33 ) = UNIT % IDENTITY
+    case ( 'CYLINDRICAL' )
+      FieldUnit ( GC % VOLUME )  &
+        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % AREA_I_D_1 )  &
+        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % AREA_I_D_2 )  &
+        =  CoordinateUnit ( 1 ) ** 2
+      FieldUnit ( GC % AREA_I_D_3 )  &
+        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
+      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_33 ) = CoordinateUnit ( 1 ) ** ( -2 )
+    case ( 'SPHERICAL' )
+      FieldUnit ( GC % VOLUME )  &
+        = CoordinateUnit ( 1 ) ** 3
+      FieldUnit ( GC % AREA_I_D_1 )  &
+        =  CoordinateUnit ( 1 ) ** 2
+      FieldUnit ( GC % AREA_I_D_2 )  &
+        =  CoordinateUnit ( 1 ) ** 3
+      FieldUnit ( GC % AREA_I_D_3 )  &
+        =  CoordinateUnit ( 1 ) ** 3
+      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_22 ) = CoordinateUnit ( 1 ) ** (  2 )
+      FieldUnit ( GC % METRIC_F_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
+      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_22 ) = CoordinateUnit ( 1 ) ** ( -2 )
+      FieldUnit ( GC % METRIC_F_UU_33 ) = CoordinateUnit ( 1 ) ** ( -2 )
+    end select !-- CoordinateSystem
+
+    end associate !-- CoordinateUnit
+
+  end subroutine SetUnits
 
   
 end module Geometry_F_CH__Form

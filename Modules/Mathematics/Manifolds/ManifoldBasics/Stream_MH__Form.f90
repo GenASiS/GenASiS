@@ -15,7 +15,7 @@ module Stream_MH__Form
       nFieldSets   = 0
     logical ( KDL ) :: &
       Verbose = .false.
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       Name = '', &
       Type = ''
     type ( GridImageStreamForm ), pointer :: &

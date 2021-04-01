@@ -8,6 +8,8 @@ program Geometry_F_CH__Form_Test
 
   implicit none
 
+  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    CoordinateUnit
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( Manifold_H_Form ), allocatable :: &
@@ -30,10 +32,12 @@ program Geometry_F_CH__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call GM % Initialize_F ( M ) 
 
+  CoordinateUnit  =  UNIT % METER
+
   allocate ( C )
   allocate ( GC )
   call C % Initialize_H &
-        ( M, 'Global', Periodic )
+        ( M, 'Global', Periodic, CoordinateUnitOption = CoordinateUnit )
   call GC % Initialize ( C, GM ) 
 
   call M % Show ( )

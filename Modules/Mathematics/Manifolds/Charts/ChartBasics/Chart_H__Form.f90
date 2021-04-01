@@ -19,7 +19,7 @@ module Chart_H__Form
       AllocatedValues = .false.
     logical ( KDL ), dimension ( : ), pointer :: &
       Periodic => null ( )
-    character ( LDF ), pointer :: &
+    character ( LDL ), pointer :: &
       Type => null ( ), &
       Name => null ( ), &
       CoordinateSystem => null ( )
@@ -141,6 +141,8 @@ contains
 
     call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
     call Show ( C % CoordinateLabel ( : nD ), 'CoordinateLabel', &
+                C % IGNORABILITY )
+    call Show ( C % CoordinateUnit ( : nD ), 'CoordinateUnit', &
                 C % IGNORABILITY )
 
     end associate !-- M, etc.

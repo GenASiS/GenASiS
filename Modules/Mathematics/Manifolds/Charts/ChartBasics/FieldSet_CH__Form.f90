@@ -18,7 +18,7 @@ module FieldSet_CH__Form
       VectorIndices
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       Name = '', &
       Type = ''
     character ( LDL ), dimension ( : ), allocatable :: &
