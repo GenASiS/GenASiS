@@ -1,22 +1,33 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with GNU compiler (PrgEnv-gnu)
 # If PrgEnv-gnu is not the default, use "module swap" to PrgEnv-gnu
 
-FORTRAN_COMPILE      = mpif90 -c -cpp -fopenmp
+FORTRAN_COMPILE      = mpif90 -c -cpp
+FORTRAN_FIXEDFORM    = -ffixed-form
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -Og -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE  = mpicc -c -fopenmp
-CC_DEBUG    = -g
-CC_OPTIMIZE = $(FORTRAN_OPTIMIZE)
+CC_COMPILE           = mpicc -c
+CC_DEBUG             = -g
+CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
+
+#-- Default to AMD HIP for GCC on current Cray machine
+DEVICE_HIP           = 1
+DEVICE_COMPILE       = hipcc -c -D__HIP_PLATFORM_HCC__
 
 LINK = mpif90 -fopenmp
+
+# Define default switches for this compiler. These can be overwritten at
+# build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
+ENABLE_OMP          ?= 1
+ENABLE_OMP_OFFLOAD  ?= 0
+USE_ISO_10646       ?= 0
 
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-SILO_DIR=/home/users/coe0021/localsw/poplar/silo/4.10.2_gcc9.1.0
+SILO_DIR    ?= /home/users/coe0021/localsw/poplar/silo/4.10.2_gcc9.1.0
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
@@ -26,13 +37,39 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 INCLUDE_HDF5 = 
 LIBRARY_HDF5 = 
 
+#-- if empty, don't link to HDF5
+ifeq ($(strip $(HDF5_DIR)),)
+  INCLUDE_HDF5 =
+  LIBRARY_HDF5 =
+endif
+
+#-- LAPACK library link line flag and location
+LAPACK_DIR    ?= ${OLCF_NETLIB_LAPACK_ROOT}
+LIBRARY_LAPACK = -L${LAPACK_DIR}/lib -llapack -lblas
+
+#-- if empty, don't link to LAPACK
+ifeq ($(strip $(LAPACK_DIR)),)
+  LIBRARY_LAPACK =
+endif
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  INCLUDE_DEVICE = -I${ROCM_PATH}/include
+  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lamdhip64
+endif
+
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- Enable unicode
-USE_ISO_10646 = 1
-
-ifdef ENABLE_OMP_OFFLOAD
-  ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES = -DENABLE_OMP_OFFLOAD
-  endif
+ifeq ($(ENABLE_OMP), 1)
+  DEFINES += -fopenmp
+else
+  ENABLE_OMP_OFFLOAD = 0
 endif
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES       += -foffload="-march=gfx908 -lm" -DENABLE_OMP_OFFLOAD
+  DEFINES       += -D__HIP_PLATFORM_HCC__
+else
+  DEFINES       += -foffload=disable
+endif
+
+DEFINES   += -D$(GENASIS_MACHINE)

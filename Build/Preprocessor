@@ -19,7 +19,7 @@
 
 #define MAP_MAXSPEED
 #ifdef ENABLE_OMP_OFFLOAD
-#if defined(Cray_CCE) || defined(POWER_GCC)
+#if defined(Cray_CCE) || defined(POWER_GCC) || defined(Cray_GCC)
 #define MAP_MAXSPEED map ( tofrom: MaxSpeed )
 #endif
 #else
