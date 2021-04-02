@@ -18,19 +18,19 @@ Stream_MH__Form.o: \
   FieldSet_MH__Form.o \
   Stream_MH__Form.f90
 
-Geometry_F_MH__Form.o: \
-  Basics.o \
-  Manifold_H__Form.o \
-  FieldSet_MH__Form.o \
-  Geometry_F_MH__Form.f90
+# Geometry_F_MH__Form.o: \
+#   Basics.o \
+#   Manifold_H__Form.o \
+#   FieldSet_MH__Form.o \
+#   Geometry_F_MH__Form.f90
 
 ManifoldBasics.o: \
   MANIFOLD_Singleton.o \
   Manifold_H__Form.o \
   FieldSet_MH__Form.o \
   Stream_MH__Form.o \
-  Geometry_F_MH__Form.o \
   ManifoldBasics.f90
+#  Geometry_F_MH__Form.o \
 
 ManifoldBasics.a: $(MANIFOLD_BASICS)
 	ar r ManifoldBasics.a $(MANIFOLD_BASICS)

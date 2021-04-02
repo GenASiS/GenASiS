@@ -16,35 +16,35 @@ Stream_CH__Form.o: \
   FieldSet_CH__Form.o \
   Stream_CH__Form.f90
 
-Geometry_F_CH__Form.o: \
-  Basics.o \
-  ManifoldBasics.o \
-  Chart_H__Form.o \
-  FieldSet_CH__Form.o \
-  Geometry_F_CH__Form.f90
+# Geometry_F_CH__Form.o: \
+#   Basics.o \
+#   ManifoldBasics.o \
+#   Chart_H__Form.o \
+#   FieldSet_CH__Form.o \
+#   Geometry_F_CH__Form.f90
 
-Geometry_F_CH__Kernel.o: \
-  Basics.o \
-  Geometry_F_CH__Form.o \
-  Geometry_F_CH__Kernel.f90
+# Geometry_F_CH__Kernel.o: \
+#   Basics.o \
+#   Geometry_F_CH__Form.o \
+#   Geometry_F_CH__Kernel.f90
 
-Geometry_F__Form.o: \
-  Basics.o \
-  FieldSet_CH__Form.o \
-  Geometry_F__Form.f90
+# Geometry_F__Form.o: \
+#   Basics.o \
+#   FieldSet_CH__Form.o \
+#   Geometry_F__Form.f90
 
-Geometry_F__Kernel.o: \
-  Basics.o \
-  Geometry_F__Form.o \
-  Geometry_F__Kernel.f90
+# Geometry_F__Kernel.o: \
+#   Basics.o \
+#   Geometry_F__Form.o \
+#   Geometry_F__Kernel.f90
 
 ChartBasics.o: \
   Chart_H__Form.o \
   FieldSet_CH__Form.o \
   Stream_CH__Form.o \
-  Geometry_F_CH__Form.o \
-  Geometry_F__Form.o \
   ChartBasics.f90
+#  Geometry_F_CH__Form.o \
+#  Geometry_F__Form.o \
 
 ChartBasics.a: $(CHART_BASICS)
 	ar r ChartBasics.a $(CHART_BASICS)
