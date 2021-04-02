@@ -109,9 +109,7 @@ program Chart_BH__Form_Test
   call Show ( Base % nFieldSets, 'nFieldSets', Base % IGNORABILITY )
   call Show ( Base % nStreams,   'nStreams',   Base % IGNORABILITY )
 
-call Show ( '>>> 1' )
   call C_Base % Show ( )
-call Show ( '>>> 2' )
 
   call ShowProper ( C_Base )
 !  call ShowGeometry ( G_Base )

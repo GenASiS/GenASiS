@@ -106,7 +106,7 @@ contains
 
     call Show ( FSM % DeviceMemory,       'DeviceMemory', &
                 FSM % IGNORABILITY )
-    call Show ( FSM % DeviceMemory,       'DeviceMemory', &
+    call Show ( FSM % PinnedMemory,       'PinnedMemory', &
                 FSM % IGNORABILITY )
     call Show ( FSM % DevicesCommunicate, 'DevicesCommunicate', &
                 FSM % IGNORABILITY )

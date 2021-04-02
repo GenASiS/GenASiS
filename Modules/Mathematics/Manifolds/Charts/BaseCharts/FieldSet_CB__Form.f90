@@ -111,7 +111,7 @@ contains
       FSC % nValues  =  C % nValues
     end select !-- C
 
-    call FSC % Initialize &
+    call FSC % FieldSet_CH_Form % Initialize &
            ( C, FSM, nFields, FieldOption, VectorOption, UnitOption, &
              VectorIndicesOption  )
 
@@ -122,22 +122,53 @@ contains
   end subroutine InitializeAllocate
 
 
-  subroutine ExchangeGhostData  ( FSC )
+  subroutine ExchangeGhostData  ( FSC, TimerLevelOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
-    call FSC % StartGhostExchange ( )
+    call FSC % StartGhostExchange ( TimerLevelOption )
     call FSC % FinishGhostExchange ( )
    
   end subroutine ExchangeGhostData
 
 
-  subroutine StartGhostExchange  ( FSC )
+  subroutine StartGhostExchange  ( FSC, TimerLevelOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
+    character ( LDF ) :: &
+      TimerName
+
+    call Show ( 'Starting ghost exchange', FSC % IGNORABILITY + 2 )
+    call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 2 )
+
+    associate &
+      ( iT_GC   =>  FSC % iTimerGhostCommunication, &
+        iT_GPU  =>  FSC % iTimerGhostPackUnpack )
+    if ( iT_GC == 0 ) then
+      TimerName  =  'GhostCommunication ' // trim ( FSC % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT_GC, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT_GC, Level = 1 )
+      end if
+    end if
+    if ( iT_GPU == 0 ) then
+      TimerName  =  'GhostPackUnpack ' // trim ( FSC % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT_GPU, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT_GPU, Level = 1 )
+      end if
+    end if
+    end associate !-- iT_GC, etc.
+      
     select type ( C  =>  FSC % Chart )
     class is ( Chart_BH_Form )
 
@@ -173,8 +204,9 @@ contains
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
 
-!  subroutine FinishExchangeFace &
-!               ( FSC, IncomingFace, OutgoingFace, TagReceive )
+    call Show ( 'Starting ghost exchange', FSC % IGNORABILITY + 2 )
+    call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 2 )
+
     !-- Finish faces
     call FinishExchangeFace &
            ( FSC, FSC % IncomingFace_L_R, FSC % OutgoingFace_L_R, &
@@ -323,9 +355,9 @@ contains
       nSend
     type ( TimerForm ), pointer :: &
       T 
-      
+
     T  =>  PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
-    
+
     select type ( C  =>  FSC % Chart )
     class is ( Chart_BH_Form )
 
@@ -358,7 +390,7 @@ contains
     end if  !-- allocated faces
     
     !-- Post Receives
-    
+
     call T % Start ( )
     call IncomingFace % Receive ( )
     call T % Stop ( )
