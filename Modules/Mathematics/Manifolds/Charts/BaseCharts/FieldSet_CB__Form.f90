@@ -325,7 +325,8 @@ contains
     allocate ( FSC % FieldSet )
     call FSC % FieldSet % Initialize &
            ( [ FSC % nValues, FSC % nFields ], &
-             VariableOption = FSC % Field, NameOption = FSC % Name )
+             VariableOption = FSC % Field, NameOption = FSC % Name, &
+             ClearOption = .true. )
 
     allocate ( FSC % FieldSetStream )
     call FSC % FieldSetStream % Initialize ( FSC % FieldSet )

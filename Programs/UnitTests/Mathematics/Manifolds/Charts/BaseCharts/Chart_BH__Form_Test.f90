@@ -11,18 +11,18 @@ program Chart_BH__Form_Test
     MinEnergy, &
     MaxEnergy, &
     MinWidthEnergy
-  real ( KDR ), dimension ( :, :, : ), pointer :: &
-    Edge_I_3D, &
-    Width_3D, &
-    Center_3D, &
-    Area_I_3D, &
-    Volume_3D, &
-    Metric_F_DD_11_3D, &
-    Metric_F_DD_22_3D, &
-    Metric_F_DD_33_3D, &
-    Metric_F_UU_11_3D, &
-    Metric_F_UU_22_3D, &
-    Metric_F_UU_33_3D
+  ! real ( KDR ), dimension ( :, :, : ), pointer :: &
+  !   Edge_I_3D, &
+  !   Width_3D, &
+  !   Center_3D, &
+  !   Area_I_3D, &
+  !   Volume_3D, &
+  !   Metric_F_DD_11_3D, &
+  !   Metric_F_DD_22_3D, &
+  !   Metric_F_DD_33_3D, &
+  !   Metric_F_UU_11_3D, &
+  !   Metric_F_UU_22_3D, &
+  !   Metric_F_UU_33_3D
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
   type ( Manifold_H_Form ), allocatable :: &
