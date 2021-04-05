@@ -8,7 +8,7 @@ program FieldSet_CB__Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    nFields = 5
+    nFields = 1
   logical ( KDL ) :: &
     DeviceMemory, &
     PinnedMemory, &
@@ -90,7 +90,7 @@ program FieldSet_CB__Form_Test
   call C % Show ( )
   call FSC % Show ( )
 
-  call InitializeField ( FSC )
+  call SetField ( FSC )
 
   deallocate ( SC )
   deallocate ( SM )
@@ -107,14 +107,73 @@ program FieldSet_CB__Form_Test
 contains
 
 
-  subroutine InitializeField ( FSC )
+  subroutine SetField ( FSC )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
 
+    integer ( KDI ) :: &
+      iF, &       !-- iField
+      iC, jC, kC  !-- iCell, etc.
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      F_3D  !-- Field
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    associate ( nCB  =>  C % nCellsBrick )
+
+    do iF  =  1, FSC % nFields
+      associate ( F  =>  FSC % FieldSet % Value ( :, iF ) )
+      call C % SetFieldPointer ( F, F_3D )
+
+      do kC  =  1, nCB ( 3 )
+        do jC  =  1, nCB ( 2 )
+          do iC  =  1, nCB ( 1 )
+            F_3D ( iC, jC, kC )  &
+              =  iF * (    1.e0  *  ( iC - 1 )  &
+                        +  1.e4  *  ( jC - 1 )  &
+                        +  1.e8  *  ( kC - 1 ) )
+          end do !-- iC
+        end do !-- jC
+      end do !-- kC
+
+      call Show ( 'Field prior to ghost exchange' )
+      call Show ( FSC % Field ( iF ), 'Field' )
+      call ShowField ( F_3D, C % nGhostLayers )
+
+      end associate !-- F
+    end do !-- iF
+
     call FSC % ExchangeGhostData ( )
 
-  end subroutine InitializeField
+    do iF  =  1, FSC % nFields
+      associate ( F  =>  FSC % FieldSet % Value ( :, iF ) )
+      call Show ( 'Field after ghost exchange' )
+      call Show ( FSC % Field ( iF ), 'Field' )
+      call ShowField ( F_3D, C % nGhostLayers )
+      end associate !-- F
+    end do !-- iF
+
+    end associate !-- nCB
+    end select !-- C
+    nullify ( F_3D )
+
+  end subroutine SetField
+
+
+  subroutine ShowField ( F_3D, nGL )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      F_3D
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nGL  !-- nGhostLayers
+    
+    call Show ( F_3D ( :, nGL ( 2 ) + 1, nGL ( 3 ) + 1 ), 'F_3D ( :, 1, 1 )' )
+    call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) + 1 ), 'F_3D ( 1, :, 1 )' )
+    call Show ( F_3D ( nGL ( 1 ) + 1, nGL ( 2 ) + 1, : ), 'F_3D ( 1, 1, : )' )
+
+  end subroutine ShowField
 
 
 end program FieldSet_CB__Form_Test

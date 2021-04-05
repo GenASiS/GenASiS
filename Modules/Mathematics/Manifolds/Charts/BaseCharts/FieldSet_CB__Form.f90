@@ -204,7 +204,7 @@ contains
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
 
-    call Show ( 'Starting ghost exchange', FSC % IGNORABILITY + 2 )
+    call Show ( 'Finishing ghost exchange', FSC % IGNORABILITY + 2 )
     call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 2 )
 
     !-- Finish faces
