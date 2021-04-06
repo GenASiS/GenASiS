@@ -328,9 +328,6 @@ contains
 
       oE  =  ( iaB - 1 ) * nCB  -  nGL
       nE  =  nCB  +  2 * nGL  +  1
-call Show ( iD, '>>> iD' )
-call Show ( oE, '>>> oE' )
-call Show ( nE, '>>> nE' )
 
       call Edge ( iD ) % Initialize ( nE )
       Edge ( iD ) % Value  =  C % Edge ( iD ) % Value ( oE + 1 : oE + nE )
@@ -338,12 +335,6 @@ call Show ( nE, '>>> nE' )
       end associate !-- nCB, etc.
 
     end do !-- iD
-
-call Show ( Edge ( 1 ) % Value, '>>> Edge 1' )
-if ( C % nDimensions > 1 ) &
-  call Show ( Edge ( 2 ) % Value, '>>> Edge 2' )
-if ( C % nDimensions > 2 ) &
-  call Show ( Edge ( 3 ) % Value, '>>> Edge 3' )
 
     end select !-- C
 

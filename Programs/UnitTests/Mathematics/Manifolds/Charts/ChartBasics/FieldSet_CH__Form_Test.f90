@@ -34,7 +34,7 @@ program FieldSet_CH__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_H &
-         ( M, 'Global', Periodic )
+         ( M, 'Chart', Periodic )
 
   FieldUnit ( 1 )      =  UNIT % MASS_DENSITY_MKS
   FieldUnit ( 2 : 4 )  =  UNIT % SPEED_MKS

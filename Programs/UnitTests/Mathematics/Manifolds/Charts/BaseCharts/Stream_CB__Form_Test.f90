@@ -40,7 +40,7 @@ program Stream_CB__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize &
-         ( M, 'Global', Periodic )
+         ( M, 'Chart', Periodic )
 
   allocate ( FSM )
   allocate ( FSC )
@@ -195,10 +195,14 @@ contains
 
     if ( nD > 2 ) then
       call Show ( 'Selected Z strips', CONSOLE % INFO_2 )
-      call Show ( F_3D ( nGL ( 1 ) + 1, nGL ( 2 ) + 1, : ), 'F_3D ( 1, 1, : )' )
-      call Show ( F_3D ( nGL ( 1 ),     nGL ( 2 ) + 1, : ), 'F_3D ( 0, 1, : )' )
-      call Show ( F_3D ( nGL ( 1 ) + 1, nGL ( 2 ),     : ), 'F_3D ( 1, 0, : )' )
-      call Show ( F_3D ( nGL ( 1 ),     nGL ( 2 ),     : ), 'F_3D ( 0, 0, : )' )
+      call Show ( F_3D ( nGL ( 1 ) + 1, nGL ( 2 ) + 1, : ), &
+                  'F_3D ( 1, 1, : )', CONSOLE % INFO_2 )
+      call Show ( F_3D ( nGL ( 1 ),     nGL ( 2 ) + 1, : ), &
+                  'F_3D ( 0, 1, : )', CONSOLE % INFO_2 )
+      call Show ( F_3D ( nGL ( 1 ) + 1, nGL ( 2 ),     : ), &
+                  'F_3D ( 1, 0, : )', CONSOLE % INFO_2 )
+      call Show ( F_3D ( nGL ( 1 ),     nGL ( 2 ),     : ), &
+                  'F_3D ( 0, 0, : )', CONSOLE % INFO_2 )
     end if
 
   end subroutine ShowField

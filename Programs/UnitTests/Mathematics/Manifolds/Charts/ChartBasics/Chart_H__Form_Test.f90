@@ -31,7 +31,7 @@ program Chart_H__Form_Test
   call Base % Initialize &
          ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
            iDimensionalityOption = 1 )
-  call C_Base % Initialize_H ( Base, 'Global', Periodic )
+  call C_Base % Initialize_H ( Base, 'Chart', Periodic )
 
   !-- Fiber
 
@@ -41,7 +41,7 @@ program Chart_H__Form_Test
   allocate ( C_Fiber )
   call Fiber % Initialize ( 'Fiber', iDimensionalityOption = 2 )
   call C_Fiber % Initialize_H &
-         ( Fiber, 'Global', Periodic, &
+         ( Fiber, 'Chart', Periodic, &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL' )
 

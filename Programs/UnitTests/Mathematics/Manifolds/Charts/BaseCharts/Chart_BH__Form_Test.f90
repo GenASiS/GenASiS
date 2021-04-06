@@ -63,7 +63,7 @@ program Chart_BH__Form_Test
 !  call GM_Base % Initialize &
 !         ( Base, NameOption = 'GeometryBase' ) 
   call C_Base % Initialize &
-         ( Base, 'Global', Periodic )
+         ( Base, 'Chart', Periodic )
 !  call GC_Base % Initialize &
 !         ( C_Base, GM_Base, nFields = 19 ) 
 !  call G_Base % Initialize &
@@ -88,7 +88,7 @@ program Chart_BH__Form_Test
 !  call GM_Fiber % Initialize &
 !         ( Fiber, NameOption = 'GeometryFiber' ) 
   call C_Fiber % Initialize &
-         ( Fiber, 'Global', Periodic, &
+         ( Fiber, 'Chart', Periodic, &
            SpacingOption = [ 'GEOMETRIC' ], &
            CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &

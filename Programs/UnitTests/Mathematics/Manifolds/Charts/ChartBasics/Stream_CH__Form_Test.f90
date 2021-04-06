@@ -39,7 +39,7 @@ program Stream_CH__Form_Test
   call M % Initialize &
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize_H &
-         ( M, 'Global', Periodic )
+         ( M, 'Chart', Periodic )
 
   allocate ( FSM )
   allocate ( FSC )
