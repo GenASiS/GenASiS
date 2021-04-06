@@ -5,7 +5,7 @@ HDF5_DIR =
 LAPACK_DIR = 
 
 all: Difference_Form_Test Jacobi_Test JacobiAsync_Test Async_Test \
-     GPU_Rank_Binding
+     GPU_Rank_Binding DataTransfer_Test
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -22,6 +22,10 @@ GPU_Rank_Binding: Basics.a GPU_Rank_Binding.o
 	$(LINK) $(FLAGS) -o GPU_Rank_Binding_$(MACHINE) \
           GPU_Rank_Binding.o Basics.a $(LIBRARIES)
 
+DataTransfer_Test: Basics.a DataTransfer_Test.o
+	$(LINK) $(FLAGS) -o DataTransfer_Test_$(MACHINE) \
+          DataTransfer_Test.o Basics.a $(LIBRARIES)
+
 JacobiAsync_Test: Basics.a JacobiAsync_Test.o
 	$(LINK) $(FLAGS) -o JacobiAsync_Test_$(MACHINE) \
           JacobiAsync_Test.o Basics.a $(LIBRARIES)
@@ -33,8 +37,10 @@ clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f Difference_Form_Test_*
-	rm -f Jacobi_Test_*
+	find . -type f -executable -name 'Difference_Form_Test_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'Jacobi_Test*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'GPU_Rank_Binding*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'DataTransfer_Test*' -exec rm -f '{}' \;
 
 include $(PATH_BASICS)/Makefile_Dependencies
 
@@ -57,3 +63,11 @@ JacobiAsync_Test.o: \
 
 async.o: \
   async.cu
+
+GPU_Rank_Binding.o: \
+  Basics.o \
+  GPU_Rank_Binding.f90
+
+DataTransfer_Test.o: \
+  Basics.o \
+  DataTransfer_Test.f90
