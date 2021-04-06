@@ -1,5 +1,7 @@
 program FieldSet_CB__Form_Test
 
+  !-- FieldSet_ChartBase__Form_Test
+
   use Basics
   use ManifoldBasics
   use ChartBasics
@@ -15,20 +17,20 @@ program FieldSet_CB__Form_Test
     DevicesCommunicate
   logical ( KDL ), dimension ( 3 ) :: &
     Periodic
-  type ( GridImageStreamForm ), allocatable :: &
-    GIS
+!  type ( GridImageStreamForm ), allocatable :: &
+!    GIS
   type ( Chart_BH_Form ), allocatable :: &
     C
   type ( FieldSet_CB_Form ), allocatable :: &
     FSC
-  type ( Stream_CH_Form ), allocatable :: &
-    SC
+!  type ( Stream_CH_Form ), allocatable :: &
+!    SC
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
     FSM
-  type ( Stream_MH_Form ), allocatable :: &
-    SM
+!  type ( Stream_MH_Form ), allocatable :: &
+!    SM
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -65,19 +67,19 @@ program FieldSet_CB__Form_Test
   call FSC % Initialize &
          ( C, FSM, nFields ) 
 
-  allocate ( GIS )
-  call GIS % Initialize &
-         ( PROGRAM_HEADER % Name, CommunicatorOption = M % Communicator )
+  ! allocate ( GIS )
+  ! call GIS % Initialize &
+  !        ( PROGRAM_HEADER % Name, CommunicatorOption = M % Communicator )
 
-  allocate ( SM )
-  allocate ( SC )
-  call SM % Initialize ( M, GIS, 'Stream' )
-  call SC % Initialize ( C, SM )
+  ! allocate ( SM )
+  ! allocate ( SC )
+  ! call SM % Initialize ( M, GIS, 'Stream' )
+  ! call SC % Initialize ( C, SM )
 
-  call SM % AddFieldSet ( FSM )
+  ! call SM % AddFieldSet ( FSM )
 
-  call FSC % AddStream ( SC )
-  call FSC % AddStream ( SC )  !-- Test the prevention of duplication
+  ! call FSC % AddStream ( SC )
+  ! call FSC % AddStream ( SC )  !-- Test the prevention of duplication
 
   call M % Show ( )
   call Show ( M % nCharts,    'nCharts',    M % IGNORABILITY )
@@ -92,9 +94,9 @@ program FieldSet_CB__Form_Test
 
   call SetField ( FSC )
 
-  deallocate ( SC )
-  deallocate ( SM )
-  deallocate ( GIS )
+!  deallocate ( SC )
+!  deallocate ( SM )
+!  deallocate ( GIS )
   deallocate ( FSC )
   deallocate ( FSM )
 
@@ -141,8 +143,8 @@ contains
         end do !-- jC
       end do !-- kC
 
-      call Show ( 'Field before ghost exchange' )
-      call Show ( FSC % Field ( iF ), 'Field' )
+      call Show ( 'Field before ghost exchange', CONSOLE % INFO_2 )
+      call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
       call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
 
       end associate !-- F
@@ -153,8 +155,8 @@ contains
     do iF  =  1, FSC % nFields
       associate ( F  =>  FSC % FieldSet % Value ( :, iF ) )
       call C % SetFieldPointer ( F, F_3D )
-      call Show ( 'Field after ghost exchange' )
-      call Show ( FSC % Field ( iF ), 'Field' )
+      call Show ( 'Field after ghost exchange', CONSOLE % INFO_2 )
+      call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
       call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
       end associate !-- F
     end do !-- iF
@@ -176,21 +178,29 @@ contains
       nD  !-- nDimensions
     
     call Show ( 'Selected X strips' )
-    call Show ( F_3D ( :, nGL ( 2 ) + 1, nGL ( 3 ) + 1 ), 'F_3D ( :, 1, 1 )' )
+    call Show ( F_3D ( :, nGL ( 2 ) + 1, nGL ( 3 ) + 1 ), &
+                'F_3D ( :, 1, 1 )', CONSOLE % INFO_2 )
     if ( nD > 1 ) &
-      call Show ( F_3D ( :, nGL ( 2 ), nGL ( 3 ) + 1 ), 'F_3D ( :, 0, 1 )' )
+      call Show ( F_3D ( :, nGL ( 2 ), nGL ( 3 ) + 1 ), &
+                  'F_3D ( :, 0, 1 )', CONSOLE % INFO_2 )
     if ( nD > 2 ) then
-      call Show ( F_3D ( :, nGL ( 2 ) + 1, nGL ( 3 ) ), 'F_3D ( :, 1, 0 )' )
-      call Show ( F_3D ( :, nGL ( 2 ),     nGL ( 3 ) ), 'F_3D ( :, 0, 0 )' )
+      call Show ( F_3D ( :, nGL ( 2 ) + 1, nGL ( 3 ) ), &
+                  'F_3D ( :, 1, 0 )', CONSOLE % INFO_2 )
+      call Show ( F_3D ( :, nGL ( 2 ),     nGL ( 3 ) ), &
+                  'F_3D ( :, 0, 0 )', CONSOLE % INFO_2 )
     end if
 
     if ( nD > 1 ) then
       call Show ( 'Selected Y strips' )
-      call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) + 1 ), 'F_3D ( 1, :, 1 )' )
-      call Show ( F_3D ( nGL ( 1 ),     :, nGL ( 3 ) + 1 ), 'F_3D ( 0, :, 1 )' )
+      call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) + 1 ), &
+                  'F_3D ( 1, :, 1 )', CONSOLE % INFO_2 )
+      call Show ( F_3D ( nGL ( 1 ),     :, nGL ( 3 ) + 1 ), &
+                  'F_3D ( 0, :, 1 )', CONSOLE % INFO_2 )
       if ( nD > 2 ) then
-        call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) ), 'F_3D ( 1, :, 0 )' )
-        call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) ), 'F_3D ( 1, :, 0 )' )
+        call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) ), &
+                    'F_3D ( 1, :, 0 )', CONSOLE % INFO_2 )
+        call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) ), &
+                    'F_3D ( 1, :, 0 )', CONSOLE % INFO_2 )
       end if
     end if
 

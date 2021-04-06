@@ -43,8 +43,8 @@ module FieldSet_CB__Form
       StartGhostExchange
     procedure, public, pass :: &
       FinishGhostExchange
-    procedure, public, pass :: &
-      AddStream
+!    procedure, public, pass :: &
+!      AddStream
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -232,38 +232,38 @@ contains
   end subroutine FinishGhostExchange
 
 
-  subroutine AddStream ( FSC, SC )
+  ! subroutine AddStream ( FSC, SC )
 
-    class ( FieldSet_CB_Form ), intent ( inout ) :: &
-      FSC
-    class ( Stream_CH_Form ), intent ( in ), target :: &
-      SC
+  !   class ( FieldSet_CB_Form ), intent ( inout ) :: &
+  !     FSC
+  !   class ( Stream_CH_Form ), intent ( in ), target :: &
+  !     SC
     
-    integer ( KDI ) :: &
-      iS
+  !   integer ( KDI ) :: &
+  !     iS
 
-    associate ( nS  =>  FSC % FieldSet_M % nStreams )
+  !   associate ( nS  =>  FSC % FieldSet_M % nStreams )
 
-    do iS  =  1, nS
-      if ( associated ( FSC % Stream ( iS ) % Pointer, SC ) ) then
-        call Show ( 'Stream already added to ' // FSC % Type, &
-                    CONSOLE % WARNING )
-        call Show ( FSC % Name, 'FieldSet', CONSOLE % WARNING )
-        call Show (  SC % Name, 'Stream',   CONSOLE % WARNING )
-        return
-      end if
-    end do !-- iS
+  !   do iS  =  1, nS
+  !     if ( associated ( FSC % Stream ( iS ) % Pointer, SC ) ) then
+  !       call Show ( 'Stream already added to ' // FSC % Type, &
+  !                   CONSOLE % WARNING )
+  !       call Show ( FSC % Name, 'FieldSet', CONSOLE % WARNING )
+  !       call Show (  SC % Name, 'Stream',   CONSOLE % WARNING )
+  !       return
+  !     end if
+  !   end do !-- iS
 
-    nS  =  nS + 1
-    FSC % Stream ( iS ) % Pointer  =>  SC
-    call Show ( 'Adding a Stream to ' // trim ( FSC % Type ), &
-                FSC % IGNORABILITY + 1 )
-    call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 1 )
-    call Show (  SC % Name, 'Stream',   FSC % IGNORABILITY + 1 )
+  !   nS  =  nS + 1
+  !   FSC % Stream ( iS ) % Pointer  =>  SC
+  !   call Show ( 'Adding a Stream to ' // trim ( FSC % Type ), &
+  !               FSC % IGNORABILITY + 1 )
+  !   call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 1 )
+  !   call Show (  SC % Name, 'Stream',   FSC % IGNORABILITY + 1 )
 
-    end associate !-- nS
+  !   end associate !-- nS
 
-  end subroutine AddStream
+  ! end subroutine AddStream
 
 
   impure elemental subroutine Finalize ( FSC )

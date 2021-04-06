@@ -311,17 +311,18 @@ contains
     call Show ( C % nCells ( : nD ), 'nCells', C % IGNORABILITY )
     call Show ( C % nGhostLayers ( : nD ), 'nGhostLayers', C % IGNORABILITY )
 
-    call Show ( C % nValues, 'nValues', C % IGNORABILITY )
-
-    call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY )
-    call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY )
+    call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY + 1 )
+    call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY + 1 )
 
     if ( C % Manifold % Distributed ) then
-
-      call Show ( C % iaBrick ( : nD ), 'iaBrick', C % IGNORABILITY )
       call Show ( C % nBricks ( : nD ), 'nBricks', C % IGNORABILITY )
+      call Show ( C % iaBrick ( : nD ), 'iaBrick', C % IGNORABILITY + 1 )
       call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', C % IGNORABILITY )
+    end if !-- Distributed
 
+    call Show ( C % nValues, 'nValues', C % IGNORABILITY )
+
+    if ( C % Manifold % Distributed ) then
       call C % PortalFace_L_R % Show &
              ( 'PortalFace_L_R', C % IGNORABILITY + 1 )
       call C % PortalFace_R_L % Show &
@@ -334,7 +335,6 @@ contains
              ( 'PortalEdge_LR_RL', C % IGNORABILITY + 1 )
       call C % PortalEdge_RL_LR % Show &
              ( 'PortalEdge_RL_LR', C % IGNORABILITY + 1 )
-
     end if !-- Distributed
 
     do iD = 1, nD

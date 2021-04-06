@@ -67,7 +67,7 @@ contains
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
-    class ( FieldSet_CH_Form ), intent ( in ), target :: &
+    class ( FieldSet_CH_Form ), intent ( in ) :: &
       FSC
 
     select type ( FSC )
