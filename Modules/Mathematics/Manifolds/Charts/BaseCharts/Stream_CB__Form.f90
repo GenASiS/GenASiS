@@ -5,6 +5,7 @@ module Stream_CB__Form
   use Basics
   use ManifoldBasics
   use ChartBasics
+  use Chart_BH__Form
   use FieldSet_CB__Form
 
   implicit none
@@ -20,12 +21,17 @@ module Stream_CB__Form
       Initialize
     procedure, public, pass :: &
       AddFieldSet
+    procedure, public, pass :: &
+      Write
+    procedure, public, pass :: &
+      Read
     final :: &
       Finalize
   end type Stream_CB_Form
 
     private :: &
-      AddStorage
+      AddStorage, &
+      SetEdgeValues
 
 
 contains
@@ -82,6 +88,193 @@ contains
   end subroutine AddFieldSet
 
 
+  subroutine Write ( SC, DirectoryOption, TimeOption, CycleNumberOption )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      CycleNumberOption
+
+    integer ( KDI ) :: &
+      nCellsProper, &
+      nCellsGhost
+    integer ( KDI ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
+      nGhostInner, &
+      nGhostOuter, &
+      nExteriorInner, &
+      nExteriorOuter, &
+      nCellsWrite
+    type ( Real_1D_Form ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
+      Edge
+    ! character ( 2 ) :: &
+    !   ChartNumber
+    character ( LDF ) :: &
+      Directory
+
+    call Show ( 'Writing ' // trim ( SC % Type ), SC % IGNORABILITY )
+    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
+
+    select type ( C  =>  SC % Chart )
+    class is ( Chart_BH_Form )
+
+    if ( C % Manifold % Distributed ) then
+      nCellsProper    =  C % nCellsProper
+      nCellsGhost     =  C % nCellsGhost
+      nGhostInner     =  C % nGhostLayers
+      nGhostOuter     =  C % nGhostLayers
+      nExteriorInner  =  0
+      nExteriorOuter  =  0
+      where ( C % iaBrick  ==  1 )
+        nGhostInner     =  0
+        nExteriorInner  =  C % nGhostLayers
+      end where
+      where ( C % iaBrick  ==  C % nBricks )
+        nGhostOuter     =  0
+        nExteriorOuter  =  C % nGhostLayers
+      end where
+    else  ! .not. Distributed
+      nCellsProper    =  C % nCellsProper
+      nCellsGhost     =  0
+      nGhostInner     =  0
+      nGhostOuter     =  0
+      nExteriorInner  =  C % nGhostLayers
+      nExteriorOuter  =  C % nGhostLayers
+    end if !-- Distributed
+    nCellsWrite  =  C % nCellsBrick  +  nGhostInner  +  nGhostOuter
+
+    call SetEdgeValues ( SC, Edge )
+
+    Directory  =  trim ( C % Name )  //  '/'
+    if ( present ( DirectoryOption ) ) &
+      Directory  =  DirectoryOption
+
+    select case ( C % nDimensions )
+    case ( 1 ) 
+      associate ( CI => SC % CurveImage )
+      call CI % SetGridWrite &
+             ( Directory, Edge ( 1 ), nCellsProper, &
+               oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
+               CoordinateLabelOption = C % CoordinateLabel ( 1 ), &
+               CoordinateUnitOption = C % CoordinateUnit ( 1 ) )
+      call CI % Write &
+             ( TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call CI % ClearGrid ( )
+      end associate !-- CI
+    case default
+      associate ( GI => SC % GridImage )
+      call GI % SetGridWrite &
+             ( Directory, Edge, nCellsWrite, nGhostInner, nGhostOuter, &
+               nExteriorInner, nExteriorOuter, C % nDimensions, nCellsProper, &
+               nCellsGhost, CoordinateLabelOption = C % CoordinateLabel, &
+               CoordinateUnitOption = C % CoordinateUnit )
+      call GI % Write &
+             ( TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call GI % ClearGrid ( )
+      end associate !-- GI
+    end select !-- nDimensions
+
+    end select !-- C
+
+  end subroutine Write
+
+
+  subroutine Read ( SC, DirectoryOption, TimeOption, CycleNumberOption )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption
+
+    ! integer ( KDI ) :: &
+    !   nCellsProper, &
+    !   nCellsGhost
+    ! integer ( KDI ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
+    !   nCells, &
+    !   nGhostInner, &
+    !   nGhostOuter, &
+    !   nExteriorInner, &
+    !   nExteriorOuter
+    ! character ( 2 ) :: &
+    !   ChartNumber
+    ! character ( LDF ) :: &
+    !   Directory
+
+    call Show ( 'Reading ' // trim ( SC % Type ), SC % IGNORABILITY )
+    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
+
+    select type ( C  =>  SC % Chart )
+    class is ( Chart_BH_Form )
+
+    ! if ( C % IsDistributed ) then
+    !   nCellsProper = C % nCellsProper
+    !   nCellsGhost  = C % nCellsGhost
+    !   nGhostInner = C % nGhostLayers
+    !   nGhostOuter = C % nGhostLayers
+    !   nExteriorInner = 0
+    !   nExteriorOuter = 0
+    !   where ( C % iaBrick == 1 )
+    !     nGhostInner = 0
+    !     nExteriorInner = C % nGhostLayers
+    !   end where
+    !   where ( C % iaBrick == C % nBricks )
+    !     nGhostOuter = 0
+    !     nExteriorOuter = C % nGhostLayers
+    !   end where
+    ! else  ! .not. IsDistributed
+    !   nCellsProper = C % nCellsProper
+    !   nCellsGhost  = 0
+    !   nGhostInner = 0
+    !   nGhostOuter = 0
+    !   nExteriorInner = C % nGhostLayers
+    !   nExteriorOuter = C % nGhostLayers
+    ! end if !-- IsDistributed
+
+    ! write ( ChartNumber, fmt = '(i2.2)' ) C % iChart
+    ! Directory = 'Chart_' // ChartNumber // '/'
+    ! if ( present ( DirectoryOption ) ) &
+    !   Directory = DirectoryOption
+
+    ! select case ( C % nDimensions )
+    ! case ( 1 ) 
+    !   associate ( CI => SC % CurveImage )
+    !   call CI % SetGridRead &
+    !          ( Directory, nCellsProper, &
+    !            oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
+    !   call CI % Read &
+    !          ( StorageOnlyOption = .true., &
+    !            TimeOption = TimeOption, &
+    !            CycleNumberOption = CycleNumberOption )
+    !   call CI % ClearGrid ( )
+    !   end associate !-- CI
+    ! case default
+    !   associate ( GI => SC % GridImage )
+    !   call GI % SetGridRead &
+    !          ( Directory, nCells, nGhostInner, nGhostOuter, &
+    !            nExteriorInner, nExteriorOuter, C % nDimensions, nCellsProper, &
+    !            nCellsGhost )
+    !   call GI % Read &
+    !          ( StorageOnlyOption = .true., &
+    !            TimeOption = TimeOption, &
+    !            CycleNumberOption = CycleNumberOption )
+    !   call GI % ClearGrid ( )
+    !   end associate !-- GI
+    ! end select !-- nDimensions
+
+    end select !-- C
+
+  end subroutine Read
+
+
   impure elemental subroutine Finalize ( SC )
 
     type ( Stream_CB_Form ), intent ( inout ) :: &
@@ -109,6 +302,52 @@ contains
     end if
 
   end subroutine AddStorage
+
+
+  subroutine SetEdgeValues ( SC, Edge )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+    type ( Real_1D_Form ), dimension ( : ), intent ( inout ) :: &
+      Edge
+
+    integer ( KDI ) :: &
+      iD, &  !-- iDimension
+      oE, &  !-- oEdge
+      nE     !-- nEdges
+
+    select type ( C  =>  SC % Chart )
+    class is ( Chart_BH_Form )
+
+    do iD = 1, C % nDimensions
+
+      associate &
+        ( nCB  =>  C % nCellsBrick ( iD ), &
+          nGL  =>  C % nGhostLayers ( iD ), &
+          iaB  =>  C % iaBrick ( iD ) )
+
+      oE  =  ( iaB - 1 ) * nCB  -  nGL
+      nE  =  nCB  +  2 * nGL  +  1
+call Show ( iD, '>>> iD' )
+call Show ( oE, '>>> oE' )
+call Show ( nE, '>>> nE' )
+
+      call Edge ( iD ) % Initialize ( nE )
+      Edge ( iD ) % Value  =  C % Edge ( iD ) % Value ( oE + 1 : oE + nE )
+
+      end associate !-- nCB, etc.
+
+    end do !-- iD
+
+call Show ( Edge ( 1 ) % Value, '>>> Edge 1' )
+if ( C % nDimensions > 1 ) &
+  call Show ( Edge ( 2 ) % Value, '>>> Edge 2' )
+if ( C % nDimensions > 2 ) &
+  call Show ( Edge ( 3 ) % Value, '>>> Edge 3' )
+
+    end select !-- C
+
+  end subroutine SetEdgeValues
 
 
 end module Stream_CB__Form

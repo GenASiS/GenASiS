@@ -14,7 +14,7 @@ module FieldSet_CB__Form
     integer ( KDI ) :: &
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
-      nValues  = 0
+      nCellsLocal  = 0
     class ( StorageForm ), allocatable :: &
       FieldSet, &
       FieldSetStream
@@ -108,7 +108,7 @@ contains
 
     select type ( C )
     class is ( Chart_BH_Form )
-      FSC % nValues  =  C % nValues
+      FSC % nCellsLocal  =  C % nCellsLocal
     end select !-- C
 
     call FSC % FieldSet_CH_Form % Initialize &
@@ -316,15 +316,15 @@ contains
     if ( allocated ( FSC % FieldSet ) ) &
       return
 
-    call Show ( 'Allocating a FieldSet',    FSC % IGNORABILITY + 1 )
-    call Show ( FSC % Name,    'Name',    FSC % IGNORABILITY + 1 )
-    call Show ( FSC % Field,   'Field',   FSC % IGNORABILITY + 1 )
-    call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY + 1 )
-    call Show ( FSC % nValues, 'nValues', FSC % IGNORABILITY + 1 )
+    call Show ( 'Allocating a FieldSet',          FSC % IGNORABILITY + 1 )
+    call Show ( FSC % Name,        'Name',        FSC % IGNORABILITY + 1 )
+    call Show ( FSC % Field,       'Field',       FSC % IGNORABILITY + 1 )
+    call Show ( FSC % nFields,     'nFields',     FSC % IGNORABILITY + 1 )
+    call Show ( FSC % nCellsLocal, 'nCellsLocal', FSC % IGNORABILITY + 1 )
     
     allocate ( FSC % FieldSet )
     call FSC % FieldSet % Initialize &
-           ( [ FSC % nValues, FSC % nFields ], &
+           ( [ FSC % nCellsLocal, FSC % nFields ], &
              VariableOption = FSC % Field, NameOption = FSC % Name, &
              ClearOption = .true. )
 

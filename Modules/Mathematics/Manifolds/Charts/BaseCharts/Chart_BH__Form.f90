@@ -11,8 +11,10 @@ module Chart_BH__Form
 
   type, public, extends ( Chart_H_Form ) :: Chart_BH_Form
     integer ( KDI ) :: &
-      nValues = 0, &
-      nEqual  = 0
+      nEqual       = 0, &
+      nCellsProper = 0, &
+      nCellsGhost  = 0, &
+      nCellsLocal  = 0
     integer ( KDI ), dimension ( : ), pointer :: &
       iaFirst      => null ( ), &
       iaLast       => null ( ), &
@@ -72,7 +74,7 @@ module Chart_BH__Form
 
       private :: &
         BrickIndex, &
-        SetFirstLast, &
+        SetCellsLocal, &
         SetPortals, &
         SetProperCells, &
         ComputeEdgeEqual, &
@@ -320,7 +322,9 @@ contains
       call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', C % IGNORABILITY )
     end if !-- Distributed
 
-    call Show ( C % nValues, 'nValues', C % IGNORABILITY )
+    call Show ( C % nCellsProper, 'nCellsProper', C % IGNORABILITY )
+    call Show ( C % nCellsGhost,  'nCellsGhost',  C % IGNORABILITY )
+    call Show ( C % nCellsLocal,  'nCellsLocal',  C % IGNORABILITY )
 
     if ( C % Manifold % Distributed ) then
       call C % PortalFace_L_R % Show &
@@ -626,18 +630,13 @@ contains
 
       end associate !-- nD
 
-      C % nValues  &
-        =  product ( C % nCellsBrick  +  2 * C % nGhostLayers )
-
-      call SetFirstLast ( C, C % nCellsBrick )
       call SetPortals ( C )
+
+      call SetCellsLocal ( C, C % nCellsBrick )
 
     else  !-- not Distributed
 
-      C % nValues  &
-        =  product ( C % nCells  +  2 * C % nGhostLayers )
-
-      call SetFirstLast ( C, C % nCells )
+      call SetCellsLocal ( C, C % nCells )
 
     end if  !-- Distributed
 
@@ -736,7 +735,7 @@ contains
   end function BrickIndex
 
 
-  subroutine SetFirstLast ( C, nCellsLocal )
+  subroutine SetCellsLocal ( C, nCellsLocal )
 
     class ( Chart_BH_Form ), intent ( inout ) :: &
       C 
@@ -758,7 +757,11 @@ contains
       C % iaLast  ( 3 ) = nCellsLocal ( 3 ) + C % nGhostLayers ( 3 )
     end if
 
-  end subroutine SetFirstLast
+    C % nCellsLocal   =  product ( nCellsLocal  +  2 * C % nGhostLayers )
+    C % nCellsProper  =  product ( nCellsLocal )
+    C % nCellsGhost   =  C % nCellsLocal  -  C % nCellsProper
+
+  end subroutine SetCellsLocal
 
 
   subroutine SetPortals ( C )
@@ -994,7 +997,7 @@ contains
     logical ( KDL ), dimension ( :, :, : ), pointer :: &
       PC
 
-    allocate ( C % ProperCell ( C % nValues ) )
+    allocate ( C % ProperCell ( C % nCellsLocal ) )
     call Clear ( C % ProperCell )
 
     associate &

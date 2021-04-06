@@ -13,6 +13,7 @@ FieldSet_CB__Form.o: \
 Stream_CB__Form.o: \
   Basics.o \
   ChartBasics.o \
+  Chart_BH__Form.o \
   FieldSet_CB__Form.o \
   Stream_CB__Form.f90
 

@@ -82,6 +82,9 @@ program Stream_CB__Form_Test
   call SC % Show ( )
 
   call SetField ( FSC )
+  call WriteField ( SC )
+
+  call SC % Read ( )
 
   deallocate ( SC )
   deallocate ( SM )
@@ -199,6 +202,20 @@ contains
     end if
 
   end subroutine ShowField
+
+
+  subroutine WriteField ( SC )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+
+    associate ( GIS  =>  SC % Stream_M % GridImageStream ) 
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call  SC % Write ( )
+    call GIS % Close ( )
+    end associate !-- GIS
+
+  end subroutine WriteField
 
 
 end program Stream_CB__Form_Test
