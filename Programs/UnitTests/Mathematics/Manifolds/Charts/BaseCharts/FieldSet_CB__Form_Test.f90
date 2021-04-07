@@ -127,6 +127,8 @@ contains
       end associate !-- F
     end do !-- iF
 
+    call FSC % UpdateDevice ( )
+
     call FSC % ExchangeGhostData ( )
 
     do iF  =  1, FSC % nFields
@@ -137,6 +139,18 @@ contains
       call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
       end associate !-- F
     end do !-- iF
+
+    if ( FSC % FieldSet_M % DevicesCommunicate ) then
+      call FSC % UpdateHost ( )
+      do iF  =  1, FSC % nFields
+        associate ( F  =>  FSC % FieldSet % Value ( :, iF ) )
+        call C % SetFieldPointer ( F, F_3D )
+        call Show ( 'Field after update host', CONSOLE % INFO_2 )
+        call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
+        call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
+        end associate !-- F
+      end do !-- iF
+    end if !-- DevicesCommunicate
 
     end associate !-- nCB
     end select !-- C

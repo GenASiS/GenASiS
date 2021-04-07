@@ -45,6 +45,10 @@ module FieldSet_CB__Form
       FinishGhostExchange
 !    procedure, public, pass :: &
 !      AddStream
+    procedure, public, pass :: &
+      UpdateDevice => UpdateDevice_FS
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_FS
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -266,6 +270,26 @@ contains
   ! end subroutine AddStream
 
 
+  subroutine UpdateDevice_FS ( FSC )
+
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+
+    call FSC % FieldSet % UpdateDevice ( )
+
+  end subroutine UpdateDevice_FS
+
+
+  subroutine UpdateHost_FS ( FSC )
+
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+
+    call FSC % FieldSet % UpdateHost ( )
+
+  end subroutine UpdateHost_FS
+
+
   impure elemental subroutine Finalize ( FSC )
 
     type ( FieldSet_CB_Form ), intent ( inout ) :: &
@@ -319,18 +343,27 @@ contains
     call Show ( FSC % nFields,     'nFields',         FSC % IGNORABILITY + 1 )
     call Show ( FSC % nCellsLocal, 'nCellsLocal',     FSC % IGNORABILITY + 1 )
     
+    associate ( FSM  =>  FSC % FieldSet_M )
+
     if ( .not. allocated ( FSC % FieldSet ) ) then
       allocate ( FSC % FieldSet )
-      call FSC % FieldSet % Initialize &
+      associate ( FS  =>  FSC % FieldSet )
+      call FS % Initialize &
              ( [ FSC % nCellsLocal, FSC % nFields ], &
                VariableOption = FSC % Field, NameOption = FSC % Name, &
-               ClearOption = .true. )
+               ClearOption = .true., &
+               PinnedOption = FSM % PinnedMemory )
+      if ( FSM % DeviceMemory ) &
+        call FS % AllocateDevice ( )
+      end associate !-- FS
     end if
 
     if ( .not. allocated ( FSC % FieldSetStream ) ) then
       allocate ( FSC % FieldSetStream )
       call FSC % FieldSetStream % Initialize ( FSC % FieldSet )
     end if
+
+    end associate !-- FSM
 
   end subroutine AllocateFieldSet
 
