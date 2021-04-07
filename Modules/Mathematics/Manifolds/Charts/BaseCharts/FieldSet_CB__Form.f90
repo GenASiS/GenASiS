@@ -14,7 +14,9 @@ module FieldSet_CB__Form
     integer ( KDI ) :: &
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
-      nCellsLocal  = 0
+      iTimerUpdateDevice       = 0, &
+      iTimerUpdateHost         = 0, &
+      nCellsLocal              = 0
     class ( StorageForm ), allocatable :: &
       FieldSet, &
       FieldSetStream
@@ -270,22 +272,66 @@ contains
   ! end subroutine AddStream
 
 
-  subroutine UpdateDevice_FS ( FSC )
+  subroutine UpdateDevice_FS ( FSC, TimerLevelOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
+    character ( LDL ) :: &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
+
+    associate ( iT  =>  FSC % iTimerUpdateDevice )
+    if ( iT == 0 ) then
+      TimerName  =  'UpdateDevice ' // trim ( FSC % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( FSC % iTimerUpdateDevice )
+
+    call T % Start ( )
     call FSC % FieldSet % UpdateDevice ( )
+    call T % Stop ( )
 
   end subroutine UpdateDevice_FS
 
 
-  subroutine UpdateHost_FS ( FSC )
+  subroutine UpdateHost_FS ( FSC, TimerLevelOption )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
+    character ( LDL ) :: &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
+
+    associate ( iT  =>  FSC % iTimerUpdateHost )
+    if ( iT == 0 ) then
+      TimerName  =  'UpdateHost ' // trim ( FSC % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( FSC % iTimerUpdateHost )
+
+    call T % Start ( )
     call FSC % FieldSet % UpdateHost ( )
+    call T % Stop ( )
 
   end subroutine UpdateHost_FS
 

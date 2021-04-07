@@ -92,12 +92,19 @@ contains
       FSC
 
     integer ( KDI ) :: &
-      iF, &       !-- iField
-      iC, jC, kC  !-- iCell, etc.
+      iF, &          !-- iField
+      iC, jC, kC, &  !-- iCell, etc.
+      iGE, &         !-- iGhostExchange
+      nGhostExchanges
     integer ( KDI ), dimension ( 3 ) :: &
       oC
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       F_3D  !-- Field
+
+    nGhostExchanges  =  1000
+    call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
+
+    associate ( FSM  =>  FSC % FieldSet_M )
 
     select type ( C  =>  FSC % Chart )
     class is ( Chart_BH_Form )
@@ -129,18 +136,25 @@ contains
 
     call FSC % UpdateDevice ( )
 
-    call FSC % ExchangeGhostData ( )
+    do iGE  =  1, nGhostExchanges
+      if ( .not. FSM % DevicesCommunicate ) &
+        call FSC % UpdateHost ( )
+      call FSC % ExchangeGhostData ( )
+      if ( .not. FSM % DevicesCommunicate ) &
+        call FSC % UpdateDevice ( )
+    end do !-- iGE
 
     do iF  =  1, FSC % nFields
       associate ( F  =>  FSC % FieldSet % Value ( :, iF ) )
       call C % SetFieldPointer ( F, F_3D )
-      call Show ( 'Field after ghost exchange', CONSOLE % INFO_2 )
+      call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
+      call Show ( nGhostExchanges, 'nGhostExchanges', CONSOLE % INFO_2 )
       call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
       call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
       end associate !-- F
     end do !-- iF
 
-    if ( FSC % FieldSet_M % DevicesCommunicate ) then
+    if ( FSM % DevicesCommunicate ) then
       call FSC % UpdateHost ( )
       do iF  =  1, FSC % nFields
         associate ( F  =>  FSC % FieldSet % Value ( :, iF ) )
@@ -154,6 +168,7 @@ contains
 
     end associate !-- nCB
     end select !-- C
+    end associate !-- FSM
     nullify ( F_3D )
 
   end subroutine SetField
