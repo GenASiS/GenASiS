@@ -313,23 +313,24 @@ contains
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
 
-    if ( allocated ( FSC % FieldSet ) ) &
-      return
-
-    call Show ( 'Allocating a FieldSet',          FSC % IGNORABILITY + 1 )
-    call Show ( FSC % Name,        'Name',        FSC % IGNORABILITY + 1 )
-    call Show ( FSC % Field,       'Field',       FSC % IGNORABILITY + 1 )
-    call Show ( FSC % nFields,     'nFields',     FSC % IGNORABILITY + 1 )
-    call Show ( FSC % nCellsLocal, 'nCellsLocal', FSC % IGNORABILITY + 1 )
+    call Show ( 'Allocating ' // trim ( FSC % Type ), FSC % IGNORABILITY + 1 )
+    call Show ( FSC % Name,        'Name',            FSC % IGNORABILITY + 1 )
+    call Show ( FSC % Field,       'Field',           FSC % IGNORABILITY + 1 )
+    call Show ( FSC % nFields,     'nFields',         FSC % IGNORABILITY + 1 )
+    call Show ( FSC % nCellsLocal, 'nCellsLocal',     FSC % IGNORABILITY + 1 )
     
-    allocate ( FSC % FieldSet )
-    call FSC % FieldSet % Initialize &
-           ( [ FSC % nCellsLocal, FSC % nFields ], &
-             VariableOption = FSC % Field, NameOption = FSC % Name, &
-             ClearOption = .true. )
+    if ( .not. allocated ( FSC % FieldSet ) ) then
+      allocate ( FSC % FieldSet )
+      call FSC % FieldSet % Initialize &
+             ( [ FSC % nCellsLocal, FSC % nFields ], &
+               VariableOption = FSC % Field, NameOption = FSC % Name, &
+               ClearOption = .true. )
+    end if
 
-    allocate ( FSC % FieldSetStream )
-    call FSC % FieldSetStream % Initialize ( FSC % FieldSet )
+    if ( .not. allocated ( FSC % FieldSetStream ) ) then
+      allocate ( FSC % FieldSetStream )
+      call FSC % FieldSetStream % Initialize ( FSC % FieldSet )
+    end if
 
   end subroutine AllocateFieldSet
 

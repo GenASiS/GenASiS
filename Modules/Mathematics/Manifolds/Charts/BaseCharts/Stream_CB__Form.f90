@@ -12,6 +12,9 @@ module Stream_CB__Form
   private
 
   type, public, extends ( Stream_CH_Form ) :: Stream_CB_Form
+    integer ( KDI ) :: &
+      iTimerWrite = 0, &
+      iTimerRead  = 0
     type ( CurveImageForm ), allocatable :: &
       CurveImage
     type ( StructuredGridImageForm ), allocatable :: &
@@ -88,7 +91,8 @@ contains
   end subroutine AddFieldSet
 
 
-  subroutine Write ( SC, DirectoryOption, TimeOption, CycleNumberOption )
+  subroutine Write ( SC, DirectoryOption, TimeOption, CycleNumberOption, &
+                     TimerLevelOption )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
@@ -97,7 +101,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
-      CycleNumberOption
+      CycleNumberOption, &
+      TimerLevelOption
 
     integer ( KDI ) :: &
       nCellsProper, &
@@ -110,13 +115,28 @@ contains
       nCellsWrite
     type ( Real_1D_Form ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
       Edge
-    ! character ( 2 ) :: &
-    !   ChartNumber
     character ( LDF ) :: &
-      Directory
+      Directory, &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
 
     call Show ( 'Writing ' // trim ( SC % Type ), SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
+
+    associate ( iT  =>  SC % iTimerWrite )
+    if ( iT == 0 ) then
+      TimerName  =  'Write ' // trim ( SC % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( SC % iTimerWrite )
+    call T % Start ( )
 
     select type ( C  =>  SC % Chart )
     class is ( Chart_BH_Form )
@@ -181,10 +201,13 @@ contains
 
     end select !-- C
 
+    call T % Stop ( )
+
   end subroutine Write
 
 
-  subroutine Read ( SC, DirectoryOption, TimeOption, CycleNumberOption )
+  subroutine Read ( SC, DirectoryOption, TimeOption, CycleNumberOption, &
+                    TimerLevelOption )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
@@ -193,7 +216,8 @@ contains
     type ( MeasuredValueForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
-      CycleNumberOption
+      CycleNumberOption, &
+      TimerLevelOption
 
     ! integer ( KDI ) :: &
     !   nCellsProper, &
@@ -206,11 +230,28 @@ contains
     !   nExteriorOuter
     ! character ( 2 ) :: &
     !   ChartNumber
-    ! character ( LDF ) :: &
-    !   Directory
+    character ( LDF ) :: &
+    !   Directory, &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
 
     call Show ( 'Reading ' // trim ( SC % Type ), SC % IGNORABILITY )
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
+
+    associate ( iT  =>  SC % iTimerRead )
+    if ( iT == 0 ) then
+      TimerName  =  'Read ' // trim ( SC % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( SC % iTimerRead )
+    call T % Start ( )
 
     select type ( C  =>  SC % Chart )
     class is ( Chart_BH_Form )
@@ -271,6 +312,8 @@ contains
     ! end select !-- nDimensions
 
     end select !-- C
+
+    call T % Stop ( )
 
   end subroutine Read
 

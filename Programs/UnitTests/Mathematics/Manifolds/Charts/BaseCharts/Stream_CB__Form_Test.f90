@@ -19,12 +19,14 @@ program Stream_CB__Form_Test
   type ( Chart_BH_Form ), allocatable :: &
     C
   type ( FieldSet_CB_Form ), allocatable :: &
+    FSC_R, &  !-- FSC_Reference
     FSC
   type ( Stream_CB_Form ), allocatable :: &
     SC
   type ( Manifold_H_Form ), allocatable :: &
     M
   type ( FieldSet_MH_Form ), allocatable :: &
+    FSM_R, &  !-- FSM_Reference
     FSM
   type ( Stream_MH_Form ), allocatable :: &
     SM
@@ -41,6 +43,11 @@ program Stream_CB__Form_Test
          ( 'Manifold', CommunicatorOption = PROGRAM_HEADER % Communicator )
   call C % Initialize &
          ( M, 'Chart', Periodic )
+
+  allocate ( FSM_R )
+  allocate ( FSC_R )
+  call FSM_R % Initialize ( M, 'FieldsReference' ) 
+  call FSC_R % Initialize ( C, FSM_R, nFields ) 
 
   allocate ( FSM )
   allocate ( FSC )
@@ -66,6 +73,9 @@ program Stream_CB__Form_Test
   call Show ( M % nFieldSets, 'nFieldSets', M % IGNORABILITY )
   call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
 
+  call FSM_R % Show ( )
+  call Show ( FSM_R % nStreams,  'nStreams',  FSM % IGNORABILITY )
+
   call FSM % Show ( )
   call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
 
@@ -78,11 +88,14 @@ program Stream_CB__Form_Test
   end do !-- iFS
 
   call C % Show ( )
+  call FSC_R % Show ( )
   call FSC % Show ( )
   call SC % Show ( )
 
+  call SetField ( FSC_R )
   call SetField ( FSC )
   call WriteField ( SC )
+  call ClearField ( FSC )
 
   call SC % Read ( )
 
@@ -91,6 +104,8 @@ program Stream_CB__Form_Test
   deallocate ( GIS )
   deallocate ( FSC )
   deallocate ( FSM )
+  deallocate ( FSC_R )
+  deallocate ( FSM_R )
   deallocate ( C )
   deallocate ( M )
   deallocate ( PROGRAM_HEADER )
@@ -220,6 +235,17 @@ contains
     end associate !-- GIS
 
   end subroutine WriteField
+
+
+  subroutine ClearField ( FSC )
+
+    class ( FieldSet_CB_Form ), intent ( inout ) :: &
+      FSC
+
+    call Clear ( FSC % FieldSet % Value )
+    call Clear ( FSC % FieldSetStream % Value )
+
+  end subroutine ClearField
 
 
 end program Stream_CB__Form_Test
