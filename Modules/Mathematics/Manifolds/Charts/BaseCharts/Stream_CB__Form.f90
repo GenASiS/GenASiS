@@ -219,19 +219,17 @@ contains
       CycleNumberOption, &
       TimerLevelOption
 
-    ! integer ( KDI ) :: &
-    !   nCellsProper, &
-    !   nCellsGhost
-    ! integer ( KDI ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
-    !   nCells, &
-    !   nGhostInner, &
-    !   nGhostOuter, &
-    !   nExteriorInner, &
-    !   nExteriorOuter
-    ! character ( 2 ) :: &
-    !   ChartNumber
+    integer ( KDI ) :: &
+      nCellsProper, &
+      nCellsGhost
+    integer ( KDI ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
+      nGhostInner, &
+      nGhostOuter, &
+      nExteriorInner, &
+      nExteriorOuter, &
+      nCellsRead
     character ( LDF ) :: &
-    !   Directory, &
+      Directory, &
       TimerName
     type ( TimerForm ), pointer :: &
       T 
@@ -256,60 +254,60 @@ contains
     select type ( C  =>  SC % Chart )
     class is ( Chart_BH_Form )
 
-    ! if ( C % IsDistributed ) then
-    !   nCellsProper = C % nCellsProper
-    !   nCellsGhost  = C % nCellsGhost
-    !   nGhostInner = C % nGhostLayers
-    !   nGhostOuter = C % nGhostLayers
-    !   nExteriorInner = 0
-    !   nExteriorOuter = 0
-    !   where ( C % iaBrick == 1 )
-    !     nGhostInner = 0
-    !     nExteriorInner = C % nGhostLayers
-    !   end where
-    !   where ( C % iaBrick == C % nBricks )
-    !     nGhostOuter = 0
-    !     nExteriorOuter = C % nGhostLayers
-    !   end where
-    ! else  ! .not. IsDistributed
-    !   nCellsProper = C % nCellsProper
-    !   nCellsGhost  = 0
-    !   nGhostInner = 0
-    !   nGhostOuter = 0
-    !   nExteriorInner = C % nGhostLayers
-    !   nExteriorOuter = C % nGhostLayers
-    ! end if !-- IsDistributed
+    if ( C % Manifold % Distributed ) then
+      nCellsProper    =  C % nCellsProper
+      nCellsGhost     =  C % nCellsGhost
+      nGhostInner     =  C % nGhostLayers
+      nGhostOuter     =  C % nGhostLayers
+      nExteriorInner  =  0
+      nExteriorOuter  =  0
+      where ( C % iaBrick  ==  1 )
+        nGhostInner     =  0
+        nExteriorInner  =  C % nGhostLayers
+      end where
+      where ( C % iaBrick  ==  C % nBricks )
+        nGhostOuter     =  0
+        nExteriorOuter  =  C % nGhostLayers
+      end where
+    else  ! .not. Distributed
+      nCellsProper    =  C % nCellsProper
+      nCellsGhost     =  0
+      nGhostInner     =  0
+      nGhostOuter     =  0
+      nExteriorInner  =  C % nGhostLayers
+      nExteriorOuter  =  C % nGhostLayers
+    end if !-- Distributed
+    nCellsRead  =  C % nCellsBrick  +  nGhostInner  +  nGhostOuter
 
-    ! write ( ChartNumber, fmt = '(i2.2)' ) C % iChart
-    ! Directory = 'Chart_' // ChartNumber // '/'
-    ! if ( present ( DirectoryOption ) ) &
-    !   Directory = DirectoryOption
+    Directory  =  trim ( C % Name )  //  '/'
+    if ( present ( DirectoryOption ) ) &
+      Directory  =  DirectoryOption
 
-    ! select case ( C % nDimensions )
-    ! case ( 1 ) 
-    !   associate ( CI => SC % CurveImage )
-    !   call CI % SetGridRead &
-    !          ( Directory, nCellsProper, &
-    !            oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
-    !   call CI % Read &
-    !          ( StorageOnlyOption = .true., &
-    !            TimeOption = TimeOption, &
-    !            CycleNumberOption = CycleNumberOption )
-    !   call CI % ClearGrid ( )
-    !   end associate !-- CI
-    ! case default
-    !   associate ( GI => SC % GridImage )
-    !   call GI % SetGridRead &
-    !          ( Directory, nCells, nGhostInner, nGhostOuter, &
-    !            nExteriorInner, nExteriorOuter, C % nDimensions, nCellsProper, &
-    !            nCellsGhost )
-    !   call GI % Read &
-    !          ( StorageOnlyOption = .true., &
-    !            TimeOption = TimeOption, &
-    !            CycleNumberOption = CycleNumberOption )
-    !   call GI % ClearGrid ( )
-    !   end associate !-- GI
-    ! end select !-- nDimensions
+    select case ( C % nDimensions )
+    case ( 1 ) 
+      associate ( CI => SC % CurveImage )
+      call CI % SetGridRead &
+             ( Directory, nCellsProper, &
+               oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
+      call CI % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call CI % ClearGrid ( )
+      end associate !-- CI
+    case default
+      associate ( GI => SC % GridImage )
+      call GI % SetGridRead &
+             ( Directory, nCellsRead, nGhostInner, nGhostOuter, &
+               nExteriorInner, nExteriorOuter, C % nDimensions, nCellsProper, &
+               nCellsGhost )
+      call GI % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call GI % ClearGrid ( )
+      end associate !-- GI
+    end select !-- nDimensions
 
     end select !-- C
 

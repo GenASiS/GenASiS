@@ -74,7 +74,7 @@ program Stream_CB__Form_Test
   call Show ( M % nStreams,   'nStreams',   M % IGNORABILITY )
 
   call FSM_R % Show ( )
-  call Show ( FSM_R % nStreams,  'nStreams',  FSM % IGNORABILITY )
+  call Show ( FSM_R % nStreams,  'nStreams',  FSM_R % IGNORABILITY )
 
   call FSM % Show ( )
   call Show ( FSM % nStreams,  'nStreams',  FSM % IGNORABILITY )
@@ -92,12 +92,15 @@ program Stream_CB__Form_Test
   call FSC % Show ( )
   call SC % Show ( )
 
-  call SetField ( FSC_R )
-  call SetField ( FSC )
-  call WriteField ( SC )
-  call ClearField ( FSC )
+  call SetFieldSet ( FSC_R )
+  call SetFieldSet ( FSC )
+  call WriteFieldSet ( SC )
 
-  call SC % Read ( )
+  call ClearFieldSet ( FSC )
+
+  call PROGRAM_HEADER % Communicator % Synchronize ( )  !-- avoid dbopen errors
+  call ReadFieldSet ( SC )
+  call CompareFieldSets ( FSC, FSC_R )
 
   deallocate ( SC )
   deallocate ( SM )
@@ -113,7 +116,7 @@ program Stream_CB__Form_Test
 contains
 
 
-  subroutine SetField ( FSC )
+  subroutine SetFieldSet ( FSC )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -169,7 +172,7 @@ contains
     end select !-- C
     nullify ( F_3D )
 
-  end subroutine SetField
+  end subroutine SetFieldSet
 
 
   subroutine ShowField ( F_3D, nGL, nD )
@@ -223,7 +226,7 @@ contains
   end subroutine ShowField
 
 
-  subroutine WriteField ( SC )
+  subroutine WriteFieldSet ( SC )
 
     class ( Stream_CB_Form ), intent ( inout ) :: &
       SC
@@ -234,10 +237,10 @@ contains
     call GIS % Close ( )
     end associate !-- GIS
 
-  end subroutine WriteField
+  end subroutine WriteFieldSet
 
 
-  subroutine ClearField ( FSC )
+  subroutine ClearFieldSet ( FSC )
 
     class ( FieldSet_CB_Form ), intent ( inout ) :: &
       FSC
@@ -245,7 +248,63 @@ contains
     call Clear ( FSC % FieldSet % Value )
     call Clear ( FSC % FieldSetStream % Value )
 
-  end subroutine ClearField
+  end subroutine ClearFieldSet
+
+
+  subroutine ReadFieldSet ( SC )
+
+    class ( Stream_CB_Form ), intent ( inout ) :: &
+      SC
+
+    associate ( GIS  =>  SC % Stream_M % GridImageStream ) 
+    call GIS % Open ( GIS % ACCESS_READ, NumberOption = GIS % Number )
+    call  SC % Read ( )
+    call GIS % Close ( )
+    end associate !-- GIS
+
+  end subroutine ReadFieldSet
+
+
+  subroutine CompareFieldSets ( FSC, FSC_R )
+
+    class ( FieldSet_CB_Form ), intent ( in ) :: &
+      FSC, &
+      FSC_R
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+    type ( CollectiveOperation_R_Form ) :: &
+      CO 
+
+    associate ( Cmm  =>  FSC % Chart % Communicator )
+    call CO % Initialize &
+           ( Cmm, nOutgoing = [ nFields ], nIncoming = [ nFields ] )
+    end associate !-- Cmm
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_BH_Form )
+
+    do iF  =  1, FSC % nFields
+      associate &
+        ( F_R  =>  FSC_R % FieldSet % Value ( :, iF ), &
+          F    =>  FSC   % FieldSet % Value ( :, iF ) )
+
+      !-- proper cells only
+      CO % Outgoing % Value ( iF )  &
+        =  sum ( pack ( abs ( F  -  F_R ), mask = C % ProperCell ) )
+
+!      !-- with ghost cells
+!      CO % Outgoing % Value ( iF )  &
+!        =  sum ( abs ( F  -  F_R ) )
+
+      end associate !-- F_R, etc.
+    end do !-- iF
+    end select !-- C
+
+    call CO % Reduce ( REDUCTION % SUM )
+    call Show ( CO % Incoming % Value, 'FieldDifference sum' )
+
+  end subroutine CompareFieldSets
 
 
 end program Stream_CB__Form_Test
