@@ -1,0 +1,7 @@
+PATH_CHARTS = $(PATH_MANIFOLDS)/Charts
+
+include $(PATH_CHARTS)/Makefile_Path
+
+VPATH_MANIFOLDS = \
+  $(VPATH_CHARTS):\
+  $(PATH_MANIFOLDS)

@@ -1,0 +1,4 @@
+include $(PATH_CHARTS)/Makefile_ObjectFiles
+
+MANIFOLDS = \
+  $(CHARTS)

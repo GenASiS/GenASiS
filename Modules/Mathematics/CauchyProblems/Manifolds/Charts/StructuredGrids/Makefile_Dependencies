@@ -1,0 +1,5 @@
+StructuredGrids.o: \
+  StructuredGrids.f90
+
+StructuredGrids.a: $(STRUCTURED_GRIDS)
+	ar r StructuredGrids.a $(STRUCTURED_GRIDS)

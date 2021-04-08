@@ -1,0 +1,4 @@
+include $(PATH_STRUCTURED_GRIDS)/Makefile_ObjectFiles
+
+CHARTS = \
+  $(STRUCTURED_GRIDS)
