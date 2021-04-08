@@ -1,6 +1,6 @@
 module Manifold_H__Form
 
-  !-- Manifold_Header_Form
+  !-- Manifold_Header__Form
 
   use Basics
 

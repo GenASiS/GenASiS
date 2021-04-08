@@ -1,6 +1,6 @@
 module Stream_CH__Form
 
-  !-- Stream_ChartHeader_Form
+  !-- Stream_ChartHeader__Form
 
   use Basics
   use ManifoldBasics

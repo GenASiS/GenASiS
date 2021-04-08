@@ -1,6 +1,6 @@
 program Stream_CB__Form_Test
 
-  !-- Stream_ChartBase_Form_Test
+  !-- Stream_ChartBase__Form_Test
 
   use Basics
   use ManifoldBasics

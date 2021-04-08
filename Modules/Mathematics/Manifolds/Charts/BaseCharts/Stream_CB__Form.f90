@@ -1,6 +1,6 @@
 module Stream_CB__Form
 
-  !-- Stream_ChartBase_Form
+  !-- Stream_ChartBase__Form
 
   use Basics
   use ManifoldBasics

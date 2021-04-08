@@ -17,10 +17,17 @@ Stream_CB__Form.o: \
   FieldSet_CB__Form.o \
   Stream_CB__Form.f90
 
+Chart_B__Form.o: \
+  Basics.o \
+  ManifoldBasics.o \
+  Chart_BH__Form.o \
+  Chart_B__Form.f90
+
 BaseCharts.o: \
   Chart_BH__Form.o \
   FieldSet_CB__Form.o \
   Stream_CB__Form.o \
+  Chart_B__Form.o \
   BaseCharts.f90
 
 BaseCharts.a: $(BASE_CHARTS)

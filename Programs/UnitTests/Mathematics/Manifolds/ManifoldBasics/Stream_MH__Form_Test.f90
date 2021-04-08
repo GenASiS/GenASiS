@@ -1,6 +1,6 @@
 program Stream_MH__Form_Test
 
-  !-- Stream_ManifoldHeader__Form
+  !-- Stream_ManifoldHeader__Form_Test
 
   use Basics
   use ManifoldBasics
