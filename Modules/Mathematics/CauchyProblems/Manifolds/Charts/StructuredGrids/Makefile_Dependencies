@@ -1,4 +1,14 @@
+Chart_H__Form.o: \
+  Basics.o \
+  Chart_H__Form.f90
+
+Grid_S__Form.o: \
+  Basics.o \
+  Grid_S__Form.f90
+
 StructuredGrids.o: \
+  Chart_H__Form.o \
+  Grid_S__Form.o \
   StructuredGrids.f90
 
 StructuredGrids.a: $(STRUCTURED_GRIDS)
