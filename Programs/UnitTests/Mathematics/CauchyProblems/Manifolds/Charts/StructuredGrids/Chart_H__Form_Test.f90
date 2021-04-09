@@ -17,13 +17,17 @@ program Chart_H__Form_Test
 
   allocate ( C_Base )
   call C_Base % Initialize &
-         ( NameOption = 'C_Base', iDimensionalityOption = 1 )
+         ( Periodic = [ .true., .true., .true. ], &
+           NameOption = 'C_Base', &
+           iDimensionalityOption = 1 )
 
   allocate ( C_Fiber )
   call C_Fiber % Initialize &
-         ( CoordinateLabelOption = [ 'E' ], &
+         ( Periodic = [ .false. ], &
+           CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &
-           NameOption = 'C_Fiber', iDimensionalityOption = 2 )
+           NameOption = 'C_Fiber', &
+           iDimensionalityOption = 2 )
 
   call C_Base % Show ( )
   call C_Fiber % Show ( )
@@ -33,4 +37,3 @@ program Chart_H__Form_Test
   deallocate ( PROGRAM_HEADER )
 
 end program Chart_H__Form_Test
-

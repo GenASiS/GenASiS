@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Chart_H__Form_Test
+all: Chart_H__Form_Test Grid_S__Form_Test
 
 Chart_H__Form_Test: Basics.a StructuredGrids.a \
   Chart_H__Form_Test.o
@@ -11,11 +11,19 @@ Chart_H__Form_Test: Basics.a StructuredGrids.a \
           Chart_H__Form_Test.o StructuredGrids.a \
           Basics.a $(LIBRARIES)
 
+Grid_S__Form_Test: Basics.a StructuredGrids.a \
+  Grid_S__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Grid_S__Form_Test_$(MACHINE) \
+          Grid_S__Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Chart_H__Form_Test_*
+	rm -f Grid_S__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_STRUCTURED_GRIDS)/Makefile_Dependencies
@@ -24,3 +32,8 @@ Chart_H__Form_Test.o: \
   Basics.o \
   StructuredGrids.o \
   Chart_H__Form_Test.f90
+
+Grid_S__Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Grid_S__Form_Test.f90

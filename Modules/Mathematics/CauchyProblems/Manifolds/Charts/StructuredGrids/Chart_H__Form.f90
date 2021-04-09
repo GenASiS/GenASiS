@@ -12,14 +12,16 @@ module Chart_H__Form
 
   type, public :: Chart_H_Form
     integer ( KDI ) :: &
-      IGNORABILITY = 0, &
-      nDimensions  = 0
+      IGNORABILITY, &
+      nDimensions
     type ( MeasuredValueForm ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateUnit
+    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
+      Periodic
     character ( LDL ) :: &
-      Type             = '', &
-      Name             = '', &
-      CoordinateSystem = ''
+      Type = '', &
+      Name, &
+      CoordinateSystem
     character ( LDL ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateLabel
   contains
@@ -27,7 +29,9 @@ module Chart_H__Form
       Initialize_H
     generic, public :: &
       Initialize => Initialize_H
-    procedure, public, pass :: &
+    procedure, private, pass :: &
+      Show_C
+    generic, public :: &
       Show => Show_C
     final :: &
       Finalize
@@ -42,12 +46,14 @@ contains
 
 
   subroutine Initialize_H &
-               ( C, CoordinateLabelOption, CoordinateSystemOption, &
+               ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
                  NameOption, CoordinateUnitOption, IgnorabilityOption, &
                  nDimensionsOption, iDimensionalityOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      Periodic
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
@@ -77,7 +83,7 @@ contains
     call SetDimensionality &
            ( C, nDimensionsOption, iDimensionalityOption )
     call SetCoordinateSystem &
-           ( C, CoordinateLabelOption, CoordinateSystemOption, &
+           ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
              CoordinateUnitOption )
 
   end subroutine Initialize_H
@@ -97,19 +103,15 @@ contains
 
     associate ( nD  =>  C % nDimensions )
 
-    ! call Show ( M % Name, 'Manifold', C % IGNORABILITY )
-    ! if ( M % Distributed ) &
-    !   call Show ( C % Communicator % Name, 'Communicator', C % IGNORABILITY )
-
     call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
-
-    ! call Show ( C % Periodic ( : nD ), 'Periodic',    C % IGNORABILITY )
 
     call Show ( C % CoordinateSystem, 'CoordinateSystem', C % IGNORABILITY )
     call Show ( C % CoordinateLabel ( : nD ), 'CoordinateLabel', &
                 C % IGNORABILITY )
     call Show ( C % CoordinateUnit ( : nD ), 'CoordinateUnit', &
                 C % IGNORABILITY )
+
+    call Show ( C % Periodic ( : nD ), 'Periodic', C % IGNORABILITY )
 
     end associate !-- nD
 
@@ -182,13 +184,13 @@ contains
 
 
   subroutine SetCoordinateSystem &
-               ( C, CoordinateLabelOption, CoordinateSystemOption, &
+               ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
                  CoordinateUnitOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
- !   logical ( KDL ), dimension ( : ), intent ( in ) :: &
- !     Periodic
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      Periodic
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
@@ -198,9 +200,8 @@ contains
 
     associate ( nD => C % nDimensions )
 
-!    allocate ( C % Periodic ( MAX_DIMENSIONS ) )
-!    C % Periodic = .false.
-!    C % Periodic ( : nD ) = Periodic ( : nD )
+    C % Periodic = .false.
+    C % Periodic ( : nD ) = Periodic ( : nD )
 
     C % CoordinateSystem = 'RECTANGULAR'
     if ( present ( CoordinateSystemOption ) ) &
