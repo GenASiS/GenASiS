@@ -515,6 +515,8 @@ contains
     if ( present ( CommunicatorOption ) ) then
       G % Distributed   =   .true.
       G % Communicator  =>  CommunicatorOption
+    else
+      G % Distributed  =  .false.
     end if !-- present Communicator 
 
     if ( G % Distributed ) then

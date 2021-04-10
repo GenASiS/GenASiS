@@ -34,8 +34,17 @@ module Chart_H__Form
     generic, public :: &
       Show => Show_C
     final :: &
-      Finalize
+      Finalize_C
   end type Chart_H_Form
+
+  type, public :: Chart_E_Form
+    !-- Chart_Element_Form
+    class ( Chart_H_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type Chart_E_Form
 
     private :: &
       SetDimensionality, &
@@ -118,7 +127,7 @@ contains
   end subroutine Show_C
 
 
-  impure elemental subroutine Finalize ( C )
+  impure elemental subroutine Finalize_C ( C )
 
     type ( Chart_H_Form ), intent ( inout ) :: &
       C
@@ -126,7 +135,18 @@ contains
     call Show ( 'Finalizing ' // trim ( C % Type ), C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
 
-  end subroutine Finalize
+  end subroutine Finalize_C
+
+
+  impure elemental subroutine Finalize_E ( CE )
+    
+    type ( Chart_E_Form ), intent ( inout ) :: &
+      CE
+
+    if ( allocated ( CE % Element ) ) &
+      deallocate ( CE % Element )
+
+  end subroutine Finalize_E
 
 
   subroutine SetDimensionality ( C, nDimensionsOption, iDimensionalityOption )
