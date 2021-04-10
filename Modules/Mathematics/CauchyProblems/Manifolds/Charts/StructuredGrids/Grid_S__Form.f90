@@ -52,9 +52,9 @@ module Grid_S__Form
       PortalEdge_RL_LR
   contains
     procedure, private, pass :: &
-      Initialize_G
+      Initialize_GS
     generic, public :: &
-      Initialize => Initialize_G
+      Initialize => Initialize_GS
     procedure, public, pass :: &
       ComputeCoordinateData
     procedure, private, pass :: &
@@ -90,7 +90,7 @@ module Grid_S__Form
 contains
 
 
-  subroutine Initialize_G &
+  subroutine Initialize_GS &
                ( G, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, NameOption, PeriodicOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
@@ -135,7 +135,7 @@ contains
       Periodic
 
     if ( G % Type  ==  '' ) &
-      G % Type = 'a Grid_S'
+      G % Type  =  'a Grid_S'
 
     Periodic  =  .false.
     if ( present ( PeriodicOption ) ) &
@@ -160,7 +160,7 @@ contains
       call ComputeCoordinateData ( G, iD )
     end do !-- iD
 
-  end subroutine Initialize_G
+  end subroutine Initialize_GS
 
 
   subroutine ComputeCoordinateData ( G, iD, EdgeValueOption )

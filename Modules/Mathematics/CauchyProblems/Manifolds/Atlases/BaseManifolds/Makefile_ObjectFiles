@@ -1,0 +1,4 @@
+BASE_MANIFOLDS = \
+  BaseManifolds.o \
+  Atlas_SG__Form.o \
+  Atlas_H__Form.o

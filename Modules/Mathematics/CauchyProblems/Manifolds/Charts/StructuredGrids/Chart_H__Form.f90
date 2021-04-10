@@ -80,7 +80,7 @@ contains
       C % IGNORABILITY  =  IgnorabilityOption
 
     if ( C % Type  ==  '' ) &
-      C % Type = 'a Chart'
+      C % Type  =  'a Chart'
 
     C % Name  =  'Chart'
     if ( present ( NameOption ) ) &

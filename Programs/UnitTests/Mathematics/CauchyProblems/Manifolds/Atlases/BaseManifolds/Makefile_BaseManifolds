@@ -1,0 +1,42 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Atlas_H__Form_Test Atlas_SG__Form_Test
+
+Atlas_H__Form_Test: Basics.a Charts.a BaseManifolds.a \
+  Atlas_H__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Atlas_H__Form_Test_$(MACHINE) \
+          Atlas_H__Form_Test.o BaseManifolds.a \
+          Charts.a Basics.a $(LIBRARIES)
+
+Atlas_SG__Form_Test: Basics.a Charts.a BaseManifolds.a \
+  Atlas_SG__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Atlas_SG__Form_Test_$(MACHINE) \
+          Atlas_SG__Form_Test.o BaseManifolds.a \
+          Charts.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Atlas_H__Form_Test_*
+	rm -f Atlas_SG__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_CHARTS)/Makefile_Dependencies
+include $(PATH_BASE_MANIFOLDS)/Makefile_Dependencies
+
+Atlas_H__Form_Test.o: \
+  Basics.o \
+  Charts.o \
+  BaseManifolds.o \
+  Atlas_H__Form_Test.f90
+
+Atlas_SG__Form_Test.o: \
+  Basics.o \
+  Charts.o \
+  BaseManifolds.o \
+  Atlas_SG__Form_Test.f90
