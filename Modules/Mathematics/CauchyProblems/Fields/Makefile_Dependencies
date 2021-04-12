@@ -1,0 +1,8 @@
+include $(PATH_FIELDS)/Makefile_Dependencies
+
+Fields.o: \
+  FieldSets.o \
+  Fields.f90
+
+Fields.a: $(FIELDS)
+	ar r Fields.a $(FIELDS)
