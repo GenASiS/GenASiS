@@ -1,0 +1,8 @@
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+
+CauchyProblemms.o: \
+  Manifolds.o \
+  CauchyProblems.f90
+
+CauchyProblems.a: $(CAUCHY_PROBLEMS)
+	ar r CauchyProblems.a $(CAUCHY_PROBLEMS)
