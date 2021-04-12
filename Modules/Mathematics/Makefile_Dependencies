@@ -1,0 +1,8 @@
+include $(PATH_CAUCHY_PROBLEMS)/Makefile_Dependencies
+
+Mathematics.o: \
+  CauchyProblems.o \
+  Mathematics.f90
+
+Mathematics.a: $(MATHEMATICS)
+	ar r Mathematics.a $(MATHEMATICS)

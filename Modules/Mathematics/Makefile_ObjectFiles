@@ -1,4 +1,5 @@
 include $(PATH_CAUCHY_PROBLEMS)/Makefile_ObjectFiles
 
 MATHEMATICS = \
+  Mathematics.o \
   $(CAUCHY_PROBLEMS)
