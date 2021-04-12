@@ -27,9 +27,9 @@ module FieldSet_CH__Form
       Chart => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate
+      InitializeAllocate_H
     generic, public :: &
-      Initialize => InitializeAllocate
+      Initialize => InitializeAllocate_H
     procedure, public, pass :: &
       Show => Show_FSC
     final :: &
@@ -45,7 +45,7 @@ module FieldSet_CH__Form
 contains
 
 
-  subroutine InitializeAllocate &
+  subroutine InitializeAllocate_H &
                ( FSC, C, nFields, FieldOption, VectorOption, NameOption, &
                  UnitOption, VectorIndicesOption )
 
@@ -77,7 +77,7 @@ contains
     if ( FSC % Type  ==  '' ) &
       FSC % Type  =  'a FieldSet_C' 
     
-    FSC % Name  =  'FieldSet'
+    FSC % Name  =  'Fields'
     if ( present ( NameOption ) ) &
       FSC % Name  =  NameOption
 
@@ -126,7 +126,7 @@ contains
 
     end if  !-- VectorIndicesOption
 
-  end subroutine InitializeAllocate
+  end subroutine InitializeAllocate_H
 
 
   subroutine Show_FSC ( FSC )

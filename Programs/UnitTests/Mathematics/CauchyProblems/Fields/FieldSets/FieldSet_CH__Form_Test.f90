@@ -42,6 +42,7 @@ program FieldSet_CH__Form_Test
   call   C % Show ( )
   call FSC % Show ( )
 
+  deallocate ( FSC )
   deallocate ( C )
   deallocate ( PROGRAM_HEADER )
 
