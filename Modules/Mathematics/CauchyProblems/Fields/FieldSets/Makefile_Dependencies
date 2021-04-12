@@ -1,0 +1,11 @@
+FieldSet_CH__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSet_CH__Form.f90
+
+FieldSets.o: \
+  FieldSet_CH__Form.o \
+  FieldSets.f90
+
+FieldSets.a: $(FIELD_SETS)
+	ar r FieldSets.a $(FIELD_SETS)
