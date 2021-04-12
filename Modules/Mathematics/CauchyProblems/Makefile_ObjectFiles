@@ -1,4 +1,7 @@
+include $(PATH_FIELDS)/Makefile_ObjectFiles
 include $(PATH_MANIFOLDS)/Makefile_ObjectFiles
 
 CAUCHY_PROBLEMS = \
+  CauchyProblems.o \
+  $(FIELDS) \
   $(MANIFOLDS)
