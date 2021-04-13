@@ -16,17 +16,17 @@ program Chart_H__Form_Test
          ( 'Chart_H__Form_Test', DimensionalityOption = '2D_1D' )
 
   allocate ( C_Base )
-  call C_Base % Initialize &
-         ( Periodic = [ .true., .true., .true. ], &
-           NameOption = 'C_Base', &
+  call C_Base % Initialize_H &
+         ( NameOption = 'C_Base', &
+           PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
 
   allocate ( C_Fiber )
-  call C_Fiber % Initialize &
-         ( Periodic = [ .false. ], &
-           CoordinateLabelOption = [ 'E' ], &
+  call C_Fiber % Initialize_H &
+         ( CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &
            NameOption = 'C_Fiber', &
+           PeriodicOption = [ .false. ], &
            iDimensionalityOption = 2 )
 
   call C_Base % Show ( )

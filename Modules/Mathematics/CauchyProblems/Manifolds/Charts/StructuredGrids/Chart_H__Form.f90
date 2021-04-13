@@ -25,10 +25,8 @@ module Chart_H__Form
     character ( LDL ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateLabel
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
-    generic, public :: &
-      Initialize => Initialize_H
     procedure, private, pass :: &
       Show_C
     generic, public :: &
@@ -55,19 +53,19 @@ contains
 
 
   subroutine Initialize_H &
-               ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
-                 NameOption, CoordinateUnitOption, IgnorabilityOption, &
+               ( C, CoordinateLabelOption, CoordinateSystemOption, NameOption, &
+                 PeriodicOption, CoordinateUnitOption, IgnorabilityOption, &
                  nDimensionsOption, iDimensionalityOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      Periodic
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption, &
       NameOption
+    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+      PeriodicOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -92,7 +90,7 @@ contains
     call SetDimensionality &
            ( C, nDimensionsOption, iDimensionalityOption )
     call SetCoordinateSystem &
-           ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
+           ( C, CoordinateLabelOption, CoordinateSystemOption, PeriodicOption, &
              CoordinateUnitOption )
 
   end subroutine Initialize_H
@@ -204,24 +202,25 @@ contains
 
 
   subroutine SetCoordinateSystem &
-               ( C, Periodic, CoordinateLabelOption, CoordinateSystemOption, &
-                 CoordinateUnitOption )
+               ( C, CoordinateLabelOption, CoordinateSystemOption, &
+                 PeriodicOption, CoordinateUnitOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      Periodic
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
+    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+      PeriodicOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
 
     associate ( nD => C % nDimensions )
 
     C % Periodic = .false.
-    C % Periodic ( : nD ) = Periodic ( : nD )
+    if ( present ( PeriodicOption ) ) &
+      C % Periodic ( : nD )  =  PeriodicOption ( : nD )
 
     C % CoordinateSystem = 'RECTANGULAR'
     if ( present ( CoordinateSystemOption ) ) &

@@ -131,19 +131,13 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
-    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
-      Periodic
 
     if ( G % Type  ==  '' ) &
       G % Type  =  'a Grid_S'
 
-    Periodic  =  .false.
-    if ( present ( PeriodicOption ) ) &
-      Periodic ( : size ( PeriodicOption ) )  =  PeriodicOption
-
-    call G % Chart_H_Form % Initialize &
-           ( Periodic, CoordinateLabelOption, CoordinateSystemOption, &
-             NameOption, CoordinateUnitOption, IgnorabilityOption, &
+    call G % Initialize_H &
+           ( CoordinateLabelOption, CoordinateSystemOption, NameOption, &
+             PeriodicOption, CoordinateUnitOption, IgnorabilityOption, &
              nDimensionsOption, iDimensionalityOption )
 
     call SetCoordinateMetadata &
