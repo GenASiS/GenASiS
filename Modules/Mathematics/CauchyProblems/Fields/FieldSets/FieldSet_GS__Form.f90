@@ -114,9 +114,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
 
-    integer ( KDI ) :: &
-      nFields
-
     if ( FSG % Type == '' ) &
       FSG % Type  =  'a FieldSet_GS' 
 
@@ -125,13 +122,9 @@ contains
       FSG % nCellsLocal  =  G % nCellsLocal
     end select !-- C
 
-    nFields  =  1
-    if ( present ( nFieldsOption ) ) &
-      nFields  =  nFieldsOption
-
-    call FSG % FieldSet_CH_Form % Initialize &
-           ( G, nFields, FieldOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+    call FSG % Initialize_H &
+           ( G, FieldOption, VectorOption, NameOption, UnitOption, &
+             VectorIndicesOption, nFieldsOption )
 
     FSG % DeviceMemory  =  .false.
     if ( present ( DeviceMemoryOption ) ) &

@@ -24,7 +24,7 @@ program FieldSet_CH__Form_Test
          ( 'FieldSet_CH__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( C )
-  call C % Initialize ( Periodic = [ .true., .true., .true. ] )
+  call C % Initialize_H ( PeriodicOption = [ .true., .true., .true. ] )
 
   nFields  =  5
 
@@ -35,9 +35,11 @@ program FieldSet_CH__Form_Test
   call VectorIndices ( 1 ) % Initialize ( [ 2, 3, 4 ] )
 
   allocate ( FSC )
-  call FSC % Initialize &
-         ( C, nFields, UnitOption = FieldUnit, &
-           VectorIndicesOption = VectorIndices )
+  call FSC % Initialize_H &
+         ( C, &
+           UnitOption = FieldUnit, &
+           VectorIndicesOption = VectorIndices, &
+           nFieldsOption = nFields )
 
   call   C % Show ( )
   call FSC % Show ( )

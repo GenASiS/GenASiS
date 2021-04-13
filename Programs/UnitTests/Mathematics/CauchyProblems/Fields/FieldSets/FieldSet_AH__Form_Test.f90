@@ -8,7 +8,7 @@ program FieldSet_AH__Form_Test
 
   implicit none
 
-  type ( Atlas_H_Form ), allocatable :: &
+  type ( Atlas_SG_Form ), allocatable :: &
     A
   type ( FieldSet_AH_Form ), allocatable :: &
     FSA
@@ -18,17 +18,14 @@ program FieldSet_AH__Form_Test
          ( 'FieldSet_AH__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( A )
-  call A % Initialize ( nCharts = 1 )
-
-  allocate ( Grid_S_Form :: A % Chart ( 1 ) % Element )
-  select type ( G  =>  A % Chart ( 1 ) % Element )
-  class is ( Grid_S_Form )
-  call G % Initialize &
+  call A % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
            PeriodicOption = [ .true., .true., .true. ] )
 
   allocate ( FSA )
-  call FSA % Initialize ( A )
+  call FSA % Initialize_H ( A )
+  select type ( G  =>  A % Chart ( 1 ) % Element )
+  class is ( Grid_S_Form )
 
   allocate ( FieldSet_GS_Form :: FSA % FieldSet_C ( 1 ) % Element )
   select type ( FSG  =>  FSA % FieldSet_C ( 1 ) % Element )

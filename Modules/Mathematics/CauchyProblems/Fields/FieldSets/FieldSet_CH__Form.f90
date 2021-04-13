@@ -26,10 +26,8 @@ module FieldSet_CH__Form
     class ( Chart_H_Form ), pointer :: &
       Chart => null ( )
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_H
-    generic, public :: &
-      Initialize => InitializeAllocate_H
+    procedure, public, pass :: &
+      Initialize_H
     procedure, public, pass :: &
       Show => Show_FSC
     final :: &
@@ -49,16 +47,14 @@ module FieldSet_CH__Form
 contains
 
 
-  subroutine InitializeAllocate_H &
-               ( FSC, C, nFields, FieldOption, VectorOption, NameOption, &
-                 UnitOption, VectorIndicesOption )
+  subroutine Initialize_H &
+               ( FSC, C, FieldOption, VectorOption, NameOption, UnitOption, &
+                 VectorIndicesOption, nFieldsOption )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC
     class ( Chart_H_Form ), intent ( in ), target :: &
       C
-    integer ( KDI ), intent ( in ) :: &
-      nFields
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -68,6 +64,8 @@ contains
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nFieldsOption
 
     integer ( KDI ) :: &
       iF, &  !-- iField
@@ -91,7 +89,9 @@ contains
     FSC % Chart  =>  C
 
     associate ( nF  =>  FSC % nFields )
-    nF  =  nFields
+    nF  =  1
+    if ( present ( nFieldsOption ) ) &
+      nF  =  nFieldsOption
     allocate ( FSC % Field ( nF ) )
     allocate ( FSC % Unit ( nF ) )
     if ( present ( FieldOption ) ) then
@@ -130,7 +130,7 @@ contains
 
     end if  !-- VectorIndicesOption
 
-  end subroutine InitializeAllocate_H
+  end subroutine Initialize_H
 
 
   subroutine Show_FSC ( FSC )

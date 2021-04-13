@@ -20,10 +20,8 @@ module FieldSet_AH__Form
     type ( FieldSet_C_E_Form ), dimension ( : ), allocatable :: &
       FieldSet_C
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_H
-    generic, public :: &
-      Initialize => InitializeAllocate_H
+    procedure, public, pass :: &
+      Initialize_H
     procedure, private, pass :: &
       Show_FSA
     generic, public :: &
@@ -36,7 +34,7 @@ module FieldSet_AH__Form
 contains
 
 
-  subroutine InitializeAllocate_H ( FSA, A, NameOption, IgnorabilityOption )
+  subroutine Initialize_H ( FSA, A, NameOption, IgnorabilityOption )
 
     class ( FieldSet_AH_Form ), intent ( inout ) :: &
       FSA
@@ -65,7 +63,7 @@ contains
 
     allocate ( FSA % FieldSet_C ( A % nCharts ) )
 
-  end subroutine InitializeAllocate_H
+  end subroutine Initialize_H
 
 
   subroutine Show_FSA ( FSA )
