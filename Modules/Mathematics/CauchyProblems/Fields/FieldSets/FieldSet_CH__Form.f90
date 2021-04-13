@@ -33,13 +33,17 @@ module FieldSet_CH__Form
     procedure, public, pass :: &
       Show => Show_FSC
     final :: &
-      Finalize
+      Finalize_FS
   end type FieldSet_CH_Form
 
-!   ! type, public :: FieldSet_CH_Pointer
-!   !   class ( FieldSet_CH_Form ), pointer :: &
-!   !     Pointer => null ( )
-!   ! end type FieldSet_CH_Pointer
+  type, public :: FieldSet_C_E_Form
+    !-- FieldSet_ChartHeader_Element_Form
+    class ( FieldSet_CH_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type FieldSet_C_E_Form
 
 
 contains
@@ -51,7 +55,7 @@ contains
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC
-    class ( Chart_H_Form ), intent ( inout ), target :: &
+    class ( Chart_H_Form ), intent ( in ), target :: &
       C
     integer ( KDI ), intent ( in ) :: &
       nFields
@@ -166,7 +170,7 @@ contains
   end subroutine Show_FSC
 
 
-  impure elemental subroutine Finalize ( FSC )
+  impure elemental subroutine Finalize_FS ( FSC )
 
     type ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC
@@ -185,7 +189,18 @@ contains
     call Show ( 'Finalizing ' // trim ( FSC % Type ), FSC % IGNORABILITY )
     call Show ( FSC % Name, 'Name', FSC % IGNORABILITY )
    
-  end subroutine Finalize
+  end subroutine Finalize_FS
+
+
+  impure elemental subroutine Finalize_E ( FSE )
+    
+    type ( FieldSet_C_E_Form ), intent ( inout ) :: &
+      FSE
+
+    if ( allocated ( FSE % Element ) ) &
+      deallocate ( FSE % Element )
+
+  end subroutine Finalize_E
 
 
 end module FieldSet_CH__Form

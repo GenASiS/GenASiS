@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: FieldSet_CH__Form_Test FieldSet_GS__Form_Test
+all: FieldSet_CH__Form_Test FieldSet_GS__Form_Test FieldSet_AH__Form_Test
 
 FieldSet_CH__Form_Test: Basics.a Manifolds.a FieldSets.a \
   FieldSet_CH__Form_Test.o
@@ -18,12 +18,20 @@ FieldSet_GS__Form_Test: Basics.a Manifolds.a FieldSets.a \
           FieldSet_GS__Form_Test.o FieldSets.a \
           Manifolds.a Basics.a $(LIBRARIES)
 
+FieldSet_AH__Form_Test: Basics.a Manifolds.a FieldSets.a \
+  FieldSet_AH__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FieldSet_AH__Form_Test_$(MACHINE) \
+          FieldSet_AH__Form_Test.o FieldSets.a \
+          Manifolds.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f FieldSet_CH__Form_Test_*
 	rm -f FieldSet_GS__Form_Test_*
+	rm -f FieldSet_AH__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
@@ -40,3 +48,9 @@ FieldSet_GS__Form_Test.o: \
   Manifolds.o \
   FieldSets.o \
   FieldSet_GS__Form_Test.f90
+
+FieldSet_AH__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  FieldSet_AH__Form_Test.f90

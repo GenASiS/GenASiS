@@ -21,8 +21,7 @@ module FieldSet_GS__Form
       PinnedMemory, &
       DevicesCommunicate
     class ( StorageForm ), allocatable :: &
-      FieldSet!, &
-  !     FieldSetStream
+      FieldSet
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
       IncomingFace_L_R, &
       IncomingFace_R_L, &
@@ -386,11 +385,6 @@ contains
         call FS % AllocateDevice ( )
       end associate !-- FS
     end if
-
-    ! if ( .not. allocated ( FSG % FieldSetStream ) ) then
-    !   allocate ( FSG % FieldSetStream )
-    !   call FSG % FieldSetStream % Initialize ( FSG % FieldSet )
-    ! end if
 
   end subroutine AllocateFieldSet
 
