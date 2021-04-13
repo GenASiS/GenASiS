@@ -67,9 +67,8 @@ contains
     if ( A % Type  ==  '' ) &
       A % Type  =  'an Atlas_SG'
 
-    call A % Atlas_H_Form % Initialize &
-           ( nCharts = 1, &
-             NameOption = NameOption, &
+    call A % Initialize_H &
+           ( NameOption = NameOption, &
              IgnorabilityOption = IgnorabilityOption )
 
     allocate ( Grid_S_Form :: A % Chart ( 1 ) % Element )

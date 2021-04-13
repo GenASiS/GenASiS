@@ -18,10 +18,8 @@ module Atlas_H__Form
     type ( Chart_E_Form ), dimension ( : ), allocatable :: &
       Chart
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
-    generic, public :: &
-      Initialize => Initialize_H
     procedure, private, pass :: &
       Show_A
     generic, public :: &
@@ -34,16 +32,17 @@ module Atlas_H__Form
 contains
 
 
-  subroutine Initialize_H ( A, nCharts, NameOption, IgnorabilityOption )
+  subroutine Initialize_H &
+               ( A, NameOption, IgnorabilityOption, nChartsOption )
 
     class ( Atlas_H_Form ), intent ( inout ) :: &
       A
-    integer ( KDI ), intent ( in ) :: &
-      nCharts
     character ( * ), intent ( in ), optional :: &
       NameOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nChartsOption
 
     A % IGNORABILITY  =  CONSOLE % INFO_1
     if ( present ( IgnorabilityOption ) ) &
@@ -59,8 +58,10 @@ contains
     call Show ( 'Initializing ' // trim ( A % Type ), A % IGNORABILITY )
     call Show ( A % Name, 'Name', A % IGNORABILITY )
 
-    A % nCharts  =  nCharts
-    allocate ( A % Chart ( nCharts ) )
+    A % nCharts  =  1
+    if ( present ( nChartsOption ) ) &
+      A % nCharts  =  nChartsOption
+    allocate ( A % Chart ( A % nCharts ) )
 
   end subroutine Initialize_H
 

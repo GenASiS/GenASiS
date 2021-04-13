@@ -21,7 +21,7 @@ program Atlas_H__Form_Test
          ( 'Atlas_H__Form_Test', DimensionalityOption = '2D_1D' )
 
   allocate ( A_Base )
-  call A_Base % Initialize ( nCharts = 1, NameOption = 'Base' )
+  call A_Base % Initialize_H ( NameOption = 'Base' )
 
   allocate ( Grid_S_Form :: A_Base % Chart ( 1 ) % Element )
   select type ( G_Base  =>  A_Base % Chart ( 1 ) % Element )
@@ -34,7 +34,7 @@ program Atlas_H__Form_Test
   end select !-- G_Base
 
   allocate ( A_Fiber )
-  call A_Fiber % Initialize ( nCharts = 1, NameOption = 'Fiber' )
+  call A_Fiber % Initialize_H ( NameOption = 'Fiber' )
 
        MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
        MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
