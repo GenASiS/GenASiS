@@ -15,10 +15,18 @@ FieldSet_AH__Form.o: \
   FieldSet_CH__Form.o \
   FieldSet_AH__Form.f90
 
+FieldSet_ASG__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSet_GS__Form.o \
+  FieldSet_AH__Form.o \
+  FieldSet_ASG__Form.f90
+
 FieldSets.o: \
   FieldSet_CH__Form.o \
   FieldSet_GS__Form.o \
   FieldSet_AH__Form.o \
+  FieldSet_ASG__Form.o \
   FieldSets.f90
 
 FieldSets.a: $(FIELD_SETS)

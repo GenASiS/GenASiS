@@ -1,5 +1,6 @@
 FIELD_SETS = \
   FieldSets.o \
+  FieldSet_ASG__Form.o \
   FieldSet_AH__Form.o \
   FieldSet_GS__Form.o \
   FieldSet_CH__Form.o
