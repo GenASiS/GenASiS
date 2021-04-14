@@ -83,7 +83,7 @@ contains
 
     class ( Stream_CH_Form ), intent ( inout ) :: &
       SC
-    class ( FieldSet_CH_Form ), intent ( inout ), target :: &
+    class ( FieldSet_CH_Form ), intent ( in ), target :: &
       FSC
     
     integer ( KDI ) :: &

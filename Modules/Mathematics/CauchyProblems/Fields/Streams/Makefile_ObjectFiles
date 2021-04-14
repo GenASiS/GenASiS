@@ -1,3 +1,4 @@
 STREAMS = \
   Streams.o \
+  Stream_GS__Form.o \
   Stream_CH__Form.o

@@ -41,10 +41,12 @@ program Stream_CH__Form_Test
   call SC % AddFieldSet ( FSC )  !-- Test the prevention of duplication
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
-  call  C % Show ( )
-  call SC % Show ( )
+  call   C % Show ( )
+  call FSC % Show ( )
+  call  SC % Show ( )
 
   deallocate ( SC )
+  deallocate ( FSC )
   deallocate ( C )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )

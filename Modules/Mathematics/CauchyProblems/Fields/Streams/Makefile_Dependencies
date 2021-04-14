@@ -4,8 +4,16 @@ Stream_CH__Form.o: \
   FieldSets.o \
   Stream_CH__Form.f90
 
+Stream_GS__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Stream_CH__Form.o \
+  Stream_GS__Form.f90
+
 Streams.o: \
   Stream_CH__Form.o \
+  Stream_GS__Form.o \
   Streams.f90
 
 Streams.a: $(STREAMS)
