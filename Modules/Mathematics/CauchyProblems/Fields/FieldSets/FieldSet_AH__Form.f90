@@ -34,7 +34,7 @@ module FieldSet_AH__Form
 contains
 
 
-  subroutine Initialize_H ( FSA, A, NameOption, IgnorabilityOption )
+  subroutine Initialize_H ( FSA, A, NameOption )
 
     class ( FieldSet_AH_Form ), intent ( inout ) :: &
       FSA
@@ -42,12 +42,8 @@ contains
       A
     character ( * ), intent ( in ), optional :: &
       NameOption
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
 
-    FSA % IGNORABILITY  =  CONSOLE % INFO_1
-    if ( present ( IgnorabilityOption ) ) &
-      FSA % IGNORABILITY  =  IgnorabilityOption
+    FSA % IGNORABILITY  =  A % IGNORABILITY
 
     if ( FSA % Type  ==  '' ) &
       FSA % Type  =  'a FieldSet_A'

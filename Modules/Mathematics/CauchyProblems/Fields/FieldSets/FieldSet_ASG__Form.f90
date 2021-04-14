@@ -25,24 +25,66 @@ module FieldSet_ASG__Form
 contains
 
 
-  subroutine InitializeAllocate_ASG ( FSA, A, NameOption, IgnorabilityOption )
+  subroutine InitializeAllocate_ASG &
+               ( FSA, A, FieldOption, VectorOption, NameOption, &
+                 DeviceMemoryOption, PinnedMemoryOption, &
+                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
+                 nFieldsOption )
 
-    class ( FieldSet_ASG_Form ), intent ( inout ) :: &
+    class ( FieldSet_ASG_Form ), intent ( inout ), target :: &
       FSA
-    class ( Atlas_SG_Form ), intent ( in ) :: &
+    class ( Atlas_SG_Form ), intent ( in ), target :: &
       A
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      FieldOption, &
+      VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption, &
+      PinnedMemoryOption, &
+      DevicesCommunicateOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      UnitOption
+    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
+      VectorIndicesOption
     integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
+      nFieldsOption
+
+    !-- FIXME: This shouldn't be necessary, but for some reason GCC 10.1.0
+    !          doesn't compile without it
+    class ( Grid_S_Form ), pointer :: &
+      G_Pointer
 
     if ( FSA % Type  ==  '' ) &
       FSA % Type  =  'a FieldSet_ASG'
 
-    call FSA % Initialize_H &
-           ( A, &
-             NameOption = NameOption, &
-             IgnorabilityOption = IgnorabilityOption )
+    call FSA % Initialize_H ( A, NameOption )
+
+    allocate ( FieldSet_GS_Form :: FSA % FieldSet_C ( 1 ) % Element )
+    select type ( FSG  =>  FSA % FieldSet_C ( 1 ) % Element )
+    class is ( FieldSet_GS_Form )
+
+    select type ( G  =>  A % Chart ( 1 ) % Element )
+    class is ( Grid_S_Form )
+
+    !-- FIXME: See FIXME above
+    G_Pointer  =>  G
+    call FSG % Initialize &
+           ( G_Pointer, FieldOption, VectorOption, NameOption, &
+             DeviceMemoryOption, PinnedMemoryOption, &
+             DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
+             nFieldsOption )
+
+    FSA % FieldSet_G  =>  FSG
+
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'FieldSet_ASG__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeAllocate_ASG', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- G
+    end select !-- FSG
 
   end subroutine InitializeAllocate_ASG
 
