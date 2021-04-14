@@ -34,14 +34,20 @@ module FieldSet_CH__Form
       Finalize_FS
   end type FieldSet_CH_Form
 
-  type, public :: FieldSet_C_E_Form
-    !-- FieldSet_ChartHeader_Element_Form
+  type, public :: FieldSet_C_Element
+    !-- FieldSet_Chart_Element
     class ( FieldSet_CH_Form ), allocatable :: &
       Element
   contains
     final :: &
       Finalize_E
-  end type FieldSet_C_E_Form
+  end type FieldSet_C_Element
+
+  type, public :: FieldSet_C_Pointer
+    !-- FieldSet_Chart_Pointer
+    class ( FieldSet_CH_Form ), pointer :: &
+      Pointer => null ( )
+  end type FieldSet_C_Pointer
 
 
 contains
@@ -194,7 +200,7 @@ contains
 
   impure elemental subroutine Finalize_E ( FSE )
     
-    type ( FieldSet_C_E_Form ), intent ( inout ) :: &
+    type ( FieldSet_C_Element ), intent ( inout ) :: &
       FSE
 
     if ( allocated ( FSE % Element ) ) &

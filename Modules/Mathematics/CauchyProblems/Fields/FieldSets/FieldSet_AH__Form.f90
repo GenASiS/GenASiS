@@ -17,7 +17,7 @@ module FieldSet_AH__Form
       Name
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
-    type ( FieldSet_C_E_Form ), dimension ( : ), allocatable :: &
+    type ( FieldSet_C_Element ), dimension ( : ), allocatable :: &
       FieldSet_C
   contains
     procedure, public, pass :: &

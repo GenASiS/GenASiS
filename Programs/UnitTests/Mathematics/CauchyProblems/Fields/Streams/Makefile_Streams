@@ -1,0 +1,33 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Test Stream_CH__Form_Test
+
+Test: Basics.a Manifolds.a FieldSets.a Streams.a
+
+Stream_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Stream_CH__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Stream_CH__Form_Test_$(MACHINE) \
+          Stream_CH__Form_Test.o Streams.a \
+          FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Stream_CH__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELD_SETS)/Makefile_Dependencies
+include $(PATH_STREAMS)/Makefile_Dependencies
+
+Stream_CH__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Streams.o \
+  Stream_CH__Form_Test.f90
+
