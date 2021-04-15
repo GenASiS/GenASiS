@@ -14,8 +14,7 @@ module FieldSet_GS__Form
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
       iTimerUpdateDevice       = 0, &
-      iTimerUpdateHost         = 0, &
-      nCellsLocal              = 0
+      iTimerUpdateHost         = 0
     logical ( KDL ) :: &
       DeviceMemory, &
       PinnedMemory, &
@@ -39,8 +38,10 @@ module FieldSet_GS__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_GS
+    procedure, private, pass :: &
+      InitializeClone_GS
     generic, public :: &
-      Initialize => InitializeAllocate_GS
+      Initialize => InitializeAllocate_GS, InitializeClone_GS
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -55,6 +56,8 @@ module FieldSet_GS__Form
       Finalize
     procedure, private, pass :: &
       AllocateFieldSet
+    procedure, private, pass :: &
+      CloneFieldSet
   end type FieldSet_GS_Form
 
 
@@ -117,11 +120,6 @@ contains
     if ( FSG % Type == '' ) &
       FSG % Type  =  'a FieldSet_GS' 
 
-    select type ( G )
-    class is ( Grid_S_Form )
-      FSG % nCellsLocal  =  G % nCellsLocal
-    end select !-- C
-
     call FSG % Initialize_H &
            ( G, FieldOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption, nFieldsOption )
@@ -141,6 +139,32 @@ contains
     call FSG % AllocateFieldSet ( )
 
   end subroutine InitializeAllocate_GS
+
+
+  subroutine InitializeClone_GS &
+               ( FSG_T, FSG_S, NameOption, iaSelectedOption )
+
+    class ( FieldSet_GS_Form ), intent ( inout ) :: &
+      FSG_T  !-- FSC_Target
+    class ( FieldSet_GS_Form ), intent ( in ) :: &
+      FSG_S  !-- FSC_Source
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
+
+    if ( FSG_T % Type == '' ) &
+      FSG_T % Type  =  'a FieldSet_GS' 
+
+    call FSG_T % Initialize_H ( FSG_S, NameOption, iaSelectedOption )
+
+    FSG_T % DeviceMemory        =  FSG_S % DeviceMemory    
+    FSG_T % PinnedMemory        =  FSG_S % PinnedMemory
+    FSG_T % DevicesCommunicate  =  FSG_S % DevicesCommunicate
+
+    call FSG_T % CloneFieldSet ( FSG_S )
+
+  end subroutine InitializeClone_GS
 
 
   subroutine ExchangeGhostData  ( FSG, TimerLevelOption )
@@ -359,27 +383,51 @@ contains
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
       FSG
 
-    call Show ( 'Allocating ' // trim ( FSG % Type ), FSG % IGNORABILITY + 1 )
-    call Show ( FSG % Name,        'Name',            FSG % IGNORABILITY + 1 )
-    call Show ( FSG % Field,       'Field',           FSG % IGNORABILITY + 1 )
-    call Show ( FSG % nFields,     'nFields',         FSG % IGNORABILITY + 1 )
-    call Show ( FSG % nCellsLocal, 'nCellsLocal',     FSG % IGNORABILITY + 1 )
-    
+    select type ( G => FSG % Chart )
+    class is ( Grid_S_Form )
+
     if ( .not. allocated ( FSG % FieldSet ) ) then
       allocate ( FSG % FieldSet )
       associate ( FS  =>  FSG % FieldSet )
       call FS % Initialize &
-             ( [ FSG % nCellsLocal, FSG % nFields ], &
+             ( [ G % nCellsLocal, FSG % nFields ], &
                VariableOption = FSG % Field, &
+               VectorOption = FSG % Vector, &
                NameOption = FSG % Name, &
                ClearOption = .true., &
-               PinnedOption = FSG % PinnedMemory )
+               PinnedOption = FSG % PinnedMemory, &
+               UnitOption = FSG % Unit, &
+               VectorIndicesOption = FSG % VectorIndices )
       if ( FSG % DeviceMemory ) &
         call FS % AllocateDevice ( )
       end associate !-- FS
     end if
 
+    end select !-- G
+
   end subroutine AllocateFieldSet
+
+
+  subroutine CloneFieldSet ( FSG_T, FSG_S )
+
+    class ( FieldSet_GS_Form ), intent ( inout ) :: &
+      FSG_T
+    class ( FieldSet_GS_Form ), intent ( in ) :: &
+      FSG_S
+
+    if ( .not. allocated ( FSG_T % FieldSet ) ) then
+      allocate ( FSG_T % FieldSet )
+      associate ( FS  =>  FSG_T % FieldSet )
+      call FS % Initialize &
+             ( FSG_S % FieldSet, &
+               VectorOption = FSG_T % Vector, &
+               NameOption = FSG_T % Name, &
+               VectorIndicesOption = FSG_T % VectorIndices, &
+               iaSelectedOption = FSG_T % iaSelected )
+      end associate !-- FS
+    end if
+
+  end subroutine CloneFieldSet
 
 
   subroutine StartExchangeFace &

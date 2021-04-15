@@ -18,7 +18,8 @@ program FieldSet_CH__Form_Test
     C
   type ( FieldSet_CH_Form ), allocatable :: &
     FSC, &
-    FSC_C  !-- FSC_Clone
+    FSC_234, &
+    FSC_5
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -36,23 +37,25 @@ program FieldSet_CH__Form_Test
   call VectorIndices ( 1 ) % Initialize ( [ 2, 3, 4 ] )
 
   allocate ( FSC )
+  allocate ( FSC_234 )
+  allocate ( FSC_5 )
   call FSC % Initialize_H &
          ( C, &
            UnitOption = FieldUnit, &
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
+  call FSC_234 % Initialize_H &
+         ( FSC, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
+  call FSC_5 % Initialize_H &
+         ( FSC, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
 
-  allocate ( FSC_C )
-  call FSC_C % Initialize_H &
-         ( FSC, NameOption = 'Fields_Clone', iaSelectedOption = [ 2, 3, 4 ] )
-!  call FSC_C % Initialize_H &
-!         ( FSC, NameOption = 'Fields_Clone', iaSelectedOption = [ 5 ] )
+  call   C     % Show ( )
+  call FSC     % Show ( )
+  call FSC_234 % Show ( )
+  call FSC_5   % Show ( )
 
-  call     C % Show ( )
-  call   FSC % Show ( )
-  call FSC_C % Show ( )
-
-  deallocate ( FSC_C )
+  deallocate ( FSC_5 )
+  deallocate ( FSC_234 )
   deallocate ( FSC )
   deallocate ( C )
   deallocate ( PROGRAM_HEADER )

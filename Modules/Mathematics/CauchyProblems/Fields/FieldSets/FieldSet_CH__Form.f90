@@ -27,6 +27,8 @@ module FieldSet_CH__Form
       Vector
     class ( Chart_H_Form ), pointer :: &
       Chart => null ( )
+    class ( FieldSet_CH_Form ), pointer :: &
+      Primary => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_H
@@ -154,7 +156,7 @@ contains
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC_T  !-- FSC_Target
-    class ( FieldSet_CH_Form ), intent ( in ) :: &
+    class ( FieldSet_CH_Form ), intent ( in ), target :: &
       FSC_S  !-- FSC_Source
     character ( * ), intent ( in ), optional :: &
       NameOption
@@ -175,6 +177,8 @@ contains
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
       Vector_T
+
+    FSC_T % Primary  =>  FSC_S
 
     associate ( nF_S  =>  FSC_S % nFields )
 
@@ -248,16 +252,16 @@ contains
     call Split ( FSC % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', FSC % IGNORABILITY )
 
-    associate ( C  =>  FSC % Chart )
     call Show ( FSC % Name, 'Name',  FSC % IGNORABILITY )
-    call Show (   C % Name, 'Chart', FSC % IGNORABILITY )
-    end associate  !-- C
+    if ( associated ( FSC % Primary ) ) &
+      call Show ( FSC % Primary % Name, 'Primary', FSC % IGNORABILITY )
+
+    call Show ( FSC % Chart % Name, 'Chart', FSC % IGNORABILITY )
 
     call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY )
     do iS  =  1, FSC % nFields
       iF  =  FSC % iaSelected ( iS )
-      call Show ( iS,                 'iSelected', FSC % IGNORABILITY ) 
-      call Show ( iF,                 'iField',    FSC % IGNORABILITY ) 
+      call Show ( iS,                 'iField', FSC % IGNORABILITY ) 
       call Show ( FSC % Field ( iF ), 'Field',     FSC % IGNORABILITY )
       call Show ( FSC % Unit ( iF ),  'Unit',      FSC % IGNORABILITY )
     end do !-- iF
@@ -278,6 +282,7 @@ contains
     type ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC
 
+    nullify ( FSC % Primary )
     nullify ( FSC % Chart )
 
     if ( allocated ( FSC % Vector ) ) &

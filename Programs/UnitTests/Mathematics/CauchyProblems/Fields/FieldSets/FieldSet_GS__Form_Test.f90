@@ -8,6 +8,13 @@ program FieldSet_GS__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    nFields, &
+    nGhostExchanges
+  type ( Integer_1D_Form ), dimension ( 1 ) :: &
+    VectorIndices
+  type ( MeasuredValueForm ), dimension ( 5 ) :: &
+    FieldUnit
   logical ( KDL ) :: &
     DeviceMemory, &
     PinnedMemory, &
@@ -15,7 +22,9 @@ program FieldSet_GS__Form_Test
   type ( Grid_S_Form ), allocatable :: &
     G
   type ( FieldSet_GS_Form ), allocatable :: &
-    FSG
+    FSG, &
+    FSG_234, &
+    FSG_5
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -26,6 +35,14 @@ program FieldSet_GS__Form_Test
          ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
            PeriodicOption = [ .true., .true., .true. ] )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
+
+  nFields  =  5
+
+  FieldUnit ( 1 )      =  UNIT % MASS_DENSITY_MKS
+  FieldUnit ( 2 : 4 )  =  UNIT % SPEED_MKS
+  FieldUnit ( 5 )      =  UNIT % JOULE
+
+  call VectorIndices ( 1 ) % Initialize ( [ 2, 3, 4 ] )
 
   DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
@@ -38,18 +55,36 @@ program FieldSet_GS__Form_Test
          ( DevicesCommunicate, 'DevicesCommunicate' )
 
   allocate ( FSG )
+  allocate ( FSG_234 )
+  allocate ( FSG_5 )
   call FSG % Initialize &
          ( G, &
            DeviceMemoryOption = DeviceMemory, &
            PinnedMemoryOption = PinnedMemory, &
-           DevicesCommunicateOption = DevicesCommunicate )
+           DevicesCommunicateOption = DevicesCommunicate, &
+           UnitOption = FieldUnit, &
+           VectorIndicesOption = VectorIndices, &
+           nFieldsOption = nFields )
+  call FSG_234 % Initialize &
+         ( FSG, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
+  call FSG_5 % Initialize &
+         ( FSG, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
 
-  call   G % Show ( )
-  call FSG % Show ( )
+  call   G     % Show ( )
+  call FSG     % Show ( )
+  call FSG_234 % Show ( )
+  call FSG_5   % Show ( )
+
+    nGhostExchanges  =  1000
+    call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
 
   call SetField ( FSG )
+  call SetField ( FSG_234 )
+  call SetField ( FSG_5 )
 
   call CONSOLE % SetVerbosity ( 'INFO_1' )
+  deallocate ( FSG_5 )
+  deallocate ( FSG_234 )
   deallocate ( FSG )
   deallocate ( G )  
   deallocate ( PROGRAM_HEADER )
@@ -64,24 +99,26 @@ contains
       FSG
 
     integer ( KDI ) :: &
+      iS, &          !-- iSelected
       iF, &          !-- iField
       iC, jC, kC, &  !-- iCell, etc.
-      iGE, &         !-- iGhostExchange
-      nGhostExchanges
+      iGE            !-- iGhostExchange
     integer ( KDI ), dimension ( 3 ) :: &
       oC
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       F_3D  !-- Field
 
-    nGhostExchanges  =  1000
-    call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
+    call Show ( 'Ghost exchange' )
+    call Show ( FSG % Name, 'FieldSet' )
+    call Clear ( FSG % FieldSet % Value )
 
     select type ( G  =>  FSG % Chart )
     class is ( Grid_S_Form )
 
     associate ( nCB  =>  G % nCellsBrick )
 
-    do iF  =  1, FSG % nFields
+    do iS  =  1, FSG % nFields
+      iF  =  FSG % iaSelected ( iS )
       associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
       call G % SetFieldPointer ( F, F_3D )
 
@@ -90,7 +127,7 @@ contains
         do jC  =  1,  nCB ( 2 )
           do iC  =  1,  nCB ( 1 )
             F_3D ( iC, jC, kC )  &
-              =  iF  *  (    1.e0  *  ( oC ( 1 )  +  iC  -  1 )  &
+              =  iS  *  (    1.e0  *  ( oC ( 1 )  +  iC  -  1 )  &
                           +  1.e2  *  ( oC ( 2 )  +  jC  -  1 )  &
                           +  1.e4  *  ( oC ( 3 )  +  kC  -  1 ) )
           end do !-- iC
@@ -114,7 +151,8 @@ contains
         call FSG % UpdateDevice ( )
     end do !-- iGE
 
-    do iF  =  1, FSG % nFields
+    do iS  =  1, FSG % nFields
+      iF  =  FSG % iaSelected ( iS )
       associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
       call G % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
@@ -126,7 +164,8 @@ contains
 
     if ( FSG % DevicesCommunicate ) then
       call FSG % UpdateHost ( )
-      do iF  =  1, FSG % nFields
+      do iS  =  1, FSG % nFields
+        iF  =  FSG % iaSelected ( iS )
         associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
         call G % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
@@ -152,7 +191,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nD  !-- nDimensions
     
-    call Show ( 'Selected X strips' )
+    call Show ( 'Selected X strips', CONSOLE % INFO_2 )
     call Show ( F_3D ( :, nGL ( 2 ) + 1, nGL ( 3 ) + 1 ), &
                 'F_3D ( :, 1, 1 )', CONSOLE % INFO_2 )
     if ( nD > 1 ) &
@@ -166,7 +205,7 @@ contains
     end if
 
     if ( nD > 1 ) then
-      call Show ( 'Selected Y strips' )
+      call Show ( 'Selected Y strips', CONSOLE % INFO_2 )
       call Show ( F_3D ( nGL ( 1 ) + 1, :, nGL ( 3 ) + 1 ), &
                   'F_3D ( 1, :, 1 )', CONSOLE % INFO_2 )
       call Show ( F_3D ( nGL ( 1 ),     :, nGL ( 3 ) + 1 ), &
