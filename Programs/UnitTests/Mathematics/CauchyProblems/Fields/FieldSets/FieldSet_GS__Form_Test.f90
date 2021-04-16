@@ -75,8 +75,8 @@ program FieldSet_GS__Form_Test
   call FSG_234 % Show ( )
   call FSG_5   % Show ( )
 
-    nGhostExchanges  =  1000
-    call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
+  nGhostExchanges  =  1000
+  call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
 
   call SetField ( FSG )
   call SetField ( FSG_234 )

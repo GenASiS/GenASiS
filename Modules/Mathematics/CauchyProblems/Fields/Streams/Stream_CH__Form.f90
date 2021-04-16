@@ -70,6 +70,7 @@ contains
     SC % Verbose  =  .false.
     if ( present ( VerboseOption ) ) &
       SC % Verbose  =  VerboseOption
+    call PROGRAM_HEADER % GetParameter ( SC % Verbose, 'VerboseStream' )
     
     SC % GridImageStream  =>  GIS
     SC % Chart            =>  C

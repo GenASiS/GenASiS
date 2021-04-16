@@ -88,14 +88,24 @@ contains
 
     call SC % Stream_CH_Form % AddFieldSet ( FSC, NameOption, iaSelectedOption )
 
-    ! select type ( FSC )
-    ! class is ( FieldSet_GS_Form )
-    !   if ( SC % Verbose ) then
-    !     call AddStorage ( SC, FSC % FieldSet )
-    !   else
-    !     call AddStorage ( SC, FSC % FieldSetStream )
-    !   end if
-    ! end select !-- FSC
+    associate ( nFS  =>  SC % nFieldSets )
+
+    select type ( FSC )
+    class is ( FieldSet_GS_Form )
+      if ( SC % Verbose ) then
+        select type ( FSC )
+        class is ( FieldSet_GS_Form )
+        call AddStorage ( SC, FSC % FieldSet )
+        end select !-- FSC
+      else
+        select type ( FSC_S  =>  SC % FieldSet ( nFS ) % Element )
+        class is ( FieldSet_GS_Form )
+        call AddStorage ( SC, FSC_S % FieldSet )
+        end select !-- FSC_S
+      end if
+    end select !-- FSC
+
+    end associate !-- nFS
 
   end subroutine AddFieldSet
 
