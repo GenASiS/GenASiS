@@ -10,6 +10,9 @@ module Stream_GS__Form
   implicit none
   private
 
+    integer ( KDI ), private, parameter :: &
+      MAX_DIMENSIONS = 3
+
   type, public, extends ( Stream_CH_Form ) :: Stream_GS_Form
     integer ( KDI ) :: &
       iTimerWrite = 0, &
@@ -123,104 +126,104 @@ contains
       CycleNumberOption, &
       TimerLevelOption
 
-    ! integer ( KDI ) :: &
-    !   nCellsProper, &
-    !   nCellsGhost
-    ! integer ( KDI ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
-    !   nGhostInner, &
-    !   nGhostOuter, &
-    !   nExteriorInner, &
-    !   nExteriorOuter, &
-    !   nCellsWrite
-    ! type ( Real_1D_Form ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
-    !   Edge
-    ! character ( LDF ) :: &
-    !   Directory, &
-    !   TimerName
-    ! type ( TimerForm ), pointer :: &
-    !   T 
+    integer ( KDI ) :: &
+      nCellsProper, &
+      nCellsGhost
+    integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
+      nGhostInner, &
+      nGhostOuter, &
+      nExteriorInner, &
+      nExteriorOuter, &
+      nCellsWrite
+    type ( Real_1D_Form ), dimension ( MAX_DIMENSIONS ) :: &
+      Edge
+    character ( LDF ) :: &
+      Directory, &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
 
-    ! call Show ( 'Writing ' // trim ( SG % Type ), SG % IGNORABILITY )
-    ! call Show ( SG % Name, 'Name', SG % IGNORABILITY )
+    call Show ( 'Writing ' // trim ( SG % Type ), SG % IGNORABILITY )
+    call Show ( SG % Name, 'Name', SG % IGNORABILITY )
 
-    ! associate ( iT  =>  SG % iTimerWrite )
-    ! if ( iT == 0 ) then
-    !   TimerName  =  'Write ' // trim ( SG % Name )
-    !   if ( present ( TimerLevelOption ) ) then
-    !     call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
-    !   else
-    !     call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-    !   end if
-    ! end if
-    ! end associate !-- iT
+    associate ( iT  =>  SG % iTimerWrite )
+    if ( iT == 0 ) then
+      TimerName  =  'Write ' // trim ( SG % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
 
-    ! T  =>  PROGRAM_HEADER % TimerPointer ( SG % iTimerWrite )
-    ! call T % Start ( )
+    T  =>  PROGRAM_HEADER % TimerPointer ( SG % iTimerWrite )
+    call T % Start ( )
 
-    ! select type ( C  =>  SG % Chart )
-    ! class is ( Chart_BH_Form )
+    select type ( G  =>  SG % Chart )
+    class is ( Grid_S_Form )
 
-    ! if ( C % Manifold % Distributed ) then
-    !   nCellsProper    =  C % nCellsProper
-    !   nCellsGhost     =  C % nCellsGhost
-    !   nGhostInner     =  C % nGhostLayers
-    !   nGhostOuter     =  C % nGhostLayers
-    !   nExteriorInner  =  0
-    !   nExteriorOuter  =  0
-    !   where ( C % iaBrick  ==  1 )
-    !     nGhostInner     =  0
-    !     nExteriorInner  =  C % nGhostLayers
-    !   end where
-    !   where ( C % iaBrick  ==  C % nBricks )
-    !     nGhostOuter     =  0
-    !     nExteriorOuter  =  C % nGhostLayers
-    !   end where
-    ! else  ! .not. Distributed
-    !   nCellsProper    =  C % nCellsProper
-    !   nCellsGhost     =  0
-    !   nGhostInner     =  0
-    !   nGhostOuter     =  0
-    !   nExteriorInner  =  C % nGhostLayers
-    !   nExteriorOuter  =  C % nGhostLayers
-    ! end if !-- Distributed
-    ! nCellsWrite  =  C % nCellsBrick  +  nGhostInner  +  nGhostOuter
+    if ( G % Distributed ) then
+      nCellsProper    =  G % nCellsProper
+      nCellsGhost     =  G % nCellsGhost
+      nGhostInner     =  G % nGhostLayers
+      nGhostOuter     =  G % nGhostLayers
+      nExteriorInner  =  0
+      nExteriorOuter  =  0
+      where ( G % iaBrick  ==  1 )
+        nGhostInner     =  0
+        nExteriorInner  =  G % nGhostLayers
+      end where
+      where ( G % iaBrick  ==  G % nBricks )
+        nGhostOuter     =  0
+        nExteriorOuter  =  G % nGhostLayers
+      end where
+    else  ! .not. Distributed
+      nCellsProper    =  G % nCellsProper
+      nCellsGhost     =  0
+      nGhostInner     =  0
+      nGhostOuter     =  0
+      nExteriorInner  =  G % nGhostLayers
+      nExteriorOuter  =  G % nGhostLayers
+    end if !-- Distributed
+    nCellsWrite  =  G % nCellsBrick  +  nGhostInner  +  nGhostOuter
 
-    ! call SetEdgeValues ( SG, Edge )
+    call SetEdgeValues ( SG, Edge )
 
-    ! Directory  =  trim ( C % Name )  //  '/'
-    ! if ( present ( DirectoryOption ) ) &
-    !   Directory  =  DirectoryOption
+    Directory  =  trim ( G % Name )  //  '/'
+    if ( present ( DirectoryOption ) ) &
+      Directory  =  DirectoryOption
 
-    ! select case ( C % nDimensions )
-    ! case ( 1 ) 
-    !   associate ( CI => SG % CurveImage )
-    !   call CI % SetGridWrite &
-    !          ( Directory, Edge ( 1 ), nCellsProper, &
-    !            oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
-    !            CoordinateLabelOption = C % CoordinateLabel ( 1 ), &
-    !            CoordinateUnitOption = C % CoordinateUnit ( 1 ) )
-    !   call CI % Write &
-    !          ( TimeOption = TimeOption, &
-    !            CycleNumberOption = CycleNumberOption )
-    !   call CI % ClearGrid ( )
-    !   end associate !-- CI
-    ! case default
-    !   associate ( GI => SG % GridImage )
-    !   call GI % SetGridWrite &
-    !          ( Directory, Edge, nCellsWrite, nGhostInner, nGhostOuter, &
-    !            nExteriorInner, nExteriorOuter, C % nDimensions, nCellsProper, &
-    !            nCellsGhost, CoordinateLabelOption = C % CoordinateLabel, &
-    !            CoordinateUnitOption = C % CoordinateUnit )
-    !   call GI % Write &
-    !          ( TimeOption = TimeOption, &
-    !            CycleNumberOption = CycleNumberOption )
-    !   call GI % ClearGrid ( )
-    !   end associate !-- GI
-    ! end select !-- nDimensions
+    select case ( G % nDimensions )
+    case ( 1 ) 
+      associate ( CI => SG % CurveImage )
+      call CI % SetGridWrite &
+             ( Directory, Edge ( 1 ), nCellsProper, &
+               oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
+               CoordinateLabelOption = G % CoordinateLabel ( 1 ), &
+               CoordinateUnitOption = G % CoordinateUnit ( 1 ) )
+      call CI % Write &
+             ( TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call CI % ClearGrid ( )
+      end associate !-- CI
+    case default
+      associate ( GI => SG % GridImage )
+      call GI % SetGridWrite &
+             ( Directory, Edge, nCellsWrite, nGhostInner, nGhostOuter, &
+               nExteriorInner, nExteriorOuter, G % nDimensions, nCellsProper, &
+               nCellsGhost, CoordinateLabelOption = G % CoordinateLabel, &
+               CoordinateUnitOption = G % CoordinateUnit )
+      call GI % Write &
+             ( TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call GI % ClearGrid ( )
+      end associate !-- GI
+    end select !-- nDimensions
 
-    ! end select !-- C
+    end select !-- G
 
-    ! call T % Stop ( )
+    call T % Stop ( )
 
   end subroutine Write
 
@@ -238,99 +241,99 @@ contains
       CycleNumberOption, &
       TimerLevelOption
 
-    ! integer ( KDI ) :: &
-    !   nCellsProper, &
-    !   nCellsGhost
-    ! integer ( KDI ), dimension ( MANIFOLD % MAX_DIMENSIONS ) :: &
-    !   nGhostInner, &
-    !   nGhostOuter, &
-    !   nExteriorInner, &
-    !   nExteriorOuter, &
-    !   nCellsRead
-    ! character ( LDF ) :: &
-    !   Directory, &
-    !   TimerName
-    ! type ( TimerForm ), pointer :: &
-    !   T 
+    integer ( KDI ) :: &
+      nCellsProper, &
+      nCellsGhost
+    integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
+      nGhostInner, &
+      nGhostOuter, &
+      nExteriorInner, &
+      nExteriorOuter, &
+      nCellsRead
+    character ( LDF ) :: &
+      Directory, &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
 
-    ! call Show ( 'Reading ' // trim ( SG % Type ), SG % IGNORABILITY )
-    ! call Show ( SG % Name, 'Name', SG % IGNORABILITY )
+    call Show ( 'Reading ' // trim ( SG % Type ), SG % IGNORABILITY )
+    call Show ( SG % Name, 'Name', SG % IGNORABILITY )
 
-    ! associate ( iT  =>  SG % iTimerRead )
-    ! if ( iT == 0 ) then
-    !   TimerName  =  'Read ' // trim ( SG % Name )
-    !   if ( present ( TimerLevelOption ) ) then
-    !     call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
-    !   else
-    !     call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-    !   end if
-    ! end if
-    ! end associate !-- iT
+    associate ( iT  =>  SG % iTimerRead )
+    if ( iT == 0 ) then
+      TimerName  =  'Read ' // trim ( SG % Name )
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
 
-    ! T  =>  PROGRAM_HEADER % TimerPointer ( SG % iTimerRead )
-    ! call T % Start ( )
+    T  =>  PROGRAM_HEADER % TimerPointer ( SG % iTimerRead )
+    call T % Start ( )
 
-    ! select type ( C  =>  SG % Chart )
-    ! class is ( Chart_BH_Form )
+    select type ( G  =>  SG % Chart )
+    class is ( Grid_S_Form )
 
-    ! if ( C % Manifold % Distributed ) then
-    !   nCellsProper    =  C % nCellsProper
-    !   nCellsGhost     =  C % nCellsGhost
-    !   nGhostInner     =  C % nGhostLayers
-    !   nGhostOuter     =  C % nGhostLayers
-    !   nExteriorInner  =  0
-    !   nExteriorOuter  =  0
-    !   where ( C % iaBrick  ==  1 )
-    !     nGhostInner     =  0
-    !     nExteriorInner  =  C % nGhostLayers
-    !   end where
-    !   where ( C % iaBrick  ==  C % nBricks )
-    !     nGhostOuter     =  0
-    !     nExteriorOuter  =  C % nGhostLayers
-    !   end where
-    ! else  ! .not. Distributed
-    !   nCellsProper    =  C % nCellsProper
-    !   nCellsGhost     =  0
-    !   nGhostInner     =  0
-    !   nGhostOuter     =  0
-    !   nExteriorInner  =  C % nGhostLayers
-    !   nExteriorOuter  =  C % nGhostLayers
-    ! end if !-- Distributed
-    ! nCellsRead  =  C % nCellsBrick  +  nGhostInner  +  nGhostOuter
+    if ( G % Distributed ) then
+      nCellsProper    =  G % nCellsProper
+      nCellsGhost     =  G % nCellsGhost
+      nGhostInner     =  G % nGhostLayers
+      nGhostOuter     =  G % nGhostLayers
+      nExteriorInner  =  0
+      nExteriorOuter  =  0
+      where ( G % iaBrick  ==  1 )
+        nGhostInner     =  0
+        nExteriorInner  =  G % nGhostLayers
+      end where
+      where ( G % iaBrick  ==  G % nBricks )
+        nGhostOuter     =  0
+        nExteriorOuter  =  G % nGhostLayers
+      end where
+    else  ! .not. Distributed
+      nCellsProper    =  G % nCellsProper
+      nCellsGhost     =  0
+      nGhostInner     =  0
+      nGhostOuter     =  0
+      nExteriorInner  =  G % nGhostLayers
+      nExteriorOuter  =  G % nGhostLayers
+    end if !-- Distributed
+    nCellsRead  =  G % nCellsBrick  +  nGhostInner  +  nGhostOuter
 
-    ! Directory  =  trim ( C % Name )  //  '/'
-    ! if ( present ( DirectoryOption ) ) &
-    !   Directory  =  DirectoryOption
+    Directory  =  trim ( G % Name )  //  '/'
+    if ( present ( DirectoryOption ) ) &
+      Directory  =  DirectoryOption
 
-    ! select case ( C % nDimensions )
-    ! case ( 1 ) 
-    !   associate ( CI => SG % CurveImage )
-    !   call CI % SetGridRead &
-    !          ( Directory, nCellsProper, &
-    !            oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
-    !   call CI % Read &
-    !          ( StorageOnlyOption = .true., &
-    !            TimeOption = TimeOption, &
-    !            CycleNumberOption = CycleNumberOption )
-    !   call CI % ClearGrid ( )
-    !   end associate !-- CI
-    ! case default
-    !   associate ( GI => SG % GridImage )
-    !   call GI % SetGridRead &
-    !          ( Directory, nCellsRead, nGhostInner, nGhostOuter, &
-    !            nExteriorInner, nExteriorOuter, C % nDimensions, nCellsProper, &
-    !            nCellsGhost )
-    !   call GI % Read &
-    !          ( StorageOnlyOption = .true., &
-    !            TimeOption = TimeOption, &
-    !            CycleNumberOption = CycleNumberOption )
-    !   call GI % ClearGrid ( )
-    !   end associate !-- GI
-    ! end select !-- nDimensions
+    select case ( G % nDimensions )
+    case ( 1 ) 
+      associate ( CI => SG % CurveImage )
+      call CI % SetGridRead &
+             ( Directory, nCellsProper, &
+               oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
+      call CI % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call CI % ClearGrid ( )
+      end associate !-- CI
+    case default
+      associate ( GI => SG % GridImage )
+      call GI % SetGridRead &
+             ( Directory, nCellsRead, nGhostInner, nGhostOuter, &
+               nExteriorInner, nExteriorOuter, G % nDimensions, nCellsProper, &
+               nCellsGhost )
+      call GI % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call GI % ClearGrid ( )
+      end associate !-- GI
+    end select !-- nDimensions
 
-    ! end select !-- C
+    end select !-- G
 
-    ! call T % Stop ( )
+    call T % Stop ( )
 
   end subroutine Read
 
