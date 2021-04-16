@@ -75,14 +75,18 @@ contains
   end subroutine Initialize
 
 
-  subroutine AddFieldSet ( SC, FSC )
+  subroutine AddFieldSet ( SC, FSC, NameOption, iaSelectedOption )
 
     class ( Stream_GS_Form ), intent ( inout ) :: &
       SC
-    class ( FieldSet_CH_Form ), intent ( in ), target :: &
+    class ( FieldSet_CH_Form ), intent ( in ) :: &
       FSC
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
 
-    call SC % Stream_CH_Form % AddFieldSet ( FSC )
+    call SC % Stream_CH_Form % AddFieldSet ( FSC, NameOption, iaSelectedOption )
 
     ! select type ( FSC )
     ! class is ( FieldSet_GS_Form )

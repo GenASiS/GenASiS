@@ -25,7 +25,7 @@ module Stream_CH__Form
       GridImageStream => null ( )
     class ( Chart_H_Form ), pointer :: &
       Chart => null ( )
-    type ( FieldSet_C_Pointer ), dimension ( : ), allocatable :: &
+    type ( FieldSet_C_Element ), dimension ( : ), allocatable :: &
       FieldSet
   contains
     procedure, public, pass :: &
@@ -79,34 +79,30 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine AddFieldSet ( SC, FSC )
+  subroutine AddFieldSet ( SC, FSC, NameOption, iaSelectedOption )
 
     class ( Stream_CH_Form ), intent ( inout ) :: &
       SC
-    class ( FieldSet_CH_Form ), intent ( in ), target :: &
+    class ( FieldSet_CH_Form ), intent ( in ) :: &
       FSC
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
     
-    integer ( KDI ) :: &
-      iFS
-
     associate ( nFS  =>  SC % nFieldSets )
 
-    do iFS  =  1, nFS
-      if ( associated ( SC % FieldSet ( iFS ) % Pointer, FSC ) ) then
-        call Show ( 'FieldSet already added to ' // SC % Type, &
-                    CONSOLE % WARNING )
-        call Show (  SC % Name, 'Stream',   CONSOLE % WARNING )
-        call Show ( FSC % Name, 'FieldSet', CONSOLE % WARNING )
-        return
-      end if
-    end do !-- iFS
-
     nFS  =  nFS + 1
-    SC % FieldSet ( iFS ) % Pointer  =>  FSC
+
+    allocate ( SC % FieldSet ( nFS ) % Element )
+    associate ( FSC_SC  =>  SC % FieldSet ( nFS ) % Element )
     call Show ( 'Adding a FieldSet to ' // trim ( SC % Type ), &
                 SC % IGNORABILITY  +  1 )
     call Show (  SC % Name, 'Stream',   SC % IGNORABILITY  +  1 )
     call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY  +  1 )
+    call FSC_SC % Clone &
+           ( FSC, NameOption = NameOption, iaSelectedOption = iaSelectedOption )
+    end associate !-- FSC_SC
 
     end associate !-- nFS
 
@@ -137,7 +133,7 @@ contains
 
     call Show ( SC % nFieldSets, 'nFieldSets', SC % IGNORABILITY )
     do iFS  =  1, SC % nFieldSets
-      associate ( FSC  =>  SC % FieldSet ( iFS ) % Pointer )
+      associate ( FSC  =>  SC % FieldSet ( iFS ) % Element )
       call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY )
       end associate !-- FS
     end do !-- iFS
