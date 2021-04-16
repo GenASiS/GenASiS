@@ -65,9 +65,9 @@ program FieldSet_GS__Form_Test
            UnitOption = FieldUnit, &
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
-  call FSG_234 % Initialize &
+  call FSG_234 % Clone &
          ( FSG, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
-  call FSG_5 % Initialize &
+  call FSG_5 % Clone &
          ( FSG, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
 
   call   G     % Show ( )

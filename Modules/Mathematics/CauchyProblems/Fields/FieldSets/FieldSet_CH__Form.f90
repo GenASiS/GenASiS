@@ -32,10 +32,10 @@ module FieldSet_CH__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_H
-    procedure, private, pass :: &
-      InitializeClone_H
     generic, public :: &
-      Initialize_H => InitializeAllocate_H, InitializeClone_H
+      Initialize_H => InitializeAllocate_H
+    procedure, public, pass :: &
+      Clone
     procedure, public, pass :: &
       Show => Show_FSC
     final :: &
@@ -50,12 +50,6 @@ module FieldSet_CH__Form
     final :: &
       Finalize_E
   end type FieldSet_C_Element
-
-  type, public :: FieldSet_C_Pointer
-    !-- FieldSet_Chart_Pointer
-    class ( FieldSet_CH_Form ), pointer :: &
-      Pointer => null ( )
-  end type FieldSet_C_Pointer
 
 
 contains
@@ -151,8 +145,7 @@ contains
   end subroutine InitializeAllocate_H
 
 
-  subroutine InitializeClone_H &
-               ( FSC_T, FSC_S, NameOption, iaSelectedOption )
+  subroutine Clone ( FSC_T, FSC_S, NameOption, iaSelectedOption )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC_T  !-- FSC_Target
@@ -178,7 +171,11 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Vector_T
 
-    FSC_T % Primary  =>  FSC_S
+    if ( associated ( FSC_S % Primary ) ) then
+      FSC_T % Primary  =>  FSC_S % Primary
+    else
+      FSC_T % Primary  =>  FSC_S
+    end if
 
     associate ( nF_S  =>  FSC_S % nFields )
 
@@ -234,7 +231,7 @@ contains
 
     end associate !-- nF_S
 
-  end subroutine InitializeClone_H
+  end subroutine Clone
 
 
   subroutine Show_FSC ( FSC )

@@ -44,9 +44,9 @@ program FieldSet_CH__Form_Test
            UnitOption = FieldUnit, &
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
-  call FSC_234 % Initialize_H &
+  call FSC_234 % Clone &
          ( FSC, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
-  call FSC_5 % Initialize_H &
+  call FSC_5 % Clone &
          ( FSC, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
 
   call   C     % Show ( )

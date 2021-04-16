@@ -38,10 +38,10 @@ module FieldSet_GS__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_GS
-    procedure, private, pass :: &
-      InitializeClone_GS
     generic, public :: &
-      Initialize => InitializeAllocate_GS, InitializeClone_GS
+      Initialize => InitializeAllocate_GS
+    procedure, public, pass :: &
+      Clone
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -141,30 +141,35 @@ contains
   end subroutine InitializeAllocate_GS
 
 
-  subroutine InitializeClone_GS &
-               ( FSG_T, FSG_S, NameOption, iaSelectedOption )
+  subroutine Clone ( FSC_T, FSC_S, NameOption, iaSelectedOption )
 
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG_T  !-- FSC_Target
-    class ( FieldSet_GS_Form ), intent ( in ) :: &
-      FSG_S  !-- FSC_Source
+      FSC_T  !-- FSC_Target
+    class ( FieldSet_CH_Form ), intent ( in ), target :: &
+      FSC_S  !-- FSC_Source
     character ( * ), intent ( in ), optional :: &
       NameOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
 
-    if ( FSG_T % Type == '' ) &
-      FSG_T % Type  =  'a FieldSet_GS' 
+    if ( FSC_T % Type == '' ) &
+      FSC_T % Type  =  'a FieldSet_GS' 
 
-    call FSG_T % Initialize_H ( FSG_S, NameOption, iaSelectedOption )
+    call FSC_T % FieldSet_CH_Form % Clone &
+           ( FSC_S, NameOption, iaSelectedOption )
 
-    FSG_T % DeviceMemory        =  FSG_S % DeviceMemory    
-    FSG_T % PinnedMemory        =  FSG_S % PinnedMemory
-    FSG_T % DevicesCommunicate  =  FSG_S % DevicesCommunicate
+    select type ( FSC_S )
+    class is ( FieldSet_GS_Form )
 
-    call FSG_T % CloneFieldSet ( FSG_S )
+    FSC_T % DeviceMemory        =  FSC_S % DeviceMemory    
+    FSC_T % PinnedMemory        =  FSC_S % PinnedMemory
+    FSC_T % DevicesCommunicate  =  FSC_S % DevicesCommunicate
 
-  end subroutine InitializeClone_GS
+    call FSC_T % CloneFieldSet ( FSC_S )
+
+    end select !-- FSC_S
+
+  end subroutine Clone
 
 
   subroutine ExchangeGhostData  ( FSG, TimerLevelOption )
