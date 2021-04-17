@@ -31,11 +31,15 @@ module Stream_CH__Form
     procedure, public, pass :: &
       Initialize_H
     procedure, public, pass :: &
+      AddFieldSet_H
+    procedure, public, pass :: &
       AddFieldSet
     procedure, public, pass :: &
       Show => Show_SC
     final :: &
       Finalize
+    procedure, private, nopass :: &
+      AllocateFieldSetElement
   end type Stream_CH_Form
 
 
@@ -80,6 +84,45 @@ contains
   end subroutine Initialize_H
 
 
+  subroutine AddFieldSet_H ( SC, FSC, NameOption, iaSelectedOption )
+
+    class ( Stream_CH_Form ), intent ( inout ) :: &
+      SC
+    class ( FieldSet_CH_Form ), intent ( in ) :: &
+      FSC
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
+
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaSelected
+
+    if ( present ( iaSelectedOption ) ) then
+      allocate ( iaSelected, source = iaSelectedOption )
+    else
+      allocate ( iaSelected, source = FSC % iaSelected )
+    end if
+
+    associate ( nFS  =>  SC % nFieldSets )
+
+    nFS  =  nFS + 1
+
+    call SC % AllocateFieldSetElement ( SC % FieldSet ( nFS ) % Element )
+    associate ( FSC_SC  =>  SC % FieldSet ( nFS ) % Element )
+    call Show ( 'Adding a FieldSet to ' // trim ( SC % Type ), &
+                SC % IGNORABILITY  +  1 )
+    call Show (  SC % Name, 'Stream',   SC % IGNORABILITY  +  1 )
+    call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY  +  1 )
+    call FSC_SC % Clone &
+           ( FSC, NameOption = NameOption, iaSelectedOption = iaSelected )
+    end associate !-- FSC_SC
+
+    end associate !-- nFS
+
+  end subroutine AddFieldSet_H
+
+
   subroutine AddFieldSet ( SC, FSC, NameOption, iaSelectedOption )
 
     class ( Stream_CH_Form ), intent ( inout ) :: &
@@ -91,21 +134,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
     
-    associate ( nFS  =>  SC % nFieldSets )
-
-    nFS  =  nFS + 1
-
-    allocate ( SC % FieldSet ( nFS ) % Element )
-    associate ( FSC_SC  =>  SC % FieldSet ( nFS ) % Element )
-    call Show ( 'Adding a FieldSet to ' // trim ( SC % Type ), &
-                SC % IGNORABILITY  +  1 )
-    call Show (  SC % Name, 'Stream',   SC % IGNORABILITY  +  1 )
-    call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY  +  1 )
-    call FSC_SC % Clone &
-           ( FSC, NameOption = NameOption, iaSelectedOption = iaSelectedOption )
-    end associate !-- FSC_SC
-
-    end associate !-- nFS
+    call SC % AddFieldSet_H ( FSC, NameOption, iaSelectedOption )
 
   end subroutine AddFieldSet
 
@@ -157,6 +186,16 @@ contains
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  subroutine AllocateFieldSetElement ( FSC )
+
+    class ( FieldSet_CH_Form ), intent ( out ), allocatable :: &
+      FSC
+
+    allocate ( FSC )
+
+  end subroutine AllocateFieldSetElement
 
 
 end module Stream_CH__Form

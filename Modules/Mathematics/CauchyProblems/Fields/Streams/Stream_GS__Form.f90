@@ -32,6 +32,8 @@ module Stream_GS__Form
       Read
     final :: &
       Finalize
+    procedure, private, nopass :: &
+      AllocateFieldSetElement
   end type Stream_GS_Form
 
     private :: &
@@ -89,7 +91,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
 
-    call SC % Stream_CH_Form % AddFieldSet ( FSC, NameOption, iaSelectedOption )
+    call SC % AddFieldSet_H ( FSC, NameOption, iaSelectedOption )
 
     associate ( nFS  =>  SC % nFieldSets )
 
@@ -349,6 +351,16 @@ contains
       deallocate ( SG % CurveImage )
 
   end subroutine Finalize
+
+
+  subroutine AllocateFieldSetElement ( FSC )
+
+    class ( FieldSet_CH_Form ), intent ( out ), allocatable :: &
+      FSC
+
+    allocate ( FieldSet_GS_Form :: FSC )
+
+  end subroutine AllocateFieldSetElement
 
 
   subroutine AddStorage ( SG, S )

@@ -78,9 +78,9 @@ program FieldSet_GS__Form_Test
   nGhostExchanges  =  1000
   call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
 
-  call SetField ( FSG )
-  call SetField ( FSG_234 )
-  call SetField ( FSG_5 )
+  call SetFieldSet ( FSG )
+  call SetFieldSet ( FSG_234 )
+  call SetFieldSet ( FSG_5 )
 
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( FSG_5 )
@@ -93,7 +93,7 @@ program FieldSet_GS__Form_Test
 contains
 
 
-  subroutine SetField ( FSG )
+  subroutine SetFieldSet ( FSG )
 
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
       FSG
@@ -179,7 +179,7 @@ contains
     end select !-- G
     nullify ( F_3D )
 
-  end subroutine SetField
+  end subroutine SetFieldSet
 
 
   subroutine ShowField ( F_3D, nGL, nD )
