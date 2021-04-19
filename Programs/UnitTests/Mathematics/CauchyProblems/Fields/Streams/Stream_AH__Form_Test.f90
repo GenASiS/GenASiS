@@ -1,21 +1,31 @@
-program FieldSet_AH__Form_Test
+program Stream_AH__Form_Test
 
-  !-- FieldSet_AtlasHeader__Form_Test
+  !-- Stream_AtlasHeader__Form_Test
 
   use Basics
   use Manifolds
   use FieldSets
+  use Streams
 
   implicit none
 
+  type ( GridImageStreamForm ), allocatable :: &
+    GIS
   type ( Atlas_H_Form ), allocatable :: &
     A
   type ( FieldSet_AH_Form ), allocatable :: &
     FSA
+  type ( Stream_AH_Form ), allocatable :: &
+    SA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FieldSet_AH__Form_Test', DimensionalityOption = '2D' )
+         ( 'Stream_AH__Form_Test', DimensionalityOption = '2D' )
+
+  allocate ( GIS )
+  call GIS % Initialize &
+         ( PROGRAM_HEADER % Name, &
+           CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( A )
   call A % Initialize_H ( )
@@ -31,14 +41,19 @@ program FieldSet_AH__Form_Test
   associate ( FSC  =>  FSA % FieldSet_C ( 1 ) % Element )
   call FSC % Initialize_H ( C )
 
+  allocate ( SA )
+  call SA % Initialize_H ( A, GIS )
+
   end associate !-- FSC
   end associate !-- C
 
   call   A % Show ( )
   call FSA % Show ( )
 
+  deallocate ( SA )
   deallocate ( FSA )
   deallocate ( A )
+  deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
-end program FieldSet_AH__Form_Test
+end program Stream_AH__Form_Test

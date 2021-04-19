@@ -42,6 +42,15 @@ module Stream_CH__Form
       AllocateFieldSetElement
   end type Stream_CH_Form
 
+  type, public :: Stream_C_Element
+    !-- Stream_Chart_Element
+    class ( Stream_CH_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type Stream_C_Element
+
 
 contains
 
@@ -186,6 +195,17 @@ contains
     call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  impure elemental subroutine Finalize_E ( SE )
+    
+    type ( Stream_C_Element ), intent ( inout ) :: &
+      SE
+
+    if ( allocated ( SE % Element ) ) &
+      deallocate ( SE % Element )
+
+  end subroutine Finalize_E
 
 
   subroutine AllocateFieldSetElement ( FSC )

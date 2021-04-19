@@ -11,7 +11,14 @@ Stream_GS__Form.o: \
   Stream_CH__Form.o \
   Stream_GS__Form.f90
 
+Stream_AH__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Stream_CH__Form.o \
+  Stream_AH__Form.f90
+
 Streams.o: \
+  Stream_AH__Form.o \
   Stream_CH__Form.o \
   Stream_GS__Form.o \
   Streams.f90

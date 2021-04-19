@@ -23,15 +23,13 @@ program Atlas_H__Form_Test
   allocate ( A_Base )
   call A_Base % Initialize_H ( NameOption = 'Base' )
 
-  allocate ( Grid_S_Form :: A_Base % Chart ( 1 ) % Element )
-  select type ( G_Base  =>  A_Base % Chart ( 1 ) % Element )
-  class is ( Grid_S_Form )
-  call G_Base % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
-           NameOption = 'G_Base', &
+  allocate ( A_Base % Chart ( 1 ) % Element )
+  associate ( C_Base  =>  A_Base % Chart ( 1 ) % Element )
+  call C_Base % Initialize_H &
+         ( NameOption = 'C_Base', &
            PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
-  end select !-- G_Base
+  end associate !-- C_Base
 
   allocate ( A_Fiber )
   call A_Fiber % Initialize_H ( NameOption = 'Fiber' )
@@ -40,22 +38,15 @@ program Atlas_H__Form_Test
        MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
   MinWidthEnergy  =    0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
 
-  allocate ( Grid_S_Form :: A_Fiber % Chart ( 1 ) % Element )
-  select type ( G_Fiber  =>  A_Fiber % Chart ( 1 ) % Element )
-  class is ( Grid_S_Form )
-  call G_Fiber % Initialize &
-         ( SpacingOption = [ 'GEOMETRIC' ], &
-           CoordinateLabelOption = [ 'E' ], &
+  allocate ( A_Fiber % Chart ( 1 ) % Element )
+  associate ( C_Fiber  =>  A_Fiber % Chart ( 1 ) % Element )
+  call C_Fiber % Initialize_H &
+         ( CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &
-           NameOption = 'G_Fiber', &
+           NameOption = 'C_Fiber', &
            CoordinateUnitOption = [ UNIT % MEGA_ELECTRON_VOLT ], &
-           MinCoordinateOption = [ MinEnergy ], &
-           MaxCoordinateOption = [ MaxEnergy ], &
-           ScaleOption = [ MinWidthEnergy ], &
-           nCellsOption = [ 16 ], &
-           nGhostLayersOption = [ 0 ], &
            iDimensionalityOption = 2 )
-  end select !-- G_Fiber
+  end associate !-- C_Fiber
 
   call A_Base % Show ( )
   call A_Fiber % Show ( )

@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Stream_CH__Form_Test Stream_GS__Form_Test
+all: Stream_CH__Form_Test Stream_GS__Form_Test Stream_AH__Form_Test
 
 Stream_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
   Stream_CH__Form_Test.o
@@ -18,12 +18,20 @@ Stream_GS__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
           Stream_GS__Form_Test.o Streams.a \
           FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
+Stream_AH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Stream_AH__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Stream_AH__Form_Test_$(MACHINE) \
+          Stream_AH__Form_Test.o Streams.a \
+          FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Stream_CH__Form_Test_*
 	rm -f Stream_GS__Form_Test_*
+	rm -f Stream_AH__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
@@ -43,3 +51,10 @@ Stream_GS__Form_Test.o: \
   FieldSets.o \
   Streams.o \
   Stream_GS__Form_Test.f90
+
+Stream_AH__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Streams.o \
+  Stream_AH__Form_Test.f90
