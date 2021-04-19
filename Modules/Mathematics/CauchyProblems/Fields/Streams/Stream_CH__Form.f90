@@ -36,6 +36,10 @@ module Stream_CH__Form
       AddFieldSet
     procedure, public, pass :: &
       Show => Show_SC
+    procedure, public, pass :: &
+      Write
+    procedure, public, pass :: &
+      Read
     final :: &
       Finalize
     procedure, private, nopass :: &
@@ -181,6 +185,38 @@ contains
     end do !-- iFS
 
   end subroutine Show_SC
+
+
+  subroutine Write ( SC, DirectoryOption, TimeOption, CycleNumberOption, &
+                     TimerLevelOption )
+
+    class ( Stream_CH_Form ), intent ( inout ) :: &
+      SC
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      CycleNumberOption, &
+      TimerLevelOption
+
+  end subroutine Write
+
+
+  subroutine Read ( SC, DirectoryOption, TimeOption, CycleNumberOption, &
+                    TimerLevelOption )
+
+    class ( Stream_CH_Form ), intent ( inout ) :: &
+      SC
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption, &
+      TimerLevelOption
+
+  end subroutine Read
 
 
   impure elemental subroutine Finalize ( SC )

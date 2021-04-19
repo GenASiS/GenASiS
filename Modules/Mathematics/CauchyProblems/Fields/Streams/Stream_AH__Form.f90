@@ -29,6 +29,10 @@ module Stream_AH__Form
       Show_SA
     generic, public :: &
       Show => Show_SA
+    procedure, public, pass :: &
+      Write
+    procedure, public, pass :: &
+      Read
     final :: &
       Finalize
   end type Stream_AH_Form
@@ -119,6 +123,60 @@ contains
     end associate  !-- A
 
   end subroutine Show_SA
+
+
+  subroutine Write ( SA, DirectoryOption, TimeOption, CycleNumberOption, &
+                     TimerLevelOption )
+
+    class ( Stream_AH_Form ), intent ( inout ) :: &
+      SA
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      CycleNumberOption, &
+      TimerLevelOption
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, SA % Atlas % nCharts
+      associate ( SC  =>  SA % Stream_C ( iC ) % Element )
+      call SC % Write &
+             ( DirectoryOption, TimeOption, CycleNumberOption, &
+               TimerLevelOption )
+      end associate !-- SC, etc.
+    end do !-- iC
+
+  end subroutine Write
+
+
+  subroutine Read ( SA, DirectoryOption, TimeOption, CycleNumberOption, &
+                    TimerLevelOption )
+
+    class ( Stream_AH_Form ), intent ( inout ) :: &
+      SA
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption, &
+      TimerLevelOption
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, SA % Atlas % nCharts
+      associate ( SC  =>  SA % Stream_C ( iC ) % Element )
+      call SC % Write &
+             ( DirectoryOption, TimeOption, CycleNumberOption, &
+               TimerLevelOption )
+      end associate !-- SC, etc.
+    end do !-- iC
+
+  end subroutine Read
 
 
   impure elemental subroutine Finalize ( SA )

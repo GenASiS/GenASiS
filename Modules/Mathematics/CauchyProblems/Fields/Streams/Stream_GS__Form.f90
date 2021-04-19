@@ -115,11 +115,11 @@ contains
   end subroutine AddFieldSet
 
 
-  subroutine Write ( SG, DirectoryOption, TimeOption, CycleNumberOption, &
+  subroutine Write ( SC, DirectoryOption, TimeOption, CycleNumberOption, &
                      TimerLevelOption )
 
     class ( Stream_GS_Form ), intent ( inout ) :: &
-      SG
+      SC
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -145,12 +145,12 @@ contains
     type ( TimerForm ), pointer :: &
       T 
 
-    call Show ( 'Writing ' // trim ( SG % Type ), SG % IGNORABILITY )
-    call Show ( SG % Name, 'Name', SG % IGNORABILITY )
+    call Show ( 'Writing ' // trim ( SC % Type ), SC % IGNORABILITY )
+    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
-    associate ( iT  =>  SG % iTimerWrite )
+    associate ( iT  =>  SC % iTimerWrite )
     if ( iT == 0 ) then
-      TimerName  =  'Write ' // trim ( SG % Name )
+      TimerName  =  'Write ' // trim ( SC % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
       else
@@ -159,10 +159,10 @@ contains
     end if
     end associate !-- iT
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( SG % iTimerWrite )
+    T  =>  PROGRAM_HEADER % TimerPointer ( SC % iTimerWrite )
     call T % Start ( )
 
-    select type ( G  =>  SG % Chart )
+    select type ( G  =>  SC % Chart )
     class is ( Grid_S_Form )
 
     if ( G % Distributed ) then
@@ -190,7 +190,7 @@ contains
     end if !-- Distributed
     nCellsWrite  =  G % nCellsBrick  +  nGhostInner  +  nGhostOuter
 
-    call SetEdgeValues ( SG, Edge )
+    call SetEdgeValues ( SC, Edge )
 
     Directory  =  trim ( G % Name )  //  '/'
     if ( present ( DirectoryOption ) ) &
@@ -198,7 +198,7 @@ contains
 
     select case ( G % nDimensions )
     case ( 1 ) 
-      associate ( CI => SG % CurveImage )
+      associate ( CI => SC % CurveImage )
       call CI % SetGridWrite &
              ( Directory, Edge ( 1 ), nCellsProper, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
@@ -210,7 +210,7 @@ contains
       call CI % ClearGrid ( )
       end associate !-- CI
     case default
-      associate ( GI => SG % GridImage )
+      associate ( GI => SC % GridImage )
       call GI % SetGridWrite &
              ( Directory, Edge, nCellsWrite, nGhostInner, nGhostOuter, &
                nExteriorInner, nExteriorOuter, G % nDimensions, nCellsProper, &
@@ -230,11 +230,11 @@ contains
   end subroutine Write
 
 
-  subroutine Read ( SG, DirectoryOption, TimeOption, CycleNumberOption, &
+  subroutine Read ( SC, DirectoryOption, TimeOption, CycleNumberOption, &
                     TimerLevelOption )
 
     class ( Stream_GS_Form ), intent ( inout ) :: &
-      SG
+      SC
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
     type ( MeasuredValueForm ), intent ( out ), optional :: &
@@ -258,12 +258,12 @@ contains
     type ( TimerForm ), pointer :: &
       T 
 
-    call Show ( 'Reading ' // trim ( SG % Type ), SG % IGNORABILITY )
-    call Show ( SG % Name, 'Name', SG % IGNORABILITY )
+    call Show ( 'Reading ' // trim ( SC % Type ), SC % IGNORABILITY )
+    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
 
-    associate ( iT  =>  SG % iTimerRead )
+    associate ( iT  =>  SC % iTimerRead )
     if ( iT == 0 ) then
-      TimerName  =  'Read ' // trim ( SG % Name )
+      TimerName  =  'Read ' // trim ( SC % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
       else
@@ -272,10 +272,10 @@ contains
     end if
     end associate !-- iT
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( SG % iTimerRead )
+    T  =>  PROGRAM_HEADER % TimerPointer ( SC % iTimerRead )
     call T % Start ( )
 
-    select type ( G  =>  SG % Chart )
+    select type ( G  =>  SC % Chart )
     class is ( Grid_S_Form )
 
     if ( G % Distributed ) then
@@ -309,7 +309,7 @@ contains
 
     select case ( G % nDimensions )
     case ( 1 ) 
-      associate ( CI => SG % CurveImage )
+      associate ( CI => SC % CurveImage )
       call CI % SetGridRead &
              ( Directory, nCellsProper, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
@@ -320,7 +320,7 @@ contains
       call CI % ClearGrid ( )
       end associate !-- CI
     case default
-      associate ( GI => SG % GridImage )
+      associate ( GI => SC % GridImage )
       call GI % SetGridRead &
              ( Directory, nCellsRead, nGhostInner, nGhostOuter, &
                nExteriorInner, nExteriorOuter, G % nDimensions, nCellsProper, &
