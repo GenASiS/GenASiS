@@ -2,7 +2,7 @@ module Fields
 
   use FieldSets
   use Streams
-!  use Calculus
+  use Calculus
 !  use Geometries
 !  use Currents  
 
