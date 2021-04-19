@@ -22,6 +22,8 @@ module FieldSet_AH__Form
   contains
     procedure, public, pass :: &
       Initialize_H
+    procedure, public, pass :: &
+      Clone
     procedure, private, pass :: &
       Show_FSA
     generic, public :: &
@@ -60,6 +62,31 @@ contains
     allocate ( FSA % FieldSet_C ( A % nCharts ) )
 
   end subroutine Initialize_H
+
+
+  subroutine Clone ( FSA_T, FSA_S, NameOption, iaSelectedOption )
+
+    class ( FieldSet_AH_Form ), intent ( inout ) :: &
+      FSA_T  !-- FSA_Target
+    class ( FieldSet_AH_Form ), intent ( in ) :: &
+      FSA_S  !-- FSA_Source
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, FSA_S % Atlas % nCharts
+      associate &
+        ( FSC_T  =>  FSA_T % FieldSet_C ( iC ) % Element, &
+          FSC_S  =>  FSA_S % FieldSet_C ( iC ) % Element )
+      call FSC_T % Clone ( FSC_S, NameOption, iaSelectedOption )
+      end associate !-- FSC_T, etc.
+    end do !-- iC
+
+  end subroutine Clone
 
 
   subroutine Show_FSA ( FSA )
