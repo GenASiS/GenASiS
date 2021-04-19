@@ -124,7 +124,10 @@ contains
     call Show (  SC % Name, 'Stream',   SC % IGNORABILITY  +  1 )
     call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY  +  1 )
     call FSC_SC % Clone &
-           ( FSC, NameOption = NameOption, iaSelectedOption = iaSelected )
+           ( FSC, &
+             NameOption = NameOption, &
+             iaSelectedOption = iaSelected, &
+             IgnorabilityOption = SC % IGNORABILITY + 1 )
     end associate !-- FSC_SC
 
     end associate !-- nFS

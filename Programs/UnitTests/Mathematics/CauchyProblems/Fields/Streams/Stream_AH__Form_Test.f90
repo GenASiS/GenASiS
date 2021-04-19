@@ -42,10 +42,18 @@ program Stream_AH__Form_Test
   call FSC % Initialize_H ( C )
 
   allocate ( SA )
-  call SA % Initialize_H ( A, GIS )
+  call SA % Initialize_H ( A )
+  allocate ( SA % Stream_C ( 1 ) % Element )
+  associate ( SC  =>  SA % Stream_C ( 1 ) % Element )
+  call SC % Initialize_H ( C, GIS )
 
+  end associate !-- SC
   end associate !-- FSC
   end associate !-- C
+
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
+  call SA % AddFieldSet ( FSA )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   call   A % Show ( )
   call FSA % Show ( )

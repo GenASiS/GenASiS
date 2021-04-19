@@ -57,7 +57,7 @@ contains
 
   subroutine InitializeAllocate_H &
                ( FSC, C, FieldOption, VectorOption, NameOption, UnitOption, &
-                 VectorIndicesOption, nFieldsOption )
+                 VectorIndicesOption, nFieldsOption, IgnorabilityOption )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC
@@ -73,7 +73,8 @@ contains
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), intent ( in ), optional :: &
-      nFieldsOption
+      nFieldsOption, &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iF, &  !-- iField
@@ -83,6 +84,8 @@ contains
       VectorNumber
 
     FSC % IGNORABILITY  =  C % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      FSC % IGNORABILITY  =  IgnorabilityOption
 
     if ( FSC % Type  ==  '' ) &
       FSC % Type  =  'a FieldSet_C' 
@@ -145,7 +148,9 @@ contains
   end subroutine InitializeAllocate_H
 
 
-  subroutine Clone ( FSC_T, FSC_S, NameOption, iaSelectedOption )
+  subroutine Clone &
+               ( FSC_T, FSC_S, NameOption, iaSelectedOption, &
+                 IgnorabilityOption )
 
     class ( FieldSet_CH_Form ), intent ( inout ) :: &
       FSC_T  !-- FSC_Target
@@ -155,6 +160,8 @@ contains
       NameOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iS, &  !-- iSelected
@@ -227,7 +234,8 @@ contains
              NameOption = Name, &
              UnitOption = FSC_S % Unit, &
              VectorIndicesOption = VectorIndices_T, &
-             nFieldsOption = size ( FSC_T % iaSelected ) )
+             nFieldsOption = size ( FSC_T % iaSelected ), &
+             IgnorabilityOption = IgnorabilityOption )
 
     end associate !-- nF_S
 

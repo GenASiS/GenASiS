@@ -14,6 +14,7 @@ Stream_GS__Form.o: \
 Stream_AH__Form.o: \
   Basics.o \
   Manifolds.o \
+  FieldSets.o \
   Stream_CH__Form.o \
   Stream_AH__Form.f90
 

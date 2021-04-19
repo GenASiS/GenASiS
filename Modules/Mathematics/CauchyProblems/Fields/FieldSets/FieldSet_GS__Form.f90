@@ -141,7 +141,9 @@ contains
   end subroutine InitializeAllocate_GS
 
 
-  subroutine Clone ( FSC_T, FSC_S, NameOption, iaSelectedOption )
+  subroutine Clone &
+               ( FSC_T, FSC_S, NameOption, iaSelectedOption, &
+                 IgnorabilityOption )
 
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
       FSC_T  !-- FSC_Target
@@ -151,12 +153,14 @@ contains
       NameOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( FSC_T % Type == '' ) &
       FSC_T % Type  =  'a FieldSet_GS' 
 
     call FSC_T % FieldSet_CH_Form % Clone &
-           ( FSC_S, NameOption, iaSelectedOption )
+           ( FSC_S, NameOption, iaSelectedOption, IgnorabilityOption )
 
     select type ( FSC_S )
     class is ( FieldSet_GS_Form )

@@ -4,6 +4,7 @@ module Stream_AH__Form
 
   use Basics
   use Manifolds
+  use FieldSets
   use Stream_CH__Form
 
   implicit none
@@ -12,13 +13,9 @@ module Stream_AH__Form
   type, public :: Stream_AH_Form
     integer ( KDI ) :: &
       IGNORABILITY
-    logical ( KDL ) :: &
-      Verbose = .false.
     character ( LDL ) :: &
       Type = '', &
       Name
-    type ( GridImageStreamForm ), pointer :: &
-      GridImageStream => null ( )
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
     type ( Stream_C_Element ), dimension ( : ), allocatable :: &
@@ -26,6 +23,8 @@ module Stream_AH__Form
   contains
     procedure, public, pass :: &
       Initialize_H
+    procedure, public, pass :: &
+      AddFieldSet
   !   procedure, private, pass :: &
   !     Show_FSA
   !   generic, public :: &
@@ -38,18 +37,14 @@ module Stream_AH__Form
 contains
 
 
-  subroutine Initialize_H ( SA, A, GIS, NameOption, VerboseOption )
+  subroutine Initialize_H ( SA, A, NameOption )
 
     class ( Stream_AH_Form ), intent ( inout ) :: &
       SA
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
-    type ( GridImageStreamForm ), intent ( in ), target :: &
-      GIS
     character ( * ), intent ( in ), optional :: &
       NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      VerboseOption
 
     SA % IGNORABILITY  =  A % IGNORABILITY
 
@@ -63,16 +58,36 @@ contains
     call Show ( 'Initializing ' // trim ( SA % Type ), A % IGNORABILITY )
     call Show ( SA % Name, 'Name', A % IGNORABILITY )
 
-    SA % Verbose  =  .false.
-    if ( present ( VerboseOption ) ) &
-      SA % Verbose  =  VerboseOption
-
-    SA % GridImageStream  =>  GIS
-    SA % Atlas            =>  A
+    SA % Atlas  =>  A
 
     allocate ( SA % Stream_C ( A % nCharts ) )
 
   end subroutine Initialize_H
+
+
+  subroutine AddFieldSet ( SA, FSA, NameOption, iaSelectedOption )
+
+    class ( Stream_AH_Form ), intent ( inout ) :: &
+      SA
+    class ( FieldSet_AH_Form ), intent ( in ) :: &
+      FSA
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, SA % Atlas % nCharts
+      associate &
+        (  SC  =>   SA %   Stream_C ( iC ) % Element, &
+          FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+      call SC % AddFieldSet ( FSC, NameOption, iaSelectedOption )
+      end associate !-- SC, etc.
+    end do !-- iC
+
+  end subroutine AddFieldSet
 
 
   impure elemental subroutine Finalize ( SA )
