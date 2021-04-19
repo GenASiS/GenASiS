@@ -25,10 +25,10 @@ module Stream_AH__Form
       Initialize_H
     procedure, public, pass :: &
       AddFieldSet
-  !   procedure, private, pass :: &
-  !     Show_FSA
-  !   generic, public :: &
-  !     Show => Show_FSA
+    procedure, private, pass :: &
+      Show_SA
+    generic, public :: &
+      Show => Show_SA
     final :: &
       Finalize
   end type Stream_AH_Form
@@ -88,6 +88,37 @@ contains
     end do !-- iC
 
   end subroutine AddFieldSet
+
+
+  subroutine Show_SA ( SA )
+
+    class ( Stream_AH_Form ), intent ( in ) :: &
+      SA
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+   character ( LDL ), dimension ( : ), allocatable :: &
+     TypeWord
+
+    call Split ( SA % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', SA % IGNORABILITY )
+
+    associate ( A  =>  SA % Atlas )
+
+    call Show ( SA % Name, 'Name',  SA % IGNORABILITY )
+    call Show (  A % Name, 'Atlas', SA % IGNORABILITY )
+
+    do iC  =  1, A % nCharts
+      if ( allocated ( SA % Stream_C ( iC ) % Element ) ) then
+        associate ( SC  =>  SA % Stream_C ( iC ) % Element )
+        call SC % Show ( )
+        end associate !-- C
+      end if  
+    end do !-- iC
+
+    end associate  !-- A
+
+  end subroutine Show_SA
 
 
   impure elemental subroutine Finalize ( SA )

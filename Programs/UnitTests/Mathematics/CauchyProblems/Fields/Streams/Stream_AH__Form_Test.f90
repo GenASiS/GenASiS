@@ -57,6 +57,7 @@ program Stream_AH__Form_Test
 
   call   A % Show ( )
   call FSA % Show ( )
+  call  SA % Show ( )
 
   deallocate ( SA )
   deallocate ( FSA )
