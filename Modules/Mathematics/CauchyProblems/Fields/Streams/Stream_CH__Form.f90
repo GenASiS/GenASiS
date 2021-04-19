@@ -63,7 +63,7 @@ contains
 
     class ( Stream_CH_Form ), intent ( inout ) :: &
       SC
-    class ( Chart_H_Form ), intent ( inout ), target :: &
+    class ( Chart_H_Form ), intent ( in ), target :: &
       C
     type ( GridImageStreamForm ), intent ( in ), target :: &
       GIS

@@ -48,7 +48,7 @@ contains
 
     class ( Stream_GS_Form ), intent ( inout ) :: &
       SG
-    class ( Grid_S_Form ), intent ( inout ), target :: &
+    class ( Grid_S_Form ), intent ( inout ) :: &
       G
     type ( GridImageStreamForm ), intent ( in ), target :: &
       GIS

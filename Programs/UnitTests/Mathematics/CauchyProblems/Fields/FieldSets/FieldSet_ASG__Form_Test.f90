@@ -1,6 +1,6 @@
-program FieldSet_AH__Form_Test
+program FieldSet_ASG__Form_Test
 
-  !-- FieldSet_AtlasHeader__Form_Test
+  !-- FieldSet_AtlasSingleGrid__Form_Test
 
   use Basics
   use Manifolds
@@ -32,4 +32,4 @@ program FieldSet_AH__Form_Test
   deallocate ( A )
   deallocate ( PROGRAM_HEADER )
 
-end program FieldSet_AH__Form_Test
+end program FieldSet_ASG__Form_Test

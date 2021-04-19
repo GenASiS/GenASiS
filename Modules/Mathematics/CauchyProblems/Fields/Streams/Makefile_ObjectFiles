@@ -1,5 +1,6 @@
 STREAMS = \
   Streams.o \
+  Stream_ASG__Form.o \
   Stream_AH__Form.o \
   Stream_GS__Form.o \
   Stream_CH__Form.o
