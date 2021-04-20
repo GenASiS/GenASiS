@@ -110,7 +110,7 @@ contains
 
     call Show ( 'Ghost exchange' )
     call Show ( FSG % Name, 'FieldSet' )
-    call Clear ( FSG % FieldSet % Value )
+    call Clear ( FSG % Storage % Value )
 
     select type ( G  =>  FSG % Chart )
     class is ( Grid_S_Form )
@@ -119,7 +119,7 @@ contains
 
     do iS  =  1, FSG % nFields
       iF  =  FSG % iaSelected ( iS )
-      associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
+      associate ( F  =>  FSG % Storage % Value ( :, iF ) )
       call G % SetFieldPointer ( F, F_3D )
 
       oC  =  ( G % iaBrick  -  1 )  *  nCB
@@ -153,7 +153,7 @@ contains
 
     do iS  =  1, FSG % nFields
       iF  =  FSG % iaSelected ( iS )
-      associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
+      associate ( F  =>  FSG % Storage % Value ( :, iF ) )
       call G % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
       call Show ( nGhostExchanges, 'nGhostExchanges', CONSOLE % INFO_2 )
@@ -166,7 +166,7 @@ contains
       call FSG % UpdateHost ( )
       do iS  =  1, FSG % nFields
         iF  =  FSG % iaSelected ( iS )
-        associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
+        associate ( F  =>  FSG % Storage % Value ( :, iF ) )
         call G % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
         call Show ( FSG % Field ( iF ), 'Field', CONSOLE % INFO_2 )

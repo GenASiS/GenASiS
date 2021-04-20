@@ -74,7 +74,7 @@ contains
 
     call Show ( 'Set FieldSet' )
     call Show ( FSG % Name, 'FieldSet' )
-    call Clear ( FSG % FieldSet % Value )
+    call Clear ( FSG % Storage % Value )
 
     select type ( G  =>  FSG % Chart )
     class is ( Grid_S_Form )
@@ -83,7 +83,7 @@ contains
 
     do iS  =  1, FSG % nFields
       iF  =  FSG % iaSelected ( iS )
-      associate ( F  =>  FSG % FieldSet % Value ( :, iF ) )
+      associate ( F  =>  FSG % Storage % Value ( :, iF ) )
       call G % SetFieldPointer ( F, F_3D )
 
       oC  =  ( G % iaBrick  -  1 )  *  nCB

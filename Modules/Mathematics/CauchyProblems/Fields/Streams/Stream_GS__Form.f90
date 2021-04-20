@@ -100,12 +100,12 @@ contains
       if ( SC % Verbose ) then
         select type ( FSC )
         class is ( FieldSet_GS_Form )
-        call AddStorage ( SC, FSC % FieldSet )
+        call AddStorage ( SC, FSC % Storage )
         end select !-- FSC
       else
         select type ( FSC_S  =>  SC % FieldSet ( nFS ) % Element )
         class is ( FieldSet_GS_Form )
-        call AddStorage ( SC, FSC_S % FieldSet )
+        call AddStorage ( SC, FSC_S % Storage )
         end select !-- FSC_S
       end if
     end select !-- FSC

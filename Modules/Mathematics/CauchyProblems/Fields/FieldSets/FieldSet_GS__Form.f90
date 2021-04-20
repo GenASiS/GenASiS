@@ -20,7 +20,7 @@ module FieldSet_GS__Form
       PinnedMemory, &
       DevicesCommunicate
     class ( StorageForm ), allocatable :: &
-      FieldSet
+      Storage
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
       IncomingFace_L_R, &
       IncomingFace_R_L, &
@@ -36,10 +36,8 @@ module FieldSet_GS__Form
       OutgoingEdge_LR_RL, &
       OutgoingEdge_RL_LR
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_GS
-    generic, public :: &
-      Initialize => InitializeAllocate_GS
+    procedure, public, pass :: &
+      Initialize
     procedure, public, pass :: &
       Clone
     procedure, public, pass :: &
@@ -55,9 +53,9 @@ module FieldSet_GS__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      AllocateFieldSet
+      AllocateStorage
     procedure, private, pass :: &
-      CloneFieldSet
+      CloneStorage
   end type FieldSet_GS_Form
 
 
@@ -91,7 +89,7 @@ module FieldSet_GS__Form
 contains
 
 
-  subroutine InitializeAllocate_GS &
+  subroutine Initialize &
                ( FSG, G, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
@@ -136,9 +134,9 @@ contains
     if ( present ( DevicesCommunicateOption ) )  &
       FSG % DevicesCommunicate  =  DevicesCommunicateOption  
 
-    call FSG % AllocateFieldSet ( )
+    call FSG % AllocateStorage ( )
 
-  end subroutine InitializeAllocate_GS
+  end subroutine Initialize
 
 
   subroutine Clone &
@@ -169,7 +167,7 @@ contains
     FSC_T % PinnedMemory        =  FSC_S % PinnedMemory
     FSC_T % DevicesCommunicate  =  FSC_S % DevicesCommunicate
 
-    call FSC_T % CloneFieldSet ( FSC_S )
+    call FSC_T % CloneStorage ( FSC_S )
 
     end select !-- FSC_S
 
@@ -312,7 +310,7 @@ contains
     T  =>  PROGRAM_HEADER % TimerPointer ( FSG % iTimerUpdateDevice )
 
     call T % Start ( )
-    call FSG % FieldSet % UpdateDevice ( )
+    call FSG % Storage % UpdateDevice ( )
     call T % Stop ( )
 
   end subroutine UpdateDevice_FS
@@ -344,7 +342,7 @@ contains
     T  =>  PROGRAM_HEADER % TimerPointer ( FSG % iTimerUpdateHost )
 
     call T % Start ( )
-    call FSG % FieldSet % UpdateHost ( )
+    call FSG % Storage % UpdateHost ( )
     call T % Stop ( )
 
   end subroutine UpdateHost_FS
@@ -381,13 +379,13 @@ contains
     if ( allocated ( FSG % IncomingFace_L_R ) ) &
       deallocate ( FSG % IncomingFace_L_R )
 
-    if ( allocated ( FSG % FieldSet ) ) &
-      deallocate ( FSG % FieldSet )
+    if ( allocated ( FSG % Storage ) ) &
+      deallocate ( FSG % Storage )
 
   end subroutine Finalize
 
 
-  subroutine AllocateFieldSet ( FSG )
+  subroutine AllocateStorage ( FSG )
 
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
       FSG
@@ -395,10 +393,10 @@ contains
     select type ( G => FSG % Chart )
     class is ( Grid_S_Form )
 
-    if ( .not. allocated ( FSG % FieldSet ) ) then
-      allocate ( FSG % FieldSet )
-      associate ( FS  =>  FSG % FieldSet )
-      call FS % Initialize &
+    if ( .not. allocated ( FSG % Storage ) ) then
+      allocate ( FSG % Storage )
+      associate ( S  =>  FSG % Storage )
+      call S % Initialize &
              ( [ G % nCellsLocal, FSG % nFields ], &
                VariableOption = FSG % Field, &
                VectorOption = FSG % Vector, &
@@ -408,35 +406,35 @@ contains
                UnitOption = FSG % Unit, &
                VectorIndicesOption = FSG % VectorIndices )
       if ( FSG % DeviceMemory ) &
-        call FS % AllocateDevice ( )
-      end associate !-- FS
+        call S % AllocateDevice ( )
+      end associate !-- S
     end if
 
     end select !-- G
 
-  end subroutine AllocateFieldSet
+  end subroutine AllocateStorage
 
 
-  subroutine CloneFieldSet ( FSG_T, FSG_S )
+  subroutine CloneStorage ( FSG_T, FSG_S )
 
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
       FSG_T
     class ( FieldSet_GS_Form ), intent ( in ) :: &
       FSG_S
 
-    if ( .not. allocated ( FSG_T % FieldSet ) ) then
-      allocate ( FSG_T % FieldSet )
-      associate ( FS  =>  FSG_T % FieldSet )
-      call FS % Initialize &
-             ( FSG_S % FieldSet, &
+    if ( .not. allocated ( FSG_T % Storage ) ) then
+      allocate ( FSG_T % Storage )
+      associate ( S  =>  FSG_T % Storage )
+      call S % Initialize &
+             ( FSG_S % Storage, &
                VectorOption = FSG_T % Vector, &
                NameOption = FSG_T % Name, &
                VectorIndicesOption = FSG_T % VectorIndices, &
                iaSelectedOption = FSG_T % iaSelected )
-      end associate !-- FS
+      end associate !-- S
     end if
 
-  end subroutine CloneFieldSet
+  end subroutine CloneStorage
 
 
   subroutine StartExchangeFace &
@@ -901,18 +899,18 @@ contains
     select type ( G  =>  FSG % Chart )
     class is ( Grid_S_Form )
 
-    associate ( FS  =>  FSG % FieldSet )
+    associate ( S  =>  FSG % Storage )
 
     oBuffer = 0
-    do iS = 1, FS % nVariables
-      iF = FS % iaSelected ( iS )
-      call G % SetFieldPointer ( FS % Value ( :, iF ), F )
+    do iS = 1, S % nVariables
+      iF = S % iaSelected ( iS )
+      call G % SetFieldPointer ( S % Value ( :, iF ), F )
       call Copy ( F, nSend, oSend, oBuffer, OutgoingMessage % Value, &
                   UseDeviceOption = FSG % DevicesCommunicate )
       oBuffer = oBuffer + product ( nSend )
     end do !-- iS
 
-    end associate !-- FS
+    end associate !-- S
     end select !-- C
     nullify ( F )
 
@@ -947,18 +945,18 @@ contains
     select type ( G  =>  FSG % Chart )
     class is ( Grid_S_Form )
 
-    associate ( FS  =>  FSG % FieldSet )
+    associate ( S  =>  FSG % Storage )
 
     oBuffer = 0
-    do iS = 1, FS % nVariables          
-      iF = FS % iaSelected ( iS )
-      call G % SetFieldPointer ( FS % Value ( :, iF ), F )
+    do iS = 1, S % nVariables          
+      iF = S % iaSelected ( iS )
+      call G % SetFieldPointer ( S % Value ( :, iF ), F )
       call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, F, &
                   UseDeviceOption = FSG % DevicesCommunicate )
       oBuffer = oBuffer + product ( nReceive )
     end do !-- iS
     
-    end associate !-- FS
+    end associate !-- S
     end select !-- C
     nullify ( F )
 

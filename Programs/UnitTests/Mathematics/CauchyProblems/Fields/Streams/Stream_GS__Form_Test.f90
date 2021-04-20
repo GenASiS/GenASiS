@@ -170,7 +170,7 @@ contains
 
     call Show ( 'Set FieldSet' )
     call Show ( FSG % Name, 'FieldSet' )
-    call Clear ( FSG % FieldSet % Value )
+    call Clear ( FSG % Storage % Value )
 
     select type ( G  =>  FSG % Chart )
     class is ( Grid_S_Form )
@@ -180,8 +180,8 @@ contains
     do iS  =  1, FSG % nFields
       iF  =  FSG % iaSelected ( iS )
       associate &
-        ( F    =>  FSG % FieldSet % Value ( :, iF ), &
-          F_U  =>  FSG % FieldSet % Unit ( iF ) )
+        ( F    =>  FSG % Storage % Value ( :, iF ), &
+          F_U  =>  FSG % Storage % Unit ( iF ) )
       call G % SetFieldPointer ( F, F_3D )
 
       oC  =  ( G % iaBrick  -  1 )  *  nCB
@@ -216,8 +216,8 @@ contains
     do iS  =  1, FSG % nFields
       iF  =  FSG % iaSelected ( iS )
       associate &
-        ( F    =>  FSG % FieldSet % Value ( :, iF ), &
-          F_U  =>  FSG % FieldSet % Unit ( iF ) )
+        ( F    =>  FSG % Storage % Value ( :, iF ), &
+          F_U  =>  FSG % Storage % Unit ( iF ) )
       call G % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
       call Show ( nGhostExchanges, 'nGhostExchanges', CONSOLE % INFO_2 )
@@ -231,8 +231,8 @@ contains
       do iS  =  1, FSG % nFields
         iF  =  FSG % iaSelected ( iS )
       associate &
-        ( F    =>  FSG % FieldSet % Value ( :, iF ), &
-          F_U  =>  FSG % FieldSet % Unit ( iF ) )
+        ( F    =>  FSG % Storage % Value ( :, iF ), &
+          F_U  =>  FSG % Storage % Unit ( iF ) )
         call G % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
         call Show ( FSG % Field ( iF ), 'Field', CONSOLE % INFO_2 )
@@ -320,7 +320,7 @@ contains
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
       FSG
 
-    call Clear ( FSG % FieldSet % Value )
+    call Clear ( FSG % Storage % Value )
 
   end subroutine ClearFieldSet
 
@@ -349,8 +349,8 @@ contains
     do iS  =  1, FSG % nFields
       iF  =  FSG % iaSelected ( iS )
       associate &
-        ( F    =>  FSG % FieldSet % Value ( :, iF ), &
-          F_U  =>  FSG % FieldSet % Unit ( iF ) )
+        ( F    =>  FSG % Storage % Value ( :, iF ), &
+          F_U  =>  FSG % Storage % Unit ( iF ) )
       call G % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after reading', CONSOLE % INFO_2 )
       call Show ( FSG % Field ( iF ), 'Field', CONSOLE % INFO_2 )
@@ -389,8 +389,8 @@ contains
     do iS  =  1, nF
       iF  =  FSG % iaSelected ( iS )
       associate &
-        ( F_R  =>  FSG_R % FieldSet % Value ( :, iF ), &
-          F    =>  FSG   % FieldSet % Value ( :, iF ) )
+        ( F_R  =>  FSG_R % Storage % Value ( :, iF ), &
+          F    =>  FSG   % Storage % Value ( :, iF ) )
 
       !-- proper cells only
       CO % Outgoing % Value ( iS )  &
