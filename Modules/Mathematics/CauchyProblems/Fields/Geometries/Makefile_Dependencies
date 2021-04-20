@@ -2,6 +2,7 @@ Geometry_F_CH__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
+  Streams.o \
   Geometry_F_CH__Form.f90
 
 Geometry_F_CH__Kernel.o: \

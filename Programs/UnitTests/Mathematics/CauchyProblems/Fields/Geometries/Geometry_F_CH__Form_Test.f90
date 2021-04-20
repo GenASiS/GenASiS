@@ -9,8 +9,8 @@ program Geometry_F_CH__Form_Test
 
   implicit none
 
-  ! type ( MeasuredValueForm ), dimension ( 5 ) :: &
-  !   FieldUnit
+  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    CoordinateUnit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Chart_H_Form ), allocatable :: &
@@ -29,36 +29,26 @@ program Geometry_F_CH__Form_Test
          ( PROGRAM_HEADER % Name, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
+  CoordinateUnit  =  UNIT % KILOMETER
+
   allocate ( C )
-  call C % Initialize_H ( PeriodicOption = [ .true., .true., .true. ] )
-
-  ! FieldUnit ( 1 )      =  UNIT % MASS_DENSITY_MKS
-  ! FieldUnit ( 2 : 4 )  =  UNIT % SPEED_MKS
-  ! FieldUnit ( 5 )      =  UNIT % JOULE
-
-  allocate ( GC )
-  call GC % Initialize_H &
-         ( C ) !UnitOption = FieldUnit )
+  call C % Initialize_H &
+         ( PeriodicOption = [ .true., .true., .true. ], &
+           CoordinateUnitOption = CoordinateUnit )
 
   allocate ( SC )
   call SC % Initialize_H ( C, GIS )
 
-  ! call CONSOLE % SetVerbosity ( 'INFO_2' )
-  ! call SC % AddFieldSet ( FSC )
-  ! call SC % AddFieldSet ( FSC_234 )
-  ! call SC % AddFieldSet ( FSC_5 )
-  ! call CONSOLE % SetVerbosity ( 'INFO_1' )
+  allocate ( GC )
+  call GC % Initialize_H ( C )
+  call GC % SetStream ( SC )
 
-  call   C % Show ( )
-  ! call FSC     % Show ( )
-  ! call FSC_234 % Show ( )
-  ! call FSC_5   % Show ( )
-  call  SC % Show ( )
+  call  C % Show ( )
+  call GC % Show ( )
+  call SC % Show ( )
 
   deallocate ( GC )
   deallocate ( SC )
-  ! deallocate ( FSC_5 )
-  ! deallocate ( FSC_234 )
   deallocate ( C )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
