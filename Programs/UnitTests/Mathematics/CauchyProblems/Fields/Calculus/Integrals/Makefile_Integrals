@@ -6,10 +6,10 @@ all: VolumeIntegral_Form_Test #SurfaceIntegral_Form_Test \
      SphericalAverage_Form_Test
 
 VolumeIntegral_Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Integrals.a VolumeIntegral_Form_Test.o
+  Geometries.a Integrals.a VolumeIntegral_Form_Test.o
 	$(LINK) $(FLAGS) -o VolumeIntegral_Form_Test_$(MACHINE) \
           VolumeIntegral_Form_Test.o Integrals.a \
-          Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
 # SurfaceIntegral_Form_Test: Basics.a Manifolds.a SurfaceIntegral_Form_Test.o
 # 	$(LINK) $(FLAGS) -o SurfaceIntegral_Form_Test_$(MACHINE) \
@@ -32,7 +32,8 @@ clobber: clean
 include $(PATH_BASICS)/Makefile_Dependencies 
 include $(PATH_MANIFOLDS)/Makefile_Dependencies 
 include $(PATH_FIELD_SETS)/Makefile_Dependencies 
-include $(PATH_STREAMS)/Makefile_Dependencies 
+include $(PATH_STREAMS)/Makefile_Dependencies
+include $(PATH_GEOMETRIES)/Makefile_Dependencies 
 include $(PATH_INTEGRALS)/Makefile_Dependencies 
 
 VolumeIntegral_Form_Test.o: \

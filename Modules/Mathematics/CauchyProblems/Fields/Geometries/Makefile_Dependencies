@@ -1,0 +1,17 @@
+Geometry_F_CH__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometry_F_CH__Form.f90
+
+Geometry_F_CH__Kernel.o: \
+  Basics.o \
+  Geometry_F_CH__Form.o \
+  Geometry_F_CH__Kernel.f90
+
+Geometries.o: \
+  Geometry_F_CH__Form.o \
+  Geometries.f90
+
+Geometries.a: $(GEOMETRIES)
+	ar r Geometries.a $(GEOMETRIES)
