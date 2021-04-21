@@ -48,6 +48,7 @@ program Stream_ASG__Form_Test
   call SA % Write ( )
   call GIS % Close ( )
 
+  deallocate ( SA )
   deallocate ( FSA )
   deallocate ( A )
   deallocate ( GIS )

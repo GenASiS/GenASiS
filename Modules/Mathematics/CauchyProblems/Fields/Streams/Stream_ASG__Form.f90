@@ -14,11 +14,12 @@ module Stream_ASG__Form
     class ( Stream_GS_Form ), pointer :: &
       Stream_G => null ( )
   contains
-   procedure, public, pass :: &
-     Initialize
+    procedure, public, pass :: &
+      Initialize
     final :: &
       Finalize
   end type Stream_ASG_Form
+
 
 contains
 
@@ -36,11 +37,6 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       VerboseOption
 
-!     !-- FIXME: This shouldn't be necessary, but for some reason GCC 10.1.0
-!     !          doesn't compile without it
-!     class ( Grid_S_Form ), pointer :: &
-!       G_Pointer
-
     if ( SA % Type  ==  '' ) &
       SA % Type  =  'a Stream_ASG'
 
@@ -53,8 +49,6 @@ contains
     select type ( G  =>  A % Chart ( 1 ) % Element )
     class is ( Grid_S_Form )
 
-!     !-- FIXME: See FIXME above
-!     G_Pointer  =>  G
     call SG % Initialize ( G, GIS, NameOption, VerboseOption )
 
     SA % Stream_G  =>  SG

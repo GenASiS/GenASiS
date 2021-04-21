@@ -14,18 +14,17 @@ module FieldSet_ASG__Form
     class ( FieldSet_GS_Form ), pointer :: &
       FieldSet_G => null ( )
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_ASG
-    generic, public :: &
-      Initialize => InitializeAllocate_ASG
+    procedure, public, pass :: &
+      Initialize
     final :: &
       Finalize
   end type FieldSet_ASG_Form
 
+
 contains
 
 
-  subroutine InitializeAllocate_ASG &
+  subroutine Initialize &
                ( FSA, A, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
@@ -81,12 +80,12 @@ contains
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'FieldSet_ASG__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeAllocate_ASG', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- G
     end select !-- FSG
 
-  end subroutine InitializeAllocate_ASG
+  end subroutine Initialize
 
 
   impure elemental subroutine Finalize ( FSA )

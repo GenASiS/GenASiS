@@ -27,10 +27,9 @@ contains
 
 
   subroutine Initialize &
-               ( GG, G, NameOption, FieldOption, &
+               ( GG, G, NameOption, nFieldsOption, FieldOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, &
-                 nFieldsOption )
+                 DevicesCommunicateOption, UnitOption )
 
     class ( Geometry_F_GS_Form ), intent ( inout ) :: &
       GG
