@@ -1,4 +1,5 @@
 GEOMETRIES = \
   Geometries.o \
+  Geometry_F_GS__Form.o \
   Geometry_F_CH__Kernel.o \
   Geometry_F_CH__Form.o

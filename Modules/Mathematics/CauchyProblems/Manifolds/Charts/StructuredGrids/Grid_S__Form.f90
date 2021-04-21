@@ -303,16 +303,15 @@ contains
     call Show ( C % nGhostLayers ( : nD ), 'nGhostLayers', C % IGNORABILITY )
 
     call Show ( C % Distributed, 'Distributed', C % IGNORABILITY )
-    if ( C % Distributed ) then
+    if ( C % Distributed ) &
       call Show ( C % Communicator % Name,  'Communicator', &
                   C % IGNORABILITY )
-      call Show ( C % nBricks ( : nD ),     'nBricks', &
-                  C % IGNORABILITY )
-      call Show ( C % iaBrick ( : nD ),     'iaBrick',      &
-                  C % IGNORABILITY + 1 )
-      call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', &
-                  C % IGNORABILITY )
-    end if !-- Distributed
+    call Show ( C % nBricks ( : nD ),     'nBricks', &
+                C % IGNORABILITY )
+    call Show ( C % iaBrick ( : nD ),     'iaBrick',      &
+                C % IGNORABILITY + 1 )
+    call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', &
+                C % IGNORABILITY )
 
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY + 1 )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY + 1 )
@@ -579,6 +578,10 @@ contains
       call SetCellsLocal ( G, G % nCellsBrick )
 
     else  !-- not Distributed
+
+      G % nBricks      =  [ 1, 1, 1 ]
+      G % nCellsBrick  =  G % nCells
+      G % iaBrick      =  [ 1, 1, 1 ]
 
       call SetCellsLocal ( G, G % nCells )
 

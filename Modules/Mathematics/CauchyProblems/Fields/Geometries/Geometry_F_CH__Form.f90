@@ -186,24 +186,21 @@ contains
 
 
   subroutine Initialize_H &
-               ( GC, C, FieldOption, VectorOption, NameOption, UnitOption, &
-                  VectorIndicesOption, nFieldsOption )
+               ( GC, C, NameOption, nFieldsOption, FieldOption, UnitOption )
 
     class ( Geometry_F_CH_Form ), intent ( inout ) :: &
       GC
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
-    character ( * ), dimension ( : ), intent ( in ), optional :: &
-      FieldOption, &
-      VectorOption
-    character ( * ), intent ( in ), optional :: &
+    character ( * ), intent ( inout ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      UnitOption
-    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
-      VectorIndicesOption
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
+    character ( * ), dimension ( : ), intent ( out ), allocatable, optional :: &
+      FieldOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( out ), allocatable, &
+      optional :: &
+        UnitOption
 
     integer ( KDI ) :: &
       nFields
@@ -215,8 +212,13 @@ contains
       Field
 
     Name  =  'Geometry'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
+    if ( present ( NameOption ) ) then
+      if ( NameOption  ==  '' ) then
+        NameOption  =  Name
+      else
+        Name  =  NameOption
+      end if
+    end if
 
     !-- Field indices
 
@@ -251,11 +253,7 @@ contains
 
     !-- Field names
 
-    if ( present ( FieldOption ) ) then
-      Field  =  FieldOption
-    else
-      allocate ( Field ( nFields ) )
-    end if
+    allocate ( Field ( nFields ) )
 
     Field ( 1 : GC % N_FIELDS_FLAT ) &
       = [ 'Edge_I_U_1    ', &
@@ -278,36 +276,36 @@ contains
           'Metric_F_UU_22', &
           'Metric_F_UU_33' ]
 
+    if ( present ( FieldOption ) ) &
+      allocate ( FieldOption, source = Field )
+
     !-- Units
 
-    if ( present ( UnitOption ) ) then
-      Unit  =  UnitOption
-    else
-      allocate ( Unit ( nFields ) )
-    end if
+    allocate ( Unit ( nFields ) )
 
     call SetUnits ( Unit, GC, C )
 
+    if ( present ( UnitOption ) ) &
+      allocate ( UnitOption, source = Unit )
+
     !-- FieldSet
 
-    if ( .not. allocated ( GC % FieldSet ) ) &
+    if ( .not. allocated ( GC % FieldSet ) ) then
+
       allocate ( GC % FieldSet )
+      associate ( FS  =>  GC % FieldSet )
 
-    associate ( FS  =>  GC % FieldSet )
-    
-    if ( FS % Type == '' ) &
-      FS % Type  =  'a Geometry_F_C'
-    
-    call FS % Initialize_H &
-           ( C, &
-             FieldOption = Field, &
-             VectorOption = VectorOption, &
-             NameOption = Name, &
-             UnitOption = Unit, &
-             VectorIndicesOption = VectorIndicesOption, &
-             nFieldsOption = nFields )
+      FS % Type  =  'a Geometry_F_C'    
 
-    end associate !-- FS
+      call FS % Initialize_H &
+             ( C, &
+               FieldOption = Field, &
+               NameOption = Name, &
+               UnitOption = Unit, &
+               nFieldsOption = nFields )
+
+      end associate !-- FS
+    end if
 
   end subroutine Initialize_H
 
@@ -447,6 +445,9 @@ contains
 
     type ( Geometry_F_CH_Form ), intent ( inout ) :: &
       GC
+
+    if ( allocated ( GC % FieldSet ) ) &
+      deallocate ( GC % FieldSet )
 
   end subroutine Finalize
 
