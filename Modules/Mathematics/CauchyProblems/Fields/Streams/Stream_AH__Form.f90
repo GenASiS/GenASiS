@@ -116,7 +116,7 @@ contains
       if ( allocated ( SA % Stream_C ( iC ) % Element ) ) then
         associate ( SC  =>  SA % Stream_C ( iC ) % Element )
         call SC % Show ( )
-        end associate !-- C
+        end associate !-- SC
       end if  
     end do !-- iC
 

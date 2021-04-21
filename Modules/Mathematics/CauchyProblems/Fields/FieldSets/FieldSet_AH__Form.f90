@@ -111,7 +111,7 @@ contains
       if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
         associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
         call FSC % Show ( )
-        end associate !-- C
+        end associate !-- FSC
       end if  
     end do !-- iC
 

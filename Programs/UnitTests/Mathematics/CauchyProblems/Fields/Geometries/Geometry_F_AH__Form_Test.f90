@@ -1,11 +1,11 @@
-program Stream_AH__Form_Test
+program Geometry_F_AH__Form_Test
 
-  !-- Stream_AtlasHeader__Form_Test
+  !-- Geometry_F_AtlasHeader__Form_Test
 
   use Basics
   use Manifolds
-  use FieldSets
   use Streams
+  use Geometries
 
   implicit none
 
@@ -13,14 +13,14 @@ program Stream_AH__Form_Test
     GIS
   type ( Atlas_H_Form ), allocatable :: &
     A
-  type ( FieldSet_AH_Form ), allocatable :: &
-    FSA
   type ( Stream_AH_Form ), allocatable :: &
     SA
+  type ( Geometry_F_AH_Form ), allocatable :: &
+    GA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Stream_AH__Form_Test', DimensionalityOption = '2D' )
+         ( 'Geometry_AH__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -35,34 +35,32 @@ program Stream_AH__Form_Test
          ( PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
 
-  allocate ( FSA )
-  call FSA % Initialize_H ( A )
-  allocate ( FSA % FieldSet_C ( 1 ) % Element )
-  associate ( FSC  =>  FSA % FieldSet_C ( 1 ) % Element )
-  call FSC % Initialize_H ( C )
-
   allocate ( SA )
   call SA % Initialize_H ( A )
   allocate ( SA % Stream_C ( 1 ) % Element )
   associate ( SC  =>  SA % Stream_C ( 1 ) % Element )
   call SC % Initialize_H ( C, GIS )
 
-  end associate !--  SC
-  end associate !-- FSC
-  end associate !--   C
+  allocate ( GA )
+  call GA % Initialize_H ( A )
+  allocate ( GA % Geometry_C ( 1 ) % Element )
+  associate ( GC  =>  GA % Geometry_C ( 1 ) % Element )
+  call GC % Initialize_H ( C )
 
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call SA % AddFieldSet ( FSA )
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
+  end associate !-- GC
+  end associate !-- SC
+  end associate !--  C
 
-  call   A % Show ( )
-  call FSA % Show ( )
-  call  SA % Show ( )
+  call GA % SetStream ( SA )
 
+  call  A % Show ( )
+  call GA % Show ( )
+  call SA % Show ( )
+
+  deallocate ( GA )
   deallocate ( SA )
-  deallocate ( FSA )
   deallocate ( A )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
-end program Stream_AH__Form_Test
+end program Geometry_F_AH__Form_Test

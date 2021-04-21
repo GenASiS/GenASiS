@@ -3,7 +3,7 @@ PATH_GENASIS = ../../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Geometry_F_CH__Form_Test Geometry_F_GS__Form_Test \
-  # Geometry_F_AH__Form_Test Geometry_F_ASG__Form_Test
+  Geometry_F_AH__Form_Test #Geometry_F_ASG__Form_Test
 
 Geometry_F_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
   Geometries.a Geometry_F_CH__Form_Test.o

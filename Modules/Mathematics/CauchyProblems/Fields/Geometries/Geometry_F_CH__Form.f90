@@ -63,6 +63,15 @@ module Geometry_F_CH__Form
       Finalize
   end type Geometry_F_CH_Form
 
+  type, public :: Geometry_C_Element
+    !-- Geometry_Chart_Element
+    class ( Geometry_F_CH_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type Geometry_C_Element
+
     private :: &
       SetUnits, &
       Compute_FV_R_Kernel, &
@@ -452,6 +461,17 @@ contains
   end subroutine Finalize
 
   
+  impure elemental subroutine Finalize_E ( GE )
+    
+    type ( Geometry_C_Element ), intent ( inout ) :: &
+      GE
+
+    if ( allocated ( GE % Element ) ) &
+      deallocate ( GE % Element )
+
+  end subroutine Finalize_E
+
+
   subroutine SetUnits ( FieldUnit, GC, C )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
