@@ -4,6 +4,6 @@ module Fields
   use Streams
   use Geometries
   use Calculus
-!  use Currents  
+  use CurrentSets
 
 end module Fields

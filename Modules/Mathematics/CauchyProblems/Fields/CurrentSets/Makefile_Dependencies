@@ -1,0 +1,9 @@
+CurrentSet_CH__Form.o: \
+  CurrentSet_CH__Form.f90
+
+CurrentSets.o: \
+  CurrentSet_CH__Form.o \
+  CurrentSets.f90
+
+CurrentSets.a: $(CURRENT_SETS)
+	ar r CurrentSets.a $(CURRENT_SETS)

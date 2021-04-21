@@ -1,0 +1,3 @@
+CURRENT_SETS = \
+  CurrentSets.o \
+  CurrentSet_CH__Form.o
