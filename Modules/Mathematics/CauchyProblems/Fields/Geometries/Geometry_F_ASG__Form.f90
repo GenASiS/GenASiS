@@ -4,6 +4,7 @@ module Geometry_F_ASG__Form
 
   use Basics
   use Manifolds
+  use FieldSets
   use Geometry_F_GS__Form
   use Geometry_F_AH__Form
 
@@ -11,6 +12,8 @@ module Geometry_F_ASG__Form
   private
 
   type, public, extends ( Geometry_F_AH_Form ) :: Geometry_F_ASG_Form
+    class ( FieldSet_GS_Form ), pointer :: &
+      FieldSet_G => null ( )
     class ( Geometry_F_GS_Form ), pointer :: &
       Geometry_G => null ( )
   contains
@@ -66,6 +69,11 @@ contains
              DevicesCommunicateOption, UnitOption )
 
     GA % Geometry_G  =>  GG
+    
+    select type ( FSG  =>  GG % FieldSet )
+    class is ( FieldSet_GS_Form )
+      GA % FieldSet_G  =>  FSG
+    end select
 
     call GA % Compute ( )
 
@@ -104,6 +112,7 @@ contains
       GA
 
     nullify ( GA % Geometry_G )
+    nullify ( GA % FieldSet_G )
 
   end subroutine Finalize
 

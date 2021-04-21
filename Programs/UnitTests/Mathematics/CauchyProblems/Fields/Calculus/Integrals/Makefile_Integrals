@@ -40,6 +40,7 @@ VolumeIntegral_Form_Test.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
+  Geometries.o \
   Integrals.o \
   VolumeIntegral_Form_Test.f90
 

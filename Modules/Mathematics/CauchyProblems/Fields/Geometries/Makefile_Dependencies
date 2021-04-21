@@ -27,6 +27,7 @@ Geometry_F_AH__Form.o: \
 Geometry_F_ASG__Form.o: \
   Basics.o \
   Manifolds.o \
+  FieldSets.o \
   Geometry_F_GS__Form.o \
   Geometry_F_AH__Form.o \
   Geometry_F_ASG__Form.f90
