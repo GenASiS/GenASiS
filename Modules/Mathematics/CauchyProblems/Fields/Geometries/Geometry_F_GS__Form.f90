@@ -61,7 +61,7 @@ contains
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    nFields  =  GG % N_FIELDS_FLAT
+    nFields  =  GG % N_FIELDS_F
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 

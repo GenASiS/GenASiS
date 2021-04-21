@@ -1,4 +1,6 @@
 CurrentSet_CH__Form.o: \
+  Basics.o \
+  Manifolds.o \
   CurrentSet_CH__Form.f90
 
 CurrentSets.o: \

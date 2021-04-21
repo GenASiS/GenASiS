@@ -11,13 +11,13 @@ module Geometry_F_CH__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_FLAT  = 19, &
-      N_VECTORS_FLAT =  0
+      N_FIELDS_F  = 19, &
+      N_VECTORS_F =  0
 
   type, public :: Geometry_F_CH_Form
     integer ( KDI ) :: &
-      N_FIELDS_FLAT = N_FIELDS_FLAT, &
-      N_VECTORS_FLAT = N_VECTORS_FLAT
+      N_FIELDS_F = N_FIELDS_F, &
+      N_VECTORS_F = N_VECTORS_F
     integer ( KDI ) :: &
       !-- Coordinate fields
       EDGE_I_U_1   = 0, &
@@ -251,7 +251,7 @@ contains
     GC % METRIC_F_UU_22  =  18
     GC % METRIC_F_UU_33  =  19
 
-    nFields  =  GC % N_FIELDS_FLAT
+    nFields  =  GC % N_FIELDS_F
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
@@ -264,7 +264,7 @@ contains
 
     allocate ( Field ( nFields ) )
 
-    Field ( 1 : GC % N_FIELDS_FLAT ) &
+    Field ( 1 : GC % N_FIELDS_F ) &
       = [ 'Edge_I_U_1    ', &
           'Edge_I_U_2    ', &
           'Edge_I_U_3    ', &
