@@ -53,22 +53,14 @@ module Geometry_F_C__Form
   contains
     procedure, public, pass :: &
       Initialize
-    procedure, private, pass ( GC ) :: &
-      Compute_CGS
-    generic, public :: &
-      Compute => Compute_CGS
+    procedure, public, pass :: &
+      Compute
     procedure, public, pass ( GC ) :: &
       SetStream
     procedure, public, pass :: &
       Show => Show_GC
     final :: &
       Finalize
-    procedure, private, pass ( GC ) :: &
-      SetCoordinates_CGS
-    generic, public :: &
-      SetCoordinates => SetCoordinates_CGS
-    procedure, public, pass ( GC ):: &
-      ComputeFromCoordinates
   end type Geometry_F_C_Form
 
   type, public :: Geometry_C_Element
@@ -82,12 +74,19 @@ module Geometry_F_C__Form
 
     private :: &
       SetUnits, &
-      Compute_FV_R_Kernel, &
-      Compute_FV_C_Kernel, &
-      Compute_FV_S_Kernel, &
-      Compute_M_R_Kernel, &
-      Compute_M_C_Kernel, &
-      Compute_M_S_Kernel
+      Compute_CGS
+
+      private :: &
+        SetCoordinates_CGS, &
+        ComputeFromCoordinates
+
+        private :: &
+          Compute_FV_R_Kernel, &
+          Compute_FV_C_Kernel, &
+          Compute_FV_S_Kernel, &
+          Compute_M_R_Kernel, &
+          Compute_M_C_Kernel, &
+          Compute_M_S_Kernel
 
     interface
       
@@ -203,9 +202,9 @@ contains
 
 
   subroutine Initialize &
-               ( GC, C, NameOption, nFieldsOption, FieldOption, &
-                 DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption )
+               ( GC, C, NameOption, nFieldsOption, DeviceMemoryOption, &
+                 PinnedMemoryOption, DevicesCommunicateOption, FieldOption, &
+                 UnitOption )
 
     class ( Geometry_F_C_Form ), intent ( inout ) :: &
       GC
@@ -215,12 +214,12 @@ contains
       NameOption
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
-    character ( * ), dimension ( : ), intent ( out ), allocatable, optional :: &
-      FieldOption
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
+    character ( * ), dimension ( : ), intent ( out ), allocatable, optional :: &
+      FieldOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( out ), allocatable, &
       optional :: &
         UnitOption
@@ -334,8 +333,6 @@ contains
                  UnitOption = Unit, &
                  nFieldsOption = nFields )
 
-          call GC % Compute ( FS )
-
         end select !-- FS
 
       class default
@@ -346,30 +343,26 @@ contains
 
     end if !-- allocated FieldSet
 
+    call GC % Compute ( )
+
   end subroutine Initialize
 
 
-  subroutine Compute_CGS ( GFSC, GC )
+  subroutine Compute ( GC )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      GFSC  
-    class ( Geometry_F_C_Form ), intent ( in ) :: &
+    class ( Geometry_F_C_Form ), intent ( inout ) :: &
       GC
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
+    select type ( GFSC  =>  GC % FieldSet )
+    class is ( FieldSet_GS_Form )
+      call Compute_CGS ( GFSC, GC )
+    class default
+      call Show ( 'FieldSet type not recognized', CONSOLE % ERROR )
+      call Show ( 'Geometry_F_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )      
+    end select !-- GFSC
 
-    associate ( nD  =>  GFSC % Chart % nDimensions )
-
-    do iD = 1, nD
-      call GC % SetCoordinates ( GFSC, iD )
-    end do !-- iD
-
-    call GC % ComputeFromCoordinates ( GFSC % Storage )
-
-    end associate !-- nD
-
-  end subroutine Compute_CGS
+  end subroutine Compute
 
 
   subroutine SetStream ( SC, GC )
@@ -410,6 +403,114 @@ contains
   end subroutine Finalize
 
   
+  impure elemental subroutine Finalize_E ( GE )
+    
+    type ( Geometry_C_Element ), intent ( inout ) :: &
+      GE
+
+    if ( allocated ( GE % Element ) ) &
+      deallocate ( GE % Element )
+
+  end subroutine Finalize_E
+
+
+  subroutine SetUnits ( FieldUnit, GC, C )
+
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+      FieldUnit
+    class ( Geometry_F_C_Form ), intent ( in ) :: &
+      GC
+    class ( Chart_H_Form ), intent ( in ) :: &
+      C
+
+    associate &
+      ( CoordinateUnit    =>  C % CoordinateUnit, &
+        CoordinateSystem  =>  C % CoordinateSystem )
+
+    FieldUnit ( GC % EDGE_I_U_1 : GC % EDGE_I_U_3 ) &
+      = CoordinateUnit
+    FieldUnit ( GC % WIDTH_U_1 : GC % WIDTH_U_3 ) &
+      = CoordinateUnit
+    FieldUnit ( GC % CENTER_U_1 : GC % CENTER_U_3 ) &
+      = CoordinateUnit
+
+    select case ( trim ( CoordinateSystem ) )
+    case ( 'RECTANGULAR' )
+      FieldUnit ( GC % VOLUME )  &
+        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )  &
+           *  CoordinateUnit ( 3 )
+      FieldUnit ( GC % AREA_I_D_1 )  &
+        =  CoordinateUnit ( 2 )  *  CoordinateUnit ( 3 )
+      FieldUnit ( GC % AREA_I_D_2 )  &
+        =  CoordinateUnit ( 3 )  *  CoordinateUnit ( 1 )
+      FieldUnit ( GC % AREA_I_D_3 )  &
+        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_33 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_33 ) = UNIT % IDENTITY
+    case ( 'CYLINDRICAL' )
+      FieldUnit ( GC % VOLUME )  &
+        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % AREA_I_D_1 )  &
+        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % AREA_I_D_2 )  &
+        =  CoordinateUnit ( 1 ) ** 2
+      FieldUnit ( GC % AREA_I_D_3 )  &
+        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
+      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
+      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_22 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_33 ) = CoordinateUnit ( 1 ) ** ( -2 )
+    case ( 'SPHERICAL' )
+      FieldUnit ( GC % VOLUME )  &
+        = CoordinateUnit ( 1 ) ** 3
+      FieldUnit ( GC % AREA_I_D_1 )  &
+        =  CoordinateUnit ( 1 ) ** 2
+      FieldUnit ( GC % AREA_I_D_2 )  &
+        =  CoordinateUnit ( 1 ) ** 3
+      FieldUnit ( GC % AREA_I_D_3 )  &
+        =  CoordinateUnit ( 1 ) ** 3
+      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_DD_22 ) = CoordinateUnit ( 1 ) ** (  2 )
+      FieldUnit ( GC % METRIC_F_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
+      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
+      FieldUnit ( GC % METRIC_F_UU_22 ) = CoordinateUnit ( 1 ) ** ( -2 )
+      FieldUnit ( GC % METRIC_F_UU_33 ) = CoordinateUnit ( 1 ) ** ( -2 )
+    end select !-- CoordinateSystem
+
+    end associate !-- CoordinateUnit
+
+  end subroutine SetUnits
+
+  
+  subroutine Compute_CGS ( GFSC, GC )
+
+    class ( FieldSet_GS_Form ), intent ( inout ) :: &
+      GFSC  
+    class ( Geometry_F_C_Form ), intent ( in ) :: &
+      GC
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    associate ( nD  =>  GFSC % Chart % nDimensions )
+
+    do iD = 1, nD
+      call SetCoordinates_CGS ( GFSC, GC, iD )
+    end do !-- iD
+
+    call ComputeFromCoordinates ( GFSC % Storage, GC )
+
+    end associate !-- nD
+
+  end subroutine Compute_CGS
+
+
   subroutine SetCoordinates_CGS ( GFSC, GC, iD )
 
     class ( FieldSet_GS_Form ), intent ( inout ) :: &
@@ -581,89 +682,4 @@ contains
   end subroutine ComputeFromCoordinates
 
 
-  impure elemental subroutine Finalize_E ( GE )
-    
-    type ( Geometry_C_Element ), intent ( inout ) :: &
-      GE
-
-    if ( allocated ( GE % Element ) ) &
-      deallocate ( GE % Element )
-
-  end subroutine Finalize_E
-
-
-  subroutine SetUnits ( FieldUnit, GC, C )
-
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
-      FieldUnit
-    class ( Geometry_F_C_Form ), intent ( in ) :: &
-      GC
-    class ( Chart_H_Form ), intent ( in ) :: &
-      C
-
-    associate &
-      ( CoordinateUnit    =>  C % CoordinateUnit, &
-        CoordinateSystem  =>  C % CoordinateSystem )
-
-    FieldUnit ( GC % EDGE_I_U_1 : GC % EDGE_I_U_3 ) &
-      = CoordinateUnit
-    FieldUnit ( GC % WIDTH_U_1 : GC % WIDTH_U_3 ) &
-      = CoordinateUnit
-    FieldUnit ( GC % CENTER_U_1 : GC % CENTER_U_3 ) &
-      = CoordinateUnit
-
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'RECTANGULAR' )
-      FieldUnit ( GC % VOLUME )  &
-        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )  &
-           *  CoordinateUnit ( 3 )
-      FieldUnit ( GC % AREA_I_D_1 )  &
-        =  CoordinateUnit ( 2 )  *  CoordinateUnit ( 3 )
-      FieldUnit ( GC % AREA_I_D_2 )  &
-        =  CoordinateUnit ( 3 )  *  CoordinateUnit ( 1 )
-      FieldUnit ( GC % AREA_I_D_3 )  &
-        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
-      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_DD_22 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_DD_33 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_UU_22 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_UU_33 ) = UNIT % IDENTITY
-    case ( 'CYLINDRICAL' )
-      FieldUnit ( GC % VOLUME )  &
-        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
-      FieldUnit ( GC % AREA_I_D_1 )  &
-        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
-      FieldUnit ( GC % AREA_I_D_2 )  &
-        =  CoordinateUnit ( 1 ) ** 2
-      FieldUnit ( GC % AREA_I_D_3 )  &
-        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
-      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_DD_22 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
-      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_UU_22 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_UU_33 ) = CoordinateUnit ( 1 ) ** ( -2 )
-    case ( 'SPHERICAL' )
-      FieldUnit ( GC % VOLUME )  &
-        = CoordinateUnit ( 1 ) ** 3
-      FieldUnit ( GC % AREA_I_D_1 )  &
-        =  CoordinateUnit ( 1 ) ** 2
-      FieldUnit ( GC % AREA_I_D_2 )  &
-        =  CoordinateUnit ( 1 ) ** 3
-      FieldUnit ( GC % AREA_I_D_3 )  &
-        =  CoordinateUnit ( 1 ) ** 3
-      FieldUnit ( GC % METRIC_F_DD_11 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_DD_22 ) = CoordinateUnit ( 1 ) ** (  2 )
-      FieldUnit ( GC % METRIC_F_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
-      FieldUnit ( GC % METRIC_F_UU_11 ) = UNIT % IDENTITY
-      FieldUnit ( GC % METRIC_F_UU_22 ) = CoordinateUnit ( 1 ) ** ( -2 )
-      FieldUnit ( GC % METRIC_F_UU_33 ) = CoordinateUnit ( 1 ) ** ( -2 )
-    end select !-- CoordinateSystem
-
-    end associate !-- CoordinateUnit
-
-  end subroutine SetUnits
-
-  
 end module Geometry_F_C__Form
