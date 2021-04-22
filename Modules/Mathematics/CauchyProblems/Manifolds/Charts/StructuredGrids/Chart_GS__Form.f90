@@ -1,6 +1,6 @@
-module Grid_S__Form
+module Chart_GS__Form
 
-  !-- Grid_Structured__Form
+  !-- Chart_GridStructured__Form
 
   use Basics
   use Chart_H__Form
@@ -11,7 +11,7 @@ module Grid_S__Form
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = 3
 
-  type, public, extends ( Chart_H_Form ) :: Grid_S_Form
+  type, public, extends ( Chart_H_Form ) :: Chart_GS_Form
     integer ( KDI ) :: &
       nEqual, &
       nCellsProper, &
@@ -65,7 +65,7 @@ module Grid_S__Form
       SetFieldPointer => SetFieldPointer_1D_3D
     final :: &
       Finalize
-  end type Grid_S_Form
+  end type Chart_GS_Form
 
     private :: &
       SetCoordinateMetadata, &
@@ -91,7 +91,7 @@ contains
 
 
   subroutine Initialize_GS &
-               ( G, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
+               ( C, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, NameOption, PeriodicOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
                  MaxCoordinateOption, RatioOption, ScaleOption, &
@@ -99,8 +99,8 @@ contains
                  nBricksCompatibleOption, IgnorabilityOption, &
                  nDimensionsOption, nEqualOption, iDimensionalityOption )
 
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -132,35 +132,35 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
 
-    if ( G % Type  ==  '' ) &
-      G % Type  =  'a Grid_S'
+    if ( C % Type  ==  '' ) &
+      C % Type  =  'a Chart_GS'
 
-    call G % Initialize_H &
+    call C % Initialize_H &
            ( CoordinateLabelOption, CoordinateSystemOption, NameOption, &
              PeriodicOption, CoordinateUnitOption, IgnorabilityOption, &
              nDimensionsOption, iDimensionalityOption )
 
     call SetCoordinateMetadata &
-           ( G, SpacingOption, MinCoordinateOption, MaxCoordinateOption, &
+           ( C, SpacingOption, MinCoordinateOption, MaxCoordinateOption, &
              RatioOption, ScaleOption, nEqualOption )
 
     call SetCells &
-           ( G, nCellsOption, nGhostLayersOption )
+           ( C, nCellsOption, nGhostLayersOption )
 
     call SetDecomposition &
-           ( G, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
+           ( C, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
 
-    do iD = 1, G % nDimensions
-      call ComputeCoordinateData ( G, iD )
+    do iD = 1, C % nDimensions
+      call ComputeCoordinateData ( C, iD )
     end do !-- iD
 
   end subroutine Initialize_GS
 
 
-  subroutine ComputeCoordinateData ( G, iD, EdgeValueOption )
+  subroutine ComputeCoordinateData ( C, iD, EdgeValueOption )
 
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
     integer ( KDI ), intent ( in ) :: &
       iD      !-- iDimension
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -172,63 +172,63 @@ contains
       Width_IG, &
       Width_OG
 
-    if ( .not. allocated ( G % Edge ) ) &
-      allocate ( G % Edge ( MAX_DIMENSIONS ) )
-    if ( .not. allocated ( G % Width ) ) &
-      allocate ( G % Width  ( MAX_DIMENSIONS ) )
-    if ( .not. allocated ( G % Center ) ) &
-      allocate ( G % Center ( MAX_DIMENSIONS ) )
+    if ( .not. allocated ( C % Edge ) ) &
+      allocate ( C % Edge ( MAX_DIMENSIONS ) )
+    if ( .not. allocated ( C % Width ) ) &
+      allocate ( C % Width  ( MAX_DIMENSIONS ) )
+    if ( .not. allocated ( C % Center ) ) &
+      allocate ( C % Center ( MAX_DIMENSIONS ) )
 
     associate &
-      (  nC => G % nCells ( iD ), &
-        nGL => G % nGhostLayers ( iD ) )
+      (  nC => C % nCells ( iD ), &
+        nGL => C % nGhostLayers ( iD ) )
 
-    if ( .not. allocated ( G % Edge ( iD ) % Value ) ) &
-      call G % Edge ( iD ) % Initialize &
+    if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
+      call C % Edge ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL + 1, &
                iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( G % Width ( iD ) % Value ) ) &
-      call G % Width ( iD ) % Initialize &
+    if ( .not. allocated ( C % Width ( iD ) % Value ) ) &
+      call C % Width ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
-    if ( .not. allocated ( G % Center ( iD ) % Value ) ) &
-      call G % Center ( iD ) % Initialize &
+    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
+      call C % Center ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
 
     !-- Edge, proper cells
     if ( present ( EdgeValueOption ) ) then
-      G % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
-      G % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
-      G % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
+      C % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
+      C % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
+      C % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
     else
-      select case ( trim ( G % Spacing ( iD ) ) )
+      select case ( trim ( C % Spacing ( iD ) ) )
       case ( 'EQUAL' )
         call ComputeEdgeEqual &
-               ( G % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 G % MinCoordinate ( iD ), G % MaxCoordinate ( iD ), nC )
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
       case ( 'GEOMETRIC' )
-        if ( G % Scale ( iD ) > 0.0_KDR ) &
+        if ( C % Scale ( iD ) > 0.0_KDR ) &
           call ComputeGeometricRatio &
-                 ( G % CoordinateUnit ( iD ), G % MinCoordinate ( iD ), &
-                   G % MaxCoordinate ( iD ), G % Scale ( iD ), nC, &
-                   G % Ratio ( iD ) )
+                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
+                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
+                   C % Ratio ( iD ) )
         call ComputeEdgeGeometric &
-               ( G % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 G % MinCoordinate ( iD ), G % MaxCoordinate ( iD ), &
-                 G % Ratio ( iD ), nC )
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
+                 C % Ratio ( iD ), nC )
       case ( 'COMPACTIFIED' )
         call ComputeEdgeCompactified &
-               ( G % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 G % Scale ( iD ), nC )
-        G % MinCoordinate ( iD )  =  G % Edge ( iD ) % Value ( 1 )
-        G % MaxCoordinate ( iD )  =  G % Edge ( iD ) % Value ( nC + 1 )
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % Scale ( iD ), nC )
+        C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
       case ( 'PROPORTIONAL' )
         call ComputeEdgeProportional &
-               ( G % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-                 G % MinCoordinate ( iD ), G % Ratio ( iD ), &
-                 G % Scale ( iD ), nC, G % nEqual )
-        G % MaxCoordinate ( iD )  =  G % Edge ( iD ) % Value ( nC + 1 )
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % Ratio ( iD ), &
+                 C % Scale ( iD ), nC, C % nEqual )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
       case default
         call Show ( 'Spacing not recognized', CONSOLE % ERROR )
         call Show ( 'ChartHeader_Form', 'module', CONSOLE % ERROR )
@@ -238,7 +238,7 @@ contains
     end if
 
     !-- Edge, ghost cells
-    associate ( Edge => G % Edge ( iD ) % Value )
+    associate ( Edge => C % Edge ( iD ) % Value )
     do iC = 1, nGL
       Width_IG  =  Edge ( iC + 1 )       -  Edge ( iC )
       Width_OG  =  Edge ( nC - iC + 2 )  -  Edge ( nC - iC + 1 )
@@ -249,8 +249,8 @@ contains
 
     !-- Width
     associate &
-      ( Edge  => G % Edge ( iD ) % Value, &
-        Width => G % Width ( iD ) % Value )
+      ( Edge  => C % Edge ( iD ) % Value, &
+        Width => C % Width ( iD ) % Value )
     do iC = lbound ( Width, dim = 1 ), ubound ( Width, dim = 1 )
       Width ( iC )  =  Edge ( iC + 1 )  -  Edge ( iC )
     end do !-- iC
@@ -258,8 +258,8 @@ contains
 
     !-- Center
     associate &
-      (   Edge => G % Edge ( iD ) % Value, &
-        Center => G % Center ( iD ) % Value )
+      (   Edge => C % Edge ( iD ) % Value, &
+        Center => C % Center ( iD ) % Value )
     do iC = lbound ( Center, dim = 1 ), ubound ( Center, dim = 1 )
       Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
     end do !-- iC
@@ -272,7 +272,7 @@ contains
 
   subroutine Show_C ( C )
 
-    class ( Grid_S_Form ), intent ( in ) :: &
+    class ( Chart_GS_Form ), intent ( in ) :: &
       C
 
     integer ( KDI ) :: &
@@ -350,63 +350,63 @@ contains
   end subroutine Show_C
 
 
-  subroutine SetFieldPointer_1D_3D ( G, Field_1D, Field_3D )
+  subroutine SetFieldPointer_1D_3D ( C, Field_1D, Field_3D )
 
-    class ( Grid_S_Form ), intent ( in ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
       Field_1D
     real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
       Field_3D
 
     Field_3D &
-      ( G % iaFirst ( 1 ) : G % iaLast ( 1 ), &
-        G % iaFirst ( 2 ) : G % iaLast ( 2 ), &
-        G % iaFirst ( 3 ) : G % iaLast ( 3 ) ) &
+      ( C % iaFirst ( 1 ) : C % iaLast ( 1 ), &
+        C % iaFirst ( 2 ) : C % iaLast ( 2 ), &
+        C % iaFirst ( 3 ) : C % iaLast ( 3 ) ) &
           => Field_1D
     
   end subroutine SetFieldPointer_1D_3D
 
   
-  impure elemental subroutine Finalize ( G )
+  impure elemental subroutine Finalize ( C )
 
-    type ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    type ( Chart_GS_Form ), intent ( inout ) :: &
+      C
 
-    nullify ( G % Communicator )
+    nullify ( C % Communicator )
 
-    if ( allocated ( G % PortalEdge_RL_LR ) ) &
-      deallocate ( G % PortalEdge_RL_LR )
-    if ( allocated ( G % PortalEdge_LR_RL ) ) &
-      deallocate ( G % PortalEdge_LR_RL )
-    if ( allocated ( G % PortalEdge_RR_LL ) ) &
-      deallocate ( G % PortalEdge_RR_LL )
-    if ( allocated ( G % PortalEdge_LL_RR ) ) &
-      deallocate ( G % PortalEdge_LL_RR )
-    if ( allocated ( G % PortalFace_R_L ) ) &
-      deallocate ( G % PortalFace_R_L )
-    if ( allocated ( G % PortalFace_L_R ) ) &
-      deallocate ( G % PortalFace_L_R )
+    if ( allocated ( C % PortalEdge_RL_LR ) ) &
+      deallocate ( C % PortalEdge_RL_LR )
+    if ( allocated ( C % PortalEdge_LR_RL ) ) &
+      deallocate ( C % PortalEdge_LR_RL )
+    if ( allocated ( C % PortalEdge_RR_LL ) ) &
+      deallocate ( C % PortalEdge_RR_LL )
+    if ( allocated ( C % PortalEdge_LL_RR ) ) &
+      deallocate ( C % PortalEdge_LL_RR )
+    if ( allocated ( C % PortalFace_R_L ) ) &
+      deallocate ( C % PortalFace_R_L )
+    if ( allocated ( C % PortalFace_L_R ) ) &
+      deallocate ( C % PortalFace_L_R )
 
-    if ( allocated ( G % ProperCell ) ) &
-      deallocate ( G % ProperCell )
+    if ( allocated ( C % ProperCell ) ) &
+      deallocate ( C % ProperCell )
 
-    if ( allocated ( G % Center ) ) &
-      deallocate ( G % Center )
-    if ( allocated ( G % Width ) ) &
-      deallocate ( G % Width )
-    if ( allocated ( G % Edge ) ) &
-      deallocate ( G % Edge )
+    if ( allocated ( C % Center ) ) &
+      deallocate ( C % Center )
+    if ( allocated ( C % Width ) ) &
+      deallocate ( C % Width )
+    if ( allocated ( C % Edge ) ) &
+      deallocate ( C % Edge )
 
   end subroutine Finalize
 
 
   subroutine SetCoordinateMetadata &
-               ( G, SpacingOption, MinCoordinateOption, MaxCoordinateOption, &
+               ( C, SpacingOption, MinCoordinateOption, MaxCoordinateOption, &
                  RatioOption, ScaleOption, nEqualOption )
 
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       SpacingOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -417,70 +417,70 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nEqualOption
 
-    associate ( nD => G % nDimensions )
+    associate ( nD => C % nDimensions )
 
-    G % MinCoordinate = 0.0_KDR
+    C % MinCoordinate = 0.0_KDR
     if ( present ( MinCoordinateOption ) ) &
-      G % MinCoordinate ( : nD ) = MinCoordinateOption ( : nD )
+      C % MinCoordinate ( : nD ) = MinCoordinateOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
-           ( G % MinCoordinate ( : nD ), 'MinCoordinate', &
-             InputUnitOption = G % CoordinateUnit ( : nD ) )
+           ( C % MinCoordinate ( : nD ), 'MinCoordinate', &
+             InputUnitOption = C % CoordinateUnit ( : nD ) )
 
-    G % MaxCoordinate = 0.0_KDR
-    G % MaxCoordinate ( : nD ) = 1.0_KDR
+    C % MaxCoordinate = 0.0_KDR
+    C % MaxCoordinate ( : nD ) = 1.0_KDR
     if ( present ( MaxCoordinateOption ) ) &
-      G % MaxCoordinate ( : nD ) = MaxCoordinateOption ( : nD )
+      C % MaxCoordinate ( : nD ) = MaxCoordinateOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
-           ( G % MaxCoordinate ( : nD ), 'MaxCoordinate', &
-             InputUnitOption = G % CoordinateUnit ( : nD ) )
+           ( C % MaxCoordinate ( : nD ), 'MaxCoordinate', &
+             InputUnitOption = C % CoordinateUnit ( : nD ) )
 
-    G % Spacing = ''
-    G % Spacing ( : nD ) = 'EQUAL'
+    C % Spacing = ''
+    C % Spacing ( : nD ) = 'EQUAL'
     if ( present ( SpacingOption ) ) &
-      G % Spacing ( : nD ) = SpacingOption ( : nD )
-    call PROGRAM_HEADER % GetParameter ( G % Spacing ( : nD ), 'Spacing' )
+      C % Spacing ( : nD ) = SpacingOption ( : nD )
+    call PROGRAM_HEADER % GetParameter ( C % Spacing ( : nD ), 'Spacing' )
 
-    G % Ratio = 0.0_KDR
+    C % Ratio = 0.0_KDR
     if ( present ( RatioOption ) ) &
-      G % Ratio ( : nD ) = RatioOption ( : nD )
-    call PROGRAM_HEADER % GetParameter ( G % Ratio ( : nD ), 'Ratio' )
+      C % Ratio ( : nD ) = RatioOption ( : nD )
+    call PROGRAM_HEADER % GetParameter ( C % Ratio ( : nD ), 'Ratio' )
 
-    G % Scale = 0.0_KDR
+    C % Scale = 0.0_KDR
     if ( present ( ScaleOption ) ) &
-      G % Scale ( : nD ) = ScaleOption ( : nD )
-    call PROGRAM_HEADER % GetParameter ( G % Scale ( : nD ), 'Scale' )
+      C % Scale ( : nD ) = ScaleOption ( : nD )
+    call PROGRAM_HEADER % GetParameter ( C % Scale ( : nD ), 'Scale' )
 
-    G % nEqual = 0
+    C % nEqual = 0
     if ( present ( nEqualOption ) ) &
-      G % nEqual = nEqualOption
+      C % nEqual = nEqualOption
 
     end associate !-- nD
 
   end subroutine SetCoordinateMetadata
 
 
-  subroutine SetCells ( G, nCellsOption, nGhostLayersOption )
+  subroutine SetCells ( C, nCellsOption, nGhostLayersOption )
 
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
       nGhostLayersOption
 
-    associate ( nD => G % nDimensions )
+    associate ( nD => C % nDimensions )
 
-    G % nCells = 1
-    G % nCells ( : nD ) = 32
+    C % nCells = 1
+    C % nCells ( : nD ) = 32
     if ( present ( nCellsOption ) ) &
-      G % nCells ( : nD ) = nCellsOption ( : nD )
-    call PROGRAM_HEADER % GetParameter ( G % nCells ( : nD ), 'nCells' )
+      C % nCells ( : nD ) = nCellsOption ( : nD )
+    call PROGRAM_HEADER % GetParameter ( C % nCells ( : nD ), 'nCells' )
 
-    G % nGhostLayers = 0
-    G % nGhostLayers ( : nD ) = 2
+    C % nGhostLayers = 0
+    C % nGhostLayers ( : nD ) = 2
     if ( present ( nGhostLayersOption ) ) &
-      G % nGhostLayers ( : nD ) = nGhostLayersOption ( : nD )
+      C % nGhostLayers ( : nD ) = nGhostLayersOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
-           ( G % nGhostLayers ( : nD ), 'nGhostLayers' )
+           ( C % nGhostLayers ( : nD ), 'nGhostLayers' )
 
     end associate !-- nD
 
@@ -488,11 +488,11 @@ contains
 
 
   subroutine SetDecomposition &
-                ( G, CommunicatorOption, nBricksOption, &
+                ( C, CommunicatorOption, nBricksOption, &
                   nBricksCompatibleOption )
                
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -506,88 +506,88 @@ contains
       nBricksCompatible
 
     if ( present ( CommunicatorOption ) ) then
-      G % Distributed   =   .true.
-      G % Communicator  =>  CommunicatorOption
+      C % Distributed   =   .true.
+      C % Communicator  =>  CommunicatorOption
     else
-      G % Distributed  =  .false.
+      C % Distributed  =  .false.
     end if !-- present Communicator 
 
-    if ( G % Distributed ) then
+    if ( C % Distributed ) then
 
-      associate ( nD => G % nDimensions )
+      associate ( nD => C % nDimensions )
 
-      SizeRoot  =  G % Communicator % Size ** ( 1.0_KDR / nD ) + 0.5_KDR
+      SizeRoot  =  C % Communicator % Size ** ( 1.0_KDR / nD ) + 0.5_KDR
 
-      G % nBricks = 1
-      G % nBricks ( : nD ) = SizeRoot
+      C % nBricks = 1
+      C % nBricks ( : nD ) = SizeRoot
       if ( present ( nBricksOption ) ) &
-        G % nBricks  =  nBricksOption 
-      call PROGRAM_HEADER % GetParameter ( G % nBricks ( : nD ), 'nBricks' )
+        C % nBricks  =  nBricksOption 
+      call PROGRAM_HEADER % GetParameter ( C % nBricks ( : nD ), 'nBricks' )
     
-      nBricksCompatible = G % nBricks
+      nBricksCompatible = C % nBricks
       if ( present ( nBricksCompatibleOption ) ) &
         nBricksCompatible  =  nBricksCompatibleOption 
       call PROGRAM_HEADER % GetParameter &
              ( nBricksCompatible ( : nD ), 'nBricksCompatible' )
 
-      if ( any ( nBricksCompatible /= G % nBricks ) ) then
+      if ( any ( nBricksCompatible /= C % nBricks ) ) then
         call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
-        call Show ( G % nBricks, 'nBricks', CONSOLE % INFO_1 )
+        call Show ( C % nBricks, 'nBricks', CONSOLE % INFO_1 )
         call Show ( nBricksCompatible, 'nBricksCompatible', CONSOLE % INFO_1 )
       end if
 
-      if ( product ( G % nBricks ) /= G % Communicator % Size ) then
+      if ( product ( C % nBricks ) /= C % Communicator % Size ) then
         call Show ( 'The total number of bricks must equal ' &
                     // 'the number of MPI processes', CONSOLE % ERROR )
-        call Show ( G % Communicator % Size, 'nProcesses', CONSOLE % ERROR )
-        call Show ( G % nBricks ( 1 : nD ), 'nBricks', CONSOLE % ERROR )
-        call Show ( product ( G % nBricks ), 'product ( nBricks )', &
+        call Show ( C % Communicator % Size, 'nProcesses', CONSOLE % ERROR )
+        call Show ( C % nBricks ( 1 : nD ), 'nBricks', CONSOLE % ERROR )
+        call Show ( product ( C % nBricks ), 'product ( nBricks )', &
                     CONSOLE % ERROR )
-        call Show ( 'Grid_S__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Chart_GS__Form', 'module', CONSOLE % ERROR )
         call Show ( 'SetDecomposition', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if
 
       do iD = 1, nD
-        if ( mod ( G % nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
+        if ( mod ( C % nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
           call Show ( 'nBricksCompatible in each dimension must divide ' &
                       // 'evenly into nCells in each dimension', &
                       CONSOLE % WARNING )
           call Show ( iD, 'iDimension', CONSOLE % WARNING )
           call Show ( nBricksCompatible ( iD ), 'nBricksCompatible', &
                       CONSOLE % WARNING )
-          call Show ( G % nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
-          G % nCells ( iD ) &
-            =  ( G % nCells ( iD ) / nBricksCompatible ( iD ) ) &
+          call Show ( C % nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
+          C % nCells ( iD ) &
+            =  ( C % nCells ( iD ) / nBricksCompatible ( iD ) ) &
                *  nBricksCompatible ( iD )
-          call Show ( G % nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
+          call Show ( C % nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
           call Show ( 'SetDecomposition', 'subroutine', CONSOLE % WARNING )
-          call Show ( 'Grid_S__Form', 'module', CONSOLE % WARNING )
+          call Show ( 'Chart_GS__Form', 'module', CONSOLE % WARNING )
         end if
       end do  !-- iD
     
-      G % nCellsBrick &
-        = G % nCells / G % nBricks
-      G % iaBrick &
-        = BrickIndex ( G % nBricks, G % nCells, G % Communicator % Rank )
+      C % nCellsBrick &
+        = C % nCells / C % nBricks
+      C % iaBrick &
+        = BrickIndex ( C % nBricks, C % nCells, C % Communicator % Rank )
 
       end associate !-- nD
 
-      call SetPortals ( G )
+      call SetPortals ( C )
 
-      call SetCellsLocal ( G, G % nCellsBrick )
+      call SetCellsLocal ( C, C % nCellsBrick )
 
     else  !-- not Distributed
 
-      G % nBricks      =  [ 1, 1, 1 ]
-      G % nCellsBrick  =  G % nCells
-      G % iaBrick      =  [ 1, 1, 1 ]
+      C % nBricks      =  [ 1, 1, 1 ]
+      C % nCellsBrick  =  C % nCells
+      C % iaBrick      =  [ 1, 1, 1 ]
 
-      call SetCellsLocal ( G, G % nCells )
+      call SetCellsLocal ( C, C % nCells )
 
     end if  !-- Distributed
 
-    call SetProperCells ( G )
+    call SetProperCells ( C )
 
   end subroutine SetDecomposition
 
@@ -623,10 +623,10 @@ contains
   end function BrickIndex
 
 
-  subroutine SetPortals ( G )
+  subroutine SetPortals ( C )
 
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
 
     integer ( KDI ) :: &
       iP, &  !-- iProcess
@@ -655,10 +655,10 @@ contains
       Process
 
     associate &
-      ( nB   =>  G % nBricks, &
-        nD   =>  G % nDimensions, &
-        nGL  =>  G % nGhostLayers, &
-        nCB  =>  G % nCellsBrick ) 
+      ( nB   =>  C % nBricks, &
+        nD   =>  C % nDimensions, &
+        nGL  =>  C % nGhostLayers, &
+        nCB  =>  C % nCellsBrick ) 
 
     allocate ( Process ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
 
@@ -693,19 +693,19 @@ contains
 
       nCellsFace ( iD )  =  nGL ( iD )  *  nCB ( jD )  *  nCB ( kD )
 
-      iaB  =  G % iaBrick
+      iaB  =  C % iaBrick
 
       !-- Left brick
 
       iaB ( iD )  &
-        =  mod ( G % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
+        =  mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
       Source_L_R ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_R_L ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
       !-- Right brick
 
       iaB ( iD )  &
-        =  mod ( G % iaBrick ( iD ), nB ( iD ) ) + 1
+        =  mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
       Source_R_L ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_L_R ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
@@ -742,44 +742,44 @@ contains
         cycle
 
       nCellsEdge ( kD )  &
-        =  G % nGhostLayers ( iD )  *  G % nGhostLayers ( jD )  &
-           *  G % nCellsBrick ( kD )
+        =  C % nGhostLayers ( iD )  *  C % nGhostLayers ( jD )  &
+           *  C % nCellsBrick ( kD )
 
-      iaB  =  G % iaBrick
+      iaB  =  C % iaBrick
 
       !-- LeftLeft brick
 
       iaB ( iD )  &
-        =  mod ( G % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
+        =  mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
       iaB ( jD )  &
-        =  mod ( G % iaBrick ( jD ) - 1 + nB ( jD ) - 1, nB ( jD ) ) + 1
+        =  mod ( C % iaBrick ( jD ) - 1 + nB ( jD ) - 1, nB ( jD ) ) + 1
       Source_LL_RR ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_RR_LL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
       !-- RightRight brick
 
       iaB ( iD )  &
-        =  mod ( G % iaBrick ( iD ), nB ( iD ) ) + 1
+        =  mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
       iaB ( jD )  &
-        =  mod ( G % iaBrick ( jD ), nB ( jD ) ) + 1
+        =  mod ( C % iaBrick ( jD ), nB ( jD ) ) + 1
       Source_RR_LL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_LL_RR ( KD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
       !-- LeftRight brick
 
       iaB ( iD )  &
-        =  mod ( G % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
+        =  mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
       iaB ( jD )  &
-        =  mod ( G % iaBrick ( jD ), nB ( jD ) ) + 1
+        =  mod ( C % iaBrick ( jD ), nB ( jD ) ) + 1
       Source_LR_RL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_RL_LR ( KD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
       !-- RightLeft brick
 
       iaB ( iD )  &
-        =  mod ( G % iaBrick ( iD ), nB ( iD ) ) + 1
+        =  mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
       iaB ( jD )  &
-        =  mod ( G % iaBrick ( jD ) - 1 + nB ( jD ) - 1, nB ( jD ) ) + 1
+        =  mod ( C % iaBrick ( jD ) - 1 + nB ( jD ) - 1, nB ( jD ) ) + 1
       Source_RL_LR ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_LR_RL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
@@ -788,21 +788,21 @@ contains
 
     !-- Set face portals
     
-    allocate ( G % PortalFace_L_R )
-    associate ( PFLR => G % PortalFace_L_R )
+    allocate ( C % PortalFace_L_R )
+    associate ( PFLR => C % PortalFace_L_R )
     call PFLR % Initialize ( Source_L_R, Target_L_R, nCellsFace, nCellsFace )
     end associate !-- PFLR
 
-    allocate ( G % PortalFace_R_L )
-    associate ( PFRL => G % PortalFace_R_L )
+    allocate ( C % PortalFace_R_L )
+    associate ( PFRL => C % PortalFace_R_L )
     call PFRL % Initialize ( Source_R_L, Target_R_L, nCellsFace, nCellsFace )
     end associate !-- PFRL
 
 
     !-- Set edge portals
     
-    allocate ( G % PortalEdge_LL_RR )
-    associate ( PELLRR => G % PortalEdge_LL_RR )
+    allocate ( C % PortalEdge_LL_RR )
+    associate ( PELLRR => C % PortalEdge_LL_RR )
     call PELLRR % Initialize &
            ( pack ( Source_LL_RR, Source_LL_RR >= 0 ), &
              pack ( Target_LL_RR, Target_LL_RR >= 0 ), &
@@ -810,8 +810,8 @@ contains
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     end associate !-- PELLRR
 
-    allocate ( G % PortalEdge_RR_LL )
-    associate ( PERRLL => G % PortalEdge_RR_LL )
+    allocate ( C % PortalEdge_RR_LL )
+    associate ( PERRLL => C % PortalEdge_RR_LL )
     call PERRLL % Initialize &
            ( pack ( Source_RR_LL, Source_RR_LL >= 0 ), &
              pack ( Target_RR_LL, Target_RR_LL >= 0 ), &
@@ -819,8 +819,8 @@ contains
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     end associate !-- PERRLL
 
-    allocate ( G % PortalEdge_LR_RL )
-    associate ( PELRRL => G % PortalEdge_LR_RL )
+    allocate ( C % PortalEdge_LR_RL )
+    associate ( PELRRL => C % PortalEdge_LR_RL )
     call PELRRL % Initialize &
            ( pack ( Source_LR_RL, Source_LR_RL >= 0 ), &
              pack ( Target_LR_RL, Target_LR_RL >= 0 ), &
@@ -828,8 +828,8 @@ contains
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     end associate !-- PELRRL
 
-    allocate ( G % PortalEdge_RL_LR )
-    associate ( PERLLR => G % PortalEdge_RL_LR )
+    allocate ( C % PortalEdge_RL_LR )
+    associate ( PERLLR => C % PortalEdge_RL_LR )
     call PERLLR % Initialize &
            ( pack ( Source_RL_LR, Source_RL_LR >= 0 ), &
              pack ( Target_RL_LR, Target_RL_LR >= 0 ), &
@@ -845,37 +845,37 @@ contains
   end subroutine SetPortals
 
 
-  subroutine SetCellsLocal ( G, nCellsLocal )
+  subroutine SetCellsLocal ( C, nCellsLocal )
 
-    class ( Grid_S_Form ), intent ( inout ) :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ) :: &
+      C
     integer, dimension ( : ), intent ( in ) :: &
       nCellsLocal
 
-    G % iaFirst = 1
-    G % iaLast = 1
-    G % iaFirst ( 1 ) = 1 - G % nGhostLayers ( 1 )
-    G % iaLast  ( 1 ) = nCellsLocal ( 1 ) + G % nGhostLayers ( 1 )
-    if ( G % nDimensions > 1 ) then
-      G % iaFirst ( 2 ) = 1 - G % nGhostLayers ( 2 )
-      G % iaLast  ( 2 ) = nCellsLocal ( 2 ) + G % nGhostLayers ( 2 )
+    C % iaFirst = 1
+    C % iaLast = 1
+    C % iaFirst ( 1 ) = 1 - C % nGhostLayers ( 1 )
+    C % iaLast  ( 1 ) = nCellsLocal ( 1 ) + C % nGhostLayers ( 1 )
+    if ( C % nDimensions > 1 ) then
+      C % iaFirst ( 2 ) = 1 - C % nGhostLayers ( 2 )
+      C % iaLast  ( 2 ) = nCellsLocal ( 2 ) + C % nGhostLayers ( 2 )
     end if
-    if ( G % nDimensions > 2 ) then
-      G % iaFirst ( 3 ) = 1 - G % nGhostLayers ( 3 )
-      G % iaLast  ( 3 ) = nCellsLocal ( 3 ) + G % nGhostLayers ( 3 )
+    if ( C % nDimensions > 2 ) then
+      C % iaFirst ( 3 ) = 1 - C % nGhostLayers ( 3 )
+      C % iaLast  ( 3 ) = nCellsLocal ( 3 ) + C % nGhostLayers ( 3 )
     end if
 
-    G % nCellsLocal   =  product ( nCellsLocal  +  2 * G % nGhostLayers )
-    G % nCellsProper  =  product ( nCellsLocal )
-    G % nCellsGhost   =  G % nCellsLocal  -  G % nCellsProper
+    C % nCellsLocal   =  product ( nCellsLocal  +  2 * C % nGhostLayers )
+    C % nCellsProper  =  product ( nCellsLocal )
+    C % nCellsGhost   =  C % nCellsLocal  -  C % nCellsProper
 
   end subroutine SetCellsLocal
 
 
-  subroutine SetProperCells ( G )
+  subroutine SetProperCells ( C )
 
-    class ( Grid_S_Form ), intent ( inout ), target :: &
-      G
+    class ( Chart_GS_Form ), intent ( inout ), target :: &
+      C
 
     integer ( KDI ) :: &
       iC, jC, kC, &
@@ -883,18 +883,18 @@ contains
     logical ( KDL ), dimension ( :, :, : ), pointer :: &
       PC
 
-    allocate ( G % ProperCell ( G % nCellsLocal ) )
-    call Clear ( G % ProperCell )
+    allocate ( C % ProperCell ( C % nCellsLocal ) )
+    call Clear ( C % ProperCell )
 
     associate &
-      ( iaF  =>  G % iaFirst, &
-        iaL  =>  G % iaLast, &
-        nGL  =>  G % nGhostLayers )
+      ( iaF  =>  C % iaFirst, &
+        iaL  =>  C % iaLast, &
+        nGL  =>  C % nGhostLayers )
 
     PC ( iaF ( 1 ) : iaL ( 1 ), &
          iaF ( 2 ) : iaL ( 2 ), &
          iaF ( 3 ) : iaL ( 3 ) )  &
-      =>  G % ProperCell
+      =>  C % ProperCell
 
     associate &
       ( lB  =>  iaF + nGL, &
@@ -1137,4 +1137,4 @@ contains
   end function ZeroGeometricRatio
 
 
-end module Grid_S__Form
+end module Chart_GS__Form

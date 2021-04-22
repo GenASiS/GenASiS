@@ -1,6 +1,6 @@
 module StructuredGrids
 
   use Chart_H__Form
-  use Grid_S__Form
+  use Chart_GS__Form
 
 end module StructuredGrids
