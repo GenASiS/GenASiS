@@ -3,7 +3,7 @@ PATH_GENASIS = ../../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Geometry_F_CH__Form_Test Geometry_F_GS__Form_Test \
-  Geometry_F_AH__Form_Test Geometry_F_ASG__Form_Test
+  Geometry_F_C__Form_Test Geometry_F_AH__Form_Test Geometry_F_ASG__Form_Test
 
 Geometry_F_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
   Geometries.a Geometry_F_CH__Form_Test.o
@@ -17,6 +17,13 @@ Geometry_F_GS__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
 	$(LINK) $(FLAGS) \
           -o Geometry_F_GS__Form_Test_$(MACHINE) \
           Geometry_F_GS__Form_Test.o Geometries.a \
+          Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+Geometry_F_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a Geometry_F_C__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Geometry_F_C__Form_Test_$(MACHINE) \
+          Geometry_F_C__Form_Test.o Geometries.a \
           Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
 Geometry_F_AH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
@@ -39,6 +46,7 @@ clean:
 clobber: clean
 	rm -f Geometry_F_CH__Form_Test_*
 	rm -f Geometry_F_GS__Form_Test_*
+	rm -f Geometry_F_C__Form_Test_*
 	rm -f Geometry_F_AH__Form_Test_*
 	rm -f Geometry_F_ASG__Form_Test_*
 
@@ -61,6 +69,13 @@ Geometry_F_GS__Form_Test.o: \
   Streams.o \
   Geometries.o \
   Geometry_F_GS__Form_Test.f90
+
+Geometry_F_C__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  Geometry_F_C__Form_Test.f90
 
 Geometry_F_AH__Form_Test.o: \
   Basics.o \
