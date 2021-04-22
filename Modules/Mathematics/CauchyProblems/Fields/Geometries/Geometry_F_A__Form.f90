@@ -4,7 +4,6 @@ module Geometry_F_A__Form
 
   use Basics
   use Manifolds
-  use FieldSets
   use Streams
   use Geometry_F_C__Form
 

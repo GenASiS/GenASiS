@@ -1,22 +1,3 @@
-Geometry_F_CH__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSets.o \
-  Streams.o \
-  Geometry_F_CH__Form.f90
-
-Geometry_F_CH__Kernel.o: \
-  Basics.o \
-  Geometry_F_CH__Form.o \
-  Geometry_F_CH__Kernel.f90
-
-Geometry_F_GS__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSets.o \
-  Geometry_F_CH__Form.o \
-  Geometry_F_GS__Form.f90
-
 Geometry_F_C__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -29,35 +10,15 @@ Geometry_F_C__Kernel.o: \
   Geometry_F_C__Form.o \
   Geometry_F_C__Kernel.f90
 
-Geometry_F_AH__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  Streams.o \
-  Geometry_F_CH__Form.o \
-  Geometry_F_AH__Form.f90
-
-Geometry_F_ASG__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSets.o \
-  Geometry_F_GS__Form.o \
-  Geometry_F_AH__Form.o \
-  Geometry_F_ASG__Form.f90
-
 Geometry_F_A__Form.o: \
   Basics.o \
   Manifolds.o \
-  FieldSets.o \
   Streams.o \
   Geometry_F_C__Form.o \
   Geometry_F_A__Form.f90
 
 Geometries.o: \
-  Geometry_F_CH__Form.o \
-  Geometry_F_GS__Form.o \
   Geometry_F_C__Form.o \
-  Geometry_F_AH__Form.o \
-  Geometry_F_ASG__Form.o \
   Geometry_F_A__Form.o \
   Geometries.f90
 

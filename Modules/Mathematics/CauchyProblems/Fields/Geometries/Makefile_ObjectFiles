@@ -1,10 +1,5 @@
 GEOMETRIES = \
   Geometries.o \
   Geometry_F_A__Form.o \
-  Geometry_F_ASG__Form.o \
-  Geometry_F_AH__Form.o \
   Geometry_F_C__Kernel.o \
-  Geometry_F_C__Form.o \
-  Geometry_F_GS__Form.o \
-  Geometry_F_CH__Kernel.o \
-  Geometry_F_CH__Form.o
+  Geometry_F_C__Form.o
