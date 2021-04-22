@@ -1,6 +1,6 @@
-module Atlas_SG__Form
+module Atlas_SCG__Form
 
-  !-- Atlas_SingleGrid__Form
+  !-- Atlas_SingleChartGrid__Form
 
   use Basics
   use Charts
@@ -9,9 +9,9 @@ module Atlas_SG__Form
   implicit none
   private
 
-  type, public, extends ( Atlas_H_Form ) :: Atlas_SG_Form
-    class ( Grid_S_Form ), pointer :: &
-      Grid => null ( )
+  type, public, extends ( Atlas_H_Form ) :: Atlas_SCG_Form
+    class ( Chart_GS_Form ), pointer :: &
+      Chart_GS => null ( )
   contains
     procedure, private, pass :: &
       Initialize_SG
@@ -19,7 +19,7 @@ module Atlas_SG__Form
       Initialize => Initialize_SG
     final :: &
       Finalize
-  end type Atlas_SG_Form
+  end type Atlas_SCG_Form
 
 
 contains
@@ -34,7 +34,7 @@ contains
                  nBricksCompatibleOption, IgnorabilityOption, &
                  nDimensionsOption, nEqualOption, iDimensionalityOption )
 
-    class ( Atlas_SG_Form ), intent ( inout ), target :: &
+    class ( Atlas_SCG_Form ), intent ( inout ), target :: &
       A
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
@@ -65,17 +65,17 @@ contains
       iDimensionalityOption
 
     if ( A % Type  ==  '' ) &
-      A % Type  =  'an Atlas_SG'
+      A % Type  =  'an Atlas_SCG'
 
     call A % Initialize_H &
            ( NameOption = NameOption, &
              IgnorabilityOption = IgnorabilityOption )
 
-    allocate ( Grid_S_Form :: A % Chart ( 1 ) % Element )
-    select type ( G  =>  A % Chart ( 1 ) % Element )
-    class is ( Grid_S_Form )
+    allocate ( Chart_GS_Form :: A % Chart ( 1 ) % Element )
+    select type ( C  =>  A % Chart ( 1 ) % Element )
+    class is ( Chart_GS_Form )
 
-    call G % Initialize &
+    call C % Initialize &
            ( CommunicatorOption, SpacingOption, CoordinateLabelOption, &
              CoordinateSystemOption, NameOption, PeriodicOption, &
              CoordinateUnitOption, MinCoordinateOption, &
@@ -84,21 +84,21 @@ contains
              nBricksCompatibleOption, IgnorabilityOption, &
              nDimensionsOption, nEqualOption, iDimensionalityOption )
 
-    A % Grid  =>  G
+    A % Chart_GS  =>  C
 
-    end select !--  G
+    end select !--  C
 
   end subroutine Initialize_SG
 
 
   impure elemental subroutine Finalize ( A )
 
-    type ( Atlas_SG_Form ), intent ( inout ) :: &
+    type ( Atlas_SCG_Form ), intent ( inout ) :: &
       A
 
-    nullify ( A % Grid )
+    nullify ( A % Chart_GS )
 
   end subroutine Finalize
 
 
-end module Atlas_SG__Form
+end module Atlas_SCG__Form

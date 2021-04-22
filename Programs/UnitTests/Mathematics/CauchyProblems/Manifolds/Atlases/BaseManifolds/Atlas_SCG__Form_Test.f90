@@ -1,6 +1,6 @@
-program Atlas_SG__Form_Test
+program Atlas_SCG__Form_Test
 
-  !-- Atlas_SingleGrid__Form_Test
+  !-- Atlas_SingleChartGrid__Form_Test
 
   use Basics
   use Charts
@@ -12,13 +12,13 @@ program Atlas_SG__Form_Test
     MinEnergy, &
     MaxEnergy, &
     MinWidthEnergy
-  type ( Atlas_SG_Form ), allocatable :: &
+  type ( Atlas_SCG_Form ), allocatable :: &
     Base, &
     Fiber
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Atlas_SG__Form_Test', DimensionalityOption = '2D_1D' )
+         ( 'Atlas_SCG__Form_Test', DimensionalityOption = '2D_1D' )
 
   allocate ( Base )
   call Base % Initialize &
@@ -52,4 +52,4 @@ program Atlas_SG__Form_Test
   deallocate ( Base )
   deallocate ( PROGRAM_HEADER )
 
-end program Atlas_SG__Form_Test
+end program Atlas_SCG__Form_Test

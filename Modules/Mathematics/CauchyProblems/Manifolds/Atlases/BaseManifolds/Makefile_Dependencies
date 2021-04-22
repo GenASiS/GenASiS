@@ -3,15 +3,15 @@ Atlas_H__Form.o: \
   Charts.o \
   Atlas_H__Form.f90
 
-Atlas_SG__Form.o: \
+Atlas_SCG__Form.o: \
   Basics.o \
   Charts.o \
   Atlas_H__Form.o \
-  Atlas_SG__Form.f90
+  Atlas_SCG__Form.f90
 
 BaseManifolds.o: \
   Atlas_H__Form.o \
-  Atlas_SG__Form.o \
+  Atlas_SCG__Form.o \
   BaseManifolds.f90
 
 BaseManifolds.a: $(BASE_MANIFOLDS)
