@@ -8,7 +8,7 @@ program FieldSet_ASG__Form_Test
 
   implicit none
 
-  type ( Atlas_SG_Form ), allocatable :: &
+  type ( Atlas_SCG_Form ), allocatable :: &
     A
   type ( FieldSet_ASG_Form ), allocatable :: &
     FSA

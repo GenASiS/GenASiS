@@ -4,14 +4,14 @@ module FieldSet_ASG__Form
 
   use Basics
   use Manifolds
-  use FieldSet_GS__Form
+  use FieldSet_CGS__Form
   use FieldSet_AH__Form
 
   implicit none
   private
 
   type, public, extends ( FieldSet_AH_Form ) :: FieldSet_ASG_Form
-    class ( FieldSet_GS_Form ), pointer :: &
+    class ( FieldSet_CGS_Form ), pointer :: &
       FieldSet_G => null ( )
   contains
     procedure, public, pass :: &
@@ -32,7 +32,7 @@ contains
 
     class ( FieldSet_ASG_Form ), intent ( inout ), target :: &
       FSA
-    class ( Atlas_SG_Form ), intent ( in ), target :: &
+    class ( Atlas_SCG_Form ), intent ( in ), target :: &
       A
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
@@ -52,7 +52,7 @@ contains
 
     !-- FIXME: This shouldn't be necessary, but for some reason GCC 10.1.0
     !          doesn't compile without it
-    class ( Grid_S_Form ), pointer :: &
+    class ( Chart_GS_Form ), pointer :: &
       G_Pointer
 
     if ( FSA % Type  ==  '' ) &
@@ -60,12 +60,12 @@ contains
 
     call FSA % Initialize_H ( A, NameOption )
 
-    allocate ( FieldSet_GS_Form :: FSA % FieldSet_C ( 1 ) % Element )
+    allocate ( FieldSet_CGS_Form :: FSA % FieldSet_C ( 1 ) % Element )
     select type ( FSG  =>  FSA % FieldSet_C ( 1 ) % Element )
-    class is ( FieldSet_GS_Form )
+    class is ( FieldSet_CGS_Form )
 
     select type ( G  =>  A % Chart ( 1 ) % Element )
-    class is ( Grid_S_Form )
+    class is ( Chart_GS_Form )
 
     !-- FIXME: See FIXME above
     G_Pointer  =>  G

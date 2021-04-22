@@ -1,6 +1,6 @@
-program FieldSet_GS__Form_Test
+program FieldSet_CGS__Form_Test
 
-  !-- FieldSet_GridStructured__Form_Test
+  !-- FieldSet_ChartGridStructured__Form_Test
 
   use Basics
   use Manifolds
@@ -19,19 +19,19 @@ program FieldSet_GS__Form_Test
     DeviceMemory, &
     PinnedMemory, &
     DevicesCommunicate
-  type ( Grid_S_Form ), allocatable :: &
-    G
-  type ( FieldSet_GS_Form ), allocatable :: &
-    FSG, &
-    FSG_234, &
-    FSG_5
+  type ( Chart_GS_Form ), allocatable :: &
+    C
+  type ( FieldSet_CGS_Form ), allocatable :: &
+    FSC, &
+    FSC_234, &
+    FSC_5
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FieldSet_GS__Form_Test', DimensionalityOption = '2D' )
+         ( 'FieldSet_CGS__Form_Test', DimensionalityOption = '2D' )
 
-  allocate ( G )
-  call G % Initialize &
+  allocate ( C )
+  call C % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
            PeriodicOption = [ .true., .true., .true. ] )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
@@ -54,49 +54,49 @@ program FieldSet_GS__Form_Test
   call PROGRAM_HEADER % GetParameter &
          ( DevicesCommunicate, 'DevicesCommunicate' )
 
-  allocate ( FSG )
-  allocate ( FSG_234 )
-  allocate ( FSG_5 )
-  call FSG % Initialize &
-         ( G, &
+  allocate ( FSC )
+  allocate ( FSC_234 )
+  allocate ( FSC_5 )
+  call FSC % Initialize &
+         ( C, &
            DeviceMemoryOption = DeviceMemory, &
            PinnedMemoryOption = PinnedMemory, &
            DevicesCommunicateOption = DevicesCommunicate, &
            UnitOption = FieldUnit, &
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
-  call FSG_234 % Clone &
-         ( FSG, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
-  call FSG_5 % Clone &
-         ( FSG, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
+  call FSC_234 % Clone &
+         ( FSC, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
+  call FSC_5 % Clone &
+         ( FSC, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
 
-  call   G     % Show ( )
-  call FSG     % Show ( )
-  call FSG_234 % Show ( )
-  call FSG_5   % Show ( )
+  call   C     % Show ( )
+  call FSC     % Show ( )
+  call FSC_234 % Show ( )
+  call FSC_5   % Show ( )
 
   nGhostExchanges  =  1000
   call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
 
-  call SetFieldSet ( FSG )
-  call SetFieldSet ( FSG_234 )
-  call SetFieldSet ( FSG_5 )
+  call SetFieldSet ( FSC )
+  call SetFieldSet ( FSC_234 )
+  call SetFieldSet ( FSC_5 )
 
   call CONSOLE % SetVerbosity ( 'INFO_1' )
-  deallocate ( FSG_5 )
-  deallocate ( FSG_234 )
-  deallocate ( FSG )
-  deallocate ( G )  
+  deallocate ( FSC_5 )
+  deallocate ( FSC_234 )
+  deallocate ( FSC )
+  deallocate ( C )  
   deallocate ( PROGRAM_HEADER )
 
 
 contains
 
 
-  subroutine SetFieldSet ( FSG )
+  subroutine SetFieldSet ( FSC )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
 
     integer ( KDI ) :: &
       iS, &          !-- iSelected
@@ -109,20 +109,20 @@ contains
       F_3D  !-- Field
 
     call Show ( 'Ghost exchange' )
-    call Show ( FSG % Name, 'FieldSet' )
-    call Clear ( FSG % Storage % Value )
+    call Show ( FSC % Name, 'FieldSet' )
+    call Clear ( FSC % Storage % Value )
 
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
-    associate ( nCB  =>  G % nCellsBrick )
+    associate ( nCB  =>  C % nCellsBrick )
 
-    do iS  =  1, FSG % nFields
-      iF  =  FSG % iaSelected ( iS )
-      associate ( F  =>  FSG % Storage % Value ( :, iF ) )
-      call G % SetFieldPointer ( F, F_3D )
+    do iS  =  1, FSC % nFields
+      iF  =  FSC % iaSelected ( iS )
+      associate ( F  =>  FSC % Storage % Value ( :, iF ) )
+      call C % SetFieldPointer ( F, F_3D )
 
-      oC  =  ( G % iaBrick  -  1 )  *  nCB
+      oC  =  ( C % iaBrick  -  1 )  *  nCB
       do kC  =  1,  nCB ( 3 )
         do jC  =  1,  nCB ( 2 )
           do iC  =  1,  nCB ( 1 )
@@ -135,42 +135,42 @@ contains
       end do !-- kC
 
       call Show ( 'Field before ghost exchange', CONSOLE % INFO_2 )
-      call Show ( FSG % Field ( iF ), 'Field', CONSOLE % INFO_2 )
-      call ShowField ( F_3D, G % nGhostLayers, G % nDimensions )
+      call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
+      call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
 
       end associate !-- F
     end do !-- iF
 
-    call FSG % UpdateDevice ( )
+    call FSC % UpdateDevice ( )
 
     do iGE  =  1, nGhostExchanges
-      if ( .not. FSG % DevicesCommunicate ) &
-        call FSG % UpdateHost ( )
-      call FSG % ExchangeGhostData ( )
-      if ( .not. FSG % DevicesCommunicate ) &
-        call FSG % UpdateDevice ( )
+      if ( .not. FSC % DevicesCommunicate ) &
+        call FSC % UpdateHost ( )
+      call FSC % ExchangeGhostData ( )
+      if ( .not. FSC % DevicesCommunicate ) &
+        call FSC % UpdateDevice ( )
     end do !-- iGE
 
-    do iS  =  1, FSG % nFields
-      iF  =  FSG % iaSelected ( iS )
-      associate ( F  =>  FSG % Storage % Value ( :, iF ) )
-      call G % SetFieldPointer ( F, F_3D )
+    do iS  =  1, FSC % nFields
+      iF  =  FSC % iaSelected ( iS )
+      associate ( F  =>  FSC % Storage % Value ( :, iF ) )
+      call C % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
       call Show ( nGhostExchanges, 'nGhostExchanges', CONSOLE % INFO_2 )
-      call Show ( FSG % Field ( iF ), 'Field', CONSOLE % INFO_2 )
-      call ShowField ( F_3D, G % nGhostLayers, G % nDimensions )
+      call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
+      call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
       end associate !-- F
     end do !-- iF
 
-    if ( FSG % DevicesCommunicate ) then
-      call FSG % UpdateHost ( )
-      do iS  =  1, FSG % nFields
-        iF  =  FSG % iaSelected ( iS )
-        associate ( F  =>  FSG % Storage % Value ( :, iF ) )
-        call G % SetFieldPointer ( F, F_3D )
+    if ( FSC % DevicesCommunicate ) then
+      call FSC % UpdateHost ( )
+      do iS  =  1, FSC % nFields
+        iF  =  FSC % iaSelected ( iS )
+        associate ( F  =>  FSC % Storage % Value ( :, iF ) )
+        call C % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
-        call Show ( FSG % Field ( iF ), 'Field', CONSOLE % INFO_2 )
-        call ShowField ( F_3D, G % nGhostLayers, G % nDimensions )
+        call Show ( FSC % Field ( iF ), 'Field', CONSOLE % INFO_2 )
+        call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
         end associate !-- F
       end do !-- iF
     end if !-- DevicesCommunicate
@@ -233,4 +233,4 @@ contains
   end subroutine ShowField
 
 
-end program FieldSet_GS__Form_Test
+end program FieldSet_CGS__Form_Test

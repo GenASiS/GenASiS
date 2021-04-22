@@ -1,4 +1,4 @@
-module FieldSet_GS__Form
+module FieldSet_CGS__Form
 
   !-- FieldSet_GridStructured__Form
 
@@ -9,7 +9,7 @@ module FieldSet_GS__Form
   implicit none
   private
 
-  type, public, extends ( FieldSet_CH_Form ) :: FieldSet_GS_Form
+  type, public, extends ( FieldSet_CH_Form ) :: FieldSet_CGS_Form
     integer ( KDI ) :: &
       iTimerGhostCommunication = 0, &
       iTimerGhostPackUnpack    = 0, &
@@ -56,7 +56,7 @@ module FieldSet_GS__Form
       AllocateStorage
     procedure, private, pass :: &
       CloneStorage
-  end type FieldSet_GS_Form
+  end type FieldSet_CGS_Form
 
 
     private :: &
@@ -90,15 +90,15 @@ contains
 
 
   subroutine Initialize &
-               ( FSG, G, FieldOption, VectorOption, NameOption, &
+               ( FSC, C, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
                  nFieldsOption )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
-    class ( Grid_S_Form ), intent ( inout ), target :: &
-      G
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
+    class ( Chart_GS_Form ), intent ( inout ), target :: &
+      C
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -115,26 +115,26 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
 
-    if ( FSG % Type == '' ) &
-      FSG % Type  =  'a FieldSet_GS' 
+    if ( FSC % Type == '' ) &
+      FSC % Type  =  'a FieldSet_CGS' 
 
-    call FSG % Initialize_H &
-           ( G, FieldOption, VectorOption, NameOption, UnitOption, &
+    call FSC % Initialize_H &
+           ( C, FieldOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption, nFieldsOption )
 
-    FSG % DeviceMemory  =  .false.
+    FSC % DeviceMemory  =  .false.
     if ( present ( DeviceMemoryOption ) ) &
-      FSG % DeviceMemory  =  DeviceMemoryOption
+      FSC % DeviceMemory  =  DeviceMemoryOption
     
-    FSG % PinnedMemory  =  .false.
+    FSC % PinnedMemory  =  .false.
     if ( present ( PinnedMemoryOption ) ) &
-      FSG % PinnedMemory  =  PinnedMemoryOption
+      FSC % PinnedMemory  =  PinnedMemoryOption
     
-    FSG % DevicesCommunicate  =  .false.
+    FSC % DevicesCommunicate  =  .false.
     if ( present ( DevicesCommunicateOption ) )  &
-      FSG % DevicesCommunicate  =  DevicesCommunicateOption  
+      FSC % DevicesCommunicate  =  DevicesCommunicateOption  
 
-    call FSG % AllocateStorage ( )
+    call FSC % AllocateStorage ( )
 
   end subroutine Initialize
 
@@ -143,7 +143,7 @@ contains
                ( FSC_T, FSC_S, NameOption, iaSelectedOption, &
                  IgnorabilityOption )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
       FSC_T  !-- FSC_Target
     class ( FieldSet_CH_Form ), intent ( in ), target :: &
       FSC_S  !-- FSC_Source
@@ -155,13 +155,13 @@ contains
       IgnorabilityOption
 
     if ( FSC_T % Type == '' ) &
-      FSC_T % Type  =  'a FieldSet_GS' 
+      FSC_T % Type  =  'a FieldSet_CGS' 
 
     call FSC_T % FieldSet_CH_Form % Clone &
            ( FSC_S, NameOption, iaSelectedOption, IgnorabilityOption )
 
     select type ( FSC_S )
-    class is ( FieldSet_GS_Form )
+    class is ( FieldSet_CGS_Form )
 
     FSC_T % DeviceMemory        =  FSC_S % DeviceMemory    
     FSC_T % PinnedMemory        =  FSC_S % PinnedMemory
@@ -174,37 +174,37 @@ contains
   end subroutine Clone
 
 
-  subroutine ExchangeGhostData  ( FSG, TimerLevelOption )
+  subroutine ExchangeGhostData  ( FSC, TimerLevelOption )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
-    call FSG % StartGhostExchange ( TimerLevelOption )
-    call FSG % FinishGhostExchange ( )
+    call FSC % StartGhostExchange ( TimerLevelOption )
+    call FSC % FinishGhostExchange ( )
    
   end subroutine ExchangeGhostData
 
 
-  subroutine StartGhostExchange  ( FSG, TimerLevelOption )
+  subroutine StartGhostExchange  ( FSC, TimerLevelOption )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
     character ( LDF ) :: &
       TimerName
 
-    call Show ( 'Starting ghost exchange', FSG % IGNORABILITY + 2 )
-    call Show ( FSG % Name, 'FieldSet', FSG % IGNORABILITY + 2 )
+    call Show ( 'Starting ghost exchange', FSC % IGNORABILITY + 2 )
+    call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 2 )
 
     associate &
-      ( iT_GC   =>  FSG % iTimerGhostCommunication, &
-        iT_GPU  =>  FSG % iTimerGhostPackUnpack )
+      ( iT_GC   =>  FSC % iTimerGhostCommunication, &
+        iT_GPU  =>  FSC % iTimerGhostPackUnpack )
     if ( iT_GC == 0 ) then
-      TimerName  =  'GhostCommunication ' // trim ( FSG % Name )
+      TimerName  =  'GhostCommunication ' // trim ( FSC % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT_GC, TimerLevelOption )
       else
@@ -212,7 +212,7 @@ contains
       end if
     end if
     if ( iT_GPU == 0 ) then
-      TimerName  =  'GhostPackUnpack ' // trim ( FSG % Name )
+      TimerName  =  'GhostPackUnpack ' // trim ( FSC % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT_GPU, TimerLevelOption )
       else
@@ -221,73 +221,73 @@ contains
     end if
     end associate !-- iT_GC, etc.
       
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
     !-- Start faces
     call StartExchangeFace &
-           ( FSG, FSG % IncomingFace_L_R, FSG % OutgoingFace_L_R, &
-             G % PortalFace_L_R, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R )
+           ( FSC, FSC % IncomingFace_L_R, FSC % OutgoingFace_L_R, &
+             C % PortalFace_L_R, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R )
     call StartExchangeFace &
-           ( FSG, FSG % IncomingFace_R_L, FSG % OutgoingFace_R_L, &
-             G % PortalFace_R_L, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L )
+           ( FSC, FSC % IncomingFace_R_L, FSC % OutgoingFace_R_L, &
+             C % PortalFace_R_L, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L )
 
     !-- Start edges
     call StartExchangeEdge &
-           ( FSG, FSG % IncomingEdge_LL_RR, FSG % OutgoingEdge_LL_RR, &
-             G % PortalEdge_LL_RR, TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR )
+           ( FSC, FSC % IncomingEdge_LL_RR, FSC % OutgoingEdge_LL_RR, &
+             C % PortalEdge_LL_RR, TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR )
     call StartExchangeEdge &
-           ( FSG, FSG % IncomingEdge_RR_LL, FSG % OutgoingEdge_RR_LL, &
-             G % PortalEdge_RR_LL, TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL )
+           ( FSC, FSC % IncomingEdge_RR_LL, FSC % OutgoingEdge_RR_LL, &
+             C % PortalEdge_RR_LL, TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL )
     call StartExchangeEdge &
-           ( FSG, FSG % IncomingEdge_LR_RL, FSG % OutgoingEdge_LR_RL, &
-             G % PortalEdge_LR_RL, TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL )
+           ( FSC, FSC % IncomingEdge_LR_RL, FSC % OutgoingEdge_LR_RL, &
+             C % PortalEdge_LR_RL, TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL )
     call StartExchangeEdge &
-           ( FSG, FSG % IncomingEdge_RL_LR, FSG % OutgoingEdge_RL_LR, &
-             G % PortalEdge_RL_LR, TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR )
+           ( FSC, FSC % IncomingEdge_RL_LR, FSC % OutgoingEdge_RL_LR, &
+             C % PortalEdge_RL_LR, TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR )
 
     end select  !-- C
 
   end subroutine StartGhostExchange
 
 
-  subroutine FinishGhostExchange  ( FSG )
+  subroutine FinishGhostExchange  ( FSC )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
 
-    call Show ( 'Finishing ghost exchange', FSG % IGNORABILITY + 2 )
-    call Show ( FSG % Name, 'FieldSet', FSG % IGNORABILITY + 2 )
+    call Show ( 'Finishing ghost exchange', FSC % IGNORABILITY + 2 )
+    call Show ( FSC % Name, 'FieldSet', FSC % IGNORABILITY + 2 )
 
     !-- Finish faces
     call FinishExchangeFace &
-           ( FSG, FSG % IncomingFace_L_R, FSG % OutgoingFace_L_R, &
+           ( FSC, FSC % IncomingFace_L_R, FSC % OutgoingFace_L_R, &
              TAG_RECEIVE_FACE_L )
     call FinishExchangeFace &
-           ( FSG, FSG % IncomingFace_R_L, FSG % OutgoingFace_R_L, &
+           ( FSC, FSC % IncomingFace_R_L, FSC % OutgoingFace_R_L, &
              TAG_RECEIVE_FACE_R )
 
     !-- Finish edges
     call FinishExchangeEdge &
-           ( FSG, FSG % IncomingEdge_LL_RR, FSG % OutgoingEdge_LL_RR, &
+           ( FSC, FSC % IncomingEdge_LL_RR, FSC % OutgoingEdge_LL_RR, &
              TAG_RECEIVE_EDGE_LL )
     call FinishExchangeEdge &
-           ( FSG, FSG % IncomingEdge_RR_LL, FSG % OutgoingEdge_RR_LL, &
+           ( FSC, FSC % IncomingEdge_RR_LL, FSC % OutgoingEdge_RR_LL, &
              TAG_RECEIVE_EDGE_RR )
     call FinishExchangeEdge &
-           ( FSG, FSG % IncomingEdge_LR_RL, FSG % OutgoingEdge_LR_RL, &
+           ( FSC, FSC % IncomingEdge_LR_RL, FSC % OutgoingEdge_LR_RL, &
              TAG_RECEIVE_EDGE_LR )
     call FinishExchangeEdge &
-           ( FSG, FSG % IncomingEdge_RL_LR, FSG % OutgoingEdge_RL_LR, &
+           ( FSC, FSC % IncomingEdge_RL_LR, FSC % OutgoingEdge_RL_LR, &
              TAG_RECEIVE_EDGE_RL )
     
   end subroutine FinishGhostExchange
 
 
-  subroutine UpdateDevice_FS ( FSG, TimerLevelOption )
+  subroutine UpdateDevice_FS ( FSC, TimerLevelOption )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
@@ -296,9 +296,9 @@ contains
     type ( TimerForm ), pointer :: &
       T 
 
-    associate ( iT  =>  FSG % iTimerUpdateDevice )
+    associate ( iT  =>  FSC % iTimerUpdateDevice )
     if ( iT == 0 ) then
-      TimerName  =  'UpdateDevice ' // trim ( FSG % Name )
+      TimerName  =  'UpdateDevice ' // trim ( FSC % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
       else
@@ -307,19 +307,19 @@ contains
     end if
     end associate !-- iT
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( FSG % iTimerUpdateDevice )
+    T  =>  PROGRAM_HEADER % TimerPointer ( FSC % iTimerUpdateDevice )
 
     call T % Start ( )
-    call FSG % Storage % UpdateDevice ( )
+    call FSC % Storage % UpdateDevice ( )
     call T % Stop ( )
 
   end subroutine UpdateDevice_FS
 
 
-  subroutine UpdateHost_FS ( FSG, TimerLevelOption )
+  subroutine UpdateHost_FS ( FSC, TimerLevelOption )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
@@ -328,9 +328,9 @@ contains
     type ( TimerForm ), pointer :: &
       T 
 
-    associate ( iT  =>  FSG % iTimerUpdateHost )
+    associate ( iT  =>  FSC % iTimerUpdateHost )
     if ( iT == 0 ) then
-      TimerName  =  'UpdateHost ' // trim ( FSG % Name )
+      TimerName  =  'UpdateHost ' // trim ( FSC % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
       else
@@ -339,73 +339,73 @@ contains
     end if
     end associate !-- iT
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( FSG % iTimerUpdateHost )
+    T  =>  PROGRAM_HEADER % TimerPointer ( FSC % iTimerUpdateHost )
 
     call T % Start ( )
-    call FSG % Storage % UpdateHost ( )
+    call FSC % Storage % UpdateHost ( )
     call T % Stop ( )
 
   end subroutine UpdateHost_FS
 
 
-  impure elemental subroutine Finalize ( FSG )
+  impure elemental subroutine Finalize ( FSC )
 
-    type ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    type ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
 
-    if ( allocated ( FSG % OutgoingEdge_RL_LR ) ) &
-      deallocate ( FSG % OutgoingEdge_RL_LR )
-    if ( allocated ( FSG % OutgoingEdge_LR_RL ) ) &
-      deallocate ( FSG % OutgoingEdge_LR_RL )
-    if ( allocated ( FSG % OutgoingEdge_RR_LL ) ) &
-      deallocate ( FSG % OutgoingEdge_RR_LL )
-    if ( allocated ( FSG % OutgoingEdge_LL_RR ) ) &
-      deallocate ( FSG % OutgoingEdge_LL_RR )
-    if ( allocated ( FSG % OutgoingFace_R_L ) ) &
-      deallocate ( FSG % OutgoingFace_R_L )
-    if ( allocated ( FSG % OutgoingFace_L_R ) ) &
-      deallocate ( FSG % OutgoingFace_L_R )
+    if ( allocated ( FSC % OutgoingEdge_RL_LR ) ) &
+      deallocate ( FSC % OutgoingEdge_RL_LR )
+    if ( allocated ( FSC % OutgoingEdge_LR_RL ) ) &
+      deallocate ( FSC % OutgoingEdge_LR_RL )
+    if ( allocated ( FSC % OutgoingEdge_RR_LL ) ) &
+      deallocate ( FSC % OutgoingEdge_RR_LL )
+    if ( allocated ( FSC % OutgoingEdge_LL_RR ) ) &
+      deallocate ( FSC % OutgoingEdge_LL_RR )
+    if ( allocated ( FSC % OutgoingFace_R_L ) ) &
+      deallocate ( FSC % OutgoingFace_R_L )
+    if ( allocated ( FSC % OutgoingFace_L_R ) ) &
+      deallocate ( FSC % OutgoingFace_L_R )
 
-    if ( allocated ( FSG % IncomingEdge_RL_LR ) ) &
-      deallocate ( FSG % IncomingEdge_RL_LR )
-    if ( allocated ( FSG % IncomingEdge_LR_RL ) ) &
-      deallocate ( FSG % IncomingEdge_LR_RL )
-    if ( allocated ( FSG % IncomingEdge_RR_LL ) ) &
-      deallocate ( FSG % IncomingEdge_RR_LL )
-    if ( allocated ( FSG % IncomingEdge_LL_RR ) ) &
-      deallocate ( FSG % IncomingEdge_LL_RR )
-    if ( allocated ( FSG % IncomingFace_R_L ) ) &
-      deallocate ( FSG % IncomingFace_R_L )
-    if ( allocated ( FSG % IncomingFace_L_R ) ) &
-      deallocate ( FSG % IncomingFace_L_R )
+    if ( allocated ( FSC % IncomingEdge_RL_LR ) ) &
+      deallocate ( FSC % IncomingEdge_RL_LR )
+    if ( allocated ( FSC % IncomingEdge_LR_RL ) ) &
+      deallocate ( FSC % IncomingEdge_LR_RL )
+    if ( allocated ( FSC % IncomingEdge_RR_LL ) ) &
+      deallocate ( FSC % IncomingEdge_RR_LL )
+    if ( allocated ( FSC % IncomingEdge_LL_RR ) ) &
+      deallocate ( FSC % IncomingEdge_LL_RR )
+    if ( allocated ( FSC % IncomingFace_R_L ) ) &
+      deallocate ( FSC % IncomingFace_R_L )
+    if ( allocated ( FSC % IncomingFace_L_R ) ) &
+      deallocate ( FSC % IncomingFace_L_R )
 
-    if ( allocated ( FSG % Storage ) ) &
-      deallocate ( FSG % Storage )
+    if ( allocated ( FSC % Storage ) ) &
+      deallocate ( FSC % Storage )
 
   end subroutine Finalize
 
 
-  subroutine AllocateStorage ( FSG )
+  subroutine AllocateStorage ( FSC )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
 
-    select type ( G => FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
-    if ( .not. allocated ( FSG % Storage ) ) then
-      allocate ( FSG % Storage )
-      associate ( S  =>  FSG % Storage )
+    if ( .not. allocated ( FSC % Storage ) ) then
+      allocate ( FSC % Storage )
+      associate ( S  =>  FSC % Storage )
       call S % Initialize &
-             ( [ G % nCellsLocal, FSG % nFields ], &
-               VariableOption = FSG % Field, &
-               VectorOption = FSG % Vector, &
-               NameOption = FSG % Name, &
+             ( [ C % nCellsLocal, FSC % nFields ], &
+               VariableOption = FSC % Field, &
+               VectorOption = FSC % Vector, &
+               NameOption = FSC % Name, &
                ClearOption = .true., &
-               PinnedOption = FSG % PinnedMemory, &
-               UnitOption = FSG % Unit, &
-               VectorIndicesOption = FSG % VectorIndices )
-      if ( FSG % DeviceMemory ) &
+               PinnedOption = FSC % PinnedMemory, &
+               UnitOption = FSC % Unit, &
+               VectorIndicesOption = FSC % VectorIndices )
+      if ( FSC % DeviceMemory ) &
         call S % AllocateDevice ( )
       end associate !-- S
     end if
@@ -415,22 +415,22 @@ contains
   end subroutine AllocateStorage
 
 
-  subroutine CloneStorage ( FSG_T, FSG_S )
+  subroutine CloneStorage ( FSC_T, FSC_S )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG_T
-    class ( FieldSet_GS_Form ), intent ( in ) :: &
-      FSG_S
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC_T
+    class ( FieldSet_CGS_Form ), intent ( in ) :: &
+      FSC_S
 
-    if ( .not. allocated ( FSG_T % Storage ) ) then
-      allocate ( FSG_T % Storage )
-      associate ( S  =>  FSG_T % Storage )
+    if ( .not. allocated ( FSC_T % Storage ) ) then
+      allocate ( FSC_T % Storage )
+      associate ( S  =>  FSC_T % Storage )
       call S % Initialize &
-             ( FSG_S % Storage, &
-               VectorOption = FSG_T % Vector, &
-               NameOption = FSG_T % Name, &
-               VectorIndicesOption = FSG_T % VectorIndices, &
-               iaSelectedOption = FSG_T % iaSelected )
+             ( FSC_S % Storage, &
+               VectorOption = FSC_T % Vector, &
+               NameOption = FSC_T % Name, &
+               VectorIndicesOption = FSC_T % VectorIndices, &
+               iaSelectedOption = FSC_T % iaSelected )
       end associate !-- S
     end if
 
@@ -438,10 +438,10 @@ contains
 
 
   subroutine StartExchangeFace &
-               ( FSG, IncomingFace, OutgoingFace, PH, TagReceive, TagSend )
+               ( FSC, IncomingFace, OutgoingFace, PH, TagReceive, TagSend )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingFace
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
@@ -460,16 +460,16 @@ contains
     type ( TimerForm ), pointer :: &
       T 
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( FSG % iTimerGhostCommunication )
+    T  =>  PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
 
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
     associate &
-      ( Communicator  =>  G % Communicator, &
-        nCB  =>  G % nCellsBrick, &
-        nGL  =>  G % nGhostLayers, &
-        nD   =>  G % nDimensions )
+      ( Communicator  =>  C % Communicator, &
+        nCB  =>  C % nCellsBrick, &
+        nGL  =>  C % nGhostLayers, &
+        nD   =>  C % nDimensions )
 
     !-- Allocate on first use
 
@@ -481,12 +481,12 @@ contains
 
       call IncomingFace % Initialize &
              ( Communicator, TagReceive ( : nD ), PH % Source, &
-               PH % nChunksFrom  *  FSG % nFields )
+               PH % nChunksFrom  *  FSC % nFields )
       call OutgoingFace % Initialize &
              ( Communicator, TagSend ( : nD ), PH % Target, &
-               PH % nChunksTo  *  FSG % nFields )
+               PH % nChunksTo  *  FSC % nFields )
     
-      if ( FSG % DevicesCommunicate ) then
+      if ( FSC % DevicesCommunicate ) then
         call IncomingFace % AllocateDevice ( )
         call OutgoingFace % AllocateDevice ( )
       end if 
@@ -514,13 +514,13 @@ contains
         oSend  =  nGL
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
-        call Show ( 'FieldSet_GS__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FieldSet_CGS__Form', 'module', CONSOLE % ERROR )
         call Show ( 'StartExchangeFace', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
       call LoadMessage &
-             ( FSG, OutgoingFace % Message ( iD ), nSend, oSend )
+             ( FSC, OutgoingFace % Message ( iD ), nSend, oSend )
       
       call T % Start ( )
       call OutgoingFace % Send ( iD )
@@ -539,10 +539,10 @@ contains
 
 
   subroutine FinishExchangeFace &
-               ( FSG, IncomingFace, OutgoingFace, TagReceive )
+               ( FSC, IncomingFace, OutgoingFace, TagReceive )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
       IncomingFace
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ) :: &
@@ -560,16 +560,16 @@ contains
     type ( TimerForm ), pointer :: &
       T 
       
-    T => PROGRAM_HEADER % TimerPointer ( FSG % iTimerGhostCommunication )
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
 
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
     associate &
-      ( nCB => G % nCellsBrick, &
-        nGL => G % nGhostLayers, &
-        iaB => G % iaBrick, &
-         nB => G % nBricks )
+      ( nCB => C % nCellsBrick, &
+        nGL => C % nGhostLayers, &
+        iaB => C % iaBrick, &
+         nB => C % nBricks )
 
     !-- Wait for Receives
 
@@ -586,24 +586,24 @@ contains
 
       !-- In setting oReceive, note Copy command does not inherit lbound
       if ( TagReceive ( iD )  ==  TAG_RECEIVE_FACE_L ( iD ) ) then
-        if ( iaB ( iD )  ==  1 .and. .not. G % Periodic ( iD ) ) &
+        if ( iaB ( iD )  ==  1 .and. .not. C % Periodic ( iD ) ) &
           cycle
         oReceive        =  nGL
         oReceive ( iD ) =  oReceive ( iD )  -  nGL ( iD )
       else if ( TagReceive ( iD )  ==  TAG_RECEIVE_FACE_R ( iD ) ) then
-        if ( iaB ( iD )  ==  nB ( iD ) .and. .not. G % Periodic ( iD ) ) &
+        if ( iaB ( iD )  ==  nB ( iD ) .and. .not. C % Periodic ( iD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
-        call Show ( 'FieldSet_GS__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FieldSet_CGS__Form', 'module', CONSOLE % ERROR )
         call Show ( 'FinishExchangeFace', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagReceive
 
       call StoreMessage &
-             ( FSG, IncomingFace % Message ( iD ), nReceive, oReceive )
+             ( FSC, IncomingFace % Message ( iD ), nReceive, oReceive )
 
     end do
 
@@ -623,10 +623,10 @@ contains
 
 
   subroutine StartExchangeEdge &
-               ( FSG, IncomingEdge, OutgoingEdge, PH, TagReceive, TagSend )
+               ( FSC, IncomingEdge, OutgoingEdge, PH, TagReceive, TagSend )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingEdge
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
@@ -648,16 +648,16 @@ contains
     type ( TimerForm ), pointer :: &
       T 
       
-    T => PROGRAM_HEADER % TimerPointer ( FSG % iTimerGhostCommunication )
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
 
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
     associate &
-      ( Communicator  =>  G % Communicator, &
-        nCB  =>  G % nCellsBrick, &
-        nGL  =>  G % nGhostLayers, &
-        nD   =>  G % nDimensions )
+      ( Communicator  =>  C % Communicator, &
+        nCB  =>  C % nCellsBrick, &
+        nGL  =>  C % nGhostLayers, &
+        nD   =>  C % nDimensions )
         
     select case ( nD )
     case ( 1 ) 
@@ -680,12 +680,12 @@ contains
 
       call IncomingEdge % Initialize &
              ( Communicator, pack ( TagReceive, DimensionMask ), PH % Source, &
-               PH % nChunksFrom  *  FSG % nFields )           
+               PH % nChunksFrom  *  FSC % nFields )           
       call OutgoingEdge % Initialize &
              ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
-               PH % nChunksTo  *  FSG % nFields )
+               PH % nChunksTo  *  FSC % nFields )
       
-      if ( FSG % DevicesCommunicate ) then
+      if ( FSC % DevicesCommunicate ) then
         call IncomingEdge % AllocateDevice ( )
         call OutgoingEdge % AllocateDevice ( )
       end if
@@ -738,7 +738,7 @@ contains
       end select !-- nD
 
       call LoadMessage &
-             ( FSG, OutgoingEdge % Message ( kM ), nSend, oSend )
+             ( FSC, OutgoingEdge % Message ( kM ), nSend, oSend )
       
       call T % Start ( )
       call OutgoingEdge % Send ( kM )
@@ -757,10 +757,10 @@ contains
 
 
   subroutine FinishExchangeEdge &
-               ( FSG, IncomingEdge, OutgoingEdge, TagReceive )
+               ( FSC, IncomingEdge, OutgoingEdge, TagReceive )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
       IncomingEdge
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ) :: &
@@ -779,17 +779,17 @@ contains
     type ( TimerForm ), pointer :: &
       T 
       
-    T => PROGRAM_HEADER % TimerPointer ( FSG % iTimerGhostCommunication )
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostCommunication )
 
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
     associate &
-      ( nCB  =>  G % nCellsBrick, &
-        nGL  =>  G % nGhostLayers, &
-         nD  =>  G % nDimensions, &
-        iaB  =>  G % iaBrick, &
-         nB  =>  G % nBricks )
+      ( nCB  =>  C % nCellsBrick, &
+        nGL  =>  C % nGhostLayers, &
+         nD  =>  C % nDimensions, &
+        iaB  =>  C % iaBrick, &
+         nB  =>  C % nBricks )
 
     if ( nD == 1 ) &
       return
@@ -820,42 +820,42 @@ contains
       !-- In setting oReceive, note Copy command does not inherit lbound
       if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LL ( kM ) ) then
         if ( iaB ( iD )  ==  1  .and.  iaB ( jD ) == 1  &
-             .and..not. G % Periodic ( iD ) .and..not. G % Periodic ( jD ) ) &
+             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  -  nGL ( iD )
         oReceive ( jD )  =  oReceive ( jD )  -  nGL ( jD )
       else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RR ( kM ) ) then
         if ( iaB ( iD )  ==  nB ( iD )  .and.  iaB ( jD )  ==  nB ( jD )  &
-             .and..not. G % Periodic ( iD ) .and..not. G % Periodic ( jD ) ) &
+             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
         oReceive ( jD )  =  oReceive ( jD )  +  nCB ( jD )
       else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LR ( kM ) ) then
         if ( iaB ( iD )  ==  1  .and.  iaB ( jD )  ==  nB ( jD )  &
-             .and..not. G % Periodic ( iD ) .and..not. G % Periodic ( jD ) ) &
+             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  -  nGL ( iD )
         oReceive ( jD )  =  oReceive ( jD )  +  nCB ( jD )
       else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RL ( kM ) ) then
         if ( iaB ( iD )  ==  nB ( iD )  .and.  iaB ( jD )  ==  1  &
-             .and. .not. G % Periodic ( iD ) &
-             .and. .not. G % Periodic ( jD ) ) &
+             .and. .not. C % Periodic ( iD ) &
+             .and. .not. C % Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
         oReceive ( jD )  =  oReceive ( jD )  -  nGL ( jD )
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
-        call Show ( 'FieldSet_GS__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FieldSet_CGS__Form', 'module', CONSOLE % ERROR )
         call Show ( 'FinishExchangeEdge', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagReceive
 
       call StoreMessage &
-             ( FSG, IncomingEdge % Message ( kM ), nReceive, oReceive )
+             ( FSC, IncomingEdge % Message ( kM ), nReceive, oReceive )
 
     end do
 
@@ -874,10 +874,10 @@ contains
   end subroutine FinishExchangeEdge
 
 
-  subroutine LoadMessage ( FSG, OutgoingMessage, nSend, oSend )
+  subroutine LoadMessage ( FSC, OutgoingMessage, nSend, oSend )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     type ( MessageOutgoing_R_Form ), intent ( in ) :: &
       OutgoingMessage
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
@@ -893,20 +893,20 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    T => PROGRAM_HEADER % TimerPointer ( FSG % iTimerGhostPackUnpack )
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostPackUnpack )
     call T % Start ( )
     
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
-    associate ( S  =>  FSG % Storage )
+    associate ( S  =>  FSC % Storage )
 
     oBuffer = 0
     do iS = 1, S % nVariables
       iF = S % iaSelected ( iS )
-      call G % SetFieldPointer ( S % Value ( :, iF ), F )
+      call C % SetFieldPointer ( S % Value ( :, iF ), F )
       call Copy ( F, nSend, oSend, oBuffer, OutgoingMessage % Value, &
-                  UseDeviceOption = FSG % DevicesCommunicate )
+                  UseDeviceOption = FSC % DevicesCommunicate )
       oBuffer = oBuffer + product ( nSend )
     end do !-- iS
 
@@ -920,10 +920,10 @@ contains
   end subroutine LoadMessage
 
 
-  subroutine StoreMessage ( FSG, IncomingMessage, nReceive, oReceive )
+  subroutine StoreMessage ( FSC, IncomingMessage, nReceive, oReceive )
                
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      FSG
+    class ( FieldSet_CGS_Form ), intent ( inout ) :: &
+      FSC
     type ( MessageIncoming_R_Form ), intent ( in ) :: &
       IncomingMessage
     integer ( KDI ), dimension ( 3 ), intent ( in )  :: &
@@ -939,20 +939,20 @@ contains
     type ( TimerForm ), pointer :: &
       T
     
-    T => PROGRAM_HEADER % TimerPointer ( FSG % iTimerGhostPackUnpack )
+    T => PROGRAM_HEADER % TimerPointer ( FSC % iTimerGhostPackUnpack )
     call T % Start ( )
     
-    select type ( G  =>  FSG % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
 
-    associate ( S  =>  FSG % Storage )
+    associate ( S  =>  FSC % Storage )
 
     oBuffer = 0
     do iS = 1, S % nVariables          
       iF = S % iaSelected ( iS )
-      call G % SetFieldPointer ( S % Value ( :, iF ), F )
+      call C % SetFieldPointer ( S % Value ( :, iF ), F )
       call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, F, &
-                  UseDeviceOption = FSG % DevicesCommunicate )
+                  UseDeviceOption = FSC % DevicesCommunicate )
       oBuffer = oBuffer + product ( nReceive )
     end do !-- iS
     
@@ -966,4 +966,4 @@ contains
   end subroutine StoreMessage
 
 
-end module FieldSet_GS__Form
+end module FieldSet_CGS__Form
