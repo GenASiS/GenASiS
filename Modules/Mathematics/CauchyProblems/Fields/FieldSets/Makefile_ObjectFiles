@@ -3,4 +3,5 @@ FIELD_SETS = \
   FieldSet_ASG__Form.o \
   FieldSet_AH__Form.o \
   FieldSet_CGS__Form.o \
-  FieldSet_CH__Form.o
+  FieldSet_CH__Form.o \
+  Storage_FSC__Form.o
