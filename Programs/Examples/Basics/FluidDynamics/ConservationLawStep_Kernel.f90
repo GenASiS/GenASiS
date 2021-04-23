@@ -2,8 +2,11 @@
 
 submodule ( ConservationLawStep_Form ) ConservationLawStep_Kernel
 
+  use iso_c_binding
   use Basics
   implicit none
+  
+  include 'ConservationLawStep_Interface.f90'
     
 contains
 
@@ -15,7 +18,8 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       iaS, &
       iaVS, &   
-      lV, uV
+      lV, uV, &
+      nSizes
       
     lV = 1
     where ( shape ( V ) > 1 )
@@ -28,6 +32,24 @@ contains
       uV = shape ( V ) - oV
     end where
     uV ( iD ) = size ( V, dim = iD ) - 1
+    
+!    if ( UseDirectDevice ) then
+!    
+!      print*, 'UsingDirectDevice'
+!      
+!      iaS = 0
+!      nSizes = shape ( V )
+!      
+!      !$OMP target data use_device_ptr ( V, dV_Left, dV_Right )
+!      call ComputeDifferences_C & 
+!             ( c_loc ( V ), lV, uV, iaS, iD, &
+!               c_loc ( dV_Left ), c_loc ( dV_Right ), nSizes )
+!      !$OMP end target data
+!      
+!      return 
+!      
+!    end if
+!    
     
 !    dV_Left  = V - cshift ( V, shift = -1, dim = iD )    
 
@@ -218,7 +240,16 @@ contains
     
     integer ( KDI ) :: &
       iV
-    
+      
+    if ( UseDirectDevice ) then
+      !$OMP target data use_device_ptr ( dU, F_I, F_O )
+      call ComputeUpdate_C &
+             ( c_loc ( dU ), c_loc ( F_I ), c_loc ( F_O ), &
+               V, A, dT, size ( dU ) )
+      !$OMP end target data
+      return
+    end if
+      
     !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET )
     do iV = 1, size ( dU )
@@ -237,6 +268,13 @@ contains
     
     nV = size ( O )
     
+    if ( UseDirectDevice ) then
+      !$OMP target data use_device_ptr ( O, U, C )
+      call AddUpdate_C ( c_loc ( O ), c_loc ( U ), c_loc ( C ), nV )
+      !$OMP end target data
+      return
+    end if
+    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET )
     do iV = 1, nV
@@ -254,6 +292,13 @@ contains
       nV
     
     nV = size ( O )
+    
+    if ( UseDirectDevice ) then
+      !$OMP target data use_device_ptr ( C, O, U )
+      call CombineUpdates_C ( c_loc ( C ), c_loc ( O ), c_loc ( U ), nV )
+      !$OMP end target data
+      return
+    end if
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET )

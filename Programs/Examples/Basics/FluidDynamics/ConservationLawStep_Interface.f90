@@ -17,6 +17,22 @@
       integer ( c_int ), dimension ( 3 ) :: &
         nSizes
     end subroutine ComputeDifferences_C
+    
+    subroutine ComputeUpdate_C &
+                 ( dU, F_I, F_O, V, A, dT, nValues ) &
+                 bind ( c, name = 'ComputeUpdate_C' )
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &  
+        dU, &
+        F_I, F_O
+      real ( c_double ), value :: &
+        V, &
+        A, &
+        dT
+      integer ( c_int ), value :: &
+        nValues
+    end subroutine ComputeUpdate_C
      
     subroutine AddUpdate_C ( O, U, C, nValues ) &
                  bind ( c, name = 'AddUpdate_C' )

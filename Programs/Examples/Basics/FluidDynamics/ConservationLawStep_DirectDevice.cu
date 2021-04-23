@@ -5,8 +5,11 @@ extern "C"
   { 
 #endif
   void ComputeDifferences_C
-       ( double *V, int *lV, int *uV, int *iaS, int iD, 
-         double *dV_Left, double *dV_Right, int *nSizes );
+         ( double *V, int *lV, int *uV, int *iaS, int iD, 
+           double *dV_Left, double *dV_Right, int *nSizes );
+  void ComputeUpdate_C
+         ( double *dU, double *F_I, double *F_O,
+           double V, double A, double dT, int nValues );
   void AddUpdate_C ( double *O, double *U, double *C, int nValues );
   void CombineUpdates_C ( double *C, double *O, double *U, int nValues );
 #ifdef __cplusplus
@@ -129,6 +132,29 @@ void ComputeDifferences_C
   */
   //DeviceSynchronize (  );
   }
+  
+__global__ void ComputeUpdateDeviceKernel
+                  ( double *dU, double *F_I, double *F_O,
+                    double V, double A, double dT, int nValues )
+  {
+  if ( tiD <  nValues )
+    dU [ tiD ] = dU [ tiD ] - dT * ( F_O [ tiD ] - F_I [ tiD ] ) * ( A / V );
+  }
+
+
+void ComputeUpdate_C
+       ( double *dU, double *F_I, double *F_O,
+         double V, double A, double dT, int nValues )
+  {
+  dim3 block_Dim ( BLOCK_DIM * BLOCK_DIM );
+  dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x - 1 ) / block_Dim.x ) );
+  
+  hipLaunchKernelGGL
+    ( ( ComputeUpdateDeviceKernel ), grid_Dim, block_Dim, 0, 0, 
+      dU, F_I, F_O, V, A, dT, nValues );
+
+  DeviceSynchronize ( );
+  }
 
 
 __global__ void AddUpdateDeviceKernel
@@ -142,7 +168,7 @@ __global__ void AddUpdateDeviceKernel
 void AddUpdate_C ( double *O, double *U, double *C, int nValues )
   {
   dim3 block_Dim ( BLOCK_DIM * BLOCK_DIM );
-  dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x -1 ) / block_Dim.x ) );
+  dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x - 1 ) / block_Dim.x ) );
 
   hipLaunchKernelGGL 
     ( ( AddUpdateDeviceKernel ), grid_Dim, block_Dim, 0, 0, 
@@ -162,7 +188,7 @@ __global__ void CombineUpdatesDeviceKernel
 void CombineUpdates_C ( double *C, double *O, double *U, int nValues )
   {
   dim3 block_Dim ( BLOCK_DIM * BLOCK_DIM );
-  dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x -1 ) / block_Dim.x ) );
+  dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x - 1 ) / block_Dim.x ) );
     
   hipLaunchKernelGGL 
     ( ( CombineUpdatesDeviceKernel ), grid_Dim, block_Dim, 0, 0, 

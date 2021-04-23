@@ -65,7 +65,9 @@ module ConservationLawStep_Form
       AddUpdateKernel, &
       ComputeUpdateKernel, &
       CombineUpdatesKernel
-      
+    
+    logical, parameter, private :: &
+      UseDirectDevice = .true.
       
     interface
     
@@ -73,12 +75,12 @@ module ConservationLawStep_Form
                    ( V, oV, iD, dV_Left, dV_Right )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
           V
         integer ( KDI ), intent ( in ) :: &
           oV, &
           iD
-        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( out ), target :: &
           dV_Left, dV_Right
       end subroutine ComputeDifferencesKernel
 
@@ -115,9 +117,9 @@ module ConservationLawStep_Form
       module subroutine ComputeUpdateKernel ( dU, F_I, F_O, V, A, dT )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           dU
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           F_I, F_O
         real ( KDR ), intent ( in ) :: &
           V, &
@@ -128,19 +130,19 @@ module ConservationLawStep_Form
       module subroutine AddUpdateKernel ( O, U, C )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           O, &
           U
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
+        real ( KDR ), dimension ( : ), intent ( out ), target :: &
           C 
       end subroutine AddUpdateKernel
       
       module subroutine CombineUpdatesKernel ( C, O, U )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           C 
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           O, &
           U
       end subroutine CombineUpdatesKernel

@@ -15,6 +15,7 @@ FLUID = \
   PressurelessFluid_Form.o \
   ConservationLawEvolution_Kernel.o \
   ConservationLawEvolution_Template.o \
+  ConservationLawStep_DirectDevice.o \
   ConservationLawStep_Kernel.o \
   ConservationLawStep_Form.o \
   ConservedFields_Template.o \
@@ -64,9 +65,13 @@ ConservationLawStep_Form.o: \
   ConservedFields_Template.o \
   ConservationLawStep_Form.f90
 
+ConservationLawStep_DirectDevice.o: \
+  ConservationLawStep_DirectDevice.cu
+
 ConservationLawStep_Kernel.o: \
   Basics.o \
   ConservationLawStep_Form.o \
+  ConservationLawStep_DirectDevice.o \
   ConservationLawStep_Kernel.f90
 
 ConservationLawEvolution_Template.o: \
