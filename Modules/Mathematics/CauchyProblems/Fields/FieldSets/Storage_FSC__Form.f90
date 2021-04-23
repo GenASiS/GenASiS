@@ -14,8 +14,7 @@ module Storage_FSC__Form
       iTimerUpdateHost   = 0
     logical ( KDL ) :: &
       DeviceMemory, &
-      PinnedMemory, &
-      DevicesCommunicate
+      PinnedMemory
     class ( StorageForm ), allocatable :: &
       Storage
   contains
@@ -32,6 +31,7 @@ module Storage_FSC__Form
     final :: &
       Finalize
   end type Storage_FSC_Form
+
 
 contains
 
@@ -111,9 +111,8 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaSelected
 
-    SFSC_T % DeviceMemory        =  SFSC_S % DeviceMemory    
-    SFSC_T % PinnedMemory        =  SFSC_S % PinnedMemory
-    SFSC_T % DevicesCommunicate  =  SFSC_S % DevicesCommunicate
+    SFSC_T % DeviceMemory  =  SFSC_S % DeviceMemory    
+    SFSC_T % PinnedMemory  =  SFSC_S % PinnedMemory
 
     allocate ( SFSC_T % Storage )
     associate ( S  =>  SFSC_T % Storage )
@@ -192,7 +191,7 @@ contains
   end subroutine UpdateHost_SFS
 
 
-  subroutine Finalize ( SFSC )
+  impure elemental subroutine Finalize ( SFSC )
 
     type ( Storage_FSC_Form ), intent ( inout ) :: &
       SFSC
