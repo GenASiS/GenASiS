@@ -33,23 +33,16 @@ contains
     end where
     uV ( iD ) = size ( V, dim = iD ) - 1
     
-!    if ( UseDirectDevice ) then
-!    
-!      print*, 'UsingDirectDevice'
-!      
-!      iaS = 0
-!      nSizes = shape ( V )
-!      
-!      !$OMP target data use_device_ptr ( V, dV_Left, dV_Right )
-!      call ComputeDifferences_C & 
-!             ( c_loc ( V ), lV, uV, iaS, iD, &
-!               c_loc ( dV_Left ), c_loc ( dV_Right ), nSizes )
-!      !$OMP end target data
-!      
-!      return 
-!      
-!    end if
-!    
+    if ( UseDirectDevice .and. .false. ) then
+      iaS = 0
+      nSizes = shape ( V )
+      !$OMP target data use_device_ptr ( V, dV_Left, dV_Right )
+      call ComputeDifferences_C & 
+             ( c_loc ( V ), lV, uV, iaS, iD, &
+               c_loc ( dV_Left ), c_loc ( dV_Right ), nSizes )
+      !$OMP end target data
+      return 
+    end if
     
 !    dV_Left  = V - cshift ( V, shift = -1, dim = iD )    
 
@@ -122,6 +115,16 @@ contains
     !V_Inner = V - 0.5_KDR * dV
     !V_Outer = V + 0.5_KDR * dV
     
+    if ( UseDirectDevice ) then
+      !$OMP target data use_device_ptr &
+      !$OMP   ( V, dV_Left, dV_Right, V_Inner, V_Outer )
+      call ComputeReconstruction_C &
+             ( c_loc ( V ), c_loc ( dV_Left ), c_loc ( dv_Right ), Theta, &
+               c_loc ( V_Inner ), c_loc ( V_Outer ), size ( V ) )
+      !$OMP end target data
+      return
+    end if
+    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( dV )
     do iV = 1, size ( V )
@@ -145,7 +148,8 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       iaS, &
       iaVS, &   
-      lV, uV
+      lV, uV, &
+      nSizes
       
     lV = 1
     where ( shape ( F_I ) > 1 )
@@ -166,6 +170,24 @@ contains
     !elsewhere
     !  F_I = 0.0_KDR
     !end where
+    
+    if ( UseDirectDevice .and. .false. ) then
+      iaS = 0
+      nSizes = shape ( F_I )
+      
+      !$OMP target data use_device_ptr &
+      !$OMP   ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, F_I, F_O )
+      call ComputeFluxes_C &
+             ( c_loc ( AP_I ), c_loc ( AP_O ), &
+               c_loc ( AM_I ), c_loc ( AM_O ), &
+               c_loc ( RF_I ), c_loc ( RF_O ), &
+               c_loc ( U_I ), c_loc ( U_O ), lV, uV, iaS, iD, &
+               c_loc ( F_I ), c_loc ( F_O ), nSizes )
+      !$OMP end target data
+
+      return
+    end if
+    
     
     iaS = 0
     iaS ( iD ) = -1

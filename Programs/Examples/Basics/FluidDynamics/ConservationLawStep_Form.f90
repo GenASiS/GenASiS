@@ -88,12 +88,12 @@ module ConservationLawStep_Form
                    ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           V, &
           dV_Left, dV_Right
         real ( KDR ), intent ( in ) :: &
           Theta
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
+        real ( KDR ), dimension ( : ), intent ( out ), target :: &
           V_Inner, V_Outer
       end subroutine ComputeReconstructionKernel
 
@@ -102,7 +102,7 @@ module ConservationLawStep_Form
                      F_I, F_O )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
           AP_I, AP_O, &
           AM_I, AM_O, &
           RF_I, RF_O, &
@@ -110,7 +110,7 @@ module ConservationLawStep_Form
         integer ( KDI ), intent ( in ) :: &
           oV, &
           iD
-        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( out ), target :: &
           F_I, F_O
       end subroutine ComputeFluxesKernel
 
