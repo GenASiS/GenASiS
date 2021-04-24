@@ -40,6 +40,12 @@ FieldSet_ASG__Form.o: \
   FieldSet_AH__Form.o \
   FieldSet_ASG__Form.f90
 
+FieldSet_A__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSet_C__Form.o \
+  FieldSet_A__Form.f90
+
 FieldSets.o: \
   Storage_FSC__Form.o \
   GhostExchange_FSC__Form.o \
@@ -48,6 +54,7 @@ FieldSets.o: \
   FieldSet_C__Form.o \
   FieldSet_AH__Form.o \
   FieldSet_ASG__Form.o \
+  FieldSet_A__Form.o \
   FieldSets.f90
 
 FieldSets.a: $(FIELD_SETS)

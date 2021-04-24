@@ -35,14 +35,14 @@ module Chart_H__Form
       Finalize_C
   end type Chart_H_Form
 
-  type, public :: Chart_E_Form
+  type, public :: ChartElement
     !-- Chart_Element_Form
     class ( Chart_H_Form ), allocatable :: &
       Element
   contains
     final :: &
       Finalize_E
-  end type Chart_E_Form
+  end type ChartElement
 
     private :: &
       SetDimensionality, &
@@ -138,7 +138,7 @@ contains
 
   impure elemental subroutine Finalize_E ( CE )
     
-    type ( Chart_E_Form ), intent ( inout ) :: &
+    type ( ChartElement ), intent ( inout ) :: &
       CE
 
     if ( allocated ( CE % Element ) ) &

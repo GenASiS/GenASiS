@@ -15,7 +15,7 @@ module Atlas_H__Form
     character ( LDL ) :: &
       Type = '', &
       Name
-    type ( Chart_E_Form ), dimension ( : ), allocatable :: &
+    type ( ChartElement ), dimension ( : ), allocatable :: &
       Chart
   contains
     procedure, public, pass :: &

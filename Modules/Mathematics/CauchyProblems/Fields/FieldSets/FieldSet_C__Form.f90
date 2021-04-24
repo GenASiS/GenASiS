@@ -37,11 +37,11 @@ module FieldSet_C__Form
       Primary => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_H
-    procedure, public, pass :: &
+      InitializeAllocate_FS
+    procedure, private, pass :: &
       InitializeClone
     generic, public :: &
-      Initialize => InitializeAllocate_H, InitializeClone
+      Initialize => InitializeAllocate_FS, InitializeClone
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -71,7 +71,7 @@ module FieldSet_C__Form
 contains
 
 
-  subroutine InitializeAllocate_H &
+  subroutine InitializeAllocate_FS &
                ( FSC, C, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
@@ -79,7 +79,7 @@ contains
 
     class ( FieldSet_C_Form ), intent ( inout ) :: &
       FSC
-    class ( Chart_H_Form ), intent ( inout ), target :: &
+    class ( Chart_H_Form ), intent ( in ), target :: &
       C
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
@@ -189,7 +189,7 @@ contains
            ( DevicesCommunicateOption )
     end associate !-- GE
 
-  end subroutine InitializeAllocate_H
+  end subroutine InitializeAllocate_FS
 
 
   subroutine InitializeClone &
