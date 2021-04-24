@@ -6,6 +6,7 @@ Storage_FSC__Form.o: \
 GhostExchange_FSC__Form.o: \
   Basics.o \
   Manifolds.o \
+  Storage_FSC__Form.o \
   GhostExchange_FSC__Form.f90
 
 FieldSet_CH__Form.o: \
@@ -18,6 +19,13 @@ FieldSet_CGS__Form.o: \
   Manifolds.o \
   FieldSet_CH__Form.o \
   FieldSet_CGS__Form.f90
+
+FieldSet_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Storage_FSC__Form.o \
+  GhostExchange_FSC__Form.o \
+  FieldSet_C__Form.f90
 
 FieldSet_AH__Form.o: \
   Basics.o \
@@ -37,6 +45,7 @@ FieldSets.o: \
   GhostExchange_FSC__Form.o \
   FieldSet_CH__Form.o \
   FieldSet_CGS__Form.o \
+  FieldSet_C__Form.o \
   FieldSet_AH__Form.o \
   FieldSet_ASG__Form.o \
   FieldSets.f90

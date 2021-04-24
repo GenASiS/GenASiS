@@ -4,6 +4,7 @@ module GhostExchange_FSC__Form
 
   use Basics
   use Manifolds
+  use Storage_FSC__Form
 
   implicit none
   private
@@ -33,20 +34,20 @@ module GhostExchange_FSC__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      ExchangeGhostData
+      Exchange
     procedure, public, pass :: &
-      StartGhostExchange
+      StartExchange
     procedure, public, pass :: &
-      FinishGhostExchange
+      FinishExchange
     final :: &
       Finalize
   end type GhostExchange_FSC_Form
 
     private :: &
-      StartExchangeFace_CGS, &
-      FinishExchangeFace_CGS, &
-      StartExchangeEdge_CGS, &
-      FinishExchangeEdge_CGS
+      StartFace_CGS, &
+      FinishFace_CGS, &
+      StartEdge_CGS, &
+      FinishEdge_CGS
 
       private :: &
         LoadMessage_CGS, &
@@ -88,36 +89,38 @@ contains
   end subroutine Initialize
 
 
-  subroutine ExchangeGhostData  ( GE, S, C, TimerLevelOption )
+  subroutine Exchange  ( GE, SFSC, C, TimerLevelOption )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
       GE
-    class ( StorageForm ), intent ( inout ) :: &
-      S
+    class ( Storage_FSC_Form ), intent ( inout ) :: &
+      SFSC
     class ( Chart_H_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
-    call GE % StartGhostExchange ( C, S, TimerLevelOption )
-    call GE % FinishGhostExchange ( S, C )
+    call GE % StartExchange ( C, SFSC, TimerLevelOption )
+    call GE % FinishExchange ( SFSC, C )
    
-  end subroutine ExchangeGhostData
+  end subroutine Exchange
 
 
-  subroutine StartGhostExchange  ( GE, C, S, TimerLevelOption )
+  subroutine StartExchange  ( GE, C, SFSC, TimerLevelOption )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
       GE
     class ( Chart_H_Form ), intent ( in ) :: &
       C
-    class ( StorageForm ), intent ( in ) :: &
-      S
+    class ( Storage_FSC_Form ), intent ( in ) :: &
+      SFSC
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
     character ( LDF ) :: &
       TimerName
+
+    associate ( S  =>  SFSC % Storage )
 
     call Show ( 'Starting ghost exchange', GE % IGNORABILITY )
     call Show ( S % Name, 'FieldSet', GE % IGNORABILITY )
@@ -143,86 +146,102 @@ contains
     end if
     end associate !-- iT_GC, etc.
       
+    end associate !-- S
+
     select type ( C )
     class is ( Chart_GS_Form )
 
+      associate ( S  =>  SFSC % Storage )
+
       !-- Start faces
-      call StartExchangeFace_CGS &
+      call StartFace_CGS &
              ( GE, GE % IncomingFace_L_R, GE % OutgoingFace_L_R, &
                C, C % PortalFace_L_R, S, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R )
-      call StartExchangeFace_CGS &
+      call StartFace_CGS &
              ( GE, GE % IncomingFace_R_L, GE % OutgoingFace_R_L, &
                C, C % PortalFace_R_L, S, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L )
 
-    !-- Start edges
-    call StartExchangeEdge_CGS &
-           ( GE, GE % IncomingEdge_LL_RR, GE % OutgoingEdge_LL_RR, &
-             C, C % PortalEdge_LL_RR, S, TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR )
-    call StartExchangeEdge_CGS &
-           ( GE, GE % IncomingEdge_RR_LL, GE % OutgoingEdge_RR_LL, &
-             C, C % PortalEdge_RR_LL, S, TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL )
-    call StartExchangeEdge_CGS &
-           ( GE, GE % IncomingEdge_LR_RL, GE % OutgoingEdge_LR_RL, &
-             C, C % PortalEdge_LR_RL, S, TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL )
-    call StartExchangeEdge_CGS &
-           ( GE, GE % IncomingEdge_RL_LR, GE % OutgoingEdge_RL_LR, &
-             C, C % PortalEdge_RL_LR, S, TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR )
+      !-- Start edges
+      call StartEdge_CGS &
+             ( GE, GE % IncomingEdge_LL_RR, GE % OutgoingEdge_LL_RR, &
+               C, C % PortalEdge_LL_RR, S, &
+               TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR )
+      call StartEdge_CGS &
+             ( GE, GE % IncomingEdge_RR_LL, GE % OutgoingEdge_RR_LL, &
+               C, C % PortalEdge_RR_LL, S, &
+               TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL )
+      call StartEdge_CGS &
+             ( GE, GE % IncomingEdge_LR_RL, GE % OutgoingEdge_LR_RL, &
+               C, C % PortalEdge_LR_RL, S, &
+               TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL )
+      call StartEdge_CGS &
+             ( GE, GE % IncomingEdge_RL_LR, GE % OutgoingEdge_RL_LR, &
+               C, C % PortalEdge_RL_LR, S, &
+               TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR )
+
+      end associate !-- S
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'GhostExchange_FSC_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'StartGhostExchange', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'StartExchange', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select  !-- C
 
-  end subroutine StartGhostExchange
+  end subroutine StartExchange
 
 
-  subroutine FinishGhostExchange  ( GE, S, C )
+  subroutine FinishExchange  ( GE, SFSC, C )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
       GE
-    class ( StorageForm ), intent ( inout ) :: &
-      S
+    class ( Storage_FSC_Form ), intent ( inout ) :: &
+      SFSC
     class ( Chart_H_Form ), intent ( in ) :: &
       C
 
+    associate ( S  =>  SFSC % Storage )
     call Show ( 'Finishing ghost exchange', GE % IGNORABILITY )
     call Show ( S % Name, 'FieldSet', GE % IGNORABILITY )
+    end associate !-- S
 
     select type ( C )
     class is ( Chart_GS_Form )
 
+      associate ( S  =>  SFSC % Storage )
+
       !-- Finish faces
-      call FinishExchangeFace_CGS &
+      call FinishFace_CGS &
              ( GE, GE % IncomingFace_L_R, GE % OutgoingFace_L_R, S, C, &
                TAG_RECEIVE_FACE_L )
-      call FinishExchangeFace_CGS &
+      call FinishFace_CGS &
              ( GE, GE % IncomingFace_R_L, GE % OutgoingFace_R_L, S, C, &
                TAG_RECEIVE_FACE_R )
 
       !-- Finish edges
-      call FinishExchangeEdge_CGS &
+      call FinishEdge_CGS &
              ( GE, GE % IncomingEdge_LL_RR, GE % OutgoingEdge_LL_RR, S, C, &
                TAG_RECEIVE_EDGE_LL )
-      call FinishExchangeEdge_CGS &
+      call FinishEdge_CGS &
              ( GE, GE % IncomingEdge_RR_LL, GE % OutgoingEdge_RR_LL, S, C, &
                TAG_RECEIVE_EDGE_RR )
-      call FinishExchangeEdge_CGS &
+      call FinishEdge_CGS &
              ( GE, GE % IncomingEdge_LR_RL, GE % OutgoingEdge_LR_RL, S, C, &
                TAG_RECEIVE_EDGE_LR )
-      call FinishExchangeEdge_CGS &
+      call FinishEdge_CGS &
              ( GE, GE % IncomingEdge_RL_LR, GE % OutgoingEdge_RL_LR, S, C, &
                TAG_RECEIVE_EDGE_RL )
-    
+
+      end associate !-- S
+
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'GhostExchange_FSC_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'StartGhostExchange', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'FinishExchange', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select  !-- C
 
-  end subroutine FinishGhostExchange
+  end subroutine FinishExchange
 
 
   impure elemental subroutine Finalize ( GE )
@@ -259,7 +278,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine StartExchangeFace_CGS &
+  subroutine StartFace_CGS &
                ( GE, IncomingFace, OutgoingFace, C, PH, S, TagReceive, TagSend )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
@@ -338,7 +357,7 @@ contains
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'FieldSet_CGS__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'StartExchangeFace', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'StartFace_CGS', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
@@ -357,10 +376,10 @@ contains
 
     nullify ( T )
 
-  end subroutine StartExchangeFace_CGS
+  end subroutine StartFace_CGS
 
 
-  subroutine FinishExchangeFace_CGS &
+  subroutine FinishFace_CGS &
                ( GE, IncomingFace, OutgoingFace, S, C, TagReceive )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
@@ -421,7 +440,7 @@ contains
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'FieldSet_CGS__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'FinishExchangeFace', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'FinishFace', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagReceive
 
@@ -441,10 +460,10 @@ contains
     
     nullify ( T )
 
-  end subroutine FinishExchangeFace_CGS
+  end subroutine FinishFace_CGS
 
 
-  subroutine StartExchangeEdge_CGS &
+  subroutine StartEdge_CGS &
                ( GE, IncomingEdge, OutgoingEdge, C, PH, S, TagReceive, TagSend )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
@@ -549,7 +568,7 @@ contains
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'Field_GS__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'StartExchangeEdge', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'StartEdge_CGS', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
@@ -575,10 +594,10 @@ contains
 
     nullify ( T )
 
-  end subroutine StartExchangeEdge_CGS
+  end subroutine StartEdge_CGS
 
 
-  subroutine FinishExchangeEdge_CGS &
+  subroutine FinishEdge_CGS &
                ( GE, IncomingEdge, OutgoingEdge, S, C, TagReceive )
 
     class ( GhostExchange_FSC_Form ), intent ( inout ) :: &
@@ -673,7 +692,7 @@ contains
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'FieldSet_CGS__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'FinishExchangeEdge', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'FinishEdge_CGS', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagReceive
 
@@ -693,7 +712,7 @@ contains
     
     nullify ( T )
 
-  end subroutine FinishExchangeEdge_CGS
+  end subroutine FinishEdge_CGS
 
 
   subroutine LoadMessage_CGS ( GE, C, S, OutgoingMessage, nSend, oSend )

@@ -2,8 +2,8 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: FieldSet_CH__Form_Test FieldSet_CGS__Form_Test FieldSet_AH__Form_Test \
-  FieldSet_ASG__Form_Test
+all: FieldSet_CH__Form_Test FieldSet_CGS__Form_Test FieldSet_C__Form_Test \
+  FieldSet_AH__Form_Test FieldSet_ASG__Form_Test
 
 FieldSet_CH__Form_Test: Basics.a Manifolds.a FieldSets.a \
   FieldSet_CH__Form_Test.o
@@ -17,6 +17,13 @@ FieldSet_CGS__Form_Test: Basics.a Manifolds.a FieldSets.a \
 	$(LINK) $(FLAGS) \
           -o FieldSet_CGS__Form_Test_$(MACHINE) \
           FieldSet_CGS__Form_Test.o FieldSets.a \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+FieldSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a \
+  FieldSet_C__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FieldSet_C__Form_Test_$(MACHINE) \
+          FieldSet_C__Form_Test.o FieldSets.a \
           Manifolds.a Basics.a $(LIBRARIES)
 
 FieldSet_AH__Form_Test: Basics.a Manifolds.a FieldSets.a \
@@ -39,6 +46,7 @@ clean:
 clobber: clean
 	rm -f FieldSet_CH__Form_Test_*
 	rm -f FieldSet_CGS__Form_Test_*
+	rm -f FieldSet_C__Form_Test_*
 	rm -f FieldSet_AH__Form_Test_*
 	rm -f FieldSet_ASG__Form_Test_*
 
@@ -57,6 +65,12 @@ FieldSet_CGS__Form_Test.o: \
   Manifolds.o \
   FieldSets.o \
   FieldSet_CGS__Form_Test.f90
+
+FieldSet_C__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  FieldSet_C__Form_Test.f90
 
 FieldSet_AH__Form_Test.o: \
   Basics.o \
