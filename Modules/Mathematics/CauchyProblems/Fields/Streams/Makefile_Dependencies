@@ -1,36 +1,43 @@
-Stream_CH__Form.o: \
+# Stream_CH__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   FieldSets.o \
+#   Stream_CH__Form.f90
+
+# Stream_GS__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   FieldSets.o \
+#   Stream_CH__Form.o \
+#   Stream_GS__Form.f90
+
+Stream_C__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
-  Stream_CH__Form.f90
+  Stream_C__Form.f90
 
-Stream_GS__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSets.o \
-  Stream_CH__Form.o \
-  Stream_GS__Form.f90
+# Stream_AH__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   FieldSets.o \
+#   Stream_CH__Form.o \
+#   Stream_AH__Form.f90
 
-Stream_AH__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSets.o \
-  Stream_CH__Form.o \
-  Stream_AH__Form.f90
-
-Stream_ASG__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  Stream_GS__Form.o \
-  Stream_AH__Form.o \
-  Stream_ASG__Form.f90
+# Stream_ASG__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   Stream_GS__Form.o \
+#   Stream_AH__Form.o \
+#   Stream_ASG__Form.f90
 
 Streams.o: \
-  Stream_AH__Form.o \
-  Stream_CH__Form.o \
-  Stream_GS__Form.o \
-  Stream_ASG__Form.o \
+  Stream_C__Form.o \
   Streams.f90
+  # Stream_AH__Form.o \
+  # Stream_CH__Form.o \
+  # Stream_GS__Form.o \
+  # Stream_ASG__Form.o \
 
 Streams.a: $(STREAMS)
 	ar r Streams.a $(STREAMS)

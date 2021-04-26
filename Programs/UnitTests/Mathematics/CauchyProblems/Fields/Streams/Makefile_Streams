@@ -2,36 +2,43 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Stream_CH__Form_Test Stream_GS__Form_Test Stream_AH__Form_Test \
+all: Stream_C__Form_Test #Stream_CH__Form_Test Stream_GS__Form_Test Stream_AH__Form_Test \
   Stream_ASG__Form_Test
 
-Stream_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Stream_CH__Form_Test.o
+# Stream_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+#   Stream_CH__Form_Test.o
+# 	$(LINK) $(FLAGS) \
+#           -o Stream_CH__Form_Test_$(MACHINE) \
+#           Stream_CH__Form_Test.o Streams.a \
+#           FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+# Stream_GS__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+#   Stream_GS__Form_Test.o
+# 	$(LINK) $(FLAGS) \
+#           -o Stream_GS__Form_Test_$(MACHINE) \
+#           Stream_GS__Form_Test.o Streams.a \
+#           FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+Stream_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Stream_C__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o Stream_CH__Form_Test_$(MACHINE) \
-          Stream_CH__Form_Test.o Streams.a \
+          -o Stream_C__Form_Test_$(MACHINE) \
+          Stream_C__Form_Test.o Streams.a \
           FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
-Stream_GS__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Stream_GS__Form_Test.o
-	$(LINK) $(FLAGS) \
-          -o Stream_GS__Form_Test_$(MACHINE) \
-          Stream_GS__Form_Test.o Streams.a \
-          FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+# Stream_AH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+#   Stream_AH__Form_Test.o
+# 	$(LINK) $(FLAGS) \
+#           -o Stream_AH__Form_Test_$(MACHINE) \
+#           Stream_AH__Form_Test.o Streams.a \
+#           FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
-Stream_AH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Stream_AH__Form_Test.o
-	$(LINK) $(FLAGS) \
-          -o Stream_AH__Form_Test_$(MACHINE) \
-          Stream_AH__Form_Test.o Streams.a \
-          FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
-
-Stream_ASG__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Stream_ASG__Form_Test.o
-	$(LINK) $(FLAGS) \
-          -o Stream_ASG__Form_Test_$(MACHINE) \
-          Stream_ASG__Form_Test.o Streams.a \
-          FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+# Stream_ASG__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+#   Stream_ASG__Form_Test.o
+# 	$(LINK) $(FLAGS) \
+#           -o Stream_ASG__Form_Test_$(MACHINE) \
+#           Stream_ASG__Form_Test.o Streams.a \
+#           FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
