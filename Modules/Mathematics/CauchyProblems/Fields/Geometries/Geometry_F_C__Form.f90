@@ -14,7 +14,7 @@ module Geometry_F_C__Form
       N_FIELDS_F  = 19, &
       N_VECTORS_F =  0
 
-  type, public :: Geometry_F_C_Form
+  type, public, extends ( FieldSet_C_Form ) :: Geometry_F_C_Form
     integer ( KDI ) :: &
       N_FIELDS_F = N_FIELDS_F, &
       N_VECTORS_F = N_VECTORS_F
@@ -48,45 +48,29 @@ module Geometry_F_C__Form
       WIDTH_U, &
       CENTER_U, &
       AREA_I_D
-    class ( FieldSet_CH_Form ), allocatable :: &
-      FieldSet
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      InitializeAllocate_FS
     procedure, public, pass :: &
       Compute
     procedure, public, pass ( GC ) :: &
       SetStream
-    procedure, public, pass :: &
-      Show => Show_GC
     final :: &
       Finalize
   end type Geometry_F_C_Form
 
-  type, public :: Geometry_C_Element
-    !-- Geometry_Chart_Element
-    class ( Geometry_F_C_Form ), allocatable :: &
-      Element
-  contains
-    final :: &
-      Finalize_E
-  end type Geometry_C_Element
-
     private :: &
       SetUnits, &
-      Compute_CGS
+      SetCoordinates, &
+      ComputeFromCoordinates
 
       private :: &
-        SetCoordinates_CGS, &
-        ComputeFromCoordinates
-
-        private :: &
-          Compute_FV_R_Kernel, &
-          Compute_FV_C_Kernel, &
-          Compute_FV_S_Kernel, &
-          Compute_M_R_Kernel, &
-          Compute_M_C_Kernel, &
-          Compute_M_S_Kernel
+        Compute_FV_R_Kernel, &
+        Compute_FV_C_Kernel, &
+        Compute_FV_S_Kernel, &
+        Compute_M_R_Kernel, &
+        Compute_M_C_Kernel, &
+        Compute_M_S_Kernel
 
     interface
       
@@ -201,28 +185,32 @@ module Geometry_F_C__Form
 contains
 
 
-  subroutine Initialize &
-               ( GC, C, NameOption, nFieldsOption, DeviceMemoryOption, &
-                 PinnedMemoryOption, DevicesCommunicateOption, FieldOption, &
-                 UnitOption )
+  subroutine InitializeAllocate_FS &
+               ( FSC, C, FieldOption, VectorOption, NameOption, &
+                 DeviceMemoryOption, PinnedMemoryOption, &
+                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
+                 nFieldsOption, IgnorabilityOption )
 
     class ( Geometry_F_C_Form ), intent ( inout ) :: &
-      GC
-    class ( Chart_H_Form ), intent ( inout ) :: &
+      FSC
+    class ( Chart_H_Form ), intent ( in ), target :: &
       C
-    character ( * ), intent ( inout ), optional :: &
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      FieldOption, &
+      VectorOption
+    character ( * ), intent ( in ), optional :: &
       NameOption
-    integer ( KDI ), intent ( in ), optional :: &
-      nFieldsOption
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
-    character ( * ), dimension ( : ), intent ( out ), allocatable, optional :: &
-      FieldOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( out ), allocatable, &
-      optional :: &
-        UnitOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      UnitOption
+    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
+      VectorIndicesOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nFieldsOption, &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       nFields
@@ -233,51 +221,53 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Field
 
+    if ( FSC % Type  ==  '' ) &
+      FSC % Type  =  'a Geometry_F_C' 
+    
     Name  =  'Geometry'
-    if ( present ( NameOption ) ) then
-      if ( NameOption  ==  '' ) then
-        NameOption  =  Name
-      else
-        Name  =  NameOption
-      end if
-    end if
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
 
     !-- Field indices
 
-    GC % EDGE_I_U_1      =   1
-    GC % EDGE_I_U_2      =   2
-    GC % EDGE_I_U_3      =   3
-    GC % WIDTH_U_1       =   4
-    GC % WIDTH_U_2       =   5
-    GC % WIDTH_U_3       =   6
-    GC % CENTER_U_1      =   7
-    GC % CENTER_U_2      =   8
-    GC % CENTER_U_3      =   9
-    GC % AREA_I_D_1      =  10
-    GC % AREA_I_D_2      =  11
-    GC % AREA_I_D_3      =  12
-    GC % VOLUME          =  13
-    GC % METRIC_F_DD_11  =  14
-    GC % METRIC_F_DD_22  =  15
-    GC % METRIC_F_DD_33  =  16
-    GC % METRIC_F_UU_11  =  17
-    GC % METRIC_F_UU_22  =  18
-    GC % METRIC_F_UU_33  =  19
+    FSC % EDGE_I_U_1      =   1
+    FSC % EDGE_I_U_2      =   2
+    FSC % EDGE_I_U_3      =   3
+    FSC % WIDTH_U_1       =   4
+    FSC % WIDTH_U_2       =   5
+    FSC % WIDTH_U_3       =   6
+    FSC % CENTER_U_1      =   7
+    FSC % CENTER_U_2      =   8
+    FSC % CENTER_U_3      =   9
+    FSC % AREA_I_D_1      =  10
+    FSC % AREA_I_D_2      =  11
+    FSC % AREA_I_D_3      =  12
+    FSC % VOLUME          =  13
+    FSC % METRIC_F_DD_11  =  14
+    FSC % METRIC_F_DD_22  =  15
+    FSC % METRIC_F_DD_33  =  16
+    FSC % METRIC_F_UU_11  =  17
+    FSC % METRIC_F_UU_22  =  18
+    FSC % METRIC_F_UU_33  =  19
 
-    nFields  =  GC % N_FIELDS_F
+    nFields  =  FSC % N_FIELDS_F
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
-    GC % EDGE_I_U  =  [ GC % EDGE_I_U_1, GC % EDGE_I_U_2, GC % EDGE_I_U_3 ]
-    GC % WIDTH_U   =  [ GC % WIDTH_U_1,  GC % WIDTH_U_2,  GC % WIDTH_U_3  ]
-    GC % CENTER_U  =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3 ]
-    GC % AREA_I_D  =  [ GC % AREA_I_D_1, GC % AREA_I_D_2, GC % AREA_I_D_3 ]
+    FSC % EDGE_I_U  =  [ FSC % EDGE_I_U_1, FSC % EDGE_I_U_2, FSC % EDGE_I_U_3 ]
+    FSC % WIDTH_U   =  [ FSC % WIDTH_U_1,  FSC % WIDTH_U_2,  FSC % WIDTH_U_3  ]
+    FSC % CENTER_U  =  [ FSC % CENTER_U_1, FSC % CENTER_U_2, FSC % CENTER_U_3 ]
+    FSC % AREA_I_D  =  [ FSC % AREA_I_D_1, FSC % AREA_I_D_2, FSC % AREA_I_D_3 ]
 
     !-- Field names
 
-    allocate ( Field ( nFields ) )
+    if ( present ( FieldOption ) ) then
+      allocate ( Field, source = FieldOption )
+    else
+      allocate ( Field ( nFields ) )
+    end if !-- FieldOption
 
-    Field ( 1 : GC % N_FIELDS_F ) &
+    Field ( 1 : FSC % N_FIELDS_F ) &
       = [ 'Edge_I_U_1    ', &
           'Edge_I_U_2    ', &
           'Edge_I_U_3    ', &
@@ -298,54 +288,34 @@ contains
           'Metric_F_UU_22', &
           'Metric_F_UU_33' ]
 
-    if ( present ( FieldOption ) ) &
-      allocate ( FieldOption, source = Field )
-
     !-- Units
 
-    allocate ( Unit ( nFields ) )
+    if ( present ( UnitOption ) ) then
+      allocate ( Unit, source = UnitOption )
+    else
+      allocate ( Unit ( nFields ) )
+    end if !-- FieldOption
 
-    call SetUnits ( Unit, GC, C )
-
-    if ( present ( UnitOption ) ) &
-      allocate ( UnitOption, source = Unit )
+    call SetUnits ( Unit, FSC, C )
 
     !-- FieldSet
 
-    if ( .not. allocated ( GC % FieldSet ) ) then
+    call FSC % FieldSet_C_Form % Initialize &
+           ( C, &
+             FieldOption = Field, &
+             VectorOption = VectorOption, &
+             NameOption = Name, &
+             DeviceMemoryOption = DeviceMemoryOption, &
+             PinnedMemoryOption = PinnedMemoryOption, &
+             DevicesCommunicateOption = DevicesCommunicateOption, &
+             UnitOption = Unit, &
+             VectorIndicesOption = VectorIndicesOption, &
+             nFieldsOption = nFields, &
+             IgnorabilityOption = IgnorabilityOption )
 
-      select type ( C )
-      class is ( Grid_S_Form )
+    call FSC % Compute ( )
 
-        allocate ( FieldSet_GS_Form :: GC % FieldSet )
-        select type ( FS  =>  GC % FieldSet )
-        type is ( FieldSet_GS_Form )
-
-        FS % Type  =  'a Geometry_F_C'    
-
-        call FS % Initialize &
-               ( C, &
-                 FieldOption = Field, &
-                 NameOption = Name, &
-                 DeviceMemoryOption = DeviceMemoryOption, &
-                 PinnedMemoryOption = PinnedMemoryOption, &
-                 DevicesCommunicateOption = DevicesCommunicateOption, &
-                 UnitOption = Unit, &
-                 nFieldsOption = nFields )
-
-        end select !-- FS
-
-      class default
-        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Geometry_F_C__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-      end select !-- C
-
-    end if !-- allocated FieldSet
-
-    call GC % Compute ( )
-
-  end subroutine Initialize
+  end subroutine InitializeAllocate_FS
 
 
   subroutine Compute ( GC )
@@ -353,27 +323,28 @@ contains
     class ( Geometry_F_C_Form ), intent ( inout ) :: &
       GC
 
-    select type ( GFSC  =>  GC % FieldSet )
-    class is ( FieldSet_GS_Form )
-      call Compute_CGS ( GFSC, GC )
-    class default
-      call Show ( 'FieldSet type not recognized', CONSOLE % ERROR )
-      call Show ( 'Geometry_F_C__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )      
-    end select !-- GFSC
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    associate ( nD  =>  GC % Chart % nDimensions )
+    do iD = 1, nD
+      call SetCoordinates ( GC, iD )
+    end do !-- iD
+    call ComputeFromCoordinates ( GC % Storage_FSC % Storage, GC )
+    end associate !-- nD
 
   end subroutine Compute
 
 
   subroutine SetStream ( SC, GC )
 
-    class ( Stream_CH_Form ), intent ( inout ) :: &
+    class ( Stream_C_Form ), intent ( inout ) :: &
       SC
     class ( Geometry_F_C_Form ), intent ( in ) :: &
       GC
 
     call SC % AddFieldSet &
-           ( GC % FieldSet, &
+           ( GC, &
              iaSelectedOption &
                =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3, &
                     GC % METRIC_F_DD_11, GC % METRIC_F_DD_22, &
@@ -382,38 +353,14 @@ contains
   end subroutine SetStream
 
 
-  subroutine Show_GC ( GC )
-
-    class ( Geometry_F_C_Form ), intent ( inout ) :: &
-      GC
-
-    call GC % FieldSet % Show ( )
-
-  end subroutine Show_GC
-
-
   impure elemental subroutine Finalize ( GC )
 
     type ( Geometry_F_C_Form ), intent ( inout ) :: &
       GC
 
-    if ( allocated ( GC % FieldSet ) ) &
-      deallocate ( GC % FieldSet )
-
   end subroutine Finalize
 
   
-  impure elemental subroutine Finalize_E ( GE )
-    
-    type ( Geometry_C_Element ), intent ( inout ) :: &
-      GE
-
-    if ( allocated ( GE % Element ) ) &
-      deallocate ( GE % Element )
-
-  end subroutine Finalize_E
-
-
   subroutine SetUnits ( FieldUnit, GC, C )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
@@ -490,32 +437,17 @@ contains
   
   subroutine Compute_CGS ( GFSC, GC )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
       GFSC  
     class ( Geometry_F_C_Form ), intent ( in ) :: &
       GC
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-
-    associate ( nD  =>  GFSC % Chart % nDimensions )
-
-    do iD = 1, nD
-      call SetCoordinates_CGS ( GFSC, GC, iD )
-    end do !-- iD
-
-    call ComputeFromCoordinates ( GFSC % Storage, GC )
-
-    end associate !-- nD
-
   end subroutine Compute_CGS
 
 
-  subroutine SetCoordinates_CGS ( GFSC, GC, iD )
+  subroutine SetCoordinates ( GC, iD )
 
-    class ( FieldSet_GS_Form ), intent ( inout ) :: &
-      GFSC  
-    class ( Geometry_F_C_Form ), intent ( in ) :: &
+    class ( Geometry_F_C_Form ), intent ( inout ) :: &
       GC
     integer ( KDI ), intent ( in ) :: &
       iD      !-- iDimension
@@ -529,31 +461,31 @@ contains
       Width_3D, &
       Center_3D
 
-    select type ( G  =>  GFSC % Chart )
-    class is ( Grid_S_Form )
+    select type ( C  =>  GC % Chart )
+    class is ( Chart_GS_Form )
 
-    associate ( GV  =>  GFSC % Storage % Value )
+    associate ( GV  =>  GC % Storage_FSC % Storage % Value )
 
-    iaF  =  1  -  G % nGhostLayers ( iD ) 
-    if ( G % Distributed ) then
-      iaL  =  G % nCellsBrick ( iD )  +  G % nGhostLayers ( iD )
-       oC  =  ( G % iaBrick ( iD )  -  1 )  *  G % nCellsBrick ( iD )
+    iaF  =  1  -  C % nGhostLayers ( iD ) 
+    if ( C % Distributed ) then
+      iaL  =  C % nCellsBrick ( iD )  +  C % nGhostLayers ( iD )
+       oC  =  ( C % iaBrick ( iD )  -  1 )  *  C % nCellsBrick ( iD )
     else
-      iaL  =  G % nCells ( iD )  +  G % nGhostLayers ( iD )
+      iaL  =  C % nCells ( iD )  +  C % nGhostLayers ( iD )
        oC  =  0
     end if
 
-    call G % SetFieldPointer &
+    call C % SetFieldPointer &
            ( GV ( :, GC % EDGE_I_U ( iD ) ), Edge_I_3D )
-    call G % SetFieldPointer &
+    call C % SetFieldPointer &
            ( GV ( :, GC % WIDTH_U ( iD ) ),  Width_3D )
-    call G % SetFieldPointer &
+    call C % SetFieldPointer &
            ( GV ( :, GC % CENTER_U ( iD ) ), Center_3D )
 
     associate &
-      (   Edge_1D  =>  G %   Edge ( iD ) % Value, &
-         Width_1D  =>  G %  Width ( iD ) % Value, &
-        Center_1D  =>  G % Center ( iD ) % Value )
+      (   Edge_1D  =>  C %   Edge ( iD ) % Value, &
+         Width_1D  =>  C %  Width ( iD ) % Value, &
+        Center_1D  =>  C % Center ( iD ) % Value )
     do iC  =  iaF, iaL
       select case ( iD )
       case ( 1 )
@@ -573,9 +505,14 @@ contains
     end associate !-- Edge_1D, etc.
 
     end associate !-- GV
-    end select !-- G
 
-  end subroutine SetCoordinates_CGS
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Geometry_F_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetCoordinates', 'subroutine', CONSOLE % ERROR )
+    end select !-- C
+
+  end subroutine SetCoordinates
 
 
   subroutine ComputeFromCoordinates ( GS, GC, nValuesOption, oValueOption )
@@ -603,7 +540,7 @@ contains
     if ( present ( nValuesOption ) ) &
       nValues  =  nValuesOption
 
-    associate ( C  =>  GC % FieldSet % Chart )
+    associate ( C  =>  GC % Chart )
 
     nDimensions  =  C % nDimensions
 

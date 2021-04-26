@@ -13,16 +13,16 @@ program Geometry_F_C__Form_Test
     CoordinateUnit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
-  type ( Grid_S_Form ), allocatable :: &
-    G
-  type ( Stream_GS_Form ), allocatable :: &
-    SG
+  type ( Chart_GS_Form ), allocatable :: &
+    C
+  type ( Stream_C_Form ), allocatable :: &
+    SC
   type ( Geometry_F_C_Form ), allocatable :: &
     GC
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Geometry_F_GS__Form_Test', DimensionalityOption = '2D' )
+         ( 'Geometry_F_C__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -31,30 +31,30 @@ program Geometry_F_C__Form_Test
 
   CoordinateUnit  =  UNIT % KILOMETER
 
-  allocate ( G )
-  call G % Initialize &
+  allocate ( C )
+  call C % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
            PeriodicOption = [ .true., .true., .true. ], &
            CoordinateUnitOption = CoordinateUnit )
 
-  allocate ( SG )
-  call SG % Initialize ( G, GIS )
+  allocate ( SC )
+  call SC % Initialize ( C, GIS )
 
   allocate ( GC )
-  call GC % Initialize ( G )
-  call GC % SetStream ( SG )
+  call GC % Initialize ( C )
+  call GC % SetStream ( SC )
 
-  call  G % Show ( )
+  call  C % Show ( )
   call GC % Show ( )
-  call SG % Show ( )
+  call SC % Show ( )
 
   call GIS % Open ( GIS % ACCESS_CREATE )
-  call SG % Write ( )
+  call SC % Write ( )
   call GIS % Close ( )
 
   deallocate ( GC )
-  deallocate ( SG )
-  deallocate ( G )
+  deallocate ( SC )
+  deallocate ( C )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
