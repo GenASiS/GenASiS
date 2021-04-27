@@ -2,45 +2,28 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: CurrentSet_CH__Form_Test #CurrentSet_GS__Form_Test \
-  CurrentSet_AH__Form_Test CurrentSet_ASG__Form_Test
+all: CurrentSet_C__Form_Test #CurrentSet_A__Form_Test
 
-CurrentSet_CH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Geometries.a CurrentSets.a CurrentSet_CH__Form_Test.o
+CurrentSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a CurrentSet_C__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o CurrentSet_CH__Form_Test_$(MACHINE) \
-          CurrentSet_CH__Form_Test.o CurrentSets.a \
+          -o CurrentSet_C__Form_Test_$(MACHINE) \
+          CurrentSet_C__Form_Test.o CurrentSets.a \
           Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
-CurrentSet_GS__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Geometries.a CurrentSets.a CurrentSet_GS__Form_Test.o
+CurrentSet_A__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a CurrentSet_A__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o CurrentSet_GS__Form_Test_$(MACHINE) \
-          CurrentSet_GS__Form_Test.o CurrentSets.a \
-          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
-
-CurrentSet_AH__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Geometries.a CurrentSets.a CurrentSet_AH__Form_Test.o
-	$(LINK) $(FLAGS) \
-          -o CurrentSet_AH__Form_Test_$(MACHINE) \
-          CurrentSet_AH__Form_Test.o CurrentSets.a \
-          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
-
-CurrentSet_ASG__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
-  Geometries.a CurrentSets.a CurrentSet_ASG__Form_Test.o
-	$(LINK) $(FLAGS) \
-          -o CurrentSet_ASG__Form_Test_$(MACHINE) \
-          CurrentSet_ASG__Form_Test.o CurrentSets.a \
+          -o CurrentSet_A__Form_Test_$(MACHINE) \
+          CurrentSet_A__Form_Test.o CurrentSets.a \
           Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f CurrentSet_CH__Form_Test_*
-	rm -f CurrentSet_GS__Form_Test_*
-	rm -f CurrentSet_AH__Form_Test_*
-	rm -f CurrentSet_ASG__Form_Test_*
+	rm -f CurrentSet_C__Form_Test_*
+	rm -f CurrentSet_A__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
@@ -49,30 +32,16 @@ include $(PATH_STREAMS)/Makefile_Dependencies
 include $(PATH_GEOMETRIES)/Makefile_Dependencies
 include $(PATH_CURRENT_SETS)/Makefile_Dependencies
 
-CurrentSet_CH__Form_Test.o: \
+CurrentSet_C__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Streams.o \
   Geometries.o \
-  CurrentSet_CH__Form_Test.f90
+  CurrentSet_C__Form_Test.f90
 
-CurrentSet_GS__Form_Test.o: \
+CurrentSet_A__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Streams.o \
   Geometries.o \
-  CurrentSet_GS__Form_Test.f90
-
-CurrentSet_AH__Form_Test.o: \
-  Basics.o \
-  Manifolds.o \
-  Streams.o \
-  Geometries.o \
-  CurrentSet_AH__Form_Test.f90
-
-CurrentSet_ASG__Form_Test.o: \
-  Basics.o \
-  Manifolds.o \
-  Streams.o \
-  Geometries.o \
-  CurrentSet_ASG__Form_Test.f90
+  CurrentSet_A__Form_Test.f90

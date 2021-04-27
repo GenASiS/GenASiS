@@ -52,7 +52,9 @@ module FieldSet_C__Form
       UpdateDevice => UpdateDevice_FS
     procedure, public, pass :: &
       UpdateHost => UpdateHost_FS
-    procedure, public, pass :: &
+    procedure, private, pass :: &
+      Show_FSC
+    generic, public :: &
       Show => Show_FSC
     final :: &
       Finalize_FS

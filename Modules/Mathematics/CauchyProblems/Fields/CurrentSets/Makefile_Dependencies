@@ -1,10 +1,12 @@
-CurrentSet_CH__Form.o: \
+CurrentSet_C__Form.o: \
   Basics.o \
   Manifolds.o \
-  CurrentSet_CH__Form.f90
+  FieldSets.o \
+  Streams.o \
+  CurrentSet_C__Form.f90
 
 CurrentSets.o: \
-  CurrentSet_CH__Form.o \
+  CurrentSet_C__Form.o \
   CurrentSets.f90
 
 CurrentSets.a: $(CURRENT_SETS)
