@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: CurrentSet_C__Form_Test #CurrentSet_A__Form_Test
+all: CurrentSet_C__Form_Test CurrentSet_A__Form_Test
 
 CurrentSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
   Geometries.a CurrentSets.a CurrentSet_C__Form_Test.o
@@ -36,12 +36,12 @@ CurrentSet_C__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Streams.o \
-  Geometries.o \
+  CurrentSets.o \
   CurrentSet_C__Form_Test.f90
 
 CurrentSet_A__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Streams.o \
-  Geometries.o \
+  CurrentSets.o \
   CurrentSet_A__Form_Test.f90
