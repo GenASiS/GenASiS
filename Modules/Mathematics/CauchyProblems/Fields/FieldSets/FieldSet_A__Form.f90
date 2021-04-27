@@ -67,6 +67,8 @@ contains
       iC  !-- iChart
 
     FSA % IGNORABILITY  =  A % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      FSA % IGNORABILITY  =  IgnorabilityOption
 
     if ( FSA % Type  ==  '' ) &
       FSA % Type  =  'a FieldSet_A'
@@ -80,21 +82,23 @@ contains
 
     FSA % Atlas  =>  A
 
-    associate ( nC  =>  A % nCharts )
-    allocate ( FSA % FieldSet_C ( nC ) )
-    do iC  =  1, nC
-      allocate ( FSA % FieldSet_C ( iC ) % Element )
-      associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-      associate (   C  =>    A %      Chart ( iC ) % Element )
-      call FSC % Initialize &
-             ( C, FieldOption, VectorOption, NameOption, &
-               DeviceMemoryOption, PinnedMemoryOption, &
-               DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-               nFieldsOption, IgnorabilityOption )
-      end associate !-- C
-      end associate !-- FSC
-    end do !-- iC
-    end associate !-- nC
+    if ( .not. allocated ( FSA % FieldSet_C ) ) then
+      associate ( nC  =>  A % nCharts )
+      allocate ( FSA % FieldSet_C ( nC ) )
+      do iC  =  1, nC
+        allocate ( FSA % FieldSet_C ( iC ) % Element )
+        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+        associate (   C  =>    A %      Chart ( iC ) % Element )
+        call FSC % Initialize &
+               ( C, FieldOption, VectorOption, NameOption, &
+                 DeviceMemoryOption, PinnedMemoryOption, &
+                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
+                 nFieldsOption, IgnorabilityOption )
+        end associate !-- C
+        end associate !-- FSC
+      end do !-- iC
+      end associate !-- nC
+    end if !-- allocated FSA % FieldSet_C
 
   end subroutine InitializeAllocate_FS
 
