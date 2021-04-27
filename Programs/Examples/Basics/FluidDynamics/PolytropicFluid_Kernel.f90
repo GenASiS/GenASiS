@@ -2,9 +2,12 @@
 
 submodule ( PolytropicFluid_Form ) PolytropicFluid_Kernel
 
+  use iso_c_binding
   use Basics
   
   implicit none
+  
+  include 'PolytropicFluid_Interface.f90'
 
 contains
 
@@ -12,10 +15,23 @@ contains
   module procedure ComputeConservedKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
       
+    nV = size ( G )
+
     if ( UseDevice ) then
-      
+          
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP  ( G, E, N, V_1, V_2, V_3 )    
+        call ComputeConservedPolytropic_C &
+               ( c_loc ( G ), c_loc ( E ), c_loc ( N ), &
+                 c_loc ( V_1 ), c_loc ( V_2 ), c_loc ( V_3 ), nV )
+        !$OMP end target data
+        return
+      end if
+
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, size ( G )
@@ -47,11 +63,25 @@ contains
   module procedure ComputePrimitiveKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV 
     real ( KDR ) :: &
       KE
     
+    nV = size ( E )
+
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( E, G, N, V_1, V_2, V_3 )    
+        call ComputePrimitivePolytropic_C &
+               ( c_loc ( E ), c_loc ( G ), c_loc ( N ), &
+                 c_loc ( V_1 ), c_loc ( V_2 ), c_loc ( V_3 ), nV )
+        !$OMP end target data
+        return
+      end if
+    
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( KE )
@@ -97,9 +127,23 @@ contains
   module procedure ComputeAuxiliaryKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
+      
+    nV = size ( P )
       
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( P, K, N, E, Gamma )    
+        call ComputeAuxiliaryPolytropic_C &
+             ( c_loc ( P ), c_loc ( K ), c_loc ( N ), &
+               c_loc ( E ), c_loc ( Gamma ), nV )
+        !$OMP end target data
+        return
+      end if
+      
       
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
@@ -148,9 +192,26 @@ contains
   module procedure ComputeEigenspeedsKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
+      
+    nV = size ( N )
     
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
+        !$OMP     CS, N, V_1, V_2, V_3, P, Gamma ) 
+        call ComputeEigenspeedsPolytropic_C &
+               ( c_loc ( FEP_1 ), c_loc ( FEP_2 ), c_loc ( FEP_3 ), &
+                 c_loc ( FEM_1 ), c_loc ( FEM_2 ), c_loc ( FEM_3 ), &
+                 c_loc ( CS ), c_loc ( N ), &
+                 c_loc ( V_1 ), c_loc ( V_2 ), c_loc ( V_3 ), &
+                 c_loc ( P ), c_loc ( Gamma ), nV )
+        !$OMP end target data
+        return
+      end if
       
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
@@ -256,7 +317,8 @@ contains
   module procedure ComputeRawFluxesKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
       
     !F_D   = D   * V_Dim
     !F_S_1 = S_1 * V_Dim
@@ -265,7 +327,23 @@ contains
     !F_S_Dim = F_S_Dim + P
     !F_G = ( G + P ) * V_Dim
     
+    nV = size ( F_D )
+    
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( F_D, F_S_1, F_S_2, F_S_3, &
+        !$OMP     F_S_Dim, F_G, D, S_1, S_2, S_3, G, P, V_Dim )
+        call ComputeRawFluxesPolytropic_C &
+               ( c_loc ( F_D ), &
+                 c_loc ( F_S_1 ), c_loc ( F_S_2 ), c_loc ( F_S_3 ), &
+                 c_loc ( F_S_Dim ), c_loc ( F_G ), c_loc ( D ), &
+                 c_loc ( S_1 ), c_loc ( S_2 ), c_loc ( S_3 ), &
+                 c_loc ( G ), c_loc ( P ), c_loc ( V_Dim ), nV )
+        !$OMP  end target data
+        return
+      end if
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )

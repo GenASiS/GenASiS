@@ -56,6 +56,8 @@ module PolytropicFluid_Form
       ApplyBoundaryConditionsReflecting, &
       ComputeRawFluxesKernel
       
+    logical, parameter, private :: &
+      UseDirectDevice = .true.
 
     interface
     
@@ -63,9 +65,9 @@ module PolytropicFluid_Form
                    ( G, E, N, V_1, V_2, V_3, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           G
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           E, &
           N, &
           V_1, V_2, V_3
@@ -77,10 +79,10 @@ module PolytropicFluid_Form
                    ( E, G, N, V_1, V_2, V_3, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           E, &
           G  
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           N, &
           V_1, V_2, V_3
         logical ( KDL ), intent ( in ) :: &
@@ -91,10 +93,10 @@ module PolytropicFluid_Form
                    ( P, K, N, E, Gamma, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           P, &
           K
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           N, &
           E, &
           Gamma
@@ -105,10 +107,10 @@ module PolytropicFluid_Form
       module subroutine ComputeAuxiliaryFromPressureKernel ( E, K, N, P, Gamma )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           E, &
           K
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           N, &
           P, &
           Gamma
@@ -119,11 +121,11 @@ module PolytropicFluid_Form
                      V_1, V_2, V_3, P, Gamma, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           FEP_1, FEP_2, FEP_3, &
           FEM_1, FEM_2, FEM_3, &
           CS
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           N, &
           V_1, V_2, V_3, &
           P, &
@@ -136,10 +138,10 @@ module PolytropicFluid_Form
                    ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ), target :: &
           E_E, &
           Gamma_E
-        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
           E_I, &
           Gamma_I
         integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
@@ -155,12 +157,12 @@ module PolytropicFluid_Form
                      G, P, V_Dim, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           F_D, &
           F_S_1, F_S_2, F_S_3, &
           F_S_Dim, &
           F_G
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           D, &
           S_1, S_2, S_3, &
           G, &

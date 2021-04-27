@@ -9,6 +9,7 @@ all: SineWaveAdvection SawtoothWaveAdvection RiemannProblem
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 FLUID = \
+  PolytropicFluid_DirectDevice.o \
   PolytropicFluid_Kernel.o \
   PolytropicFluid_Form.o \
   PressurelessFluid_DirectDevice.o \
@@ -109,9 +110,13 @@ PolytropicFluid_Form.o: \
   PressurelessFluid_Form.o \
   PolytropicFluid_Form.f90
 
+PolytropicFluid_DirectDevice.o: \
+  PolytropicFluid_DirectDevice.cu
+
 PolytropicFluid_Kernel.o: \
   Basics.o \
   PolytropicFluid_Form.o \
+  PolytropicFluid_DirectDevice.o \
   PolytropicFluid_Kernel.f90
 
 Fluid.a: $(FLUID)
