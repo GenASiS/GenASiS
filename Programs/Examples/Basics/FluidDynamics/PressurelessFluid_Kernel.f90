@@ -2,9 +2,12 @@
 
 submodule ( PressurelessFluid_Form ) PressurelessFluid_Kernel
 
+  use iso_c_binding
   use Basics
   
   implicit none
+  
+  include 'PressurelessFluid_Interface.f90'
     
 contains
 
@@ -12,9 +15,24 @@ contains
   module procedure ComputeConservedKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
+    
+    nV = size ( D )
     
     if ( UseDevice ) then 
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( D, S_1, S_2, S_3, N, V_1, V_2, V_3 )    
+        call ComputeConservedPressureless_C &
+               ( c_loc ( D ), c_loc ( S_1 ), c_loc ( S_2 ), &
+                 c_loc ( S_3 ), c_loc ( N ), c_loc ( V_1 ), &
+                 c_loc ( V_2 ), c_loc ( V_3 ), nV )
+       !$OMP  end target data
+       return
+      end if
+      
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
@@ -46,9 +64,23 @@ contains
   module procedure ComputePrimitiveKernel
 
     integer ( KDI ) :: &
-      iV
-      
+      iV, &
+      nV
+    
+    nV = size ( N )
+    
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( N, V_1, V_2, V_3, D, S_1, S_2, S_3 )    
+        call ComputePrimitivePressureless_C &
+               ( c_loc ( N ), c_loc ( V_1 ), c_loc ( V_2 ), &
+                 c_loc ( V_3 ), c_loc ( D ), c_loc ( S_1 ), &
+                 c_loc ( S_2 ), c_loc ( S_3 ), nV )
+        !$OMP end target data
+        return
+      end if
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
@@ -102,9 +134,24 @@ contains
   module procedure ComputeEigenspeedsKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
+      
+    nV = size ( FEP_1 )
     
     if ( UseDevice ) then
+
+      if ( UseDirectDevice ) then
+        !$OMP  target data use_device_ptr & 
+        !$OMP&    ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, & 
+        !$OMP&	    V_1, V_2, V_3 )    
+        call ComputeEigenspeedsPressureless_C &
+               ( c_loc ( FEP_1 ), c_loc ( FEP_2 ), c_loc ( FEP_3 ), &
+                 c_loc ( FEM_1 ), c_loc ( FEM_2 ), c_loc ( FEM_3 ), &
+                 c_loc ( V_1 ), c_loc ( V_2 ), c_loc ( V_3 ), nV )
+        !$OMP  end target data
+        return
+      end if
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )

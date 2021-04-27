@@ -58,16 +58,19 @@ module PressurelessFluid_Form
       ComputeRawFluxesKernel, &
       ComputeRiemannSolverInputKernel
       
+    logical, parameter, private :: &
+      UseDirectDevice = .true.
+      
     interface
     
       module subroutine ComputeConservedKernel &
                    ( D, S_1, S_2, S_3, N, V_1, V_2, V_3, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           D, &
           S_1, S_2, S_3
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           N, &
           V_1, V_2, V_3
         logical ( KDL ), intent ( in ) :: &
@@ -78,7 +81,7 @@ module PressurelessFluid_Form
                    ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           N, &
           V_1, V_2, V_3, &
           D, &
@@ -92,15 +95,14 @@ module PressurelessFluid_Form
                      V_1, V_2, V_3, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ), target :: &
           FEP_1, FEP_2, FEP_3, &
           FEM_1, FEM_2, FEM_3
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ), target :: &
           V_1, V_2, V_3
         logical ( KDL ), intent ( in ) :: &
           UseDevice
       end subroutine ComputeEigenspeedsKernel
-
 
       module subroutine ApplyBoundaryConditionsReflecting &
                    ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, &
@@ -121,7 +123,6 @@ module PressurelessFluid_Form
           UseDevice
       end subroutine ApplyBoundaryConditionsReflecting
 
-
       module subroutine ComputeRawFluxesKernel &
                    ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
                      UseDevice )
@@ -137,7 +138,6 @@ module PressurelessFluid_Form
         logical ( KDL ), intent ( in ) :: &
           UseDevice
       end subroutine ComputeRawFluxesKernel
-
 
       module subroutine ComputeRiemannSolverInputKernel &
                    ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD, &

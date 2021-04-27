@@ -11,6 +11,7 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 FLUID = \
   PolytropicFluid_Kernel.o \
   PolytropicFluid_Form.o \
+  PressurelessFluid_DirectDevice.o \
   PressurelessFluid_Kernel.o \
   PressurelessFluid_Form.o \
   ConservationLawEvolution_Kernel.o \
@@ -93,9 +94,13 @@ PressurelessFluid_Form.o: \
   ConservationLawStep_Form.o \
   PressurelessFluid_Form.f90
 
+PressurelessFluid_DirectDevice.o: \
+  PressurelessFluid_DirectDevice.cu
+
 PressurelessFluid_Kernel.o: \
   Basics.o \
   PressurelessFluid_Form.o \
+  PressurelessFluid_DirectDevice.o \
   PressurelessFluid_Kernel.f90
 
 PolytropicFluid_Form.o: \
