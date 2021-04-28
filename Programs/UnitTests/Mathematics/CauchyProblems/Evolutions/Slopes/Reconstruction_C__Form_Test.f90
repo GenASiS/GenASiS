@@ -9,18 +9,19 @@ program Reconstruction_C__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    iD
+  character ( 1 ), dimension ( 3 ) :: &
+    D  =  [ 'X', 'Y', 'Z' ]
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Chart_GS_Form ), allocatable :: &
     C
   type ( FieldSet_C_Form ), allocatable :: &
-    FSC, &
-    FSC_X_IL, FSC_X_IR, &
-    FSC_Y_IL, FSC_Y_IR, &
-    FSC_Z_IL, FSC_Z_IR, &
-     DC_X_IL,  DC_X_IR, &
-     DC_Y_IL,  DC_Y_IR, &
-     DC_Z_IL,  DC_Z_IR
+    FSC
+  type ( FieldSet_C_Element ), dimension ( : ), allocatable :: &
+    FSC_IL, FSC_IR, &
+     DC_IL,  DC_IR
   type ( Stream_C_Form ), allocatable :: &
     SC
   type ( Geometry_F_C_Form ), allocatable :: &
@@ -44,35 +45,22 @@ program Reconstruction_C__Form_Test
   allocate ( FSC )
   call FSC % Initialize ( C )
 
-  allocate ( FSC_X_IL )
-  allocate ( FSC_X_IR )
-  call FSC_X_IL % Initialize ( C, NameOption = 'Fields_X_IL' )
-  call FSC_X_IR % Initialize ( C, NameOption = 'Fields_X_IR' )
-
-  allocate ( FSC_Y_IL )
-  allocate ( FSC_Y_IR )
-  call FSC_Y_IL % Initialize ( C, NameOption = 'Fields_Y_IL' )
-  call FSC_Y_IR % Initialize ( C, NameOption = 'Fields_Y_IR' )
-
-  allocate ( FSC_Z_IL )
-  allocate ( FSC_Z_IR )
-  call FSC_Z_IL % Initialize ( C, NameOption = 'Fields_Z_IL' )
-  call FSC_Z_IR % Initialize ( C, NameOption = 'Fields_Z_IR' )
-
-  allocate ( DC_X_IL )
-  allocate ( DC_X_IR )
-  call DC_X_IL % Initialize ( C, NameOption = 'Difference_X_IL' )
-  call DC_X_IR % Initialize ( C, NameOption = 'Difference_X_IR' )
-
-  allocate ( DC_Y_IL )
-  allocate ( DC_Y_IR )
-  call DC_Y_IL % Initialize ( C, NameOption = 'Difference_Y_IL' )
-  call DC_Y_IR % Initialize ( C, NameOption = 'Difference_Y_IR' )
-
-  allocate ( DC_Z_IL )
-  allocate ( DC_Z_IR )
-  call DC_Z_IL % Initialize ( C, NameOption = 'Difference_Z_IL' )
-  call DC_Z_IR % Initialize ( C, NameOption = 'Difference_Z_IR' )
+  allocate ( FSC_IL ( 3 ), FSC_IR ( 3 ) )
+  allocate (  DC_IL ( 3 ),  DC_IR ( 3 ) )
+  do iD = 1, 3
+    allocate ( FSC_IL ( iD ) % Element, FSC_IR ( iD ) % Element )
+    allocate (  DC_IL ( iD ) % Element,  DC_IR ( iD ) % Element )
+    associate &
+      ( FSC_IL  =>  FSC_IL ( iD ) % Element, &
+        FSC_IR  =>  FSC_IR ( iD ) % Element, &
+         DC_IL  =>   DC_IL ( iD ) % Element, &
+         DC_IR  =>   DC_IR ( iD ) % Element )
+    call FSC_IL % Initialize ( C, NameOption = 'Fields_IL_' // D ( iD ) )
+    call FSC_IR % Initialize ( C, NameOption = 'Fields_IR_' // D ( iD ) )
+    call  DC_IL % Initialize ( C, NameOption = 'Difference_IL_' // D ( iD ) )
+    call  DC_IR % Initialize ( C, NameOption = 'Difference_IR_' // D ( iD ) )
+    end associate !-- FSC_IL, etc.
+  end do !-- iD
 
   allocate ( GC )
   call GC % Initialize ( C )
@@ -99,18 +87,18 @@ program Reconstruction_C__Form_Test
   allocate ( SC )
   call SC % Initialize ( C, GIS )
   call SC % AddFieldSet ( FSC )
-  call SC % AddFieldSet ( FSC_X_IL )
-  call SC % AddFieldSet ( FSC_X_IR )
-  call SC % AddFieldSet ( FSC_Y_IL )
-  call SC % AddFieldSet ( FSC_Y_IR )
-  call SC % AddFieldSet ( FSC_Z_IL )
-  call SC % AddFieldSet ( FSC_Z_IR )
-  call SC % AddFieldSet ( DC_X_IL )
-  call SC % AddFieldSet ( DC_X_IR )
-  call SC % AddFieldSet ( DC_Y_IL )
-  call SC % AddFieldSet ( DC_Y_IR )
-  call SC % AddFieldSet ( DC_Z_IL )
-  call SC % AddFieldSet ( DC_Z_IR )
+  do iD = 1, 3
+    associate &
+      ( FSC_IL  =>  FSC_IL ( iD ) % Element, &
+        FSC_IR  =>  FSC_IR ( iD ) % Element, &
+         DC_IL  =>   DC_IL ( iD ) % Element, &
+         DC_IR  =>   DC_IR ( iD ) % Element )
+    call SC % AddFieldSet ( FSC_IL )
+    call SC % AddFieldSet ( FSC_IR )
+    call SC % AddFieldSet (  DC_IL )
+    call SC % AddFieldSet (  DC_IR )
+    end associate !-- FSC_IL, etc.
+  end do !-- iD
 
   call   C   % Show ( )
   call FSC   % Show ( )
@@ -121,9 +109,13 @@ program Reconstruction_C__Form_Test
   call  SC   % Show ( )
 
   call SetWave ( FSC, GC )
-  call SetReference ( FSC_X_IL, FSC_X_IR, GC, iD = 1 )
-  call SetReference ( FSC_Y_IL, FSC_Y_IR, GC, iD = 2 )
-  call SetReference ( FSC_Z_IL, FSC_Z_IR, GC, iD = 3 )
+  do iD = 1, 3
+    associate &
+      ( FSC_IL  =>  FSC_IL ( iD ) % Element, &
+        FSC_IR  =>  FSC_IR ( iD ) % Element )
+    call SetReference ( FSC_IL, FSC_IR, GC, iD )
+    end associate !-- FSC_IL, etc.
+  end do !-- iD
 
   call GIS % Open ( GIS % ACCESS_CREATE )
   call SC % Write ( )
@@ -133,18 +125,8 @@ program Reconstruction_C__Form_Test
   deallocate ( RC_1 )
   deallocate ( RC_0 )
   deallocate ( GC )
-  deallocate ( DC_Z_IR )
-  deallocate ( DC_Z_IL )
-  deallocate ( DC_Y_IR )
-  deallocate ( DC_Y_IL )
-  deallocate ( DC_X_IR )
-  deallocate ( DC_X_IL )
-  deallocate ( FSC_Z_IR )
-  deallocate ( FSC_Z_IL )
-  deallocate ( FSC_Y_IR )
-  deallocate ( FSC_Y_IL )
-  deallocate ( FSC_X_IR )
-  deallocate ( FSC_X_IL )
+  deallocate ( DC_IR, DC_IL )
+  deallocate ( FSC_IR, FSC_IL )
   deallocate ( FSC )
   deallocate ( C )
   deallocate ( GIS )
