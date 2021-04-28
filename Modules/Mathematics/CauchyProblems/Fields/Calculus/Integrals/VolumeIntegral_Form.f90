@@ -12,28 +12,26 @@ module VolumeIntegral_Form
     real ( KDR ), dimension ( : ), allocatable :: &
       Output
   contains
-    procedure, private, pass :: &
-      Compute_ASG
-    generic, public :: &
-      Compute => Compute_ASG
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type VolumeIntegralForm
 
     private :: &
-      ComputeIntegral_GS
+      ComputeIntegral_CGS
 
 
 contains
 
 
-  subroutine Compute_ASG ( VI, IA, GA, ReduceOption, IgnorabilityOption )
+  subroutine Compute ( VI, IA, GA, ReduceOption, IgnorabilityOption )
 
     class ( VolumeIntegralForm ), intent ( inout ) :: &
       VI
-    class ( FieldSet_ASG_Form ), intent ( in ) :: &
+    class ( FieldSet_A_Form ), intent ( in ) :: &
       IA  !-- Integrand
-    class ( Geometry_F_ASG_Form ), intent ( in ) :: &
+    class ( Geometry_F_A_Form ), intent ( in ) :: &
       GA
     logical ( KDL ), intent ( in ), optional :: &
       ReduceOption
@@ -65,42 +63,47 @@ contains
 
     !-- Integrand
 
-    associate ( IG  =>  IA % FieldSet_G )
-    associate ( IV  =>  IG % Storage % Value )
+    select type ( A  =>  IA % Atlas )
+    class is ( Atlas_SCG_Form )
+
+    associate ( IC  =>  IA % FieldSet_C ( 1 ) % Element )
+    associate ( IV  =>  IC % Storage_FSC % Storage % Value )
 
     !-- Geometry
 
-    associate ( GG  =>  GA % Geometry_G )
-    associate ( GV  =>  GA % FieldSet_G % Storage % Value )
+    select type ( GC  =>  GA % FieldSet_C ( 1 ) % Element )
+    class is ( Geometry_F_C_Form )
+
+    associate ( GV  =>  GC % Storage_FSC % Storage % Value )
 
     !-- Grid
 
-    select type ( G  =>  IG % Chart ) 
-    type is ( Grid_S_Form )
+    select type ( C  =>  IC % Chart ) 
+    type is ( Chart_GS_Form )
 
     !-- Integrals
 
-    associate ( nI  =>  IG % nFields )
+    associate ( nI  =>  IC % nFields )
 
     allocate ( VI % Output ( nI ) )
     allocate ( MyIntegral ( nI ) )
 
-    if ( G % Distributed .and. Reduce ) then
+    if ( C % Distributed .and. Reduce ) then
       call CO % Initialize &
-             ( G % Communicator, &
+             ( C % Communicator, &
                nOutgoing = [ nI ], nIncoming = [ nI ] )
     end if
 
 
     do iI = 1, nI
-      iF  =  IG % iaSelected ( iI )
-      call ComputeIntegral_GS &
-             ( G % ProperCell, IV ( :, iF ), GV ( :, GG % VOLUME ), &
+      iF  =  IC % iaSelected ( iI )
+      call ComputeIntegral_CGS &
+             ( C % ProperCell, IV ( :, iF ), GV ( :, GC % VOLUME ), &
                MyIntegral ( iI ) )
     end do !-- iI
     call Show ( MyIntegral, 'MyIntegral', Ignorability )
 
-    if ( G % Distributed .and. Reduce ) then
+    if ( C % Distributed .and. Reduce ) then
       CO % Outgoing % Value  =  MyIntegral
       call CO % Reduce ( REDUCTION % SUM )
       VI % Output  =  CO % Incoming % Value
@@ -115,17 +118,24 @@ contains
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'VolumeIntegral_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_ASG', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
-    end select !-- G
+    end select !-- C
 
     end associate !-- GV
-    end associate !-- GG
+    end select    !-- GC
 
-    end associate !-- FSV
-    end associate !-- FSG
+    end associate !-- IV
+    end associate !-- IC
 
-  end subroutine Compute_ASG
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'VolumeIntegral_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+  end subroutine Compute
 
 
   subroutine Finalize ( VI )
@@ -139,7 +149,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeIntegral_GS ( ProperCell, dIdV, dV, I )
+  subroutine ComputeIntegral_CGS ( ProperCell, dIdV, dV, I )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
@@ -164,7 +174,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeIntegral_GS
+  end subroutine ComputeIntegral_CGS
 
 
 end module VolumeIntegral_Form

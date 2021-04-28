@@ -8,11 +8,11 @@ program VolumeIntegral_Form_Test
 
   implicit none
 
-  type ( Atlas_SG_Form ), allocatable :: &
+  type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( Geometry_F_ASG_Form ), allocatable :: &
+  type ( Geometry_F_A_Form ), allocatable :: &
     GA
-  type ( FieldSet_ASG_Form ), allocatable :: &
+  type ( FieldSet_A_Form ), allocatable :: &
     IA  !-- Integrand
   type ( VolumeIntegralForm ) :: &
     VI
@@ -36,9 +36,11 @@ program VolumeIntegral_Form_Test
   call GA % Show ( )
   call IA % Show ( )
 
-  associate ( IV  =>  IA % FieldSet_G % Storage % Value ( :, 1 ) )
+  associate ( IC  =>  IA % FieldSet_C ( 1 ) % Element )
+  associate ( IV  =>  IC % Storage_FSC % Storage % Value ( :, 1 ) )
   IV  =  1.0_KDR
   end associate !-- IV
+  end associate !-- IC
 
   call VI % Compute ( IA, GA, IgnorabilityOption = CONSOLE % INFO_1 )
 
