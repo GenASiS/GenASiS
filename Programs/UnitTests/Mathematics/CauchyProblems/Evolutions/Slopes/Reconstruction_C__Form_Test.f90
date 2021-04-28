@@ -105,15 +105,7 @@ program Reconstruction_C__Form_Test
     call SetReference ( FSC_IL ( iD ), FSC_IR ( iD ), GC, iD )
   end do !-- iD
 
-  do iD  =  1, nD
-    call RC_0 % Compute ( iD )
-    call RC_1 % Compute ( iD )
-    call RC_2 % Compute ( iD )
-  end do !-- iD
-
-  call GIS % Open ( GIS % ACCESS_CREATE )
-  call SC % Write ( )
-  call GIS % Close ( )
+  call TestReconstruction ( RC_0, SC, DC_IL, DC_IR, FSC_IL, FSC_IR )
 
   end associate !-- nD
 
@@ -232,6 +224,47 @@ contains
     end associate !-- C, etc.
 
   end subroutine SetReference
+
+
+  subroutine TestReconstruction ( RC, SC, DC_IL, DC_IR, FSC_IL, FSC_IR )
+
+    class ( Reconstruction_C_Form ), intent ( inout ) :: &
+      RC
+    type ( Stream_C_Form ), intent ( inout ) :: &
+      SC
+    type ( FieldSet_C_Form ), dimension ( : ), intent ( inout ) :: &
+      DC_IL, DC_IR
+    type ( FieldSet_C_Form ), dimension ( : ), intent ( in ) :: &
+      FSC_IL, FSC_IR
+
+    associate ( nD  =>  RC % FieldSet_C % Chart % nDimensions )
+
+    do iD  =  1, nD
+
+      call RC % Compute ( iD )
+
+      associate & 
+        ( OV_IL  =>  RC % Output_IL_C % Storage_FSC % Storage % Value, &
+          OV_IR  =>  RC % Output_IR_C % Storage_FSC % Storage % Value, &
+          FV_IL  =>  FSC_IL ( iD ) % Storage_FSC % Storage % Value, &
+          FV_IR  =>  FSC_IR ( iD ) % Storage_FSC % Storage % Value, &
+          DV_IL  =>   DC_IL ( iD ) % Storage_FSC % Storage % Value, &
+          DV_IR  =>   DC_IR ( iD ) % Storage_FSC % Storage % Value )
+
+      DV_IL  =  OV_IL  -  FV_IL
+      DV_IR  =  OV_IR  -  FV_IR
+
+      end associate !-- OV_IL, etc.
+
+    end do !-- iD
+
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call SC % Write ( )
+    call GIS % Close ( )
+
+    end associate !-- nD
+
+  end subroutine TestReconstruction
 
 
 end program Reconstruction_C__Form_Test

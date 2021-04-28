@@ -12,6 +12,7 @@ module Reconstruction_C__Form
   type, public :: Reconstruction_C_Form
     integer ( KDI ) :: &
       IGNORABILITY, &
+      iTimer = 0, &
       Order
     logical ( KDL ) :: &
       Streamed
@@ -166,12 +167,14 @@ contains
   end subroutine InitializeAllocate_R
 
 
-  subroutine Compute ( RC, iD )
+  subroutine Compute ( RC, iD, TimerLevelOption )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimensions
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     real ( KDR ), dimension ( :, :, : ), pointer :: &
        X, &
@@ -180,6 +183,27 @@ contains
       F, &
       F_IL, &
       F_IR
+    character ( LDL ) :: &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T 
+
+    associate ( iT  =>  RC % iTimer )
+    if ( iT == 0 ) then
+      TimerName  =  RC % Name
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( RC % iTimer )
+    call T % Start ( )
+
+    call Show ( 'Computing a Reconstruction_C', RC % IGNORABILITY + 4 )
+    call Show ( RC % Name, 'Name', RC % IGNORABILITY + 4 )
 
     associate &
       ( GC     =>  RC % Geometry_C, &
@@ -218,6 +242,8 @@ contains
 
     end associate !-- FV, etc.
     end associate !-- FC, etc.
+
+    call T % Stop ( )
 
   end subroutine Compute
 
