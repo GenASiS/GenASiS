@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Slopes.a #Reconstruction_C__Form_Test Reconstruction_A__Form_Test
+all: Reconstruction_C__Form_Test #Reconstruction_A__Form_Test
 
 Reconstruction_C__Form_Test: Basics.a Manifolds.a Fields.a Slopes.a \
   Reconstruction_C__Form_Test.o
