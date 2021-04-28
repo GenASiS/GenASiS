@@ -9,11 +9,16 @@ module Reconstruction_C__Form
   implicit none
   private
 
-  type, public, extends ( FieldSet_C_Form ) :: Reconstruction_C_Form
+  type, public :: Reconstruction_C_Form
     integer ( KDI ) :: &
+      IGNORABILITY, &
       Order
     logical ( KDL ) :: &
       Streamed
+    character ( LDL ) :: &
+      Name
+    class ( FieldSet_C_Form ), allocatable :: &
+      Output_IL_C, Output_IR_C
     class ( FieldSet_C_Form ), pointer :: &
       FieldSet_C => null ( )
     class ( Geometry_F_C_Form ), pointer :: &
@@ -23,8 +28,10 @@ module Reconstruction_C__Form
       InitializeAllocate_R
     generic, public :: &
       Initialize => InitializeAllocate_R
-    procedure, private, pass :: &
-      Show_FSC
+    procedure, public, pass :: &
+      Compute
+    procedure, public, pass :: &
+      Show => Show_RC
     final :: &
       Finalize
   end type Reconstruction_C_Form
@@ -34,8 +41,7 @@ contains
 
 
   subroutine InitializeAllocate_R &
-               ( RC, GC, FSC, NameOption, StreamedOption, OrderOption, &
-                 IgnorabilityOption )
+               ( RC, GC, FSC, NameOption, StreamedOption, OrderOption )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
@@ -48,30 +54,25 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       StreamedOption
     integer ( KDI ), intent ( in ), optional :: &
-      OrderOption, &
-      IgnorabilityOption
+      OrderOption
 
     integer ( KDI ) :: &
       iS, &  !-- iSelected
-      iF, &  !-- iField
-      Ignorability
+      iF     !-- iField
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
-    character ( LDL ) :: &
-      Name
     character ( LDL ), dimension ( : ), allocatable :: &
       Field
 
-    Ignorability  =  FSC % IGNORABILITY
-    if ( present ( IgnorabilityOption ) ) &
-      Ignorability  =  IgnorabilityOption
+    RC % IGNORABILITY  =  FSC % IGNORABILITY
 
-    RC % Type  =  'a Reconstruction_C'
-
-    Name  =  'Reconstruction_' // trim ( FSC % Name )
+    RC % Name  =  'Reconstruction_' // trim ( FSC % Name )
     if ( present ( NameOption ) ) &
-      Name  =  trim ( NameOption ) // '_' // trim ( FSC % Name )
+      RC % Name  =  trim ( NameOption ) // '_' // trim ( FSC % Name )
 
+    call Show ( 'Initializing a Reconstruction_C', RC % IGNORABILITY )
+    call Show ( RC % Name, 'Name', RC % IGNORABILITY )
+   
     associate ( nF  =>  FSC % nFields )
  
     allocate ( Field ( nF ) )
@@ -82,17 +83,30 @@ contains
       Unit  ( iF )  =  FSC % Unit  ( iF )
     end do !-- iS
 
-    call RC % FieldSet_C_Form % Initialize &
+    allocate ( RC % Output_IL_C )
+    allocate ( RC % Output_IR_C )
+    call RC % Output_IL_C % Initialize &
            ( FSC % Chart, &
              FieldOption = Field, &
-             NameOption = Name, &
+             NameOption = trim ( RC % Name ) // '_IL', &
              DeviceMemoryOption = FSC % Storage_FSC % DeviceMemory, &
              PinnedMemoryOption = FSC % Storage_FSC % PinnedMemory, &
              DevicesCommunicateOption = FSC % GhostExchange_FSC &
                                           % DevicesCommunicate, &
              UnitOption = Unit, &
              nFieldsOption = nF, &
-             IgnorabilityOption = Ignorability )
+             IgnorabilityOption = FSC % Ignorability )
+    call RC % Output_IR_C % Initialize &
+           ( FSC % Chart, &
+             FieldOption = Field, &
+             NameOption = trim ( RC % Name ) // '_IR', &
+             DeviceMemoryOption = FSC % Storage_FSC % DeviceMemory, &
+             PinnedMemoryOption = FSC % Storage_FSC % PinnedMemory, &
+             DevicesCommunicateOption = FSC % GhostExchange_FSC &
+                                          % DevicesCommunicate, &
+             UnitOption = Unit, &
+             nFieldsOption = nF, &
+             IgnorabilityOption = FSC % Ignorability )
 
     end associate !-- nF
 
@@ -110,16 +124,46 @@ contains
   end subroutine InitializeAllocate_R
 
 
-  subroutine Show_FSC ( FSC )
+  subroutine Compute ( RC, iD )
+
+    class ( Reconstruction_C_Form ), intent ( inout ) :: &
+      RC
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimensions
+
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      X, &
+      dX_L, dX_R, &
+      F_IL, &
+      F_IR
+
+    select type ( C  =>  RC % FieldSet_C % Chart )
+    class is ( Chart_GS_Form )
+
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Reconstruction_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+  end subroutine Compute
+
+
+  subroutine Show_RC ( RC )
 
     class ( Reconstruction_C_Form ), intent ( in ) :: &
-      FSC
+      RC
 
-    call FSC % FieldSet_C_Form % Show ( )
-    call Show ( FSC % Order, 'Order', FSC % IGNORABILITY )
-    call Show ( FSC % Streamed, 'Streamed', FSC % IGNORABILITY )
+    call Show ( 'Reconstruction_C Parameters', RC % IGNORABILITY )
 
-  end subroutine Show_FSC
+    call Show ( RC % Name, 'Name',  RC % IGNORABILITY )
+    call Show ( RC % Order, 'Order', RC % IGNORABILITY )
+    call Show ( RC % Streamed, 'Streamed', RC % IGNORABILITY )
+    call RC % Output_IL_C % Show ( )
+    call RC % Output_IR_C % Show ( )
+
+  end subroutine Show_RC
 
 
   impure elemental subroutine Finalize ( RC )
@@ -130,6 +174,14 @@ contains
     nullify ( RC % Geometry_C )
     nullify ( RC % FieldSet_C )
 
+    if ( allocated ( RC % Output_IR_C ) ) &
+      deallocate ( RC % Output_IR_C )
+    if ( allocated ( RC % Output_IL_C ) ) &
+      deallocate ( RC % Output_IL_C )
+
+    call Show ( 'Finalizing a Reconstruction_C', RC % IGNORABILITY )
+    call Show ( RC % Name, 'Name', RC % IGNORABILITY )
+   
   end subroutine Finalize
 
   
