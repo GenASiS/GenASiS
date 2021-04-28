@@ -61,8 +61,10 @@ module Chart_GS__Form
       Show_C
     procedure, public, pass :: &
       SetFieldPointer_1D_3D
+    procedure, public, pass :: &
+      SetFieldPointer_2D_4D
     generic, public :: &
-      SetFieldPointer => SetFieldPointer_1D_3D
+      SetFieldPointer => SetFieldPointer_1D_3D, SetFieldPointer_2D_4D
     final :: &
       Finalize
   end type Chart_GS_Form
@@ -368,6 +370,30 @@ contains
   end subroutine SetFieldPointer_1D_3D
 
   
+  subroutine SetFieldPointer_2D_4D ( C, Field_2D, Field_4D )
+
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( :, : ), intent ( in ), contiguous, target :: &
+      Field_2D
+    real ( KDR ), dimension ( :, :, :, : ), intent ( out ), pointer :: &
+      Field_4D
+      
+    integer ( KDI ) :: &
+      nFields
+      
+    nFields = size ( Field_2D, dim = 2 )
+
+    Field_4D &
+      ( C % iaFirst ( 1 ) : C % iaLast ( 1 ), &
+        C % iaFirst ( 2 ) : C % iaLast ( 2 ), &
+        C % iaFirst ( 3 ) : C % iaLast ( 3 ), &
+        1 : nFields ) &
+          => Field_2D 
+    
+  end subroutine SetFieldPointer_2D_4D
+
+
   impure elemental subroutine Finalize ( C )
 
     type ( Chart_GS_Form ), intent ( inout ) :: &

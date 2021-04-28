@@ -36,6 +36,48 @@ module Reconstruction_C__Form
       Finalize
   end type Reconstruction_C_Form
 
+    private :: &
+      ComputeConstant_CGS_Kernel, &
+      ComputeLinear_CGS_Kernel
+
+  interface
+  
+    module subroutine ComputeConstant_CGS_Kernel &
+                 ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        F
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        iaSlctd
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV   
+      real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+        F_IL, F_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeConstant_CGS_Kernel
+
+    module subroutine ComputeLinear_CGS_Kernel &
+                 ( F, X, dX, iaS, iD, oV, F_IL, F_IR, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        F
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+         X, &
+        dX
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        iaS
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV   
+      real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+        F_IL, F_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeLinear_CGS_Kernel
+
+  end interface
 
 contains
 
@@ -132,20 +174,50 @@ contains
       iD  !-- iDimensions
 
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      X, &
-      dX_L, dX_R, &
+       X, &
+      dX
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+      F, &
       F_IL, &
       F_IR
 
+    associate &
+      ( GC     =>  RC % Geometry_C, &
+        FC     =>  RC % FieldSet_C, &
+        FC_IL  =>  RC % Output_IL_C, &
+        FC_IR  =>  RC % Output_IR_C )
+    associate &
+      ( GV     =>  GC    % Storage_FSC % Storage % Value, &
+        FV     =>  FC    % Storage_FSC % Storage % Value, &
+        FV_IL  =>  FC_IL % Storage_FSC % Storage % Value, &
+        FV_IR  =>  FC_IR % Storage_FSC % Storage % Value, &
+        DeviceMemory  =>  FC % Storage_FSC % DeviceMemory )
+
     select type ( C  =>  RC % FieldSet_C % Chart )
     class is ( Chart_GS_Form )
+
+      call C % SetFieldPointer ( GV ( :, GC % CENTER_U ( iD ) ),  X )
+      call C % SetFieldPointer ( GV ( :, GC % WIDTH_U  ( iD ) ), dX )
+      call C % SetFieldPointer ( FV,    F    )
+      call C % SetFieldPointer ( FV_IL, F_IL )
+      call C % SetFieldPointer ( FV_IR, F_IR )
+
+      select case ( RC % Order )
+      case ( 0 )
+        call ComputeConstant_CGS_Kernel &
+               ( F, FC % iaSelected, iD, C % nGhostLayers ( iD ), F_IL, F_IR, &
+                 UseDeviceOption = DeviceMemory )
+      end select !-- Order
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'Reconstruction_C__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
-    end select
+    end select !-- C
+
+    end associate !-- FV, etc.
+    end associate !-- FC, etc.
 
   end subroutine Compute
 

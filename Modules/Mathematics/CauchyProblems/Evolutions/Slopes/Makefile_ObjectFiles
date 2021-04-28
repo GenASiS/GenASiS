@@ -1,3 +1,4 @@
 SLOPES = \
   Slopes.o \
+  Reconstruction_C__Kernel.o \
   Reconstruction_C__Form.o

@@ -4,6 +4,11 @@ Reconstruction_C__Form.o: \
   Fields.o \
   Reconstruction_C__Form.f90
 
+Reconstruction_C__Kernel.o: \
+  Basics.o \
+  Reconstruction_C__Form.o \
+  Reconstruction_C__Kernel.f90
+
 Slopes.o: \
   Reconstruction_C__Form.o \
   Slopes.f90

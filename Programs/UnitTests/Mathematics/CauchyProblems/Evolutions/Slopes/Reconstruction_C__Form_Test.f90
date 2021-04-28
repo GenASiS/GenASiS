@@ -45,9 +45,11 @@ program Reconstruction_C__Form_Test
   allocate ( FSC )
   call FSC % Initialize ( C )
 
-  allocate ( FSC_IL ( 3 ), FSC_IR ( 3 ) )
-  allocate (  DC_IL ( 3 ),  DC_IR ( 3 ) )
-  do iD = 1, 3
+  associate ( nD  =>  C % nDimensions )
+
+  allocate ( FSC_IL ( nD ), FSC_IR ( nD ) )
+  allocate (  DC_IL ( nD ),  DC_IR ( nD ) )
+  do iD = 1, nD
     call FSC_IL ( iD ) % Initialize &
            ( C, NameOption = 'Fields_IL_' // D ( iD ) )
     call FSC_IR ( iD ) % Initialize &
@@ -83,7 +85,7 @@ program Reconstruction_C__Form_Test
   allocate ( SC )
   call SC % Initialize ( C, GIS )
   call SC % AddFieldSet ( FSC )
-  do iD = 1, 3
+  do iD = 1, nD
     call SC % AddFieldSet ( FSC_IL ( iD ) )
     call SC % AddFieldSet ( FSC_IR ( iD ) )
     call SC % AddFieldSet (  DC_IL ( iD ) )
@@ -99,13 +101,21 @@ program Reconstruction_C__Form_Test
   call  SC   % Show ( )
 
   call SetWave ( FSC, GC )
-  do iD = 1, 3
+  do iD = 1, nD
     call SetReference ( FSC_IL ( iD ), FSC_IR ( iD ), GC, iD )
+  end do !-- iD
+
+  do iD  =  1, nD
+    call RC_0 % Compute ( iD )
+    call RC_1 % Compute ( iD )
+    call RC_2 % Compute ( iD )
   end do !-- iD
 
   call GIS % Open ( GIS % ACCESS_CREATE )
   call SC % Write ( )
   call GIS % Close ( )
+
+  end associate !-- nD
 
   deallocate ( RC_2 )
   deallocate ( RC_1 )
