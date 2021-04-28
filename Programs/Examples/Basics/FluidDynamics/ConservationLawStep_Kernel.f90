@@ -33,7 +33,7 @@ contains
     end where
     uV ( iD ) = size ( V, dim = iD ) - 1
     
-    if ( UseDirectDevice .and. .false. ) then
+    if ( UseDirectDevice ) then
       iaS = 0
       nSizes = shape ( V )
       !$OMP target data use_device_ptr ( V, dV_Left, dV_Right )
@@ -171,7 +171,7 @@ contains
     !  F_I = 0.0_KDR
     !end where
     
-    if ( UseDirectDevice .and. .false. ) then
+    if ( UseDirectDevice ) then
       iaS = 0
       nSizes = shape ( F_I )
       

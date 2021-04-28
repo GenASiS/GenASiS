@@ -18,6 +18,9 @@ void ComputeEigenspeedsPolytropic_C
          double *FEM_1, double *FEM_2, double *FEM_3,
          double *CS, double *N, double *V_1, double *V_2, 
          double *V_3, double *P, double *Gamma, int nValues );
+void ApplyBoundaryConditionsReflectingPolytropic_C
+       ( double *E_E, double *Gamma_E, double *E_I, double *Gamma_I,
+         int *nB, int *oBE, int *oBI, int *nSizes );
 void ComputeRawFluxesPolytropic_C
        ( double *F_D, double *F_S_1, double *F_S_2, double *F_S_3,
          double *F_S_Dim, double *F_G, double *D, double *S_1, double *S_2, 
@@ -164,6 +167,73 @@ void ComputeEigenspeedsPolytropic_C
   DeviceSynchronize ( );
   }
 
+
+__global__ void ApplyBoundaryConditionsReflectingPolytropic
+                  ( double *E_E, double *Gamma_E,
+                    double *E_I, double *Gamma_I,
+                    int *nB, int *oBE, int *oBI, 
+                    int iSize, int jSize, int kSize )
+  {
+  int iV, jV, kV, iI_I, jI_I, kI_I, iI_E, jI_E, kI_E;  // base-1 indexing
+  int cI_I, cI_E; // 1D index for Interior and Exterior, base-0 indexing 
+ 
+  iV = ( tiD ) % nB [ 1 - 1 ] + 1;
+  jV = ( tiD /  nB [ 1 - 1 ] ) % nB [ 2 - 1 ] + 1;
+  kV = tiD / ( nB [ 1 - 1 ] * nB [ 2 - 1 ] ) + 1; 
+ 
+  iI_I = oBI [ 0 ] + iV;
+  jI_I = oBI [ 1 ] + jV;
+  kI_I = oBI [ 2 ] + kV;
+  
+  cI_I = ( iI_I  +  iSize * ( jI_I - 1 )
+                 +  iSize * jSize * ( kI_I - 1 ) ) - 1;
+  
+  iI_E = oBE [ 0 ] + iV;
+  jI_E = oBE [ 1 ] + jV;
+  kI_E = oBE [ 2 ] + kV;
+  
+  cI_E = ( iI_E  +  iSize * ( jI_E - 1 )
+                 +  iSize * jSize * ( kI_E - 1 ) ) - 1;
+  
+  if ( kV <= nB [ 3 - 1 ]  &&  jV <= nB [ 2 - 1 ]  &&  iV <= nB [ 1 - 1 ] )
+    {
+    E_E     [ cI_E ]  = E_I     [ cI_I ];
+    Gamma_E [ cI_E ]  = Gamma_I [ cI_I ];
+    }
+  }
+
+     
+void ApplyBoundaryConditionsReflectingPolytropic_C
+       ( double *E_E, double *Gamma_E, double *E_I, double *Gamma_I,
+         int *nB, int *oBE, int *oBI, int *nSizes )
+  {
+  int nValues = nSizes [ 3 - 1 ] * nSizes [ 2 - 1 ] * nSizes [ 1 - 1 ];
+  dim3 block_Dim ( BLOCK_DIM * BLOCK_DIM );
+  dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x -1 ) / block_Dim.x ) );
+  
+  int *d_nB, *d_oBE, *d_oBI;
+  
+  hipHostMalloc ( &d_nB,  3 * sizeof ( int ) );
+  hipHostMalloc ( &d_oBE, 3 * sizeof ( int ) );
+  hipHostMalloc ( &d_oBI, 3 * sizeof ( int ) );
+  
+  hipMemcpy ( d_nB, nB, 3 * sizeof ( int ), hipMemcpyDefault );
+  hipMemcpy ( d_oBE, oBE, 3 * sizeof ( int ), hipMemcpyDefault );
+  hipMemcpy ( d_oBI, oBI, 3 * sizeof ( int ), hipMemcpyDefault );
+  
+  hipLaunchKernelGGL
+    ( ( ApplyBoundaryConditionsReflectingPolytropic ), 
+      grid_Dim, block_Dim, 0, 0,
+      E_E, Gamma_E, E_I, Gamma_I, d_nB, d_oBE, d_oBI, 
+      nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] );
+  
+  DeviceSynchronize (  );
+  
+  hipFree ( d_oBI );
+  hipFree ( d_oBE );
+  hipFree ( d_nB );
+  }
+ 
 
 __global__ void ComputeRawFluxesPolytropicDeviceKernel
                   ( double *F_D, double *F_S_1, double *F_S_2, 

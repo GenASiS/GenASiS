@@ -104,24 +104,37 @@ void ComputeDifferences_C
   int nValues = nSizes [ 3 - 1 ] * nSizes [ 2 - 1 ] * nSizes [ 1 - 1 ];
   dim3 block_Dim ( BLOCK_DIM * BLOCK_DIM );
   dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x - 1 ) / block_Dim.x ) );
-   
-  iaS [ iD - 1 ] = -1;
+  
+  int *d_lV, *d_uV, *d_iaS; 
+  
+  hipHostMalloc ( &d_lV, 3 * sizeof ( int ) );
+  hipHostMalloc ( &d_uV, 3 * sizeof ( int ) );
+  hipHostMalloc ( &d_iaS, 3 * sizeof ( int ) );
+  
+  hipMemcpy ( d_lV, lV, 3 * sizeof ( int ), hipMemcpyDefault );
+  hipMemcpy ( d_uV, uV, 3 * sizeof ( int ), hipMemcpyDefault );
+  hipMemcpy ( d_iaS, iaS, 3 * sizeof ( int ), hipMemcpyDefault );
+  
+  d_iaS [ iD - 1 ] = -1;
   hipLaunchKernelGGL 
     ( ( ComputeDifferencesLeftDeviceKernel ), 
       dim3 ( grid_Dim ), dim3 ( block_Dim ), 0, 0, 
-      V, lV, uV, iaS, dV_Left, nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] );
-  
+      V, d_lV, d_uV, d_iaS, dV_Left, nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] );
+
   DeviceSynchronize (  );
-  
-  iaS [ iD - 1 ] = +1;
+
+  d_iaS [ iD - 1 ] = +1;
   hipLaunchKernelGGL 
     ( ( ComputeDifferencesRightDeviceKernel ), 
         dim3 ( grid_Dim ), dim3 ( block_Dim ), 0, 0,
-      V, lV, uV, iaS, dV_Right, nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] );
+      V, d_lV, d_uV, d_iaS, dV_Right, nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] );
 
   DeviceSynchronize (  );
-  }
   
+  hipFree ( d_iaS );
+  hipFree ( d_uV );
+  hipFree ( d_lV );
+  }
 
 __global__ void ComputeReconstructionDeviceKernel
                   ( double *V, double *dV_Left, double *dV_Right, 
@@ -263,21 +276,35 @@ void ComputeFluxes_C
   dim3 block_Dim ( BLOCK_DIM * BLOCK_DIM );
   dim3 grid_Dim  ( ceil ( ( nValues + block_Dim.x - 1 ) / block_Dim.x ) );
   
-  iaS [ iD - 1 ] = -1;
+  int *d_lV, *d_uV, *d_iaS; 
+  
+  hipHostMalloc ( &d_lV, 3 * sizeof ( int ) );
+  hipHostMalloc ( &d_uV, 3 * sizeof ( int ) );
+  hipHostMalloc ( &d_iaS, 3 * sizeof ( int ) );
+  
+  hipMemcpy ( d_lV, lV, 3 * sizeof ( int ), hipMemcpyDefault );
+  hipMemcpy ( d_uV, uV, 3 * sizeof ( int ), hipMemcpyDefault );
+  hipMemcpy ( d_iaS, iaS, 3 * sizeof ( int ), hipMemcpyDefault );
+  
+  d_iaS [ iD - 1 ] = -1;
   hipLaunchKernelGGL 
     ( ( ComputeFluxesInnerDeviceKernel ), grid_Dim, block_Dim, 0, 0,
-      AP_I, AM_I, RF_I, RF_O, U_I, U_O, lV, uV, iaS, F_I, 
+      AP_I, AM_I, RF_I, RF_O, U_I, U_O, d_lV, d_uV, d_iaS, F_I, 
       nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] ); 
   
   DeviceSynchronize (  );
   
-  iaS [ iD - 1 ] = +1;
+  d_iaS [ iD - 1 ] = +1;
   hipLaunchKernelGGL
     ( ( ComputeFluxesOuterDeviceKernel ), grid_Dim, block_Dim, 0, 0, 
-      AP_O, AM_O, RF_I, RF_O, U_I, U_O, lV, uV, iaS, F_O, 
+      AP_O, AM_O, RF_I, RF_O, U_I, U_O, d_lV, d_uV, d_iaS, F_O, 
       nSizes [ 0 ], nSizes [ 1 ], nSizes [ 2 ] );
       
   DeviceSynchronize (  );
+  
+  hipFree ( d_iaS );
+  hipFree ( d_uV );
+  hipFree ( d_lV );
   }
                                                            
   

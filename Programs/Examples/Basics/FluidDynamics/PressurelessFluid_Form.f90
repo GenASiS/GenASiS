@@ -109,13 +109,13 @@ module PressurelessFluid_Form
                      nB, oBE, oBI, UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ), target :: &
           N_E, &
           VI_E, VJ_E, VK_E
-        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
           N_I, &
           VI_I, VJ_I, VK_I
-        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+        integer ( KDI ), dimension ( 3 ), intent ( in ), target :: &
           nB,  & 
           oBE, &
           oBI
@@ -144,10 +144,10 @@ module PressurelessFluid_Form
                      UseDevice )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ), target :: &
           AP_I, AP_O, &
           AM_I, AM_O
-        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
           LP_I, LP_O, &
           LM_I, LM_O
         integer ( KDI ), intent ( in ) :: &

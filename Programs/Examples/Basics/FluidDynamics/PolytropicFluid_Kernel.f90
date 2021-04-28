@@ -270,9 +270,24 @@ contains
 
     integer ( KDI ) :: &
       iV, jV, kV
+    
+    integer ( KDI ), dimension ( 3 ) :: &
+      nSizes
+      
+    nSizes = shape ( E_E )
       
     if ( UseDevice ) then
-      
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr ( E_E, Gamma_E, E_I, Gamma_I )
+        call ApplyBoundaryConditionsReflectingPolytropic_C &
+               ( c_loc ( E_E ), c_loc ( Gamma_E ), & 
+                 c_loc ( E_I ), c_loc ( Gamma_I ), &
+                 c_loc ( nB ), c_loc ( oBE ), c_loc ( oBI ), nSizes )
+        !$OMP end target data
+        return
+      end if
+
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do kV = 1, nB ( 3 )

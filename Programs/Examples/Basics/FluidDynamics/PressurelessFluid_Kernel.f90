@@ -188,8 +188,23 @@ contains
 
     integer ( KDI ) :: &
       iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nSizes
       
+    nSizes = shape ( N_E )
+    
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I )    
+        call ApplyBoundaryConditionsReflectingPressureless_C &
+               ( c_loc ( N_E ), c_loc ( VI_E ), c_loc ( VJ_E ), c_loc ( VK_E ), & 
+                 c_loc ( N_I ), c_loc ( VI_I ), c_loc ( VJ_I ), c_loc ( VK_I ), & 
+                 c_loc ( nB ), c_loc ( oBE ), c_loc ( oBI ), nSizes )
+        !$OMP end target data
+        return
+      end if
       
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
@@ -261,7 +276,8 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       iaS_P, iaS_M, &
       iaVS_P, iaVS_M, &
-      lV, uV
+      lV, uV, &
+      nSizes 
       
     !AP_I = max ( 0.0_KDR, + cshift ( LP_O, shift = -1, dim = iD ), + LP_I )
     !AP_O = max ( 0.0_KDR, + LP_O, + cshift ( LP_I, shift = +1, dim = iD ) )
@@ -285,7 +301,21 @@ contains
     iaS_P = 0
     iaS_P ( iD ) = + 1
     
+    nSizes = shape ( LP_O )
+    
     if ( UseDevice ) then
+    
+      if ( UseDirectDevice ) then
+        !$OMP target data use_device_ptr &
+        !$OMP   ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O )
+        call ComputeRiemannSolverInputPressureless_C &
+               ( c_loc ( AP_I ), c_loc ( AP_O ), c_loc ( AM_I ), &
+                 c_loc ( AM_O ), c_loc ( LP_I ), c_loc ( LP_O ), &
+                 c_loc ( LM_I ), c_loc ( LM_O ), lV, uV, iaS_M, &
+                 iaS_P, nSizes )
+        !$OMP end target data
+        return
+      end if
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS_M, iaVS_P )

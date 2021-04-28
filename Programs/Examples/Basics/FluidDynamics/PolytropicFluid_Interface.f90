@@ -60,23 +60,23 @@
       integer ( c_int ), value :: &
         nValues
     end subroutine ComputeEigenspeedsPolytropic_C
-!
-!    subroutine ApplyBoundaryConditionsReflectingPolytropic_C &
-!                 ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, nSizes ) &
-!                 bind ( c, name = 'ApplyBoundaryConditionsReflectingPolytropic_C' )
-!      use iso_c_binding
-!      implicit none
-!      type ( c_ptr ), value :: &
-!        E_E, &
-!        Gamma_E, &
-!        E_I, &
-!        Gamma_I, &
-!        nB, &
-!        oBE, oBI
-!      integer ( c_int ), dimension ( 3 ) :: &
-!        nSizes
-!    end subroutine ApplyBoundaryConditionsReflectingPolytropic_C 
-! 
+
+    subroutine ApplyBoundaryConditionsReflectingPolytropic_C &
+                 ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, nSizes ) &
+                 bind ( c, name = 'ApplyBoundaryConditionsReflectingPolytropic_C' )
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &
+        E_E, &
+        Gamma_E, &
+        E_I, &
+        Gamma_I, &
+        nB, &
+        oBE, oBI
+      integer ( c_int ), dimension ( 3 ) :: &
+        nSizes
+    end subroutine ApplyBoundaryConditionsReflectingPolytropic_C 
+ 
     subroutine ComputeRawFluxesPolytropic_C &
                  ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, &
                    S_1, S_2, S_3, G, P, V_Dim, nValues ) &
