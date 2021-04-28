@@ -1,0 +1,8 @@
+include $(PATH_SLOPES)/Makefile_Dependencies
+
+Evolutions.o: \
+  Slopes.o \
+  Evolutions.f90
+
+Evolutions.a: $(EVOLUTIONS)
+	ar r Evoluations.a $(EVOLUTIONS)

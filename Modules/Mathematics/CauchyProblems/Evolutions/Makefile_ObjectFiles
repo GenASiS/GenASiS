@@ -1,0 +1,4 @@
+include $(PATH_SLOPES)/Makefile_ObjectFiles
+
+EVOLUTIONS = \
+  $(SLOPES)

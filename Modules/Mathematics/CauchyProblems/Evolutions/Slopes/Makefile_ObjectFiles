@@ -1,0 +1,3 @@
+SLOPES = \
+  Slopes.o \
+  Reconstruction_C__Form.o
