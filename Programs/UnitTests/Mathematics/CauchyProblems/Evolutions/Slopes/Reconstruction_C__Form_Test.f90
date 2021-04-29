@@ -105,6 +105,7 @@ program Reconstruction_C__Form_Test
 
   call TestReconstruction ( RC_0, SC, DC_IL, DC_IR, FSC_I )
   call TestReconstruction ( RC_1, SC, DC_IL, DC_IR, FSC_I )
+  call TestReconstruction ( RC_2, SC, DC_IL, DC_IR, FSC_I )
 
   end associate !-- nD
 

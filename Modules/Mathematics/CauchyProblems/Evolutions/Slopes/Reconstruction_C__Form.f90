@@ -39,12 +39,13 @@ module Reconstruction_C__Form
 
     private :: &
       ComputeConstant_CGS_Kernel, &
-      ComputeLinear_CGS_Kernel
+      ComputeLinear_CGS_Kernel, &
+      ComputeParabolic_CGS_Kernel
 
   interface
   
     module subroutine ComputeConstant_CGS_Kernel &
-                 ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+             ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
@@ -61,7 +62,7 @@ module Reconstruction_C__Form
     end subroutine ComputeConstant_CGS_Kernel
 
     module subroutine ComputeLinear_CGS_Kernel &
-                 ( F, X, dX, XA, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+             ( F, X, dX, XA, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
@@ -80,6 +81,28 @@ module Reconstruction_C__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine ComputeLinear_CGS_Kernel
+
+    module subroutine ComputeParabolic_CGS_Kernel &
+             ( F, X, dX, XA, X2A, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        F
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+         X, &
+        dX, &
+         XA, &
+         X2A
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        iaSlctd
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV   
+      real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+        F_IL, F_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeParabolic_CGS_Kernel
 
   end interface
 
@@ -238,6 +261,16 @@ contains
         call ComputeLinear_CGS_Kernel &
                ( F, X, dX, X, FC % iaSelected, iD, C % nGhostLayers ( iD ), &
                  F_IL, F_IR, UseDeviceOption = DeviceMemory )
+      case ( 2 )
+        call ComputeParabolic_CGS_Kernel &
+               ( F, X, dX, X, X ** 2, FC % iaSelected, iD, & 
+                 C % nGhostLayers ( iD ), F_IL, F_IR, &
+                 UseDeviceOption = DeviceMemory )
+      case default
+        call Show ( 'Order not implemented', CONSOLE % ERROR )
+        call Show ( 'Reconstruction_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
       end select !-- Order
 
     class default
