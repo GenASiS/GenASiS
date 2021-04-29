@@ -20,7 +20,7 @@ program Reconstruction_C__Form_Test
   type ( FieldSet_C_Form ), allocatable :: &
     FSC
   type ( FieldSet_C_Form ), dimension ( : ), allocatable :: &
-    FSC_IL, FSC_IR, &
+    FSC_I, &
      DC_IL,  DC_IR
   type ( Stream_C_Form ), allocatable :: &
     SC
@@ -40,20 +40,19 @@ program Reconstruction_C__Form_Test
 
   allocate ( C )
   call C % Initialize &
-         ( PeriodicOption = [ .true., .true., .true. ] )
+         ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
+           PeriodicOption = [ .true., .true., .true. ] )
 
   allocate ( FSC )
   call FSC % Initialize ( C )
 
   associate ( nD  =>  C % nDimensions )
 
-  allocate ( FSC_IL ( nD ), FSC_IR ( nD ) )
+  allocate ( FSC_I ( nD ) )
   allocate (  DC_IL ( nD ),  DC_IR ( nD ) )
   do iD = 1, nD
-    call FSC_IL ( iD ) % Initialize &
-           ( C, NameOption = 'Fields_IL_' // D ( iD ) )
-    call FSC_IR ( iD ) % Initialize &
-           ( C, NameOption = 'Fields_IR_' // D ( iD ) )
+    call FSC_I ( iD ) % Initialize &
+           ( C, NameOption = 'Fields_I_' // D ( iD ) )
     call DC_IL ( iD ) % Initialize &
           ( C, NameOption = 'Difference_IL_' // D ( iD ) )
     call DC_IR ( iD ) % Initialize &
@@ -86,8 +85,7 @@ program Reconstruction_C__Form_Test
   call SC % Initialize ( C, GIS )
   call SC % AddFieldSet ( FSC )
   do iD = 1, nD
-    call SC % AddFieldSet ( FSC_IL ( iD ) )
-    call SC % AddFieldSet ( FSC_IR ( iD ) )
+    call SC % AddFieldSet ( FSC_I  ( iD ) )
     call SC % AddFieldSet (  DC_IL ( iD ) )
     call SC % AddFieldSet (  DC_IR ( iD ) )
   end do !-- iD
@@ -102,10 +100,11 @@ program Reconstruction_C__Form_Test
 
   call SetWave ( FSC, GC )
   do iD = 1, nD
-    call SetReference ( FSC_IL ( iD ), FSC_IR ( iD ), GC, iD )
+    call SetReference ( FSC_I ( iD ), GC, iD )
   end do !-- iD
 
-  call TestReconstruction ( RC_0, SC, DC_IL, DC_IR, FSC_IL, FSC_IR )
+  call TestReconstruction ( RC_0, SC, DC_IL, DC_IR, FSC_I )
+  call TestReconstruction ( RC_1, SC, DC_IL, DC_IR, FSC_I )
 
   end associate !-- nD
 
@@ -114,7 +113,7 @@ program Reconstruction_C__Form_Test
   deallocate ( RC_0 )
   deallocate ( GC )
   deallocate ( DC_IR, DC_IL )
-  deallocate ( FSC_IR, FSC_IL )
+  deallocate ( FSC_I )
   deallocate ( FSC )
   deallocate ( C )
   deallocate ( GIS )
@@ -196,10 +195,10 @@ contains
   end subroutine SetWave
 
 
-  subroutine SetReference ( FSC_IL, FSC_IR, GC, iD )
+  subroutine SetReference ( FSC_I, GC, iD )
 
     class ( FieldSet_C_Form ), intent ( inout ) :: &
-      FSC_IL, FSC_IR
+      FSC_I
     class ( Geometry_F_C_Form ), intent ( in ) :: &
       GC
     integer ( KDI ), intent ( in ) :: &
@@ -211,14 +210,11 @@ contains
 
     select case ( iD )
     case ( 1 )
-      call SetWave ( FSC_IL, GC, X_Option  =  C  -  0.5 * W )
-      call SetWave ( FSC_IR, GC, X_Option  =  C  +  0.5 * W )
+      call SetWave ( FSC_I, GC, X_Option  =  C  -  0.5 * W )
     case ( 2 )
-      call SetWave ( FSC_IL, GC, Y_Option  =  C  -  0.5 * W )
-      call SetWave ( FSC_IR, GC, Y_Option  =  C  +  0.5 * W )
+      call SetWave ( FSC_I, GC, Y_Option  =  C  -  0.5 * W )
     case ( 3 )
-      call SetWave ( FSC_IL, GC, Z_Option  =  C  -  0.5 * W )
-      call SetWave ( FSC_IR, GC, Z_Option  =  C  +  0.5 * W )
+      call SetWave ( FSC_I, GC, Z_Option  =  C  -  0.5 * W )
     end select !-- iD
 
     end associate !-- C, etc.
@@ -226,7 +222,7 @@ contains
   end subroutine SetReference
 
 
-  subroutine TestReconstruction ( RC, SC, DC_IL, DC_IR, FSC_IL, FSC_IR )
+  subroutine TestReconstruction ( RC, SC, DC_IL, DC_IR, FSC_I )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
@@ -235,24 +231,25 @@ contains
     type ( FieldSet_C_Form ), dimension ( : ), intent ( inout ) :: &
       DC_IL, DC_IR
     type ( FieldSet_C_Form ), dimension ( : ), intent ( in ) :: &
-      FSC_IL, FSC_IR
+      FSC_I
 
     associate ( nD  =>  RC % FieldSet_C % Chart % nDimensions )
 
     do iD  =  1, nD
 
       call RC % Compute ( iD )
+      call CompareFieldSets ( RC % Output_IL_C, FSC_I ( iD ), iD )
+      call CompareFieldSets ( RC % Output_IR_C, FSC_I ( iD ), iD )
 
       associate & 
-        ( OV_IL  =>  RC % Output_IL_C % Storage_FSC % Storage % Value, &
+        ( FV_I   =>  FSC_I ( iD ) % Storage_FSC % Storage % Value, &
+          OV_IL  =>  RC % Output_IL_C % Storage_FSC % Storage % Value, &
           OV_IR  =>  RC % Output_IR_C % Storage_FSC % Storage % Value, &
-          FV_IL  =>  FSC_IL ( iD ) % Storage_FSC % Storage % Value, &
-          FV_IR  =>  FSC_IR ( iD ) % Storage_FSC % Storage % Value, &
-          DV_IL  =>   DC_IL ( iD ) % Storage_FSC % Storage % Value, &
-          DV_IR  =>   DC_IR ( iD ) % Storage_FSC % Storage % Value )
+          DV_IL  =>  DC_IL ( iD ) % Storage_FSC % Storage % Value, &
+          DV_IR  =>  DC_IR ( iD ) % Storage_FSC % Storage % Value )
 
-      DV_IL  =  OV_IL  -  FV_IL
-      DV_IR  =  OV_IR  -  FV_IR
+      DV_IL  =  OV_IL  -  FV_I
+      DV_IR  =  OV_IR  -  FV_I
 
       end associate !-- OV_IL, etc.
 
@@ -265,6 +262,63 @@ contains
     end associate !-- nD
 
   end subroutine TestReconstruction
+
+
+  subroutine CompareFieldSets ( FSC, FSC_R, iD )
+
+    class ( FieldSet_C_Form ), intent ( in ) :: &
+      FSC, &
+      FSC_R
+    integer ( KDI ), intent ( in ) :: &
+      iD
+
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iF     !-- iField
+    type ( CollectiveOperation_R_Form ) :: &
+      CO 
+
+    call Show ( 'Comparing FieldSet with reference' )
+    call Show ( FSC % Name, 'FieldSet' )
+    call Show ( iD, 'iDimension' )
+
+    associate ( nF  =>  FSC % nFields )
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
+
+    associate ( Cmm  =>  C % Communicator )
+    call CO % Initialize &
+           ( Cmm, nOutgoing = [ 2 * nF ], nIncoming = [ 2 * nF ] )
+    end associate !-- Cmm
+
+    do iS  =  1, nF
+      iF  =  FSC % iaSelected ( iS )
+      associate &
+        ( F_R  =>  FSC_R % Storage_FSC % Storage % Value ( :, iF ), &
+          F    =>  FSC   % Storage_FSC % Storage % Value ( :, iF ) )
+
+      !-- proper cells only
+      CO % Outgoing % Value ( iS )  &
+        =  sum ( pack ( abs ( F  -  F_R ), mask = C % ProperCell ) )
+      CO % Outgoing % Value ( nF + iS )  &
+        =  sum ( pack ( abs ( F_R ), mask = C % ProperCell ) )
+
+!      !-- with ghost cells
+!      CO % Outgoing % Value ( iF )  &
+!        =  sum ( abs ( F  -  F_R ) )
+
+      end associate !-- F_R, etc.
+    end do !-- iF
+    end select !-- G
+
+    call CO % Reduce ( REDUCTION % SUM )
+    call Show (    CO % Incoming % Value (      1 :      nF )  &
+                /  CO % Incoming % Value ( nF + 1 : nF + nF ), 'L1 Error' )
+
+    end associate !-- nF
+
+  end subroutine CompareFieldSets
 
 
 end program Reconstruction_C__Form_Test

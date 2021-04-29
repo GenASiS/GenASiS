@@ -46,6 +46,7 @@ module Reconstruction_C__Form
     module subroutine ComputeConstant_CGS_Kernel &
                  ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
       use Basics
+      implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         F
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -60,15 +61,17 @@ module Reconstruction_C__Form
     end subroutine ComputeConstant_CGS_Kernel
 
     module subroutine ComputeLinear_CGS_Kernel &
-                 ( F, X, dX, iaS, iD, oV, F_IL, F_IR, UseDeviceOption )
+                 ( F, X, dX, XA, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
       use Basics
+      implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         F
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
          X, &
-        dX
+        dX, &
+         XA
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
-        iaS
+        iaSlctd
       integer ( KDI ), intent ( in ) :: &
         iD, &
         oV   
@@ -231,6 +234,10 @@ contains
         call ComputeConstant_CGS_Kernel &
                ( F, FC % iaSelected, iD, C % nGhostLayers ( iD ), F_IL, F_IR, &
                  UseDeviceOption = DeviceMemory )
+      case ( 1 )
+        call ComputeLinear_CGS_Kernel &
+               ( F, X, dX, X, FC % iaSelected, iD, C % nGhostLayers ( iD ), &
+                 F_IL, F_IR, UseDeviceOption = DeviceMemory )
       end select !-- Order
 
     class default
