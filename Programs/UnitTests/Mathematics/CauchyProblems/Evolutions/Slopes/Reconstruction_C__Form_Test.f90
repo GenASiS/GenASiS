@@ -18,10 +18,11 @@ program Reconstruction_C__Form_Test
   type ( Chart_GS_Form ), allocatable :: &
     C
   type ( FieldSet_C_Form ), allocatable :: &
-    FSC
+    FSC, &
+    O_IL_C, O_IR_C
   type ( FieldSet_C_Form ), dimension ( : ), allocatable :: &
-    FSC_I, &
-     DC_IL,  DC_IR
+    FS_I_C, &
+     D_IL_C,  D_IR_C
   type ( Stream_C_Form ), allocatable :: &
     SC
   type ( Geometry_F_C_Form ), allocatable :: &
@@ -46,16 +47,22 @@ program Reconstruction_C__Form_Test
   allocate ( FSC )
   call FSC % Initialize ( C )
 
+  allocate ( O_IL_C, O_IR_C )
+  call O_IL_C % Initialize &
+         ( C, NameOption = 'Reconstruction_' // trim ( FSC % Name ) // '_IL' )
+  call O_IR_C % Initialize &
+         ( C, NameOption = 'Reconstruction_' // trim ( FSC % Name ) // '_IR' )
+
   associate ( nD  =>  C % nDimensions )
 
-  allocate ( FSC_I ( nD ) )
-  allocate (  DC_IL ( nD ),  DC_IR ( nD ) )
+  allocate ( FS_I_C ( nD ) )
+  allocate ( D_IL_C ( nD ), D_IR_C ( nD ) )
   do iD = 1, nD
-    call FSC_I ( iD ) % Initialize &
+    call FS_I_C ( iD ) % Initialize &
            ( C, NameOption = 'Fields_I_' // D ( iD ) )
-    call DC_IL ( iD ) % Initialize &
+    call D_IL_C ( iD ) % Initialize &
           ( C, NameOption = 'Difference_IL_' // D ( iD ) )
-    call DC_IR ( iD ) % Initialize &
+    call D_IR_C ( iD ) % Initialize &
           ( C, NameOption = 'Difference_IR_' // D ( iD ) )
   end do !-- iD
 
@@ -66,17 +73,17 @@ program Reconstruction_C__Form_Test
   allocate ( RC_1 )
   allocate ( RC_2 )
   call RC_0 % Initialize &
-         ( GC, FSC, &
+         ( GC, FSC, O_IL_C, O_IR_C, &
            NameOption = 'Reconstruction_0', &
            StreamedOption = .true., &
            OrderOption = 0 )
   call RC_1 % Initialize &
-         ( GC, FSC, &
+         ( GC, FSC, O_IL_C, O_IR_C, &
            NameOption = 'Reconstruction_1', &
            StreamedOption = .true., &
            OrderOption = 1 )
   call RC_2 % Initialize &
-         ( GC, FSC, &
+         ( GC, FSC, O_IL_C, O_IR_C, &
            NameOption = 'Reconstruction_2', &
            StreamedOption = .true., &
            OrderOption = 2 )
@@ -85,9 +92,9 @@ program Reconstruction_C__Form_Test
   call SC % Initialize ( C, GIS )
   call SC % AddFieldSet ( FSC )
   do iD = 1, nD
-    call SC % AddFieldSet ( FSC_I  ( iD ) )
-    call SC % AddFieldSet (  DC_IL ( iD ) )
-    call SC % AddFieldSet (  DC_IR ( iD ) )
+    call SC % AddFieldSet ( FS_I_C  ( iD ) )
+    call SC % AddFieldSet (  D_IL_C ( iD ) )
+    call SC % AddFieldSet (  D_IR_C ( iD ) )
   end do !-- iD
 
   call   C   % Show ( )
@@ -100,12 +107,12 @@ program Reconstruction_C__Form_Test
 
   call SetWave ( FSC, GC )
   do iD = 1, nD
-    call SetReference ( FSC_I ( iD ), GC, iD )
+    call SetReference ( FS_I_C ( iD ), GC, iD )
   end do !-- iD
 
-  call TestReconstruction ( RC_0, SC, DC_IL, DC_IR, FSC_I )
-  call TestReconstruction ( RC_1, SC, DC_IL, DC_IR, FSC_I )
-  call TestReconstruction ( RC_2, SC, DC_IL, DC_IR, FSC_I )
+  call TestReconstruction ( RC_0, SC, D_IL_C, D_IR_C, FS_I_C )
+  call TestReconstruction ( RC_1, SC, D_IL_C, D_IR_C, FS_I_C )
+  call TestReconstruction ( RC_2, SC, D_IL_C, D_IR_C, FS_I_C )
 
   end associate !-- nD
 
@@ -113,8 +120,9 @@ program Reconstruction_C__Form_Test
   deallocate ( RC_1 )
   deallocate ( RC_0 )
   deallocate ( GC )
-  deallocate ( DC_IR, DC_IL )
-  deallocate ( FSC_I )
+  deallocate ( D_IR_C, D_IL_C )
+  deallocate ( FS_I_C )
+  deallocate ( O_IR_C, O_IL_C )
   deallocate ( FSC )
   deallocate ( C )
   deallocate ( GIS )
@@ -196,10 +204,10 @@ contains
   end subroutine SetWave
 
 
-  subroutine SetReference ( FSC_I, GC, iD )
+  subroutine SetReference ( FS_I_C, GC, iD )
 
     class ( FieldSet_C_Form ), intent ( inout ) :: &
-      FSC_I
+      FS_I_C
     class ( Geometry_F_C_Form ), intent ( in ) :: &
       GC
     integer ( KDI ), intent ( in ) :: &
@@ -211,11 +219,11 @@ contains
 
     select case ( iD )
     case ( 1 )
-      call SetWave ( FSC_I, GC, X_Option  =  C  -  0.5 * W )
+      call SetWave ( FS_I_C, GC, X_Option  =  C  -  0.5 * W )
     case ( 2 )
-      call SetWave ( FSC_I, GC, Y_Option  =  C  -  0.5 * W )
+      call SetWave ( FS_I_C, GC, Y_Option  =  C  -  0.5 * W )
     case ( 3 )
-      call SetWave ( FSC_I, GC, Z_Option  =  C  -  0.5 * W )
+      call SetWave ( FS_I_C, GC, Z_Option  =  C  -  0.5 * W )
     end select !-- iD
 
     end associate !-- C, etc.
@@ -223,31 +231,31 @@ contains
   end subroutine SetReference
 
 
-  subroutine TestReconstruction ( RC, SC, DC_IL, DC_IR, FSC_I )
+  subroutine TestReconstruction ( RC, SC, D_IL_C, D_IR_C, FS_I_C )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
     type ( Stream_C_Form ), intent ( inout ) :: &
       SC
     type ( FieldSet_C_Form ), dimension ( : ), intent ( inout ) :: &
-      DC_IL, DC_IR
+      D_IL_C, D_IR_C
     type ( FieldSet_C_Form ), dimension ( : ), intent ( in ) :: &
-      FSC_I
+      FS_I_C
 
     associate ( nD  =>  RC % FieldSet_C % Chart % nDimensions )
 
     do iD  =  1, nD
 
       call RC % Compute ( iD )
-      call CompareFieldSets ( RC % Output_IL_C, FSC_I ( iD ), iD )
-      call CompareFieldSets ( RC % Output_IR_C, FSC_I ( iD ), iD )
+      call CompareFieldSets ( RC % Output_IL_C, FS_I_C ( iD ), iD )
+      call CompareFieldSets ( RC % Output_IR_C, FS_I_C ( iD ), iD )
 
       associate & 
-        ( FV_I   =>  FSC_I ( iD ) % Storage_FSC % Storage % Value, &
+        ( FV_I   =>  FS_I_C ( iD ) % Storage_FSC % Storage % Value, &
           OV_IL  =>  RC % Output_IL_C % Storage_FSC % Storage % Value, &
           OV_IR  =>  RC % Output_IR_C % Storage_FSC % Storage % Value, &
-          DV_IL  =>  DC_IL ( iD ) % Storage_FSC % Storage % Value, &
-          DV_IR  =>  DC_IR ( iD ) % Storage_FSC % Storage % Value )
+          DV_IL  =>  D_IL_C ( iD ) % Storage_FSC % Storage % Value, &
+          DV_IR  =>  D_IR_C ( iD ) % Storage_FSC % Storage % Value )
 
       DV_IL  =  OV_IL  -  FV_I
       DV_IR  =  OV_IR  -  FV_I
