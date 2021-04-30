@@ -166,7 +166,7 @@ contains
 !call Show ( [ fM, fC, fP ], '>>> fM, fC, fP' )
               !-- Local extremum of cell average values? 
               !   Then reconstruction is constant.
-              if ( ( fC - fM ) * ( fP - fC )  <=  0.0_KDR ) then
+              if ( ( fC - fM ) * ( fP - fC )  <  0.0_KDR ) then
 !call Show ( '>>> Local extremum' )
 
                 c1  =  0.0_KDR
@@ -189,7 +189,7 @@ contains
                   c1  =  ( fC - fM ) / ( xAC - xAM )
                   c0  =  fC  -  c1 * xAC
 
-                end if
+                end if  !-- Overshoot inner
 
                 !-- Overshoot at outer face?
                 !   Reduce slope.
@@ -200,7 +200,7 @@ contains
                   c1  =  ( fP - fC ) / ( xAP - xAC )
                   c0  =  fC  -  c1 * xAC
 
-                end if
+                end if  !-- Overshoot outer
 
               end if  !-- Local extremum
 
@@ -236,13 +236,14 @@ contains
       iaVP, iaVM, &
       lV, uV
     real ( KDR ) :: &
-        fM,   fC,   fP, &  !-- f_Minus, f_Center, f_Plus
-       xAM,  xAC,  xAP, & 
-      x2AM, x2AC, x2AP, & 
-        fI,   fO, &        !-- F_Inner, F_Outer
-        xI,   xO, &        !-- X_Inner, X_Outer
-        c0,   c1,   c2, &  !-- Parabola coefficients
-        d                  !-- Determinant / Denominator
+        fM,   fC,   fP,  &  !-- f_Minus, f_Center, f_Plus
+       xAM,  xAC,  xAP,  & 
+      x2AM, x2AC, x2AP,  & 
+        fI,   fO,        &  !-- F_Inner, F_Outer
+        xI,   xO,   xE,  &  !-- X_Inner, X_Outer, X_Extremum
+         d,              &  !-- Determinant / Denominator
+        c0,   c1,   c2,  &  !-- Parabola coefficients,
+      c2_S,   SqrtTiny      !-- c2_Safe
     logical ( KDL ) :: &
       UseDevice
       
@@ -264,6 +265,8 @@ contains
     iaS  =  0
     iaS ( iD )  =  1
     
+    SqrtTiny  =  tiny ( 0.0_KDR )
+
     if ( UseDevice ) then
     
     else !-- use host
@@ -271,7 +274,9 @@ contains
       !$OMP parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO ) &
-      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, c0, c1, c2, d )
+      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, xE ) &
+      !$OMP private ( c0, c1, c2, c2_S, d ) &
+      !$OMP firstprivate ( SqrtTiny )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
@@ -301,7 +306,7 @@ contains
 !call Show ( [ fM, fC, fP ], '>>> fM, fC, fP' )
               !-- Local extremum of cell average values? 
               !   Then reconstruction is constant.
-              if ( ( fC - fM ) * ( fP - fC )  <=  0.0_KDR ) then
+              if ( ( fC - fM ) * ( fP - fC )  <  0.0_KDR ) then
 !call Show ( '>>> Local extremum' )
 
                 c2  =  0.0_KDR
@@ -310,11 +315,7 @@ contains
 
               else  !-- Parabolic reconstruction
 
-!                 c1  =  ( fP - fM ) / ( xAP - xAM )
-!                 c0  =  fC  -  c1 * xAC
-
-!                 fI  =  c0  +  c1 * xI
-!                 fO  =  c0  +  c1 * xO
+                !-- First parabola
 
                 d  =    ( x2AM - x2AP ) * xAC  &
                       + ( x2AP - x2AC ) * xAM  &
@@ -322,37 +323,117 @@ contains
 
                 c0  =  (   fP * ( x2AM * xAC  -  x2AC * xAM )  &
                          + fM * ( x2AC * xAP  -  x2AP * xAC )  &
-                         + fC * ( x2AP * xAM  -  x2AM * xAP ) )  /  D
+                         + fC * ( x2AP * xAM  -  x2AM * xAP ) )  /  d
 
                 c1  =  (   fP * ( x2AC - x2AM )  &
                          + fC * ( x2AM - x2AP )  &
-                         + fM * ( x2AP - x2AC ) )  /  D
+                         + fM * ( x2AP - x2AC ) )  /  d
 
                 c2  =  (   fP * ( xAM - xAC )  &
                          + fM * ( xAC - xAP )  &
-                         + fC * ( xAP - xAM ) )  /  D
+                         + fC * ( xAP - xAM ) )  /  d
 
-!                 !-- Overshoot at inner face?
-!                 !   Reduce slope.
-!                 if ( c1 * ( fI - fM )  <  0.0_KDR ) then
-! !call Show ( '>>> Overshoot inner' )
-! !call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
+                c2_S  =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
+                  xE  =  - c1 / ( 2.0 * c2_S )
 
-!                   c1  =  ( fC - fM ) / ( xAC - xAM )
-!                   c0  =  fC  -  c1 * xAC
+                fI  =  c0  +  c1 * xI  +  c2 * xI**2
+                fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
-!                 end if
+                !-- Overshoot at inner face?
+                !   New inner parabola, revise fI
+                if ( xE  >  xAM  .and.  xE  <=  xAC ) then
+!call Show ( '>>> Overshoot inner' )
+!call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
 
-!                 !-- Overshoot at outer face?
-!                 !   Reduce slope.
-!                 if ( c1 * ( fP - fO )  <  0.0_KDR ) then
-! !call Show ( '>>> Overshoot outer' )
-! !call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
+                   d  =  ( x2AC - x2AM )  +  2.0 * ( xAM - xAC ) * xAM
 
-!                   c1  =  ( fP - fC ) / ( xAP - xAC )
-!                   c0  =  fC  -  c1 * xAC
+                  c0  =  (    ( fM * x2AC  -  fC * x2AM )  &
+                           +  2.0 * ( fC * xAM  -  fM * xAC ) * xAM )  /  d
 
-!                 end if
+                  c1  =  -2.0 * ( fC - fM ) * xAM  /  d
+
+                  c2  =  ( fC - fM )  /  d
+
+                  fI  =  c0  +  c1 * xI  +  c2 * xI**2
+
+!call Show ( '>>> Revised fI' )
+!call Show ( [ fM, fI, fC ], '>>> fM, fI, fC' )
+
+                !-- Overshoot at outer face?
+                !   New outer parabola, revise fO
+                else if ( xE  >  xAC  .and.  xE  <  xAP ) then
+!call Show ( '>>> Overshoot outer' )
+!call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
+
+                   d  =  ( x2AC - x2AP )  +  2.0 * ( xAP - xAC ) * xAP
+  
+                  c0  =  (    ( fP * x2AC  -  fC * x2AP )  &
+                           +  2.0 * ( fC * xAP  -  fP * xAC ) * xAP )  /  d
+
+                  c1  =  -2.0 * ( fC - fP ) * xAP  /  d
+
+                  c2  =  ( fC - fP )  /  d
+
+                  fO  =  c0  +  c1 * xO  +  c2 * xO**2
+
+!call Show ( '>>> Revised fO' )
+!call Show ( [ fC, fO, fP ], '>>> fC, fO, fP' )
+
+                end if  !-- First parabola extremum
+
+                !-- Second parabola
+
+                d  =  ( xI - xO ) * ( x2AC  +  xI * xO  -  xAC * ( xI + xO ) )
+
+                c0  =  (    fO * xI * ( x2AC  -  xAC * xI )  &
+                         +  fC * xI * xO * ( xI  -  xO )  &
+                         +  fI * xO * ( xAC * xO  -  x2AC ) )  /  d
+
+                c1  =  (    fO * ( xI**2  -  x2AC )  &
+                         +  fI * (  x2AC  -  xO**2 )  &
+                         +  fC * ( xO**2  -  xI**2 ) )  /  d
+
+                c2  =  (    fO * ( xAC -  xI )  &
+                         +  fC * (  xI -  xO )  &
+                         +  fI * (  xO - xAC ) )  /  d
+
+                c2_S  =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
+                  xE  =  - c1 / ( 2.0 * c2_S )
+
+                fI  =  c0  +  c1 * xI  +  c2 * xI**2
+                fO  =  c0  +  c1 * xO  +  c2 * xO**2
+
+                !-- Extremum near inner face?
+                !   New parabola, flat slope at inner face
+                if ( xE  >  xI  .and.  xE  <=  xAC ) then
+!call Show ( '>>> Extremum near inner face' )
+!call Show ( [ fI, fC, fO ], '>>> fI, fC, fO' )
+
+                  d  =  x2AC  -  2.0 * xAC * xI  +  xI**2
+
+                  c0  =  ( fI * x2AC  -  2.0 * fI * xAC * xI  +  fC * xI**2 ) &
+                         /  d
+
+                  c1  =  -2.0 * ( fC - fI ) * xI  /  d
+
+                  c2  =  ( fC - fI )  /  d
+
+                !-- Extremum near outer face?
+                !   New parabola, flat slope at outer face
+                else if ( xE  >  xAC  .and.  xE  <  xO ) then
+!call Show ( '>>> Extremum near outer face' )
+!call Show ( [ fI, fC, fO ], '>>> fI, fC, fO' )
+
+                  d  =  x2AC  -  2.0 * xAC * xO  +  xO**2
+
+                  c0  =  ( fO * x2AC  -  2.0 * fO *xAC * xO  +  fC * xO**2 ) &
+                         /  d
+
+                  c1  =  -2.0 * ( fC - fO ) * xO  /  d
+
+                  c2  =  ( fC - fO )  /  d
+
+                end if  !-- Second parabola extremum
 
               end if  !-- Local extremum
 
