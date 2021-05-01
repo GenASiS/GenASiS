@@ -9,6 +9,8 @@ program CurrentSet_A__Form_Test
 
   implicit none
 
+  type ( MeasuredValueForm ) :: &
+    DensityUnit
   type ( MeasuredValueForm ), dimension ( 3 ) :: &
     Velocity_U_Unit
   type ( GridImageStreamForm ), allocatable :: &
@@ -38,9 +40,13 @@ program CurrentSet_A__Form_Test
   call SA % Initialize ( A, GIS )
 
   Velocity_U_Unit  =  UNIT % SPEED_MKS
+      DensityUnit  =  UNIT % MASS_DENSITY_MKS
 
   allocate ( CSA )
-  call CSA % Initialize ( A, Velocity_U_Unit )
+  call CSA % Initialize &
+         ( A, &
+           Velocity_U_Unit, &
+           DensityUnitOption = DensityUnit )
   call CSA % SetStream ( SA )
 
   call   A % Show ( )

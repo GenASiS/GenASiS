@@ -30,9 +30,9 @@ contains
   subroutine InitializeAllocate_CS &
                ( CSA, A, Velocity_U_Unit, FieldOption, VectorOption, &
                  NameOption, DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+                 DevicesCommunicateOption, UnitOption, DensityUnitOption, &
+                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
+                 nFieldsOption, IgnorabilityOption )
 
     class ( CurrentSet_A_Form ), intent ( inout ), target :: &
       CSA
@@ -51,6 +51,8 @@ contains
       DevicesCommunicateOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      DensityUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -99,9 +101,9 @@ contains
         call CSC % Initialize &
                ( C, Velocity_U_Unit, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+                 DevicesCommunicateOption, UnitOption, DensityUnitOption, &
+                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
+                 nFieldsOption, IgnorabilityOption )
         end associate !-- C
 
         end select !-- CSC

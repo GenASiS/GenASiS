@@ -31,6 +31,11 @@ module CurrentSet_C__Form
     integer ( KDI ), dimension ( 3 ) :: &
       FAST_EIGENSPEED_PLUS_U, &
       FAST_EIGENSPEED_MINUS_U
+    !-- Defaults not generally used
+    integer ( KDI ) :: &
+      DENSITY_DEFAULT = 0
+    real ( KDR ), dimension ( 3 ) :: &
+      Velocity_U_Default = 0.0_KDR
     !-- Primtive and Balanced
     integer ( KDI ) :: &
       nPrimitive = 0, &
@@ -61,9 +66,9 @@ contains
   subroutine InitializeAllocate_CS &
                ( CSC, C, Velocity_U_Unit, FieldOption, VectorOption, &
                  NameOption, DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+                 DevicesCommunicateOption, UnitOption, DensityUnitOption, &
+                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
+                 nFieldsOption, IgnorabilityOption )
 
     class ( CurrentSet_C_Form ), intent ( inout ) :: &
       CSC
@@ -82,6 +87,8 @@ contains
       DevicesCommunicateOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      DensityUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -121,13 +128,12 @@ contains
     CSC % FAST_EIGENSPEED_MINUS_U_2  =  5
     CSC % FAST_EIGENSPEED_MINUS_U_3  =  6
 
-!    !-- FIXME: GCC 10.1 is not initializing this correction 
-!    !          in the type definition 
-!    CSC % N_FIELDS_CS  =  N_FIELDS_CS
-
-    nFields  =  CSC % N_FIELDS_CS
-    if ( present ( nFieldsOption ) ) &
+    if ( present ( nFieldsOption ) ) then
       nFields  =  nFieldsOption
+    else
+      CSC % DENSITY_DEFAULT  =  7
+      nFields  =  CSC % N_FIELDS_CS  +  1
+    end if
 
    CSC % FAST_EIGENSPEED_PLUS_U  &
      =  [ CSC % FAST_EIGENSPEED_PLUS_U_1, &
@@ -144,15 +150,16 @@ contains
       allocate ( Field, source = FieldOption )
     else
       allocate ( Field ( nFields ) )
+      Field ( CSC % N_FIELDS_CS + 1 )  =  'Density'
     end if !-- FieldOption
 
     Field ( 1 : CSC % N_FIELDS_CS ) &
-      = [ 'FastEigenspeedPlus_U_1 ', &
-          'FastEigenspeedPlus_U_2 ', &
-          'FastEigenspeedPlus_U_3 ', &
-          'FastEigenspeedMinus_U_1', &
-          'FastEigenspeedMinus_U_2', &
-          'FastEigenspeedMinus_U_3' ]
+      =  [ 'FastEigenspeedPlus_U_1 ', &
+           'FastEigenspeedPlus_U_2 ', &
+           'FastEigenspeedPlus_U_3 ', &
+           'FastEigenspeedMinus_U_1', &
+           'FastEigenspeedMinus_U_2', &
+           'FastEigenspeedMinus_U_3' ]
           
     !-- Units
 
@@ -160,6 +167,8 @@ contains
       allocate ( Unit, source = UnitOption )
     else
       allocate ( Unit ( nFields ) )
+      if ( present ( DensityUnitOption ) ) &
+        Unit ( CSC % DENSITY_DEFAULT )  =  DensityUnitOption
     end if !-- UnitOption
 
     Unit ( CSC % FAST_EIGENSPEED_PLUS_U_1 : CSC % FAST_EIGENSPEED_PLUS_U_3 ) &
@@ -216,8 +225,9 @@ contains
       CSC % nPrimitive  =  size ( iaPrimitiveOption )
       allocate ( CSC % iaPrimitive, source = iaPrimitiveOption )
     else
-      CSC % nPrimitive  =  CSC % N_PRIMITIVE_CS
+      CSC % nPrimitive  =  CSC % N_PRIMITIVE_CS + 1
       allocate ( CSC % iaPrimitive ( CSC % nPrimitive ) )
+      CSC % iaPrimitive  =  [ CSC % DENSITY_DEFAULT ]
     end if !-- iaPrimitiveOption
 
     !-- Balanced fields
@@ -226,8 +236,9 @@ contains
       CSC % nBalanced  =  size ( iaBalancedOption )
       allocate ( CSC % iaBalanced, source = iaBalancedOption )
     else
-      CSC % nBalanced  =  CSC % N_BALANCED_CS
+      CSC % nBalanced  =  CSC % N_BALANCED_CS + 1
       allocate ( CSC % iaBalanced ( CSC % nBalanced ) )
+      CSC % iaBalanced  =  [ CSC % DENSITY_DEFAULT ]
     end if !-- iaBalancedOption
 
   end subroutine InitializeAllocate_CS
