@@ -14,21 +14,17 @@ module Reconstruction_C__Form
       IGNORABILITY, &
       iTimer = 0, &
       Order
-    logical ( KDL ) :: &
-      Streamed
     character ( LDL ) :: &
       Name
     class ( FieldSet_C_Form ), pointer :: &
-      FieldSet_C => null ( ), &
       Output_IL_C => null ( ), &
-      Output_IR_C => null ( ) 
+      Output_IR_C => null ( ), & 
+      FieldSet_C => null ( )
     class ( Geometry_F_C_Form ), pointer :: &
       Geometry_C => null ( )
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_R
-    generic, public :: &
-      Initialize => InitializeAllocate_R
+    procedure, public, pass :: &
+      Initialize
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
@@ -109,9 +105,8 @@ module Reconstruction_C__Form
 contains
 
 
-  subroutine InitializeAllocate_R &
-               ( RC, GC, FSC, O_IL_C, O_IR_C, NameOption, StreamedOption, &
-                 OrderOption )
+  subroutine Initialize &
+               ( RC, GC, FSC, O_IL_C, O_IR_C, NameOption, OrderOption )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
@@ -122,8 +117,6 @@ contains
       O_IL_C, O_IR_C
     character ( * ), intent ( in ), optional :: &
       NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      StreamedOption
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
@@ -187,15 +180,11 @@ contains
 
     RC % Geometry_C  =>   GC
 
-    RC % Order  =  0
+    RC % Order  =  2
     if ( present ( OrderOption ) ) &
       RC % Order  =  OrderOption
 
-    RC % Streamed  =  .false.
-    if ( present ( StreamedOption ) ) &
-      RC % Streamed  =  StreamedOption
-
-  end subroutine InitializeAllocate_R
+  end subroutine Initialize
 
 
   subroutine Compute ( RC, iD, TimerLevelOption )
@@ -302,7 +291,6 @@ contains
 
     call Show ( RC % Name, 'Name',  RC % IGNORABILITY )
     call Show ( RC % Order, 'Order', RC % IGNORABILITY )
-    call Show ( RC % Streamed, 'Streamed', RC % IGNORABILITY )
     call RC % Output_IL_C % Show ( )
     call RC % Output_IR_C % Show ( )
 
@@ -315,9 +303,9 @@ contains
       RC
 
     nullify ( RC % Geometry_C )
+    nullify ( RC % FieldSet_C )
     nullify ( RC % Output_IR_C )
     nullify ( RC % Output_IL_C )
-    nullify ( RC % FieldSet_C )
 
     call Show ( 'Finalizing a Reconstruction_C', RC % IGNORABILITY )
     call Show ( RC % Name, 'Name', RC % IGNORABILITY )

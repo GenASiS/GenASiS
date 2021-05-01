@@ -169,7 +169,7 @@ contains
       SA
 
    integer ( KDI ) :: &
-     iC  !-- iC
+     iC  !-- iChart
    character ( LDL ), dimension ( : ), allocatable :: &
      TypeWord
 
