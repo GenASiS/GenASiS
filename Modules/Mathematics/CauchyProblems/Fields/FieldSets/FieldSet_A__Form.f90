@@ -87,14 +87,14 @@ contains
       allocate ( FSA % FieldSet_C ( nC ) )
       do iC  =  1, nC
         allocate ( FSA % FieldSet_C ( iC ) % Element )
-        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-        associate (   C  =>    A %      Chart ( iC ) % Element )
+        associate &
+          ( FSC  =>  FSA % FieldSet_C ( iC ) % Element, &
+              C  =>    A %      Chart ( iC ) % Element )
         call FSC % Initialize &
                ( C, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
                  nFieldsOption, IgnorabilityOption )
-        end associate !-- C
         end associate !-- FSC
       end do !-- iC
       end associate !-- nC

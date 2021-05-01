@@ -243,7 +243,7 @@ contains
     type ( FieldSet_A_Form ), dimension ( : ), intent ( in ) :: &
       FS_I_A
 
-    associate ( RC  =>  RA % Reconstruction_C ( 1 ) )
+    associate ( RC  =>  RA % Reconstruction_C ( 1 ) % Element )
         
     associate ( nD  =>  RC % FieldSet_C % Chart % nDimensions )
 

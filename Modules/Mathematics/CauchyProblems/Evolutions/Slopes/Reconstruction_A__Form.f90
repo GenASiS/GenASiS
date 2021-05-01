@@ -22,7 +22,7 @@ module Reconstruction_A__Form
       FieldSet_A => null ( )
     class ( Geometry_F_A_Form ), pointer :: &
       Geometry_A => null ( )
-    class ( Reconstruction_C_Form ), dimension ( : ), allocatable :: &
+    class ( Reconstruction_C_Element ), dimension ( : ), allocatable :: &
       Reconstruction_C
   contains
     procedure, public, pass :: &
@@ -118,8 +118,9 @@ contains
     associate ( nC  =>  FSA % Atlas % nCharts )
     allocate ( RA % Reconstruction_C ( nC ) )
     do iC  =  1, nC
+      allocate ( RA % Reconstruction_C ( iC ) % Element )
       associate &
-        (     RC  =>  RA % Reconstruction_C ( iC ), &
+        (     RC  =>  RA % Reconstruction_C ( iC ) % Element, &
              FSC  =>  RA % FieldSet_A % FieldSet_C ( iC ) % Element, &
           O_IL_C  =>  RA % Output_IL_A % FieldSet_C ( iC ) % Element, &
           O_IR_C  =>  RA % Output_IR_A % FieldSet_C ( iC ) % Element )
@@ -148,7 +149,7 @@ contains
      iC  !-- iChart
 
     do iC  =  1, size ( RA % Reconstruction_C )
-      associate ( RC  =>  RA % Reconstruction_C ( iC ) )
+      associate ( RC  =>  RA % Reconstruction_C ( iC ) % Element )
       call RC % Compute ( iD, TimerLevelOption )
       end associate !-- RC
     end do !-- iC
@@ -169,7 +170,7 @@ contains
     call Show ( RA % Name, 'Name',  RA % IGNORABILITY )
     call Show ( RA % FieldSet_A % Atlas % Name, 'Atlas', RA % IGNORABILITY )
     do iC  =  1, size ( RA % Reconstruction_C )
-      associate ( RC  =>  RA % Reconstruction_C ( iC ) )
+      associate ( RC  =>  RA % Reconstruction_C ( iC ) % Element )
       call RC % Show ( )
       end associate !-- RC
     end do !-- iC

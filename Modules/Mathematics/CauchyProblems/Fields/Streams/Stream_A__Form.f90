@@ -73,11 +73,11 @@ contains
     allocate ( SA % Stream_C ( nC ) )
     do iC  =  1, nC
       allocate ( SA % Stream_C ( iC ) % Element )
-      associate ( SC  =>  SA % Stream_C ( iC ) % Element )
-      associate (  C  =>   A %    Chart ( iC ) % Element )
+      associate &
+        ( SC  =>  SA % Stream_C ( iC ) % Element, &
+           C  =>   A %    Chart ( iC ) % Element )
       call SC % Initialize ( C, GIS, NameOption, VerboseOption )
-      end associate !-- C
-      end associate !-- SC
+      end associate !-- SC, etc.
     end do !-- iC
     end associate !-- nC
 

@@ -33,6 +33,15 @@ module Reconstruction_C__Form
       Finalize
   end type Reconstruction_C_Form
 
+  type, public :: Reconstruction_C_Element
+    !-- Reconstruction_Chart_Element
+    class ( Reconstruction_C_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type Reconstruction_C_Element
+
     private :: &
       ComputeConstant_CGS_Kernel, &
       ComputeLinear_CGS_Kernel, &
@@ -313,4 +322,15 @@ contains
   end subroutine Finalize
 
   
+  impure elemental subroutine Finalize_E ( RE )
+    
+    type ( Reconstruction_C_Element ), intent ( inout ) :: &
+      RE
+
+    if ( allocated ( RE % Element ) ) &
+      deallocate ( RE % Element )
+
+  end subroutine Finalize_E
+
+
 end module Reconstruction_C__Form
