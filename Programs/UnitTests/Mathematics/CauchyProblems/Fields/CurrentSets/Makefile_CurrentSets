@@ -36,6 +36,7 @@ CurrentSet_C__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Streams.o \
+  Geometries.o \
   CurrentSets.o \
   CurrentSet_C__Form_Test.f90
 
@@ -43,5 +44,6 @@ CurrentSet_A__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Streams.o \
+  Geometries.o \
   CurrentSets.o \
   CurrentSet_A__Form_Test.f90

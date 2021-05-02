@@ -254,7 +254,12 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaSelected
 
-    allocate ( iaSelected ( 0 ) )
+    if ( CSC % DENSITY_DEFAULT  >  0 ) then
+      allocate ( iaSelected ( 1 ) )
+      iaSelected ( 1 )  =  CSC % DENSITY_DEFAULT
+    else
+      allocate ( iaSelected ( 0 ) )
+    end if
 
     call SC % AddFieldSet &
            ( CSC, &
