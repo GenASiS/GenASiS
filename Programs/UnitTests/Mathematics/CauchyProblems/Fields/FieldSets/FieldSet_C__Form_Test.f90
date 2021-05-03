@@ -66,9 +66,9 @@ program FieldSet_C__Form_Test
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
   call FSC_234 % Initialize &
-         ( FSC, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
+         ( FSC, iaSelected = [ 2, 3, 4 ], NameOption = 'Fields_234' )
   call FSC_5 % Initialize &
-         ( FSC, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
+         ( FSC, iaSelected = [ 5 ], NameOption = 'Fields_5' )
 
   call   C     % Show ( )
   call FSC     % Show ( )

@@ -104,17 +104,16 @@ contains
 
 
   subroutine InitializeClone &
-               ( FSA_T, FSA_S, NameOption, iaSelectedOption, &
-                 IgnorabilityOption )
+               ( FSA_T, FSA_S, iaSelected, NameOption, IgnorabilityOption )
 
     class ( FieldSet_A_Form ), intent ( inout ) :: &
       FSA_T  !-- FSA_Target
     class ( FieldSet_A_Form ), intent ( in ) :: &
       FSA_S  !-- FSA_Source
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaSelected
     character ( * ), intent ( in ), optional :: &
       NameOption
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      iaSelectedOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -126,7 +125,7 @@ contains
         ( FSC_T  =>  FSA_T % FieldSet_C ( iC ) % Element, &
           FSC_S  =>  FSA_S % FieldSet_C ( iC ) % Element )
       call FSC_T % Initialize &
-             ( FSC_S, NameOption, iaSelectedOption, IgnorabilityOption )
+             ( FSC_S, iaSelected, NameOption, IgnorabilityOption )
       end associate !-- FSC_T, etc.
     end do !-- iC
 

@@ -156,9 +156,8 @@ contains
     call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY  +  1 )
 
     call FSC_SC % Initialize &
-           ( FSC, &
+           ( FSC, iaSelected, &
              NameOption = NameOption, &
-             iaSelectedOption = iaSelected, &
              IgnorabilityOption = SC % IGNORABILITY + 1 )
     
     call AddStorage ( SC, FSC_SC % Storage_FSC )

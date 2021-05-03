@@ -76,9 +76,9 @@ program Stream_C__Form_Test
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
   call FSC_234_R % Initialize &
-         ( FSC_R, NameOption = 'Fields_234_R', iaSelectedOption = [ 2, 3, 4 ] )
+         ( FSC_R, iaSelected = [ 2, 3, 4 ], NameOption = 'Fields_234_R' )
   call FSC_5_R % Initialize &
-         ( FSC_R, NameOption = 'Fields_5_R', iaSelectedOption = [ 5 ] )
+         ( FSC_R, iaSelected = [ 5 ], NameOption = 'Fields_5_R' )
 
   allocate ( FSC )
   allocate ( FSC_234 )
@@ -92,9 +92,9 @@ program Stream_C__Form_Test
            VectorIndicesOption = VectorIndices, &
            nFieldsOption = nFields )
   call FSC_234 % Initialize &
-         ( FSC, NameOption = 'Fields_234', iaSelectedOption = [ 2, 3, 4 ] )
+         ( FSC, iaSelected = [ 2, 3, 4 ], NameOption = 'Fields_234' )
   call FSC_5 % Initialize &
-         ( FSC, NameOption = 'Fields_5', iaSelectedOption = [ 5 ] )
+         ( FSC, iaSelected = [ 5 ], NameOption = 'Fields_5' )
 
   allocate ( SC )
   call SC % Initialize ( C, GIS )

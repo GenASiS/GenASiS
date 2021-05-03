@@ -195,17 +195,16 @@ contains
 
 
   subroutine InitializeClone &
-               ( FSC_T, FSC_S, NameOption, iaSelectedOption, &
-                 IgnorabilityOption )
+               ( FSC_T, FSC_S, iaSelected, NameOption, IgnorabilityOption )
 
     class ( FieldSet_C_Form ), intent ( inout ) :: &
       FSC_T  !-- FSC_Target
     class ( FieldSet_C_Form ), intent ( in ), target :: &
       FSC_S  !-- FSC_Source
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaSelected
     character ( * ), intent ( in ), optional :: &
       NameOption
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      iaSelectedOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -215,8 +214,6 @@ contains
       nV_T   !-- nVectors_T
     integer ( KDI ), dimension ( 3 ) :: &
       iaV_T
-    integer ( KDI ), dimension ( : ), allocatable :: &
-      iaSelected
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices_T
     character ( LDL ) :: &
@@ -232,12 +229,7 @@ contains
 
     associate ( nF_S  =>  FSC_S % nFields )
 
-    if ( present ( iaSelectedOption ) ) then
-      allocate ( FSC_T % iaSelected, source = iaSelectedOption )
-    else
-      allocate ( FSC_T % iaSelected ( nF_S ) )
-      FSC_T % iaSelected  =  [ ( iS, iS = 1, nF_S ) ]
-    end if
+    allocate ( FSC_T % iaSelected, source = iaSelected )
 
     Name  =  FSC_S % Name
     if ( present ( NameOption ) ) &
