@@ -49,7 +49,7 @@ program CurrentSet_C__Form_Test
 
   allocate ( CSC )
   call CSC % Initialize &
-         ( C, &
+         ( GC, &
            Velocity_U_Unit, &
            DensityUnitOption = DensityUnit )
   call CSC % SetStream ( SC )
@@ -122,7 +122,7 @@ contains
                        % Value ( :, GC % CENTER_U_3 ), &
           Rho  =>  CSC % Storage_FSC % Storage &
                        % Value ( :, CSC % DENSITY_DEFAULT ), &
-            V  =>  CSC % Velocity_U_Default, &
+            V  =>  CSC % VelocityDefault_U, &
             K  =>  Wavenumber, &
         Abs_K  =>  sqrt ( dot_product ( Wavenumber, Wavenumber ) ), &
         TwoPi  =>  2.0_KDR  *  CONSTANT % PI )

@@ -2,20 +2,35 @@ CurrentSet_C__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
+  Geometries.o \
   Streams.o \
   CurrentSet_C__Form.f90
+
+CurrentSet_C__Kernel.o: \
+  Basics.o \
+  CurrentSet_C__Form.o \
+  CurrentSet_C__Kernel.f90
 
 CurrentSet_A__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
   Streams.o \
+  Geometries.o \
   CurrentSet_C__Form.o \
   CurrentSet_A__Form.f90
+
+FluxSet_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  CurrentSet_C__Form.o \
+  FluxSet_C__Form.f90
 
 CurrentSets.o: \
   CurrentSet_C__Form.o \
   CurrentSet_A__Form.o \
+  FluxSet_C__Form.o \
   CurrentSets.f90
 
 CurrentSets.a: $(CURRENT_SETS)

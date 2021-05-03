@@ -85,8 +85,8 @@ contains
     allocate ( Unit ( nF ) )
     do iS  =  1,  nF
       iF  =  FSC % iaSelected ( iS )
-      Field ( iF )  =  FSC % Field ( iF )
-      Unit  ( iF )  =  FSC % Unit  ( iF )
+      Field ( iS )  =  FSC % Field ( iF )
+      Unit  ( iS )  =  FSC % Unit  ( iF )
     end do !-- iS
 
     allocate ( RA % Output_IL_A )
@@ -110,9 +110,9 @@ contains
              DevicesCommunicateOption = DevicesCommunicate, &
              UnitOption = Unit, &
              nFieldsOption = nF, &
-             IgnorabilityOption = FSC % Ignorability )
+             IgnorabilityOption = FSC % IGNORABILITY )
 
-    end associate !-- nF
+    end associate !-- nF, etc.
     end associate !-- FSC
 
     associate ( nC  =>  FSA % Atlas % nCharts )

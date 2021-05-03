@@ -6,6 +6,7 @@ module CurrentSet_C__Form
   use Manifolds
   use FieldSets
   use Streams
+  use Geometries
 
   implicit none
   private
@@ -35,7 +36,7 @@ module CurrentSet_C__Form
     integer ( KDI ) :: &
       DENSITY_DEFAULT = 0
     real ( KDR ), dimension ( 3 ) :: &
-      Velocity_U_Default = 0.0_KDR
+      VelocityDefault_U = 0.0_KDR
     !-- Primtive and Balanced
     integer ( KDI ) :: &
       nPrimitive = 0, &
@@ -46,6 +47,8 @@ module CurrentSet_C__Form
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaBalanced
+    class ( Geometry_F_C_Form ), pointer :: &
+      Geometry_C => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_CS
@@ -55,16 +58,37 @@ module CurrentSet_C__Form
       SetStream
     procedure, private, pass :: &
       Show_FSC
+    procedure, public, pass ( CSC ) :: &
+      ComputeFluxes
     final :: &
       Finalize
   end type CurrentSet_C_Form
 
+    private :: &
+      ComputeFluxesKernel
+
+    interface
+
+      module subroutine ComputeFluxesKernel ( F_D, D, V_Dim, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          F_D
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          D
+        real ( KDR ), intent ( in ) :: &
+          V_Dim
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeFluxesKernel
+
+    end interface
 
 contains
 
 
   subroutine InitializeAllocate_CS &
-               ( CSC, C, Velocity_U_Unit, FieldOption, VectorOption, &
+               ( CSC, GC, Velocity_U_Unit, FieldOption, VectorOption, &
                  NameOption, DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, DensityUnitOption, &
                  VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
@@ -72,8 +96,8 @@ contains
 
     class ( CurrentSet_C_Form ), intent ( inout ) :: &
       CSC
-    class ( Chart_H_Form ), intent ( in ), target :: &
-      C
+    class ( Geometry_F_C_Form ), intent ( in ), target :: &
+      GC
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -118,6 +142,8 @@ contains
     Name  =  'CurrentSet'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
+
+    CSC % Geometry_C  =>  GC
 
     !-- Field indices
 
@@ -207,7 +233,7 @@ contains
     !-- FieldSet
 
     call CSC % FieldSet_C_Form % Initialize &
-           ( C, &
+           ( GC % Chart, &
              FieldOption = Field, &
              VectorOption = Vector, &
              NameOption = Name, &
@@ -288,10 +314,49 @@ contains
   end subroutine Show_FSC
 
 
+  subroutine ComputeFluxes ( FSC, CSC, iD )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    class ( CurrentSet_C_Form ), intent ( in ) :: &
+      CSC
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimension
+    
+    integer ( KDI ) :: &
+      iDensity
+
+    if ( CSC % DENSITY_DEFAULT > 0 ) then
+
+      call Search ( CSC % iaBalanced, CSC % DENSITY_DEFAULT, iDensity )
+
+      associate &
+        ( FSS  =>  FSC % Storage_FSC % Storage, &
+          CSS  =>  CSC % Storage_FSC % Storage, &
+          DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+      associate &
+        ( F_D  =>  FSS % Value ( :, iDensity ), &
+            D  =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ) ) 
+ 
+      call ComputeFluxesKernel &
+             ( F_D, D, &
+               V_Dim = CSC % VelocityDefault_U ( iD ), &
+               UseDeviceOption = DeviceMemory )
+  
+      end associate !-- F_D, etc.
+      end associate !-- FSS, etc.
+
+    end if !-- Density default
+
+  end subroutine ComputeFluxes
+
+
   impure elemental subroutine Finalize ( CSC )
 
     type ( CurrentSet_C_Form ), intent ( inout ) :: &
       CSC
+
+    nullify ( CSC % Geometry_C )
 
     if ( allocated ( CSC % iaBalanced ) ) &
       deallocate ( CSC % iaBalanced )

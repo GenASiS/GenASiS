@@ -6,12 +6,15 @@ module CurrentSet_A__Form
   use Manifolds
   use FieldSets
   use Streams
+  use Geometries
   use CurrentSet_C__Form
 
   implicit none
   private
 
   type, public, extends ( FieldSet_A_Form ) :: CurrentSet_A_Form
+    class ( Geometry_F_A_Form ), pointer :: &
+      Geometry_A => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_CS
@@ -28,7 +31,7 @@ contains
 
 
   subroutine InitializeAllocate_CS &
-               ( CSA, A, Velocity_U_Unit, FieldOption, VectorOption, &
+               ( CSA, GA, Velocity_U_Unit, FieldOption, VectorOption, &
                  NameOption, DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, DensityUnitOption, &
                  VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
@@ -36,8 +39,8 @@ contains
 
     class ( CurrentSet_A_Form ), intent ( inout ), target :: &
       CSA
-    class ( Atlas_H_Form ), intent ( in ), target :: &
-      A
+    class ( Geometry_F_A_Form ), intent ( in ), target :: &
+      GA
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -76,7 +79,9 @@ contains
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    associate ( nC  =>  A % nCharts )
+    CSA % Geometry_A  =>  GA
+
+    associate ( nC  =>  GA % Atlas % nCharts )
 
     if ( allocated ( CSA % FieldSet_C ) ) then
       PreviouslyAllocated  =  .true.
@@ -86,7 +91,7 @@ contains
     end if
 
     call CSA % FieldSet_A_Form % Initialize &
-           ( A, &
+           ( GA % Atlas, &
              NameOption = Name, &
              IgnorabilityOption = IgnorabilityOption )
 
@@ -97,14 +102,15 @@ contains
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
         class is ( CurrentSet_C_Form )
 
-        associate ( C  =>  A % Chart ( iC ) % Element )
+        select type ( GC  =>  GA % FieldSet_C ( iC ) % Element )
+        class is ( Geometry_F_C_Form )
         call CSC % Initialize &
-               ( C, Velocity_U_Unit, FieldOption, VectorOption, NameOption, &
+               ( GC, Velocity_U_Unit, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, DensityUnitOption, &
                  VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
                  nFieldsOption, IgnorabilityOption )
-        end associate !-- C
+        end select !-- GC
 
         end select !-- CSC
 
@@ -142,6 +148,8 @@ contains
 
     type ( CurrentSet_A_Form ), intent ( inout ) :: &
       CSA
+
+    nullify ( CSA % Geometry_A )
 
   end subroutine Finalize
 

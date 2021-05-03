@@ -129,14 +129,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
-    ! integer ( KDI ) :: &
-    !   iS, &  !-- iSelected
-    !   iF     !-- iField
-    ! type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
-    !   Unit
-    ! character ( LDL ), dimension ( : ), allocatable :: &
-    !   Field
-
     RC % IGNORABILITY  =  FSC % IGNORABILITY
 
     RC % Name  =  'Reconstruction_' // trim ( FSC % Name )
@@ -146,43 +138,6 @@ contains
     call Show ( 'Initializing a Reconstruction_C', RC % IGNORABILITY )
     call Show ( RC % Name, 'Name', RC % IGNORABILITY )
    
-    ! associate ( nF  =>  FSC % nFields ) 
-
-    ! allocate ( Field ( nF ) )
-    ! allocate ( Unit ( nF ) )
-    ! do iS  =  1,  nF
-    !   iF  =  FSC % iaSelected ( iS )
-    !   Field ( iF )  =  FSC % Field ( iF )
-    !   Unit  ( iF )  =  FSC % Unit  ( iF )
-    ! end do !-- iS
-
-    ! allocate ( RC % Output_IL_C )
-    ! allocate ( RC % Output_IR_C )
-    ! call RC % Output_IL_C % Initialize &
-    !        ( FSC % Chart, &
-    !          FieldOption = Field, &
-    !          NameOption = trim ( RC % Name ) // '_IL', &
-    !          DeviceMemoryOption = FSC % Storage_FSC % DeviceMemory, &
-    !          PinnedMemoryOption = FSC % Storage_FSC % PinnedMemory, &
-    !          DevicesCommunicateOption = FSC % GhostExchange_FSC &
-    !                                       % DevicesCommunicate, &
-    !          UnitOption = Unit, &
-    !          nFieldsOption = nF, &
-    !          IgnorabilityOption = FSC % Ignorability )
-    ! call RC % Output_IR_C % Initialize &
-    !        ( FSC % Chart, &
-    !          FieldOption = Field, &
-    !          NameOption = trim ( RC % Name ) // '_IR', &
-    !          DeviceMemoryOption = FSC % Storage_FSC % DeviceMemory, &
-    !          PinnedMemoryOption = FSC % Storage_FSC % PinnedMemory, &
-    !          DevicesCommunicateOption = FSC % GhostExchange_FSC &
-    !                                       % DevicesCommunicate, &
-    !          UnitOption = Unit, &
-    !          nFieldsOption = nF, &
-    !          IgnorabilityOption = FSC % Ignorability )
-
-    ! end associate !-- nF
-
     RC % FieldSet_C   =>  FSC
     RC % Output_IL_C  =>  O_IL_C
     RC % Output_IR_C  =>  O_IR_C

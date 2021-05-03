@@ -1,6 +1,6 @@
-program CurrentSet_A__Form_Test
+program FluxSet_C__Form_Test
 
-  !-- CurrentSet_Atlas__Form_Test
+  !-- FluxSet_Chart__Form_Test
 
   use Basics
   use Manifolds
@@ -10,65 +10,62 @@ program CurrentSet_A__Form_Test
 
   implicit none
 
-  type ( MeasuredValueForm ) :: &
-    DensityUnit
   type ( MeasuredValueForm ), dimension ( 3 ) :: &
     Velocity_U_Unit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
-  type ( Atlas_SCG_Form ), allocatable :: &
-    A
-  type ( Stream_A_Form ), allocatable :: &
-    SA
-  type ( Geometry_F_A_Form ), allocatable :: &
-    GA
-  type ( CurrentSet_A_Form ), allocatable :: &
-    CSA
+  type ( Chart_GS_Form ), allocatable :: &
+    C
+  type ( Stream_C_Form ), allocatable :: &
+    SC
+  type ( Geometry_F_C_Form ), allocatable :: &
+    GC
+  type ( CurrentSet_C_Form ), allocatable :: &
+    CSC
+  type ( FluxSet_C_Form ), allocatable :: &
+    FSC
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'CurrentSet_A__Form_Test', DimensionalityOption = '2D' )
+         ( 'FluxSet_C__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
          ( PROGRAM_HEADER % Name, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  allocate ( A )
-  call A % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
-           PeriodicOption = [ .true., .true., .true. ] )
+  allocate ( C )
+  call C % Initialize &
+         ( PeriodicOption = [ .true., .true., .true. ] )
 
-  allocate ( SA )
-  call SA % Initialize ( A, GIS )
+  allocate ( SC )
+  call SC % Initialize ( C, GIS )
 
-  allocate ( GA )
-  call GA % Initialize ( A )
+  allocate ( GC )
+  call GC % Initialize ( C )
 
-  Velocity_U_Unit  =  UNIT % SPEED_MKS
-      DensityUnit  =  UNIT % MASS_DENSITY_MKS
+  allocate ( CSC )
+  call CSC % Initialize ( GC, Velocity_U_Unit ) 
+  call CSC % SetStream ( SC )
 
-  allocate ( CSA )
-  call CSA % Initialize &
-         ( GA, &
-           Velocity_U_Unit, &
-           DensityUnitOption = DensityUnit )
-  call CSA % SetStream ( SA )
+  allocate ( FSC )
+  call FSC % Initialize ( CSC ) 
+  call SC % AddFieldSet ( FSC )
 
-  call   A % Show ( )
-  call CSA % Show ( )
-  call  SA % Show ( )
+  call   C % Show ( )
+  call CSC % Show ( )
+  call FSC % Show ( )
+  call  SC % Show ( )
 
-  call SetWave ( CSA, GA )
+  call SetWave ( CSC, GC )
+  call TestFluxes ( FSC, iD = 1 )
+  call TestFluxes ( FSC, iD = 2 )
+  call TestFluxes ( FSC, iD = 3 )
 
-  call GIS % Open ( GIS % ACCESS_CREATE )
-  call SA % Write ( )
-  call GIS % Close ( )
-
-  deallocate ( CSA )
-  deallocate ( GA )
-  deallocate ( SA )
-  deallocate ( A )
+  deallocate ( CSC )
+  deallocate ( GC )
+  deallocate ( SC )
+  deallocate ( C )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
@@ -76,12 +73,12 @@ program CurrentSet_A__Form_Test
 contains
 
 
-  subroutine SetWave ( CSA, GA )
+  subroutine SetWave ( CSC, GC )
 
-    class ( CurrentSet_A_Form ), intent ( inout ) :: &
-      CSA
-    class ( Geometry_F_A_Form ), intent ( in ), target :: &
-      GA
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CSC
+    class ( Geometry_F_C_Form ), intent ( in ), target :: &
+      GC
 
     integer ( KDI ), dimension ( 3 ) :: &
       nWavelengths
@@ -91,12 +88,6 @@ contains
       Speed
     real ( KDR ), dimension ( 3 ) :: &
       Wavenumber
-
-    select type ( CSC  =>  CSA % FieldSet_C ( 1 ) % Element )
-    class is ( CurrentSet_C_Form )
-
-    select type ( GC  =>  GA % FieldSet_C ( 1 ) % Element )
-    class is ( Geometry_F_C_Form )
 
     select type ( C  =>  CSC % Chart )
     class is ( Chart_GS_Form )
@@ -146,10 +137,24 @@ contains
     
     end associate !-- Rho, etc.
     end select !-- C
-    end select !-- GC
-    end select !-- CSC
 
   end subroutine SetWave
 
 
-end program CurrentSet_A__Form_Test
+  subroutine TestFluxes ( FSC, iD )
+
+    class ( FluxSet_C_Form ), intent ( inout ) :: &
+      FSC
+    integer ( KDI ), intent ( in ) :: &
+      iD
+
+    call FSC % Compute ( iD )
+
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call SC % Write ( )
+    call GIS % Close ( )
+
+  end subroutine TestFluxes
+
+
+end program FluxSet_C__Form_Test
