@@ -2,7 +2,8 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: CurrentSet_C__Form_Test CurrentSet_A__Form_Test FluxSet_C__Form_Test
+all: CurrentSet_C__Form_Test CurrentSet_A__Form_Test FluxSet_C__Form_Test \
+  FluxSet_A__Form_Test
 
 CurrentSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
   Geometries.a CurrentSets.a CurrentSet_C__Form_Test.o
@@ -25,6 +26,13 @@ FluxSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
           FluxSet_C__Form_Test.o CurrentSets.a \
           Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
 
+FluxSet_A__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a FluxSet_A__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluxSet_A__Form_Test_$(MACHINE) \
+          FluxSet_A__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
@@ -32,6 +40,7 @@ clobber: clean
 	rm -f CurrentSet_C__Form_Test_*
 	rm -f CurrentSet_A__Form_Test_*
 	rm -f FluxSet_C__Form_Test_*
+	rm -f FluxSet_A__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
@@ -63,3 +72,11 @@ FluxSet_C__Form_Test.o: \
   Geometries.o \
   CurrentSets.o \
   FluxSet_C__Form_Test.f90
+
+FluxSet_A__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  FluxSet_A__Form_Test.f90

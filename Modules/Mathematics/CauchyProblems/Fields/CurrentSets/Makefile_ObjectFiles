@@ -1,5 +1,6 @@
 CURRENT_SETS = \
   CurrentSets.o \
+  FluxSet_A__Form.o \
   FluxSet_C__Form.o \
   CurrentSet_A__Form.o \
   CurrentSet_C__Kernel.o \

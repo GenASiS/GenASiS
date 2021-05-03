@@ -27,10 +27,20 @@ FluxSet_C__Form.o: \
   CurrentSet_C__Form.o \
   FluxSet_C__Form.f90
 
+FluxSet_A__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  CurrentSet_C__Form.o \
+  CurrentSet_A__Form.o \
+  FluxSet_C__Form.o \
+  FluxSet_A__Form.f90
+
 CurrentSets.o: \
   CurrentSet_C__Form.o \
   CurrentSet_A__Form.o \
   FluxSet_C__Form.o \
+  FluxSet_A__Form.o \
   CurrentSets.f90
 
 CurrentSets.a: $(CURRENT_SETS)
