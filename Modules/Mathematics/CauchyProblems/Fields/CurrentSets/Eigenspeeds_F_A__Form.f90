@@ -1,18 +1,18 @@
-module FluxSet_A__Form
+module Eigenspeeds_F_A__Form
 
-  !-- FluxSet_Atlas_Form
+  !-- Eigenspeeds_Fast_Atlas_Form
 
   use Basics
   use Manifolds
   use FieldSets
   use CurrentSet_C__Form
   use CurrentSet_A__Form
-  use FluxSet_C__Form
+  use Eigenspeeds_F_C__Form
 
   implicit none
   private
 
-  type, public, extends ( FieldSet_A_Form ) :: FluxSet_A_Form
+  type, public, extends ( FieldSet_A_Form ) :: Eigenspeeds_F_A_Form
     class ( CurrentSet_A_Form ), pointer :: &
       CurrentSet_A => null ( )
   contains
@@ -24,16 +24,16 @@ module FluxSet_A__Form
       Compute
     final :: &
       Finalize
-  end type FluxSet_A_Form
+  end type Eigenspeeds_F_A_Form
 
 
 contains
 
 
-  subroutine InitializeAllocate_F ( FSA, CSA, NameOption )
+  subroutine InitializeAllocate_F ( EA, CSA, NameOption )
 
-    class ( FluxSet_A_Form ), intent ( inout ) :: &
-      FSA
+    class ( Eigenspeeds_F_A_Form ), intent ( inout ) :: &
+      EA
     class ( CurrentSet_A_Form ), intent ( in ), target :: &
       CSA
     character ( * ), intent ( in ), optional :: &
@@ -46,25 +46,25 @@ contains
     character ( LDL ) :: &
       Name
 
-    if ( FSA % Type  ==  '' ) &
-      FSA % Type  =  'a FluxSet_A'
+    if ( EA % Type  ==  '' ) &
+      EA % Type  =  'an Eigenspeeds_F_A'
 
-    Name  =  'FluxSet_' // trim ( CSA % Name )
+    Name  =  'Eigenspeeds_F_' // trim ( CSA % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    FSA % CurrentSet_A  =>  CSA
+    EA % CurrentSet_A  =>  CSA
 
     associate ( nC  =>  CSA % Atlas % nCharts )
 
-    if ( allocated ( FSA % FieldSet_C ) ) then
+    if ( allocated ( EA % FieldSet_C ) ) then
       PreviouslyAllocated  =  .true.
     else
       PreviouslyAllocated  =  .false.
-      allocate ( FSA % FieldSet_C ( nC ) )
+      allocate ( EA % FieldSet_C ( nC ) )
     end if
 
-    call FSA % FieldSet_A_Form % Initialize &
+    call EA % FieldSet_A_Form % Initialize &
            ( CSA % Atlas, &
              NameOption = Name, &
              IgnorabilityOption = CSA % IGNORABILITY )
@@ -72,16 +72,16 @@ contains
     if ( .not. PreviouslyAllocated ) then
       do iC  =  1,  nC
 
-        allocate ( FluxSet_C_Form :: FSA % FieldSet_C ( iC ) % Element ) 
-        select type ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-        class is ( FluxSet_C_Form )
+        allocate ( Eigenspeeds_F_C_Form :: EA % FieldSet_C ( iC ) % Element ) 
+        select type ( EC  =>  EA % FieldSet_C ( iC ) % Element )
+        class is ( Eigenspeeds_F_C_Form )
 
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
         class is ( CurrentSet_C_Form )
-        call FSC % Initialize ( CSC, NameOption = Name )
+        call EC % Initialize ( CSC, NameOption = Name )
         end select !-- CSC
 
-        end select !-- FSC
+        end select !-- EC
 
       end do !-- iC
     end if !-- PreviouslyAllocated
@@ -91,10 +91,10 @@ contains
   end subroutine InitializeAllocate_F
 
 
-  subroutine Compute ( FSA, iD, TimerLevelOption )
+  subroutine Compute ( EA, iD, TimerLevelOption )
 
-    class ( FluxSet_A_Form ), intent ( inout ) :: &
-      FSA
+    class ( Eigenspeeds_F_A_Form ), intent ( inout ) :: &
+      EA
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimensions
     integer ( KDI ), intent ( in ), optional :: &
@@ -103,24 +103,24 @@ contains
    integer ( KDI ) :: &
      iC  !-- iChart
 
-    do iC  =  1, size ( FSA % FieldSet_C )
-      select type ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-      class is ( FluxSet_C_Form )
-      call FSC % Compute ( iD, TimerLevelOption )
-      end select !-- FSC
+    do iC  =  1, size ( EA % FieldSet_C )
+      select type ( EC  =>  EA % FieldSet_C ( iC ) % Element )
+      class is ( Eigenspeeds_F_C_Form )
+      call EC % Compute ( iD, TimerLevelOption )
+      end select !-- EC
     end do !-- iC
 
   end subroutine Compute
 
 
-  impure elemental subroutine Finalize ( FSA )
+  impure elemental subroutine Finalize ( EA )
 
-    type ( FluxSet_A_Form ), intent ( inout ) :: &
-      FSA
+    type ( Eigenspeeds_F_A_Form ), intent ( inout ) :: &
+      EA
 
-    nullify ( FSA % CurrentSet_A )
+    nullify ( EA % CurrentSet_A )
 
   end subroutine Finalize
 
 
-end module FluxSet_A__Form
+end module Eigenspeeds_F_A__Form
