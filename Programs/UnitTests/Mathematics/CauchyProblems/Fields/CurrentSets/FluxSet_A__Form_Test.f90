@@ -10,10 +10,6 @@ program FluxSet_A__Form_Test
 
   implicit none
 
-  type ( MeasuredValueForm ) :: &
-    DensityUnit
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    Velocity_U_Unit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
@@ -48,7 +44,7 @@ program FluxSet_A__Form_Test
   call GA % Initialize ( A )
 
   allocate ( CSA )
-  call CSA % Initialize( GA, Velocity_U_Unit )
+  call CSA % Initialize( GA )
   call CSA % SetStream ( SA )
 
   allocate ( FSA )

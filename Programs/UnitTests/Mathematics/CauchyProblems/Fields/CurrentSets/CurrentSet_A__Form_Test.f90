@@ -12,8 +12,6 @@ program CurrentSet_A__Form_Test
 
   type ( MeasuredValueForm ) :: &
     DensityUnit
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    Velocity_U_Unit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
@@ -45,14 +43,10 @@ program CurrentSet_A__Form_Test
   allocate ( GA )
   call GA % Initialize ( A )
 
-  Velocity_U_Unit  =  UNIT % SPEED_MKS
-      DensityUnit  =  UNIT % MASS_DENSITY_MKS
+  DensityUnit  =  UNIT % MASS_DENSITY_MKS
 
   allocate ( CSA )
-  call CSA % Initialize &
-         ( GA, &
-           Velocity_U_Unit, &
-           DensityUnitOption = DensityUnit )
+  call CSA % Initialize ( GA, DensityUnitOption = DensityUnit )
   call CSA % SetStream ( SA )
 
   call   A % Show ( )

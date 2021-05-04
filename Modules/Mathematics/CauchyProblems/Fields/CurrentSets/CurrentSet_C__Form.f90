@@ -93,27 +93,19 @@ contains
 
 
   subroutine InitializeAllocate_CS &
-               ( CSC, GC, Velocity_U_Unit, FieldOption, VectorOption, &
-                 NameOption, DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, DensityUnitOption, &
-                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
-                 nFieldsOption, IgnorabilityOption )
+               ( CSC, GC, FieldOption, VectorOption, NameOption, UnitOption, &
+                 DensityUnitOption, VectorIndicesOption, iaPrimitiveOption, &
+                 iaBalancedOption, nFieldsOption, IgnorabilityOption )
 
     class ( CurrentSet_C_Form ), intent ( inout ) :: &
       CSC
     class ( Geometry_F_C_Form ), intent ( in ), target :: &
       GC
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      DeviceMemoryOption, &
-      PinnedMemoryOption, &
-      DevicesCommunicateOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -149,6 +141,11 @@ contains
       Name  =  NameOption
 
     CSC % Geometry_C  =>  GC
+
+    associate &
+      ( DeviceMemory  =>  GC % Storage_FSC % DeviceMemory, &
+        PinnedMemory  =>  GC % Storage_FSC % PinnedMemory, &
+        DevicesCommunicate  =>  GC % GhostExchange_FSC % DevicesCommunicate ) 
 
     !-- Field indices
 
@@ -242,13 +239,15 @@ contains
              FieldOption = Field, &
              VectorOption = Vector, &
              NameOption = Name, &
-             DeviceMemoryOption = DeviceMemoryOption, &
-             PinnedMemoryOption = PinnedMemoryOption, &
-             DevicesCommunicateOption = DevicesCommunicateOption, &
+             DeviceMemoryOption = DeviceMemory, &
+             PinnedMemoryOption = PinnedMemory, &
+             DevicesCommunicateOption = DevicesCommunicate, &
              UnitOption = Unit, &
              VectorIndicesOption = VectorIndices, &
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
+
+    end associate !-- DeviceMemory, etc.
 
     !-- Primitive fields
 

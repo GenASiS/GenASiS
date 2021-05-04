@@ -12,8 +12,6 @@ program CurrentSet_C__Form_Test
 
   type ( MeasuredValueForm ) :: &
     DensityUnit
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    Velocity_U_Unit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Chart_GS_Form ), allocatable :: &
@@ -44,14 +42,10 @@ program CurrentSet_C__Form_Test
   allocate ( GC )
   call GC % Initialize ( C )
 
-  Velocity_U_Unit  =  UNIT % SPEED_MKS
-      DensityUnit  =  UNIT % MASS_DENSITY_MKS
+  DensityUnit  =  UNIT % MASS_DENSITY_MKS
 
   allocate ( CSC )
-  call CSC % Initialize &
-         ( GC, &
-           Velocity_U_Unit, &
-           DensityUnitOption = DensityUnit )
+  call CSC % Initialize ( GC, DensityUnitOption = DensityUnit )
   call CSC % SetStream ( SC )
 
   call   C % Show ( )

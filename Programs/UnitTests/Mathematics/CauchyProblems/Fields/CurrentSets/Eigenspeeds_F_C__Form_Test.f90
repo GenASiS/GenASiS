@@ -10,8 +10,6 @@ program Eigenspeeds_F_C__Form_Test
 
   implicit none
 
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    Velocity_U_Unit
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Chart_GS_Form ), allocatable :: &
@@ -45,7 +43,7 @@ program Eigenspeeds_F_C__Form_Test
   call GC % Initialize ( C )
 
   allocate ( CSC )
-  call CSC % Initialize ( GC, Velocity_U_Unit ) 
+  call CSC % Initialize ( GC ) 
   call CSC % SetStream ( SC )
 
   allocate ( EC )

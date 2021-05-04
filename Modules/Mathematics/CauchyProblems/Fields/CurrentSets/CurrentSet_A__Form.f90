@@ -31,27 +31,19 @@ contains
 
 
   subroutine InitializeAllocate_CS &
-               ( CSA, GA, Velocity_U_Unit, FieldOption, VectorOption, &
-                 NameOption, DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, DensityUnitOption, &
-                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
-                 nFieldsOption, IgnorabilityOption )
+               ( CSA, GA, FieldOption, VectorOption, NameOption, UnitOption, &
+                 DensityUnitOption, VectorIndicesOption, iaPrimitiveOption, &
+                 iaBalancedOption, nFieldsOption, IgnorabilityOption )
 
     class ( CurrentSet_A_Form ), intent ( inout ), target :: &
       CSA
     class ( Geometry_F_A_Form ), intent ( in ), target :: &
       GA
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      DeviceMemoryOption, &
-      PinnedMemoryOption, &
-      DevicesCommunicateOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -105,11 +97,10 @@ contains
         select type ( GC  =>  GA % FieldSet_C ( iC ) % Element )
         class is ( Geometry_F_C_Form )
         call CSC % Initialize &
-               ( GC, Velocity_U_Unit, FieldOption, VectorOption, NameOption, &
-                 DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, DensityUnitOption, &
-                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
-                 nFieldsOption, IgnorabilityOption )
+               ( GC, FieldOption, VectorOption, NameOption, &
+                 UnitOption, DensityUnitOption, VectorIndicesOption, &
+                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
+                 IgnorabilityOption )
         end select !-- GC
 
         end select !-- CSC
