@@ -23,6 +23,11 @@ RiemannSolver_HLL_C__Form.o: \
   Reconstruction_C__Form.o \
   RiemannSolver_HLL_C__Form.f90
 
+RiemannSolver_HLL_C__Kernel.o: \
+  Basics.o \
+  RiemannSolver_HLL_C__Form.o \
+  RiemannSolver_HLL_C__Kernel.f90
+
 Slopes.o: \
   Reconstruction_C__Form.o \
   Reconstruction_A__Form.o \

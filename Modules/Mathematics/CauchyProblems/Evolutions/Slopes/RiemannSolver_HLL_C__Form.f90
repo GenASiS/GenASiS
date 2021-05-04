@@ -15,7 +15,8 @@ module RiemannSolver_HLL_C__Form
 
   type, public, extends ( FieldSet_C_Form ) :: RiemannSolver_HLL_C_Form
     integer ( KDI ) :: &
-      iTimer = 0
+      iTimer       = 0, &
+      iTimerKernel = 0
     integer ( KDI ) :: &
       N_SOLVER_SPEEDS_HLL = N_SOLVER_SPEEDS_HLL
     integer ( KDI ) :: &
@@ -37,12 +38,39 @@ module RiemannSolver_HLL_C__Form
       InitializeAllocate_RS
     generic, public :: &
       Initialize => InitializeAllocate_RS
+    procedure, public, pass :: &
+      Compute
     procedure, private, pass :: &
       Show_FSC
     final :: &
       Finalize
   end type RiemannSolver_HLL_C_Form
 
+    private :: &
+      ComputeKernel
+
+    interface
+      
+      module subroutine ComputeKernel &
+               ( F_I, AP_I, AM_I, F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, &
+                 EM_IL, EM_IR, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          F_I
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          AP_I, AM_I
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          F_IL, F_IR, &
+          U_IL, U_IR
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          EP_IL, EP_IR, &
+          EM_IL, EM_IR
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeKernel
+
+    end interface
 
 contains
 
@@ -143,6 +171,100 @@ contains
     end associate !-- nB, etc.
 
   end subroutine InitializeAllocate_RS
+
+
+  subroutine Compute ( RSC, iD, TimerLevelOption )
+
+    class ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
+      RSC
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimensions
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
+
+    character ( LDL ) :: &
+      TimerName
+    type ( TimerForm ), pointer :: &
+      T, &
+      T_Kernel
+
+    associate ( iT  =>  RSC % iTimer )
+    if ( iT == 0 ) then
+      TimerName  =  RSC % Name
+      if ( present ( TimerLevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+    end associate !-- iT
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( RSC % iTimer )
+    call T % Start ( )
+
+    call Show ( 'Computing ' // trim ( RSC % Type ), RSC % IGNORABILITY + 4 )
+    call Show ( RSC % Name, 'Name', RSC % IGNORABILITY + 4 )
+
+    associate &
+      ( CSC  =>  RSC % CurrentSet_C, &
+        FSC  =>  RSC % FluxSet_C, &
+         EC  =>  RSC % Eigenspeeds_C, &
+        RBC  =>  RSC % Reconstruction_B_C, &
+        RFC  =>  RSC % Reconstruction_F_C, &
+        REC  =>  RSC % Reconstruction_E_C )
+
+    call FSC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+    call  EC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+    call RBC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+    call RFC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+    call REC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+
+    associate ( iT_K  =>  RSC % iTimerKernel )
+    if ( iT_K == 0 ) then
+      TimerName  =  trim ( T % Name ) // '_Kernel' 
+      call PROGRAM_HEADER % AddTimer ( TimerName, iT_K, Level = T % Level + 1 )
+    end if
+    end associate !-- iT_K
+
+    T_Kernel  =>  PROGRAM_HEADER % TimerPointer ( RSC % iTimerKernel )
+    call T_Kernel % Start ( )
+
+    associate &
+      ( RSS     =>  RSC % Storage_FSC % Storage, &
+        RBS_IL  =>  RBC % Output_IL_C % Storage_FSC % Storage, &
+        RBS_IR  =>  RBC % Output_IR_C % Storage_FSC % Storage, &
+        RFS_IL  =>  RFC % Output_IL_C % Storage_FSC % Storage, &
+        RFS_IR  =>  RFC % Output_IR_C % Storage_FSC % Storage, &
+        RES_IL  =>  REC % Output_IL_C % Storage_FSC % Storage, &
+        RES_IR  =>  REC % Output_IR_C % Storage_FSC % Storage, &
+        DeviceMemory  =>  RSC % Storage_FSC % DeviceMemory )
+    associate &
+      (  F_I   =>  RSS % Value ( :, 1 : CSC % nBalanced ), &
+        AP_I   =>  RSS % Value ( :, RSC % ALPHA_PLUS_U ), &
+        AM_I   =>  RSS % Value ( :, RSC % ALPHA_MINUS_U ), &
+         F_IL  =>  RFS_IL % Value ( :, : ), &
+         F_IR  =>  RFS_IR % Value ( :, : ), &
+         U_IL  =>  RBS_IL % Value ( :, : ), &
+         U_IR  =>  RBS_IR % Value ( :, : ), &
+        EP_IL  =>  RES_IL % Value ( :, EC % EIGENSPEED_FAST_PLUS_U ), &
+        EP_IR  =>  RES_IR % Value ( :, EC % EIGENSPEED_FAST_PLUS_U ), &
+        EM_IL  =>  RES_IL % Value ( :, EC % EIGENSPEED_FAST_MINUS_U ), &
+        EM_IR  =>  RES_IR % Value ( :, EC % EIGENSPEED_FAST_MINUS_U ) )
+
+    call ComputeKernel &
+           ( F_I, AP_I, AM_I, F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, &
+             EM_IL, EM_IR, UseDeviceOption = DeviceMemory )
+
+    end associate !-- F_I, etc.
+    end associate !-- RSS, etc.
+
+    call T_Kernel % Stop
+
+    end associate !-- CSC
+
+    call T % Stop ( )
+
+  end subroutine Compute
 
 
   subroutine Show_FSC ( FSC )

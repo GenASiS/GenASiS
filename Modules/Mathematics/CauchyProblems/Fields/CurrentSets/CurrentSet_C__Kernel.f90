@@ -12,7 +12,8 @@ contains
   module procedure ComputeFluxesKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
     logical ( KDL ) :: &
       UseDevice      
           
@@ -20,17 +21,19 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
       
+    nV  =  size ( F_D )
+
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV = 1, size ( F_D )
+      do iV = 1, nV
         F_D ( iV )  =  D ( iV )  *  V_Dim
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iV = 1, size ( F_D )
+      do iV = 1, nV
         F_D ( iV )  =  D ( iV )  *  V_Dim
       end do
       !$OMP end parallel do
@@ -42,7 +45,8 @@ contains
   module procedure ComputeEigenspeedsKernel
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      nV
     logical ( KDL ) :: &
       UseDevice      
           
@@ -50,10 +54,12 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
       
+    nV  =  size ( EF_P )
+
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV = 1, size ( EF_P )
+      do iV = 1, nV
         EF_P ( iV )  =  V_Dim
         EF_M ( iV )  =  V_Dim
       end do
@@ -61,7 +67,7 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iV = 1, size ( EF_P )
+      do iV = 1, nV
         EF_P ( iV )  =  V_Dim
         EF_M ( iV )  =  V_Dim
       end do

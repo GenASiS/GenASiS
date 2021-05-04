@@ -110,9 +110,11 @@ program RiemannSolver_HLL_C__Form_Test
   call  SC % Show ( )
 
   call SetWave ( CSC, GC )
-!   call TestEigenspeeds ( EC, iD = 1 )
-!   call TestEigenspeeds ( EC, iD = 2 )
-!   call TestEigenspeeds ( EC, iD = 3 )
+  call TestRiemannSolver ( RSC, iD = 1 )
+  if ( C % nDimensions  >  1 ) &
+    call TestRiemannSolver ( RSC, iD = 2 )
+  if ( C % nDimensions  >  2 ) &
+    call TestRiemannSolver ( RSC, iD = 3 )
 
   deallocate ( RSC )
   deallocate ( REC, RFC, RBC )
@@ -201,20 +203,20 @@ contains
   end subroutine SetWave
 
 
-!   subroutine TestEigenspeeds ( EC, iD )
+  subroutine TestRiemannSolver ( RSC, iD )
 
-!     class ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
-!       EC
-!     integer ( KDI ), intent ( in ) :: &
-!       iD
+    class ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
+      RSC
+    integer ( KDI ), intent ( in ) :: &
+      iD
 
-!     call EC % Compute ( iD )
+    call RSC % Compute ( iD )
 
-!     call GIS % Open ( GIS % ACCESS_CREATE )
-!     call SC % Write ( )
-!     call GIS % Close ( )
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call SC % Write ( )
+    call GIS % Close ( )
 
-!   end subroutine TestEigenspeeds
+  end subroutine TestRiemannSolver
 
 
 end program RiemannSolver_HLL_C__Form_Test
