@@ -12,8 +12,8 @@ module CurrentSet_C__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_CS    = 6, &
-      N_VECTORS_CS   = 2, &
+      N_FIELDS_CS    = 0, &
+      N_VECTORS_CS   = 0, &
       N_PRIMITIVE_CS = 0, &
       N_BALANCED_CS  = 0
 
@@ -22,16 +22,6 @@ module CurrentSet_C__Form
     integer ( KDI ) :: &
       N_FIELDS_CS    = N_FIELDS_CS, &
       N_VECTORS_CS   = N_VECTORS_CS
-    integer ( KDI ) :: &
-      FAST_EIGENSPEED_PLUS_U_1  = 0, &
-      FAST_EIGENSPEED_PLUS_U_2  = 0, &
-      FAST_EIGENSPEED_PLUS_U_3  = 0, &
-      FAST_EIGENSPEED_MINUS_U_1 = 0, &
-      FAST_EIGENSPEED_MINUS_U_2 = 0, &
-      FAST_EIGENSPEED_MINUS_U_3 = 0
-    integer ( KDI ), dimension ( 3 ) :: &
-      FAST_EIGENSPEED_PLUS_U, &
-      FAST_EIGENSPEED_MINUS_U
     !-- Defaults not generally used
     integer ( KDI ) :: &
       DENSITY_DEFAULT = 0
@@ -60,12 +50,15 @@ module CurrentSet_C__Form
       Show_FSC
     procedure, public, pass ( CSC ) :: &
       ComputeFluxes
+    procedure, public, pass ( CSC ) :: &
+      ComputeEigenspeeds
     final :: &
       Finalize
   end type CurrentSet_C_Form
 
     private :: &
-      ComputeFluxesKernel
+      ComputeFluxesKernel, &
+      ComputeEigenspeedsKernel
 
     interface
 
@@ -81,6 +74,18 @@ module CurrentSet_C__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeFluxesKernel
+
+      module subroutine ComputeEigenspeedsKernel &
+               ( EF_P, EF_M, V_Dim, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          EF_P, EF_M
+        real ( KDR ), intent ( in ) :: &
+          V_Dim
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeEigenspeedsKernel
 
     end interface
 
@@ -147,28 +152,28 @@ contains
 
     !-- Field indices
 
-    CSC % FAST_EIGENSPEED_PLUS_U_1   =  1
-    CSC % FAST_EIGENSPEED_PLUS_U_2   =  2
-    CSC % FAST_EIGENSPEED_PLUS_U_3   =  3
-    CSC % FAST_EIGENSPEED_MINUS_U_1  =  4
-    CSC % FAST_EIGENSPEED_MINUS_U_2  =  5
-    CSC % FAST_EIGENSPEED_MINUS_U_3  =  6
+    ! CSC % FAST_EIGENSPEED_PLUS_U_1   =  1
+    ! CSC % FAST_EIGENSPEED_PLUS_U_2   =  2
+    ! CSC % FAST_EIGENSPEED_PLUS_U_3   =  3
+    ! CSC % FAST_EIGENSPEED_MINUS_U_1  =  4
+    ! CSC % FAST_EIGENSPEED_MINUS_U_2  =  5
+    ! CSC % FAST_EIGENSPEED_MINUS_U_3  =  6
 
     if ( present ( nFieldsOption ) ) then
       nFields  =  nFieldsOption
     else
-      CSC % DENSITY_DEFAULT  =  7
+      CSC % DENSITY_DEFAULT  =  1
       nFields  =  CSC % N_FIELDS_CS  +  1
     end if
 
-   CSC % FAST_EIGENSPEED_PLUS_U  &
-     =  [ CSC % FAST_EIGENSPEED_PLUS_U_1, &
-          CSC % FAST_EIGENSPEED_PLUS_U_2, &
-          CSC % FAST_EIGENSPEED_PLUS_U_3 ]
-   CSC % FAST_EIGENSPEED_MINUS_U  &
-     =  [ CSC % FAST_EIGENSPEED_MINUS_U_1, &
-          CSC % FAST_EIGENSPEED_MINUS_U_2, &
-          CSC % FAST_EIGENSPEED_MINUS_U_3 ]
+   ! CSC % FAST_EIGENSPEED_PLUS_U  &
+   !   =  [ CSC % FAST_EIGENSPEED_PLUS_U_1, &
+   !        CSC % FAST_EIGENSPEED_PLUS_U_2, &
+   !        CSC % FAST_EIGENSPEED_PLUS_U_3 ]
+   ! CSC % FAST_EIGENSPEED_MINUS_U  &
+   !   =  [ CSC % FAST_EIGENSPEED_MINUS_U_1, &
+   !        CSC % FAST_EIGENSPEED_MINUS_U_2, &
+   !        CSC % FAST_EIGENSPEED_MINUS_U_3 ]
 
     !-- Field names
 
@@ -179,13 +184,13 @@ contains
       Field ( CSC % N_FIELDS_CS + 1 )  =  'Density'
     end if !-- FieldOption
 
-    Field ( 1 : CSC % N_FIELDS_CS ) &
-      =  [ 'FastEigenspeedPlus_U_1 ', &
-           'FastEigenspeedPlus_U_2 ', &
-           'FastEigenspeedPlus_U_3 ', &
-           'FastEigenspeedMinus_U_1', &
-           'FastEigenspeedMinus_U_2', &
-           'FastEigenspeedMinus_U_3' ]
+    ! Field ( 1 : CSC % N_FIELDS_CS ) &
+    !   =  [ 'FastEigenspeedPlus_U_1 ', &
+    !        'FastEigenspeedPlus_U_2 ', &
+    !        'FastEigenspeedPlus_U_3 ', &
+    !        'FastEigenspeedMinus_U_1', &
+    !        'FastEigenspeedMinus_U_2', &
+    !        'FastEigenspeedMinus_U_3' ]
           
     !-- Units
 
@@ -197,10 +202,10 @@ contains
         Unit ( CSC % DENSITY_DEFAULT )  =  DensityUnitOption
     end if !-- UnitOption
 
-    Unit ( CSC % FAST_EIGENSPEED_PLUS_U_1 : CSC % FAST_EIGENSPEED_PLUS_U_3 ) &
-      =  Velocity_U_Unit
-    Unit ( CSC % FAST_EIGENSPEED_MINUS_U_1 : CSC % FAST_EIGENSPEED_MINUS_U_3 ) &
-      =  Velocity_U_Unit
+!    Unit ( CSC % FAST_EIGENSPEED_PLUS_U_1 : CSC % FAST_EIGENSPEED_PLUS_U_3 ) &
+!      =  Velocity_U_Unit
+!    Unit ( CSC % FAST_EIGENSPEED_MINUS_U_1 : CSC % FAST_EIGENSPEED_MINUS_U_3 ) &
+!      =  Velocity_U_Unit
 
     !-- Vector indices
 
@@ -215,8 +220,8 @@ contains
       allocate ( VectorIndices ( nVectors ) )
     end if
 
-    call VectorIndices ( 1 ) % Initialize ( CSC % FAST_EIGENSPEED_PLUS_U )
-    call VectorIndices ( 2 ) % Initialize ( CSC % FAST_EIGENSPEED_MINUS_U )
+!    call VectorIndices ( 1 ) % Initialize ( CSC % FAST_EIGENSPEED_PLUS_U )
+!    call VectorIndices ( 2 ) % Initialize ( CSC % FAST_EIGENSPEED_MINUS_U )
 
     !-- Vector names
 
@@ -226,9 +231,9 @@ contains
       allocate ( Vector ( nVectors ) )
     end if !-- FieldOption
 
-    Vector ( 1 : CSC % N_VECTORS_CS ) &
-      = [ 'FastEigenspeedPlus ', &
-          'FastEigenspeedMinus' ]
+    ! Vector ( 1 : CSC % N_VECTORS_CS ) &
+    !   = [ 'FastEigenspeedPlus ', &
+    !       'FastEigenspeedMinus' ]
 
     !-- FieldSet
 
@@ -333,7 +338,7 @@ contains
       associate &
         ( FSS  =>  FSC % Storage_FSC % Storage, &
           CSS  =>  CSC % Storage_FSC % Storage, &
-          DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+          DeviceMemory  =>  FSC % Storage_FSC % DeviceMemory )
       associate &
         ( F_D  =>  FSS % Value ( :, iDensity ), &
             D  =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ) ) 
@@ -349,6 +354,39 @@ contains
     end if !-- Density default
 
   end subroutine ComputeFluxes
+
+
+  subroutine ComputeEigenspeeds ( FSC, CSC, iaEigenspeeds, iD )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    class ( CurrentSet_C_Form ), intent ( in ) :: &
+      CSC
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaEigenspeeds
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimension
+    
+    if ( CSC % DENSITY_DEFAULT > 0 ) then
+
+      associate &
+        ( FSS  =>  FSC % Storage_FSC % Storage, &
+          DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+      associate &
+        ( EF_P  =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
+          EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
+ 
+      call ComputeEigenspeedsKernel &
+             ( EF_P, EF_M, &
+               V_Dim = CSC % VelocityDefault_U ( iD ), &
+               UseDeviceOption = DeviceMemory )
+  
+      end associate !-- EF_P, etc.
+      end associate !-- FSS, etc.
+
+    end if !-- Density default
+
+  end subroutine ComputeEigenspeeds
 
 
   impure elemental subroutine Finalize ( CSC )

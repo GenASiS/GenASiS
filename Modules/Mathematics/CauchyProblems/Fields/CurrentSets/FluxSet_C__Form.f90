@@ -75,7 +75,7 @@ contains
              DeviceMemoryOption = DeviceMemory, &
              PinnedMemoryOption = PinnedMemory, &
              DevicesCommunicateOption = DevicesCommunicate, &
-             nFieldsOption = nB , &
+             nFieldsOption = nB, &
              IgnorabilityOption = CSC % IGNORABILITY )
 
     end associate !-- nB, etc.

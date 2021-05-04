@@ -1,5 +1,6 @@
 CURRENT_SETS = \
   CurrentSets.o \
+  Eigenspeeds_F_C__Form.o \
   FluxSet_A__Form.o \
   FluxSet_C__Form.o \
   CurrentSet_A__Form.o \
