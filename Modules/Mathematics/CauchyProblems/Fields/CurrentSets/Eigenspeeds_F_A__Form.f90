@@ -49,7 +49,7 @@ contains
     if ( EA % Type  ==  '' ) &
       EA % Type  =  'an Eigenspeeds_F_A'
 
-    Name  =  'Eigenspeeds_F_' // trim ( CSA % Name )
+    Name  =  'E_' // trim ( CSA % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

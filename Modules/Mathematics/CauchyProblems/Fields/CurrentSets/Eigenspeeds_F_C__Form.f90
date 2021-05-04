@@ -64,7 +64,7 @@ contains
     if ( EC % Type  ==  '' ) &
       EC % Type  =  'an Eigenspeeds_F_C' 
     
-    Name  =  'Eigenspeeds_' // trim ( CSC % Name )
+    Name  =  'E_' // trim ( CSC % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

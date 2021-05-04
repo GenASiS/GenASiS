@@ -63,7 +63,7 @@ contains
 
     RA % IGNORABILITY  =  FSA % IGNORABILITY
 
-    RA % Name  =  'Reconstruction_' // trim ( FSA % Name )
+    RA % Name  =  'R_' // trim ( FSA % Name )
     if ( present ( NameOption ) ) &
       RA % Name  =  trim ( NameOption ) // '_' // trim ( FSA % Name )
 

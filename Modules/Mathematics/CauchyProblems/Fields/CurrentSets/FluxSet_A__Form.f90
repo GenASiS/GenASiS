@@ -49,7 +49,7 @@ contains
     if ( FSA % Type  ==  '' ) &
       FSA % Type  =  'a FluxSet_A'
 
-    Name  =  'FluxSet_' // trim ( CSA % Name )
+    Name  =  'FS_' // trim ( CSA % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

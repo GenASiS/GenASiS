@@ -131,7 +131,7 @@ contains
 
     RC % IGNORABILITY  =  FSC % IGNORABILITY
 
-    RC % Name  =  'Reconstruction_' // trim ( FSC % Name )
+    RC % Name  =  'R_' // trim ( FSC % Name )
     if ( present ( NameOption ) ) &
       RC % Name  =  trim ( NameOption ) // '_' // trim ( FSC % Name )
 

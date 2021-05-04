@@ -16,9 +16,17 @@ Reconstruction_A__Form.o: \
   Reconstruction_C__Form.o \
   Reconstruction_A__Form.f90
 
+RiemannSolver_HLL_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Reconstruction_C__Form.o \
+  RiemannSolver_HLL_C__Form.f90
+
 Slopes.o: \
   Reconstruction_C__Form.o \
   Reconstruction_A__Form.o \
+  RiemannSolver_HLL_C__Form.o \
   Slopes.f90
 
 Slopes.a: $(SLOPES)

@@ -50,7 +50,7 @@ contains
     if ( FSC % Type  ==  '' ) &
       FSC % Type  =  'a FluxSet_C' 
     
-    Name  =  'FluxSet_' // trim ( CSC % Name )
+    Name  =  'FS_' // trim ( CSC % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
