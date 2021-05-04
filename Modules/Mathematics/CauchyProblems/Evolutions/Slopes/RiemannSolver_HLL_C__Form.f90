@@ -29,7 +29,7 @@ module RiemannSolver_HLL_C__Form
     class ( Eigenspeeds_F_C_Form ), pointer :: &
       Eigenspeeds_C => null ( )
     class ( Reconstruction_C_Form ), pointer :: &
-      Reconstruction_C_C => null ( ), &
+      Reconstruction_B_C => null ( ), &
       Reconstruction_F_C => null ( ), &
       Reconstruction_E_C => null ( )
   contains
@@ -37,6 +37,8 @@ module RiemannSolver_HLL_C__Form
       InitializeAllocate_RS
     generic, public :: &
       Initialize => InitializeAllocate_RS
+    procedure, private, pass :: &
+      Show_FSC
     final :: &
       Finalize
   end type RiemannSolver_HLL_C_Form
@@ -46,7 +48,7 @@ contains
 
 
   subroutine InitializeAllocate_RS &
-               ( RSC, RFC, REC, RCC, EC, FSC, CSC, FieldOption, NameOption, &
+               ( RSC, RBC, RFC, REC, EC, FSC, CSC, FieldOption, NameOption, &
                  nFieldsOption )
 
     class ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
@@ -54,7 +56,7 @@ contains
     class ( Reconstruction_C_Form ), intent ( in ), target :: &
       RFC, &
       REC, &
-      RCC
+      RBC
     class ( Eigenspeeds_F_C_Form ), intent ( in ), target :: &
       EC
     class ( FluxSet_C_Form ), intent ( in ), target :: &
@@ -80,14 +82,14 @@ contains
     if ( RSC % Type  ==  '' ) &
       RSC % Type  =  'a RiemannSolver_HLL_C' 
     
-    Name  =  'RiemannSolver_' // trim ( CSC % Name )
+    Name  =  'RS_' // trim ( CSC % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
     RSC % CurrentSet_C        =>  CSC
     RSC % FluxSet_C           =>  FSC
     RSC % Eigenspeeds_C       =>  EC
-    RSC % Reconstruction_C_C  =>  RCC
+    RSC % Reconstruction_B_C  =>  RBC
     RSC % Reconstruction_F_C  =>  RFC
     RSC % Reconstruction_E_C  =>  REC
 
@@ -143,6 +145,21 @@ contains
   end subroutine InitializeAllocate_RS
 
 
+  subroutine Show_FSC ( FSC )
+
+    class ( RiemannSolver_HLL_C_Form ), intent ( in ) :: &
+      FSC
+
+    call FSC % FieldSet_C_Form % Show ( )
+    call FSC % FluxSet_C % Show ( )
+    call FSC % Eigenspeeds_C % Show ( )
+    call FSC % Reconstruction_B_C % Show ( )
+    call FSC % Reconstruction_F_C % Show ( )
+    call FSC % Reconstruction_E_C % Show ( )
+
+  end subroutine Show_FSC
+
+
   impure elemental subroutine Finalize ( RSC )
 
     type ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
@@ -150,7 +167,7 @@ contains
 
     nullify ( RSC % Reconstruction_E_C )
     nullify ( RSC % Reconstruction_F_C )
-    nullify ( RSC % Reconstruction_C_C )
+    nullify ( RSC % Reconstruction_B_C )
     nullify ( RSC % Eigenspeeds_C )
     nullify ( RSC % FluxSet_C )
     nullify ( RSC % CurrentSet_C )

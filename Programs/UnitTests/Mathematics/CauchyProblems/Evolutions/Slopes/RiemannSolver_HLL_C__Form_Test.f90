@@ -29,7 +29,7 @@ program RiemannSolver_HLL_C__Form_Test
   type ( Eigenspeeds_F_C_Form ), allocatable :: &
     EC
   type ( Reconstruction_C_Form ), allocatable :: &
-    RCC, RFC, REC
+    RBC, RFC, REC
   type ( RiemannSolver_HLL_C_Form ), allocatable :: &
     RSC
 
@@ -95,13 +95,13 @@ program RiemannSolver_HLL_C__Form_Test
            NameOption = 'R_' // trim ( EC % Name ) // '_IR', &
            nFieldsOption = EC % nFields )
 
-  allocate ( RCC, RFC, REC )
-  call RCC % Initialize ( GC, BC, OB_IL_C, OB_IR_C )
-  call RFC % Initialize ( GC, BC, OF_IL_C, OF_IR_C )
-  call REC % Initialize ( GC, BC, OE_IL_C, OE_IR_C )
+  allocate ( RBC, RFC, REC )
+  call RBC % Initialize ( GC,  BC, OB_IL_C, OB_IR_C )
+  call RFC % Initialize ( GC, FSC, OF_IL_C, OF_IR_C )
+  call REC % Initialize ( GC,  EC, OE_IL_C, OE_IR_C )
 
   allocate ( RSC )
-  call RSC % Initialize ( RFC, RCC, REC, EC, FSC, CSC ) 
+  call RSC % Initialize ( RBC, RFC, REC, EC, FSC, CSC ) 
   call SC % AddFieldSet ( RSC )
 
   call   C % Show ( )
@@ -115,7 +115,7 @@ program RiemannSolver_HLL_C__Form_Test
 !   call TestEigenspeeds ( EC, iD = 3 )
 
   deallocate ( RSC )
-  deallocate ( REC, RFC, RCC )
+  deallocate ( REC, RFC, RBC )
   deallocate ( OE_IR_C, OE_IL_C )
   deallocate ( OF_IR_C, OF_IL_C )
   deallocate ( OB_IR_C, OB_IL_C )
