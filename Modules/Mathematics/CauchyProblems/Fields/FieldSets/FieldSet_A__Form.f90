@@ -120,7 +120,16 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
 
-    do iC  =  1, FSA_S % Atlas % nCharts
+    associate ( nC  =>  FSA_S % Atlas % nCharts )
+    allocate ( FSA_T % FieldSet_C ( nC ) )
+ 
+    call FSA_T % Initialize &
+           ( FSA_S % Atlas, &
+             NameOption = NameOption, &
+             IgnorabilityOption = IgnorabilityOption )
+
+    do iC  =  1, nC
+      allocate ( FSA_T % FieldSet_C ( iC ) % Element )
       associate &
         ( FSC_T  =>  FSA_T % FieldSet_C ( iC ) % Element, &
           FSC_S  =>  FSA_S % FieldSet_C ( iC ) % Element )
@@ -128,6 +137,8 @@ contains
              ( FSC_S, iaSelected, NameOption, IgnorabilityOption )
       end associate !-- FSC_T, etc.
     end do !-- iC
+
+    end associate !-- nC
 
   end subroutine InitializeClone
 

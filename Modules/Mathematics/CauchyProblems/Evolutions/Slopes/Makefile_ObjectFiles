@@ -1,5 +1,6 @@
 SLOPES = \
   Slopes.o \
+  RiemannSolver_HLL_A__Form.o \
   RiemannSolver_HLL_C__Kernel.o \
   RiemannSolver_HLL_C__Form.o \
   Reconstruction_A__Form.o \

@@ -30,14 +30,19 @@ module Eigenspeeds_F_A__Form
 contains
 
 
-  subroutine InitializeAllocate_F ( EA, CSA, NameOption )
+  subroutine InitializeAllocate_F &
+               ( EA, CSA, FieldOption, NameOption, nFieldsOption )
 
     class ( Eigenspeeds_F_A_Form ), intent ( inout ) :: &
       EA
     class ( CurrentSet_A_Form ), intent ( in ), target :: &
       CSA
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      FieldOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nFieldsOption
 
     integer ( KDI ) :: &
       iC !-- iChart
@@ -78,7 +83,7 @@ contains
 
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
         class is ( CurrentSet_C_Form )
-        call EC % Initialize ( CSC, NameOption = Name )
+        call EC % Initialize ( CSC, FieldOption, NameOption, nFieldsOption )
         end select !-- CSC
 
         end select !-- EC
@@ -100,8 +105,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
-   integer ( KDI ) :: &
-     iC  !-- iChart
+    integer ( KDI ) :: &
+      iC  !-- iChart
 
     do iC  =  1, size ( EA % FieldSet_C )
       select type ( EC  =>  EA % FieldSet_C ( iC ) % Element )

@@ -78,7 +78,7 @@ contains
 
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
         class is ( CurrentSet_C_Form )
-        call FSC % Initialize ( CSC, NameOption = Name )
+        call FSC % Initialize ( CSC, NameOption )
         end select !-- CSC
 
         end select !-- FSC
@@ -100,8 +100,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
-   integer ( KDI ) :: &
-     iC  !-- iChart
+    integer ( KDI ) :: &
+      iC  !-- iChart
 
     do iC  =  1, size ( FSA % FieldSet_C )
       select type ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
