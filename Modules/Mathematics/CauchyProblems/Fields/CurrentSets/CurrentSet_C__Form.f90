@@ -3,7 +3,6 @@ module CurrentSet_C__Form
   !-- CurrentSet_Chart_Form
 
   use Basics
-  use Manifolds
   use FieldSets
   use Streams
   use Geometries

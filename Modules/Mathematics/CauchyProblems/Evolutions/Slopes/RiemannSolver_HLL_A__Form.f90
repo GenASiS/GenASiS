@@ -3,7 +3,6 @@ module RiemannSolver_HLL_A__Form
   !-- RiemannSolver_HartenLaxVanLeer_Atlas_Form
 
   use Basics
-  use Manifolds
   use Fields
   use Reconstruction_A__Form
   use RiemannSolver_HLL_C__Form

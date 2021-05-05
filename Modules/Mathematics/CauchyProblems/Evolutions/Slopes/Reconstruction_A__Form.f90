@@ -3,7 +3,6 @@ module Reconstruction_A__Form
   !-- Reconstruction_Atlas_Form
 
   use Basics
-  use Manifolds
   use Fields
   use Reconstruction_C__Form
 

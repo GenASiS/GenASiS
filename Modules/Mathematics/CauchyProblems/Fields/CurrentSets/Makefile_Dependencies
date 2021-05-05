@@ -1,9 +1,8 @@
 CurrentSet_C__Form.o: \
   Basics.o \
-  Manifolds.o \
   FieldSets.o \
-  Geometries.o \
   Streams.o \
+  Geometries.o \
   CurrentSet_C__Form.f90
 
 CurrentSet_C__Kernel.o: \
@@ -13,7 +12,6 @@ CurrentSet_C__Kernel.o: \
 
 CurrentSet_A__Form.o: \
   Basics.o \
-  Manifolds.o \
   FieldSets.o \
   Streams.o \
   Geometries.o \
@@ -22,14 +20,12 @@ CurrentSet_A__Form.o: \
 
 FluxSet_C__Form.o: \
   Basics.o \
-  Manifolds.o \
   FieldSets.o \
   CurrentSet_C__Form.o \
   FluxSet_C__Form.f90
 
 FluxSet_A__Form.o: \
   Basics.o \
-  Manifolds.o \
   FieldSets.o \
   CurrentSet_C__Form.o \
   CurrentSet_A__Form.o \
@@ -38,14 +34,12 @@ FluxSet_A__Form.o: \
 
 Eigenspeeds_F_C__Form.o: \
   Basics.o \
-  Manifolds.o \
   FieldSets.o \
   CurrentSet_C__Form.o \
   Eigenspeeds_F_C__Form.f90
 
 Eigenspeeds_F_A__Form.o: \
   Basics.o \
-  Manifolds.o \
   FieldSets.o \
   CurrentSet_C__Form.o \
   Eigenspeeds_F_A__Form.f90

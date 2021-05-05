@@ -3,7 +3,6 @@ module FluxSet_A__Form
   !-- FluxSet_Atlas_Form
 
   use Basics
-  use Manifolds
   use FieldSets
   use CurrentSet_C__Form
   use CurrentSet_A__Form

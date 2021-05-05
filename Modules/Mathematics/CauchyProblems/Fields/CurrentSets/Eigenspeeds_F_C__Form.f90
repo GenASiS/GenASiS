@@ -3,7 +3,6 @@ module Eigenspeeds_F_C__Form
   !-- Eigenspeeds_Fast_Chart_Form
 
   use Basics
-  use Manifolds
   use FieldSets
   use CurrentSet_C__Form
 

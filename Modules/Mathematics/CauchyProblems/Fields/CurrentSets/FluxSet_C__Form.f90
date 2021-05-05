@@ -3,7 +3,6 @@ module FluxSet_C__Form
   !-- FluxSet_Chart_Form
 
   use Basics
-  use Manifolds
   use FieldSets
   use CurrentSet_C__Form
 

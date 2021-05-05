@@ -3,7 +3,6 @@ module CurrentSet_A__Form
   !-- CurrentSet_Atlas_Form
 
   use Basics
-  use Manifolds
   use FieldSets
   use Streams
   use Geometries
