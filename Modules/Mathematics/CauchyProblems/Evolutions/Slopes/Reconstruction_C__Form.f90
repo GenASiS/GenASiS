@@ -47,69 +47,70 @@ module Reconstruction_C__Form
       ComputeLinear_CGS_Kernel, &
       ComputeParabolic_CGS_Kernel
 
-  interface
+    interface
   
-    module subroutine ComputeConstant_CGS_Kernel &
-             ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
-      use Basics
-      implicit none
-      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-        F
-      integer ( KDI ), dimension ( : ), intent ( in ) :: &
-        iaSlctd
-      integer ( KDI ), intent ( in ) :: &
-        iD, &
-        oV   
-      real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
-        F_IL, F_IR
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine ComputeConstant_CGS_Kernel
+      module subroutine ComputeConstant_CGS_Kernel &
+               ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          F
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSlctd
+        integer ( KDI ), intent ( in ) :: &
+          iD, &
+          oV   
+        real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+          F_IL, F_IR
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeConstant_CGS_Kernel
 
-    module subroutine ComputeLinear_CGS_Kernel &
-             ( F, X, dX, XA, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
-      use Basics
-      implicit none
-      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-        F
-      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-         X, &
-        dX, &
-         XA
-      integer ( KDI ), dimension ( : ), intent ( in ) :: &
-        iaSlctd
-      integer ( KDI ), intent ( in ) :: &
-        iD, &
-        oV   
-      real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
-        F_IL, F_IR
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine ComputeLinear_CGS_Kernel
+      module subroutine ComputeLinear_CGS_Kernel &
+               ( F, X, dX, XA, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          F
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+           X, &
+          dX, &
+           XA
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSlctd
+        integer ( KDI ), intent ( in ) :: &
+          iD, &
+          oV   
+        real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+          F_IL, F_IR
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeLinear_CGS_Kernel
 
-    module subroutine ComputeParabolic_CGS_Kernel &
-             ( F, X, dX, XA, X2A, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
-      use Basics
-      implicit none
-      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-        F
-      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-         X, &
-        dX, &
-         XA, &
-         X2A
-      integer ( KDI ), dimension ( : ), intent ( in ) :: &
-        iaSlctd
-      integer ( KDI ), intent ( in ) :: &
-        iD, &
-        oV   
-      real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
-        F_IL, F_IR
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine ComputeParabolic_CGS_Kernel
+      module subroutine ComputeParabolic_CGS_Kernel &
+               ( F, X, dX, XA, X2A, iaSlctd, iD, oV, F_IL, F_IR, &
+                 UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          F
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+           X, &
+          dX, &
+           XA, &
+           X2A
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSlctd
+        integer ( KDI ), intent ( in ) :: &
+          iD, &
+          oV   
+        real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+          F_IL, F_IR
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeParabolic_CGS_Kernel
 
-  end interface
+    end interface
 
 contains
 

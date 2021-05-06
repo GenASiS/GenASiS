@@ -70,6 +70,20 @@ contains
 
     RSA % CurrentSet_A  =>  CSA
 
+    associate ( nC  =>  CSA % Atlas % nCharts )
+
+    if ( allocated ( RSA % FieldSet_C ) ) then
+      PreviouslyAllocated  =  .true.
+    else
+      PreviouslyAllocated  =  .false.
+      allocate ( RSA % FieldSet_C ( nC ) )
+    end if
+
+    call RSA % FieldSet_A_Form % Initialize &
+           ( CSA % Atlas, &
+             NameOption = Name, &
+             IgnorabilityOption = CSA % IGNORABILITY )
+
     select type ( CSC  =>  CSA % FieldSet_C ( 1 ) % Element )
     class is ( CurrentSet_C_Form )
     iaBalanced  =>  CSC % iaBalanced
@@ -100,20 +114,6 @@ contains
     allocate ( RSA % Reconstruction_E_A )
     associate ( REA  =>  RSA % Reconstruction_E_A )
     call REA % Initialize ( CSA % Geometry_A, EA )
-
-    associate ( nC  =>  CSA % Atlas % nCharts )
-
-    if ( allocated ( RSA % FieldSet_C ) ) then
-      PreviouslyAllocated  =  .true.
-    else
-      PreviouslyAllocated  =  .false.
-      allocate ( RSA % FieldSet_C ( nC ) )
-    end if
-
-    call RSA % FieldSet_A_Form % Initialize &
-           ( CSA % Atlas, &
-             NameOption = Name, &
-             IgnorabilityOption = CSA % IGNORABILITY )
 
     if ( .not. PreviouslyAllocated ) then
       do iC  =  1,  nC

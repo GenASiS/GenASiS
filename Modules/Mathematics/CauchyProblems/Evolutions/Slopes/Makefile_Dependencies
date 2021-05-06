@@ -33,18 +33,24 @@ RiemannSolver_HLL_A__Form.o: \
   RiemannSolver_HLL_C__Form.o \
   Reconstruction_A__Form.f90
 
-Divergence_FV_C__Form.o: \
+Slope_DFV_C__Form.o: \
   Basics.o \
+  Manifolds.o \
   Fields.o \
   RiemannSolver_HLL_C__Form.o \
-  Divergence_FV_C__Form.f90
+  Slope_DFV_C__Form.f90
+
+Slope_DFV_C__Kernel.o: \
+  Basics.o \
+  Slope_DFV_C__Form.o \
+  Slope_DFV_C__Kernel.f90
 
 Slopes.o: \
   Reconstruction_C__Form.o \
   Reconstruction_A__Form.o \
   RiemannSolver_HLL_C__Form.o \
   RiemannSolver_HLL_A__Form.o \
-  Divergence_FV_C__Form.o \
+  Slope_DFV_C__Form.o \
   Slopes.f90
 
 Slopes.a: $(SLOPES)

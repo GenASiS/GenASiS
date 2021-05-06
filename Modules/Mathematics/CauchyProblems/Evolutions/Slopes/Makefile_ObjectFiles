@@ -1,6 +1,7 @@
 SLOPES = \
   Slopes.o \
-  Divergence_FV_C__Form.o \
+  Slope_DFV_C__Kernel.o \
+  Slope_DFV_C__Form.o \
   RiemannSolver_HLL_A__Form.o \
   RiemannSolver_HLL_C__Kernel.o \
   RiemannSolver_HLL_C__Form.o \

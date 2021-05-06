@@ -259,7 +259,7 @@ contains
 
     call T_Kernel % Stop
 
-    end associate !-- CSC
+    end associate !-- CSC, etc.
 
     call T % Stop ( )
 
