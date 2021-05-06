@@ -75,106 +75,92 @@ module Geometry_F_C__Form
     interface
       
       module subroutine Compute_FV_R_Kernel &
-               ( A_I_1, A_I_2, A_I_3, V, W_1, W_2, W_3, nD, nV, oV )
+               ( W_1, W_2, W_3, nD, A_I_1, A_I_2, A_I_3, V )
         !-- Compute_FiniteVolume_Rectangular_Kernel
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          A_I_1, A_I_2, A_I_3, &
-          V
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           W_1, W_2, W_3
         integer ( KDI ), intent ( in ) :: &
-          nD, &
-          nV, &
-          oV
+          nD
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          A_I_1, A_I_2, A_I_3, &
+          V
       end subroutine Compute_FV_R_Kernel
 
       module subroutine Compute_FV_C_Kernel &
-               ( A_I_1, A_I_2, A_I_3, V, W_1, W_2, W_3, E_I_1, nD, nV, oV )
+               ( W_1, W_2, W_3, E_I_1, nD, A_I_1, A_I_2, A_I_3, V )
         !-- Compute_FiniteVolume_Cylindrical_Kernel
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          A_I_1, A_I_2, A_I_3, &
-          V
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           W_1, W_2, W_3, &
           E_I_1
         integer ( KDI ), intent ( in ) :: &
-          nD, &
-          nV, &
-          oV
+          nD
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          A_I_1, A_I_2, A_I_3, &
+          V
       end subroutine Compute_FV_C_Kernel
 
       module subroutine Compute_FV_S_Kernel &
-               ( A_I_1, A_I_2, A_I_3, V, W_1, W_2, W_3, E_I_1, E_I_2, &
-                 nD, nV, oV )
+               ( W_1, W_2, W_3, E_I_1, E_I_2, nD, A_I_1, A_I_2, A_I_3, V )
         !-- Compute_FiniteVolume_Spherical_Kernel
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          A_I_1, A_I_2, A_I_3, &
-          V
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           W_1, W_2, W_3, &
           E_I_1, E_I_2
         integer ( KDI ), intent ( in ) :: &
-          nD, &
-          nV, &
-          oV
+          nD
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          A_I_1, A_I_2, A_I_3, &
+          V
       end subroutine Compute_FV_S_Kernel
 
       module subroutine Compute_M_R_Kernel &
                ( M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
-                 nV, oV, UseDeviceOption )
+                 UseDeviceOption )
         !-- Compute_Metric_Rectangular_Kernel
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
           M_DD_11, M_DD_22, M_DD_33, &
           M_UU_11, M_UU_22, M_UU_33
-        integer ( KDI ), intent ( in ) :: &
-          nV, &
-          oV
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_M_R_Kernel
 
       module subroutine Compute_M_C_Kernel &
-               ( M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
-                 RP, nD, nV, oV, UseDeviceOption )
+               ( RP, nD, M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 UseDeviceOption )
         !-- Compute_Metric_Cylindrical_Kernel
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          M_DD_11, M_DD_22, M_DD_33, &
-          M_UU_11, M_UU_22, M_UU_33
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           RP
         integer ( KDI ), intent ( in ) :: &
-          nD, &
-          nV, &
-          oV
+          nD
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          M_DD_11, M_DD_22, M_DD_33, &
+          M_UU_11, M_UU_22, M_UU_33
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_M_C_Kernel
 
       module subroutine Compute_M_S_Kernel &
-               ( M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
-                 R, Th, nD, nV, oV, UseDeviceOption )
+               ( R, Th, nD, M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, &
+                 M_UU_33, UseDeviceOption )
         !-- Compute_Metric_Spherical_Kernel
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          M_DD_11, M_DD_22, M_DD_33, &
-          M_UU_11, M_UU_22, M_UU_33
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           R, Th
         integer ( KDI ), intent ( in ) :: &
-          nD, &
-          nV, &
-          oV
+          nD
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          M_DD_11, M_DD_22, M_DD_33, &
+          M_UU_11, M_UU_22, M_UU_33
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_M_S_Kernel
@@ -547,64 +533,63 @@ contains
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
       call Compute_FV_R_Kernel &
-             ( GS % Value ( :, GC % AREA_I_D_1 ), &
-               GS % Value ( :, GC % AREA_I_D_2 ), &
-               GS % Value ( :, GC % AREA_I_D_3 ), &
-               GS % Value ( :, GC % VOLUME ), &
-               GS % Value ( :, GC % WIDTH_U_1 ), &
+             ( GS % Value ( :, GC % WIDTH_U_1 ), &
                GS % Value ( :, GC % WIDTH_U_2 ), &
                GS % Value ( :, GC % WIDTH_U_3 ), &
-               nDimensions, nValues, oValue )
+               nDimensions, &
+               GS % Value ( :, GC % AREA_I_D_1 ), &
+               GS % Value ( :, GC % AREA_I_D_2 ), &
+               GS % Value ( :, GC % AREA_I_D_3 ), &
+               GS % Value ( :, GC % VOLUME ) )
       call Compute_M_R_Kernel &
              ( GS % Value ( :, GC % METRIC_F_DD_11 ), &
                GS % Value ( :, GC % METRIC_F_DD_22 ), &
                GS % Value ( :, GC % METRIC_F_DD_33 ), &
                GS % Value ( :, GC % METRIC_F_UU_11 ), &
                GS % Value ( :, GC % METRIC_F_UU_22 ), &
-               GS % Value ( :, GC % METRIC_F_UU_33 ), &
-               nValues, oValue )
+               GS % Value ( :, GC % METRIC_F_UU_33 ) )
     case ( 'CYLINDRICAL' )
       call Compute_FV_C_Kernel &
-             ( GS % Value ( :, GC % AREA_I_D_1 ), &
-               GS % Value ( :, GC % AREA_I_D_2 ), &
-               GS % Value ( :, GC % AREA_I_D_3 ), &
-               GS % Value ( :, GC % VOLUME ), &
-               GS % Value ( :, GC % WIDTH_U_1 ), &
+             ( GS % Value ( :, GC % WIDTH_U_1 ), &
                GS % Value ( :, GC % WIDTH_U_2 ), &
                GS % Value ( :, GC % WIDTH_U_3 ), &
                GS % Value ( :, GC % EDGE_I_U_1 ), &
-               nDimensions, nValues, oValue )
+               nDimensions, &
+               GS % Value ( :, GC % AREA_I_D_1 ), &
+               GS % Value ( :, GC % AREA_I_D_2 ), &
+               GS % Value ( :, GC % AREA_I_D_3 ), &
+               GS % Value ( :, GC % VOLUME ) )
       call Compute_M_C_Kernel &
-             ( GS % Value ( :, GC % METRIC_F_DD_11 ), &
+             ( GS % Value ( :, GC % CENTER_U_1 ), &
+               nDimensions, &
+               GS % Value ( :, GC % METRIC_F_DD_11 ), &
                GS % Value ( :, GC % METRIC_F_DD_22 ), &
                GS % Value ( :, GC % METRIC_F_DD_33 ), &
                GS % Value ( :, GC % METRIC_F_UU_11 ), &
                GS % Value ( :, GC % METRIC_F_UU_22 ), &
-               GS % Value ( :, GC % METRIC_F_UU_33 ), &
-               GS % Value ( :, GC % CENTER_U_1 ), &
-               nDimensions, nValues, oValue )
+               GS % Value ( :, GC % METRIC_F_UU_33 ) )
     case ( 'SPHERICAL' )
       call Compute_FV_S_Kernel &
-             ( GS % Value ( :, GC % AREA_I_D_1 ), &
-               GS % Value ( :, GC % AREA_I_D_2 ), &
-               GS % Value ( :, GC % AREA_I_D_3 ), &
-               GS % Value ( :, GC % VOLUME ), &
-               GS % Value ( :, GC % WIDTH_U_1 ), &
+             ( GS % Value ( :, GC % WIDTH_U_1 ), &
                GS % Value ( :, GC % WIDTH_U_2 ), &
                GS % Value ( :, GC % WIDTH_U_3 ), &
                GS % Value ( :, GC % EDGE_I_U_1 ), &
                GS % Value ( :, GC % EDGE_I_U_2 ), &
-               nDimensions, nValues, oValue )
+               nDimensions, &
+               GS % Value ( :, GC % AREA_I_D_1 ), &
+               GS % Value ( :, GC % AREA_I_D_2 ), &
+               GS % Value ( :, GC % AREA_I_D_3 ), &
+               GS % Value ( :, GC % VOLUME ) )
       call Compute_M_S_Kernel &
-             ( GS % Value ( :, GC % METRIC_F_DD_11 ), &
+             ( GS % Value ( :, GC % CENTER_U_1 ), &
+               GS % Value ( :, GC % CENTER_U_2 ), &
+               nDimensions, &
+               GS % Value ( :, GC % METRIC_F_DD_11 ), &
                GS % Value ( :, GC % METRIC_F_DD_22 ), &
                GS % Value ( :, GC % METRIC_F_DD_33 ), &
                GS % Value ( :, GC % METRIC_F_UU_11 ), &
                GS % Value ( :, GC % METRIC_F_UU_22 ), &
-               GS % Value ( :, GC % METRIC_F_UU_33 ), &
-               GS % Value ( :, GC % CENTER_U_1 ), &
-               GS % Value ( :, GC % CENTER_U_2 ), &
-               nDimensions, nValues, oValue )
+               GS % Value ( :, GC % METRIC_F_UU_33 ) )
     case default
       call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', &

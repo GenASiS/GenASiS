@@ -14,12 +14,15 @@ contains
     !-- Compute_FiniteVolume_Rectangular_Kernel
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      nV     !-- nValues
     real ( KDR ) :: &
       dX, dY, dZ
 
+    nV  =  size ( V )
+
     !$OMP parallel do private ( dX, dY, dZ )
-    do iV = oV + 1, oV + nV
+    do iV = 1, nV
 
       dX  =  W_1 ( iV )
       dY  =  W_2 ( iV )
@@ -54,7 +57,8 @@ contains
     !-- Compute_FiniteVolume_Cylindrical_Kernel
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      nV     !-- nValues
     real ( KDR ) :: &
       Pi, &
       RP_I, RP_O, &
@@ -62,8 +66,10 @@ contains
 
     Pi  =  CONSTANT % PI
 
+    nV  =  size ( V )
+
     !$OMP parallel do private ( RP_I, RP_O, dZ, dPh )
-    do iV = oV + 1, oV + nV
+    do iV = 1, nV
 
       RP_I  =  E_I_1 ( iV )
       RP_O  =  E_I_1 ( iV )  +  W_1 ( iV )
@@ -100,7 +106,8 @@ contains
     !-- Compute_FiniteVolume_Spherical_Kernel
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      nV     !-- nValues
     real ( KDR ) :: &
       Pi, &
       R_I, R_O, &
@@ -109,8 +116,10 @@ contains
 
     Pi  =  CONSTANT % PI
 
+    nV  =  size ( V )
+
     !$OMP parallel do private ( R_I, R_O, Th_I, Th_O, dPh )
-    do iV = oV + 1, oV + nV
+    do iV = 1, nV
 
       R_I  =  E_I_1 ( iV )
       R_O  =  E_I_1 ( iV )  +  W_1 ( iV )
@@ -156,7 +165,8 @@ contains
     !-- Compute_Metric_Rectangular_Kernel
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      nV     !-- nValues
     logical ( KDL ) :: &
       UseDevice
 
@@ -164,11 +174,13 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
     
+    nV  =  size ( M_DD_11 )
+
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV = oV + 1, oV + nV
+      do iV = 1, nV
         M_DD_11 ( iV )  =  1.0_KDR
         M_DD_22 ( iV )  =  1.0_KDR
         M_DD_33 ( iV )  =  1.0_KDR
@@ -181,7 +193,7 @@ contains
     else
 
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) 
-      do iV = oV + 1, oV + nV
+      do iV = 1, nV
         M_DD_11 ( iV )  =  1.0_KDR
         M_DD_22 ( iV )  =  1.0_KDR
         M_DD_33 ( iV )  =  1.0_KDR
@@ -201,7 +213,8 @@ contains
     !-- Compute_Metric_Cylindrical_Kernel
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      nV     !-- nValues
     logical ( KDL ) :: &
       UseDevice
 
@@ -209,11 +222,13 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
     
+    nV  =  size ( M_DD_11 )
+
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV = oV + 1, oV + nV
+      do iV = 1, nV
 
         M_DD_11 ( iV )  =  1.0_KDR
         M_DD_22 ( iV )  =  1.0_KDR
@@ -233,7 +248,7 @@ contains
     else
 
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST )
-      do iV = oV + 1, oV + nV
+      do iV = 1, nV
 
         M_DD_11 ( iV )  =  1.0_KDR
         M_DD_22 ( iV )  =  1.0_KDR
@@ -260,7 +275,8 @@ contains
     !-- Compute_Metric_Spherical_Kernel
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      nV     !-- nValues
     real ( KDR ) :: &
       Sin_Th
     logical ( KDL ) :: &
@@ -270,11 +286,13 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
     
+    nV  =  size ( M_DD_11 )
+
     if ( UseDevice ) then      
     
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( Sin_Th )
-      do iV = oV + 1, oV + nV
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( Sin_Th )
+      do iV = 1, nV
 
         select case ( nD )
         case ( 1 )
@@ -299,12 +317,12 @@ contains
         end if
 
       end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     else
     
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( Sin_Th )
-      do iV = oV + 1, oV + nV
+      do iV = 1, nV
 
         select case ( nD )
         case ( 1 )
