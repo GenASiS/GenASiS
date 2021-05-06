@@ -141,9 +141,9 @@ contains
                ( RBC, RFC, REC, EC, FSC, CSC, FieldOption, NameOption, &
                  nFieldsOption )
 
-        end select !-- EC
-        end select !-- FSC
         end select !-- CSC
+        end select !-- FSC
+        end select !-- EC
         end associate !-- RBC, etc.
         end select !-- RSC
 
@@ -177,7 +177,7 @@ contains
       select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
       class is ( RiemannSolver_HLL_C_Form )
       call RSC % Compute ( iD, TimerLevelOption )
-      end select !-- EC
+      end select !-- RSC
     end do !-- iC
 
   end subroutine Compute

@@ -5,5 +5,6 @@ module Slopes
   use RiemannSolver_HLL_C__Form
   use RiemannSolver_HLL_A__Form
   use Slope_DFV_C__Form
+  use Slope_DFV_A__Form
 
 end module Slopes
