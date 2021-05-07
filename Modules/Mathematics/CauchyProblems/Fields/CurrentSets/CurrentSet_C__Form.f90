@@ -61,27 +61,27 @@ module CurrentSet_C__Form
 
     interface
 
-      module subroutine ComputeFluxesKernel ( F_D, D, V_Dim, UseDeviceOption )
+      module subroutine ComputeFluxesKernel ( D, V_Dim, F_D, UseDeviceOption )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          F_D
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           D
         real ( KDR ), intent ( in ) :: &
           V_Dim
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          F_D
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeFluxesKernel
 
       module subroutine ComputeEigenspeedsKernel &
-               ( EF_P, EF_M, V_Dim, UseDeviceOption )
+               ( V_Dim, EF_P, EF_M, UseDeviceOption )
         use Basics
         implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          EF_P, EF_M
         real ( KDR ), intent ( in ) :: &
           V_Dim
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          EF_P, EF_M
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeEigenspeedsKernel
@@ -328,10 +328,14 @@ contains
     
     integer ( KDI ) :: &
       iDensity
+    real ( KDR ) :: &
+      V_Dim
 
     if ( CSC % DENSITY_DEFAULT > 0 ) then
 
       call Search ( CSC % iaBalanced, CSC % DENSITY_DEFAULT, iDensity )
+
+      V_Dim  =  CSC % VelocityDefault_U ( iD )
 
       associate &
         ( FSS  =>  FSC % Storage_FSC % Storage, &
@@ -342,9 +346,7 @@ contains
             D  =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ) ) 
  
       call ComputeFluxesKernel &
-             ( F_D, D, &
-               V_Dim = CSC % VelocityDefault_U ( iD ), &
-               UseDeviceOption = DeviceMemory )
+             ( D, V_Dim, F_D, UseDeviceOption = DeviceMemory )
   
       end associate !-- F_D, etc.
       end associate !-- FSS, etc.
@@ -364,8 +366,12 @@ contains
       iaEigenspeeds
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
-    
+    real ( KDR ) :: &
+      V_Dim
+
     if ( CSC % DENSITY_DEFAULT > 0 ) then
+
+      V_Dim  =  CSC % VelocityDefault_U ( iD )
 
       associate &
         ( FSS  =>  FSC % Storage_FSC % Storage, &
@@ -375,9 +381,7 @@ contains
           EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
  
       call ComputeEigenspeedsKernel &
-             ( EF_P, EF_M, &
-               V_Dim = CSC % VelocityDefault_U ( iD ), &
-               UseDeviceOption = DeviceMemory )
+             ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
   
       end associate !-- EF_P, etc.
       end associate !-- FSS, etc.
