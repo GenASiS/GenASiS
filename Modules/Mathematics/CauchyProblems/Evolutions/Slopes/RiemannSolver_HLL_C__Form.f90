@@ -51,20 +51,20 @@ module RiemannSolver_HLL_C__Form
     interface
       
       module subroutine ComputeKernel &
-               ( F_I, AP_I, AM_I, F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, &
-                 EM_IL, EM_IR, UseDeviceOption )
+               ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
+                 F_I, AP_I, AM_I, UseDeviceOption )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-          F_I
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          AP_I, AM_I
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
           F_IL, F_IR, &
           U_IL, U_IR
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           EP_IL, EP_IR, &
           EM_IL, EM_IR
+        real ( KDR ), dimension ( :, : ), intent ( out ) :: &
+          F_I
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          AP_I, AM_I
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeKernel
@@ -251,8 +251,8 @@ contains
         EM_IR  =>  RES_IR % Value ( :, EC % EIGENSPEED_FAST_MINUS_U ) )
 
     call ComputeKernel &
-           ( F_I, AP_I, AM_I, F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, &
-             EM_IL, EM_IR, UseDeviceOption = DeviceMemory )
+           ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
+             F_I, AP_I, AM_I, UseDeviceOption = DeviceMemory )
 
     end associate !-- F_I, etc.
     end associate !-- RSS, etc.

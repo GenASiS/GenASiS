@@ -148,6 +148,7 @@ contains
     RC % Order  =  2
     if ( present ( OrderOption ) ) &
       RC % Order  =  OrderOption
+    call PROGRAM_HEADER % GetParameter ( RC % Order, 'Order' )
 
   end subroutine Initialize
 
