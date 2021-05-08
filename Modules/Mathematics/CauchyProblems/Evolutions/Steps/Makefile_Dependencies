@@ -1,0 +1,10 @@
+Step_RK_H__Form.o: \
+  Basics.o \
+  Step_RK_H__Form.f90
+
+Steps.o: \
+  Step_RK_H__Form.o \
+  Steps.f90
+
+Steps.a: $(STEPS)
+	ar r Steps.a $(STEPS)

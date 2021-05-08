@@ -1,4 +1,6 @@
+include $(PATH_STEPS)/Makefile_ObjectFiles
 include $(PATH_SLOPES)/Makefile_ObjectFiles
 
 EVOLUTIONS = \
+  $(STEPS) \
   $(SLOPES)

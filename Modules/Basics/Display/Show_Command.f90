@@ -92,7 +92,7 @@ contains
   subroutine ShowInteger_1D &
                ( Integer, Description, IgnorabilityOption, &
                  DisplayRankOption, nLeadingLinesOption, &
-                 nTrailingLinesOption )
+                 nTrailingLinesOption, lIntegerOption )
 
     !-- Convention on argument order violated because the Integer being
     !   "Show"n is more important than the Description.
@@ -105,10 +105,12 @@ contains
       IgnorabilityOption, &
       DisplayRankOption, &
       nLeadingLinesOption, &
-      nTrailingLinesOption
+      nTrailingLinesOption, &
+      lIntegerOption
 
     integer ( KDI ) :: &
-      i
+      i, &
+      oI
     logical ( KDL ) :: &
       AbortShow
     character ( LDN ) :: &
@@ -120,9 +122,13 @@ contains
 
     if ( AbortShow ) return
 
+    oI  =  0
+    if ( present ( lIntegerOption ) ) &
+      oI  =  lIntegerOption - 1
+
     print '(a35)', trim ( Description )
     do i = 1, size ( Integer )
-      write ( IndexLabel, fmt = '( i7 )' ) i
+      write ( IndexLabel, fmt = '( i7 )' ) oI + i
       print &
         '(a38,i10)', &
         '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', Integer ( i )
@@ -420,7 +426,7 @@ contains
   
   subroutine ShowReal_1D &
                ( Real, Description, IgnorabilityOption, DisplayRankOption, &
-                 nLeadingLinesOption, nTrailingLinesOption )
+                 nLeadingLinesOption, nTrailingLinesOption, lRealOption )
 
     !-- Convention on argument order violated because the Real being
     !   "Show"n is more important than the Description.
@@ -433,10 +439,12 @@ contains
       IgnorabilityOption, &
       DisplayRankOption, &
       nLeadingLinesOption, &
-      nTrailingLinesOption
+      nTrailingLinesOption, &
+      lRealOption
 
     integer ( KDI ) :: &
-      i
+      i, &
+      oR
     logical ( KDL ) :: &
       AbortShow
     character ( LDN ) :: &
@@ -448,9 +456,13 @@ contains
 
     if ( AbortShow ) return
 
+    oR  =  0
+    if ( present ( lRealOption ) ) &
+      oR  =  lRealOption - 1
+
     print '(a35)', trim ( Description )
     do i = 1, size ( Real )
-      write ( IndexLabel, fmt = '( i7 )' ) i
+      write ( IndexLabel, fmt = '( i7 )' ) oR + i
       print &
         '(a38,es15.6e3)', &
         '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', Real ( i )
