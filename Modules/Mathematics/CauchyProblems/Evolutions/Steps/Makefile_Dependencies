@@ -2,8 +2,15 @@ Step_RK_H__Form.o: \
   Basics.o \
   Step_RK_H__Form.f90
 
+Step_RK_CSA__Form.o: \
+  Basics.o \
+  Fields.o \
+  Step_RK_H__Form.o \
+  Step_RK_CSA__Form.f90
+
 Steps.o: \
   Step_RK_H__Form.o \
+  Step_RK_CSA__Form.o \
   Steps.f90
 
 Steps.a: $(STEPS)
