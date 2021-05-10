@@ -17,6 +17,7 @@ module Step_RK_H__Form
       iTimer_CS    = 0, &  !-- ComputeStage
       iTimer_IS_B  = 0, &  !-- IncrementSolution
       iTimer_SF    = 0, &  !-- StoreFinal
+      nEquations, &
       nStages
     real ( KDR ), dimension ( : ), allocatable :: &
       C, & 
@@ -57,7 +58,7 @@ module Step_RK_H__Form
 contains
 
 
-  subroutine Initialize_H ( S, A, B, C, NameOption )
+  subroutine Initialize_H ( S, A, B, C, nEquations, NameOption )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -67,6 +68,8 @@ contains
       B
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
+    integer ( KDI ), intent ( in ) :: &
+      nEquations
     character ( * ), intent ( in ), optional :: &
       NameOption
 
@@ -85,20 +88,22 @@ contains
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
-    S % nStages = size ( B )
-    associate ( nS => S % nStages )
+    S % nEquations  =  nEquations
+
+    S % nStages  =  size ( B )
+    associate ( nS  =>  S % nStages )
 
     allocate ( S % A ( 2 : nS ) )
-    do iS = 2, nS
+    do iS  =  2,  nS
       call S % A ( iS ) % Initialize ( iS - 1 )
       S % A ( iS ) % Value  =  A ( iS, 1 : iS - 1 )
     end do !-- iS
 
     allocate ( S % B ( nS ) )
-    S % B = B
+    S % B  =  B
 
     allocate ( S % C ( 2 : nS ) )
-    S % C = C
+    S % C  =  C
 
     end associate !-- nS
 
@@ -273,6 +278,7 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
+    call Show ( S % nEquations, 'nEquations', S % IGNORABILITY )
     call Show ( S % nStages, 'nStages', S % IGNORABILITY )
 
     do iA  =  2, S % nStages

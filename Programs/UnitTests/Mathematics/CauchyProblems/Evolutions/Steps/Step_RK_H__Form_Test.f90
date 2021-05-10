@@ -29,7 +29,7 @@ program Step_RK_H__Form_Test
   C ( 2 ) = 1.0_KDR
     
   allocate ( S )
-  call S % Initialize ( A, B, C )
+  call S % Initialize ( A, B, C, nEquations = 1 )
 
   call S % Show ( )
 
