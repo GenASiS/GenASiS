@@ -98,8 +98,6 @@ contains
       nFieldsOption
 
     integer ( KDI ) :: &
-      iB, &  !-- iBalanced
-      iF, &  !-- iField
       nFields
     character ( LDL ) :: &
       Name
@@ -146,10 +144,7 @@ contains
       allocate ( Field ( nFields ) )
     end if !-- FieldOption
 
-    do iB  =  1,  nB
-      iF  =  CSC % iaBalanced ( iB )
-      Field ( iB )  =  CSC % Field ( iF )
-    end do !-- iS
+    Field ( : nB )  =  CSC % Balanced
 
     Field ( nB + 1 : nB + RSC % N_SOLVER_SPEEDS ) &
       =  [ 'AlphaPlus_U ', &

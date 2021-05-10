@@ -36,6 +36,9 @@ module CurrentSet_C__Form
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaBalanced
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Primitive, &
+      Balanced
     class ( Geometry_F_C_Form ), pointer :: &
       Geometry_C => null ( )
   contains
@@ -119,6 +122,9 @@ contains
       IgnorabilityOption
 
     integer ( KDI ) :: &
+      iP, &  !-- iPrimitive
+      iB, &  !-- iBalanced
+      iF, &  !-- iField
       iV, &  !-- iVector
       nFields, &
       nVectors
@@ -259,6 +265,14 @@ contains
       CSC % iaPrimitive  =  [ CSC % DENSITY_DEFAULT ]
     end if !-- iaPrimitiveOption
 
+    associate ( nP  =>  CSC % nPrimitive )
+    allocate ( CSC % Primitive ( nP ) )
+    do iP  =  1, nP
+      iF  =  CSC % iaPrimitive ( iP )
+      CSC % Primitive ( iP )  =  Field ( iF )
+    end do !-- iP
+    end associate !-- nP
+
     !-- Balanced fields
 
     if ( present ( iaBalancedOption ) ) then
@@ -269,6 +283,14 @@ contains
       allocate ( CSC % iaBalanced ( CSC % nBalanced ) )
       CSC % iaBalanced  =  [ CSC % DENSITY_DEFAULT ]
     end if !-- iaBalancedOption
+
+    associate ( nB  =>  CSC % nBalanced )
+    allocate ( CSC % Balanced ( nB ) )
+    do iB  =  1, nB
+      iF  =  CSC % iaBalanced ( iB )
+      CSC % Balanced ( iB )  =  Field ( iF )
+    end do !-- iB
+    end associate !-- nP
 
   end subroutine InitializeAllocate_CS
 
@@ -308,11 +330,13 @@ contains
 
     call FSC % FieldSet_C_Form % Show ( )
 
-    call Show ( FSC % nPrimitive,   'nPrimitive', FSC % IGNORABILITY )
+    call Show ( FSC %  nPrimitive,  'nPrimitive', FSC % IGNORABILITY )
     call Show ( FSC % iaPrimitive, 'iaPrimitive', FSC % IGNORABILITY )
+    call Show ( FSC %   Primitive,   'Primitive', FSC % IGNORABILITY )
 
-    call Show ( FSC % nBalanced,   'nBalanced', FSC % IGNORABILITY )
+    call Show ( FSC %  nBalanced,  'nBalanced', FSC % IGNORABILITY )
     call Show ( FSC % iaBalanced, 'iaBalanced', FSC % IGNORABILITY )
+    call Show ( FSC %   Balanced,   'Balanced', FSC % IGNORABILITY )
 
   end subroutine Show_FSC
 
@@ -398,6 +422,10 @@ contains
 
     nullify ( CSC % Geometry_C )
 
+    if ( allocated ( CSC % Balanced ) ) &
+      deallocate ( CSC % Balanced )
+    if ( allocated ( CSC % Primitive ) ) &
+      deallocate ( CSC % Primitive )
     if ( allocated ( CSC % iaBalanced ) ) &
       deallocate ( CSC % iaBalanced )
     if ( allocated ( CSC % iaPrimitive ) ) &

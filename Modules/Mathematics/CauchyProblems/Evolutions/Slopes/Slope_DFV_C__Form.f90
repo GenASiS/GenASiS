@@ -71,13 +71,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption    
 
-   integer ( KDI ) :: &
-     iB, &  !-- iBalanced
-     iF     !-- iField
     character ( LDL ) :: &
       Name
-    character ( LDL ), dimension ( : ), allocatable :: &
-      Field
 
     if ( SC % Type  ==  '' ) &
       SC % Type  =  'a Slope_DFV_C' 
@@ -95,15 +90,9 @@ contains
         PinnedMemory  =>  CSC % Storage_FSC % PinnedMemory, &
         DevicesCommunicate  =>  CSC % GhostExchange_FSC % DevicesCommunicate ) 
 
-    allocate ( Field ( nB ) )
-    do iB  =  1,  nB
-      iF  =  CSC % iaBalanced ( iB )
-      Field ( iB )  =  CSC % Field ( iF )
-    end do !-- iS
-
     call SC % FieldSet_C_Form % Initialize &
            ( CSC % Chart, &
-             FieldOption = Field, &
+             FieldOption = CSC % Balanced, &
              NameOption = Name, &
              DeviceMemoryOption = DeviceMemory, &
              PinnedMemoryOption = PinnedMemory, &
