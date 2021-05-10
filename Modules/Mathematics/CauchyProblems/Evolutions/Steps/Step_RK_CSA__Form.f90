@@ -12,7 +12,8 @@ module Step_RK_CSA__Form
 
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CSA_Form
     type ( FieldSet_A_Form ), allocatable :: &
-      Solution_A
+      Solution_A, &
+      Intermediate_A
     class ( CurrentSet_A_Form ), pointer :: &
       CurrentSet_A
     class ( FieldSet_A_Form ), allocatable :: &
@@ -28,8 +29,12 @@ module Step_RK_CSA__Form
       Finalize
     procedure, private, pass :: &
       LoadSolution
-    procedure, public, pass ( S ) :: &
+    procedure, private, pass :: &
+      InitializeIntermediate
+    procedure, public, nopass :: &
       LoadSolution_C
+    procedure, public, nopass :: &
+      InitializeIntermediate_C
   end type Step_RK_CSA_Form
 
 
@@ -92,6 +97,20 @@ contains
              nFieldsOption = nEquations )
     end associate !-- SA 
 
+    !-- Intermediate storage
+
+    allocate ( S % Intermediate_A )
+    associate ( IA  =>  S % Intermediate_A )
+    call IA % Initialize &
+           ( CSA % Atlas, &
+             FieldOption = Equation, &
+             NameOption = 'Intermediate', &
+             DeviceMemoryOption = DeviceMemory, &
+             PinnedMemoryOption = PinnedMemory, &
+             DevicesCommunicateOption = DevicesCommunicate, &
+             nFieldsOption = nEquations )
+    end associate !-- SA 
+
     !-- Slope
 
     if ( .not. allocated ( S % Slope_A ) ) then
@@ -117,6 +136,7 @@ contains
 
     call S % Step_RK_H_Form % Show ( )
     call S % Solution_A % Show ( )
+    call S % Intermediate_A % Show ( )
     call S % Slope_A % Show ( )
 
   end subroutine Show_S
@@ -132,6 +152,11 @@ contains
 
     nullify ( S % CurrentSet_A )
 
+    if ( allocated ( S % Intermediate_A ) ) &
+      deallocate ( S % Intermediate_A )
+    if ( allocated ( S % Solution_A ) ) &
+      deallocate ( S % Solution_A )
+
   end subroutine Finalize
 
 
@@ -143,50 +168,100 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
 
-    do iC  =  1, size ( S % Solution_A % FieldSet_C )
+    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+    do iC  =  1,  nC
 
-      associate ( Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
-
-      select type ( CSC  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
+      associate &
+        ( Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
+      select type &
+        ( CurrentSet_C  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
       class is ( CurrentSet_C_Form )
 
-      call S % LoadSolution_C ( Solution_C, CSC )
+      call S % LoadSolution_C ( Solution_C, CurrentSet_C )
 
       end select !-- CSC
       end associate !-- Solution_C
 
     end do !-- iC
+    end associate !-- nC
 
   end subroutine LoadSolution
 
 
-  subroutine LoadSolution_C ( Solution_C, S, CSC )
+  subroutine InitializeIntermediate ( S, iStage )
+
+    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+    do iC  =  1,  nC
+
+      associate &
+        ( Intermediate_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element, &
+              Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
+
+      call S % InitializeIntermediate_C ( Intermediate_C, Solution_C )
+
+      end associate !-- Intermediate_C
+
+    end do !-- iC
+    end associate !-- nC
+
+  end subroutine InitializeIntermediate
+
+
+  subroutine LoadSolution_C ( Solution_C, CurrentSet_C )
 
     type ( FieldSet_C_Form ), intent ( inout ) :: &
       Solution_C
-    class ( Step_RK_CSA_Form ), intent ( in ) :: &
-      S
     class ( CurrentSet_C_Form ), intent ( in ) :: &
-      CSC
+      CurrentSet_C
 
     integer ( KDI ) :: &
-      iE  !-- iEquation
+      iB  !-- iBalanced
       
-    associate ( iaB  =>  CSC % iaBalanced )
-    do iE  =  1,  S % nEquations
+    associate ( iaB  =>  CurrentSet_C % iaBalanced )
+    do iB  =  1,  CurrentSet_C % nBalanced
       
       associate &
-        ( CV  => CSC % Storage_FSC % Storage % Value ( :, iaB ( iE ) ), &
-          SV  => Solution_C % Storage_FSC % Storage % Value ( :, iE ) )
+        ( CSV  => CurrentSet_C % Storage_FSC % Storage &
+                    % Value ( :, iaB ( iB ) ), &
+           SV  => Solution_C % Storage_FSC % Storage &
+                    % Value ( :, iB ) )
       
-      call Copy ( CV, SV, UseDeviceOption = CSC % Storage_FSC % DeviceMemory )
+      call Copy ( CSV, SV, &
+                  UseDeviceOption = CurrentSet_C % Storage_FSC % DeviceMemory )
       
       end associate !-- CV, etc.
       
-    end do !-- iF
+    end do !-- iB
     end associate !-- iaB
 
   end subroutine LoadSolution_C
+
+
+  subroutine InitializeIntermediate_C ( Intermediate_C, Solution_C )
+
+    type ( FieldSet_C_Form ), intent ( inout ) :: &
+      Intermediate_C
+    type ( FieldSet_C_Form ), intent ( in ) :: &
+      Solution_C
+
+      associate &
+        ( SV  => Solution_C % Storage_FSC % Storage % Value, &
+          YV  => Intermediate_C % Storage_FSC % Storage % Value )
+
+    call Copy ( SV, YV, &
+                UseDeviceOption = Intermediate_C % Storage_FSC % DeviceMemory )
+
+    end associate !-- SV, etc.
+
+  end subroutine InitializeIntermediate_C
 
 
 end module Step_RK_CSA__Form
