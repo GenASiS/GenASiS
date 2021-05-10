@@ -19,6 +19,8 @@ program Slope_DFV_A__Form_Test
     GA
   type ( CurrentSet_A_Form ), allocatable :: &
     CSA
+  type ( RiemannSolver_HLL_A_Form ), allocatable :: &
+    RSA
   type ( Slope_DFV_A_Form ), allocatable :: &
     SA
 
@@ -46,12 +48,16 @@ program Slope_DFV_A__Form_Test
   call CSA % Initialize( GA )
   call CSA % SetStream ( Stream_A )
 
+  allocate ( RSA )
+  call RSA % Initialize ( CSA )
+
   allocate ( SA )
-  call SA % Initialize ( CSA )
+  call SA % Initialize ( RSA )
   call Stream_A % AddFieldSet ( SA )
 
   call         A % Show ( )
   call       CSA % Show ( )
+  call       RSA % Show ( )
   call        SA % Show ( )
   call  Stream_A % Show ( )
 
@@ -59,6 +65,7 @@ program Slope_DFV_A__Form_Test
   call TestSlope ( SA )
 
   deallocate ( SA )
+  deallocate ( RSA )
   deallocate ( CSA )
   deallocate ( GA )
   deallocate ( Stream_A )

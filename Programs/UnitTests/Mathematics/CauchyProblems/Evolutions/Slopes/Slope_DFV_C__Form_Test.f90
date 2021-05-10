@@ -54,14 +54,10 @@ program Slope_DFV_C__Form_Test
   select type ( RSC  =>  RSA % FieldSet_C ( 1 ) % Element )
   class is ( RiemannSolver_HLL_C_Form )
 
-  select type ( CSC  =>  CSA % FieldSet_C ( 1 ) % Element )
-  class is ( CurrentSet_C_Form )
-
   allocate ( SC )
-  call SC % Initialize ( RSC, CSC )
+  call SC % Initialize ( RSC )
   call Stream_A % Stream_C ( 1 ) % Element % AddFieldSet ( SC )
 
-  end select !-- CSC
   end select !-- RSC
 
   call         A % Show ( )

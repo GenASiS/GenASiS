@@ -60,14 +60,12 @@ module Slope_DFV_C__Form
 contains
 
 
-  subroutine InitializeAllocate_S ( SC, RSC, CSC, NameOption )
+  subroutine InitializeAllocate_S ( SC, RSC, NameOption )
 
     class ( Slope_DFV_C_Form ), intent ( inout ) :: &
       SC
     class ( RiemannSolver_HLL_C_Form ), intent ( in ), target :: &
       RSC
-    class ( CurrentSet_C_Form ), intent ( in ), target :: &
-      CSC
     character ( * ), intent ( in ), optional :: &
       NameOption    
 
@@ -77,13 +75,15 @@ contains
     if ( SC % Type  ==  '' ) &
       SC % Type  =  'a Slope_DFV_C' 
     
-    Name  =  'SDFV_' // trim ( CSC % Name )
+    Name  =  'SDFV_' // trim ( RSC % CurrentSet_C % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    SC % CurrentSet_C     =>  CSC
+    SC % CurrentSet_C     =>  RSC % CurrentSet_C
     SC % RiemannSolver_C  =>  RSC
 
+    associate &
+      ( CSC  =>  RSC % CurrentSet_C )
     associate &
       ( nB  =>  CSC % nBalanced, &
         DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory, &
@@ -101,6 +101,7 @@ contains
              IgnorabilityOption = CSC % IGNORABILITY )
 
     end associate !-- nB, etc.
+    end associate !-- CSC
 
   end subroutine InitializeAllocate_S
 

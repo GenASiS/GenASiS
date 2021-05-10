@@ -14,8 +14,8 @@ module Slope_DFV_A__Form
   type, public, extends ( FieldSet_A_Form ) :: Slope_DFV_A_Form
     class ( CurrentSet_A_Form ), pointer :: &
       CurrentSet_A => null ( )
-    class ( RiemannSolver_HLL_A_Form ), allocatable :: &
-      RiemannSolver_A
+    class ( RiemannSolver_HLL_A_Form ), pointer :: &
+      RiemannSolver_A => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_S
@@ -31,12 +31,12 @@ module Slope_DFV_A__Form
 contains
 
 
-  subroutine InitializeAllocate_S ( SA, CSA, NameOption )
+  subroutine InitializeAllocate_S ( SA, RSA, NameOption )
 
     class ( Slope_DFV_A_Form ), intent ( inout ) :: &
       SA
-    class ( CurrentSet_A_Form ), intent ( in ), target :: &
-      CSA
+    class ( RiemannSolver_HLL_A_Form ), intent ( in ), target :: &
+      RSA
     character ( * ), intent ( in ), optional :: &
       NameOption
 
@@ -50,13 +50,14 @@ contains
     if ( SA % Type  ==  '' ) &
       SA % Type  =  'a Slope_DFV_A'
 
-    Name  =  'SDFV_' // trim ( CSA % Name )
+    Name  =  'SDFV_' // trim ( RSA % CurrentSet_A % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    SA % CurrentSet_A  =>  CSA
+    SA % CurrentSet_A     =>  RSA % CurrentSet_A
+    SA % RiemannSolver_A  =>  RSA
 
-    associate ( nC  =>  CSA % Atlas % nCharts )
+    associate ( nC  =>  RSA % Atlas % nCharts )
 
     if ( allocated ( SA % FieldSet_C ) ) then
       PreviouslyAllocated  =  .true.
@@ -66,13 +67,9 @@ contains
     end if
 
     call SA % FieldSet_A_Form % Initialize &
-           ( CSA % Atlas, &
+           ( RSA % Atlas, &
              NameOption = Name, &
-             IgnorabilityOption = CSA % IGNORABILITY )
-
-    allocate ( SA % RiemannSolver_A )
-    associate ( RSA  =>  SA % RiemannSolver_A )
-    call RSA % Initialize ( CSA )
+             IgnorabilityOption = RSA % IGNORABILITY )
 
     if ( .not. PreviouslyAllocated ) then
       do iC  =  1,  nC
@@ -82,19 +79,15 @@ contains
           class is ( Slope_DFV_C_Form )
         select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
           class is ( RiemannSolver_HLL_C_Form )
-        select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-          class is ( CurrentSet_C_Form )
 
-        call SC % Initialize ( RSC, CSC, NameOption )
+        call SC % Initialize ( RSC, NameOption )
 
-        end select !-- CSC
         end select !-- RSC
         end select !-- SC
 
       end do !-- iC
     end if !-- PreviouslyAllocated
 
-    end associate !-- RSA
     end associate !-- nC
 
   end subroutine InitializeAllocate_S
@@ -125,9 +118,7 @@ contains
     type ( Slope_DFV_A_Form ), intent ( inout ) :: &
       SA
 
-    if ( allocated ( SA % RiemannSolver_A ) ) &
-      deallocate ( SA % RiemannSolver_A )
-
+    nullify ( SA % RiemannSolver_A )
     nullify ( SA % CurrentSet_A )
 
   end subroutine Finalize
