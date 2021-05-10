@@ -73,13 +73,13 @@ contains
 
         allocate ( FluxSet_C_Form :: FSA % FieldSet_C ( iC ) % Element ) 
         select type ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-        class is ( FluxSet_C_Form )
-
+          class is ( FluxSet_C_Form )
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-        class is ( CurrentSet_C_Form )
+          class is ( CurrentSet_C_Form )
+  
         call FSC % Initialize ( CSC, NameOption )
+  
         end select !-- CSC
-
         end select !-- FSC
 
       end do !-- iC

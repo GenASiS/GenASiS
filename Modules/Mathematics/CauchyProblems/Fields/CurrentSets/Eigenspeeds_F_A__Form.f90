@@ -78,13 +78,13 @@ contains
 
         allocate ( Eigenspeeds_F_C_Form :: EA % FieldSet_C ( iC ) % Element ) 
         select type ( EC  =>  EA % FieldSet_C ( iC ) % Element )
-        class is ( Eigenspeeds_F_C_Form )
-
+          class is ( Eigenspeeds_F_C_Form )
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-        class is ( CurrentSet_C_Form )
-        call EC % Initialize ( CSC, FieldOption, NameOption, nFieldsOption )
-        end select !-- CSC
+          class is ( CurrentSet_C_Form )
 
+        call EC % Initialize ( CSC, FieldOption, NameOption, nFieldsOption )
+
+        end select !-- CSC
         end select !-- EC
 
       end do !-- iC

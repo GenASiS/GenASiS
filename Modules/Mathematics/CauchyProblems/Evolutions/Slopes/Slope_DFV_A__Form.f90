@@ -79,13 +79,11 @@ contains
 
         allocate ( Slope_DFV_C_Form :: SA % FieldSet_C ( iC ) % Element ) 
         select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )
-        class is ( Slope_DFV_C_Form )
-
+          class is ( Slope_DFV_C_Form )
         select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
-        class is ( RiemannSolver_HLL_C_Form )
-
+          class is ( RiemannSolver_HLL_C_Form )
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-        class is ( CurrentSet_C_Form )
+          class is ( CurrentSet_C_Form )
 
         call SC % Initialize ( RSC, CSC, NameOption )
 

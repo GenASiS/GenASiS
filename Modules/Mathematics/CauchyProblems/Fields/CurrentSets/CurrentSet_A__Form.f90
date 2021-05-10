@@ -91,17 +91,17 @@ contains
 
         allocate ( CurrentSet_C_Form :: CSA % FieldSet_C ( iC ) % Element ) 
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-        class is ( CurrentSet_C_Form )
-
+          class is ( CurrentSet_C_Form )
         select type ( GC  =>  GA % FieldSet_C ( iC ) % Element )
-        class is ( Geometry_F_C_Form )
+          class is ( Geometry_F_C_Form )
+
         call CSC % Initialize &
                ( GC, FieldOption, VectorOption, NameOption, &
                  UnitOption, DensityUnitOption, VectorIndicesOption, &
                  iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
                  IgnorabilityOption )
-        end select !-- GC
 
+        end select !-- GC
         end select !-- CSC
 
       end do !-- iC

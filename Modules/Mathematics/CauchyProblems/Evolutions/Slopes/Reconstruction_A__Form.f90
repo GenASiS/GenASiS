@@ -124,9 +124,11 @@ contains
           O_IL_C  =>  RA % Output_IL_A % FieldSet_C ( iC ) % Element, &
           O_IR_C  =>  RA % Output_IR_A % FieldSet_C ( iC ) % Element )
       select type ( GC  =>  GA % FieldSet_C ( iC ) % Element )
-      class is ( Geometry_F_C_Form )
-        call RC % Initialize &
-               ( GC, FSC, O_IL_C, O_IR_C, NameOption, OrderOption )
+        class is ( Geometry_F_C_Form )
+
+      call RC % Initialize &
+             ( GC, FSC, O_IL_C, O_IR_C, NameOption, OrderOption )
+
       end select !-- GC
       end associate !-- RC, etc.
     end do !-- iC

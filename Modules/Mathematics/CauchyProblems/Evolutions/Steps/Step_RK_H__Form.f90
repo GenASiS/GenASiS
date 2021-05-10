@@ -339,12 +339,12 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine InitializeIntermediate ( S, iStage )
+  subroutine InitializeIntermediate ( S, iS )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
-      iStage
+      iS
 
     call Show ( 'InitializeIntermediate must be overridden', CONSOLE % ERROR )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )

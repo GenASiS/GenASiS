@@ -121,21 +121,17 @@ contains
         allocate &
           ( RiemannSolver_HLL_C_Form :: RSA % FieldSet_C ( iC ) % Element ) 
         select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
-        class is ( RiemannSolver_HLL_C_Form )
-
+          class is ( RiemannSolver_HLL_C_Form )
         associate &
           ( RBC  =>  RBA % Reconstruction_C ( iC ) % Element, &
             RFC  =>  RFA % Reconstruction_C ( iC ) % Element, &
             REC  =>  REA % Reconstruction_C ( iC ) % Element )
-
         select type ( EC  =>  EA % FieldSet_C ( iC ) % Element )
-        class is ( Eigenspeeds_F_C_Form )
-
+          class is ( Eigenspeeds_F_C_Form )
         select type ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-        class is ( FluxSet_C_Form )
-
+          class is ( FluxSet_C_Form )
         select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-        class is ( CurrentSet_C_Form )
+          class is ( CurrentSet_C_Form )
 
         call RSC % Initialize &
                ( RBC, RFC, REC, EC, FSC, CSC, FieldOption, NameOption, &

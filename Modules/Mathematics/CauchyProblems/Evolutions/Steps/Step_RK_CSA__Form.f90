@@ -31,10 +31,14 @@ module Step_RK_CSA__Form
       LoadSolution
     procedure, private, pass :: &
       InitializeIntermediate
+    procedure, private, pass :: &
+      IncrementIntermediate
     procedure, public, nopass :: &
       LoadSolution_C
     procedure, public, nopass :: &
       InitializeIntermediate_C
+    procedure, public, nopass :: &
+      IncrementIntermediate_C
   end type Step_RK_CSA_Form
 
 
@@ -188,15 +192,18 @@ contains
   end subroutine LoadSolution
 
 
-  subroutine InitializeIntermediate ( S, iStage )
+  subroutine InitializeIntermediate ( S, iS )
 
     class ( Step_RK_CSA_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
-      iStage
+      iS  !-- iStage
 
     integer ( KDI ) :: &
       iC  !-- iChart
+
+    if ( iS  ==  1 ) &
+      return
 
     associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
     do iC  =  1,  nC
@@ -215,6 +222,23 @@ contains
   end subroutine InitializeIntermediate
 
 
+  subroutine IncrementIntermediate ( S, A, iK )
+
+    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iK
+
+    call Show ( 'IncrementIntermediate must be overridden', CONSOLE % ERROR )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
+    call Show ( 'IncrementIntermediate', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine IncrementIntermediate
+
+
   subroutine LoadSolution_C ( Solution_C, CurrentSet_C )
 
     type ( FieldSet_C_Form ), intent ( inout ) :: &
@@ -229,12 +253,12 @@ contains
     do iB  =  1,  CurrentSet_C % nBalanced
       
       associate &
-        ( CSV  => CurrentSet_C % Storage_FSC % Storage &
-                    % Value ( :, iaB ( iB ) ), &
-           SV  => Solution_C % Storage_FSC % Storage &
-                    % Value ( :, iB ) )
+        ( CV  => CurrentSet_C % Storage_FSC % Storage &
+                   % Value ( :, iaB ( iB ) ), &
+          SV  => Solution_C % Storage_FSC % Storage &
+                   % Value ( :, iB ) )
       
-      call Copy ( CSV, SV, &
+      call Copy ( CV, SV, &
                   UseDeviceOption = CurrentSet_C % Storage_FSC % DeviceMemory )
       
       end associate !-- CV, etc.
@@ -262,6 +286,24 @@ contains
     end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate_C
+
+
+  subroutine IncrementIntermediate_C ( A, iK )
+
+    real ( KDR ), intent ( in ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iK
+
+    associate &
+      ( YV  => S % Y % Value, &
+        KV  => S % K ( iK ) % Field % Value )
+    
+    call MultiplyAdd ( YV, KV, A, UseDeviceOption = S % Y % AllocatedDevice )
+    
+    end associate !-- YV, etc.
+
+  end subroutine IncrementIntermediate_C
 
 
 end module Step_RK_CSA__Form

@@ -85,16 +85,16 @@ contains
 
         allocate ( Geometry_F_C_Form :: FSA % FieldSet_C ( iC ) % Element ) 
         select type ( GC  =>  FSA % FieldSet_C ( iC ) % Element )
-        class is ( Geometry_F_C_Form )
-
+          class is ( Geometry_F_C_Form )
         associate ( C  =>  A % Chart ( iC ) % Element )
+
         call GC % Initialize &
                ( C, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
                  nFieldsOption, IgnorabilityOption )
-        end associate !-- C
 
+        end associate !-- C
         end select !-- GC
 
       end do !-- iC
