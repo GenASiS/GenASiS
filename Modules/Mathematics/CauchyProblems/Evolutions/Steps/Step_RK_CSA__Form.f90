@@ -33,6 +33,8 @@ module Step_RK_CSA__Form
     procedure, private, pass :: &
       LoadSolution
     procedure, private, pass :: &
+      StoreSolution
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -40,6 +42,8 @@ module Step_RK_CSA__Form
       ComputeStage
     procedure, public, nopass :: &
       LoadSolution_C
+    procedure, public, nopass :: &
+      StoreSolution_C
     procedure, public, nopass :: &
       InitializeIntermediate_C
     procedure, public, nopass :: &
@@ -232,6 +236,34 @@ contains
   end subroutine LoadSolution
 
 
+  subroutine StoreSolution ( S )
+
+    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+    do iC  =  1,  nC
+
+      select type &
+          ( CurrentSet_C  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
+        class is ( CurrentSet_C_Form )
+      associate &
+        ( Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
+
+      call S % StoreSolution_C ( CurrentSet_C, Solution_C )
+
+      end associate !-- Solution_C
+      end select !-- CSC
+
+    end do !-- iC
+    end associate !-- nC
+
+  end subroutine StoreSolution
+
+
   subroutine InitializeIntermediate ( S, iS )
 
     class ( Step_RK_CSA_Form ), intent ( inout ) :: &
@@ -242,22 +274,23 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
 
-    if ( iS  ==  1 ) &
-      return
+    if ( iS  >  1 ) then
 
-    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
-    do iC  =  1,  nC
+      associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+      do iC  =  1,  nC
 
-      associate &
-        ( Intermediate_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element, &
-              Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
+        associate &
+          ( Intermediate_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element, &
+                Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
 
-      call S % InitializeIntermediate_C ( Intermediate_C, Solution_C )
+        call S % InitializeIntermediate_C ( Intermediate_C, Solution_C )
 
-      end associate !-- Intermediate_C
+        end associate !-- Intermediate_C, etc.
 
-    end do !-- iC
-    end associate !-- nC
+      end do !-- iC
+      end associate !-- nC
+
+    end if !-- iStage > 1
 
   end subroutine InitializeIntermediate
 
@@ -285,7 +318,7 @@ contains
 
       call S % IncrementIntermediate_C ( Intermediate_C, Slope_C, A, dT )
 
-      end associate !-- Intermediate_C
+      end associate !-- Intermediate_C, etc.
 
     end do !-- iC
     end associate !-- nC
@@ -293,20 +326,44 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, dT, iS )
+  subroutine ComputeStage ( S, T, iS )
 
-      class ( Step_RK_CSA_Form ), intent ( inout ) :: &
-        S
-      real ( KDR ), intent ( in ) :: &
-         T, &
-        dT   
-      integer ( KDI ), intent ( in ) :: &
-        iS  !-- iStage
+    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      T
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iStage
 
-    call Show ( 'ComputeStage must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'ComputeStage', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    if ( iS  >  1 ) then
+      select type ( S )
+      type is ( Step_RK_CSA_Form )
+        call S % StoreSolution ( )
+      class default
+        call Show ( 'Wrong Step type', CONSOLE % ERROR )
+        call Show ( 'Step_RK_CSA_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeStage', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select
+    end if !-- iStage > 1
+
+    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+    do iC  =  1,  nC
+
+      select type &
+        ( Slope_C  =>  S % Slope_A ( iS ) % Element &
+                         % FieldSet_C ( iC ) % Element )
+      class is ( Slope_DFV_C_Form )
+
+      call S % ComputeStage_C ( Slope_C )
+
+      end select !-- Slope_C
+
+    end do !-- iC
+    end associate !-- nC
 
   end subroutine ComputeStage
 
@@ -339,6 +396,38 @@ contains
     end associate !-- iaB
 
   end subroutine LoadSolution_C
+
+
+  subroutine StoreSolution_C ( CurrentSet_C, Solution_C )
+
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CurrentSet_C
+    type ( FieldSet_C_Form ), intent ( in ) :: &
+      Solution_C
+
+    integer ( KDI ) :: &
+      iB  !-- iBalanced
+      
+    associate ( iaB  =>  CurrentSet_C % iaBalanced )
+    do iB  =  1,  CurrentSet_C % nBalanced
+      
+      associate &
+        ( SV  => Solution_C % Storage_FSC % Storage &
+                   % Value ( :, iB ), &
+          CV  => CurrentSet_C % Storage_FSC % Storage &
+                   % Value ( :, iaB ( iB ) ) )
+      
+      call Copy ( SV, CV, &
+                  UseDeviceOption = Solution_C % Storage_FSC % DeviceMemory )
+      
+      end associate !-- CV, etc.
+      
+    end do !-- iB
+    end associate !-- iaB
+
+    call CurrentSet_C % ComputeFromConserved ( )
+
+  end subroutine StoreSolution_C
 
 
   subroutine InitializeIntermediate_C ( Intermediate_C, Solution_C )
@@ -381,6 +470,18 @@ contains
     end associate !-- YV, etc.
 
   end subroutine IncrementIntermediate_C
+
+
+  subroutine ComputeStage_C ( Slope_C )
+
+    class ( Slope_DFV_C_Form ), intent ( inout ) :: &
+      Slope_C
+
+    call Slope_C % Clear ( )
+    call Slope_C % Compute ( )
+    call Slope_C % ExchangeGhostData ( )
+
+  end subroutine ComputeStage_C
 
 
 end module Step_RK_CSA__Form

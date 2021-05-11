@@ -27,6 +27,8 @@ module FieldSet_A__Form
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone
     procedure, public, pass :: &
+      Clear => Clear_FSA
+    procedure, public, pass :: &
       Show => Show_FSA
     final :: &
       Finalize
@@ -150,6 +152,27 @@ contains
     end associate !-- nC
 
   end subroutine InitializeClone
+
+
+  subroutine Clear_FSA ( FSA )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+
+    associate ( A  =>  FSA % Atlas )
+    do iC  =  1, A % nCharts
+      if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
+        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+        call FSC % Clear ( )
+        end associate !-- FSC
+      end if  
+    end do !-- iC
+    end associate  !-- A
+
+  end subroutine Clear_FSA
 
 
   subroutine Show_FSA ( FSA )

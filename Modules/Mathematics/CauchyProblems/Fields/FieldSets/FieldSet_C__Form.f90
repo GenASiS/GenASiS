@@ -43,6 +43,8 @@ module FieldSet_C__Form
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone
     procedure, public, pass :: &
+      Clear => Clear_FSC
+    procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
       StartGhostExchange
@@ -278,6 +280,18 @@ contains
     end associate !-- nF_S
 
   end subroutine InitializeClone
+
+
+  subroutine Clear_FSC ( FSC )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+
+    associate ( FSV  =>  FSC % Storage_FSC % Storage % Value )
+    call Clear ( FSV )
+    end associate !-- FSV
+
+  end subroutine Clear_FSC
 
 
   subroutine ExchangeGhostData ( FSC, TimerLevelOption )

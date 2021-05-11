@@ -218,7 +218,7 @@ contains
       Timer_CS  =>  PROGRAM_HEADER % TimerPointer ( S % iTimer_CS )
 
       call Timer_CS % Start ( )
-      call S % ComputeStage ( T, dT, iS )
+      call S % ComputeStage ( T, iS )
       call Timer_CS % Stop ( )
 
     end do !-- iS
@@ -372,13 +372,12 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, dT, iS )
+  subroutine ComputeStage ( S, T, iS )
 
       class ( Step_RK_H_Form ), intent ( inout ) :: &
         S
       real ( KDR ), intent ( in ) :: &
-         T, &
-        dT   
+        T
       integer ( KDI ), intent ( in ) :: &
         iS  !-- iStage
 

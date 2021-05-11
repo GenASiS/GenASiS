@@ -48,6 +48,8 @@ module CurrentSet_C__Form
       Initialize => InitializeAllocate_CS
     procedure, public, pass ( CSC ) :: &
       SetStream
+    procedure, public, pass :: &
+      ComputeFromConserved
     procedure, private, pass :: &
       Show_FSC
     procedure, public, pass ( CSC ) :: &
@@ -317,6 +319,14 @@ contains
              iaSelectedOption  =  iaSelected )
 
   end subroutine SetStream
+
+
+  subroutine ComputeFromConserved ( CSC )
+
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CSC
+
+  end subroutine ComputeFromConserved
 
 
   subroutine Show_FSC ( FSC )
