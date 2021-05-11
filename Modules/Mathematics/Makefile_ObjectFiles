@@ -1,5 +1,7 @@
 include $(PATH_CAUCHY_PROBLEMS)/Makefile_ObjectFiles
+include $(PATH_ALGEBRA)/Makefile_ObjectFiles
 
 MATHEMATICS = \
   Mathematics.o \
-  $(CAUCHY_PROBLEMS)
+  $(CAUCHY_PROBLEMS) \
+  $(ALGEBRA)

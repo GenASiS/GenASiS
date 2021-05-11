@@ -1,6 +1,6 @@
 module Mathematics
 
-!  use LinearAlgebra
+  use Algebra
   use CauchyProblems
 
 end module Mathematics
