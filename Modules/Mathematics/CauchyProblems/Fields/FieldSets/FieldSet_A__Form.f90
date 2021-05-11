@@ -32,6 +32,15 @@ module FieldSet_A__Form
       Finalize
   end type FieldSet_A_Form
 
+  type, public :: FieldSet_A_Element
+    !-- FieldSet_Atlas_Element
+    class ( FieldSet_A_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type FieldSet_A_Element
+
 
 contains
 
@@ -188,6 +197,17 @@ contains
     call Show ( FSA % Name, 'Name', FSA % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  impure elemental subroutine Finalize_E ( FSE )
+    
+    type ( FieldSet_A_Element ), intent ( inout ) :: &
+      FSE
+
+    if ( allocated ( FSE % Element ) ) &
+      deallocate ( FSE % Element )
+
+  end subroutine Finalize_E
 
 
 end module FieldSet_A__Form

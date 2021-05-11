@@ -203,7 +203,7 @@ contains
       do iK = 1, iS - 1
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
         !-- Set Y  =  Y  +  A * K ( iK )
-        call S % IncrementIntermediate ( A, iK )
+        call S % IncrementIntermediate ( A, dT, iK )
         end associate !-- A
       end do !-- iK
       call Timer_II_A % Stop ( )
@@ -354,12 +354,13 @@ contains
   end subroutine InitializeIntermediate
 
 
-  subroutine IncrementIntermediate ( S, A, iK )
+  subroutine IncrementIntermediate ( S, A, dT, iK )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-      A
+       A, &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iK
 
