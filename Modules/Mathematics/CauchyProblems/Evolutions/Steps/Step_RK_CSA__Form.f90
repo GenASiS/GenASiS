@@ -40,6 +40,8 @@ module Step_RK_CSA__Form
       IncrementIntermediate
     procedure, private, pass :: &
       ComputeStage
+    procedure, private, pass :: &
+      IncrementSolution
     procedure, public, nopass :: &
       LoadSolution_C
     procedure, public, nopass :: &
@@ -50,6 +52,8 @@ module Step_RK_CSA__Form
       IncrementIntermediate_C
     procedure, public, nopass :: &
       ComputeStage_C
+    procedure, public, nopass :: &
+      IncrementSolution_C
   end type Step_RK_CSA_Form
 
 
@@ -222,8 +226,8 @@ contains
       associate &
         ( Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
       select type &
-        ( CurrentSet_C  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
-      class is ( CurrentSet_C_Form )
+          ( CurrentSet_C  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
+        class is ( CurrentSet_C_Form )
 
       call S % LoadSolution_C ( Solution_C, CurrentSet_C )
 
@@ -280,8 +284,10 @@ contains
       do iC  =  1,  nC
 
         associate &
-          ( Intermediate_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element, &
-                Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element )
+          ( Intermediate_C  =>  S % Intermediate_A % FieldSet_C ( iC ) &
+                                  % Element, &
+                Solution_C  =>  S %     Solution_A % FieldSet_C ( iC ) &
+                                  % Element )
 
         call S % InitializeIntermediate_C ( Intermediate_C, Solution_C )
 
@@ -312,7 +318,8 @@ contains
     do iC  =  1,  nC
 
       associate &
-        ( Intermediate_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element, &
+        ( Intermediate_C  =>  S % Intermediate_A % FieldSet_C ( iC ) &
+                                % Element, &
                  Slope_C  =>  S % Slope_A ( iK ) % Element &
                                 % FieldSet_C ( iC ) % Element )
 
@@ -366,6 +373,37 @@ contains
     end associate !-- nC
 
   end subroutine ComputeStage
+
+
+  subroutine IncrementSolution ( S, B, dT, iS )
+
+    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+       B, &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+    do iC  =  1,  nC
+
+      associate &
+        ( Solution_C  =>  S % Solution_A % FieldSet_C ( iC ) % Element, &
+             Slope_C  =>  S % Slope_A ( iS ) % Element &
+                            % FieldSet_C ( iC ) % Element )
+
+      call S % IncrementSolution_C ( Solution_C, Slope_C, B, dT )
+
+      end associate !-- Solution_C, etc.
+
+    end do !-- iC
+    end associate !-- nC
+
+  end subroutine IncrementSolution
 
 
   subroutine LoadSolution_C ( Solution_C, CurrentSet_C )
@@ -482,6 +520,29 @@ contains
     call Slope_C % ExchangeGhostData ( )
 
   end subroutine ComputeStage_C
+
+
+  subroutine IncrementSolution_C ( Solution_C, Slope_C, B, dT )
+
+    type ( FieldSet_C_Form ), intent ( inout ) :: &
+      Solution_C
+    class ( FieldSet_C_Form ), intent ( in ) :: &
+      Slope_C
+    real ( KDR ), intent ( in ) :: &
+       B, &
+      dT
+
+    associate &
+      ( SV  => Solution_C % Storage_FSC % Storage % Value, &
+        KV  =>    Slope_C % Storage_FSC % Storage % Value )
+    
+    call MultiplyAdd &
+           ( SV, KV, dT * B, &
+             UseDeviceOption = Solution_C % Storage_FSC % DeviceMemory )
+    
+    end associate !-- SV, etc.
+
+  end subroutine IncrementSolution_C
 
 
 end module Step_RK_CSA__Form

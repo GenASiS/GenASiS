@@ -154,7 +154,7 @@ contains
     call SA % Write ( )
     call GIS % Close ( )
 
-    call S % Compute ( T = 0.0_KDR, dT = 1.0e-3_KDR )
+    call S % Compute ( T = 0.0_KDR, dT = 1.0e-1_KDR )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call SA % Write ( )

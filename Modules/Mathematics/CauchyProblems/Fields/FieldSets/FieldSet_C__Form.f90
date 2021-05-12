@@ -288,7 +288,7 @@ contains
       FSC
 
     associate ( FSV  =>  FSC % Storage_FSC % Storage % Value )
-    call Clear ( FSV )
+    call Clear ( FSV, UseDeviceOption = FSC % Storage_FSC % DeviceMemory )
     end associate !-- FSV
 
   end subroutine Clear_FSC

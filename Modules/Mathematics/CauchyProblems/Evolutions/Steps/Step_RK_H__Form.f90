@@ -202,7 +202,7 @@ contains
       call Timer_II_A % Start ( )
       do iK = 1, iS - 1
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
-        !-- Set Y  =  Y  +  A * K ( iK )
+        !-- Set Y  =  Y  +  dT * A * K ( iK )
         call S % IncrementIntermediate ( A, dT, iK )
         end associate !-- A
       end do !-- iK
@@ -236,8 +236,8 @@ contains
     !-- Assemble stages
     do iS = 1, S % nStages
       associate ( B  =>  S % B ( iS ) )
-      !-- Set Solution  =  Solution  +  B * K ( iS )
-      call S % IncrementSolution ( B, iS )
+      !-- Set Solution  =  Solution  +  dT * B * K ( iS )
+      call S % IncrementSolution ( B, dT, iS )
       end associate !-- B
     end do !-- iS
     call Timer_IS_B % Stop ( )
@@ -389,12 +389,13 @@ contains
   end subroutine ComputeStage
 
 
-  subroutine IncrementSolution ( S, B, iS )
+  subroutine IncrementSolution ( S, B, dT, iS )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-      B
+       B, &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iS
 
