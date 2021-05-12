@@ -218,7 +218,7 @@ contains
       Timer_CS  =>  PROGRAM_HEADER % TimerPointer ( S % iTimer_CS )
 
       call Timer_CS % Start ( )
-      call S % ComputeStage ( T, iS )
+      call S % ComputeStage ( T, iS, TimerLevelOption = Timer_CS % Level + 1 )
       call Timer_CS % Stop ( )
 
     end do !-- iS
@@ -244,7 +244,7 @@ contains
 
     associate ( iT  =>  S % iTimer_SF )
     if ( iT == 0 ) then
-      TimerName  =  trim ( Timer % Name ) // '_IS_B' 
+      TimerName  =  trim ( Timer % Name ) // '_SF' 
       call PROGRAM_HEADER % AddTimer &
              ( TimerName, iT, Level = Timer % Level + 1 )
     end if
@@ -372,7 +372,7 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, iS )
+  subroutine ComputeStage ( S, T, iS, TimerLevelOption )
 
       class ( Step_RK_H_Form ), intent ( inout ) :: &
         S
@@ -380,6 +380,8 @@ contains
         T
       integer ( KDI ), intent ( in ) :: &
         iS  !-- iStage
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     call Show ( 'ComputeStage must be overridden', CONSOLE % ERROR )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )

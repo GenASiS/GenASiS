@@ -12,8 +12,8 @@ module GhostExchange_FSC__Form
   type, public :: GhostExchange_FSC_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerGhostCommunication = 0, &
-      iTimerGhostPackUnpack    = 0
+      iTimer_C  = 0, &  !-- Communication
+      iTimer_PU = 0     !-- PackUnpack
     logical ( KDL ) :: &
       DevicesCommunicate
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
@@ -126,10 +126,10 @@ contains
     call Show ( S % Name, 'FieldSet', GE % IGNORABILITY )
 
     associate &
-      ( iT_GC   =>  GE % iTimerGhostCommunication, &
-        iT_GPU  =>  GE % iTimerGhostPackUnpack )
+      ( iT_GC   =>  GE % iTimer_C, &
+        iT_GPU  =>  GE % iTimer_PU )
     if ( iT_GC == 0 ) then
-      TimerName  =  'GhostCommunication ' // trim ( S % Name )
+      TimerName  =  'G_C_' // trim ( S % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT_GC, TimerLevelOption )
       else
@@ -137,7 +137,7 @@ contains
       end if
     end if
     if ( iT_GPU == 0 ) then
-      TimerName  =  'GhostPackUnpack ' // trim ( S % Name )
+      TimerName  =  'G_PU_' // trim ( S % Name )
       if ( present ( TimerLevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT_GPU, TimerLevelOption )
       else
@@ -305,7 +305,7 @@ contains
     type ( TimerForm ), pointer :: &
       T 
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( GE % iTimerGhostCommunication )
+    T  =>  PROGRAM_HEADER % TimerPointer ( GE % iTimer_C )
 
     associate &
       ( Communicator  =>  C % Communicator, &
@@ -405,7 +405,7 @@ contains
     type ( TimerForm ), pointer :: &
       T 
       
-    T => PROGRAM_HEADER % TimerPointer ( GE % iTimerGhostCommunication )
+    T => PROGRAM_HEADER % TimerPointer ( GE % iTimer_C )
 
     associate &
       ( nCB => C % nCellsBrick, &
@@ -493,7 +493,7 @@ contains
     type ( TimerForm ), pointer :: &
       T 
       
-    T => PROGRAM_HEADER % TimerPointer ( GE % iTimerGhostCommunication )
+    T => PROGRAM_HEADER % TimerPointer ( GE % iTimer_C )
 
     associate &
       ( Communicator  =>  C % Communicator, &
@@ -624,7 +624,7 @@ contains
     type ( TimerForm ), pointer :: &
       T 
       
-    T => PROGRAM_HEADER % TimerPointer ( GE % iTimerGhostCommunication )
+    T => PROGRAM_HEADER % TimerPointer ( GE % iTimer_C )
 
     associate &
       ( nCB  =>  C % nCellsBrick, &
@@ -738,7 +738,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    T => PROGRAM_HEADER % TimerPointer ( GE % iTimerGhostPackUnpack )
+    T => PROGRAM_HEADER % TimerPointer ( GE % iTimer_PU )
     call T % Start ( )
     
     oBuffer = 0
@@ -780,7 +780,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
     
-    T => PROGRAM_HEADER % TimerPointer ( GE % iTimerGhostPackUnpack )
+    T => PROGRAM_HEADER % TimerPointer ( GE % iTimer_PU )
     call T % Start ( )
     
     oBuffer = 0

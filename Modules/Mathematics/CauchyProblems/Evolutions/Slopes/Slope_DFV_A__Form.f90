@@ -50,7 +50,7 @@ contains
     if ( SA % Type  ==  '' ) &
       SA % Type  =  'a Slope_DFV_A'
 
-    Name  =  'SDFV_' // trim ( RSA % CurrentSet_A % Name )
+    Name  =  'S_DFV_' // trim ( RSA % CurrentSet_A % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

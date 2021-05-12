@@ -75,7 +75,7 @@ contains
     if ( SC % Type  ==  '' ) &
       SC % Type  =  'a Slope_DFV_C' 
     
-    Name  =  'SDFV_' // trim ( RSC % CurrentSet_C % Name )
+    Name  =  'S_DFV_' // trim ( RSC % CurrentSet_C % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

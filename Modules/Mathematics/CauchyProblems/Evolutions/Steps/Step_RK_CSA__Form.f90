@@ -156,7 +156,7 @@ contains
         associate ( RSA  =>  S % RiemannSolver_A )
         call SA % Initialize &
                ( RSA, &
-                 NameOption = 'SDFV_' // StageNumber // '_' &
+                 NameOption = 'S_DFV_' // StageNumber // '_' &
                                 // trim ( CSA % Name ) )
         end associate !-- RSA
         end select !-- SA
@@ -333,7 +333,7 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, iS )
+  subroutine ComputeStage ( S, T, iS, TimerLevelOption )
 
     class ( Step_RK_CSA_Form ), intent ( inout ) :: &
       S
@@ -341,6 +341,8 @@ contains
       T
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     integer ( KDI ) :: &
       iC  !-- iChart
@@ -365,7 +367,7 @@ contains
                          % FieldSet_C ( iC ) % Element )
       class is ( Slope_DFV_C_Form )
 
-      call S % ComputeStage_C ( Slope_C )
+      call S % ComputeStage_C ( Slope_C, TimerLevelOption )
 
       end select !-- Slope_C
 
@@ -510,14 +512,16 @@ contains
   end subroutine IncrementIntermediate_C
 
 
-  subroutine ComputeStage_C ( Slope_C )
+  subroutine ComputeStage_C ( Slope_C, TimerLevelOption )
 
     class ( Slope_DFV_C_Form ), intent ( inout ) :: &
       Slope_C
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     call Slope_C % Clear ( )
-    call Slope_C % Compute ( )
-    call Slope_C % ExchangeGhostData ( )
+    call Slope_C % Compute ( TimerLevelOption )
+    call Slope_C % ExchangeGhostData ( TimerLevelOption )
 
   end subroutine ComputeStage_C
 

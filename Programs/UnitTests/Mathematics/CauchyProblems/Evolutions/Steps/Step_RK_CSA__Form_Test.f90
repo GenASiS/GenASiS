@@ -11,6 +11,10 @@ program Step_RK_CSA__Form_Test
 
   implicit none
 
+  integer ( KDI ) :: &
+    iD
+  character ( 1 ) :: &
+    Dimension
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
@@ -21,6 +25,8 @@ program Step_RK_CSA__Form_Test
     GA
   type ( CurrentSet_A_Form ), allocatable :: &
     CSA
+  class ( FieldSet_A_Element ), dimension ( : ), allocatable :: &
+    EA
   type ( Step_RK_CSA_Form ), allocatable :: &
     S
 
@@ -48,6 +54,18 @@ program Step_RK_CSA__Form_Test
   call CSA % Initialize( GA )
   call CSA % SetStream ( SA )
 
+  allocate ( EA ( 3 ) )
+  do iD  =  1, 3
+    allocate ( Eigenspeeds_F_A_Form :: EA ( iD ) % Element )
+    select type ( EA_iD  =>  EA ( iD ) % Element )
+      class is ( Eigenspeeds_F_A_Form )
+    write ( Dimension, fmt = '(i1.1)' ) iD
+    call EA_iD % Initialize &
+           ( CSA, &
+             NameOption = 'E_' // Dimension // '_' // trim ( CSA % Name ) ) 
+    end select !-- EA_iD
+  end do !-- iD
+
   allocate ( S )
   call S % Initialize ( CSA )
 
@@ -57,7 +75,7 @@ program Step_RK_CSA__Form_Test
   call  SA % Show ( )
 
   call SetWave ( CSA, GA )
-  call TestStep ( S )
+  call TestStep ( S, EA )
 
   deallocate ( S )
   deallocate ( CSA )
@@ -147,76 +165,103 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestStep ( S )
+  subroutine TestStep ( S, EA )
 
     class ( Step_RK_CSA_Form ), intent ( inout ) :: &
       S
+    class ( FieldSet_A_Element ), dimension ( : ), intent ( inout ) :: &
+      EA
 
+    integer ( KDI ) :: &
+      iC, &  !-- iCycle
+      nCycles
     real ( KDR ) :: &
       CourantFactor, &
+      Time, &
       TimeStep
 
+    Time  =  0.0_KDR
+
     call GIS % Open ( GIS % ACCESS_CREATE )
-    call SA % Write ( )
+    call SA % Write &
+           ( TimeOption = Time  *  UNIT % IDENTITY, &
+             CycleNumberOption = 0 )
     call GIS % Close ( )
 
     CourantFactor  =  0.7_KDR
-         TimeStep  =  huge ( 1.0_KDR )
-    call ComputeTimeStep ( S, TimeStep, CourantFactor )
-    call Show ( TimeStep, 'TimeStep' )
+    call PROGRAM_HEADER % GetParameter ( CourantFactor, 'CourantFactor' )
 
-    call S % Compute ( T = 0.0_KDR, dT = TimeStep )
+    nCycles  =  1
+    call PROGRAM_HEADER % GetParameter ( nCycles, 'nCycles' )
 
-    call GIS % Open ( GIS % ACCESS_CREATE )
-    call SA % Write ( )
-    call GIS % Close ( )
+    call Show ( CourantFactor, 'CourantFactor' )
+    call Show ( nCycles, 'nCycles' )
+
+    do iC  =  1,  nCycles
+
+      call ComputeTimeStep ( EA, TimeStep, S, CourantFactor )
+      call Show ( iC, 'iCycle' )
+      call Show ( TimeStep, 'TimeStep' )
+
+      call S % Compute ( T = 0.0_KDR, dT = TimeStep )
+
+      Time  =  Time + TimeStep
+
+      call GIS % Open ( GIS % ACCESS_CREATE )
+      call SA % Write &
+             ( TimeOption = Time  *  UNIT % IDENTITY, &
+               CycleNumberOption = 0 )
+      call GIS % Close ( )
+
+    end do !-- iS
 
   end subroutine TestStep
 
 
-  subroutine ComputeTimeStep ( S, TimeStep, CourantFactor )
+  subroutine ComputeTimeStep ( EA, TimeStep, S, CourantFactor )
 
-    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
-      S
+    class ( FieldSet_A_Element ), dimension ( : ), intent ( inout ) :: &
+      EA
     real ( KDR ), intent ( inout ) :: &
       TimeStep
+    class ( Step_RK_CSA_Form ), intent ( in ) :: &
+      S
     real ( KDR ), intent ( in ) :: &
       CourantFactor
 
-    ! class ( GeometryFlatForm ), pointer :: &
-    !   G
-    ! class ( CurrentTemplate ), pointer :: &
-    !   C
+    integer ( KDI ) :: &
+      iD
 
-    ! select type ( PS => I % PositionSpace )
-    ! class is ( Atlas_SC_Form )
-
-    ! G => CSL % Geometry ( )
-    ! C => CA % Current ( )
-    associate ( EA  =>  S % RiemannSolver_A % Eigenspeeds_A )
-
-    select type ( EC  =>  EA % FieldSet_C ( 1 ) % Element )
+    select type ( EC_1  =>  EA ( 1 ) % Element % FieldSet_C ( 1 ) % Element )
+      class is ( Eigenspeeds_F_C_Form )
+    select type ( EC_2  =>  EA ( 2 ) % Element % FieldSet_C ( 1 ) % Element )
+      class is ( Eigenspeeds_F_C_Form )
+    select type ( EC_3  =>  EA ( 3 ) % Element % FieldSet_C ( 1 ) % Element )
       class is ( Eigenspeeds_F_C_Form )
     select type ( GC  =>  CSA % Geometry_A % FieldSet_C ( 1 ) % Element )
       class is ( Geometry_F_C_Form )
     select type ( CGS  =>  CSA % Atlas % Chart ( 1 ) % Element )
       class is ( Chart_GS_Form )
 
-    call EC % Compute ( iD = 1 )
+    call EC_1 % Compute ( iD = 1 )
+    call EC_2 % Compute ( iD = 2 )
+    call EC_3 % Compute ( iD = 3 )
 
     associate &
-      ( EV  =>  EC % Storage_FSC % Storage % Value, &
-        GV  =>  GC % Storage_FSC % Storage % Value, &
-        DeviceMemory  =>  EC % Storage_FSC % DeviceMemory )
+      ( EV_1  =>  EC_1 % Storage_FSC % Storage % Value, &
+        EV_2  =>  EC_2 % Storage_FSC % Storage % Value, &
+        EV_3  =>  EC_3 % Storage_FSC % Storage % Value, &
+        GV    =>  GC   % Storage_FSC % Storage % Value, &
+        DeviceMemory  =>  GC % Storage_FSC % DeviceMemory )
 
     call ComputeTimeStepKernel &
            ( TimeStep, CGS % ProperCell, &
-             EV ( :, EC % EIGENSPEED_FAST_PLUS_U ), &
-             EV ( :, EC % EIGENSPEED_FAST_PLUS_U ), &
-             EV ( :, EC % EIGENSPEED_FAST_PLUS_U ), &
-             EV ( :, EC % EIGENSPEED_FAST_MINUS_U ), &
-             EV ( :, EC % EIGENSPEED_FAST_MINUS_U ), &
-             EV ( :, EC % EIGENSPEED_FAST_MINUS_U ), &
+             EV_1 ( :, EC_1 % EIGENSPEED_FAST_PLUS_U ), &
+             EV_2 ( :, EC_2 % EIGENSPEED_FAST_PLUS_U ), &
+             EV_3 ( :, EC_3 % EIGENSPEED_FAST_PLUS_U ), &
+             EV_1 ( :, EC_1 % EIGENSPEED_FAST_MINUS_U ), &
+             EV_2 ( :, EC_2 % EIGENSPEED_FAST_MINUS_U ), &
+             EV_3 ( :, EC_3 % EIGENSPEED_FAST_MINUS_U ), &
              GV ( :, GC % WIDTH_U_1 ), &
              GV ( :, GC % WIDTH_U_2 ), &
              GV ( :, GC % WIDTH_U_3 ), &
@@ -226,8 +271,9 @@ contains
     end associate !-- EV, etc.
     end select !-- CGS
     end select !-- GC
-    end select !-- EC
-    end associate !-- EA
+    end select !-- EC_3
+    end select !-- EC_2
+    end select !-- EC_1
 
     TimeStep  =  CourantFactor  *  TimeStep
     
