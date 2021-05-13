@@ -1,4 +1,9 @@
+Integrator_H__Form.o: \
+  Basics.o \
+  Integrator_H__Form.f90
+
 Integrators.o: \
+  Integrator_H__Form.o \
   Integrators.f90
 
 Integrators.a: $(INTEGRATORS)

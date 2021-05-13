@@ -105,14 +105,13 @@ contains
     class is ( CurrentSet_C_Form )
 
     associate &
-      (         nEquations  =>  CSC % nBalanced, &
-                  Equation  =>  CSC % Balanced, & 
+      (           Equation  =>  CSC % Balanced, & 
               DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory, &
               PinnedMemory  =>  CSC % Storage_FSC % PinnedMemory, &
         DevicesCommunicate  =>  CSC % GhostExchange_FSC % DevicesCommunicate )
 
     call S % Step_RK_H_Form % Initialize &
-           ( A, B, C, nEquations, NameOption )
+           ( A, B, C, NameOption )
 
     !-- Solution storage
 
@@ -125,7 +124,7 @@ contains
              DeviceMemoryOption = DeviceMemory, &
              PinnedMemoryOption = PinnedMemory, &
              DevicesCommunicateOption = DevicesCommunicate, &
-             nFieldsOption = nEquations )
+             nFieldsOption = CSC % nBalanced )
     end associate !-- SA 
 
     !-- Intermediate storage
@@ -139,7 +138,7 @@ contains
              DeviceMemoryOption = DeviceMemory, &
              PinnedMemoryOption = PinnedMemory, &
              DevicesCommunicateOption = DevicesCommunicate, &
-             nFieldsOption = nEquations )
+             nFieldsOption = CSC % nBalanced )
     end associate !-- SA 
 
     !-- RiemannSolver

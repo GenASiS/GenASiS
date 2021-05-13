@@ -57,7 +57,7 @@ module Step_RK_H__Form
 contains
 
 
-  subroutine Initialize_H ( S, A, B, C, nEquations, NameOption )
+  subroutine Initialize_H ( S, A, B, C, NameOption )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -67,8 +67,6 @@ contains
       B
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
-    integer ( KDI ), intent ( in ) :: &
-      nEquations
     character ( * ), intent ( in ), optional :: &
       NameOption
 

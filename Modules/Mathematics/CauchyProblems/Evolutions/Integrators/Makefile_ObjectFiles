@@ -1,2 +1,3 @@
 INTEGRATORS = \
-  Integrators.o
+  Integrators.o \
+  Integrator_H__Form.o
