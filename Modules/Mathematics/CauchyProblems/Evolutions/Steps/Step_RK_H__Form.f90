@@ -17,7 +17,6 @@ module Step_RK_H__Form
       iTimer_CS    = 0, &  !-- ComputeStage
       iTimer_IS_B  = 0, &  !-- IncrementSolution
       iTimer_SF    = 0, &  !-- StoreFinal
-      nEquations, &
       nStages
     real ( KDR ), dimension ( : ), allocatable :: &
       C, & 
@@ -87,8 +86,6 @@ contains
 
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
-
-    S % nEquations  =  nEquations
 
     S % nStages  =  size ( B )
     associate ( nS  =>  S % nStages )
@@ -278,7 +275,6 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
-    call Show ( S % nEquations, 'nEquations', S % IGNORABILITY )
     call Show ( S % nStages, 'nStages', S % IGNORABILITY )
 
     do iA  =  2, S % nStages
