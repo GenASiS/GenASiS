@@ -230,6 +230,35 @@ contains
     real ( KDR ), intent ( out ) :: &
       TimeStep
 
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    call ComputeTimeStepLocal ( EA, S, CourantFactor, TimeStep )
+
+    call CO % Initialize &
+           ( PROGRAM_HEADER % Communicator, &
+             nOutgoing = [ 1 ], &
+             nIncoming = [ 1 ] )
+    CO % Outgoing % Value  =  TimeStep
+
+    call CO % Reduce ( REDUCTION % MIN )
+
+    TimeStep  =  CO % Incoming % Value ( 1 )
+
+  end subroutine ComputeTimeStep
+
+
+  subroutine ComputeTimeStepLocal ( EA, S, CourantFactor, TimeStep )
+
+    class ( FieldSet_A_Element ), dimension ( : ), intent ( inout ) :: &
+      EA
+    class ( Step_RK_CSA_Form ), intent ( in ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      CourantFactor
+    real ( KDR ), intent ( out ) :: &
+      TimeStep
+
     integer ( KDI ) :: &
       iD
 
@@ -280,7 +309,7 @@ contains
 
     TimeStep  =  CourantFactor  *  TimeStep
     
-  end subroutine ComputeTimeStep
+  end subroutine ComputeTimeStepLocal
 
 
   subroutine ComputeTimeStepKernel &
