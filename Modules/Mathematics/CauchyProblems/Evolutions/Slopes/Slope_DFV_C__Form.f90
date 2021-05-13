@@ -6,11 +6,12 @@ module Slope_DFV_C__Form
   use Manifolds
   use Fields
   use RiemannSolver_HLL_C__Form
+  use Slope_H_C__Form
 
   implicit none
   private
 
-  type, public, extends ( FieldSet_C_Form ) :: Slope_DFV_C_Form
+  type, public, extends ( Slope_H_C_Form ) :: Slope_DFV_C_Form
     integer ( KDI ) :: &
       iTimer       = 0, &
       iTimerKernel = 0
@@ -90,7 +91,7 @@ contains
         PinnedMemory  =>  CSC % Storage_FSC % PinnedMemory, &
         DevicesCommunicate  =>  CSC % GhostExchange_FSC % DevicesCommunicate ) 
 
-    call SC % FieldSet_C_Form % Initialize &
+    call SC % Slope_H_C_Form % Initialize &
            ( CSC % Chart, &
              FieldOption = CSC % Balanced, &
              NameOption = Name, &

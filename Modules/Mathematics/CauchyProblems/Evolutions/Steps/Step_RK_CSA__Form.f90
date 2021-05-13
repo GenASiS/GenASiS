@@ -164,7 +164,7 @@ contains
         associate ( RSA  =>  S % RiemannSolver_A )
         call SA % Initialize &
                ( RSA, &
-                 NameOption = 'S_DFV_' // StageNumber // '_' &
+                 NameOption = 'S_H_' // StageNumber // '_' &
                                 // trim ( CSA % Name ) )
         end associate !-- RSA
         end select !-- SA
@@ -211,7 +211,7 @@ contains
     call SSA % Initialize &
            ( SA_1 % Atlas, &
              FieldOption = SC % Field, &
-             NameOption = 'S_DFV_Sum_' // trim ( CSA % Name ), &
+             NameOption = 'S_H_Sum_' // trim ( CSA % Name ), &
              DeviceMemoryOption = DeviceMemory, &
              PinnedMemoryOption = PinnedMemory, &
              DevicesCommunicateOption = DevicesCommunicate, &
@@ -480,7 +480,7 @@ contains
       select type &
         ( Slope_C  =>  S % Slope_A ( iS ) % Element &
                          % FieldSet_C ( iC ) % Element )
-      class is ( Slope_DFV_C_Form )
+      class is ( Slope_H_C_Form )
 
       call S % ComputeStage_C ( Slope_C, TimerLevelOption )
 
@@ -641,7 +641,7 @@ contains
 
   subroutine ComputeStage_C ( Slope_C, TimerLevelOption )
 
-    class ( Slope_DFV_C_Form ), intent ( inout ) :: &
+    class ( Slope_H_C_Form ), intent ( inout ) :: &
       Slope_C
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption

@@ -6,12 +6,13 @@ module Slope_DFV_A__Form
   use Fields
   use RiemannSolver_HLL_C__Form
   use RiemannSolver_HLL_A__Form
+  use Slope_H_A__Form
   use Slope_DFV_C__Form
 
   implicit none
   private
 
-  type, public, extends ( FieldSet_A_Form ) :: Slope_DFV_A_Form
+  type, public, extends ( Slope_H_A_Form ) :: Slope_DFV_A_Form
     class ( CurrentSet_A_Form ), pointer :: &
       CurrentSet_A => null ( )
     class ( RiemannSolver_HLL_A_Form ), pointer :: &
@@ -21,8 +22,6 @@ module Slope_DFV_A__Form
       InitializeAllocate_S
     generic, public :: &
       Initialize => InitializeAllocate_S
-    procedure, public, pass :: &
-      Compute
     final :: &
       Finalize
   end type Slope_DFV_A_Form
@@ -66,7 +65,7 @@ contains
       allocate ( SA % FieldSet_C ( nC ) )
     end if
 
-    call SA % FieldSet_A_Form % Initialize &
+    call SA % Slope_H_A_Form % Initialize &
            ( RSA % Atlas, &
              NameOption = Name, &
              IgnorabilityOption = RSA % IGNORABILITY )
@@ -91,26 +90,6 @@ contains
     end associate !-- nC
 
   end subroutine InitializeAllocate_S
-
-
-  subroutine Compute ( SA, TimerLevelOption )
-
-    class ( Slope_DFV_A_Form ), intent ( inout ) :: &
-      SA
-    integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
-
-    integer ( KDI ) :: &
-      iC  !-- iChart
-
-    do iC  =  1, size ( SA % FieldSet_C )
-      select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )
-      class is ( Slope_DFV_C_Form )
-      call SC % Compute ( TimerLevelOption )
-      end select !-- SC
-    end do !-- iC
-
-  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( SA )
