@@ -3,6 +3,7 @@ module Integrator_H__Form
   !-- Integrator_Header_Form
 
   use Basics
+  use Manifolds
 
   implicit none
   private
@@ -46,10 +47,12 @@ module Integrator_H__Form
     character ( LDF ) :: &
       Type = '', &
       Name = ''
-    ! type ( CommunicatorForm ), pointer :: &
-    !   Communicator => null ( )
+    type ( CommunicatorForm ), pointer :: &
+      Communicator => null ( )
     ! type ( GridImageStreamForm ), allocatable :: &
     !   GridImageStream
+    class ( Atlas_H_Form ), allocatable :: &
+      X
   contains
     procedure, private, pass :: &
       Initialize_H
@@ -67,10 +70,13 @@ contains
 
 
   subroutine Initialize_H &
-               ( I, NameOption, Unit_T_Option, T_FinishOption, nWriteOption )
+               ( I, CommunicatorOption, NameOption, Unit_T_Option, &
+                 T_FinishOption, nWriteOption )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -133,6 +139,23 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( I % CheckpointTimeExact, 'CheckpointTimeExact' )
 
+    if ( present ( CommunicatorOption ) ) then
+      I % Communicator  =>  CommunicatorOption
+    else
+      I % Communicator  =>  PROGRAM_HEADER % Communicator
+    end if
+
+    if ( .not. allocated ( I % X ) ) then
+      allocate ( Atlas_SCG_Form :: I % X )
+      select type ( A  =>  I % X )
+        class is ( Atlas_SCG_Form )
+      call A % Initialize &
+             ( CommunicatorOption = I % Communicator, &
+               NameOption = 'X', &
+               PeriodicOption = [ .true., .true., .true. ] )
+      end select !-- A
+    end if
+
   end subroutine Initialize_H
 
 
@@ -165,6 +188,10 @@ contains
     call Show ( I % CheckpointTimeExact, 'CheckpointTimeExact', &
                 I % IGNORABILITY )
 
+    call Show ( I % Communicator % Name, 'Communicator', I % IGNORABILITY )
+
+    call I % X % Show ( )
+
  end subroutine Show_I
 
 
@@ -175,6 +202,9 @@ contains
 
     if ( I % Name == '' ) &
       return
+
+    if ( allocated ( I % X ) ) &
+      deallocate ( I % X )
 
     call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )

@@ -1,5 +1,6 @@
 Integrator_H__Form.o: \
   Basics.o \
+  Manifolds.o \
   Integrator_H__Form.f90
 
 Integrators.o: \
