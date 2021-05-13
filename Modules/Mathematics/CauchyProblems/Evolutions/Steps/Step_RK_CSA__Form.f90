@@ -21,11 +21,17 @@ module Step_RK_CSA__Form
       RiemannSolver_A
     type ( FieldSet_A_Element ), dimension ( : ), allocatable :: &
       Slope_A  !-- Some extension of FieldSet_A_Form that computes slopes
+    class ( FieldSet_A_Form ), allocatable :: &
+      SlopeSum_A
+    type ( FieldSet_A_Element ), dimension ( : ), allocatable :: &
+      SolutionStage_A
   contains
     procedure, private, pass :: &
       Initialize_CSA
     generic, public :: &
       Initialize => Initialize_CSA
+    procedure, public, pass :: &
+      SetStream
     procedure, private, pass :: &
       Show_S
     final :: &
@@ -54,6 +60,8 @@ module Step_RK_CSA__Form
       ComputeStage_C
     procedure, public, nopass :: &
       IncrementSolution_C
+    procedure, public, nopass :: &
+      IncrementSlopeSum_C
   end type Step_RK_CSA_Form
 
 
@@ -172,6 +180,85 @@ contains
   end subroutine Initialize_CSA
 
 
+  subroutine SetStream ( S, SA, StagesOption )
+
+    class ( Step_RK_CSA_Form ), intent ( inout ) :: &
+      S
+    class ( Stream_A_Form ), intent ( inout ) :: &
+      SA
+    logical ( KDL ), intent ( in ), optional :: &
+      StagesOption
+
+    integer ( KDI ) :: &
+      iS  !-- iStage
+    logical ( KDL ) :: &
+      Stages
+    character ( 1 ) :: &
+      StageNumber
+
+    allocate ( S % SlopeSum_A )
+    associate &
+      ( CSA    =>  S % CurrentSet_A, &
+        SSA    =>  S % SlopeSum_A, &
+         SA_1  =>  S % Slope_A ( 1 ) % Element )
+    associate &
+      ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
+    associate &
+      (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
+              PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
+        DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
+
+    call SSA % Initialize &
+           ( SA_1 % Atlas, &
+             FieldOption = SC % Field, &
+             NameOption = 'S_DFV_Sum_' // trim ( CSA % Name ), &
+             DeviceMemoryOption = DeviceMemory, &
+             PinnedMemoryOption = PinnedMemory, &
+             DevicesCommunicateOption = DevicesCommunicate, &
+             nFieldsOption = SC % nFields )
+    call SA % AddFieldSet ( SSA )
+
+    Stages  =  .false.
+    if ( present ( StagesOption ) ) &
+      Stages  =  StagesOption
+
+    if ( Stages ) then
+
+      associate ( nS  =>  S % nStages )
+
+      do iS  =  1,  nS
+        call SA % AddFieldSet ( S % Slope_A ( iS ) % Element )
+      end do !-- iS
+
+      allocate ( S % SolutionStage_A ( nS ) )
+      do iS  =  1, nS
+        write ( StageNumber, fmt = '(i1.1)' ) iS
+        allocate ( S % SolutionStage_A ( iS ) % Element )
+        associate ( SSA  =>  S % SolutionStage_A ( iS ) % Element )
+        call SSA % Initialize &
+               ( SA_1 % Atlas, &
+                 FieldOption = SC % Field, &
+                 NameOption = 'Solution_' // StageNumber // '_' &
+                              // trim ( CSA % Name ), &
+                 DeviceMemoryOption = DeviceMemory, &
+                 PinnedMemoryOption = PinnedMemory, &
+                 DevicesCommunicateOption = DevicesCommunicate, &
+                 nFieldsOption = SC % nFields )
+        call SA % AddFieldSet ( SSA )
+        end associate !-- SSA
+      end do !-- iS
+
+      end associate !-- nS
+
+    end if
+
+    end associate !-- DeviceMemory, etc.
+    end associate !-- SC
+    end associate !-- CSA, etc.
+
+  end subroutine SetStream
+
+
   subroutine Show_S ( S )
 
     class ( Step_RK_CSA_Form ), intent ( in ) :: &
@@ -197,6 +284,10 @@ contains
     type ( Step_RK_CSA_Form ), intent ( inout ) :: &
       S
 
+    if ( allocated ( S % SolutionStage_A ) ) &
+      deallocate ( S % SolutionStage_A )
+    if ( allocated ( S % SlopeSum_A ) ) &
+      deallocate ( S % SlopeSum_A )
     if ( allocated ( S % Slope_A ) ) &
       deallocate ( S % Slope_A )
     if ( allocated ( S % RiemannSolver_A ) ) &
@@ -231,6 +322,17 @@ contains
 
       call S % LoadSolution_C ( Solution_C, CurrentSet_C )
 
+      !-- For diagnostic streaming (i.e., I/O)
+      if ( allocated ( S % SolutionStage_A ) ) then
+        associate &
+          ( SolutionStage_C  =>  S % SolutionStage_A ( 1 ) % Element &
+                                   % FieldSet_C ( iC ) % Element )
+
+        call S % LoadSolution_C ( SolutionStage_C, CurrentSet_C )
+
+        end associate !-- SolutionStage_C
+      end if !-- allocated S % SolutionStage_A
+
       end select !-- CSC
       end associate !-- Solution_C
 
@@ -250,7 +352,6 @@ contains
 
     associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
     do iC  =  1,  nC
-
       select type &
           ( CurrentSet_C  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
         class is ( CurrentSet_C_Form )
@@ -261,7 +362,6 @@ contains
 
       end associate !-- Solution_C
       end select !-- CSC
-
     end do !-- iC
     end associate !-- nC
 
@@ -279,7 +379,6 @@ contains
       iC  !-- iChart
 
     if ( iS  >  1 ) then
-
       associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
       do iC  =  1,  nC
 
@@ -295,7 +394,6 @@ contains
 
       end do !-- iC
       end associate !-- nC
-
     end if !-- iStage > 1
 
   end subroutine InitializeIntermediate
@@ -348,15 +446,32 @@ contains
       iC  !-- iChart
 
     if ( iS  >  1 ) then
-      select type ( S )
-      type is ( Step_RK_CSA_Form )
-        call S % StoreSolution ( )
-      class default
-        call Show ( 'Wrong Step type', CONSOLE % ERROR )
-        call Show ( 'Step_RK_CSA_Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeStage', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select
+      associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
+      do iC  =  1,  nC
+        select type &
+            ( CurrentSet_C  =>  S % CurrentSet_A % FieldSet_C ( iC ) % Element )
+          class is ( CurrentSet_C_Form )
+        associate &
+          ( Intermediate_C  =>  S % Intermediate_A % FieldSet_C ( iC ) &
+                                  % Element )
+
+        call S % StoreSolution_C ( CurrentSet_C, Intermediate_C )
+
+        !-- For diagnostic streaming (i.e., I/O)
+        if ( allocated ( S % SolutionStage_A ) ) then
+          associate &
+            ( SolutionStage_C  =>  S % SolutionStage_A ( iS ) % Element &
+                                     % FieldSet_C ( iC ) % Element )
+
+          call S % LoadSolution_C ( SolutionStage_C, CurrentSet_C )
+
+          end associate !-- SolutionStage_C
+        end if !-- allocated S % SolutionStage_A
+
+        end associate !-- Solution_C
+        end select !-- CSC
+      end do !-- iC
+      end associate !-- nC
     end if !-- iStage > 1
 
     associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
@@ -401,6 +516,18 @@ contains
       call S % IncrementSolution_C ( Solution_C, Slope_C, B, dT )
 
       end associate !-- Solution_C, etc.
+
+      !-- For diagnostic streaming (i.e., I/O)
+      if ( allocated ( S % SlopeSum_A ) ) then
+        associate &
+          ( SlopeSum_C  =>  S % SlopeSum_A % FieldSet_C ( iC ) % Element, &
+               Slope_C  =>  S % Slope_A ( iS ) % Element &
+                              % FieldSet_C ( iC ) % Element )
+
+        call S % IncrementSlopeSum_C ( SlopeSum_C, Slope_C, B, iS )
+
+        end associate !-- Solution_C, etc.
+      end if 
 
     end do !-- iC
     end associate !-- nC
@@ -547,6 +674,34 @@ contains
     end associate !-- SV, etc.
 
   end subroutine IncrementSolution_C
+
+
+  subroutine IncrementSlopeSum_C ( SlopeSum_C, Slope_C, B, iS )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      SlopeSum_C
+    class ( FieldSet_C_Form ), intent ( in ) :: &
+      Slope_C
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    associate &
+      ( KSV  =>  SlopeSum_C % Storage_FSC % Storage % Value, &
+         KV  =>     Slope_C % Storage_FSC % Storage % Value )
+
+    if ( iS  ==  1 )  &
+      call Clear ( KSV, &
+                   UseDeviceOption = SlopeSum_C % Storage_FSC % DeviceMemory )
+
+    call MultiplyAdd &
+           ( KSV, KV, B, &
+             UseDeviceOption = SlopeSum_C % Storage_FSC % DeviceMemory )
+    
+    end associate !-- SV, etc.
+
+  end subroutine IncrementSlopeSum_C
 
 
 end module Step_RK_CSA__Form

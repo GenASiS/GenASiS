@@ -68,6 +68,7 @@ program Step_RK_CSA__Form_Test
 
   allocate ( S )
   call S % Initialize ( CSA )
+  call S % SetStream ( SA, StagesOption = .true. )
 
   call   A % Show ( )
   call CSA % Show ( )
@@ -199,7 +200,7 @@ contains
 
     do iC  =  1,  nCycles
 
-      call ComputeTimeStep ( EA, TimeStep, S, CourantFactor )
+      call ComputeTimeStep ( EA, S, CourantFactor, TimeStep )
       call Show ( iC, 'iCycle' )
       call Show ( TimeStep, 'TimeStep' )
 
@@ -218,20 +219,22 @@ contains
   end subroutine TestStep
 
 
-  subroutine ComputeTimeStep ( EA, TimeStep, S, CourantFactor )
+  subroutine ComputeTimeStep ( EA, S, CourantFactor, TimeStep )
 
     class ( FieldSet_A_Element ), dimension ( : ), intent ( inout ) :: &
       EA
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
     class ( Step_RK_CSA_Form ), intent ( in ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       CourantFactor
+    real ( KDR ), intent ( out ) :: &
+      TimeStep
 
     integer ( KDI ) :: &
       iD
 
+    TimeStep  =  huge ( 1.0_KDR )
+    
     select type ( EC_1  =>  EA ( 1 ) % Element % FieldSet_C ( 1 ) % Element )
       class is ( Eigenspeeds_F_C_Form )
     select type ( EC_2  =>  EA ( 2 ) % Element % FieldSet_C ( 1 ) % Element )
