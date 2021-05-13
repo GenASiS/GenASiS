@@ -1,0 +1,5 @@
+Integrators.o: \
+  Integrators.f90
+
+Integrators.a: $(INTEGRATORS)
+	ar r Integrators.a $(INTEGRATORS)
