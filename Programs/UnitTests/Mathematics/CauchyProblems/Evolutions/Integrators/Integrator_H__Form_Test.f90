@@ -16,8 +16,9 @@ program Integrator_H__Form_Test
 
   allocate ( I )
   call I % Initialize ( )
-
   call I % Show ( )
+
+  call I % Evolve ( )
 
   deallocate ( I )
   deallocate ( PROGRAM_HEADER )

@@ -30,20 +30,20 @@ module Integrator_H__Form
     real ( KDR ) :: &
       T_Start, &
       T_Finish, &
-    !   CheckpointTimeInterval, &
-    !   CheckpointTime, &
-      Time
+    !   T_CheckpointInterval, &
+    !   T_Checkpoint, &
+      T
     type ( MeasuredValueForm ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), allocatable :: &
       dT_Candidate
     logical ( KDL ) :: &
-    !   Start, &
-    !   Restart, &
-    !   IsCheckpointTime, &
+      Start, &
+      Restart, &
+    !   IsT_Checkpoint, &
       NoWrite, &
       AllWrite, &
-      CheckpointTimeExact
+      T_CheckpointExact
     character ( LDL ), dimension ( : ), allocatable :: &
       dT_Label
     character ( LDF ) :: &
@@ -59,27 +59,88 @@ module Integrator_H__Form
       Checkpoint_X_A
     class ( Geometry_F_A_Form ), allocatable :: &
       Geometry_X_A
+    procedure ( SI ), public, pointer :: &
+      SetInitial => null ( )
+    procedure ( RI ), public, pointer :: &
+      ResetInitial => null ( )
+    procedure ( W ), public, pointer :: &
+      Write => null ( )
+    procedure ( R ), public, pointer :: &
+      Read => null ( )
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H
     generic, public :: &           
       Initialize => Initialize_H
-    procedure, public, pass :: &   !-- 1
-      Evolve
     procedure, private, pass :: &  !-- 1
       Show_I
     generic, public :: &
       Show => Show_I
+    procedure, public, pass :: &   !-- 1
+      Evolve
     final :: &                     !-- 1
       Finalize
-    procedure, private, pass :: &   !-- 2
+    procedure, private, pass :: &  !-- 2
       ShowManifold
-    procedure, private, pass :: &   !-- 2
+    procedure, private, pass :: &  !-- 2
       ShowFields
-    procedure, private, pass :: &   !-- 2
+    procedure, private, pass :: &  !-- 2
       ShowCheckpoint
+    procedure, public, pass :: &   !-- 2
+      PrepareInitial
+    procedure, public, pass :: &   !-- 3
+      SetInitial_H
+    procedure, public, pass :: &   !-- 3
+      ResetInitial_H
+    procedure, public, pass :: &   !-- 3
+      Write_H
+    procedure, public, pass :: &   !-- 3
+      Read_H
   end type Integrator_H_Form
 
+  interface
+
+    subroutine SI ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine SI
+
+    subroutine RI ( I, RestartFrom, T_Restart )
+      use Basics
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+      integer ( KDI ), intent ( in ) :: &
+        RestartFrom
+      type ( MeasuredValueForm ), intent ( out ) :: &
+        T_Restart
+    end subroutine RI
+
+    subroutine W ( I )
+      import Integrator_H_Form
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine W
+
+    subroutine R ( I, ReadFrom, T, CycleNumber )
+      use Basics
+      import Integrator_H_Form
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+      integer ( KDI ), intent ( in ) :: &
+        ReadFrom
+      type ( MeasuredValueForm ), intent ( out ) :: &
+        T
+      integer ( KDI ), intent ( out ) :: &
+        CycleNumber
+    end subroutine R
+
+  end interface
+
+  
 contains
 
 
@@ -210,11 +271,11 @@ contains
     call PROGRAM_HEADER % GetParameter ( I % AllWrite, 'AllWrite' )
 
     I % CheckpointDisplayInterval  =  100
-    I % CheckpointTimeExact  =  .false.
+    I % T_CheckpointExact  =  .false.
     call PROGRAM_HEADER % GetParameter &
            ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval' )
     call PROGRAM_HEADER % GetParameter &
-           ( I % CheckpointTimeExact, 'CheckpointTimeExact' )
+           ( I % T_CheckpointExact, 'T_CheckpointExact' )
 
     OutputDirectory = '../Output/'
     call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
@@ -257,7 +318,7 @@ contains
 !     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
 !     if ( associated ( Timer ) ) call Timer % Start ( )   
 
-!     call I % PrepareInitial ( )
+    call I % PrepareInitial ( )
 !     call I % PrepareEvolution ( )
 !     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
@@ -275,7 +336,7 @@ contains
 
 !       TimeStepRatio  &
 !         =  minval ( I % TimeStepCandidate ) &
-!              / max ( I % CheckpointTimeInterval, sqrt ( tiny ( 0.0_KDR ) ) )
+!              / max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
 !       if ( TimeStepRatio  <  1.0e-6  *  I % nWrite ) then
 !         call I % AdministerCheckpoint ( )
 !         call Show ( 'TimeStepRatio too small', CONSOLE % WARNING )
@@ -284,7 +345,7 @@ contains
 !       end if
 
 ! !call I % Write ( )
-!       if ( I % IsCheckpointTime ) &
+!       if ( I % IsT_Checkpoint ) &
 !         call I % AdministerCheckpoint ( )
 
 !     end do !-- Time < FinishTime 
@@ -321,7 +382,7 @@ contains
     call I % ShowFields ( )
     call I % ShowCheckpoint ( )
 
- end subroutine Show_I
+  end subroutine Show_I
 
 
   impure elemental subroutine Finalize ( I )
@@ -380,7 +441,7 @@ contains
     
     call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
                 I % IGNORABILITY )
-    call Show ( I % CheckpointTimeExact, 'CheckpointTimeExact', &
+    call Show ( I % T_CheckpointExact, 'T_CheckpointExact', &
                 I % IGNORABILITY )
 
     call Show ( I % GridImageStream % Name, 'GridImageStream', &
@@ -390,6 +451,196 @@ contains
     call SA % Show ( )
     end associate !-- SA
   end subroutine ShowCheckpoint
+
+
+  subroutine PrepareInitial ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      RestartFrom
+    type ( MeasuredValueForm ) :: &
+      T_Restart
+
+    if ( .not. associated ( I % SetInitial ) ) then
+      call Show ( 'SetInitial unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % SetInitial  =>  SetInitial_H
+    end if
+
+    if ( .not. associated ( I % ResetInitial ) ) then
+      call Show ( 'ResetInitial unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % ResetInitial  =>  ResetInitial_H
+    end if
+
+    if ( .not. associated ( I % Write ) ) then
+      call Show ( 'Write unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % Write  =>  Write_H
+    end if
+
+    if ( .not. associated ( I % Read ) ) then
+      call Show ( 'Read unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % Read  =>  Read_H
+    end if
+
+    RestartFrom  =  - huge ( 1 )
+    call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
+
+    if ( RestartFrom >= 0 ) then
+      call I % ResetInitial ( RestartFrom, T_Restart )
+      I % Start    =  .false.
+      I % Restart  =  .true.
+      I % T        =  T_Restart
+    else !-- no restart
+      call I % SetInitial ( )
+      I % Start    =  .true.
+      I % Restart  =  .false.
+      I % T        =  I % T_Start
+    end if !-- restart
+
+  end subroutine PrepareInitial
+
+
+  subroutine SetInitial_H ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+  end subroutine SetInitial_H
+
+
+  subroutine ResetInitial_H ( I, RestartFrom, T_Restart )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      RestartFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      T_Restart
+
+    integer ( KDI ) :: &
+      CycleNumber
+    ! real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
+    !   MaxTime, &
+    !   MinTime, &
+    !   MeanTime
+
+    call I % Read ( RestartFrom, T_Restart, CycleNumber )
+
+    I % iCheckpoint  =  RestartFrom
+    I % iCycle       =  CycleNumber  !-- needed by RestoreTimeSeries
+
+    ! call I % ReadTimeSeries ( nSeries = RestartFrom + 1 )
+
+    ! call I % RestoreTimeSeries ( MaxTime, MinTime, MeanTime )
+
+    ! call PROGRAM_HEADER % RestoreStatistics &
+    !        ( Ignorability = CONSOLE % INFO_1, &
+    !          CommunicatorOption = PROGRAM_HEADER % Communicator, &
+    !          MeanTimeOption = MeanTime )
+ 
+  end subroutine ResetInitial_H
+
+
+  subroutine Write_H ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % MarkFibersWritten ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    associate ( GIS => I % GridImageStream )
+    call GIS % Open ( GIS % ACCESS_CREATE )
+
+    associate ( SA  =>  I % Checkpoint_X_A )
+    call SA % Write &
+           ( TimeOption  =  I % T  /  I % Unit_T, &
+             CycleNumberOption  =  I % iCycle )
+    end associate !-- SA
+
+    !-- Base's GIS must be closed before call to Bundle % Write ( ).
+    call GIS % Close ( )
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % Write &
+    !            ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
+    !              CycleNumberOption = I % iCycle )
+    !   class default
+    !     call Show ( 'Bundle type not found', CONSOLE % ERROR )
+    !     call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+    !     call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+    !     call PROGRAM_HEADER % Abort ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    end associate !-- GIS
+
+  end subroutine Write_H
+
+
+  subroutine Read_H ( I, ReadFrom, T, CycleNumber )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      ReadFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      T
+    integer ( KDI ), intent ( out ) :: &
+      CycleNumber
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % MarkFibersWritten ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    associate ( GIS => I % GridImageStream )
+    call GIS % Open ( GIS % ACCESS_READ, NumberOption = ReadFrom )
+
+    associate ( SA  =>  I % Checkpoint_X_A )
+    call SA % Read &
+           ( TimeOption = T, &
+             CycleNumberOption = CycleNumber )
+    T  =  T  *  I % Unit_T
+    end associate !-- SA
+
+    !-- Base's GIS must be closed before call to Bundle % Write ( ).
+    call GIS % Close ( )
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % Write &
+    !            ( iStream = iS, TimeOption = I % T / I % TimeUnit, &
+    !              CycleNumberOption = I % iCycle )
+    !   class default
+    !     call Show ( 'Bundle type not found', CONSOLE % ERROR )
+    !     call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+    !     call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+    !     call PROGRAM_HEADER % Abort ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    end associate !-- GIS
+
+  end subroutine Read_H
 
 
 end module Integrator_H__Form
