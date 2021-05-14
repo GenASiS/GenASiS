@@ -12,7 +12,7 @@ module Integrator_H__Form
   type, public :: Integrator_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      ! iTimerEvolve = 0, &
+      iTimer_E = 0, &
       ! iTimerCycle = 0, &
       ! iTimerNewTime = 0, &
       ! iTimerCheckpoint = 0, &
@@ -308,8 +308,8 @@ contains
 
 !     real ( KDR ) :: &
 !       TimeStepRatio
-!     type ( TimerForm ), pointer :: &
-!       Timer
+    type ( TimerForm ), pointer :: &
+      T
 
 !     call I % OpenManifoldStreams ( )
 !     call I % InitializeTimers ( )
@@ -317,6 +317,15 @@ contains
 
 !     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
 !     if ( associated ( Timer ) ) call Timer % Start ( )   
+
+    associate ( iT  =>  I % iTimer_E )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer ( 'Evolve', iT, Level = 1 )
+    end if
+    end associate !-- iT
+    T  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_E )
+
+    call T % Start ( )
 
     call I % PrepareInitial ( )
 !     call I % PrepareEvolution ( )
@@ -350,7 +359,7 @@ contains
 
 !     end do !-- Time < FinishTime 
 
-!     if ( associated ( Timer ) ) call Timer % Stop ( )   
+    call T % Stop ( )   
 
   end subroutine Evolve
 
