@@ -48,10 +48,10 @@ module CurrentSet_C__Form
       Initialize => InitializeAllocate_CS
     procedure, public, pass ( CSC ) :: &
       SetStream
-    procedure, public, pass :: &
-      ComputeFromConserved
     procedure, private, pass :: &
       Show_FSC
+    procedure, public, pass :: &
+      ComputeFromConserved
     procedure, public, pass ( CSC ) :: &
       ComputeFluxes
     procedure, public, pass ( CSC ) :: &
@@ -321,14 +321,6 @@ contains
   end subroutine SetStream
 
 
-  subroutine ComputeFromConserved ( CSC )
-
-    class ( CurrentSet_C_Form ), intent ( inout ) :: &
-      CSC
-
-  end subroutine ComputeFromConserved
-
-
   subroutine Show_FSC ( FSC )
 
     class ( CurrentSet_C_Form ), intent ( in ) :: &
@@ -349,6 +341,14 @@ contains
     call Show ( FSC %   Balanced,   'Balanced', FSC % IGNORABILITY )
 
   end subroutine Show_FSC
+
+
+  subroutine ComputeFromConserved ( CSC )
+
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CSC
+
+  end subroutine ComputeFromConserved
 
 
   subroutine ComputeFluxes ( FSC, CSC, iD )

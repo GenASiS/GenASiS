@@ -26,9 +26,9 @@ module Reconstruction_C__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      Compute
-    procedure, public, pass :: &
       Show => Show_RC
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Reconstruction_C_Form
@@ -153,6 +153,21 @@ contains
   end subroutine Initialize
 
 
+  subroutine Show_RC ( RC )
+
+    class ( Reconstruction_C_Form ), intent ( in ) :: &
+      RC
+
+    call Show ( 'Reconstruction_C Parameters', RC % IGNORABILITY )
+
+    call Show ( RC % Name, 'Name',  RC % IGNORABILITY )
+    call Show ( RC % Order, 'Order', RC % IGNORABILITY )
+    call RC % Output_IL_C % Show ( )
+    call RC % Output_IR_C % Show ( )
+
+  end subroutine Show_RC
+
+
   subroutine Compute ( RC, iD, TimerLevelOption )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
@@ -246,21 +261,6 @@ contains
     call T % Stop ( )
 
   end subroutine Compute
-
-
-  subroutine Show_RC ( RC )
-
-    class ( Reconstruction_C_Form ), intent ( in ) :: &
-      RC
-
-    call Show ( 'Reconstruction_C Parameters', RC % IGNORABILITY )
-
-    call Show ( RC % Name, 'Name',  RC % IGNORABILITY )
-    call Show ( RC % Order, 'Order', RC % IGNORABILITY )
-    call RC % Output_IL_C % Show ( )
-    call RC % Output_IR_C % Show ( )
-
-  end subroutine Show_RC
 
 
   impure elemental subroutine Finalize ( RC )

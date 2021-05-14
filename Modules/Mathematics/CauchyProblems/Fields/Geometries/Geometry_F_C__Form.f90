@@ -51,10 +51,10 @@ module Geometry_F_C__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
-    procedure, public, pass :: &
-      Compute
     procedure, public, pass ( GC ) :: &
       SetStream
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Geometry_F_C_Form
@@ -304,6 +304,23 @@ contains
   end subroutine InitializeAllocate_FS
 
 
+  subroutine SetStream ( SC, GC )
+
+    class ( Stream_C_Form ), intent ( inout ) :: &
+      SC
+    class ( Geometry_F_C_Form ), intent ( in ) :: &
+      GC
+
+    call SC % AddFieldSet &
+           ( GC, &
+             iaSelectedOption &
+               =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3, &
+                    GC % METRIC_F_DD_11, GC % METRIC_F_DD_22, &
+                    GC % METRIC_F_DD_33 ] )
+
+  end subroutine SetStream
+
+
   subroutine Compute ( GC )
 
     class ( Geometry_F_C_Form ), intent ( inout ) :: &
@@ -320,23 +337,6 @@ contains
     end associate !-- nD
 
   end subroutine Compute
-
-
-  subroutine SetStream ( SC, GC )
-
-    class ( Stream_C_Form ), intent ( inout ) :: &
-      SC
-    class ( Geometry_F_C_Form ), intent ( in ) :: &
-      GC
-
-    call SC % AddFieldSet &
-           ( GC, &
-             iaSelectedOption &
-               =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3, &
-                    GC % METRIC_F_DD_11, GC % METRIC_F_DD_22, &
-                    GC % METRIC_F_DD_33 ] )
-
-  end subroutine SetStream
 
 
   impure elemental subroutine Finalize ( GC )

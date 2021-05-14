@@ -27,9 +27,9 @@ module Reconstruction_A__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      Compute
-    procedure, public, pass :: &
       Show => Show_RA
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Reconstruction_A_Form
@@ -137,27 +137,6 @@ contains
   end subroutine Initialize
 
 
-  subroutine Compute ( RA, iD, TimerLevelOption )
-
-    class ( Reconstruction_A_Form ), intent ( inout ) :: &
-      RA
-    integer ( KDI ), intent ( in ) :: &
-      iD  !-- iDimensions
-    integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
-
-   integer ( KDI ) :: &
-     iC  !-- iChart
-
-    do iC  =  1, size ( RA % Reconstruction_C )
-      associate ( RC  =>  RA % Reconstruction_C ( iC ) % Element )
-      call RC % Compute ( iD, TimerLevelOption )
-      end associate !-- RC
-    end do !-- iC
-
-  end subroutine Compute
-
-
   subroutine Show_RA ( RA )
 
     class ( Reconstruction_A_Form ), intent ( in ) :: &
@@ -177,6 +156,27 @@ contains
     end do !-- iC
 
   end subroutine Show_RA
+
+
+  subroutine Compute ( RA, iD, TimerLevelOption )
+
+    class ( Reconstruction_A_Form ), intent ( inout ) :: &
+      RA
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimensions
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
+
+   integer ( KDI ) :: &
+     iC  !-- iChart
+
+    do iC  =  1, size ( RA % Reconstruction_C )
+      associate ( RC  =>  RA % Reconstruction_C ( iC ) % Element )
+      call RC % Compute ( iD, TimerLevelOption )
+      end associate !-- RC
+    end do !-- iC
+
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( RA )

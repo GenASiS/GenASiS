@@ -24,10 +24,10 @@ module Slope_DFV_C__Form
       InitializeAllocate_S
     generic, public :: &
       Initialize => InitializeAllocate_S
-    procedure, public, pass :: &
-      Compute
     procedure, private, pass :: &
       Show_FSC
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Slope_DFV_C_Form
@@ -105,6 +105,17 @@ contains
     end associate !-- CSC
 
   end subroutine InitializeAllocate_S
+
+
+  subroutine Show_FSC ( FSC )
+
+    class ( Slope_DFV_C_Form ), intent ( in ) :: &
+      FSC
+
+    call FSC % FieldSet_C_Form % Show ( )
+    call FSC % RiemannSolver_C % Show ( )
+
+  end subroutine Show_FSC
 
 
   subroutine Compute ( SC, TimerLevelOption )
@@ -201,17 +212,6 @@ contains
     call T % Stop ( )
 
   end subroutine Compute
-
-
-  subroutine Show_FSC ( FSC )
-
-    class ( Slope_DFV_C_Form ), intent ( in ) :: &
-      FSC
-
-    call FSC % FieldSet_C_Form % Show ( )
-    call FSC % RiemannSolver_C % Show ( )
-
-  end subroutine Show_FSC
 
 
   impure elemental subroutine Finalize ( SC )

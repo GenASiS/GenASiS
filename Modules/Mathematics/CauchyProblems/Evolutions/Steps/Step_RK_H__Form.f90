@@ -31,12 +31,12 @@ module Step_RK_H__Form
       Initialize_H
     generic, public :: &
       Initialize => Initialize_H
-    procedure, public, pass :: &
-      Compute
     procedure, private, pass :: &
       Show_S
     generic, public :: &
       Show => Show_S
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -103,6 +103,36 @@ contains
     end associate !-- nS
 
   end subroutine Initialize_H
+
+
+  subroutine Show_S ( S )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+
+   character ( LDL ), dimension ( : ), allocatable :: &
+     TypeWord
+
+   integer ( KDI ) :: &
+     iA
+   character ( 1 ) :: &
+     Index
+
+    call Split ( S % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', S % IGNORABILITY )
+    call Show ( S % Name, 'Name', S % IGNORABILITY )
+
+    call Show ( S % nStages, 'nStages', S % IGNORABILITY )
+
+    do iA  =  2, S % nStages
+      write ( Index, fmt = '(i1.1)' ) iA
+      call Show ( S % A ( iA ) % Value, 'A ( ' // Index // ' )' )
+    end do !-- iA
+
+    call Show ( S % B, 'B' )
+    call Show ( S % C, 'C', lRealOption = 2 )
+
+  end subroutine Show_S
 
 
   subroutine Compute ( S, T, dT, TimerLevelOption )
@@ -254,36 +284,6 @@ contains
     call Timer % Stop ( )
 
   end subroutine Compute
-
-
-  subroutine Show_S ( S )
-
-    class ( Step_RK_H_Form ), intent ( in ) :: &
-      S
-
-   character ( LDL ), dimension ( : ), allocatable :: &
-     TypeWord
-
-   integer ( KDI ) :: &
-     iA
-   character ( 1 ) :: &
-     Index
-
-    call Split ( S % Type, ' ', TypeWord )
-    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', S % IGNORABILITY )
-    call Show ( S % Name, 'Name', S % IGNORABILITY )
-
-    call Show ( S % nStages, 'nStages', S % IGNORABILITY )
-
-    do iA  =  2, S % nStages
-      write ( Index, fmt = '(i1.1)' ) iA
-      call Show ( S % A ( iA ) % Value, 'A ( ' // Index // ' )' )
-    end do !-- iA
-
-    call Show ( S % B, 'B' )
-    call Show ( S % C, 'C', lRealOption = 2 )
-
-  end subroutine Show_S
 
 
   impure elemental subroutine Finalize ( S )
