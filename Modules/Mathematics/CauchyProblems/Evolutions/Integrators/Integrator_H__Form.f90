@@ -42,6 +42,7 @@ module Integrator_H__Form
     !   Restart, &
     !   IsCheckpointTime, &
       NoWrite, &
+      AllWrite, &
       CheckpointTimeExact
     character ( LDL ), dimension ( : ), allocatable :: &
       dT_Label
@@ -54,19 +55,29 @@ module Integrator_H__Form
       GridImageStream
     class ( Atlas_H_Form ), allocatable :: &
       X_A
+    type ( Stream_A_Form ), allocatable :: &
+      Checkpoint_X_A
     class ( Geometry_F_A_Form ), allocatable :: &
-      Geometry_A
+      Geometry_X_A
   contains
-    procedure, private, pass :: &
+    procedure, private, pass :: &  !-- 1
       Initialize_H
-    generic, public :: &
+    generic, public :: &           
       Initialize => Initialize_H
-    procedure, private, pass :: &
+    procedure, public, pass :: &   !-- 1
+      Evolve
+    procedure, private, pass :: &  !-- 1
       Show_I
     generic, public :: &
       Show => Show_I
-    final :: &
+    final :: &                     !-- 1
       Finalize
+    procedure, private, pass :: &   !-- 2
+      ShowManifold
+    procedure, private, pass :: &   !-- 2
+      ShowFields
+    procedure, private, pass :: &   !-- 2
+      ShowCheckpoint
   end type Integrator_H_Form
 
 contains
@@ -129,18 +140,6 @@ contains
     ! call PROGRAM_HEADER % GetParameter &
     !        ( I % DevicesCommunicate, 'DevicesCommunicate' )
 
-    !-- GridImageStream
-
-    OutputDirectory = '../Output/'
-    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
-
-    allocate ( I % GridImageStream )
-    associate ( GIS => I % GridImageStream )
-    call GIS % Initialize &
-           ( I % Name, CommunicatorOption = I % Communicator, &
-             WorkingDirectoryOption = OutputDirectory )
-    end associate !-- GIS
-
     !-- Atlas, if necessary
 
     if ( .not. allocated ( I % X_A ) ) then
@@ -156,9 +155,9 @@ contains
 
     !-- Geometry, if necessary
 
-    if ( .not. allocated ( I % Geometry_A ) ) then
-      allocate ( I % Geometry_A )
-      associate ( GA  =>  I % Geometry_A )
+    if ( .not. allocated ( I % Geometry_X_A ) ) then
+      allocate ( I % Geometry_X_A )
+      associate ( GA  =>  I % Geometry_X_A )
       call GA % Initialize &
              ( I % X_A, &
                DeviceMemoryOption = DeviceMemoryOption, &
@@ -167,7 +166,7 @@ contains
       end associate !-- GA
     end if
 
-    !-- Parameters
+    !-- Integration parameters
 
     call Show ( 'Initializing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
@@ -199,12 +198,16 @@ contains
     I % FinishCycle = huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( I % FinishCycle, 'FinishCycle' )
 
+    !-- Checkpointing
+
     I % nWrite  =  100
     if ( present ( nWriteOption ) ) &
       I % nWrite  =  nWriteOption
-    I % NoWrite  =  .false.
-    call PROGRAM_HEADER % GetParameter ( I % nWrite, 'nWrite' )
-    call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
+    I %  NoWrite  =  .false.
+    I % AllWrite  =  .false.
+    call PROGRAM_HEADER % GetParameter ( I %   nWrite,   'nWrite' )
+    call PROGRAM_HEADER % GetParameter ( I %  NoWrite,  'NoWrite' )
+    call PROGRAM_HEADER % GetParameter ( I % AllWrite, 'AllWrite' )
 
     I % CheckpointDisplayInterval  =  100
     I % CheckpointTimeExact  =  .false.
@@ -213,7 +216,82 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( I % CheckpointTimeExact, 'CheckpointTimeExact' )
 
+    OutputDirectory = '../Output/'
+    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
+
+    allocate ( I % GridImageStream )
+    associate ( GIS => I % GridImageStream )
+    call GIS % Initialize &
+           ( PROGRAM_HEADER % Name, &
+             CommunicatorOption = I % Communicator, &
+             WorkingDirectoryOption = OutputDirectory )
+    end associate !-- GIS
+
+    allocate ( I % Checkpoint_X_A )
+    associate &
+      (  SA  =>  I % Checkpoint_X_A, &
+          A  =>  I % X_A, &
+        GIS  =>  I % GridImageStream, &
+         GA  =>  I % Geometry_X_A )
+    call SA % Initialize ( A, GIS, NameOption = 'Checkpoint' )
+    call GA % SetStream ( SA )
+    end associate !--SA
+    
   end subroutine Initialize_H
+
+
+  subroutine Evolve ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+!     real ( KDR ) :: &
+!       TimeStepRatio
+!     type ( TimerForm ), pointer :: &
+!       Timer
+
+!     call I % OpenManifoldStreams ( )
+!     call I % InitializeTimers ( )
+!     call I % InitializeTimeSeries ( )
+
+!     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
+!     if ( associated ( Timer ) ) call Timer % Start ( )   
+
+!     call I % PrepareInitial ( )
+!     call I % PrepareEvolution ( )
+!     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
+
+!     call Show ( 'Starting evolution', I % IGNORABILITY )
+!     call Show ( I % Name, 'Name', I % IGNORABILITY )
+
+!     do while ( I % Time < I % FinishTime .and. I % iCycle < I % FinishCycle )
+!       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
+
+!       call I % ComputeCycle ( )
+
+!       call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
+!       call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
+!       call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
+
+!       TimeStepRatio  &
+!         =  minval ( I % TimeStepCandidate ) &
+!              / max ( I % CheckpointTimeInterval, sqrt ( tiny ( 0.0_KDR ) ) )
+!       if ( TimeStepRatio  <  1.0e-6  *  I % nWrite ) then
+!         call I % AdministerCheckpoint ( )
+!         call Show ( 'TimeStepRatio too small', CONSOLE % WARNING )
+!         call Show ( TimeStepRatio, 'TimeStepRatio', CONSOLE % WARNING )
+!         exit
+!       end if
+
+! !call I % Write ( )
+!       if ( I % IsCheckpointTime ) &
+!         call I % AdministerCheckpoint ( )
+
+!     end do !-- Time < FinishTime 
+
+!     if ( associated ( Timer ) ) call Timer % Stop ( )   
+
+  end subroutine Evolve
 
 
   subroutine Show_I ( I )
@@ -228,6 +306,8 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
+    call Show ( I % Communicator % Name, 'Communicator', I % IGNORABILITY )
+
     call Show ( I % T_Start, I % Unit_T, 'T_Start', I % IGNORABILITY )
     call Show ( I % T_Finish, I % Unit_T, 'T_Finish', I % IGNORABILITY )
 
@@ -237,20 +317,9 @@ contains
     call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
     call Show ( I % FinishCycle, 'FinishCycle', I % IGNORABILITY )
 
-    call Show ( I % nWrite, 'nWrite', I % IGNORABILITY )
-    call Show ( I % NoWrite, 'NoWrite', I % IGNORABILITY )
-    
-    call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
-                I % IGNORABILITY )
-    call Show ( I % CheckpointTimeExact, 'CheckpointTimeExact', &
-                I % IGNORABILITY )
-
-    call Show ( I % Communicator % Name, 'Communicator', I % IGNORABILITY )
-    call Show ( I % GridImageStream % Name, 'GridImageStream', &
-                I % IGNORABILITY )
-
-    call I %        X_A % Show ( )
-    call I % Geometry_A % Show ( )
+    call I % ShowManifold ( )
+    call I % ShowFields ( )
+    call I % ShowCheckpoint ( )
 
  end subroutine Show_I
 
@@ -263,8 +332,8 @@ contains
     if ( I % Name == '' ) &
       return
 
-    if ( allocated ( I % Geometry_A ) ) &
-      deallocate ( I % Geometry_A )
+    if ( allocated ( I % Geometry_X_A ) ) &
+      deallocate ( I % Geometry_X_A )
     if ( allocated ( I % X_A ) ) &
       deallocate ( I % X_A )
     if ( allocated ( I % GridImageStream ) ) &
@@ -276,6 +345,51 @@ contains
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  subroutine ShowManifold ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    call I % X_A % Show ( )
+
+  end subroutine ShowManifold
+
+
+  subroutine ShowFields ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    call I % Geometry_X_A % Show ( )
+
+  end subroutine ShowFields
+
+
+  subroutine ShowCheckpoint ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    call Show ( 'Checkpointing', I % IGNORABILITY )
+
+    call Show ( I %   nWrite,   'nWrite', I % IGNORABILITY )
+    call Show ( I %  NoWrite,  'NoWrite', I % IGNORABILITY )
+    call Show ( I % AllWrite, 'AllWrite', I % IGNORABILITY )
+    
+    call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
+                I % IGNORABILITY )
+    call Show ( I % CheckpointTimeExact, 'CheckpointTimeExact', &
+                I % IGNORABILITY )
+
+    call Show ( I % GridImageStream % Name, 'GridImageStream', &
+                I % IGNORABILITY )
+
+    associate ( SA  =>  I % Checkpoint_X_A )
+    call SA % Show ( )
+    end associate !-- SA
+  end subroutine ShowCheckpoint
 
 
 end module Integrator_H__Form
