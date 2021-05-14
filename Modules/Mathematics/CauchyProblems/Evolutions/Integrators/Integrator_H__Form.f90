@@ -4,6 +4,7 @@ module Integrator_H__Form
 
   use Basics
   use Manifolds
+  use Fields
 
   implicit none
   private
@@ -49,10 +50,12 @@ module Integrator_H__Form
       Name = ''
     type ( CommunicatorForm ), pointer :: &
       Communicator => null ( )
-    ! type ( GridImageStreamForm ), allocatable :: &
-    !   GridImageStream
+    type ( GridImageStreamForm ), allocatable :: &
+      GridImageStream
     class ( Atlas_H_Form ), allocatable :: &
-      X
+      X_A
+    class ( Geometry_F_A_Form ), allocatable :: &
+      Geometry_A
   contains
     procedure, private, pass :: &
       Initialize_H
@@ -70,8 +73,9 @@ contains
 
 
   subroutine Initialize_H &
-               ( I, CommunicatorOption, NameOption, Unit_T_Option, &
-                 T_FinishOption, nWriteOption )
+               ( I, CommunicatorOption, NameOption, DeviceMemoryOption, &
+                 PinnedMemoryOption, DevicesCommunicateOption, &
+                 Unit_T_Option, T_FinishOption, nWriteOption )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -79,12 +83,19 @@ contains
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption, &
+      PinnedMemoryOption, &
+      DevicesCommunicateOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       Unit_T_Option
     real ( KDR ), intent ( in ), optional :: &
       T_FinishOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
+
+    character ( LDF ) :: &
+      OutputDirectory
 
     I % IGNORABILITY  =  CONSOLE % INFO_1
 
@@ -94,6 +105,69 @@ contains
     I % Name = 'Integrator'
     if ( present ( NameOption ) ) &
       I % Name  =  NameOption
+
+    !-- Communicator
+
+    if ( present ( CommunicatorOption ) ) then
+      I % Communicator  =>  CommunicatorOption
+    else
+      I % Communicator  =>  PROGRAM_HEADER % Communicator
+    end if
+
+    ! !-- Device
+
+    ! I % DeviceMemory        =  OffloadEnabled ( )  &
+    !                            .and.  GetNumberOfDevices ( ) >= 1 
+    ! I % PinnedMemory        =  OffloadEnabled ( )  &
+    !                            .and.  GetNumberOfDevices ( ) >= 1 
+    ! I % DevicesCommunicate  =  OffloadEnabled ( )  &
+    !                            .and.  GetNumberOfDevices ( ) >= 1
+    ! call PROGRAM_HEADER % GetParameter &
+    !        ( I % DeviceMemory, 'DeviceMemory' )
+    ! call PROGRAM_HEADER % GetParameter &
+    !        ( I % PinnedMemory, 'PinnedMemory' )
+    ! call PROGRAM_HEADER % GetParameter &
+    !        ( I % DevicesCommunicate, 'DevicesCommunicate' )
+
+    !-- GridImageStream
+
+    OutputDirectory = '../Output/'
+    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
+
+    allocate ( I % GridImageStream )
+    associate ( GIS => I % GridImageStream )
+    call GIS % Initialize &
+           ( I % Name, CommunicatorOption = I % Communicator, &
+             WorkingDirectoryOption = OutputDirectory )
+    end associate !-- GIS
+
+    !-- Atlas, if necessary
+
+    if ( .not. allocated ( I % X_A ) ) then
+      allocate ( Atlas_SCG_Form :: I % X_A )
+      select type ( A  =>  I % X_A )
+        class is ( Atlas_SCG_Form )
+      call A % Initialize &
+             ( CommunicatorOption = I % Communicator, &
+               NameOption = 'X', &
+               PeriodicOption = [ .true., .true., .true. ] )
+      end select !-- A
+    end if
+
+    !-- Geometry, if necessary
+
+    if ( .not. allocated ( I % Geometry_A ) ) then
+      allocate ( I % Geometry_A )
+      associate ( GA  =>  I % Geometry_A )
+      call GA % Initialize &
+             ( I % X_A, &
+               DeviceMemoryOption = DeviceMemoryOption, &
+               PinnedMemoryOption = PinnedMemoryOption, &
+               DevicesCommunicateOption = DevicesCommunicateOption )
+      end associate !-- GA
+    end if
+
+    !-- Parameters
 
     call Show ( 'Initializing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
@@ -139,23 +213,6 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( I % CheckpointTimeExact, 'CheckpointTimeExact' )
 
-    if ( present ( CommunicatorOption ) ) then
-      I % Communicator  =>  CommunicatorOption
-    else
-      I % Communicator  =>  PROGRAM_HEADER % Communicator
-    end if
-
-    if ( .not. allocated ( I % X ) ) then
-      allocate ( Atlas_SCG_Form :: I % X )
-      select type ( A  =>  I % X )
-        class is ( Atlas_SCG_Form )
-      call A % Initialize &
-             ( CommunicatorOption = I % Communicator, &
-               NameOption = 'X', &
-               PeriodicOption = [ .true., .true., .true. ] )
-      end select !-- A
-    end if
-
   end subroutine Initialize_H
 
 
@@ -189,8 +246,11 @@ contains
                 I % IGNORABILITY )
 
     call Show ( I % Communicator % Name, 'Communicator', I % IGNORABILITY )
+    call Show ( I % GridImageStream % Name, 'GridImageStream', &
+                I % IGNORABILITY )
 
-    call I % X % Show ( )
+    call I %        X_A % Show ( )
+    call I % Geometry_A % Show ( )
 
  end subroutine Show_I
 
@@ -203,16 +263,17 @@ contains
     if ( I % Name == '' ) &
       return
 
-    if ( allocated ( I % X ) ) &
-      deallocate ( I % X )
+    if ( allocated ( I % Geometry_A ) ) &
+      deallocate ( I % Geometry_A )
+    if ( allocated ( I % X_A ) ) &
+      deallocate ( I % X_A )
+    if ( allocated ( I % GridImageStream ) ) &
+      deallocate ( I % GridImageStream )
+
+    nullify ( I % Communicator )
 
     call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
-
-!    if ( allocated ( I % GridImageStream ) ) &
-!      deallocate ( I % GridImageStream )
-
-!    nullify ( I % Communicator )
 
   end subroutine Finalize
 
