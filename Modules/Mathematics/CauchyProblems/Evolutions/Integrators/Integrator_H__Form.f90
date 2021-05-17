@@ -579,7 +579,7 @@ contains
       end do !-- iTSC
     end if
 
-    call I % UpdateHost ( )
+    call I % UpdateHost ( TimerLevelOption = T_AC % Level + 1 )
 
 !     WriteSeries = .true.
 
@@ -692,13 +692,15 @@ contains
   end subroutine ResetInitial_H
 
 
-  subroutine UpdateHost_H ( I )
+  subroutine UpdateHost_H ( I, TimerLevelOption )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
+    integer ( KDI ), intent ( in ) :: &
+      TimerLevelOption
 
     associate ( GA  =>  I % Geometry_X_A )
-    call GA % UpdateHost ( )
+    call GA % UpdateHost ( TimerLevelOption )
     end associate !-- GA
 
   end subroutine UpdateHost_H
