@@ -42,8 +42,12 @@ module FieldSet_C__Form
       InitializeClone
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone
+    procedure, private, pass :: &
+      Show_FS
+    generic, public :: &
+      Show => Show_FS
     procedure, public, pass :: &
-      Clear => Clear_FSC
+      Clear => Clear_FS
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -54,10 +58,6 @@ module FieldSet_C__Form
       UpdateDevice => UpdateDevice_FS
     procedure, public, pass :: &
       UpdateHost => UpdateHost_FS
-    procedure, private, pass :: &
-      Show_FSC
-    generic, public :: &
-      Show => Show_FSC
     final :: &
       Finalize_FS
   end type FieldSet_C_Form
@@ -282,7 +282,54 @@ contains
   end subroutine InitializeClone
 
 
-  subroutine Clear_FSC ( FSC )
+  subroutine Show_FS ( FSC )
+
+    class ( FieldSet_C_Form ), intent ( in ) :: &
+      FSC
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      iS, &  !-- iSelected
+      iV     !-- iVector
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( FSC % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', FSC % IGNORABILITY )
+
+    call Show ( FSC % Name, 'Name',  FSC % IGNORABILITY )
+    if ( associated ( FSC % Primary ) ) &
+      call Show ( FSC % Primary % Name, 'Primary', FSC % IGNORABILITY )
+
+    call Show ( FSC % Chart % Name, 'Chart', FSC % IGNORABILITY )
+
+    call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY )
+    do iS  =  1, FSC % nFields
+      iF  =  FSC % iaSelected ( iS )
+      call Show ( iS,                 'iField', FSC % IGNORABILITY ) 
+      call Show ( FSC % Field ( iF ), 'Field',  FSC % IGNORABILITY )
+      call Show ( FSC % Unit ( iF ),  'Unit',   FSC % IGNORABILITY )
+    end do !-- iF
+    
+    call Show ( FSC % nVectors, 'nVectors', FSC % IGNORABILITY )
+    do iV  =  1, FSC % nVectors
+      call Show ( FSC % Vector ( iV ),                 'Vector', &
+                  FSC % IGNORABILITY )
+      call Show ( FSC % VectorIndices ( iV ) % Value, 'VectorIndices', &
+                  FSC % IGNORABILITY )
+    end do  !-- iV
+
+    call Show ( FSC % Storage_FSC % DeviceMemory, &
+                'DeviceMemory', FSC % IGNORABILITY ) 
+    call Show ( FSC % Storage_FSC % PinnedMemory, &
+                'PinnedMemory', FSC % IGNORABILITY ) 
+    call Show ( FSC % GhostExchange_FSC % DevicesCommunicate, &
+                'DevicesCommunicate', FSC % IGNORABILITY ) 
+
+  end subroutine Show_FS
+
+
+  subroutine Clear_FS ( FSC )
 
     class ( FieldSet_C_Form ), intent ( inout ) :: &
       FSC
@@ -291,7 +338,7 @@ contains
     call Clear ( FSV, UseDeviceOption = FSC % Storage_FSC % DeviceMemory )
     end associate !-- FSV
 
-  end subroutine Clear_FSC
+  end subroutine Clear_FS
 
 
   subroutine ExchangeGhostData ( FSC, TimerLevelOption )
@@ -365,53 +412,6 @@ contains
     call FSC % Storage_FSC % UpdateHost ( TimerLevelOption )
 
   end subroutine UpdateHost_FS
-
-
-  subroutine Show_FSC ( FSC )
-
-    class ( FieldSet_C_Form ), intent ( in ) :: &
-      FSC
-
-    integer ( KDI ) :: &
-      iF, &  !-- iField
-      iS, &  !-- iSelected
-      iV     !-- iVector
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
-
-    call Split ( FSC % Type, ' ', TypeWord )
-    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', FSC % IGNORABILITY )
-
-    call Show ( FSC % Name, 'Name',  FSC % IGNORABILITY )
-    if ( associated ( FSC % Primary ) ) &
-      call Show ( FSC % Primary % Name, 'Primary', FSC % IGNORABILITY )
-
-    call Show ( FSC % Chart % Name, 'Chart', FSC % IGNORABILITY )
-
-    call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY )
-    do iS  =  1, FSC % nFields
-      iF  =  FSC % iaSelected ( iS )
-      call Show ( iS,                 'iField', FSC % IGNORABILITY ) 
-      call Show ( FSC % Field ( iF ), 'Field',  FSC % IGNORABILITY )
-      call Show ( FSC % Unit ( iF ),  'Unit',   FSC % IGNORABILITY )
-    end do !-- iF
-    
-    call Show ( FSC % nVectors, 'nVectors', FSC % IGNORABILITY )
-    do iV  =  1, FSC % nVectors
-      call Show ( FSC % Vector ( iV ),                 'Vector', &
-                  FSC % IGNORABILITY )
-      call Show ( FSC % VectorIndices ( iV ) % Value, 'VectorIndices', &
-                  FSC % IGNORABILITY )
-    end do  !-- iV
-
-    call Show ( FSC % Storage_FSC % DeviceMemory, &
-                'DeviceMemory', FSC % IGNORABILITY ) 
-    call Show ( FSC % Storage_FSC % PinnedMemory, &
-                'PinnedMemory', FSC % IGNORABILITY ) 
-    call Show ( FSC % GhostExchange_FSC % DevicesCommunicate, &
-                'DevicesCommunicate', FSC % IGNORABILITY ) 
-
-  end subroutine Show_FSC
 
 
   impure elemental subroutine Finalize_FS ( FSC )

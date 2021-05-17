@@ -27,9 +27,13 @@ module FieldSet_A__Form
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone
     procedure, public, pass :: &
-      Clear => Clear_FSA
+      Show => Show_FS
     procedure, public, pass :: &
-      Show => Show_FSA
+      Clear => Clear_FS
+    procedure, public, pass :: &
+      UpdateDevice => UpdateDevice_FS
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_FS
     final :: &
       Finalize
   end type FieldSet_A_Form
@@ -154,28 +158,7 @@ contains
   end subroutine InitializeClone
 
 
-  subroutine Clear_FSA ( FSA )
-
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      FSA
-
-   integer ( KDI ) :: &
-     iC  !-- iC
-
-    associate ( A  =>  FSA % Atlas )
-    do iC  =  1, A % nCharts
-      if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
-        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-        call FSC % Clear ( )
-        end associate !-- FSC
-      end if  
-    end do !-- iC
-    end associate  !-- A
-
-  end subroutine Clear_FSA
-
-
-  subroutine Show_FSA ( FSA )
+  subroutine Show_FS ( FSA )
 
     class ( FieldSet_A_Form ), intent ( in ) :: &
       FSA
@@ -203,7 +186,74 @@ contains
 
     end associate  !-- A
 
-  end subroutine Show_FSA
+  end subroutine Show_FS
+
+
+  subroutine Clear_FS ( FSA )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+
+    associate ( A  =>  FSA % Atlas )
+    do iC  =  1, A % nCharts
+      if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
+        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+        call FSC % Clear ( )
+        end associate !-- FSC
+      end if  
+    end do !-- iC
+    end associate  !-- A
+
+  end subroutine Clear_FS
+
+
+  subroutine UpdateDevice_FS ( FSA, TimerLevelOption )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+
+    associate ( A  =>  FSA % Atlas )
+    do iC  =  1, A % nCharts
+      if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
+        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+        call FSC % UpdateDevice ( TimerLevelOption )
+        end associate !-- FSC
+      end if  
+    end do !-- iC
+    end associate  !-- A
+
+  end subroutine UpdateDevice_FS
+
+
+  subroutine UpdateHost_FS ( FSA, TimerLevelOption )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+
+    associate ( A  =>  FSA % Atlas )
+    do iC  =  1, A % nCharts
+      if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
+        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+        call FSC % UpdateHost ( TimerLevelOption )
+        end associate !-- FSC
+      end if  
+    end do !-- iC
+    end associate  !-- A
+
+  end subroutine UpdateHost_FS
 
 
   impure elemental subroutine Finalize ( FSA )

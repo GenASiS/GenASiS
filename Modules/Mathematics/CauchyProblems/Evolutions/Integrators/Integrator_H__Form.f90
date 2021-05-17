@@ -12,10 +12,10 @@ module Integrator_H__Form
   type, public :: Integrator_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimer_E = 0, &
+      iTimer_E = 0, &   !-- Evolution
+      iTimer_AC = 0, &  !-- AdministerCheckpoint
       ! iTimerCycle = 0, &
       ! iTimerNewTime = 0, &
-      ! iTimerCheckpoint = 0, &
       ! iTimerTally = 0, &
       ! iTimerAnalyze = 0, &
       ! iTimerWrite = 0, &
@@ -88,10 +88,16 @@ module Integrator_H__Form
       ShowCheckpoint
     procedure, public, pass :: &   !-- 2
       PrepareInitial
+    procedure, public, pass :: &   !-- 2
+      PrepareEvolution
+    procedure, private, pass :: &  !-- 2
+      AdministerCheckpoint
     procedure, public, pass :: &   !-- 3
       SetInitial_H
     procedure, public, pass :: &   !-- 3
       ResetInitial_H
+    procedure, public, pass :: &  !-- 3
+      UpdateHost => UpdateHost_H
     procedure, public, pass :: &   !-- 3
       Write_H
     procedure, public, pass :: &   !-- 3
@@ -246,7 +252,7 @@ contains
            
     if ( .not. allocated ( I % dT_Label ) ) then
       allocate ( I % dT_Label ( 1 ) )
-      I % dT_Label ( 1 ) = 'dT_Candidate'
+      I % dT_Label ( 1 ) = 'Candidate'
     end if
     I % n_dT_Candidates  =  size ( I % dT_Label )
     allocate ( I % dT_Candidate ( I % n_dT_Candidates ) )
@@ -315,9 +321,6 @@ contains
 !     call I % InitializeTimers ( )
 !     call I % InitializeTimeSeries ( )
 
-!     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
-!     if ( associated ( Timer ) ) call Timer % Start ( )   
-
     associate ( iT  =>  I % iTimer_E )
     if ( iT == 0 ) then
       call PROGRAM_HEADER % AddTimer ( 'Evolve', iT, Level = 1 )
@@ -328,14 +331,14 @@ contains
     call T % Start ( )
 
     call I % PrepareInitial ( )
-!     call I % PrepareEvolution ( )
-!     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
+    call I % PrepareEvolution ( )
+    call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
-!     call Show ( 'Starting evolution', I % IGNORABILITY )
-!     call Show ( I % Name, 'Name', I % IGNORABILITY )
+    call Show ( 'Starting evolution', I % IGNORABILITY )
+    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
-!     do while ( I % Time < I % FinishTime .and. I % iCycle < I % FinishCycle )
-!       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
+!    do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
+!      call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
 !       call I % ComputeCycle ( )
 
@@ -357,7 +360,7 @@ contains
 !       if ( I % IsT_Checkpoint ) &
 !         call I % AdministerCheckpoint ( )
 
-!     end do !-- Time < FinishTime 
+!    end do !-- T  <  T_Finish
 
     call T % Stop ( )   
 
@@ -518,6 +521,136 @@ contains
   end subroutine PrepareInitial
 
 
+  subroutine PrepareEvolution ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareEvolution
+
+
+  subroutine AdministerCheckpoint ( I, ComputeChangeOption )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      ComputeChangeOption
+
+    integer ( KDI ) :: &
+      iTSC!, &
+!       TallyIgnorability, &
+!       StatisticsIgnorability
+!     real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
+!       MaxTime, &
+!       MinTime, &
+!       MeanTime
+!     logical ( KDL ) :: &
+!       WriteSeries
+    type ( TimerForm ), pointer :: &
+      T_AC!, &
+!       Timer_T, &
+!       Timer_A, &
+!       Timer_W, &
+!       Timer_WS
+    
+!     Timer_T  => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
+!     Timer_A  => PROGRAM_HEADER % TimerPointer ( I % iTimerAnalyze )
+!     Timer_W  => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
+!     Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
+
+    associate ( iT  =>  I % iTimer_AC )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer ( 'AdministerCheckpoint', iT, Level = 2 )
+    end if
+    end associate !-- iT
+    T_AC  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_AC )
+
+    call T_AC % Start ( )   
+
+    call Show ( 'Checkpoint reached', I % IGNORABILITY )
+    call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
+    call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
+    call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY )
+    if ( .not. I % Start .and. .not. I % Restart ) then
+      do iTSC = 1, I % n_dT_Candidates
+        call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
+                    trim ( I % dT_Label ( iTSC ) ) // ' dT', &
+                    I % IGNORABILITY )
+      end do !-- iTSC
+    end if
+
+    call I % UpdateHost ( )
+
+!     WriteSeries = .true.
+
+!     if ( .not. I % Start & !.and. .not. I % Restart &
+!          .and. I % Time < I % FinishTime &
+!          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
+!     then
+!       TallyIgnorability       =  I % IGNORABILITY + 2
+!       StatisticsIgnorability  =  I % IGNORABILITY + 2
+! !      WriteSeries = .false.
+!     else
+!       TallyIgnorability       =  CONSOLE % INFO_1
+!       StatisticsIgnorability  =  CONSOLE % INFO_1
+! !      WriteSeries = .true.
+!     end if
+
+!     if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
+!     call I % ComputeTally &
+!            ( ComputeChangeOption = ComputeChangeOption, &
+!              IgnorabilityOption  = TallyIgnorability )
+!     if ( associated ( Timer_T ) ) call Timer_T % Stop ( )   
+
+!     if ( associated ( Timer_A ) ) call Timer_A % Start ( )   
+!     call I % Analyze ( )
+!     if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
+
+!     if ( associated ( Timer_W ) ) call Timer_W % Start ( )   
+!     if ( .not. I % NoWrite .and. .not. I % Restart ) &
+!       call I % Write ( )
+!     if ( associated ( Timer_W ) ) call Timer_W % Stop ( )   
+
+!     call PROGRAM_HEADER % ShowStatistics &
+!            ( StatisticsIgnorability, &
+!              CommunicatorOption = PROGRAM_HEADER % Communicator, &
+!              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
+!              MeanTimeOption = MeanTime )
+
+!     if ( .not. I % Restart ) &
+!       call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
+
+!     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
+!     if ( WriteSeries .and. .not. I % NoWrite .and. .not. I % Restart ) &
+!       call I % WriteTimeSeries ( )
+!     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
+
+!     I % IsCheckpointTime = .false.
+!     if ( I % Time < I % FinishTime ) then
+!       call I % SetCheckpointTimeInterval ( )
+!       I % CheckpointTime &
+!         = min ( I % Time + I % CheckpointTimeInterval, I % FinishTime )
+!       if ( I % CheckpointTime == I % FinishTime ) &
+!         I % CheckpointTimeExact = .true.
+!       call Show ( I % CheckpointTimeInterval, I % TimeUnit, &
+!                   'CheckpointTimeInterval', &
+!                   I % IGNORABILITY )
+!       call Show ( I % CheckpointTime, I % TimeUnit, 'Next CheckpointTime', &
+!                   I % IGNORABILITY + 1 )
+!     else 
+!       call Show ( 'FinishTime reached', I % IGNORABILITY )
+!     end if
+
+!     I % iCheckpoint = I % iCheckpoint + 1
+    
+!     I % Start    =  .false.
+!     I % Restart  =  .false.
+
+    call T_AC % Stop ( )
+
+  end subroutine AdministerCheckpoint
+
+
   subroutine SetInitial_H ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -557,6 +690,18 @@ contains
     !          MeanTimeOption = MeanTime )
  
   end subroutine ResetInitial_H
+
+
+  subroutine UpdateHost_H ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    associate ( GA  =>  I % Geometry_X_A )
+    call GA % UpdateHost ( )
+    end associate !-- GA
+
+  end subroutine UpdateHost_H
 
 
   subroutine Write_H ( I )
