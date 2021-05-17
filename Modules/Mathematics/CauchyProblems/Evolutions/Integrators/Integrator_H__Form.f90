@@ -29,8 +29,8 @@ module Integrator_H__Form
     real ( KDR ) :: &
       T_Start, &
       T_Finish, &
-    !   T_CheckpointInterval, &
-    !   T_Checkpoint, &
+      T_CheckpointInterval, &
+      T_Checkpoint, &
       T
     type ( MeasuredValueForm ) :: &
       Unit_T
@@ -39,10 +39,10 @@ module Integrator_H__Form
     logical ( KDL ) :: &
       Start, &
       Restart, &
-    !   IsT_Checkpoint, &
       NoWrite, &
       AllWrite, &
-      T_CheckpointExact
+      T_CheckpointExact, &
+      CheckpointDue
     character ( LDL ), dimension ( : ), allocatable :: &
       dT_Label
     character ( LDF ) :: &
@@ -66,6 +66,8 @@ module Integrator_H__Form
       Write => null ( )
     procedure ( R ), public, pointer :: &
       Read => null ( )
+    procedure ( SCTI ), pointer :: &
+      Set_T_CheckpointInterval => null ( )
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H
@@ -146,9 +148,19 @@ module Integrator_H__Form
         CycleNumber
     end subroutine R
 
+    subroutine SCTI ( I )
+      import Integrator_H_Form
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine SCTI
+
   end interface
 
   
+    private :: &
+      Set_T_CheckpointInterval
+          
+
 contains
 
 
@@ -505,6 +517,13 @@ contains
       I % Read  =>  Read_H
     end if
 
+    if ( .not. associated ( I % Set_T_CheckpointInterval ) ) then
+      call Show ( 'Set_T_CheckpointInterval unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
+    end if
+
     RestartFrom  =  - huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
 
@@ -626,26 +645,26 @@ contains
 !       call I % WriteTimeSeries ( )
 !     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
 
-!     I % IsCheckpointTime = .false.
-!     if ( I % Time < I % FinishTime ) then
-!       call I % SetCheckpointTimeInterval ( )
-!       I % CheckpointTime &
-!         = min ( I % Time + I % CheckpointTimeInterval, I % FinishTime )
-!       if ( I % CheckpointTime == I % FinishTime ) &
-!         I % CheckpointTimeExact = .true.
-!       call Show ( I % CheckpointTimeInterval, I % TimeUnit, &
-!                   'CheckpointTimeInterval', &
-!                   I % IGNORABILITY )
-!       call Show ( I % CheckpointTime, I % TimeUnit, 'Next CheckpointTime', &
-!                   I % IGNORABILITY + 1 )
-!     else 
-!       call Show ( 'FinishTime reached', I % IGNORABILITY )
-!     end if
+    I % CheckpointDue  =  .false.
+    if ( I % T  <  I % T_Finish ) then
+      call I % Set_T_CheckpointInterval ( )
+      I % T_Checkpoint &
+        =  min ( I % T  +  I % T_CheckpointInterval, I % T_Finish )
+      if ( I % T_Checkpoint  ==  I % T_Finish ) &
+        I % T_CheckpointExact  =  .true.
+      call Show ( I % T_CheckpointInterval, I % Unit_T, &
+                  'T_CheckpointInterval', &
+                  I % IGNORABILITY )
+      call Show ( I % T_Checkpoint, I % Unit_T, 'Next T_Checkpoint', &
+                  I % IGNORABILITY )
+    else 
+      call Show ( 'T_Finish reached', I % IGNORABILITY )
+    end if  !-- T  <  T_Finish
 
-!     I % iCheckpoint = I % iCheckpoint + 1
+    I % iCheckpoint  =  I % iCheckpoint + 1
     
-!     I % Start    =  .false.
-!     I % Restart  =  .false.
+    I % Start    =  .false.
+    I % Restart  =  .false.
 
     call T_AC % Stop ( )
 
@@ -801,6 +820,17 @@ contains
     end associate !-- GIS
 
   end subroutine Read_H
+
+
+  subroutine Set_T_CheckpointInterval ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    I % T_CheckpointInterval &
+      =  ( I % T_Finish  -  I % T_Start )  /  I % nWrite
+
+  end subroutine Set_T_CheckpointInterval
 
 
 end module Integrator_H__Form
