@@ -125,10 +125,13 @@ module Integrator_H__Form
         T_Restart
     end subroutine RI
 
-    subroutine W ( I )
+    subroutine W ( I, TimerLevelOption )
+      use Basics
       import Integrator_H_Form
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
+      integer ( KDI ), intent ( in ), optional :: &
+        TimerLevelOption
     end subroutine W
 
     subroutine R ( I, ReadFrom, T, CycleNumber )
@@ -579,7 +582,7 @@ contains
       end do !-- iTSC
     end if
 
-    call I % UpdateHost ( TimerLevelOption = T_AC % Level + 1 )
+    call I % UpdateHost ( TimerLevelOption  =  T_AC % Level  +  1 )
 
 !     WriteSeries = .true.
 
@@ -607,8 +610,8 @@ contains
 !     if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
 
 !     if ( associated ( Timer_W ) ) call Timer_W % Start ( )   
-!     if ( .not. I % NoWrite .and. .not. I % Restart ) &
-!       call I % Write ( )
+    if ( .not. I % NoWrite .and. .not. I % Restart ) &
+      call I % Write ( TimerLevelOption  =  T_AC % Level  +  1 )
 !     if ( associated ( Timer_W ) ) call Timer_W % Stop ( )   
 
 !     call PROGRAM_HEADER % ShowStatistics &
@@ -696,7 +699,7 @@ contains
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    integer ( KDI ), intent ( in ) :: &
+    integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
     associate ( GA  =>  I % Geometry_X_A )
@@ -706,10 +709,12 @@ contains
   end subroutine UpdateHost_H
 
 
-  subroutine Write_H ( I )
+  subroutine Write_H ( I, TimerLevelOption )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     ! if ( allocated ( I % MomentumSpace ) ) then
     !   select type ( MS => I % MomentumSpace )
@@ -724,7 +729,8 @@ contains
     associate ( SA  =>  I % Checkpoint_X_A )
     call SA % Write &
            ( TimeOption  =  I % T  /  I % Unit_T, &
-             CycleNumberOption  =  I % iCycle )
+             CycleNumberOption  =  I % iCycle, &
+             TimerLevelOption  =  TimerLevelOption )
     end associate !-- SA
 
     !-- Base's GIS must be closed before call to Bundle % Write ( ).
