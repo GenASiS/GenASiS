@@ -18,7 +18,6 @@ module Integrator_H__Form
       ! iTimerNewTime = 0, &
       ! iTimerTally = 0, &
       ! iTimerAnalyze = 0, &
-      ! iTimerWrite = 0, &
       ! iTimerWriteSeries = 0, &
       iCycle, &
       iCheckpoint, &
@@ -540,25 +539,23 @@ contains
       ComputeChangeOption
 
     integer ( KDI ) :: &
-      iTSC!, &
+      iTSC, &  !-- iTimeStepCandidates
 !       TallyIgnorability, &
-!       StatisticsIgnorability
-!     real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
-!       MaxTime, &
-!       MinTime, &
-!       MeanTime
+      StatisticsIgnorability
+    real ( KDR ), dimension ( : ), allocatable :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
 !     logical ( KDL ) :: &
 !       WriteSeries
     type ( TimerForm ), pointer :: &
       T_AC!, &
 !       Timer_T, &
 !       Timer_A, &
-!       Timer_W, &
 !       Timer_WS
     
 !     Timer_T  => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
 !     Timer_A  => PROGRAM_HEADER % TimerPointer ( I % iTimerAnalyze )
-!     Timer_W  => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
 !     Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
 
     associate ( iT  =>  I % iTimer_AC )
@@ -586,18 +583,18 @@ contains
 
 !     WriteSeries = .true.
 
-!     if ( .not. I % Start & !.and. .not. I % Restart &
-!          .and. I % Time < I % FinishTime &
-!          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
-!     then
+    if ( .not. I % Start & !.and. .not. I % Restart &
+         .and. I % T  <  I % T_Finish &
+         .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
+    then
 !       TallyIgnorability       =  I % IGNORABILITY + 2
-!       StatisticsIgnorability  =  I % IGNORABILITY + 2
+      StatisticsIgnorability  =  I % IGNORABILITY + 2
 ! !      WriteSeries = .false.
-!     else
+    else
 !       TallyIgnorability       =  CONSOLE % INFO_1
-!       StatisticsIgnorability  =  CONSOLE % INFO_1
+      StatisticsIgnorability  =  CONSOLE % INFO_1
 ! !      WriteSeries = .true.
-!     end if
+    end if
 
 !     if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
 !     call I % ComputeTally &
@@ -609,16 +606,17 @@ contains
 !     call I % Analyze ( )
 !     if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
 
-!     if ( associated ( Timer_W ) ) call Timer_W % Start ( )   
     if ( .not. I % NoWrite .and. .not. I % Restart ) &
       call I % Write ( TimerLevelOption  =  T_AC % Level  +  1 )
-!     if ( associated ( Timer_W ) ) call Timer_W % Stop ( )   
 
-!     call PROGRAM_HEADER % ShowStatistics &
-!            ( StatisticsIgnorability, &
-!              CommunicatorOption = PROGRAM_HEADER % Communicator, &
-!              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
-!              MeanTimeOption = MeanTime )
+    associate ( nT  =>  PROGRAM_HEADER % nTimers )
+    allocate ( MaxTime ( nT ), MinTime ( nT ), MeanTime ( nT ) )
+    call PROGRAM_HEADER % ShowStatistics &
+           ( StatisticsIgnorability, &
+             CommunicatorOption = PROGRAM_HEADER % Communicator, &
+             MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
+             MeanTimeOption = MeanTime )
+    end associate !-- nT
 
 !     if ( .not. I % Restart ) &
 !       call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
