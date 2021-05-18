@@ -12,10 +12,11 @@ module Integrator_H__Form
   type, public :: Integrator_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimer_E = 0, &   !-- Evolution
-      iTimer_AC = 0, &  !-- AdministerCheckpoint
-      ! iTimerCycle = 0, &
-      ! iTimerNewTime = 0, &
+      iTimer_E = 0, &    !-- Evolution
+      iTimer_AC = 0, &   !-- AdministerCheckpoint
+      iTimer_UH = 0, &   !-- UpdateHost
+      iTimer_CC = 0, &   !-- ComputeCycle
+      iTimer_CNT = 0, &  !-- ComputeNewTime
       ! iTimerTally = 0, &
       ! iTimerAnalyze = 0, &
       ! iTimerWriteSeries = 0, &
@@ -66,8 +67,10 @@ module Integrator_H__Form
       Write => null ( )
     procedure ( R ), public, pointer :: &
       Read => null ( )
-    procedure ( SCTI ), pointer :: &
+    procedure ( STCI ), pointer :: &
       Set_T_CheckpointInterval => null ( )
+    procedure ( C_dT_L ), pointer :: &
+      Compute_dT_Local => null ( )
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H
@@ -87,22 +90,30 @@ module Integrator_H__Form
       ShowFields
     procedure, private, pass :: &  !-- 2
       ShowCheckpoint
-    procedure, public, pass :: &   !-- 2
+    procedure, private, pass :: &   !-- 2
       PrepareInitial
-    procedure, public, pass :: &   !-- 2
+    procedure, private, pass :: &   !-- 2
       PrepareEvolution
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
-    procedure, public, pass :: &   !-- 3
+    procedure, private, pass :: &  !-- 2
+      ComputeCycle
+    procedure, private, pass :: &   !-- 3
       SetInitial_H
-    procedure, public, pass :: &   !-- 3
+    procedure, private, pass :: &   !-- 3
       ResetInitial_H
-    procedure, public, pass :: &  !-- 3
+    procedure, private, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
-    procedure, public, pass :: &   !-- 3
+    procedure, private, pass :: &   !-- 3
       Write_H
-    procedure, public, pass :: &   !-- 3
+    procedure, private, pass :: &   !-- 3
       Read_H
+    procedure, private, pass :: &   !-- 3
+      PrepareCycle
+    procedure, private, pass :: &   !-- 3
+      Compute_T_New
+    procedure, private, pass :: &   !-- 4
+      Compute_dT
   end type Integrator_H_Form
 
   interface
@@ -148,17 +159,27 @@ module Integrator_H__Form
         CycleNumber
     end subroutine R
 
-    subroutine SCTI ( I )
+    subroutine STCI ( I )
       import Integrator_H_Form
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
-    end subroutine SCTI
+    end subroutine STCI
+
+    subroutine C_dT_L ( I, dT_Candidate )
+      use Basics
+      import Integrator_H_Form
+      class ( Integrator_H_Form ), intent ( inout ), target :: &
+        I
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        dT_Candidate
+    end subroutine C_dT_L
 
   end interface
 
   
     private :: &
-      Set_T_CheckpointInterval
+      Set_T_CheckpointInterval, &
+      Compute_dT_Local
           
 
 contains
@@ -326,14 +347,20 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-!     real ( KDR ) :: &
-!       TimeStepRatio
+    real ( KDR ) :: &
+      dT_Ratio
     type ( TimerForm ), pointer :: &
       T
 
 !     call I % OpenManifoldStreams ( )
 !     call I % InitializeTimers ( )
 !     call I % InitializeTimeSeries ( )
+
+    call I % PrepareInitial ( )
+    call I % PrepareEvolution ( )
+
+    call Show ( 'Starting evolution', I % IGNORABILITY )
+    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
     associate ( iT  =>  I % iTimer_E )
     if ( iT == 0 ) then
@@ -344,35 +371,32 @@ contains
 
     call T % Start ( )
 
-    call I % PrepareInitial ( )
-    call I % PrepareEvolution ( )
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
-    call Show ( 'Starting evolution', I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
-
 !    do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
-!      call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
+      call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
-!       call I % ComputeCycle ( )
+      call I % ComputeCycle ( )
 
-!       call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
-!       call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
-!       call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
+      call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
+      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
+      call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY + 1 )
 
-!       TimeStepRatio  &
-!         =  minval ( I % TimeStepCandidate ) &
-!              / max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
-!       if ( TimeStepRatio  <  1.0e-6  *  I % nWrite ) then
-!         call I % AdministerCheckpoint ( )
-!         call Show ( 'TimeStepRatio too small', CONSOLE % WARNING )
-!         call Show ( TimeStepRatio, 'TimeStepRatio', CONSOLE % WARNING )
-!         exit
-!       end if
+      ! dT_Ratio  &
+      !   =  minval ( I % dT_Candidate ) &
+      !        /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
+      ! if ( dT_Ratio  <  1.0e-6  *  I % nWrite ) then
+      !   call I % AdministerCheckpoint ( )
+      !   call Show ( 'dT_Ratio too small', CONSOLE % WARNING )
+      !   call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
+      !   exit
+      ! end if
 
-! !call I % Write ( )
-!       if ( I % IsT_Checkpoint ) &
-!         call I % AdministerCheckpoint ( )
+      if ( I % AllWrite  .and. .not. I % CheckpointDue ) &
+        call I % Write ( )
+
+      if ( I % CheckpointDue ) &
+        call I % AdministerCheckpoint ( )
 
 !    end do !-- T  <  T_Finish
 
@@ -524,6 +548,13 @@ contains
       I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
     end if
 
+    if ( .not. associated ( I % Compute_dT_Local ) ) then
+      call Show ( 'Compute_dT_Local unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % Compute_dT_Local  =>  Compute_dT_Local
+    end if
+
     RestartFrom  =  - huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
 
@@ -568,7 +599,8 @@ contains
 !     logical ( KDL ) :: &
 !       WriteSeries
     type ( TimerForm ), pointer :: &
-      T_AC!, &
+      T, &
+      T_UH
 !       Timer_T, &
 !       Timer_A, &
 !       Timer_WS
@@ -582,9 +614,9 @@ contains
       call PROGRAM_HEADER % AddTimer ( 'AdministerCheckpoint', iT, Level = 2 )
     end if
     end associate !-- iT
-    T_AC  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_AC )
+    T  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_AC )
 
-    call T_AC % Start ( )   
+    call T % Start ( )   
 
     call Show ( 'Checkpoint reached', I % IGNORABILITY )
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
@@ -598,7 +630,17 @@ contains
       end do !-- iTSC
     end if
 
-    call I % UpdateHost ( TimerLevelOption  =  T_AC % Level  +  1 )
+    associate ( iT  =>  I % iTimer_UH )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer &
+             ( 'UpdateHost', iT, Level  =  T % Level  + 1 )
+    end if
+    end associate !-- iT
+    T_UH  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_UH )
+
+    call T_UH % Start ( )   
+    call I % UpdateHost ( TimerLevelOption  =  T_UH % Level  +  1 )
+    call T_UH % Stop ( )
 
 !     WriteSeries = .true.
 
@@ -626,7 +668,7 @@ contains
 !     if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
 
     if ( .not. I % NoWrite .and. .not. I % Restart ) &
-      call I % Write ( TimerLevelOption  =  T_AC % Level  +  1 )
+      call I % Write ( TimerLevelOption  =  T % Level  +  1 )
 
     associate ( nT  =>  PROGRAM_HEADER % nTimers )
     allocate ( MaxTime ( nT ), MinTime ( nT ), MeanTime ( nT ) )
@@ -666,9 +708,66 @@ contains
     I % Start    =  .false.
     I % Restart  =  .false.
 
-    call T_AC % Stop ( )
+    call T % Stop ( )
 
   end subroutine AdministerCheckpoint
+
+
+  subroutine ComputeCycle ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    type ( TimerForm ), pointer :: &
+      T
+
+    real ( KDR ) :: &
+      T_New  !-- Use of Compute_T_New is a relic of past AMR evolution
+
+    associate ( iT  =>  I % iTimer_CC )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer ( 'ComputeCycle', iT, Level = 2 )
+    end if
+    end associate !-- iT
+    T  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_CC )
+
+    call T % Start ( )   
+
+    call I % PrepareCycle ( )
+    call I % Compute_T_New ( T_New )
+
+    ! associate ( S => I % Step )
+    associate ( dT  =>  T_New  -  I % T )    
+
+    ! select type ( Chart => PS % Chart )
+    ! class is ( Chart_SLD_Form )
+
+    !   call S % Compute ( I % Time, dT )
+
+    ! class default
+    !   call Show ( 'Chart type not found', CONSOLE % ERROR )
+    !   call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
+    !   call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select !-- C
+
+    I % iCycle  =  I % iCycle  +   1
+    I % T       =  I % T       +  dT
+
+    ! if ( I % CheckpointTimeExact ) then
+    !   if ( I % Time == I % CheckpointTime ) &
+    !     I % IsCheckpointTime = .true.
+    ! else 
+    !   if ( I % Time  >  I % CheckpointTime &
+    !        .or. abs ( I % Time - I % CheckpointTime )  <  0.5_KDR * dT ) &
+    !     I % IsCheckpointTime = .true.
+    ! end if
+
+    end associate !-- dT
+    ! end associate !-- S
+
+    call T % Stop ( )
+
+  end subroutine ComputeCycle
 
 
   subroutine SetInitial_H ( I )
@@ -822,6 +921,117 @@ contains
   end subroutine Read_H
 
 
+  subroutine PrepareCycle ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareCycle
+
+
+  subroutine Compute_T_New ( I, T_New, HoldCheckpointSolveOption )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    real ( KDR ), intent ( out ) :: &
+      T_New
+    logical ( KDL ), dimension ( : ), intent ( inout ), optional :: &
+      HoldCheckpointSolveOption
+
+    real ( KDR ) :: &
+      dT
+    type ( TimerForm ), pointer :: &
+      T
+
+    associate ( iT  =>  I % iTimer_CNT )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer ( 'Compute_T_New', iT, Level = 3 )
+    end if
+    end associate !-- iT
+    T  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_CNT )
+
+    call T % Start ( )   
+
+!    call Show ( 'Computing T_New', I % IGNORABILITY )
+!    call Show ( I % Name, 'Name', I % IGNORABILITY )
+
+    ! associate ( CFC => I % ConservedFields % Chart ( 1 ) % Element )
+    ! select type ( C => I % Atlas % Chart ( 1 ) % Element )
+    ! class is ( Chart_SL_Template )
+    !   call I % Compute_dT_CSL ( CFC, C, dT )
+    ! ! class is ( ChartMultiLevelTemplate )
+    ! !   call I % Compute_dT_CML ( CFC, C, dT )
+    ! end select !-- C
+    ! end associate !-- CFC
+
+    call I % Compute_dT ( dT )
+
+!    associate ( C => I % Atlas % Chart ( 1 ) % Element )
+
+    if ( I % T_CheckpointExact ) then
+      if ( I % T  +  dT  >  I % T_Checkpoint ) then
+        call Show ( 'T_Checkpoint encountered', I % IGNORABILITY ) 
+!        if ( present ( HoldCheckpointSolveOption ) ) &
+!          HoldCheckpointSolveOption ( 2 : C % nLevels ) = .true.
+        dT  =  I % T_Checkpoint  -  I % T
+        call Show ( dT, I % Unit_T, 'Modified dT', I % IGNORABILITY + 1 )
+      end if
+    end if
+
+    T_New  =  I % T  +  dT
+    call Show ( T_New, I % Unit_T, 'T_New', I % IGNORABILITY + 1 )
+
+!    end associate !-- C
+
+    call T % Stop ( )
+
+  end subroutine Compute_T_New
+
+
+  subroutine Compute_dT ( I, dT )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    real ( KDR ), intent ( out ) :: &
+      dT
+
+    integer ( KDI ) :: &
+      iTSC  !-- iTimeStepCandidate
+    real ( KDR ) :: &
+      RampFactor
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    I % dT_Candidate  =  huge ( 0.0_KDR )
+
+    call I % Compute_dT_Local ( I % dT_Candidate )
+
+    call CO % Initialize &
+           ( I % Communicator, nOutgoing = [ I % n_dT_Candidates ], &
+             nIncoming = [ I % n_dT_Candidates ] )
+    CO % Outgoing % Value  =  I % dT_Candidate
+
+    call CO % Reduce ( REDUCTION % MIN )
+
+    I % dT_Candidate  =  CO % Incoming % Value
+    do iTSC  =  1,  I % n_dT_Candidates
+      call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
+                  trim ( I % dT_Label ( iTSC ) ) // ' dT', &
+                  I % IGNORABILITY + 1 )
+    end do !-- iTSC
+
+    dT  =  minval ( I % dT_Candidate )
+
+    RampFactor &
+      =  min ( real ( I % iCycle + 1, KDR ) / I % nRampCycles, 1.0_KDR )
+    if ( RampFactor  <  1.0_KDR ) then
+      dT  =  RampFactor * dT
+      call Show ( dT, I % Unit_T, 'Ramped dT', I % IGNORABILITY + 1 )
+    end if
+
+  end subroutine Compute_dT
+
+
   subroutine Set_T_CheckpointInterval ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -831,6 +1041,20 @@ contains
       =  ( I % T_Finish  -  I % T_Start )  /  I % nWrite
 
   end subroutine Set_T_CheckpointInterval
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+
+    !-- Very arbitrary for Integrator_H_Form test
+
+    dT_Candidate ( 1 )  =  I % T_CheckpointInterval  /  10
+    
+  end subroutine Compute_dT_Local
 
 
 end module Integrator_H__Form
