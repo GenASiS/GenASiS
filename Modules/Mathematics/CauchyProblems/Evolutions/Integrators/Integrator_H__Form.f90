@@ -92,6 +92,8 @@ module Integrator_H__Form
     procedure, private, pass :: &  !-- 2
       ShowFields
     procedure, private, pass :: &  !-- 2
+      ShowSteps
+    procedure, private, pass :: &  !-- 2
       ShowCheckpoint
     procedure, private, pass :: &   !-- 2
       PrepareInitial
@@ -303,6 +305,18 @@ contains
     I % FinishCycle = huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( I % FinishCycle, 'FinishCycle' )
 
+    !-- Step, if necessary (should not be)
+
+    if ( .not. allocated ( I % Step_X_A ) ) then
+      call Show ( 'Step_X_A not allocated', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      allocate ( I % Step_X_A )
+      associate ( S  =>  I % Step_X_A )
+      call S % Initialize ( )
+      end associate !-- S
+    end if
+
     !-- Checkpointing
 
     I % nWrite  =  100
@@ -433,6 +447,7 @@ contains
 
     call I % ShowManifold ( )
     call I % ShowFields ( )
+    call I % ShowSteps ( )
     call I % ShowCheckpoint ( )
 
   end subroutine Show_I
@@ -483,6 +498,16 @@ contains
   end subroutine ShowFields
 
 
+  subroutine ShowSteps ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    call I % Step_X_A % Show ( )
+
+  end subroutine ShowSteps
+
+
   subroutine ShowCheckpoint ( I )
 
     class ( Integrator_H_Form ), intent ( in ) :: &
@@ -517,16 +542,6 @@ contains
       RestartFrom
     type ( MeasuredValueForm ) :: &
       T_Restart
-
-    if ( .not. allocated ( I % Step_X_A ) ) then
-      call Show ( 'Step_X_A not allocated', CONSOLE % WARNING )
-      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
-      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
-      allocate ( I % Step_X_A )
-      associate ( S  =>  I % Step_X_A )
-      call S % Initialize ( )
-      end associate !-- S
-    end if
 
     if ( .not. associated ( I % SetInitial ) ) then
       call Show ( 'SetInitial unset', CONSOLE % WARNING )
@@ -768,14 +783,14 @@ contains
     I % iCycle  =  I % iCycle  +   1
     I % T       =  I % T       +  dT
 
-    ! if ( I % CheckpointTimeExact ) then
-    !   if ( I % Time == I % CheckpointTime ) &
-    !     I % IsCheckpointTime = .true.
-    ! else 
-    !   if ( I % Time  >  I % CheckpointTime &
-    !        .or. abs ( I % Time - I % CheckpointTime )  <  0.5_KDR * dT ) &
-    !     I % IsCheckpointTime = .true.
-    ! end if
+    if ( I % T_CheckpointExact ) then
+      if ( ( I % T  -  I % T_Checkpoint )  /  I % T_Checkpoint  <  1.0e-14 ) &
+        I % CheckpointDue  =  .true.
+    else 
+      if ( I % T  >  I % T_Checkpoint &
+           .or. abs ( I % T  -  I % T_Checkpoint )  <  0.5_KDR * dT ) &
+        I % CheckpointDue  =  .true.
+    end if
 
     end associate !-- dT
     end associate !--  S
