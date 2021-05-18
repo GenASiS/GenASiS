@@ -5,6 +5,7 @@ module Integrator_H__Form
   use Basics
   use Manifolds
   use Fields
+  use Steps
 
   implicit none
   private
@@ -59,6 +60,8 @@ module Integrator_H__Form
       Checkpoint_X_A
     class ( Geometry_F_A_Form ), allocatable :: &
       Geometry_X_A
+    class ( Step_RK_H_Form ), allocatable :: &
+      Step_X_A
     procedure ( SI ), public, pointer :: &
       SetInitial => null ( )
     procedure ( RI ), public, pointer :: &
@@ -443,6 +446,8 @@ contains
     if ( I % Name == '' ) &
       return
 
+    if ( allocated ( I % Step_X_A ) ) &
+      deallocate ( I % Step_X_A )
     if ( allocated ( I % Geometry_X_A ) ) &
       deallocate ( I % Geometry_X_A )
     if ( allocated ( I % X_A ) ) &
@@ -512,6 +517,16 @@ contains
       RestartFrom
     type ( MeasuredValueForm ) :: &
       T_Restart
+
+    if ( .not. allocated ( I % Step_X_A ) ) then
+      call Show ( 'Step_X_A not allocated', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      allocate ( I % Step_X_A )
+      associate ( S  =>  I % Step_X_A )
+      call S % Initialize ( )
+      end associate !-- S
+    end if
 
     if ( .not. associated ( I % SetInitial ) ) then
       call Show ( 'SetInitial unset', CONSOLE % WARNING )
@@ -735,13 +750,13 @@ contains
     call I % PrepareCycle ( )
     call I % Compute_T_New ( T_New )
 
-    ! associate ( S => I % Step )
+    associate (  S  =>  I % Step_X_A )
     associate ( dT  =>  T_New  -  I % T )    
 
     ! select type ( Chart => PS % Chart )
     ! class is ( Chart_SLD_Form )
 
-    !   call S % Compute ( I % Time, dT )
+      call S % Compute ( I % T, dT, TimerLevelOption  =  T % Level  +  1 )
 
     ! class default
     !   call Show ( 'Chart type not found', CONSOLE % ERROR )
@@ -763,7 +778,7 @@ contains
     ! end if
 
     end associate !-- dT
-    ! end associate !-- S
+    end associate !--  S
 
     call T % Stop ( )
 

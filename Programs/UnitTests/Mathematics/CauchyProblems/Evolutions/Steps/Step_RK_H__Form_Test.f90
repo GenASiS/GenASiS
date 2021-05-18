@@ -29,7 +29,7 @@ program Step_RK_H__Form_Test
   C ( 2 ) = 1.0_KDR
     
   allocate ( S )
-  call S % Initialize ( A, B, C )
+  call S % Initialize ( A_Option = A, B_Option = B, C_Option = C )
 
   call S % Show ( )
 

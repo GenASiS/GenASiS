@@ -68,7 +68,7 @@ module Step_RK_CSA__Form
 contains
 
 
-  subroutine Initialize_CSA ( S, CSA, NameOption )
+  subroutine Initialize_CSA ( S, CSA, NameOption, A_Option, B_Option, C_Option )
 
     class ( Step_RK_CSA_Form ), intent ( inout ) :: &
       S
@@ -76,15 +76,15 @@ contains
       CSA
     character ( * ), intent ( in ), optional :: &
       NameOption
+    real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
+      A_Option
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      B_Option
+    real ( KDR ), dimension ( 2 : ), intent ( in ), optional :: &
+      C_Option
 
     integer ( KDI ) :: &
       iS  !-- iStage
-    real ( KDR ), dimension ( 2 : 2, 1 : 1 ) :: &
-      A
-    real ( KDR ), dimension ( 2 : 2 ) :: &
-      C
-    real ( KDR ), dimension ( 1 : 2 ) :: &
-      B
     character ( 1 ) :: &
       StageNumber
 
@@ -93,14 +93,6 @@ contains
 
     S % CurrentSet_A  =>  CSA
 
-    call Clear ( A )
-    A ( 2, 1 ) = 1.0_KDR
-
-    B ( 1 ) = 0.5_KDR
-    B ( 2 ) = 0.5_KDR
-
-    C ( 2 ) = 1.0_KDR
-    
     select type ( CSC  =>  CSA % FieldSet_C ( 1 ) % Element )
     class is ( CurrentSet_C_Form )
 
@@ -111,7 +103,7 @@ contains
         DevicesCommunicate  =>  CSC % GhostExchange_FSC % DevicesCommunicate )
 
     call S % Step_RK_H_Form % Initialize &
-           ( A, B, C, NameOption )
+           ( NameOption, A_Option, B_Option, C_Option )
 
     !-- Solution storage
 

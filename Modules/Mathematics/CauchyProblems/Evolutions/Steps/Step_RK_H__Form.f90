@@ -57,23 +57,55 @@ module Step_RK_H__Form
 contains
 
 
-  subroutine Initialize_H ( S, A, B, C, NameOption )
+  subroutine Initialize_H ( S, NameOption, A_Option, B_Option, C_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), dimension ( 2 : , : ), intent ( in ) :: &
-      A
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      B
-    real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
-      C
     character ( * ), intent ( in ), optional :: &
       NameOption
+    real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
+      A_Option
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      B_Option
+    real ( KDR ), dimension ( 2 : ), intent ( in ), optional :: &
+      C_Option
 
     integer ( KDI ) :: &
       iS
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      A
+    real ( KDR ), dimension ( : ), allocatable :: &
+      B
+    real ( KDR ), dimension ( : ), allocatable :: &
+      C
 
     S % IGNORABILITY  =  CONSOLE % INFO_1
+
+    if ( present ( A_Option ) ) then
+      allocate ( A ( 2 : ubound ( A_Option, dim = 1 ), &
+                     size ( A_Option, dim = 2 ) ) )
+      A  =  A_Option
+    else
+      allocate ( A ( 2 : 2, 1 : 1 ) )
+      A           =  0.0_KDR
+      A ( 2, 1 )  =  1.0_KDR
+    end if
+
+    if ( present ( B_Option ) ) then
+      allocate ( B, source = B_Option )
+    else
+      allocate ( B ( 1 : 2 ) )
+      B ( 1 )  =  0.5_KDR
+      B ( 2 )  =  0.5_KDR
+    end if
+
+    if ( present ( C_Option ) ) then
+      allocate ( C ( 2 : ubound ( C_Option, dim = 1 ) ) )
+      C  =  C_Option
+    else
+      allocate ( C ( 2 : 2 ) )
+      C ( 2 )  =  1.0_KDR
+    end if
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK' 
@@ -312,10 +344,9 @@ contains
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
 
-    call Show ( 'LoadSolution must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'LoadSolution', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    call Show ( 'LoadSolution should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'LoadSolution', 'subroutine', CONSOLE % WARNING )
 
   end subroutine LoadSolution
 
@@ -325,10 +356,9 @@ contains
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
 
-    call Show ( 'StoreSolution must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'StoreSolution', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    call Show ( 'StoreSolution should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'StoreSolution', 'subroutine', CONSOLE % WARNING )
 
   end subroutine StoreSolution
 
@@ -340,10 +370,10 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
 
-    call Show ( 'InitializeIntermediate must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'InitializeIntermediate', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    call Show ( 'InitializeIntermediate should be overridden', &
+                CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'InitializeIntermediate', 'subroutine', CONSOLE % WARNING )
 
   end subroutine InitializeIntermediate
 
@@ -358,10 +388,10 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
-    call Show ( 'IncrementIntermediate must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'IncrementIntermediate', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    call Show ( 'IncrementIntermediate should be overridden', &
+                CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'IncrementIntermediate', 'subroutine', CONSOLE % WARNING )
 
   end subroutine IncrementIntermediate
 
@@ -377,10 +407,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
 
-    call Show ( 'ComputeStage must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'ComputeStage', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    call Show ( 'ComputeStage should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'ComputeStage', 'subroutine', CONSOLE % WARNING )
 
   end subroutine ComputeStage
 
@@ -395,10 +424,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
 
-    call Show ( 'IncrementSolution must be overridden', CONSOLE % ERROR )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % ERROR )
-    call Show ( 'IncrementSolution', 'subroutine', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
+    call Show ( 'IncrementSolution should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'IncrementSolution', 'subroutine', CONSOLE % WARNING )
 
   end subroutine IncrementSolution
 
