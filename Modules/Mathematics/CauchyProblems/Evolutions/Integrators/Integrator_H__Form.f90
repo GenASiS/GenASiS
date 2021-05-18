@@ -390,7 +390,7 @@ contains
 
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
-!    do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
+    do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
       call I % ComputeCycle ( )
@@ -399,15 +399,15 @@ contains
       call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
       call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY + 1 )
 
-      ! dT_Ratio  &
-      !   =  minval ( I % dT_Candidate ) &
-      !        /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
-      ! if ( dT_Ratio  <  1.0e-6  *  I % nWrite ) then
-      !   call I % AdministerCheckpoint ( )
-      !   call Show ( 'dT_Ratio too small', CONSOLE % WARNING )
-      !   call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
-      !   exit
-      ! end if
+      dT_Ratio  &
+        =  minval ( I % dT_Candidate ) &
+             /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
+      if ( dT_Ratio  <  1.0e-6  *  I % nWrite ) then
+        call I % AdministerCheckpoint ( )
+        call Show ( 'dT_Ratio too small', CONSOLE % WARNING )
+        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
+        exit
+      end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) &
         call I % Write ( )
@@ -415,7 +415,7 @@ contains
       if ( I % CheckpointDue ) &
         call I % AdministerCheckpoint ( )
 
-!    end do !-- T  <  T_Finish
+    end do !-- T  <  T_Finish
 
     call T % Stop ( )   
 
@@ -722,7 +722,8 @@ contains
       call I % Set_T_CheckpointInterval ( )
       I % T_Checkpoint &
         =  min ( I % T  +  I % T_CheckpointInterval, I % T_Finish )
-      if ( I % T_Checkpoint  ==  I % T_Finish ) &
+      if ( abs ( I % T_Finish  -  I % T_Checkpoint )  /  I % T_Finish  &
+                 <  1.0e-14 ) &
         I % T_CheckpointExact  =  .true.
       call Show ( I % T_CheckpointInterval, I % Unit_T, &
                   'T_CheckpointInterval', &
@@ -784,11 +785,12 @@ contains
     I % T       =  I % T       +  dT
 
     if ( I % T_CheckpointExact ) then
-      if ( ( I % T  -  I % T_Checkpoint )  /  I % T_Checkpoint  <  1.0e-14 ) &
+      if ( abs ( I % T_Checkpoint  -  I % T )  /  I % T_Checkpoint  &
+           <  1.0e-14 ) &
         I % CheckpointDue  =  .true.
     else 
       if ( I % T  >  I % T_Checkpoint &
-           .or. abs ( I % T  -  I % T_Checkpoint )  <  0.5_KDR * dT ) &
+           .or. abs ( I % T_Checkpoint  -  I % T )  <  0.5_KDR * dT ) &
         I % CheckpointDue  =  .true.
     end if
 
