@@ -113,7 +113,7 @@ module Integrator_H__Form
       SetInitial_H
     procedure, private, pass :: &   !-- 3
       ResetInitial_H
-    procedure, private, pass :: &   !-- 3
+    procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
     procedure, private, pass :: &   !-- 3
       Analyze_H

@@ -27,6 +27,8 @@ module Integrator_CSA__Form
       ShowFields
     final :: &
       Finalize
+    procedure, public, pass :: &   !-- 3
+      UpdateHost => UpdateHost_CSA
     procedure, public, pass :: &
       Compute_dT_CSC
   end type Integrator_CSA_Form
@@ -211,6 +213,22 @@ contains
       deallocate ( I % CurrentSet_X_A )
 
   end subroutine Finalize
+
+
+  subroutine UpdateHost_CSA ( I, TimerLevelOption )
+
+    class ( Integrator_CSA_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
+
+    call I % Integrator_H_Form % UpdateHost ( TimerLevelOption )
+
+    associate ( CSA  =>  I % CurrentSet_A )
+    call CSA % UpdateHost ( TimerLevelOption )
+    end associate !-- CSA
+
+  end subroutine UpdateHost_CSA
 
 
   subroutine Compute_dT_CSC ( I, dT, iC, TimerLevelOption )
