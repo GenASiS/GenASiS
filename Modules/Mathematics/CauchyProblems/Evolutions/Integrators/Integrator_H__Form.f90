@@ -87,13 +87,15 @@ module Integrator_H__Form
       Evolve
     final :: &                     !-- 1
       Finalize
-    procedure, private, pass :: &  !-- 2
+    procedure, public, pass :: &  !-- 2
+      ShowParameters
+    procedure, public, pass :: &  !-- 2
       ShowManifold
-    procedure, private, pass :: &  !-- 2
+    procedure, public, pass :: &  !-- 2
       ShowFields
-    procedure, private, pass :: &  !-- 2
+    procedure, public, pass :: &  !-- 2
       ShowSteps
-    procedure, private, pass :: &  !-- 2
+    procedure, public, pass :: &  !-- 2
       ShowCheckpoint
     procedure, private, pass :: &   !-- 2
       PrepareInitial
@@ -170,13 +172,17 @@ module Integrator_H__Form
         I
     end subroutine STCI
 
-    subroutine C_dT_L ( I, dT_Candidate )
+    subroutine C_dT_L ( I, dT_Candidate, iC, TimerLevelOption )
       use Basics
       import Integrator_H_Form
       class ( Integrator_H_Form ), intent ( inout ), target :: &
         I
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         dT_Candidate
+      integer ( KDI ), intent ( in ) :: &
+        iC
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
     end subroutine C_dT_L
 
   end interface
@@ -436,15 +442,7 @@ contains
 
     call Show ( I % Communicator % Name, 'Communicator', I % IGNORABILITY )
 
-    call Show ( I % T_Start, I % Unit_T, 'T_Start', I % IGNORABILITY )
-    call Show ( I % T_Finish, I % Unit_T, 'T_Finish', I % IGNORABILITY )
-
-    call Show ( I % n_dT_Candidates, 'n_dT_Candidates', I % IGNORABILITY )
-    call Show ( I % dT_Label, 'dT_Label', I % IGNORABILITY )
-
-    call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
-    call Show ( I % FinishCycle, 'FinishCycle', I % IGNORABILITY )
-
+    call I % ShowParameters ( )
     call I % ShowManifold ( )
     call I % ShowFields ( )
     call I % ShowSteps ( )
@@ -476,6 +474,23 @@ contains
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    call Show ( I % T_Start, I % Unit_T, 'T_Start', I % IGNORABILITY )
+    call Show ( I % T_Finish, I % Unit_T, 'T_Finish', I % IGNORABILITY )
+
+    call Show ( I % n_dT_Candidates, 'n_dT_Candidates', I % IGNORABILITY )
+    call Show ( I % dT_Label, 'dT_Label', I % IGNORABILITY )
+
+    call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
+    call Show ( I % FinishCycle, 'FinishCycle', I % IGNORABILITY )
+
+  end subroutine ShowParameters
 
 
   subroutine ShowManifold ( I )
@@ -996,7 +1011,7 @@ contains
     ! end select !-- C
     ! end associate !-- CFC
 
-    call I % Compute_dT ( dT )
+    call I % Compute_dT ( dT, TimerLevelOption  =  T % Level + 1 )
 
 !    associate ( C => I % Atlas % Chart ( 1 ) % Element )
 
@@ -1020,32 +1035,53 @@ contains
   end subroutine Compute_T_New
 
 
-  subroutine Compute_dT ( I, dT )
+  subroutine Compute_dT ( I, dT, TimerLevelOption )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
     real ( KDR ), intent ( out ) :: &
       dT
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     integer ( KDI ) :: &
-      iTSC  !-- iTimeStepCandidate
+      iC, &  !-- iChart
+      iTSC   !-- iTimeStepCandidate
     real ( KDR ) :: &
       RampFactor
-    type ( CollectiveOperation_R_Form ) :: &
+    type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
 
     I % dT_Candidate  =  huge ( 0.0_KDR )
 
-    call I % Compute_dT_Local ( I % dT_Candidate )
+    associate ( A  =>  I % X_A )
+    do iC  =  1,  A % nCharts
 
-    call CO % Initialize &
-           ( I % Communicator, nOutgoing = [ I % n_dT_Candidates ], &
-             nIncoming = [ I % n_dT_Candidates ] )
-    CO % Outgoing % Value  =  I % dT_Candidate
+      call I % Compute_dT_Local ( I % dT_Candidate, iC, TimerLevelOption )
 
-    call CO % Reduce ( REDUCTION % MIN )
+      select type ( C  =>  A % Chart ( iC ) % Element )
+        class is ( Chart_GS_Form )
 
-    I % dT_Candidate  =  CO % Incoming % Value
+      allocate ( CO )
+      call CO % Initialize &
+             ( C % Communicator, nOutgoing = [ I % n_dT_Candidates ], &
+               nIncoming = [ I % n_dT_Candidates ] )
+
+      CO % Outgoing % Value  =  I % dT_Candidate
+      call CO % Reduce ( REDUCTION % MIN )
+      I % dT_Candidate  =  CO % Incoming % Value
+
+      deallocate ( CO )
+
+      class default 
+        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+        call Show ( 'Integrator_H_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Compute_dT', 'subroutine', CONSOLE % ERROR )
+      end select !-- C
+
+    end do !-- iC
+    end associate !-- A
+
     do iTSC  =  1,  I % n_dT_Candidates
       call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
                   trim ( I % dT_Label ( iTSC ) ) // ' dT', &
@@ -1075,12 +1111,16 @@ contains
   end subroutine Set_T_CheckpointInterval
 
 
-  subroutine Compute_dT_Local ( I, dT_Candidate )
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, TimerLevelOption )
 
     class ( Integrator_H_Form ), intent ( inout ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
 
     !-- Very arbitrary for Integrator_H_Form test
 

@@ -1,3 +1,5 @@
 INTEGRATORS = \
   Integrators.o \
+  Integrator_CSA__Kernel.o \
+  Integrator_CSA__Form.o \
   Integrator_H__Form.o
