@@ -20,6 +20,9 @@ program Integrator_CSA__Form_Test
     Period
   real ( KDR ), dimension ( 3 ) :: &
     Wavenumber
+  type ( CurrentSet_A_Form ), allocatable :: &
+    CSA_R, &  !-- Reference
+    CSA_D     !-- Difference
   type ( Integrator_CSA_Form ), allocatable :: &
     I
 
@@ -29,14 +32,28 @@ program Integrator_CSA__Form_Test
 
   allocate ( I )
   call I % Initialize ( )
+  I % SetInitial    =>  SetInitial
+  I % SetReference  =>  SetReference
 
   call SetParameters ( I )
 
+  allocate ( CSA_R, CSA_D )
+  associate &
+    ( GA  =>  I % Geometry_X_A, &
+      SA  =>  I % Checkpoint_X_A )
+  call CSA_R % Initialize ( GA, NameOption = 'Reference' )
+  call CSA_D % Initialize ( GA, NameOption = 'Difference' )
+  call CSA_R % SetStream ( SA )
+  call CSA_D % SetStream ( SA )
+  end associate !-- GA, etc.
+
   call I % Show ( )
-  I % SetInitial  =>  SetInitial
+  call CSA_R % Show ( )
+  call CSA_D % Show ( )
 
   call I % Evolve ( )
 
+  deallocate ( CSA_D, CSA_R )
   deallocate ( I )
   deallocate ( PROGRAM_HEADER )
 
@@ -112,6 +129,38 @@ contains
   end subroutine SetInitial
 
 
+  subroutine SetReference ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    call SetWave ( CSA_R, I % T )
+
+    select type ( I )
+      class is ( Integrator_CSA_Form )
+    associate &
+      ( CSA  =>  I % CurrentSet_X_A )
+    associate &
+      ( CSC    =>  CSA   % FieldSet_C ( 1 ) % Element, &
+        CSC_R  =>  CSA_R % FieldSet_C ( 1 ) % Element, &
+        CSC_D  =>  CSA_D % FieldSet_C ( 1 ) % Element )
+    associate &
+      ( CSV    =>  CSC   % Storage_FSC % Storage % Value, &
+        CSV_R  =>  CSC_R % Storage_FSC % Storage % Value, &
+        CSV_D  =>  CSC_D % Storage_FSC % Storage % Value )
+    
+    CSV_D  =  CSV  -  CSV_R
+
+    call ComputeError ( CSC, CSC_R )
+
+    end associate !-- CSV, etc.
+    end associate !-- CSC, etc.
+    end associate !-- CSA
+    end select !-- I
+
+  end subroutine SetReference
+
+
   subroutine SetWave ( CSA, T )
 
     class ( CurrentSet_A_Form ), intent ( inout ) :: &
@@ -155,6 +204,60 @@ contains
     end associate !-- GA
 
   end subroutine SetWave
+
+
+  subroutine ComputeError ( FSC, FSC_R )
+
+    class ( FieldSet_C_Form ), intent ( in ) :: &
+      FSC, &
+      FSC_R
+
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iF     !-- iField
+    type ( CollectiveOperation_R_Form ) :: &
+      CO 
+
+    call Show ( 'Computing error' )
+    call Show ( FSC % Name, 'FieldSet' )
+
+    associate ( nF  =>  FSC % nFields )
+
+    select type ( C  =>  FSC % Chart )
+    class is ( Chart_GS_Form )
+
+    associate ( Cmm  =>  C % Communicator )
+    call CO % Initialize &
+           ( Cmm, nOutgoing = [ 2 * nF ], nIncoming = [ 2 * nF ] )
+    end associate !-- Cmm
+
+    do iS  =  1, nF
+      iF  =  FSC % iaSelected ( iS )
+      associate &
+        ( F_R  =>  FSC_R % Storage_FSC % Storage % Value ( :, iF ), &
+          F    =>  FSC   % Storage_FSC % Storage % Value ( :, iF ) )
+
+      !-- proper cells only
+      CO % Outgoing % Value ( iS )  &
+        =  sum ( pack ( abs ( F  -  F_R ), mask = C % ProperCell ) )
+      CO % Outgoing % Value ( nF + iS )  &
+        =  sum ( pack ( abs ( F_R ), mask = C % ProperCell ) )
+
+!      !-- with ghost cells
+!      CO % Outgoing % Value ( iF )  &
+!        =  sum ( abs ( F  -  F_R ) )
+
+      end associate !-- F_R, etc.
+    end do !-- iF
+    end select !-- G
+
+    call CO % Reduce ( REDUCTION % SUM )
+    call Show (    CO % Incoming % Value (      1 :      nF )  &
+                /  CO % Incoming % Value ( nF + 1 : nF + nF ), 'L1 Error' )
+
+    end associate !-- nF
+
+  end subroutine ComputeError
 
 
 end program Integrator_CSA__Form_Test

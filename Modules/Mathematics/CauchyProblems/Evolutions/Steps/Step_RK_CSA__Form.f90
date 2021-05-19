@@ -155,7 +155,7 @@ contains
         associate ( RSA  =>  S % RiemannSolver_A )
         call SA % Initialize &
                ( RSA, &
-                 NameOption = 'S_H_' // StageNumber // '_' &
+                 NameOption = 'S_DFV_' // StageNumber // '_' &
                                 // trim ( CSA % Name ) )
         end associate !-- RSA
         end select !-- SA

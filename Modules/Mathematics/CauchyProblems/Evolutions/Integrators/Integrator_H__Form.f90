@@ -16,10 +16,10 @@ module Integrator_H__Form
       iTimer_E = 0, &    !-- Evolution
       iTimer_AC = 0, &   !-- AdministerCheckpoint
       iTimer_UH = 0, &   !-- UpdateHost
+      iTimer_A = 0, &    !-- Analyze
       iTimer_CC = 0, &   !-- ComputeCycle
       iTimer_CNT = 0, &  !-- ComputeNewTime
       ! iTimerTally = 0, &
-      ! iTimerAnalyze = 0, &
       ! iTimerWriteSeries = 0, &
       iCycle, &
       iCheckpoint, &
@@ -66,10 +66,14 @@ module Integrator_H__Form
       SetInitial => null ( )
     procedure ( RI ), public, pointer :: &
       ResetInitial => null ( )
+    procedure ( A ), public, pointer :: &
+      Analyze => null ( )
     procedure ( W ), public, pointer :: &
       Write => null ( )
     procedure ( R ), public, pointer :: &
       Read => null ( )
+    procedure ( SR ), public, pointer :: &
+      SetReference => null ( )
     procedure ( STCI ), pointer :: &
       Set_T_CheckpointInterval => null ( )
     procedure ( C_dT_L ), pointer :: &
@@ -112,6 +116,8 @@ module Integrator_H__Form
     procedure, private, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
     procedure, private, pass :: &   !-- 3
+      Analyze_H
+    procedure, private, pass :: &   !-- 3
       Write_H
     procedure, private, pass :: &   !-- 3
       Read_H
@@ -144,9 +150,17 @@ module Integrator_H__Form
         T_Restart
     end subroutine RI
 
+    subroutine A ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine A
+    
     subroutine W ( I, TimerLevelOption )
       use Basics
       import Integrator_H_Form
+      implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
       integer ( KDI ), intent ( in ), optional :: &
@@ -156,6 +170,7 @@ module Integrator_H__Form
     subroutine R ( I, ReadFrom, T, CycleNumber )
       use Basics
       import Integrator_H_Form
+      implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
       integer ( KDI ), intent ( in ) :: &
@@ -166,8 +181,16 @@ module Integrator_H__Form
         CycleNumber
     end subroutine R
 
+    subroutine SR ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine SR
+    
     subroutine STCI ( I )
       import Integrator_H_Form
+      implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
     end subroutine STCI
@@ -175,6 +198,7 @@ module Integrator_H__Form
     subroutine C_dT_L ( I, dT_Candidate, iC, TimerLevelOption )
       use Basics
       import Integrator_H_Form
+      implicit none
       class ( Integrator_H_Form ), intent ( inout ), target :: &
         I
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -572,6 +596,13 @@ contains
       I % ResetInitial  =>  ResetInitial_H
     end if
 
+    if ( .not. associated ( I % Analyze ) ) then
+      call Show ( 'Analyze unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % Analyze  =>  Analyze_H
+    end if
+
     if ( .not. associated ( I % Write ) ) then
       call Show ( 'Write unset', CONSOLE % WARNING )
       call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
@@ -645,13 +676,12 @@ contains
 !       WriteSeries
     type ( TimerForm ), pointer :: &
       T, &
-      T_UH
+      T_UH, &
+      T_A
 !       Timer_T, &
-!       Timer_A, &
 !       Timer_WS
     
 !     Timer_T  => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
-!     Timer_A  => PROGRAM_HEADER % TimerPointer ( I % iTimerAnalyze )
 !     Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
 
     associate ( iT  =>  I % iTimer_AC )
@@ -660,6 +690,22 @@ contains
     end if
     end associate !-- iT
     T  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_AC )
+
+    associate ( iT  =>  I % iTimer_UH )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer &
+             ( 'UpdateHost', iT, Level  =  T % Level  + 1 )
+    end if
+    end associate !-- iT
+    T_UH  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_UH )
+
+    associate ( iT  =>  I % iTimer_A )
+    if ( iT == 0 ) then
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Analyze', iT, Level  =  T % Level  + 1 )
+    end if
+    end associate !-- iT
+    T_A  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_A )
 
     call T % Start ( )   
 
@@ -674,14 +720,6 @@ contains
                     I % IGNORABILITY )
       end do !-- iTSC
     end if
-
-    associate ( iT  =>  I % iTimer_UH )
-    if ( iT == 0 ) then
-      call PROGRAM_HEADER % AddTimer &
-             ( 'UpdateHost', iT, Level  =  T % Level  + 1 )
-    end if
-    end associate !-- iT
-    T_UH  =>  PROGRAM_HEADER % TimerPointer ( I % iTimer_UH )
 
     call T_UH % Start ( )   
     call I % UpdateHost ( TimerLevelOption  =  T_UH % Level  +  1 )
@@ -708,9 +746,9 @@ contains
 !              IgnorabilityOption  = TallyIgnorability )
 !     if ( associated ( Timer_T ) ) call Timer_T % Stop ( )   
 
-!     if ( associated ( Timer_A ) ) call Timer_A % Start ( )   
-!     call I % Analyze ( )
-!     if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
+    call T_A % Start ( )   
+    call I % Analyze ( )
+    call T_A % Stop ( )   
 
     if ( .not. I % NoWrite .and. .not. I % Restart ) &
       call I % Write ( TimerLevelOption  =  T % Level  +  1 )
@@ -870,6 +908,17 @@ contains
     end associate !-- GA
 
   end subroutine UpdateHost_H
+
+
+  subroutine Analyze_H ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    if ( associated ( I % SetReference ) ) &
+      call I % SetReference ( )
+
+  end subroutine Analyze_H
 
 
   subroutine Write_H ( I, TimerLevelOption )

@@ -80,13 +80,13 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
-        A ( iV ) =  A ( iV ) +  C * B ( iV )
+        A ( iV ) =  A ( iV )  +  C * B ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else 
       !$OMP parallel do private ( iV )
       do iV = 1, nV
-        A ( iV ) =  A ( iV ) +  C * B ( iV )
+        A ( iV ) =  A ( iV )  +  C * B ( iV )
       end do
       !$OMP end parallel do
     end if
