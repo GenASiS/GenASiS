@@ -1,4 +1,0 @@
-include $(PATH_MANIFOLDS)/Makefile_ObjectFiles
-
-MATHEMATICS = \
-  $(MANIFOLDS)
