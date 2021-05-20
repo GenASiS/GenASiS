@@ -12,7 +12,7 @@ Gravitation_G_C__Form_Test: Basics.a Mathematics.a Gravitations.a \
           Mathematics.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Gravitation_G_C__Form_Test_*

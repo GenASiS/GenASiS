@@ -1,0 +1,12 @@
+Fluid_D_C__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Fluid_D_C__Form.f90
+
+Fluids.o: \
+  Fluid_D_C__Form.o \
+  Fluids.f90
+
+Fluids.a: $(FLUIDS)
+	ar r Fluids.a $(FLUIDS)
