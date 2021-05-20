@@ -51,6 +51,8 @@ module CurrentSet_C__Form
     procedure, private, pass :: &
       Show_FSC
     procedure, public, pass :: &
+      ComputeFromInitial
+    procedure, public, pass :: &
       ComputeFromConserved
     procedure, public, pass ( CSC ) :: &
       ComputeFluxes
@@ -341,6 +343,14 @@ contains
     call Show ( FSC %   Balanced,   'Balanced', FSC % IGNORABILITY )
 
   end subroutine Show_FSC
+
+
+  subroutine ComputeFromInitial ( CSC )
+
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CSC
+
+  end subroutine ComputeFromInitial
 
 
   subroutine ComputeFromConserved ( CSC )

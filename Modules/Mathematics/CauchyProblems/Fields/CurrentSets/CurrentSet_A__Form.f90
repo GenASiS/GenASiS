@@ -21,6 +21,8 @@ module CurrentSet_A__Form
       Initialize => InitializeAllocate_CS
     procedure, public, pass ( CSA ) :: &
       SetStream
+    procedure, public, pass :: &
+      ComputeFromInitial
     final :: &
       Finalize
   end type CurrentSet_A_Form
@@ -125,13 +127,31 @@ contains
     do iC  =  1, CSA % Atlas % nCharts
       associate ( SC  =>  SA % Stream_C ( iC ) % Element )
       select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
-      class is ( CurrentSet_C_Form )
+        class is ( CurrentSet_C_Form )
       call CSC % SetStream ( SC )
       end select !-- CSC
       end associate !-- SC
     end do !-- iC
 
   end subroutine SetStream
+
+
+  subroutine ComputeFromInitial ( CSA )
+
+    class ( CurrentSet_A_Form ), intent ( inout ) :: &
+      CSA
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, CSA % Atlas % nCharts
+      select type ( CSC  =>  CSA % FieldSet_C ( iC ) % Element )
+        class is ( CurrentSet_C_Form )
+      call CSC % ComputeFromInitial ( )
+      end select !-- CSC
+    end do !-- iC
+
+  end subroutine ComputeFromInitial
 
 
   impure elemental subroutine Finalize ( CSA )

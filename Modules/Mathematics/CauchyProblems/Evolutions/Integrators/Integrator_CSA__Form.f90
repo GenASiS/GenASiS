@@ -27,6 +27,8 @@ module Integrator_CSA__Form
       ShowFields
     final :: &
       Finalize
+    procedure, private, pass :: &   !-- 2
+      PrepareEvolution
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CSA
     procedure, public, pass :: &
@@ -215,6 +217,30 @@ contains
   end subroutine Finalize
 
 
+  subroutine PrepareEvolution ( I )
+
+    class ( Integrator_CSA_Form ), intent ( inout ) :: &
+      I
+
+    associate ( GA  =>  I % Geometry_X_A )
+    call GA % UpdateDevice ( )
+    end associate !-- GA
+
+    if ( .not. allocated ( I % CurrentSet_X_A ) ) &
+      return
+
+    associate ( CSA  =>  I % CurrentSet_X_A )
+    call CSA % UpdateDevice ( )
+    call CSA % ExchangeGhostData ( )
+    call CSA % ComputeFromInitial ( )
+    call CSA % UpdateHost ( )
+    end associate !-- CSA
+
+    ! call I % ComputeConstraints ( )
+
+  end subroutine PrepareEvolution
+
+
   subroutine UpdateHost_CSA ( I, TimerLevelOption )
 
     class ( Integrator_CSA_Form ), intent ( inout ) :: &
@@ -224,7 +250,7 @@ contains
 
     call I % Integrator_H_Form % UpdateHost ( TimerLevelOption )
 
-    associate ( CSA  =>  I % CurrentSet_A )
+    associate ( CSA  =>  I % CurrentSet_X_A )
     call CSA % UpdateHost ( TimerLevelOption )
     end associate !-- CSA
 
