@@ -1,4 +1,0 @@
-SINGLE_LEVEL_CHARTS = \
-  SingleLevelCharts.o \
-  Fields_CSL__Form.o
-

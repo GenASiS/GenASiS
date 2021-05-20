@@ -1,6 +1,0 @@
-MANIFOLD_BASICS = \
-  ManifoldBasics.o \
-  Manifold_Form.o \
-  FieldsHeader_M__Form.o \
-  ManifoldHeader_Form.o \
-  MANIFOLD_Singleton.o
