@@ -1,0 +1,11 @@
+PATH_SPACES          = $(PATH_PHYSICS)/Spaces
+#PATH_STRESS_ENERGIES = $(PATH_PHYSICS)/StressEnergies
+#PATH_UNIVERSES       = $(PATH_PHYSICS)/Universes
+
+#include $(PATH_STRESS_ENERGIES)/Makefile_Path
+
+VPATH_PHYSICS = \
+  $(PATH_SPACES):\
+  $(PATH_PHYSICS)
+#  $(VPATH_STRESS_ENERGIES):\
+#  $(PATH_UNIVERSES):\
