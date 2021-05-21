@@ -119,8 +119,8 @@ contains
     FC % VELOCITY_U_2          =  oF + 5
     FC % VELOCITY_U_3          =  oF + 6
     FC % MOMENTUM_DENSITY_D_1  =  oF + 7
-    FC % MOMENTUM_DENSITY_D_2  =  oF + 7
-    FC % MOMENTUM_DENSITY_D_3  =  oF + 7
+    FC % MOMENTUM_DENSITY_D_2  =  oF + 8
+    FC % MOMENTUM_DENSITY_D_3  =  oF + 9
 
     nFields  =  oF  +  FC % N_FIELDS_D
     if ( present ( nFieldsOption ) ) &

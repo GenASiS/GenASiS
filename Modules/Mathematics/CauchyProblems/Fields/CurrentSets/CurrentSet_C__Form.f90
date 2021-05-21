@@ -49,7 +49,7 @@ module CurrentSet_C__Form
     procedure, public, pass ( CSC ) :: &
       SetStream
     procedure, private, pass :: &
-      Show_FSC
+      Show_FS
     procedure, public, pass :: &
       ComputeFromInitial
     procedure, public, pass :: &
@@ -291,7 +291,7 @@ contains
   end subroutine SetStream
 
 
-  subroutine Show_FSC ( FSC )
+  subroutine Show_FS ( FSC )
 
     class ( CurrentSet_C_Form ), intent ( in ) :: &
       FSC
@@ -310,7 +310,7 @@ contains
     call Show ( FSC % iaBalanced, 'iaBalanced', FSC % IGNORABILITY )
     call Show ( FSC %   Balanced,   'Balanced', FSC % IGNORABILITY )
 
-  end subroutine Show_FSC
+  end subroutine Show_FS
 
 
   subroutine ComputeFromInitial ( CSC )
