@@ -34,10 +34,78 @@ module Units_F__Form
       AngularMomentum
   contains
     procedure, public, pass :: &
+      Initialize
+    procedure, public, pass :: &
       Show => Show_U
   end type Units_F_Form
 
 contains
+
+
+  subroutine Initialize ( U, TypeOption, CoordinateSystemOption )
+
+    class ( Units_F_Form ), intent ( inout ) :: &
+      U
+    character ( * ), intent ( in ), optional :: &
+      TypeOption, &
+      CoordinateSystemOption
+
+    if ( present ( TypeOption ) ) then
+      select case ( trim ( TypeOption ) )
+      case ( 'MKS' )
+        !-- Phase space 
+        U % Time                 =  UNIT % SECOND
+        U % Length               =  UNIT % METER
+        U % SqrtDet_M            =  UNIT % IDENTITY
+        U % Coordinate_PS ( 1 )  =  UNIT % METER
+        U % Coordinate_PS ( 2 )  =  UNIT % METER
+        U % Coordinate_PS ( 3 )  =  UNIT % METER
+        U % Coordinate_MS ( 1 )  =  UNIT % JOULE
+        U % Coordinate_MS ( 2 )  =  UNIT % RADIAN
+        U % Coordinate_MS ( 3 )  =  UNIT % RADIAN
+        !-- Local
+        U % BaryonMass               =  UNIT % KILOGRAM
+        U % NumberDensity            =  UNIT % NUMBER_DENSITY_MKS
+        U % MassDensity              =  UNIT % MASS_DENSITY_MKS
+        U % EnergyDensity            =  UNIT % ENERGY_DENSITY_MKS
+        U % Temperature              =  UNIT % KELVIN
+        U % Velocity_U ( 1 )         =  UNIT % SPEED_MKS
+        U % Velocity_U ( 2 )         =  UNIT % SPEED_MKS
+        U % Velocity_U ( 3 )         =  UNIT % SPEED_MKS
+        U % MomentumDensity_D ( 1 )  =  UNIT % MASS_DENSITY_MKS  &
+                                        *  UNIT % SPEED_MKS
+        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_MKS  &
+                                        *  UNIT % SPEED_MKS
+        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_MKS  &
+                                        *  UNIT % SPEED_MKS
+        !-- Global
+        U % Number           =  UNIT % MOLE
+        U % Energy           =  UNIT % JOULE
+        U % Momentum         =  UNIT % KILOGRAM  *  UNIT % SPEED_MKS
+        U % AngularMomentum  =  U % Momentum  *  UNIT % METER
+      case default
+        call Show ( 'Type not recognized', CONSOLE % ERROR )
+        call Show ( 'Units_F__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- TypeOption
+    end if !-- TypeOption
+
+    if ( present ( CoordinateSystemOption ) ) then
+      select case ( trim ( CoordinateSystemOption ) )
+      case ( 'RECTANGULAR' )
+        !-- Leave defaults
+!      case ( 'CYLINDRICAL' )
+!      case ( 'SPHERICAL' )
+      case default
+        call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
+        call Show ( 'Units_F__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- CoordinateSystemOption
+    end if !-- CoordinateSystemOption 
+
+  end subroutine Initialize
 
 
   subroutine Show_U ( U, IgnorabilityOption )
@@ -48,20 +116,21 @@ contains
       IgnorabilityOption
 
     call Show ( 'Units -- Phase space', IgnorabilityOption )
-    call Show ( U % Time,          'Time', IgnorabilityOption )
-    call Show ( U % Length,        'Length', IgnorabilityOption )
-    call Show ( U % SqrtDet_M,     'SqrtDet_M', IgnorabilityOption )
+    call Show ( U % Time,          'Time',          IgnorabilityOption )
+    call Show ( U % Length,        'Length',        IgnorabilityOption )
+    call Show ( U % SqrtDet_M,     'SqrtDet_M',     IgnorabilityOption )
     call Show ( U % Coordinate_PS, 'Coordinate_PS', IgnorabilityOption )
     call Show ( U % Coordinate_MS, 'Coordinate_MS', IgnorabilityOption )
 
     call Show ( 'Units -- Local' )
-    call Show ( U % BaryonMass,        'BaryonMass', IgnorabilityOption )
+    call Show ( U % BaryonMass,        'BaryonMass',    IgnorabilityOption )
     call Show ( U % NumberDensity,     'NumberDensity', IgnorabilityOption )
+    call Show ( U % MassDensity,       'MassDensity',   IgnorabilityOption )
     call Show ( U % EnergyDensity,     'EnergyDensity', IgnorabilityOption )
-    call Show ( U % Temperature,       'Temperature', IgnorabilityOption )
-    call Show ( U % Velocity_U,        'Velocity_U', IgnorabilityOption )
+    call Show ( U % Temperature,       'Temperature',   IgnorabilityOption )
+    call Show ( U % Velocity_U,        'Velocity_U',    IgnorabilityOption )
     call Show ( U % MomentumDensity_D, 'MomentumDensity_D', &
-                IgnorabilityOption )
+                                                        IgnorabilityOption )
 
     call Show ( 'Units -- Global' )
     call Show ( U % Number,          'Number', IgnorabilityOption )

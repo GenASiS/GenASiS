@@ -77,6 +77,7 @@ module UNIT_Singleton
     type ( MeasuredValueForm ) :: &  !-- Energy/length conversion
       HBAR_C
     type ( MeasuredValueForm ) :: &  !-- Number density
+      NUMBER_DENSITY_MKS, &
       NUMBER_DENSITY_ANGSTROM, &
       NUMBER_DENSITY_NUCLEAR, &
       NUMBER_DENSITY_MEV_HBAR_C
@@ -84,6 +85,7 @@ module UNIT_Singleton
       MASS_DENSITY_MKS, &
       MASS_DENSITY_CGS
     type ( MeasuredValueForm ) :: &  !-- Energy density
+      ENERGY_DENSITY_MKS, &
       ENERGY_DENSITY_NUCLEAR
     type ( MeasuredValueForm ) :: &  !-- Computer resources
       KILOBYTE, &
@@ -282,6 +284,8 @@ contains
     end if
 
     !-- Number density
+    U % NUMBER_DENSITY_MKS &
+      =  1 / U % METER ** 3
     U % NUMBER_DENSITY_ANGSTROM &
       =  1 / U % ANGSTROM ** 3
     U % NUMBER_DENSITY_NUCLEAR &
@@ -296,6 +300,8 @@ contains
       =  U % GRAM  /  U % CENTIMETER ** 3
 
     !-- Energy density
+    U % ENERGY_DENSITY_MKS &
+      =  U % JOULE  /  U % METER ** 3
     U % ENERGY_DENSITY_NUCLEAR &
       =  U % MEGA_ELECTRON_VOLT  /  U % FEMTOMETER ** 3
 
@@ -402,6 +408,8 @@ contains
       Result = UNIT % BOLTZMANN
     case ( 'HBAR_C' )
       Result = UNIT % HBAR_C
+    case ( 'NUMBER_DENSITY_MKS' )
+      Result = UNIT % NUMBER_DENSITY_MKS
     case ( 'NUMBER_DENSITY_ANGSTROM' )
       Result = UNIT % NUMBER_DENSITY_ANGSTROM
     case ( 'NUMBER_DENSITY_NUCLEAR' )
@@ -412,6 +420,8 @@ contains
       Result = UNIT % MASS_DENSITY_MKS
     case ( 'MASS_DENSITY_CGS' )
       Result = UNIT % MASS_DENSITY_CGS
+    case ( 'ENERGY_DENSITY_MKS' )
+      Result = UNIT % ENERGY_DENSITY_MKS
     case ( 'ENERGY_DENSITY_NUCLEAR' )
       Result = UNIT % ENERGY_DENSITY_NUCLEAR
     case ( 'KILOBYTE' )

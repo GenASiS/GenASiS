@@ -42,6 +42,7 @@ program Fluid_D_C__Form_Test
   call GC % Initialize ( C )
 
   allocate ( U )
+  call U % Initialize ( TypeOption = 'MKS' )
 
   allocate ( FC )
   call FC % Initialize ( GC, U )
