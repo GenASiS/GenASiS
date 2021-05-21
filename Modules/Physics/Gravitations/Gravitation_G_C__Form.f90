@@ -12,6 +12,8 @@ module Gravitation_G_C__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
+    final :: &
+      Finalize
   end type Gravitation_G_C_Form
 
 
@@ -69,6 +71,14 @@ contains
              IgnorabilityOption = IgnorabilityOption )
 
   end subroutine InitializeAllocate_FS
+
+
+  impure elemental subroutine Finalize ( GC )
+
+    type ( Gravitation_G_C_Form ), intent ( inout ) :: &
+      GC
+
+  end subroutine Finalize
 
 
 end module Gravitation_G_C__Form

@@ -158,28 +158,12 @@ contains
 
     !-- Field indices
 
-    ! CSC % FAST_EIGENSPEED_PLUS_U_1   =  1
-    ! CSC % FAST_EIGENSPEED_PLUS_U_2   =  2
-    ! CSC % FAST_EIGENSPEED_PLUS_U_3   =  3
-    ! CSC % FAST_EIGENSPEED_MINUS_U_1  =  4
-    ! CSC % FAST_EIGENSPEED_MINUS_U_2  =  5
-    ! CSC % FAST_EIGENSPEED_MINUS_U_3  =  6
-
     if ( present ( nFieldsOption ) ) then
       nFields  =  nFieldsOption
     else
       CSC % DENSITY_DEFAULT  =  1
       nFields  =  CSC % N_FIELDS_CS  +  1
     end if
-
-   ! CSC % FAST_EIGENSPEED_PLUS_U  &
-   !   =  [ CSC % FAST_EIGENSPEED_PLUS_U_1, &
-   !        CSC % FAST_EIGENSPEED_PLUS_U_2, &
-   !        CSC % FAST_EIGENSPEED_PLUS_U_3 ]
-   ! CSC % FAST_EIGENSPEED_MINUS_U  &
-   !   =  [ CSC % FAST_EIGENSPEED_MINUS_U_1, &
-   !        CSC % FAST_EIGENSPEED_MINUS_U_2, &
-   !        CSC % FAST_EIGENSPEED_MINUS_U_3 ]
 
     !-- Field names
 
@@ -190,14 +174,6 @@ contains
       Field ( CSC % N_FIELDS_CS + 1 )  =  'Density'
     end if !-- FieldOption
 
-    ! Field ( 1 : CSC % N_FIELDS_CS ) &
-    !   =  [ 'FastEigenspeedPlus_U_1 ', &
-    !        'FastEigenspeedPlus_U_2 ', &
-    !        'FastEigenspeedPlus_U_3 ', &
-    !        'FastEigenspeedMinus_U_1', &
-    !        'FastEigenspeedMinus_U_2', &
-    !        'FastEigenspeedMinus_U_3' ]
-          
     !-- Units
 
     if ( present ( UnitOption ) ) then
@@ -207,11 +183,6 @@ contains
       if ( present ( DensityUnitOption ) ) &
         Unit ( CSC % DENSITY_DEFAULT )  =  DensityUnitOption
     end if !-- UnitOption
-
-!    Unit ( CSC % FAST_EIGENSPEED_PLUS_U_1 : CSC % FAST_EIGENSPEED_PLUS_U_3 ) &
-!      =  Velocity_U_Unit
-!    Unit ( CSC % FAST_EIGENSPEED_MINUS_U_1 : CSC % FAST_EIGENSPEED_MINUS_U_3 ) &
-!      =  Velocity_U_Unit
 
     !-- Vector indices
 
@@ -226,9 +197,6 @@ contains
       allocate ( VectorIndices ( nVectors ) )
     end if
 
-!    call VectorIndices ( 1 ) % Initialize ( CSC % FAST_EIGENSPEED_PLUS_U )
-!    call VectorIndices ( 2 ) % Initialize ( CSC % FAST_EIGENSPEED_MINUS_U )
-
     !-- Vector names
 
     if ( present ( VectorOption ) ) then
@@ -240,23 +208,6 @@ contains
     ! Vector ( 1 : CSC % N_VECTORS_CS ) &
     !   = [ 'FastEigenspeedPlus ', &
     !       'FastEigenspeedMinus' ]
-
-    !-- FieldSet
-
-    call CSC % FieldSet_C_Form % Initialize &
-           ( GC % Chart, &
-             FieldOption = Field, &
-             VectorOption = Vector, &
-             NameOption = Name, &
-             DeviceMemoryOption = DeviceMemory, &
-             PinnedMemoryOption = PinnedMemory, &
-             DevicesCommunicateOption = DevicesCommunicate, &
-             UnitOption = Unit, &
-             VectorIndicesOption = VectorIndices, &
-             nFieldsOption = nFields, &
-             IgnorabilityOption = IgnorabilityOption )
-
-    end associate !-- DeviceMemory, etc.
 
     !-- Primitive fields
 
@@ -295,6 +246,23 @@ contains
       CSC % Balanced ( iB )  =  Field ( iF )
     end do !-- iB
     end associate !-- nP
+
+    !-- FieldSet
+
+    call CSC % FieldSet_C_Form % Initialize &
+           ( GC % Chart, &
+             FieldOption = Field, &
+             VectorOption = Vector, &
+             NameOption = Name, &
+             DeviceMemoryOption = DeviceMemory, &
+             PinnedMemoryOption = PinnedMemory, &
+             DevicesCommunicateOption = DevicesCommunicate, &
+             UnitOption = Unit, &
+             VectorIndicesOption = VectorIndices, &
+             nFieldsOption = nFields, &
+             IgnorabilityOption = IgnorabilityOption )
+
+    end associate !-- DeviceMemory, etc.
 
   end subroutine InitializeAllocate_CS
 
