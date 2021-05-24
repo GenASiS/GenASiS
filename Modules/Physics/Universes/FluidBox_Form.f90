@@ -29,8 +29,8 @@ module FluidBox_Form
       InitializeGravitation
     procedure, public, pass :: &
       InitializeFluid
-!     procedure, public, pass :: &
-!       InitializeStep
+    procedure, public, pass :: &
+      InitializeStep
    end type FluidBoxForm
 
 contains
@@ -211,10 +211,9 @@ contains
 
     select type ( I  =>  FB % Integrator )
       class is ( Integrator_CSA_Form )
-    select type ( GA  =>  I % Geometry_X_A )
-      class is ( Geometry_F_A_Form )
     associate &
-      ( SA  =>  I % Checkpoint_X_A )
+      ( GA  =>  I % Geometry_X_A, &
+        SA  =>  I % Checkpoint_X_A )
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )
@@ -232,37 +231,37 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- FluidType
 
-    end associate !-- SA
-    end select !-- GA
+    end associate !-- GA, etc.
     end select !-- I
 
   end subroutine InitializeFluid
 
 
-!   subroutine InitializeStep ( FB, Name, GravitySolverTypeOption )
+  subroutine InitializeStep ( FB )
 
-!     class ( FluidBoxForm ), intent ( inout ) :: &
-!       FB
-!     character ( * ), intent ( in )  :: &
-!       Name
-!     character ( * ), intent ( in ), optional :: &
-!       GravitySolverTypeOption
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
 
-!     select type ( I => FB % Integrator )
-!     class is ( Integrator_C_PS_Form )
+    select type ( I  =>  FB % Integrator )
+      class is ( Integrator_CSA_Form )
+    associate &
+      ( FA  =>  I % CurrentSet_X_A )
 
-!     allocate ( Step_RK2_C_ASC_Form :: I % Step )
-!     select type ( S => I % Step )
-!     class is ( Step_RK2_C_ASC_Form )
-!     call S % Initialize ( I, I % Current_ASC, NameSuffix = 'Fluid' )
+    allocate ( Step_RK_CSA_Form :: I % Step_X_A )
+    select type ( S  =>  I % Step_X_A )
+      class is ( Step_RK_CSA_Form )
+
+    call S % Initialize ( FA )
 !     if ( present ( GravitySolverTypeOption ) ) &   
 !       S % ComputeConstraints % Pointer => ComputeGravity
 !       S % ApplySources % Pointer => ApplyGravity_F
-!     end select !-- S
 
-!     end select !-- I
+    end select !-- S
 
-!   end subroutine InitializeStep
+    end associate !-- FA
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
 end module FluidBox_Form
