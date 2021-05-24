@@ -406,16 +406,15 @@ contains
         CSS  =>  CSC % Storage_FSC % Storage, &
         DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
     associate &
-      ( EF_P  =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
-        EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
+      ( EF_P    =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
+        EF_M    =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ), & 
+         V_Dim  =>  CSS % Value ( :, CSC % VELOCITY_U ( iD ) ) )
  
     call ComputeEigenspeeds_G_Kernel &
            ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
-    !   call ComputeEigenspeedsKernel &
-    !          ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
   
-      end associate !-- EF_P, etc.
-      end associate !-- FSS, etc.
+    end associate !-- EF_P, etc.
+    end associate !-- FSS, etc.
 
   end subroutine ComputeEigenspeeds
 
