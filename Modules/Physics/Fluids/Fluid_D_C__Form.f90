@@ -64,7 +64,6 @@ module Fluid_D_C__Form
         UseDeviceOption
     end subroutine Compute_M_Kernel
 
-
     module subroutine Compute_D_S_G_Kernel & 	 	 
              ( N, V_1, V_2, V_3, M, M_DD_11, M_DD_22, M_DD_33, N_Min, &
                D, S_1, S_2, S_3, UseDeviceOption )
@@ -85,7 +84,6 @@ module Fluid_D_C__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Compute_D_S_G_Kernel 	 	 
-
 
     module subroutine Compute_N_V_G_Kernel &
              ( D, S_1, S_2, S_3, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
@@ -108,7 +106,6 @@ module Fluid_D_C__Form
         UseDeviceOption
     end subroutine Compute_N_V_G_Kernel
 
-
     module subroutine ComputeFluxes_G_Kernel &
              ( D, S_1, S_2, S_3, V_Dim, F_D, F_S_1, F_S_2, F_S_3, &
                UseDeviceOption )
@@ -126,7 +123,6 @@ module Fluid_D_C__Form
         UseDeviceOption
     end subroutine ComputeFluxes_G_Kernel
 
-
     module subroutine ComputeEigenspeeds_G_Kernel &
              ( V_Dim, EF_P, EF_M, UseDeviceOption )
       !-- Compute_Eigenspeeds_Galileo_Kernel
@@ -140,7 +136,6 @@ module Fluid_D_C__Form
         UseDeviceOption
     end subroutine ComputeEigenspeeds_G_Kernel
     
-
   end interface
 
 
@@ -370,8 +365,6 @@ contains
     call Search &
            ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
 
-    !   V_Dim  =  CSC % VelocityDefault_U ( iD )
-
     associate &
       ( FSS  =>  FSC % Storage_FSC % Storage, &
         CSS  =>  CSC % Storage_FSC % Storage, &
@@ -408,27 +401,21 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
 
-    ! real ( KDR ) :: &
-    !   V_Dim
-
-    ! if ( CSC % DENSITY_DEFAULT > 0 ) then
-
-    !   V_Dim  =  CSC % VelocityDefault_U ( iD )
-
-    !   associate &
-    !     ( FSS  =>  FSC % Storage_FSC % Storage, &
-    !       DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
-    !   associate &
-    !     ( EF_P  =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
-    !       EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
+    associate &
+      ( FSS  =>  FSC % Storage_FSC % Storage, &
+        CSS  =>  CSC % Storage_FSC % Storage, &
+        DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+    associate &
+      ( EF_P  =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
+        EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
  
+    call ComputeEigenspeeds_G_Kernel &
+           ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
     !   call ComputeEigenspeedsKernel &
     !          ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
   
-    !   end associate !-- EF_P, etc.
-    !   end associate !-- FSS, etc.
-
-    ! end if !-- Density default
+      end associate !-- EF_P, etc.
+      end associate !-- FSS, etc.
 
   end subroutine ComputeEigenspeeds
 
