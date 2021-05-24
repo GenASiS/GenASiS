@@ -37,34 +37,39 @@ contains
 
 
   subroutine Initialize_FB &
-               ( FB, FluidType, GravitationType, Name, MinCoordinateOption, &
-                 MaxCoordinateOption, nCellsOption )!, &
-!                 FinishTimeOption, &
+               ( FB, FluidType, GravitationType, NameOption, &
+                 MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
+                 nCellsOption, nWriteOption )
 !                 CourantFactorOption, UniformAccelerationOption, &
-!                 nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
     character ( * ), intent ( in )  :: &
       FluidType, &
-      GravitationType, &
-      Name
-!     character ( * ), intent ( in ), optional :: &
-!       GravitySolverTypeOption
+      GravitationType
+    character ( * ), intent ( in ), optional :: &
+      NameOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
-!     real ( KDR ), intent ( in ), optional :: &
-!       FinishTimeOption, &
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption!, &
 !       CourantFactorOption, &
 !       UniformAccelerationOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption
-!     integer ( KDI ), intent ( in ), optional :: &
-!       nWriteOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
 
-    if ( FB % Type == '' ) &
-      FB % Type = 'a FluidBox'
+    character ( LDL ) :: &
+      Name
+
+    if ( FB % Type  ==  '' ) &
+      FB % Type  =  'a FluidBox'
+
+    Name  =  'FluidBox'
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
 
     call FB % Universe_H_Form % Initialize ( NameOption = Name )
 
@@ -81,18 +86,17 @@ contains
 !              UniformAccelerationOption = UniformAccelerationOption, &
     call FB % InitializeFluid &
            ( FluidType )
-!     call FB % InitializeStep &
-!            ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
+    call FB % InitializeStep &
+           ( )
 
-
-!     select type ( I => FB % Integrator )
-!     class is ( Integrator_C_PS_Form )
-!       call I % Initialize &
-!              ( FB, Name, TimeUnitOption = FB % Units % Time, &
-!                FinishTimeOption = FinishTimeOption, &
-!                CourantFactorOption = CourantFactorOption, &
-!                nWriteOption = nWriteOption )
-!     end select !-- I
+    select type ( I  =>  FB % Integrator )
+      class is ( Integrator_CSA_Form )
+    call I % Initialize &
+           ( Unit_T_Option = FB % Units_F % Time, &
+             T_FinishOption = FinishTimeOption, &
+!             CourantFactorOption = CourantFactorOption, &
+             nWriteOption = nWriteOption )
+    end select !-- I
 
   end subroutine Initialize_FB
 
@@ -173,8 +177,7 @@ contains
 !     real ( KDR ), intent ( in ), optional :: &
 !       UniformAccelerationOption
 
-    associate (  I  =>  FB % Integrator )
-    associate ( SA  =>   I % Checkpoint_X_A )
+    associate ( I  =>  FB % Integrator )
 
     select case ( trim ( GravitationType ) )
     case ( 'GALILEO' )
@@ -186,7 +189,6 @@ contains
                DeviceMemoryOption = FB % DeviceMemory, &
                PinnedMemoryOption = FB % PinnedMemory, &
                DevicesCommunicateOption = FB % DevicesCommunicate )
-      call GA % SetStream ( SA )
       end select !-- GA
     case default
       call Show ( 'GravitationType not recognized', CONSOLE % ERROR )
@@ -196,7 +198,6 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- GravitationType
 
-    end associate !-- SA
     end associate !-- I
 
   end subroutine InitializeGravitation
@@ -212,8 +213,7 @@ contains
     select type ( I  =>  FB % Integrator )
       class is ( Integrator_CSA_Form )
     associate &
-      ( GA  =>  I % Geometry_X_A, &
-        SA  =>  I % Checkpoint_X_A )
+      ( GA  =>  I % Geometry_X_A )
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )
@@ -221,7 +221,6 @@ contains
       select type ( FA  =>  I % CurrentSet_X_A )
         class is ( Fluid_D_A_Form )
       call FA % Initialize ( GA, FB % Units_F )
-      call FA % SetStream ( SA )
       end select !-- GA
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )

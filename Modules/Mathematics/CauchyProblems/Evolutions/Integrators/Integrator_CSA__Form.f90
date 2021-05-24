@@ -124,10 +124,8 @@ contains
       allocate ( I % CurrentSet_X_A )
       associate &
         ( CSA  =>  I % CurrentSet_X_A, &
-           GA  =>  I % Geometry_X_A, &
-           SA  =>  I % Checkpoint_X_A )
+           GA  =>  I % Geometry_X_A )
       call CSA % Initialize( GA )
-      call CSA % SetStream ( SA )
       end associate !-- CSA, etc.
     end if
 
@@ -137,10 +135,8 @@ contains
       select type ( S  =>  I % Step_X_A )
         class is ( Step_RK_CSA_Form )
       associate &
-        ( CSA  =>  I % CurrentSet_X_A, &
-           SA  =>  I % Checkpoint_X_A )
+        ( CSA  =>  I % CurrentSet_X_A )
       call S % Initialize ( CSA )
-      call S % SetStream ( SA )
       end associate !-- CSA, etc.
       end select !-- S
     end if
@@ -162,6 +158,18 @@ contains
       end select !-- EA
       end associate !-- EAE, CSA
     end do !-- iD
+
+    !-- Stream
+
+    select type ( S  =>  I % Step_X_A )
+      class is ( Step_RK_CSA_Form )
+    associate &
+      ( CSA  =>  I % CurrentSet_X_A, &
+         SA  =>  I % Checkpoint_X_A )
+    call CSA % SetStream ( SA )
+    call   S % SetStream ( SA )
+    end associate !-- CSA, etc.
+    end select !-- S
 
     !-- Courant factor
 

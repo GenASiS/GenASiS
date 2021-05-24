@@ -2,16 +2,15 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Universes.a #FluidBox_Form_Test FluidSymmetricCurvilinear_Form_Test \
+all: FluidBox_Form_Test #FluidSymmetricCurvilinear_Form_Test \
      FluidCentralExcision_Form_Test FluidCentralCore_Form_Test
 
-FluidBox_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
-  StressEnergies.a FluidBox_Form_Test.o
+FluidBox_Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
+  Fluids.a Universes.a FluidBox_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FluidBox_Form_Test_$(MACHINE) \
-          FluidBox_Form_Test.o FluidBox_Form.o ApplyGravity_F__Command.o \
-          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
-          Basics.a ThirdParty.a \
+          FluidBox_Form_Test.o Universes.a \
+          Fluids.a Gravitations.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
 FluidSymmetricCurvilinear_Form_Test: ThirdParty.a Basics.a Mathematics.a \
