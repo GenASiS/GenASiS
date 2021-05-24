@@ -403,6 +403,7 @@ contains
       call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
       call Show ( 'Fluid_D_C__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeFromInitial', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
     end select !-- GC
 
     end associate !-- EF_P, etc.
@@ -453,6 +454,7 @@ contains
       call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
       call Show ( 'Fluid_D_C__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeFromConserved', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
     end select !-- GC
 
     call Compute_M_Kernel &

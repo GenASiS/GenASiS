@@ -262,21 +262,6 @@ contains
       I % Communicator  =>  PROGRAM_HEADER % Communicator
     end if
 
-    ! !-- Device
-
-    ! I % DeviceMemory        =  OffloadEnabled ( )  &
-    !                            .and.  GetNumberOfDevices ( ) >= 1 
-    ! I % PinnedMemory        =  OffloadEnabled ( )  &
-    !                            .and.  GetNumberOfDevices ( ) >= 1 
-    ! I % DevicesCommunicate  =  OffloadEnabled ( )  &
-    !                            .and.  GetNumberOfDevices ( ) >= 1
-    ! call PROGRAM_HEADER % GetParameter &
-    !        ( I % DeviceMemory, 'DeviceMemory' )
-    ! call PROGRAM_HEADER % GetParameter &
-    !        ( I % PinnedMemory, 'PinnedMemory' )
-    ! call PROGRAM_HEADER % GetParameter &
-    !        ( I % DevicesCommunicate, 'DevicesCommunicate' )
-
     !-- Atlas, if necessary
 
     if ( .not. allocated ( I % X_A ) ) then

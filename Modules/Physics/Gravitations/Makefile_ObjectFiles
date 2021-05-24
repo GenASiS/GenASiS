@@ -1,9 +1,4 @@
 GRAVITATIONS = \
   Gravitations.o \
-  Gravitation_G_C__Form.o
-  # Geometry_ASC__Kernel.o \
-  # Geometry_ASC__Form.o \
-  # Geometry_CSL__Form.o \
-  # Geometry_N_S__Form.o \
-  # Geometry_N__Form.o \
-  # Geometry_G__Form.o
+  Gravitation_G_C__Form.o \
+  Gravitation_G_A__Form.o

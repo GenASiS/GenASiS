@@ -1,12 +1,12 @@
 include $(PATH_GRAVITATIONS)/Makefile_Dependencies
 include $(PATH_FLUIDS)/Makefile_Dependencies
-#include $(PATH_UNIVERSES)/Makefile_Dependencies
+include $(PATH_UNIVERSES)/Makefile_Dependencies
 
 Physics.o: \
   Gravitations.o \
   Fluids.o \
-  Physics.f90
   Universes.o \
+  Physics.f90
 
 Physics.a: $(PHYSICS)
 	ar r Physics.a $(PHYSICS)
