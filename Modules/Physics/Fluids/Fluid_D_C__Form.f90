@@ -4,6 +4,7 @@ module Fluid_D_C__Form
 
   use Basics
   use Mathematics
+  use Gravitations
   use Units_F__Form
 
   implicit none
@@ -35,11 +36,18 @@ module Fluid_D_C__Form
     integer ( KDI ), dimension ( 3 ) :: &
       VELOCITY_U, &
       MOMENTUM_DENSITY_D
+    real ( KDR ) :: &
+      BaryonMassReference, &
+      BaryonDensityMin
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
     generic, public :: &
       Initialize => InitializeAllocate_F
+    procedure, public, pass :: &
+      ComputeFromInitial
+    procedure, public, pass :: &
+      ComputeFromConserved
     procedure, public, pass ( CSC ) :: &
       ComputeFluxes
     procedure, public, pass ( CSC ) :: &
@@ -256,7 +264,7 @@ contains
 
     Unit ( FC % BARYON_DENSITY_C )      =  Units_F % NumberDensity
     Unit ( FC % BARYON_DENSITY_B )      =  Units_F % SqrtDet_M  &
-                                           *  Units_F % NumberDensity
+                                                *  Units_F % NumberDensity
     Unit ( FC % BARYON_MASS )           =  Units_F % BaryonMass
     Unit ( FC % VELOCITY_U_1 )          =  Units_F % Velocity_U ( 1 )
     Unit ( FC % VELOCITY_U_2 )          =  Units_F % Velocity_U ( 2 )
@@ -339,7 +347,121 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
+    !-- Parameters
+
+    if ( Units_F % BaryonMass % Number  ==  1.0_KDR ) then
+      FC % BaryonMassReference  =  1.0_KDR
+    else
+      FC % BaryonMassReference  =  CONSTANT % ATOMIC_MASS_UNIT
+    end if
+
   end subroutine InitializeAllocate_F
+
+
+  subroutine ComputeFromInitial ( CSC )
+
+    class ( Fluid_D_C_Form ), intent ( inout ) :: &
+      CSC
+
+    associate &
+      ( CSS  =>  CSC % Storage_FSC % Storage, &
+        M_Ref  =>  CSC % BaryonMassReference, &
+        N_Min  =>  CSC % BaryonDensityMin, &
+        DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+    associate &
+      ( M    =>  CSS % Value ( :, CSC % BARYON_MASS ), &
+        N    =>  CSS % Value ( :, CSC % BARYON_DENSITY_C ), &
+        V_1  =>  CSS % Value ( :, CSC % VELOCITY_U_1 ), &
+        V_2  =>  CSS % Value ( :, CSC % VELOCITY_U_2 ), &
+        V_3  =>  CSS % Value ( :, CSC % VELOCITY_U_3 ), &
+        D    =>  CSS % Value ( :, CSC % BARYON_DENSITY_B ), &
+        S_1  =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_1 ), &
+        S_2  =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_2 ), &
+        S_3  =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_3 ) )
+ 
+    call Compute_M_Kernel &
+           ( M_Ref, M, UseDeviceOption = DeviceMemory )
+
+    select type ( GC  =>  CSC % Geometry_C )
+    class is ( Gravitation_G_C_Form )
+
+      associate &
+        ( GS  =>  GC % Storage_FSC % Storage )
+      associate &
+        ( M_DD_11  =>  GS % Value ( :, GC % METRIC_F_DD_11 ), &
+          M_DD_22  =>  GS % Value ( :, GC % METRIC_F_DD_22 ), &
+          M_DD_33  =>  GS % Value ( :, GC % METRIC_F_DD_33 ) )
+
+      call Compute_D_S_G_Kernel & 	 	 
+             ( N, V_1, V_2, V_3, M, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+               D, S_1, S_2, S_3, UseDeviceOption = DeviceMemory )
+
+      end associate !-- M_DD_11, etc.
+      end associate !-- GC
+
+    class default
+      call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_D_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeFromInitial', 'subroutine', CONSOLE % ERROR )
+    end select !-- GC
+
+    end associate !-- EF_P, etc.
+    end associate !-- CSS, etc.
+
+  end subroutine ComputeFromInitial
+
+
+  subroutine ComputeFromConserved ( CSC )
+
+    class ( Fluid_D_C_Form ), intent ( inout ) :: &
+      CSC
+
+    associate &
+      ( CSS  =>  CSC % Storage_FSC % Storage, &
+        M_Ref  =>  CSC % BaryonMassReference, &
+        N_Min  =>  CSC % BaryonDensityMin, &
+        DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+    associate &
+      ( M    =>  CSS % Value ( :, CSC % BARYON_MASS ), &
+        N    =>  CSS % Value ( :, CSC % BARYON_DENSITY_C ), &
+        V_1  =>  CSS % Value ( :, CSC % VELOCITY_U_1 ), &
+        V_2  =>  CSS % Value ( :, CSC % VELOCITY_U_2 ), &
+        V_3  =>  CSS % Value ( :, CSC % VELOCITY_U_3 ), &
+        D    =>  CSS % Value ( :, CSC % BARYON_DENSITY_B ), &
+        S_1  =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_1 ), &
+        S_2  =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_2 ), &
+        S_3  =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_3 ) )
+ 
+    select type ( GC  =>  CSC % Geometry_C )
+    class is ( Gravitation_G_C_Form )
+
+      associate &
+        ( GS  =>  GC % Storage_FSC % Storage )
+      associate &
+        ( M_UU_11  =>  GS % Value ( :, GC % METRIC_F_UU_11 ), &
+          M_UU_22  =>  GS % Value ( :, GC % METRIC_F_UU_22 ), &
+          M_UU_33  =>  GS % Value ( :, GC % METRIC_F_UU_33 ) )
+
+      call Compute_N_V_G_Kernel &
+             ( D, S_1, S_2, S_3, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
+               N, V_1, V_2, V_3, UseDeviceOption = DeviceMemory )
+
+      end associate !-- M_DD_11, etc.
+      end associate !-- GC
+
+    class default
+      call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_D_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeFromConserved', 'subroutine', CONSOLE % ERROR )
+    end select !-- GC
+
+    call Compute_M_Kernel &
+           ( M_Ref, M, UseDeviceOption = DeviceMemory )
+
+    end associate !-- EF_P, etc.
+    end associate !-- CSS, etc.
+
+  end subroutine ComputeFromConserved
 
 
   subroutine ComputeFluxes ( FSC, CSC, iD )
