@@ -40,6 +40,10 @@ module Fluid_D_C__Form
       InitializeAllocate_F
     generic, public :: &
       Initialize => InitializeAllocate_F
+    procedure, public, pass ( CSC ) :: &
+      ComputeFluxes
+    procedure, public, pass ( CSC ) :: &
+      ComputeEigenspeeds
     final :: &
       Finalize
   end type Fluid_D_C_Form
@@ -341,6 +345,92 @@ contains
              IgnorabilityOption = IgnorabilityOption )
 
   end subroutine InitializeAllocate_F
+
+
+  subroutine ComputeFluxes ( FSC, CSC, iD )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    class ( Fluid_D_C_Form ), intent ( in ) :: &
+      CSC
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimension
+    
+    integer ( KDI ) :: &
+      iDensity
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+
+    call Search &
+           ( CSC % iaBalanced, CSC % BARYON_DENSITY_B, iDensity )
+    call Search &
+           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+
+    !   V_Dim  =  CSC % VelocityDefault_U ( iD )
+
+    associate &
+      ( FSS  =>  FSC % Storage_FSC % Storage, &
+        CSS  =>  CSC % Storage_FSC % Storage, &
+        DeviceMemory  =>  FSC % Storage_FSC % DeviceMemory )
+    associate &
+      ( F_D      =>  FSS % Value ( :, iDensity ), &
+        F_S_1    =>  FSS % Value ( :, iMomentum ( 1 ) ), &
+        F_S_2    =>  FSS % Value ( :, iMomentum ( 2 ) ), &
+        F_S_3    =>  FSS % Value ( :, iMomentum ( 3 ) ), &
+          D      =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ), &
+          S_1    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D ( 1 ) ), &
+          S_2    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D ( 2 ) ), &
+          S_3    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D ( 3 ) ), &
+          V_Dim  =>  CSS % Value ( :, CSC % VELOCITY_U ( iD ) ) )
+ 
+    call ComputeFluxes_G_Kernel &
+           ( D, S_1, S_2, S_3, V_Dim, F_D, F_S_1, F_S_2, F_S_3, &
+             UseDeviceOption = DeviceMemory )
+  
+    end associate !-- F_D, etc.
+    end associate !-- FSS, etc.
+
+  end subroutine ComputeFluxes
+
+
+  subroutine ComputeEigenspeeds ( FSC, CSC, iaEigenspeeds, iD )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    class ( Fluid_D_C_Form ), intent ( in ) :: &
+      CSC
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaEigenspeeds
+    integer ( KDI ), intent ( in ) :: &
+      iD  !-- iDimension
+
+    ! real ( KDR ) :: &
+    !   V_Dim
+
+    ! if ( CSC % DENSITY_DEFAULT > 0 ) then
+
+    !   V_Dim  =  CSC % VelocityDefault_U ( iD )
+
+    !   associate &
+    !     ( FSS  =>  FSC % Storage_FSC % Storage, &
+    !       DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
+    !   associate &
+    !     ( EF_P  =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
+    !       EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
+ 
+    !   call ComputeEigenspeedsKernel &
+    !          ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
+  
+    !   end associate !-- EF_P, etc.
+    !   end associate !-- FSS, etc.
+
+    ! end if !-- Density default
+
+  end subroutine ComputeEigenspeeds
 
 
   impure elemental subroutine Finalize ( FC )
