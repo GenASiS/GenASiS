@@ -44,6 +44,8 @@ module Fluid_D_C__Form
       InitializeAllocate_F
     generic, public :: &
       Initialize => InitializeAllocate_F
+    procedure, public, pass ( CSC ) :: &
+      SetStream
     procedure, public, pass :: &
       ComputeFromInitial
     procedure, public, pass :: &
@@ -356,6 +358,21 @@ contains
     end if
 
   end subroutine InitializeAllocate_F
+
+
+  subroutine SetStream ( SC, CSC )
+
+    class ( Stream_C_Form ), intent ( inout ) :: &
+      SC
+    class ( Fluid_D_C_Form ), intent ( in ) :: &
+      CSC
+
+    call SC % AddFieldSet &
+           ( CSC, &
+             iaSelectedOption &
+               =  [ CSC % BARYON_DENSITY_C, CSC % VELOCITY_U ] )
+
+  end subroutine SetStream
 
 
   subroutine ComputeFromInitial ( CSC )

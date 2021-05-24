@@ -27,8 +27,8 @@ module FluidBox_Form
       InitializePositionSpace
     procedure, public, pass :: &
       InitializeGravitation
-!     procedure, public, pass :: &
-!       InitializeFluid
+    procedure, public, pass :: &
+      InitializeFluid
 !     procedure, public, pass :: &
 !       InitializeStep
    end type FluidBoxForm
@@ -39,8 +39,7 @@ contains
   subroutine Initialize_FB &
                ( FB, FluidType, GravitationType, Name, MinCoordinateOption, &
                  MaxCoordinateOption, nCellsOption )!, &
-!                 GravitySolverTypeOption, MinCoordinateOption, &
-!                 MaxCoordinateOption, FinishTimeOption, &
+!                 FinishTimeOption, &
 !                 CourantFactorOption, UniformAccelerationOption, &
 !                 nWriteOption )
 
@@ -80,8 +79,8 @@ contains
     call FB % InitializeGravitation &
            ( GravitationType )
 !              UniformAccelerationOption = UniformAccelerationOption, &
-!     call FB % InitializeFluid &
-!            ( FluidType, FluidUseDeviceOption = FB % UseDevice )
+    call FB % InitializeFluid &
+           ( FluidType )
 !     call FB % InitializeStep &
 !            ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
 
@@ -174,7 +173,8 @@ contains
 !     real ( KDR ), intent ( in ), optional :: &
 !       UniformAccelerationOption
 
-    associate ( I  =>  FB % Integrator )
+    associate (  I  =>  FB % Integrator )
+    associate ( SA  =>   I % Checkpoint_X_A )
 
     select case ( trim ( GravitationType ) )
     case ( 'GALILEO' )
@@ -186,6 +186,7 @@ contains
                DeviceMemoryOption = FB % DeviceMemory, &
                PinnedMemoryOption = FB % PinnedMemory, &
                DevicesCommunicateOption = FB % DevicesCommunicate )
+      call GA % SetStream ( SA )
       end select !-- GA
     case default
       call Show ( 'GravitationType not recognized', CONSOLE % ERROR )
@@ -193,45 +194,49 @@ contains
       call Show ( 'FluidBox_Form', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeGravitation', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
-    end select
+    end select !-- GravitationType
 
+    end associate !-- SA
     end associate !-- I
 
   end subroutine InitializeGravitation
 
 
-!   subroutine InitializeFluid ( FB, FluidType, FluidUseDeviceOption )
+  subroutine InitializeFluid ( FB, FluidType )
 
-!     class ( FluidBoxForm ), intent ( inout ) :: &
-!       FB
-!     character ( * ), intent ( in )  :: &
-!       FluidType
-!     logical ( KDL ), intent ( in ), optional :: &
-!       FluidUseDeviceOption
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      FluidType
 
-!     select type ( I => FB % Integrator )
-!     class is ( Integrator_C_PS_Form )
+    select type ( I  =>  FB % Integrator )
+      class is ( Integrator_CSA_Form )
+    select type ( GA  =>  I % Geometry_X_A )
+      class is ( Geometry_F_A_Form )
+    associate &
+      ( SA  =>  I % Checkpoint_X_A )
 
-!     select type ( PS => I % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    select case ( trim ( FluidType ) )
+    case ( 'DUST' )
+      allocate ( Fluid_D_A_Form  ::  I % CurrentSet_X_A )
+      select type ( FA  =>  I % CurrentSet_X_A )
+        class is ( Fluid_D_A_Form )
+      call FA % Initialize ( GA, FB % Units_F )
+      call FA % SetStream ( SA )
+      end select !-- GA
+    case default
+      call Show ( 'FluidType not recognized', CONSOLE % ERROR )
+      call Show ( FluidType, 'FluidType', CONSOLE % ERROR )
+      call Show ( 'FluidBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeFluid', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FluidType
 
-!     allocate ( Fluid_ASC_Form :: I % Current_ASC )
-!     select type ( FA => I % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!       call FA % Initialize &
-!              ( PS, FluidType, FB % Units, &
-!                UsePinnedMemoryOption = FluidUseDeviceOption )
-!       if ( present ( FluidUseDeviceOption ) ) then
-!         if ( FluidUseDeviceOption ) then
-!           call FA % AllocateDevice ( )
-!         end if
-!       end if
-!     end select !-- FA
+    end associate !-- SA
+    end select !-- GA
+    end select !-- I
 
-!     end select !-- PS
-!     end select !-- I
-
-!   end subroutine InitializeFluid
+  end subroutine InitializeFluid
 
 
 !   subroutine InitializeStep ( FB, Name, GravitySolverTypeOption )

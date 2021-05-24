@@ -32,30 +32,17 @@ contains
 
 
   subroutine InitializeAllocate_CS &
-               ( CSA, GA, FieldOption, VectorOption, NameOption, UnitOption, &
-                 DensityUnitOption, VectorIndicesOption, iaPrimitiveOption, &
-                 iaBalancedOption, nFieldsOption, IgnorabilityOption )
+               ( CSA, GA, NameOption, DensityUnitOption, IgnorabilityOption )
 
     class ( CurrentSet_A_Form ), intent ( inout ), target :: &
       CSA
     class ( Geometry_F_A_Form ), intent ( in ), target :: &
       GA
-    character ( * ), dimension ( : ), intent ( in ), optional :: &
-      FieldOption, &
-      VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       DensityUnitOption
-    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
-      VectorIndicesOption
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      iaPrimitiveOption, &
-      iaBalancedOption
     integer ( KDI ), intent ( in ), optional :: &
-      nFieldsOption, &
       IgnorabilityOption
 
     integer ( KDI ) :: &
@@ -98,10 +85,10 @@ contains
           class is ( Geometry_F_C_Form )
 
         call CSC % Initialize &
-               ( GC, FieldOption, VectorOption, NameOption, &
-                 UnitOption, DensityUnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+               ( GC, &
+                 NameOption = NameOption, &
+                 DensityUnitOption = DensityUnitOption, &
+                 IgnorabilityOption = IgnorabilityOption )
 
         end select !-- GC
         end select !-- CSC
