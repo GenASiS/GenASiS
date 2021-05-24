@@ -45,6 +45,101 @@ module Fluid_D_C__Form
   end type Fluid_D_C_Form
 
 
+  interface
+  
+    module subroutine Compute_M_Kernel &
+             ( M_Ref, M, UseDeviceOption )
+      !-- Compute_BaryonMass_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), intent ( in ) :: &
+        M_Ref
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_M_Kernel
+
+
+    module subroutine Compute_D_S_G_Kernel & 	 	 
+             ( N, V_1, V_2, V_3, M, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+               D, S_1, S_2, S_3, UseDeviceOption )
+      !-- Compute_ConservedDensity_Momentum_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+        N, & 	 	 
+        V_1, V_2, V_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        M, & 	 	 
+        M_DD_11, M_DD_22, M_DD_33
+      real ( KDR ), intent ( in ) :: &
+        N_Min
+      real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
+        D, & 	 	 
+        S_1, S_2, S_3 	 	 
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_D_S_G_Kernel 	 	 
+
+
+    module subroutine Compute_N_V_G_Kernel &
+             ( D, S_1, S_2, S_3, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
+               N, V_1, V_2, V_3, UseDeviceOption )
+      !-- Compute_ComovingBaryonDensity_Velocity_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        D, &
+        S_1, S_2, S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        M_UU_11, M_UU_22, M_UU_33
+      real ( KDR ), intent ( in ) :: &
+        N_Min
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        N, &
+        V_1, V_2, V_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_N_V_G_Kernel
+
+
+    module subroutine ComputeFluxes_G_Kernel &
+             ( D, S_1, S_2, S_3, V_Dim, F_D, F_S_1, F_S_2, F_S_3, &
+               UseDeviceOption )
+      !-- ComputeFluxes_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        D, &
+        S_1, S_2, S_3, &
+        V_Dim
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        F_D, &
+        F_S_1, F_S_2, F_S_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeFluxes_G_Kernel
+
+
+    module subroutine ComputeEigenspeeds_G_Kernel &
+             ( V_Dim, EF_P, EF_M, UseDeviceOption )
+      !-- Compute_Eigenspeeds_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        V_Dim
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        EF_P, EF_M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeEigenspeeds_G_Kernel
+    
+
+  end interface
+
+
 contains
 
 

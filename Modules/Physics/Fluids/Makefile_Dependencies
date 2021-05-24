@@ -8,6 +8,11 @@ Fluid_D_C__Form.o: \
   Gravitations.o \
   Fluid_D_C__Form.f90
 
+Fluid_D_C__Kernel.o: \
+  Basics.o \
+  Fluid_D_C__Form.o \
+  Fluid_D_C__Kernel.f90
+
 Fluids.o: \
   Units_F__Form.o \
   Fluid_D_C__Form.o \

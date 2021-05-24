@@ -1,4 +1,5 @@
 FLUIDS = \
   Fluids.o \
+  Fluid_D_C__Kernel.o \
   Fluid_D_C__Form.o \
   Units_F__Form.o
