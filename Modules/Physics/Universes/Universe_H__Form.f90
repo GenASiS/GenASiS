@@ -38,7 +38,7 @@ contains
  
   subroutine Initialize_H ( U, NameOption )
 
-    class ( Universe_H_Form ), intent ( inout ) :: &
+    class ( Universe_H_Form ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ), optional :: &
       NameOption
