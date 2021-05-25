@@ -9,6 +9,8 @@ export GCC_ROOT=$GCC_UMS_DIR/$latest
 
 echo "Using GCC in $GCC_ROOT"
 
+export PATH=$GCC_ROOT/bin:${PATH}
+
 export GENASIS_MACHINE=POWER_GCC
 
 export OMPI_CC=${GCC_ROOT}/bin/gcc
