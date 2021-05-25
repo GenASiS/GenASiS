@@ -174,7 +174,7 @@ contains
     
     call PrepareAndShow_OMP_Environment ( )
     
-    call InitializeRandomSeed ( PH % Communicator )
+    !call InitializeRandomSeed ( PH % Communicator )
 
     if ( AppendDimensionality ) then
       if ( present ( DimensionalityOption ) ) &
