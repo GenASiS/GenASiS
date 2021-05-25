@@ -3,6 +3,7 @@ program MessageIncomingOutgoing_Forms_Test
   use MPI
   use Specifiers
   use Display
+  use Devices
   use MessagePassingBasics
   use MessageIncoming_I__Form
   use MessageIncoming_BI__Form
@@ -212,10 +213,12 @@ program MessageIncomingOutgoing_Forms_Test
 
     allocate ( IM_R )
     call IM_R % Initialize ( C, Tag, SourceRank, nReceiveBig )
+    call IM_R % AllocateDevice ( )
     call IM_R % Receive ( ) 
 
     allocate ( OM_R )
     call OM_R % Initialize ( C, Tag, TargetRank, nSendBig )
+    call OM_R % AllocateDevice ( )
 
     if ( mod ( iIB, 1 ) == 0 ) then
       call Show ( iIB, 'iIB' )
@@ -225,10 +228,12 @@ program MessageIncomingOutgoing_Forms_Test
 
     if ( C % Rank == 0 ) then
       OM_R % Value = PI * [ ( iV - 1, iV = 1, nSendBig ) ]
+      call UpdateDevice ( OM_R % Value, OM_R % D_Value )
       call OM_R % Send ( )
     else
       call IM_R % Wait ( )
       OM_R % Value = IM_R % Value + PI
+      call UpdateDevice ( OM_R % Value, OM_R % D_Value )
       call OM_R % Send ( )
     end if
  
