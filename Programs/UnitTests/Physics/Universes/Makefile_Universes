@@ -42,7 +42,7 @@ FluidCentralCore_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
           Basics.a ThirdParty.a \
           $(LIBRARIES)
 
-clean:
+clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
