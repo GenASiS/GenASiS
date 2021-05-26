@@ -26,6 +26,9 @@ module PlaneWave_Form
       Waveform
   end type PlaneWaveForm
 
+  class ( PlaneWaveForm ), public, allocatable, target :: &
+    PLANE_WAVE
+
     private :: &
       SetReference, &
       InitializeFluidBox, &
@@ -37,9 +40,6 @@ module PlaneWave_Form
 
         private :: &
           SetFluidKernel
-
-    class ( PlaneWaveForm ), pointer, private :: &
-      PlaneWave => null ( )
 
 contains
 
@@ -54,8 +54,6 @@ contains
     character ( LDL ) :: &
       Name
 
-    PlaneWave  =>  U
-
     if ( U % Type  ==  '' ) &
       U % Type  =  'a PlaneWave'
 
@@ -67,8 +65,6 @@ contains
     call InitializeDiagnostics ( U )
 
     U % Integrator % SetInitial  =>  SetProblem
-
-    call U % Integrator % Show ( )
 
   end subroutine Initialize_H
 
@@ -158,7 +154,7 @@ contains
       I
 
     associate &
-      ( PW  =>  PlaneWave )
+      ( PW  =>  PLANE_WAVE )
     select type ( I  =>  PW % Integrator )
       class is ( Integrator_CSA_Form )
     select type ( FC    =>  I % CurrentSet_X_A % FieldSet_C ( 1 ) % Element )
@@ -242,7 +238,7 @@ contains
       Period
 
     associate &
-      ( PW  =>  PlaneWave )
+      ( PW  =>  PLANE_WAVE )
     select type ( I )
       class is ( Integrator_CSA_Form )
     select type ( FA  =>  I % CurrentSet_X_A )
@@ -317,8 +313,8 @@ contains
              PW = PW, &
              ProperCell = C % ProperCell, &
              X = GS % Value ( :, GC % CENTER_U_1 ), &
-             Y = GS % Value ( :, GC % CENTER_U_1 ), &
-             Z = GS % Value ( :, GC % CENTER_U_1 ), &
+             Y = GS % Value ( :, GC % CENTER_U_2 ), &
+             Z = GS % Value ( :, GC % CENTER_U_3 ), &
              K = PW % Wavenumber, &
              V = PW % Speed, &
              T = PW % Integrator % T )

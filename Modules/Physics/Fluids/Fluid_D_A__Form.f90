@@ -77,8 +77,8 @@ contains
           class is ( Geometry_F_C_Form )
 
         call FC % Initialize &
-               ( GC, &
-                 NameOption = NameOption, &
+               ( GC, Units_F, &
+                 NameOption = Name, &
                  IgnorabilityOption = IgnorabilityOption )
 
         end select !-- GC

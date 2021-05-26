@@ -1,17 +1,15 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWave #SawtoothWave OppenheimerSnyder RiemannProblem RayleighTaylor \
+all: SineWaveAdvection #SawtoothWave OppenheimerSnyder RiemannProblem RayleighTaylor \
      SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
      ODE_Solve 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-# include ../Makefile_ObjectFiles
-
-SineWave: ThirdParty.a GenASiS.a SineWave.o
+SineWaveAdvection: ThirdParty.a GenASiS.a SineWaveAdvection.o
 	$(LINK) $(FLAGS) \
-           -o SineWave_$(MACHINE) \
-           SineWave.o SineWave_Form.o PlaneWave_Template.o \
+           -o SineWaveAdvection_$(MACHINE) \
+           SineWaveAdvection.o SineWave_Form.o PlaneWave_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 SawtoothWave: ThirdParty.a GenASiS.a SawtoothWave.o
@@ -83,7 +81,7 @@ clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.ld *.smod
 
 clobber: clean
-	rm -f SineWave_*
+	rm -f SineWaveAdvection_*
 	rm -f SawtoothWave_*
 	rm -f OppenheimerSnyder_*
 	rm -f RiemannProblem_*
@@ -101,13 +99,14 @@ PlaneWave_Form.o: \
 
 SineWave_Form.o: \
   GenASiS.o \
-  PlaneWave_Template.o \
+  PlaneWave_Form.o \
   SineWave_Form.f90
 
-SineWave.o: \
+SineWaveAdvection.o: \
   GenASiS.o \
+  PlaneWave_Form.o \
   SineWave_Form.o \
-  SineWave.f90
+  SineWaveAdvection.f90
 
 SawtoothWave_Form.o: \
   Basics.o \

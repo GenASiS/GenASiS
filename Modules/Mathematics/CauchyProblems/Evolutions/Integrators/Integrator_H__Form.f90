@@ -631,6 +631,8 @@ contains
       I % T        =  I % T_Start
     end if !-- restart
 
+    call I % Show ( )
+
   end subroutine PrepareInitial
 
 

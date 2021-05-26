@@ -500,11 +500,11 @@ contains
     call Search &
            ( CSC % iaBalanced, CSC % BARYON_DENSITY_B, iDensity )
     call Search &
-           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
+           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D_1, iMomentum ( 1 ) )
     call Search &
-           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
+           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D_2, iMomentum ( 2 ) )
     call Search &
-           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+           ( CSC % iaBalanced, CSC % MOMENTUM_DENSITY_D_3, iMomentum ( 3 ) )
 
     associate &
       ( FSS  =>  FSC % Storage_FSC % Storage, &
@@ -516,9 +516,9 @@ contains
         F_S_2    =>  FSS % Value ( :, iMomentum ( 2 ) ), &
         F_S_3    =>  FSS % Value ( :, iMomentum ( 3 ) ), &
           D      =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ), &
-          S_1    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D ( 1 ) ), &
-          S_2    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D ( 2 ) ), &
-          S_3    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D ( 3 ) ), &
+          S_1    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_1 ), &
+          S_2    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_2 ), &
+          S_3    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_3 ), &
           V_Dim  =>  CSS % Value ( :, CSC % VELOCITY_U ( iD ) ) )
  
     call ComputeFluxes_G_Kernel &

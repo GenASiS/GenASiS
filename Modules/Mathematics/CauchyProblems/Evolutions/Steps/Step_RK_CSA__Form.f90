@@ -212,6 +212,7 @@ contains
     Stages  =  .false.
     if ( present ( StagesOption ) ) &
       Stages  =  StagesOption
+    call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
 
     if ( Stages ) then
 
