@@ -242,6 +242,10 @@ contains
 
       end associate !-- nS
 
+      associate ( RSA  =>  S % RiemannSolver_A )
+      call RSA % SetStream ( SA, S % nStages )
+      end associate !-- RSA
+
     end if
 
     end associate !-- DeviceMemory, etc.
@@ -474,7 +478,7 @@ contains
                          % FieldSet_C ( iC ) % Element )
       class is ( Slope_H_C_Form )
 
-      call S % ComputeStage_C ( Slope_C, TimerLevelOption )
+      call S % ComputeStage_C ( Slope_C, TimerLevelOption, iS_Option = iS )
 
       end select !-- Slope_C
 
@@ -631,15 +635,16 @@ contains
   end subroutine IncrementIntermediate_C
 
 
-  subroutine ComputeStage_C ( Slope_C, TimerLevelOption )
+  subroutine ComputeStage_C ( Slope_C, TimerLevelOption, iS_Option )
 
     class ( Slope_H_C_Form ), intent ( inout ) :: &
       Slope_C
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     call Slope_C % Clear ( )
-    call Slope_C % Compute ( TimerLevelOption )
+    call Slope_C % Compute ( TimerLevelOption, iS_Option )
     call Slope_C % ExchangeGhostData ( TimerLevelOption )
 
   end subroutine ComputeStage_C

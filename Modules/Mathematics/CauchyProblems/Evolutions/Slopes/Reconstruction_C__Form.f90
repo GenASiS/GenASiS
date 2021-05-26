@@ -17,14 +17,20 @@ module Reconstruction_C__Form
     character ( LDL ) :: &
       Name
     class ( FieldSet_C_Form ), pointer :: &
+      FieldSet_C  => null ( ), &
       Output_IL_C => null ( ), &
-      Output_IR_C => null ( ), & 
-      FieldSet_C => null ( )
+      Output_IR_C => null ( ) 
     class ( Geometry_F_C_Form ), pointer :: &
       Geometry_C => null ( )
+    type ( FieldSet_C_Element ), dimension ( :, : ), allocatable :: &
+      StageDimension_IL_C, &
+      StageDimension_IR_C, &
+      StageDimension_C
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      SetStream
     procedure, public, pass :: &
       Show => Show_RC
     procedure, public, pass :: &
@@ -153,6 +159,98 @@ contains
   end subroutine Initialize
 
 
+  subroutine SetStream ( RC, SC, nS )
+
+    class ( Reconstruction_C_Form ), intent ( inout ) :: &
+      RC
+    class ( Stream_C_Form ), intent ( inout ) :: &
+      SC
+    integer ( KDI ), intent ( in ) :: &
+      nS  !-- nStages
+
+    integer ( KDI ) :: &
+      iS, &  !-- iStage
+      iD     !-- iDimension
+    character ( 1 ) :: &
+      StageNumber, &
+      DimensionNumber
+
+    associate &
+      ( FC  =>  RC % FieldSet_C )
+    associate &
+      (                 nD  =>  FC % Chart % nDimensions, &
+              DeviceMemory  =>  FC % Storage_FSC % DeviceMemory, &
+              PinnedMemory  =>  FC % Storage_FSC % DeviceMemory, &
+        DevicesCommunicate  =>  FC % GhostExchange_FSC % DevicesCommunicate )
+
+    allocate ( RC % StageDimension_C ( nS, nD ) )
+    allocate ( RC % StageDimension_IL_C ( nS, nD ) )
+    allocate ( RC % StageDimension_IR_C ( nS, nD ) )
+    do iS  =  1, nS
+      do iD  =  1, nD
+
+        write ( StageNumber, fmt = '(i1.1)' ) iS
+        write ( DimensionNumber, fmt = '(i1.1)' ) iD
+
+        allocate ( RC % StageDimension_C ( iS, iD ) % Element )
+        allocate ( RC % StageDimension_IL_C ( iS, iD ) % Element )
+        allocate ( RC % StageDimension_IR_C ( iS, iD ) % Element )
+
+        associate &
+          ( SDC  =>  RC % StageDimension_C ( iS, iD ) % Element, &
+            FSC  =>  RC % FieldSet_C )
+        call SDC % Initialize &
+               ( FSC % Chart, &
+                 FieldOption = FSC % Field, &
+                 NameOption = 'R_' // trim ( FSC % Name ) // '_' &
+                              // StageNumber // '_' // DimensionNumber, &
+                 DeviceMemoryOption = DeviceMemory, &
+                 PinnedMemoryOption = PinnedMemory, &
+                 DevicesCommunicateOption = DevicesCommunicate, &
+                 nFieldsOption = size ( FSC % Storage_FSC % Storage % Value, &
+                                        dim = 2 ) )
+        call SC % AddFieldSet ( SDC, iaSelectedOption = FSC % iaSelected )
+        end associate !-- SDC, etc.
+
+        associate &
+          ( SDC  =>  RC % StageDimension_IL_C ( iS, iD ) % Element, &
+             OC  =>  RC % Output_IL_C )
+        call SDC % Initialize &
+               ( OC % Chart, &
+                 FieldOption = OC % Field, &
+                 NameOption = trim ( OC % Name ) // '_' // StageNumber // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = DeviceMemory, &
+                 PinnedMemoryOption = PinnedMemory, &
+                 DevicesCommunicateOption = DevicesCommunicate, &
+                 nFieldsOption = OC % nFields )
+        call SC % AddFieldSet ( SDC )
+        end associate !-- SDC, etc.
+
+        associate &
+          ( SDC  =>  RC % StageDimension_IR_C ( iS, iD ) % Element, &
+             OC  =>  RC % Output_IR_C )
+        call SDC % Initialize &
+               ( OC % Chart, &
+                 FieldOption = OC % Field, &
+                 NameOption = trim ( OC % Name ) // '_' // StageNumber // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = DeviceMemory, &
+                 PinnedMemoryOption = PinnedMemory, &
+                 DevicesCommunicateOption = DevicesCommunicate, &
+                 nFieldsOption = OC % nFields )
+        call SC % AddFieldSet ( SDC )
+        end associate !-- SDC, etc.
+
+      end do !-- iD
+    end do !-- iS
+
+    end associate !-- nD, etc.
+    end associate !-- FC
+
+  end subroutine SetStream
+
+
   subroutine Show_RC ( RC )
 
     class ( Reconstruction_C_Form ), intent ( in ) :: &
@@ -162,20 +260,22 @@ contains
 
     call Show ( RC % Name, 'Name',  RC % IGNORABILITY )
     call Show ( RC % Order, 'Order', RC % IGNORABILITY )
+    call RC % FieldSet_C % Show ( )
     call RC % Output_IL_C % Show ( )
     call RC % Output_IR_C % Show ( )
 
   end subroutine Show_RC
 
 
-  subroutine Compute ( RC, iD, TimerLevelOption )
+  subroutine Compute ( RC, iD, TimerLevelOption, iS_Option )
 
     class ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimensions
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     real ( KDR ), dimension ( :, :, : ), pointer :: &
        X, &
@@ -258,6 +358,33 @@ contains
     end associate !-- FV, etc.
     end associate !-- FC, etc.
 
+    if ( allocated ( RC % StageDimension_C ) .and. present ( iS_Option ) ) &
+    then
+      associate &
+        ( SDC  =>  RC % StageDimension_C ( iS_Option, iD ) % Element, &
+          FSC  =>  RC % FieldSet_C )
+      call FSC % Copy ( SDC )
+      end associate !-- SDC, etc.
+    end if
+
+    if ( allocated ( RC % StageDimension_IL_C ) .and. present ( iS_Option ) ) &
+    then
+      associate &
+        ( SDC  =>  RC % StageDimension_IL_C ( iS_Option, iD ) % Element, &
+           OC  =>  RC % Output_IL_C )
+      call OC % Copy ( SDC )
+      end associate !-- SDC, etc.
+    end if
+
+    if ( allocated ( RC % StageDimension_IR_C ) .and. present ( iS_Option ) ) &
+    then
+      associate &
+        ( SDC  =>  RC % StageDimension_IR_C ( iS_Option, iD ) % Element, &
+           OC  =>  RC % Output_IR_C )
+      call OC % Copy ( SDC )
+      end associate !-- SDC, etc.
+    end if
+
     call T % Stop ( )
 
   end subroutine Compute
@@ -268,10 +395,17 @@ contains
     type ( Reconstruction_C_Form ), intent ( inout ) :: &
       RC
 
+    if ( allocated ( RC % StageDimension_C ) ) &
+      deallocate ( RC % StageDimension_C )
+    if ( allocated ( RC % StageDimension_IR_C ) ) &
+      deallocate ( RC % StageDimension_IR_C )
+    if ( allocated ( RC % StageDimension_IL_C ) ) &
+      deallocate ( RC % StageDimension_IL_C )
+
     nullify ( RC % Geometry_C )
-    nullify ( RC % FieldSet_C )
     nullify ( RC % Output_IR_C )
     nullify ( RC % Output_IL_C )
+    nullify ( RC % FieldSet_C )
 
     call Show ( 'Finalizing a Reconstruction_C', RC % IGNORABILITY )
     call Show ( RC % Name, 'Name', RC % IGNORABILITY )

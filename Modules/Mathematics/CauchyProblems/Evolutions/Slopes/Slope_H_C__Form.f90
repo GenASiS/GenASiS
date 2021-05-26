@@ -62,12 +62,13 @@ contains
   end subroutine InitializeAllocate_FS
 
 
-  subroutine Compute ( SC, TimerLevelOption )
+  subroutine Compute ( SC, TimerLevelOption, iS_Option )
 
     class ( Slope_H_C_Form ), intent ( inout ) :: &
       SC
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     call Show ( 'Compute must be overridden', CONSOLE % ERROR )
     call Show ( 'Slope_H_C_Form', 'module', CONSOLE % ERROR )

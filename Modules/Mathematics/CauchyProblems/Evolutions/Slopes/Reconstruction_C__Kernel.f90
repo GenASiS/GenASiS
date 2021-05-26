@@ -57,8 +57,7 @@ contains
                 =  F ( iV, jV, kV, iF )
 
               F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
-                =  F ( iV, jV, kV, iF )
-                    
+                =  F ( iV, jV, kV, iF )                    
 
             end do !-- iV
           end do !-- jV
@@ -85,7 +84,6 @@ contains
               F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
                 =  F ( iV, jV, kV, iF )
                     
-
             end do !-- iV
           end do !-- jV
         end do !-- kV

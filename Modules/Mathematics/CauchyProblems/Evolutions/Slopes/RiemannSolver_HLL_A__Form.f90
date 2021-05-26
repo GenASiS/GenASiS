@@ -29,6 +29,8 @@ module RiemannSolver_HLL_A__Form
     generic, public :: &
       Initialize => InitializeAllocate_RS
     procedure, public, pass :: &
+      SetStream
+    procedure, public, pass :: &
       Compute
     final :: &
       Finalize
@@ -157,14 +159,39 @@ contains
   end subroutine InitializeAllocate_RS
 
 
-  subroutine Compute ( RSA, iD, TimerLevelOption )
+  subroutine SetStream ( RSA, SA, nS )
+
+    class ( RiemannSolver_HLL_A_Form ), intent ( inout ) :: &
+      RSA
+    class ( Stream_A_Form ), intent ( inout ) :: &
+      SA
+    integer ( KDI ), intent ( in ) :: &
+      nS  !-- nStages
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, RSA % Atlas % nCharts
+      associate ( SC  =>  SA % Stream_C ( iC ) % Element )
+      select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
+        class is ( RiemannSolver_HLL_C_Form )
+      call RSC % SetStream ( SC, nS )
+      end select !-- RSC
+      end associate !-- SC
+    end do !-- iC
+
+  end subroutine SetStream
+
+
+  subroutine Compute ( RSA, iD, TimerLevelOption, iS_Option )
 
     class ( RiemannSolver_HLL_A_Form ), intent ( inout ) :: &
       RSA
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimensions
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     integer ( KDI ) :: &
       iC  !-- iChart
@@ -172,7 +199,7 @@ contains
     do iC  =  1, size ( RSA % FieldSet_C )
       select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
       class is ( RiemannSolver_HLL_C_Form )
-      call RSC % Compute ( iD, TimerLevelOption )
+      call RSC % Compute ( iD, TimerLevelOption, iS_Option )
       end select !-- RSC
     end do !-- iC
 

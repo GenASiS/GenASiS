@@ -32,13 +32,17 @@ module RiemannSolver_HLL_C__Form
       Reconstruction_B_C => null ( ), &
       Reconstruction_F_C => null ( ), &
       Reconstruction_E_C => null ( )
+    type ( FieldSet_C_Element ), dimension ( :, : ), allocatable :: &
+      StageDimension_C
   contains
     procedure, private, pass :: &
       InitializeAllocate_RS
     generic, public :: &
       Initialize => InitializeAllocate_RS
+    procedure, public, pass :: &
+      SetStream
     procedure, private, pass :: &
-      Show_FSC
+      Show_FS
     procedure, public, pass :: &
       Compute
     final :: &
@@ -167,7 +171,64 @@ contains
   end subroutine InitializeAllocate_RS
 
 
-  subroutine Show_FSC ( FSC )
+  subroutine SetStream ( RSC, SC, nS )
+
+    class ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
+      RSC
+    class ( Stream_C_Form ), intent ( inout ) :: &
+      SC
+    integer ( KDI ), intent ( in ) :: &
+      nS  !-- nStages
+
+    integer ( KDI ) :: &
+      iS, &  !-- iStage
+      iD     !-- iDimension
+    character ( 1 ) :: &
+      StageNumber, &
+      DimensionNumber
+
+    associate &
+      (                 nD  =>  RSC % Chart % nDimensions, &
+              DeviceMemory  =>  RSC % Storage_FSC % DeviceMemory, &
+              PinnedMemory  =>  RSC % Storage_FSC % DeviceMemory, &
+        DevicesCommunicate  =>  RSC % GhostExchange_FSC % DevicesCommunicate )
+
+    allocate ( RSC % StageDimension_C ( nS, nD ) )
+    do iS  =  1, nS
+      do iD  =  1, nD
+        write ( StageNumber, fmt = '(i1.1)' ) iS
+        write ( DimensionNumber, fmt = '(i1.1)' ) iD
+        allocate ( RSC % StageDimension_C ( iS, iD ) % Element )
+        associate ( SDC  =>  RSC % StageDimension_C ( iS, iD ) % Element )
+        call SDC % Initialize &
+               ( RSC % Chart, &
+                 FieldOption = RSC % Field, &
+                 NameOption = trim ( RSC % Name ) // '_' // StageNumber // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = DeviceMemory, &
+                 PinnedMemoryOption = PinnedMemory, &
+                 DevicesCommunicateOption = DevicesCommunicate, &
+                 nFieldsOption = RSC % nFields )
+        call SC % AddFieldSet ( SDC )
+        end associate !-- SDC
+      end do !-- iD
+    end do !-- iS
+
+    end associate !-- nD, etc.
+
+    associate &
+      ( RBC  =>  RSC % Reconstruction_B_C, &
+        RFC  =>  RSC % Reconstruction_F_C, &
+        REC  =>  RSC % Reconstruction_E_C )
+    call RBC % SetStream ( SC, nS )
+    call RFC % SetStream ( SC, nS )
+    call REC % SetStream ( SC, nS )
+    end associate !-- RBC, etc.
+
+  end subroutine SetStream
+
+
+  subroutine Show_FS ( FSC )
 
     class ( RiemannSolver_HLL_C_Form ), intent ( in ) :: &
       FSC
@@ -179,17 +240,18 @@ contains
     call FSC % Reconstruction_F_C % Show ( )
     call FSC % Reconstruction_E_C % Show ( )
 
-  end subroutine Show_FSC
+  end subroutine Show_FS
 
 
-  subroutine Compute ( RSC, iD, TimerLevelOption )
+  subroutine Compute ( RSC, iD, TimerLevelOption, iS_Option )
 
     class ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
       RSC
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimensions
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     character ( LDL ) :: &
       TimerName
@@ -224,9 +286,12 @@ contains
 
     call FSC % Compute ( iD, TimerLevelOption = T % Level + 1 )
     call  EC % Compute ( iD, TimerLevelOption = T % Level + 1 )
-    call RBC % Compute ( iD, TimerLevelOption = T % Level + 1 )
-    call RFC % Compute ( iD, TimerLevelOption = T % Level + 1 )
-    call REC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+    call RBC % Compute &
+           ( iD, TimerLevelOption = T % Level + 1, iS_Option = iS_Option )
+    call RFC % Compute &
+           ( iD, TimerLevelOption = T % Level + 1, iS_Option = iS_Option )
+    call REC % Compute &
+           ( iD, TimerLevelOption = T % Level + 1, iS_Option = iS_Option )
 
     associate ( iT_K  =>  RSC % iTimerKernel )
     if ( iT_K == 0 ) then
@@ -271,6 +336,12 @@ contains
 
     end associate !-- CSC, etc.
 
+    if ( allocated ( RSC % StageDimension_C ) .and. present ( iS_Option ) ) then
+      associate ( SDC  =>  RSC % StageDimension_C ( iS_Option, iD ) % Element )
+      call RSC % Copy ( SDC )
+      end associate !-- SDC
+    end if
+
     call T % Stop ( )
 
   end subroutine Compute
@@ -280,6 +351,9 @@ contains
 
     type ( RiemannSolver_HLL_C_Form ), intent ( inout ) :: &
       RSC
+
+    if ( allocated ( RSC % StageDimension_C ) ) &
+      deallocate ( RSC % StageDimension_C )
 
     nullify ( RSC % Reconstruction_E_C )
     nullify ( RSC % Reconstruction_F_C )

@@ -78,7 +78,7 @@ contains
       L1
     type ( CollectiveOperation_R_Form ) :: &
       CO
-    
+
     select type ( FC_R  =>  PW % Reference % FieldSet_C ( 1 ) % Element )
       class is ( Fluid_D_C_Form )
     select type ( FC_D  =>  PW % Difference % FieldSet_C ( 1 ) % Element )
@@ -88,13 +88,14 @@ contains
     associate &
       ( FV_R  =>  FC_R % Storage_FSC % Storage % Value, &
         FV_D  =>  FC_D % Storage_FSC % Storage % Value )
+
+    call CO % Initialize ( C % Communicator, [ 2 ], [ 2 ] )
+
     associate &
       ( D  =>  FV_D ( :, FC_D % BARYON_DENSITY_C ), &
         R  =>  FV_R ( :, FC_R % BARYON_DENSITY_C ), &
         Norm_D  =>  CO % Incoming % Value ( 1 ), &
         Norm_R  =>  CO % Incoming % Value ( 2 ) )
-
-    call CO % Initialize ( C % Communicator, [ 2 ], [ 2 ] )
 
     CO % Outgoing % Value ( 1 ) &
       =  sum ( abs ( D ), mask = C % ProperCell )
@@ -365,10 +366,10 @@ contains
       VY ( iV )  =  V  *  K ( 2 )  /  Abs_K
       VZ ( iV )  =  V  *  K ( 3 )  /  Abs_K
 
-      N ( iV ) = PW % Waveform &
-                   (    K ( 1 )  *  ( X ( iV )  -  VX ( iV )  *  T ) &
-                     +  K ( 2 )  *  ( Y ( iV )  -  VY ( iV )  *  T ) &
-                     +  K ( 3 )  *  ( Z ( iV )  -  VZ ( iV )  *  T ) )
+      N ( iV )  =  PW % Waveform &
+                     (    K ( 1 )  *  ( X ( iV )  -  VX ( iV )  *  T ) &
+                       +  K ( 2 )  *  ( Y ( iV )  -  VY ( iV )  *  T ) &
+                       +  K ( 3 )  *  ( Z ( iV )  -  VZ ( iV )  *  T ) )
 
     end do !-- iV
     !$OMP end parallel do

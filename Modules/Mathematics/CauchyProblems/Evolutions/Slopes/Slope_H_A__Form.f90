@@ -63,12 +63,13 @@ contains
   end subroutine InitializeAllocate_FS
 
 
-  subroutine Compute ( SA, TimerLevelOption )
+  subroutine Compute ( SA, TimerLevelOption, iS_Option )
 
     class ( Slope_H_A_Form ), intent ( inout ) :: &
       SA
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     integer ( KDI ) :: &
       iC  !-- iChart
@@ -76,7 +77,7 @@ contains
     do iC  =  1, size ( SA % FieldSet_C )
       select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )
       class is ( Slope_H_C_Form )
-      call SC % Compute ( TimerLevelOption )
+      call SC % Compute ( TimerLevelOption, iS_Option )
       end select !-- SC
     end do !-- iC
 

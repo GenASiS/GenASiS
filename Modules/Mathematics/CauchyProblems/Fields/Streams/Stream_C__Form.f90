@@ -429,6 +429,7 @@ contains
     do iFS  =  1, SC % nFieldSets
       associate ( FSC  =>  SC % FieldSet ( iFS ) % Element )
       call Show ( FSC % Name, 'FieldSet', SC % IGNORABILITY )
+      call FSC % Show ( )
       end associate !-- FS
     end do !-- iFS
 

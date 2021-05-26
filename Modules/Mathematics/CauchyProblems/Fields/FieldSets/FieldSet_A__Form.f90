@@ -31,6 +31,8 @@ module FieldSet_A__Form
     procedure, public, pass :: &
       Clear => Clear_FS
     procedure, public, pass :: &
+      Copy => Copy_FS
+    procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
       UpdateDevice => UpdateDevice_FS
@@ -210,6 +212,30 @@ contains
     end associate  !-- A
 
   end subroutine Clear_FS
+
+
+  subroutine Copy_FS ( FSA_S, FSA_T )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA_S, &
+      FSA_T
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+
+    associate ( A  =>  FSA_S % Atlas )
+    do iC  =  1, A % nCharts
+      if ( allocated ( FSA_S % FieldSet_C ( iC ) % Element ) ) then
+        associate &
+          ( FSC_S  =>  FSA_S % FieldSet_C ( iC ) % Element, &
+            FSC_T  =>  FSA_T % FieldSet_C ( iC ) % Element )
+        call FSC_S % Copy ( FSC_T )
+        end associate !-- FSC
+      end if  
+    end do !-- iC
+    end associate  !-- A
+
+  end subroutine Copy_FS
 
 
   subroutine ExchangeGhostData ( FSA, TimerLevelOption )

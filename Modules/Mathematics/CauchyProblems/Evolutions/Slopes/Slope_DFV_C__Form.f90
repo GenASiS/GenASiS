@@ -118,12 +118,13 @@ contains
   end subroutine Show_FSC
 
 
-  subroutine Compute ( SC, TimerLevelOption )
+  subroutine Compute ( SC, TimerLevelOption, iS_Option )
 
     class ( Slope_DFV_C_Form ), intent ( inout ) :: &
       SC
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      TimerLevelOption, &
+      iS_Option
 
     integer ( KDI ) :: &
       iD
@@ -163,7 +164,10 @@ contains
 
     do iD  =  1, C % nDimensions
 
-      call RSC % Compute ( iD, TimerLevelOption = T % Level + 1 )
+      call RSC % Compute &
+             ( iD, &
+               TimerLevelOption = T % Level + 1, &
+               iS_Option = iS_Option )
 
       associate ( iT_K  =>  SC % iTimerKernel )
       if ( iT_K == 0 ) then

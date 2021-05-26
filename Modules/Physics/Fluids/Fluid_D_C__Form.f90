@@ -515,7 +515,7 @@ contains
         F_S_1    =>  FSS % Value ( :, iMomentum ( 1 ) ), &
         F_S_2    =>  FSS % Value ( :, iMomentum ( 2 ) ), &
         F_S_3    =>  FSS % Value ( :, iMomentum ( 3 ) ), &
-          D      =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ), &
+          D      =>  CSS % Value ( :, CSC % BARYON_DENSITY_B ), &
           S_1    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_1 ), &
           S_2    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_2 ), &
           S_3    =>  CSS % Value ( :, CSC % MOMENTUM_DENSITY_D_3 ), &

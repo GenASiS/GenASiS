@@ -49,6 +49,8 @@ module FieldSet_C__Form
     procedure, public, pass :: &
       Clear => Clear_FS
     procedure, public, pass :: &
+      Copy => Copy_FS
+    procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
       StartGhostExchange
@@ -306,9 +308,10 @@ contains
     call Show ( FSC % nFields, 'nFields', FSC % IGNORABILITY )
     do iS  =  1, FSC % nFields
       iF  =  FSC % iaSelected ( iS )
-      call Show ( iS,                 'iField', FSC % IGNORABILITY ) 
-      call Show ( FSC % Field ( iF ), 'Field',  FSC % IGNORABILITY )
-      call Show ( FSC % Unit ( iF ),  'Unit',   FSC % IGNORABILITY )
+      call Show ( iS,                 'iSelected', FSC % IGNORABILITY ) 
+      call Show ( iF,                 'iField',    FSC % IGNORABILITY ) 
+      call Show ( FSC % Field ( iF ), 'Field',     FSC % IGNORABILITY )
+      call Show ( FSC % Unit ( iF ),  'Unit',      FSC % IGNORABILITY )
     end do !-- iF
     
     call Show ( FSC % nVectors, 'nVectors', FSC % IGNORABILITY )
@@ -339,6 +342,22 @@ contains
     end associate !-- FSV
 
   end subroutine Clear_FS
+
+
+  subroutine Copy_FS ( FSC_S, FSC_T )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC_S, &
+      FSC_T
+
+    associate &
+      ( FSV_S  =>  FSC_S % Storage_FSC % Storage % Value, &
+        FSV_T  =>  FSC_T % Storage_FSC % Storage % Value )
+    call Copy ( FSV_S, FSV_T, &
+                UseDeviceOption = FSC_S % Storage_FSC % DeviceMemory )
+    end associate !-- FSV_S, etc.
+
+  end subroutine Copy_FS
 
 
   subroutine ExchangeGhostData ( FSC, TimerLevelOption )
