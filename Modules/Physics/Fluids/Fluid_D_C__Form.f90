@@ -357,6 +357,8 @@ contains
       FC % BaryonMassReference  =  CONSTANT % ATOMIC_MASS_UNIT
     end if
 
+    FC % BaryonDensityMin  =  sqrt ( tiny ( 0.0_KDR ) )
+
   end subroutine InitializeAllocate_F
 
 
