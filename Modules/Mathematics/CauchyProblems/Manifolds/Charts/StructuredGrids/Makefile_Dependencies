@@ -7,9 +7,15 @@ Chart_GS__Form.o: \
   Chart_H__Form.o \
   Chart_GS__Form.f90
 
+Chart_GS_C__Form.o: \
+  Basics.o \
+  Chart_GS__Form.o \
+  Chart_GS_C__Form.f90
+
 StructuredGrids.o: \
   Chart_H__Form.o \
   Chart_GS__Form.o \
+  Chart_GS_C__Form.o \
   StructuredGrids.f90
 
 StructuredGrids.a: $(STRUCTURED_GRIDS)

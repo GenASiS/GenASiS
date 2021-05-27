@@ -1,4 +1,5 @@
 STRUCTURED_GRIDS = \
   StructuredGrids.o \
   Chart_GS__Form.o \
+  Chart_GS_C__Form.o \
   Chart_H__Form.o
