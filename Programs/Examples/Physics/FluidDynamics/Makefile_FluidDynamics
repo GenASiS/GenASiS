@@ -104,7 +104,6 @@ SineWave_Form.o: \
 
 SineWaveAdvection.o: \
   GenASiS.o \
-  PlaneWave_Form.o \
   SineWave_Form.o \
   SineWaveAdvection.f90
 

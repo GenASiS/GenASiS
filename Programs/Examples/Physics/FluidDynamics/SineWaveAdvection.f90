@@ -6,19 +6,18 @@ program SineWaveAdvection
 
   implicit none
 
+  type ( SineWaveForm ), allocatable :: &
+    SW
+
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'SineWaveAdvection', DimensionalityOption = '2D' )
 
-  allocate ( SineWaveForm :: PLANE_WAVE )
-  associate ( SW  =>  PLANE_WAVE )
-
+  allocate ( SW )
   call SW % Initialize ( )
   call SW % Evolve ( )
   call SW % ComputeError ( )
-
-  end associate !-- SW
-  deallocate ( PLANE_WAVE )
+  deallocate ( SW )
 
   deallocate ( PROGRAM_HEADER )
 

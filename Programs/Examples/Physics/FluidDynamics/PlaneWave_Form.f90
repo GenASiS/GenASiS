@@ -26,14 +26,15 @@ module PlaneWave_Form
       Waveform
   end type PlaneWaveForm
 
-  class ( PlaneWaveForm ), public, allocatable, target :: &
-    PLANE_WAVE
+  class ( PlaneWaveForm ), public, pointer :: &
+    PLANE_WAVE => null ( )  !-- Makes instance of PlaneWave accessible to 
+                            !   SetInitial and SetReference
 
     private :: &
-      SetReference, &
       InitializeFluidBox, &
       InitializeDiagnostics, &
-      SetProblem
+      SetInitial, &
+      SetReference
 
       private :: &
         SetFluid
@@ -54,6 +55,9 @@ contains
     character ( LDL ) :: &
       Name
 
+    if ( .not. associated ( PLANE_WAVE ) ) &
+      PLANE_WAVE  =>  U
+
     if ( U % Type  ==  '' ) &
       U % Type  =  'a PlaneWave'
 
@@ -64,7 +68,7 @@ contains
     call InitializeFluidBox ( U, Name )
     call InitializeDiagnostics ( U )
 
-    U % Integrator % SetInitial  =>  SetProblem
+    U % Integrator % SetInitial  =>  SetInitial
 
   end subroutine Initialize_H
 
@@ -149,41 +153,6 @@ contains
   end function Waveform
 
 
-  subroutine SetReference ( I )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-
-    associate &
-      ( PW  =>  PLANE_WAVE )
-    select type ( I  =>  PW % Integrator )
-      class is ( Integrator_CSA_Form )
-    select type ( FC    =>  I % CurrentSet_X_A % FieldSet_C ( 1 ) % Element )
-      class is ( Fluid_D_C_Form )
-    select type ( FC_R  =>  PW % Reference % FieldSet_C ( 1 ) % Element )
-      class is ( Fluid_D_C_Form )
-    select type ( FC_D  =>  PW % Difference % FieldSet_C ( 1 ) % Element )
-      class is ( Fluid_D_C_Form )
-
-    call SetFluid ( PW, FC_R )
-
-    associate &
-      ( FV    =>  FC   % Storage_FSC % Storage % Value, &
-        FV_R  =>  FC_R % Storage_FSC % Storage % Value, &
-        FV_D  =>  FC_D % Storage_FSC % Storage % Value )
-
-    call MultiplyAdd ( FV, FV_R, -1.0_KDR, FV_D )
-
-    end associate !-- FV, etc.
-    end select !-- FC_D
-    end select !-- FC_R
-    end select !-- FC
-    end select !-- I
-    end associate !-- PW
-
-  end subroutine SetReference
-
-
   subroutine InitializeFluidBox ( PW, Name )
 
     class ( PlaneWaveForm ), intent ( inout ) :: &
@@ -226,7 +195,7 @@ contains
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetProblem ( I )
+  subroutine SetInitial ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -288,7 +257,42 @@ contains
     end select !-- I
     end associate !-- PW
 
-  end subroutine SetProblem
+  end subroutine SetInitial
+
+
+  subroutine SetReference ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    associate &
+      ( PW  =>  PLANE_WAVE )
+    select type ( I  =>  PW % Integrator )
+      class is ( Integrator_CSA_Form )
+    select type ( FC    =>  I % CurrentSet_X_A % FieldSet_C ( 1 ) % Element )
+      class is ( Fluid_D_C_Form )
+    select type ( FC_R  =>  PW % Reference % FieldSet_C ( 1 ) % Element )
+      class is ( Fluid_D_C_Form )
+    select type ( FC_D  =>  PW % Difference % FieldSet_C ( 1 ) % Element )
+      class is ( Fluid_D_C_Form )
+
+    call SetFluid ( PW, FC_R )
+
+    associate &
+      ( FV    =>  FC   % Storage_FSC % Storage % Value, &
+        FV_R  =>  FC_R % Storage_FSC % Storage % Value, &
+        FV_D  =>  FC_D % Storage_FSC % Storage % Value )
+
+    call MultiplyAdd ( FV, FV_R, -1.0_KDR, FV_D )
+
+    end associate !-- FV, etc.
+    end select !-- FC_D
+    end select !-- FC_R
+    end select !-- FC
+    end select !-- I
+    end associate !-- PW
+
+  end subroutine SetReference
 
 
   subroutine SetFluid ( PW, FC )

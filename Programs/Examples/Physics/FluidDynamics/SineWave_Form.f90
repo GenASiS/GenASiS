@@ -30,6 +30,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
 
+    if ( .not. associated ( PLANE_WAVE ) ) &
+      PLANE_WAVE  =>  U
+
     if ( U % Type  ==  '' ) &
       U % Type  =  'a SineWave'
 
