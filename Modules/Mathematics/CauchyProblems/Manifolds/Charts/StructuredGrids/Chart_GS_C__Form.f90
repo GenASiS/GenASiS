@@ -10,11 +10,11 @@ module Chart_GS_C__Form
 
   type, public, extends ( Chart_GS_Form ) :: Chart_GS_C_Form
     integer ( KDI ) :: &
-      nCellsPolar
+      nCellsPolar = 0
     real ( KDR ) :: &
-      RadiusMax = 0.0_KDR, &    !-- should be set by a descendant
-      RadiusScale = 0.0_KDR, &  !-- should be set by a descendant
-      RadialRatio, &            !-- nCellsRadial / nCellsPolar
+      RadiusMax, &    !-- should be set by a descendant
+      RadiusScale, &  !-- should be set by a descendant
+      RadialRatio, &  !-- nCellsRadial / nCellsPolar
       MinWidth
   contains
     procedure, private, pass :: &
@@ -25,8 +25,8 @@ module Chart_GS_C__Form
       Show_C
     final :: &
       Finalize
-    procedure, private, pass :: &
-      SetCore
+    procedure, public, pass :: &
+      SetPolar
   end type Chart_GS_C_Form
 
 
@@ -34,18 +34,21 @@ contains
 
 
   subroutine Initialize_GS_C &
-               ( C, RadiusMin, CoordinateUnitOption, RadiusMaxOption, &
-                 RadialRatioOption, nGhostLayersOption, nCellsPolarOption, &
-                 nEqualOption  )
+               ( C, RadiusMin, RadiusMax, RadiusScale, CommunicatorOption, &
+                 CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
+                 nCellsPolarOption, nEqualOption )
 
     class ( Chart_GS_C_Form ), intent ( inout ) :: &
       C
     real ( KDR ), intent ( in ) :: &
-      RadiusMin
+      RadiusMin, &
+      RadiusMax, &
+      RadiusScale
+    type ( CommunicatorForm ), intent ( in ), optional :: &
+      CommunicatorOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
-      RadiusMaxOption, &
       RadialRatioOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
@@ -84,37 +87,27 @@ contains
     Periodic  =  .false.
     Periodic ( 3 )  =  .true.
 
-    if ( C % RadiusMax  ==  0.0_KDR ) &
-      C % RadiusMax  =  10.0_KDR
-    if ( C % RadiusScale  ==  0.0_KDR ) &
-      C % RadiusScale  =  C % RadiusMax  /  8.0_KDR
+    C % RadiusMax    =  RadiusMax
+    C % RadiusScale  =  RadiusScale
 
     MinCoordinate  =  [ RadiusMin,     0.0_KDR,      0.0_KDR ]
     MaxCoordinate  =  [ C % RadiusMax,      Pi, 2.0_KDR * Pi ]
 
-    C % nCellsPolar  =  128
-    if ( present ( nCellsPolarOption ) ) &
-      C % nCellsPolar = nCellsPolarOption
-    call PROGRAM_HEADER % GetParameter ( C % nCellsPolar, 'nCellsPolar' )
+    if ( C % nCellsPolar  ==  0 ) &
+      call C % SetPolar ( )
 
-    call C % SetCore ( )
-
-    C % RadialRatio  =  1
+    C % RadialRatio  =  1.0_KDR
     if ( present ( RadialRatioOption ) ) &
-      C % RadialRatio = RadialRatioOption
+      C % RadialRatio  =  RadialRatioOption
     call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
 
     nCellsRadial     =  C % RadialRatio * C % nCellsPolar !-- Aim for RadiusMax
     nCellsPolar      =  C % nCellsPolar
     nCellsAzimuthal  =  2 * nCellsPolar
  
-    C % MinWidth  =  C % RadiusScale  *  Pi / nCellsPolar
+    nCells  =  [ nCellsRadial, nCellsPolar, nCellsAzimuthal ]
 
-    nCells  =  [ nCellsRadial, 1, 1 ]
-    if ( C % nDimensions  >  1 ) &
-      nCells ( 2 )  =  nCellsPolar
-    if ( C % nDimensions > 2 ) &
-      nCells ( 3 )  =  nCellsAzimuthal
+    C % MinWidth  =  C % RadiusScale  *  Pi / nCellsPolar
 
     Ratio        =  0.0_KDR
     Ratio ( 1 )  =  Pi / nCellsPolar  !-- dTheta
@@ -123,11 +116,12 @@ contains
     Scale ( 1 )  =  C % RadiusScale
 
     nBricks  =  [ 1, 1, 1 ]
-    if ( C % Distributed ) &
-      nBricks ( 1 )  =  C % Communicator % Size  !-- spherical shells
+    if ( present ( CommunicatorOption ) ) &
+      nBricks ( 1 )  =  CommunicatorOption % Size  !-- spherical shells
 
     call C % Chart_GS_Form % Initialize &
-           ( SpacingOption = Spacing, &
+           ( CommunicatorOption = CommunicatorOption, &
+             SpacingOption = Spacing, &
              CoordinateSystemOption = CoordinateSystem, &
              PeriodicOption = Periodic, &
              CoordinateUnitOption = CoordinateUnitOption, &
@@ -143,6 +137,8 @@ contains
     if ( C % nBricks ( 2 )  /=  1  .or.  C % nBricks ( 3 ) /= 1 ) then
       call Show ( 'Decomposition in angle not allowed', CONSOLE % ERROR )
       call Show ( 'Do not use nBricks command line option', CONSOLE % ERROR )
+      call Show ( 'Chart_GS_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize_GS_C', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Communicator % Synchronize ( )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -196,12 +192,19 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetCore ( C )
+  subroutine SetPolar ( C, nCellsPolarOption )
 
     class ( Chart_GS_C_Form ), intent ( inout ) :: &
       C
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption
 
-  end subroutine SetCore
+    C % nCellsPolar  =  128
+    if ( present ( nCellsPolarOption ) ) &
+      C % nCellsPolar  =  nCellsPolarOption
+    call PROGRAM_HEADER % GetParameter ( C % nCellsPolar, 'nCellsPolar' )
+
+  end subroutine SetPolar
 
 
 end module Chart_GS_C__Form
