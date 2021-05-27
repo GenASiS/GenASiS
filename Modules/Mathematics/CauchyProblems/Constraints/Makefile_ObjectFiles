@@ -1,0 +1,5 @@
+include $(PATH_POISSON_EQUATIONS)/Makefile_ObjectFiles
+
+CONSTRAINTS = \
+  Constraints.o \
+  $(POISSON_EQUATIONS)

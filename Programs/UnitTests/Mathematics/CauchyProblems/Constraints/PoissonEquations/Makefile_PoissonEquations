@@ -1,0 +1,104 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: PoissonEquations.a #LaplacianMultipoleOld_1_ASC__Form_Test LaplacianMultipole_ASC__Form_Test \
+  Poisson_ASC__Form_Test 
+
+LaplacianMultipoleOld_1_ASC__Form_Test: Basics.a Manifolds.a \
+  LaplacianMultipoleOld_1_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o LaplacianMultipoleOld_1_ASC__Form_Test_$(MACHINE) \
+          LaplacianMultipoleOld_1_ASC__Form_Test.o \
+          LaplacianMultipoleOld_1_ASC__Kernel.o \
+          LaplacianMultipoleOld_1_ASC__Form.o \
+          LaplacianMultipoleOld_1__Kernel.o \
+          LaplacianMultipoleOld_1__Template.o \
+          SetHomogeneousSphere_Command.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
+  LaplacianMultipole_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o LaplacianMultipole_ASC__Form_Test_$(MACHINE) \
+          LaplacianMultipole_ASC__Form_Test.o \
+          LaplacianMultipole_ASC__Kernel.o \
+          LaplacianMultipole_ASC__Form.o \
+          LaplacianMultipole_Kernel.o \
+          LaplacianMultipole_Template.o \
+          SetHomogeneousSphere_Command.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+Poisson_ASC__Form_Test: Basics.a Manifolds.a Operations.a \
+  Poisson_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Poisson_ASC__Form_Test_$(MACHINE) \
+          Poisson_ASC__Form_Test.o Poisson_ASC__Kernel.o Poisson_ASC__Form.o \
+          Poisson_Template.o \
+          LaplacianMultipole_ASC__Kernel.o \
+          LaplacianMultipole_ASC__Form.o \
+          LaplacianMultipole_Kernel.o \
+          LaplacianMultipole_Template.o \
+          LaplacianMultipoleOld_2_ASC__Kernel.o \
+          LaplacianMultipoleOld_2_ASC__Form.o \
+          LaplacianMultipoleOld_2__Kernel.o \
+          LaplacianMultipoleOld_2__Template.o \
+          LaplacianMultipoleOld_1_ASC__Kernel.o \
+          LaplacianMultipoleOld_1_ASC__Form.o \
+          LaplacianMultipoleOld_1__Kernel.o \
+          LaplacianMultipoleOld_1__Template.o \
+          SetHomogeneousSphere_Command.o \
+	  Operations.a Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f LaplacianMultipoleOld_1_ASC__Form_Test_*
+	rm -f LaplacianMultipole_ASC__Form_Test_*
+	rm -f Poisson_ASC__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
+
+SetHomogeneousSphere_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetHomogeneousSphere_Command.f90
+
+LaplacianMultipoleOld_1_ASC__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipoleOld_1__Template.o \
+  LaplacianMultipoleOld_1__Kernel.o \
+  LaplacianMultipoleOld_1_ASC__Form.o \
+  LaplacianMultipoleOld_1_ASC__Kernel.o \
+  SetHomogeneousSphere_Command.o \
+  LaplacianMultipoleOld_1_ASC__Form_Test.f90
+
+LaplacianMultipole_ASC__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_Template.o \
+  LaplacianMultipole_Kernel.o \
+  LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipole_ASC__Kernel.o \
+  SetHomogeneousSphere_Command.o \
+  LaplacianMultipole_ASC__Form_Test.f90
+
+Poisson_ASC__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Operations.o \
+  LaplacianMultipoleOld_1__Kernel.o \
+  LaplacianMultipoleOld_1_ASC__Kernel.o \
+  LaplacianMultipoleOld_2__Kernel.o \
+  LaplacianMultipoleOld_2_ASC__Kernel.o \
+  LaplacianMultipole_Kernel.o \
+  LaplacianMultipole_ASC__Kernel.o \
+  Poisson_ASC__Form.o \
+  Poisson_ASC__Kernel.o \
+  SetHomogeneousSphere_Command.o \
+  Poisson_ASC__Form_Test.f90

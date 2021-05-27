@@ -1,0 +1,8 @@
+include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
+
+Constraints.o: \
+  PoissonEquations.o \
+  Constraints.f90
+
+Constraints.a: $(CONSTRAINTS)
+	ar r DifferentialEquations.a $(CONSTRAINTS)
