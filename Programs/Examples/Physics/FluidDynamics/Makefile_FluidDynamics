@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWaveAdvection #SawtoothWave OppenheimerSnyder RiemannProblem RayleighTaylor \
+all: SineWaveAdvection SawtoothWaveAdvection #OppenheimerSnyder RiemannProblem RayleighTaylor \
      SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
      ODE_Solve 
 
@@ -12,10 +12,10 @@ SineWaveAdvection: ThirdParty.a GenASiS.a SineWaveAdvection.o
            SineWaveAdvection.o SineWave_Form.o PlaneWave_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-SawtoothWave: ThirdParty.a GenASiS.a SawtoothWave.o
+SawtoothWaveAdvection: ThirdParty.a GenASiS.a SawtoothWaveAdvection.o
 	$(LINK) $(FLAGS) \
-          -o SawtoothWave_$(MACHINE) \
-          SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
+          -o SawtoothWaveAdvection_$(MACHINE) \
+          SawtoothWaveAdvection.o SawtoothWave_Form.o PlaneWave_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
@@ -78,11 +78,11 @@ include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
 
 clean: clean_ThirdParty
-	rm -f *.o *.a *.mod *.ld *.smod
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f SineWaveAdvection_*
-	rm -f SawtoothWave_*
+	rm -f SawtoothWaveAdvection_*
 	rm -f OppenheimerSnyder_*
 	rm -f RiemannProblem_*
 	rm -f RayleighTaylor_*
@@ -109,13 +109,13 @@ SineWaveAdvection.o: \
 
 SawtoothWave_Form.o: \
   Basics.o \
-  PlaneWave_Template.o \
+  PlaneWave_Form.o \
   SawtoothWave_Form.f90
 
-SawtoothWave.o: \
+SawtoothWaveAdvection.o: \
   Basics.o \
   SawtoothWave_Form.o \
-  SawtoothWave.f90
+  SawtoothWaveAdvection.f90
 
 OppenheimerSnyder_Form.o: \
   GenASiS.o \
