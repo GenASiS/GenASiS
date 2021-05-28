@@ -77,6 +77,9 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
 
+    if ( C % Type  ==  '' ) &
+      C % Type  =  'a Chart_GS_C'
+
     Pi  =  CONSTANT % PI
 
     CoordinateSystem  =  'SPHERICAL'

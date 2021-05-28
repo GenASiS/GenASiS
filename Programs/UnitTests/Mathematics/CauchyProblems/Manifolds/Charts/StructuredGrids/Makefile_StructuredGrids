@@ -2,7 +2,8 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Chart_H__Form_Test Chart_GS__Form_Test Chart_GS_CC__Form_Test
+all: Chart_H__Form_Test Chart_GS__Form_Test Chart_GS_CE__Form_Test \
+  Chart_GS_CC__Form_Test
 
 Chart_H__Form_Test: Basics.a StructuredGrids.a \
   Chart_H__Form_Test.o
@@ -18,6 +19,13 @@ Chart_GS__Form_Test: Basics.a StructuredGrids.a \
           Chart_GS__Form_Test.o StructuredGrids.a \
           Basics.a $(LIBRARIES)
 
+Chart_GS_CE__Form_Test: Basics.a StructuredGrids.a \
+  Chart_GS_CE__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_GS_CE__Form_Test_$(MACHINE) \
+          Chart_GS_CE__Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
 Chart_GS_CC__Form_Test: Basics.a StructuredGrids.a \
   Chart_GS_CC__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -31,6 +39,7 @@ clean:
 clobber: clean
 	rm -f Chart_H__Form_Test_*
 	rm -f Chart_GS__Form_Test_*
+	rm -f Chart_GS_CE__Form_Test_*
 	rm -f Chart_GS_CC__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -45,6 +54,11 @@ Chart_GS__Form_Test.o: \
   Basics.o \
   StructuredGrids.o \
   Chart_GS__Form_Test.f90
+
+Chart_GS_CE__Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Chart_GS_CE__Form_Test.f90
 
 Chart_GS_CC__Form_Test.o: \
   Basics.o \

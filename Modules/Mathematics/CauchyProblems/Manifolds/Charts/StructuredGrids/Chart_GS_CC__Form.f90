@@ -52,6 +52,9 @@ contains
       nCellsPolarOption, &
       nEqualOption
 
+    if ( C % Type  ==  '' ) &
+      C % Type  =  'a Chart_GS_CC'
+
     call C % SetCore ( RadiusCore, nCellsPolarOption )
 
     call C % Chart_GS_C_Form % Initialize &

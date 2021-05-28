@@ -12,6 +12,11 @@ Chart_GS_C__Form.o: \
   Chart_GS__Form.o \
   Chart_GS_C__Form.f90
 
+Chart_GS_CE__Form.o: \
+  Basics.o \
+  Chart_GS_C__Form.o \
+  Chart_GS_CC__Form.f90
+
 Chart_GS_CC__Form.o: \
   Basics.o \
   Chart_GS_C__Form.o \
@@ -21,6 +26,7 @@ StructuredGrids.o: \
   Chart_H__Form.o \
   Chart_GS__Form.o \
   Chart_GS_C__Form.o \
+  Chart_GS_CE__Form.o \
   Chart_GS_CC__Form.o \
   StructuredGrids.f90
 
