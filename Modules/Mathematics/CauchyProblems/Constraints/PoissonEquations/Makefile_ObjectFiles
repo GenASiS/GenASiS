@@ -1,5 +1,7 @@
 POISSON_EQUATIONS = \
-  PoissonEquations.o
+  PoissonEquations.o \
+  Laplacian_M_H__Kernel.o \
+  Laplacian_M_H__Form.o
 #  Poisson_ASC__Kernel.o \
   Poisson_ASC__Form.o \
   Poisson_Template.o \

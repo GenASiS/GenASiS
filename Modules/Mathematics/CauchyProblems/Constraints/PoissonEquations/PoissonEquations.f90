@@ -8,5 +8,6 @@ module PoissonEquations
   ! use LaplacianMultipole_ASC__Form
   ! use Poisson_Template
   ! use Poisson_ASC__Form
+  use Laplacian_M_H__Form
 
 end module PoissonEquations
