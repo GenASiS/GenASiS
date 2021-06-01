@@ -14,9 +14,9 @@ module Atlas_SCG__Form
       Chart_GS => null ( )
   contains
     procedure, private, pass :: &
-      Initialize_SG
+      Initialize_SCG
     generic, public :: &
-      Initialize => Initialize_SG
+      Initialize => Initialize_SCG
     final :: &
       Finalize
   end type Atlas_SCG_Form
@@ -25,7 +25,7 @@ module Atlas_SCG__Form
 contains
 
 
-  subroutine Initialize_SG &
+  subroutine Initialize_SCG &
                ( A, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, NameOption, PeriodicOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
@@ -64,31 +64,51 @@ contains
       nEqualOption, &
       iDimensionalityOption
 
+    logical :: &
+      PreviouslyAllocated
+
     if ( A % Type  ==  '' ) &
       A % Type  =  'an Atlas_SCG'
 
+    if ( .not. allocated ( A % Chart ) ) &
+      allocate ( A % Chart ( 1 ) )
+    
+    if ( allocated ( A % Chart ( 1 ) % Element ) ) then
+      PreviouslyAllocated  =  .true.
+    else
+      PreviouslyAllocated  =  .false.
+      allocate ( Chart_GS_Form :: A % Chart ( 1 ) % Element )
+    end if
+
     call A % Initialize_H &
            ( NameOption = NameOption, &
-             IgnorabilityOption = IgnorabilityOption )
+             IgnorabilityOption = IgnorabilityOption, &
+             nChartsOption = 1 )
 
-    allocate ( Chart_GS_Form :: A % Chart ( 1 ) % Element )
+    if ( .not. PreviouslyAllocated ) then
+
+      select type ( C  =>  A % Chart ( 1 ) % Element )
+      class is ( Chart_GS_Form )
+
+      call C % Initialize &
+             ( CommunicatorOption, SpacingOption, CoordinateLabelOption, &
+               CoordinateSystemOption, NameOption, PeriodicOption, &
+               CoordinateUnitOption, MinCoordinateOption, &
+               MaxCoordinateOption, RatioOption, ScaleOption, &
+               nCellsOption, nGhostLayersOption, nBricksOption, &
+               nBricksCompatibleOption, IgnorabilityOption, &
+               nDimensionsOption, nEqualOption, iDimensionalityOption )
+
+      end select !--  C
+
+    end if !-- PreviouslyAllocated  
+
     select type ( C  =>  A % Chart ( 1 ) % Element )
     class is ( Chart_GS_Form )
-
-    call C % Initialize &
-           ( CommunicatorOption, SpacingOption, CoordinateLabelOption, &
-             CoordinateSystemOption, NameOption, PeriodicOption, &
-             CoordinateUnitOption, MinCoordinateOption, &
-             MaxCoordinateOption, RatioOption, ScaleOption, &
-             nCellsOption, nGhostLayersOption, nBricksOption, &
-             nBricksCompatibleOption, IgnorabilityOption, &
-             nDimensionsOption, nEqualOption, iDimensionalityOption )
-
-    A % Chart_GS  =>  C
-
-    end select !--  C
-
-  end subroutine Initialize_SG
+      A % Chart_GS  =>  C
+    end select !-- C
+      
+  end subroutine Initialize_SCG
 
 
   impure elemental subroutine Finalize ( A )

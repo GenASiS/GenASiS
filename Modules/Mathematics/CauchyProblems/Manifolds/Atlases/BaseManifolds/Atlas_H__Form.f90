@@ -61,7 +61,8 @@ contains
     A % nCharts  =  1
     if ( present ( nChartsOption ) ) &
       A % nCharts  =  nChartsOption
-    allocate ( A % Chart ( A % nCharts ) )
+    if ( .not. allocated ( A % Chart ) ) &
+      allocate ( A % Chart ( A % nCharts ) )
 
   end subroutine Initialize_H
 

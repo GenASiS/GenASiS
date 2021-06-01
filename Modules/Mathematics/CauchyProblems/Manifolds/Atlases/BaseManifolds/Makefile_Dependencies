@@ -9,9 +9,16 @@ Atlas_SCG__Form.o: \
   Atlas_H__Form.o \
   Atlas_SCG__Form.f90
 
+Atlas_SCG_CE__Form.o: \
+  Basics.o \
+  Charts.o \
+  Atlas_SCG__Form.o \
+  Atlas_SCG_CE__Form.f90
+
 BaseManifolds.o: \
   Atlas_H__Form.o \
   Atlas_SCG__Form.o \
+  Atlas_SCG_CE__Form.o \
   BaseManifolds.f90
 
 BaseManifolds.a: $(BASE_MANIFOLDS)
