@@ -40,7 +40,6 @@ module Laplacian_M_H__Form
       MomentName
     type ( StorageForm ), allocatable :: &
       d_Radius_3_3, &
-!       CellFraction, &
       RadialFunctions_R, &
       RadialFunctions_I, &
       MyAngularMoments, &
@@ -50,8 +49,6 @@ module Laplacian_M_H__Form
       DeltaFactor
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO_AngularMoments
-    class ( Atlas_H_Form ), pointer :: &
-      Atlas => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -118,27 +115,27 @@ module Laplacian_M_H__Form
 contains
 
 
-  subroutine Initialize ( L, A, MaxDegree, nEquations )
+  subroutine Initialize ( L, GA, MaxDegree, nEquations )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( Atlas_H_Form ), intent ( in ) :: &
-      A
+    class ( Geometry_F_A_Form ), intent ( in ) :: &
+      GA
     integer ( KDI ), intent ( in ) :: &
       MaxDegree, &
       nEquations
 
-    L % IGNORABILITY  =  A % IGNORABILITY
+    L % IGNORABILITY  =  GA % IGNORABILITY
 
-    if ( L % Type == '' ) &
-      L % Type = 'a Laplacian_M' 
+    if ( L % Type  ==  '' ) &
+      L % Type  =  'a Laplacian_M' 
 
-    L % Name = 'Laplacian'
+    L % Name  =  'Laplacian'
 
     call Show ( 'Initializing ' // trim ( L % Type ), L % IGNORABILITY )
     call Show ( L % Name, 'Name', L % IGNORABILITY )
 
-    call L % SetParameters ( A, MaxDegree, nEquations )
+    call L % SetParameters ( GA, MaxDegree, nEquations )
     call L % SetKernelFunctions ( )
     call L % AllocateMoments ( )
 
@@ -191,12 +188,12 @@ contains
   end subroutine Show_L
 
 
-  subroutine ComputeMoments ( L, Source )
+  subroutine ComputeMoments ( L, Source_A )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
     class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source
+      Source_A
 
     ! type ( TimerForm ), pointer :: &
     !   Timer, &
@@ -224,7 +221,7 @@ contains
     ! if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     ! if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
-    call L % ComputeAngularMomentsLocal ( Source )
+    call L % ComputeAngularMomentsLocal ( Source_A )
     ! if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     ! if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
@@ -249,8 +246,6 @@ contains
     type ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
 
-    nullify ( L % Atlas )
-
     if ( allocated ( L % CO_AngularMoments ) ) &
       deallocate ( L % CO_AngularMoments )
 
@@ -268,8 +263,6 @@ contains
       deallocate ( L % RadialFunctions_I )
     if ( allocated ( L % RadialFunctions_R ) ) &
       deallocate ( L % RadialFunctions_R )
-!     if ( allocated ( L % CellFraction ) ) &
-!       deallocate ( L % CellFraction )
     if ( allocated ( L % d_Radius_3_3 ) ) &
       deallocate ( L % d_Radius_3_3 )
 
@@ -292,12 +285,12 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetParameters ( L, A, MaxDegree, nEquations )
+  subroutine SetParameters ( L, GA, MaxDegree, nEquations )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( Atlas_H_Form ), intent ( in ), target :: &
-      A
+    class ( Geometry_F_A_Form ), intent ( in ), target :: &
+      GA
     integer ( KDI ), intent ( in ) :: &
       MaxDegree, &
       nEquations
@@ -317,7 +310,7 @@ contains
     L % MaxDegree  =  MaxDegree
     L % MaxOrder   =  MaxDegree
 
-    call L % SetParameters_A ( A )
+    call L % SetParameters_A ( GA )
 
     associate &
       (  L_Max  =>  L % MaxDegree, &
@@ -395,12 +388,12 @@ contains
   end subroutine SetParameters
 
 
-  subroutine SetParameters_A ( L, A )
+  subroutine SetParameters_A ( L, GA )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( Atlas_H_Form ), intent ( in ) :: &
-      A
+    class ( Geometry_F_A_Form ), intent ( in ), target :: &
+      GA
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Laplacian_M_H__Form', 'module', CONSOLE % ERROR )
@@ -669,12 +662,12 @@ contains
   end function AssociatedLegendre
 
 
-  subroutine ComputeAngularMomentsLocal ( L, Source )
+  subroutine ComputeAngularMomentsLocal ( L, Source_A )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
     class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source
+      Source_A
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Laplacian_M_H__Form', 'module', CONSOLE % ERROR )

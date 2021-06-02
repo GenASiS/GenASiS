@@ -9,5 +9,6 @@ module PoissonEquations
   ! use Poisson_Template
   ! use Poisson_ASC__Form
   use Laplacian_M_H__Form
+  use Laplacian_M_A__Form
 
 end module PoissonEquations
