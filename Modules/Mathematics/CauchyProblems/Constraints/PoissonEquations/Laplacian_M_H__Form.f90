@@ -51,7 +51,7 @@ module Laplacian_M_H__Form
       CO_AngularMoments
   contains
     procedure, public, pass :: &
-      Initialize
+      Initialize_H
     procedure, public, pass :: &
       Show => Show_L
 !     procedure, public, pass :: &
@@ -115,7 +115,7 @@ module Laplacian_M_H__Form
 contains
 
 
-  subroutine Initialize ( L, GA, MaxDegree, nEquations )
+  subroutine Initialize_H ( L, GA, MaxDegree, nEquations )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
@@ -139,7 +139,7 @@ contains
     call L % SetKernelFunctions ( )
     call L % AllocateMoments ( )
 
-  end subroutine Initialize
+  end subroutine Initialize_H
 
 
 !   subroutine InitializeTimers ( L, BaseLevel )

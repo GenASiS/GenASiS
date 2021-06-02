@@ -91,7 +91,7 @@ contains
     if ( L % Type  ==  '' ) &
       L % Type  =  'a Laplacian_M_A' 
 
-    call L % Laplacian_M_H_Form % Initialize ( GA, MaxDegree, nEquations )
+    call L % Initialize_H ( GA, MaxDegree, nEquations )
 
   end subroutine Initialize
 
