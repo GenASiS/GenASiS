@@ -108,9 +108,16 @@ Laplacian_M_A__Kernel.o: \
 #   Poisson_ASC__Form.o \
 #   Poisson_ASC__Kernel.f90
 
+Poisson_H__Form.o: \
+  Basics.o \
+  Fields.o \
+  Laplacian_M_H__Form.o \
+  Poisson_H__Form.f90
+
 PoissonEquations.o: \
   Laplacian_M_H__Form.o \
   Laplacian_M_A__Form.o \
+  Poisson_H__Form.o \
   PoissonEquations.f90
 #  LaplacianMultipoleOld_1__Template.o \
   LaplacianMultipoleOld_1_ASC__Form.o \
