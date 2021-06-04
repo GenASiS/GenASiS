@@ -114,10 +114,24 @@ Poisson_H__Form.o: \
   Laplacian_M_H__Form.o \
   Poisson_H__Form.f90
 
+Poisson_A__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Laplacian_M_A__Form.o \
+  Poisson_H__Form.o \
+  Poisson_A__Form.f90
+
+Poisson_A__Kernel.o: \
+  Basics.o \
+  Poisson_A__Form.o \
+  Poisson_A__Kernel.f90
+
 PoissonEquations.o: \
   Laplacian_M_H__Form.o \
   Laplacian_M_A__Form.o \
   Poisson_H__Form.o \
+  Poisson_A__Form.o \
   PoissonEquations.f90
 #  LaplacianMultipoleOld_1__Template.o \
   LaplacianMultipoleOld_1_ASC__Form.o \

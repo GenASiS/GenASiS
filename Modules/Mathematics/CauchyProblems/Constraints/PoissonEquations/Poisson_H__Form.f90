@@ -1,5 +1,7 @@
 module Poisson_H__Form
 
+  !-- Poisson_Header__Form
+
   use Basics
   use Fields
   use Laplacian_M_H__Form
@@ -302,9 +304,9 @@ contains
     class ( FieldSet_A_Form ), intent ( inout ) :: &
       Solution_A
 
-    call Show ( 'Subroutine should be overidden', CONSOLE % WARNING )
-    call Show ( 'Poisson_H__Form', 'module', CONSOLE % WARNING )
-    call Show ( 'ApplyBoundarySolution', 'subroutine', CONSOLE % WARNING )
+    call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
+    call Show ( 'Poisson_H__Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ApplyBoundarySolution', 'subroutine', CONSOLE % ERROR )
     call PROGRAM_HEADER % Abort ( )
 
   end subroutine ApplyBoundarySolution
