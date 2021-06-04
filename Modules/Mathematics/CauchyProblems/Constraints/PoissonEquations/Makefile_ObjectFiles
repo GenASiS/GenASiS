@@ -7,18 +7,3 @@ POISSON_EQUATIONS = \
   Laplacian_M_A__Form.o \
   Laplacian_M_H__Kernel.o \
   Laplacian_M_H__Form.o
-#  Poisson_ASC__Kernel.o \
-  Poisson_ASC__Form.o \
-  Poisson_Template.o \
-  LaplacianMultipole_ASC__Kernel.o \
-  LaplacianMultipole_ASC__Form.o \
-  LaplacianMultipole_Kernel.o \
-  LaplacianMultipole_Template.o \
-  LaplacianMultipoleOld_2_ASC__Kernel.o \
-  LaplacianMultipoleOld_2_ASC__Form.o \
-  LaplacianMultipoleOld_2__Kernel.o \
-  LaplacianMultipoleOld_2__Template.o \
-  LaplacianMultipoleOld_1_ASC__Kernel.o \
-  LaplacianMultipoleOld_1_ASC__Form.o \
-  LaplacianMultipoleOld_1__Kernel.o \
-  LaplacianMultipoleOld_1__Template.o \

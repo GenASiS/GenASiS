@@ -32,6 +32,8 @@ module Poisson_H__Form
 !     procedure, public, pass :: &
 !       InitializeTimers
     procedure, public, pass :: &
+      Show => Show_P
+    procedure, public, pass :: &
       Solve
     final :: &
       Finalize
@@ -132,6 +134,25 @@ contains
 !                Level = BaseLevel + 2 )
 
 !   end subroutine InitializeTimers
+
+
+  subroutine Show_P ( P )
+
+    class ( Poisson_H_Form ), intent ( inout ) :: &
+      P
+
+   character ( LDL ), dimension ( : ), allocatable :: &
+     TypeWord
+
+    call Split ( P % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', P % IGNORABILITY )
+    call Show ( P % Name, 'Name', P % IGNORABILITY )
+    call Show ( P % SolverType, 'SolverType', P % IGNORABILITY )
+
+    if ( allocated ( P % Laplacian_M ) ) &
+      call P % Laplacian_M % Show ( )
+
+  end subroutine Show_P
 
 
   subroutine Solve ( P, Solution_A, Source_A )

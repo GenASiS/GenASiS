@@ -223,7 +223,6 @@ contains
     call Show ( 'Subroutine should be overidden', CONSOLE % WARNING )
     call Show ( 'Poisson_A__Form', 'module', CONSOLE % WARNING )
     call Show ( 'ApplyBoundarySolution', 'subroutine', CONSOLE % WARNING )
-    call PROGRAM_HEADER % Abort ( )
 
 !     class ( StorageForm ), pointer :: &
 !       Solution_S
