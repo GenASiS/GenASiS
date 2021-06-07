@@ -1,7 +1,6 @@
 program SineWaveAdvection
 
   use GenASiS
-  use PlaneWave_Form
   use SineWave_Form
 
   implicit none
