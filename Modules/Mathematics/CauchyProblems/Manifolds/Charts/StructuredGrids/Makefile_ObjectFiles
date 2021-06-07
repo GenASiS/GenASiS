@@ -1,5 +1,6 @@
 STRUCTURED_GRIDS = \
   StructuredGrids.o \
+  Connectivity_Form.o \
   Chart_GS_CC__Form.o \
   Chart_GS_CE__Form.o \
   Chart_GS_C__Form.o \
