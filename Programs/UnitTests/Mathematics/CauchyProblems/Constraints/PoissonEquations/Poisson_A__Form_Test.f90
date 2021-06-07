@@ -109,6 +109,10 @@ contains
              NameOption = 'Solution', &
              DeviceMemoryOption = PA % Laplacian_M % DeviceMemory, &
              nFieldsOption = nEquations )
+    call Solution_A % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
+    call Solution_A % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
     
     allocate ( Reference_A )
     call Reference_A % Initialize &

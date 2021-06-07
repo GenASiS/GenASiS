@@ -224,6 +224,8 @@ contains
     call Show ( 'Poisson_A__Form', 'module', CONSOLE % WARNING )
     call Show ( 'ApplyBoundarySolution', 'subroutine', CONSOLE % WARNING )
 
+    call Solution_A % Show ( )
+
 !     class ( StorageForm ), pointer :: &
 !       Solution_S
 

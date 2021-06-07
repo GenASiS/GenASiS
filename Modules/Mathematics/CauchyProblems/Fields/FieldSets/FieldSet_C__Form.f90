@@ -14,7 +14,8 @@ module FieldSet_C__Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nFields      = 0, &
-      nVectors     = 0
+      nVectors     = 0, &
+      nBoundaries  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaSelected
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
@@ -26,7 +27,10 @@ module FieldSet_C__Form
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
       Field, &
-      Vector
+      Vector, &
+      Boundary
+    character ( LDL ), dimension ( :, : ), allocatable :: &
+      BoundaryCondition
     class ( Storage_FSC_Form ), allocatable :: &
       Storage_FSC
     class ( GhostExchange_FSC_Form ), allocatable :: &
@@ -42,6 +46,10 @@ module FieldSet_C__Form
       InitializeClone
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone
+    procedure, public, pass :: &
+      SetBoundaryConditionsFace
+    procedure, public, pass :: &
+      SetBoundaryConditionsEdge
     procedure, private, pass :: &
       Show_FS
     generic, public :: &
@@ -73,6 +81,9 @@ module FieldSet_C__Form
       Finalize_E
   end type FieldSet_C_Element
 
+    private :: &
+      SetDefaultBoundaries, &
+      ShowBoundaryConditions
 
 contains
 
@@ -195,6 +206,15 @@ contains
            ( DevicesCommunicateOption )
     end associate !-- GE
 
+    if ( associated ( FSC % Primary ) ) then
+      allocate &
+        ( FSC % Boundary, source = FSC % Primary % Boundary )
+      allocate &
+        ( FSC % BoundaryCondition, source = FSC % Primary % BoundaryCondition )
+    else
+      call SetDefaultBoundaries ( FSC )
+    end if
+
   end subroutine InitializeAllocate_FS
 
 
@@ -284,6 +304,198 @@ contains
   end subroutine InitializeClone
 
 
+  subroutine SetBoundaryConditionsFace &
+               ( FSC, BoundaryCondition, iDimension, BoundaryOption, &
+                 iBoundaryOption )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    character ( * ), dimension ( 2 ), intent ( in ) :: &
+      BoundaryCondition  !-- [ Inner, Outer ]
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    character ( * ), intent ( in ), optional :: &
+      BoundaryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iBoundaryOption
+
+    integer ( KDI ) :: &
+      iB  !-- iBoundary
+
+    associate ( C  =>  FSC % Chart )
+
+    if ( C % Connectivity % nFaces == 0 ) then
+      call Show ( 'Faces not included in Connectivity', CONSOLE % ERROR )
+      call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetBoundaryConditionsFace', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    if ( iDimension > C % nDimensions ) then
+      call Show ( 'Selected iDimension > nDimensions', CONSOLE % ERROR )
+      call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetBoundaryConditionsFace', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    iB = 1
+    if ( present ( iBoundaryOption ) ) then
+      if ( iBoundaryOption > FSC % nBoundaries ) then
+        call Show ( 'Selected iBoundary > nBoundaries', CONSOLE % ERROR )
+        call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SetBoundaryConditionsFace', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+      if ( iBoundaryOption == 1 ) then
+        if ( present ( BoundaryOption ) ) then
+          call Show ( 'Boundary name not allowed for iBoundary == 1', &
+                      CONSOLE % ERROR )
+          call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'SetBoundaryConditionsFace', 'subroutine', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )           
+        end if
+      else
+        if ( .not. present ( BoundaryOption ) ) then
+          call Show ( 'Boundary name required for iBoundary > 1', &
+                      CONSOLE % ERROR )
+          call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'SetBoundaryConditionsFace', 'subroutine', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )           
+        end if
+      end if
+      iB = iBoundaryOption
+    end if
+
+    if ( present ( BoundaryOption ) ) then
+      if ( .not.present ( iBoundaryOption ) ) then
+        call Show ( 'Argument iBoundary required when Boundary name present', &
+                    CONSOLE % ERROR )
+        call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SetBoundaryConditionsFace', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )         
+      else
+        FSC % Boundary ( iBoundaryOption ) = BoundaryOption
+      end if
+    end if
+
+    associate &
+      ( Cy  => C % Connectivity, &
+        iD => iDimension )
+    FSC % BoundaryCondition ( Cy % iaInner ( iD ), iB ) &
+      = BoundaryCondition ( 1 )
+    FSC % BoundaryCondition ( Cy % iaOuter ( iD ), iB ) &
+      = BoundaryCondition ( 2 )
+    end associate !-- Cy, etc.
+
+    end associate !-- C
+
+  end subroutine SetBoundaryConditionsFace
+
+
+  subroutine SetBoundaryConditionsEdge &
+               ( FSC, BoundaryCondition, iDimension, BoundaryOption, &
+                 iBoundaryOption )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    character ( * ), dimension ( 4 ), intent ( in ) :: &
+      BoundaryCondition  !-- [ InnerInner, OuterInner, InnerOuter, OuterOuter ]
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    character ( * ), intent ( in ), optional :: &
+      BoundaryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iBoundaryOption
+
+    integer ( KDI ) :: &
+      iD, jD, kD, &  !-- jDimension, etc.
+      iB  !-- iBoundary
+
+    associate ( C  =>  FSC % Chart )
+
+    iD = iDimension
+    jD = mod ( iD, 3 ) + 1
+    kD = mod ( jD, 3 ) + 1
+ 
+    if ( C % Connectivity % nEdges == 0 ) then
+      call Show ( 'Edges not included in Connectivity', CONSOLE % ERROR )
+      call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetBoundaryConditionsEdge', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    if ( jD > C % nDimensions .or. kD > C % nDimensions ) then
+      call Show ( 'Selected jDimension or kDimension > nDimensions', &
+                  CONSOLE % ERROR )
+      call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetBoundaryConditionsEdge', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    iB = 1
+    if ( present ( iBoundaryOption ) ) then
+      if ( iBoundaryOption > FSC % nBoundaries ) then
+        call Show ( 'Selected iBoundary > nBoundaries', CONSOLE % ERROR )
+        call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SetBoundaryConditionsEdge', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+      if ( iBoundaryOption == 1 ) then
+        if ( present ( BoundaryOption ) ) then
+          call Show ( 'Boundary name not allowed for iBoundary == 1', &
+                      CONSOLE % ERROR )
+          call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'SetBoundaryConditionsEdge', 'subroutine', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )           
+        end if
+      else
+        if ( .not. present ( BoundaryOption ) ) then
+          call Show ( 'Boundary name required for iBoundary > 1', &
+                      CONSOLE % ERROR )
+          call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'SetBoundaryConditionsEdge', 'subroutine', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )           
+        end if
+      end if
+      iB = iBoundaryOption
+    end if
+
+    if ( present ( BoundaryOption ) ) then
+      if ( .not.present ( iBoundaryOption ) ) then
+        call Show ( 'Argument iBoundary required when BoundaryName present', &
+                    CONSOLE % ERROR )
+        call Show ( 'FieldSet_C_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SetBoundaryConditionsEdge', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )         
+      else
+        FSC % Boundary ( iBoundaryOption ) = BoundaryOption
+      end if
+    end if
+
+    associate ( Cy => C % Connectivity )
+    FSC % BoundaryCondition ( Cy % iaInnerInner ( iD ), iB ) &
+      = BoundaryCondition ( 1 )
+    FSC % BoundaryCondition ( Cy % iaOuterInner ( iD ), iB ) &
+      = BoundaryCondition ( 2 )
+    FSC % BoundaryCondition ( Cy % iaInnerOuter ( iD ), iB ) &
+      = BoundaryCondition ( 3 )
+    FSC % BoundaryCondition ( Cy % iaOuterOuter ( iD ), iB ) &
+      = BoundaryCondition ( 4 )
+    end associate !-- Cy
+
+    end associate !-- C
+
+  end subroutine SetBoundaryConditionsEdge
+
+
   subroutine Show_FS ( FSC )
 
     class ( FieldSet_C_Form ), intent ( in ) :: &
@@ -328,6 +540,8 @@ contains
                 'PinnedMemory', FSC % IGNORABILITY ) 
     call Show ( FSC % GhostExchange_FSC % DevicesCommunicate, &
                 'DevicesCommunicate', FSC % IGNORABILITY ) 
+
+    call ShowBoundaryConditions ( FSC )
 
   end subroutine Show_FS
 
@@ -445,6 +659,10 @@ contains
       deallocate ( FSC % GhostExchange_FSC )
     if ( allocated ( FSC % Storage_FSC ) ) &
       deallocate ( FSC % Storage_FSC )
+    if ( allocated ( FSC % BoundaryCondition ) ) &
+      deallocate ( FSC % BoundaryCondition )
+    if ( allocated ( FSC % Boundary ) ) &
+      deallocate ( FSC % Boundary )
     if ( allocated ( FSC % Vector ) ) &
       deallocate ( FSC % Vector )
     if ( allocated ( FSC % Field ) ) &
@@ -469,6 +687,98 @@ contains
       deallocate ( FSE % Element )
 
   end subroutine Finalize_E
+
+
+  subroutine SetDefaultBoundaries ( FSC, nExcisionsOption )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+    integer ( KDI ), intent ( in ), optional :: &
+      nExcisionsOption
+
+    FSC % nBoundaries = 1
+    if ( present ( nExcisionsOption ) ) &
+      FSC % nBoundaries = 1 + nExcisionsOption 
+
+    associate &
+      ( Cy => FSC % Chart % Connectivity )
+    allocate &
+      ( FSC % BoundaryCondition ( Cy % nConnections, FSC % nBoundaries ) )
+    allocate &
+      ( FSC % Boundary ( FSC % nBoundaries ) )
+
+    FSC % Boundary = ''
+    FSC % Boundary ( 1 ) = 'Extent' 
+
+    FSC % BoundaryCondition = ''
+    FSC % BoundaryCondition ( :, 1 ) = 'PERIODIC'
+
+    end associate !-- C
+
+  end subroutine SetDefaultBoundaries
+
+
+  subroutine ShowBoundaryConditions ( FSC )
+
+    class ( FieldSet_C_Form ), intent ( in ) :: &
+      FSC
+
+    integer ( KDI ) :: &
+      iB, &  !-- iBoundary
+      iD, jD, kD  !-- iDimension, etc.
+
+    associate &
+      ( Cy  => FSC % Chart % Connectivity, &
+        BC => FSC % BoundaryCondition ( :, : ), &
+        BN => FSC % Boundary ( : ), &
+        nD => FSC % Chart % nDimensions )
+
+    call Show ( 'Boundary conditions', FSC % IGNORABILITY )
+    call Show ( FSC % nBoundaries, 'nBoundaries', FSC % IGNORABILITY )
+
+    do iB = 1, FSC % nBoundaries
+      call Show ( BN ( iB ), 'Boundary', FSC % IGNORABILITY )
+      call Show ( iB, 'iBoundary', FSC % IGNORABILITY )
+  
+      if ( Cy % nFaces > 0 ) then
+          do iD = 1, nD
+            call Show ( iD, 'Faces, iDimension', &
+                        FSC % IGNORABILITY )
+            associate &
+              ( iaI => Cy % iaInner ( iD ), &
+                iaO => Cy % iaOuter ( iD ) )
+            call Show ( [ BC ( iaI, iB ), BC ( iaO, iB ) ], &
+                        '[ Inner, Outer ]', FSC % IGNORABILITY )
+            end associate !-- iaI, etc.
+          end do !-- iD
+      end if
+
+      if ( Cy % nEdges > 0 ) then
+          do iD = 1, nD
+            jD = mod ( iD, 3 ) + 1
+            kD = mod ( jD, 3 ) + 1
+            if ( jD > nD .or. kD > nD ) &
+              cycle
+            call Show ( iD, 'Edges parallel to iDimension', &
+                        FSC % IGNORABILITY )
+            associate &
+              ( iaII => Cy % iaInnerInner ( iD ), &
+                iaOI => Cy % iaOuterInner ( iD ), &
+                iaIO => Cy % iaInnerOuter ( iD ), &
+                iaOO => Cy % iaOuterOuter ( iD ) )
+            call Show ( [ BC ( iaII, iB ), BC ( iaOI, iB ), &
+                          BC ( iaIO, iB ), BC ( iaOO, iB ) ], &
+                        '[ InnerInner, OuterInner, InnerOuter, OuterOuter ]', &
+                        FSC % IGNORABILITY )
+            end associate !-- iaII, etc.
+          end do !-- iD
+      end if
+
+    end do !-- iB
+
+    end associate !-- Cy, etc.
+
+  end subroutine ShowBoundaryConditions
 
 
 end module FieldSet_C__Form

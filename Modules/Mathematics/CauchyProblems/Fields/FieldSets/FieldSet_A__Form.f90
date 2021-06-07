@@ -27,6 +27,10 @@ module FieldSet_A__Form
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone
     procedure, public, pass :: &
+      SetBoundaryConditionsFace
+    procedure, public, pass :: &
+      SetBoundaryConditionsEdge
+    procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
       Clear => Clear_FS
@@ -160,6 +164,66 @@ contains
     end associate !-- nC
 
   end subroutine InitializeClone
+
+
+  subroutine SetBoundaryConditionsFace &
+               ( FSA, BoundaryCondition, iDimension, BoundaryOption, &
+                 iBoundaryOption )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+    character ( * ), dimension ( 2 ), intent ( in ) :: &
+      BoundaryCondition  !-- [ Inner, Outer ]
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    character ( * ), intent ( in ), optional :: &
+      BoundaryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iBoundaryOption
+
+    integer ( KDI ) :: &
+      iC
+
+    associate ( nC  =>  FSA % Atlas % nCharts )
+    do iC  =  1, nC
+      associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+      call FSC % SetBoundaryConditionsFace &
+             ( BoundaryCondition, iDimension, BoundaryOption, iBoundaryOption )
+      end associate !-- FSC
+    end do !-- iC
+    end associate !-- nC
+
+  end subroutine SetBoundaryConditionsFace
+
+
+  subroutine SetBoundaryConditionsEdge &
+               ( FSA, BoundaryCondition, iDimension, BoundaryOption, &
+                 iBoundaryOption )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+    character ( * ), dimension ( 4 ), intent ( in ) :: &
+      BoundaryCondition  !-- [ InnerInner, OuterInner, InnerOuter, OuterOuter ]
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    character ( * ), intent ( in ), optional :: &
+      BoundaryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iBoundaryOption
+
+    integer ( KDI ) :: &
+      iC
+
+    associate ( nC  =>  FSA % Atlas % nCharts )
+    do iC  =  1, nC
+      associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+      call FSC % SetBoundaryConditionsFace &
+             ( BoundaryCondition, iDimension, BoundaryOption, iBoundaryOption )
+      end associate !-- FSC
+    end do !-- iC
+    end associate !-- nC
+
+  end subroutine SetBoundaryConditionsEdge
 
 
   subroutine Show_FS ( FSA )
