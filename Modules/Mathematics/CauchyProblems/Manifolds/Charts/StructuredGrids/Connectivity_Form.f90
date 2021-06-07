@@ -108,7 +108,7 @@ contains
   subroutine Show_C ( C, IgnorabilityOption, nLeadingLinesOption, &
                       nTrailingLinesOption )
 
-    class ( ConnectivityForm ), intent ( inout ) :: &
+    class ( ConnectivityForm ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption, &

@@ -3,6 +3,7 @@ module Chart_H__Form
   !-- Chart_Header__Form
 
   use Basics
+  use Connectivity_Form
 
   implicit none
   private
@@ -24,6 +25,8 @@ module Chart_H__Form
       CoordinateSystem
     character ( LDL ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateLabel
+    type ( ConnectivityForm ), allocatable :: &
+      Connectivity
   contains
     procedure, public, pass :: &
       Initialize_H
@@ -93,6 +96,11 @@ contains
            ( C, CoordinateLabelOption, CoordinateSystemOption, PeriodicOption, &
              CoordinateUnitOption )
 
+    allocate ( C % Connectivity )
+    associate ( Cy  =>  C % Connectivity )
+    call Cy % Initialize ( C % nDimensions )
+    end associate !-- Cy
+
   end subroutine Initialize_H
 
 
@@ -120,6 +128,8 @@ contains
 
     call Show ( C % Periodic ( : nD ), 'Periodic', C % IGNORABILITY )
 
+    call C % Connectivity % Show ( C % IGNORABILITY + 1 )
+
     end associate !-- nD
 
   end subroutine Show_C
@@ -129,6 +139,9 @@ contains
 
     type ( Chart_H_Form ), intent ( inout ) :: &
       C
+
+    if ( allocated ( C % Connectivity ) ) &
+      deallocate ( C % Connectivity )
 
     call Show ( 'Finalizing ' // trim ( C % Type ), C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )

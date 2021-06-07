@@ -4,6 +4,7 @@ Connectivity_Form.o: \
 
 Chart_H__Form.o: \
   Basics.o \
+  Connectivity_Form.o \
   Chart_H__Form.f90
 
 Chart_GS__Form.o: \
