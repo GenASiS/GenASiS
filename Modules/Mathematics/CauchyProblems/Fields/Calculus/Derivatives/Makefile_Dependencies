@@ -1,0 +1,14 @@
+Gradient_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Streams.o \
+  Gradient_C__Form.f90
+
+Derivatives.o: \
+  Gradient_C__Form.o \
+  Derivatives.f90
+
+Derivatives.a: $(DERIVATIVES)
+	ar r Derivatives.a $(DERIVATIVES)

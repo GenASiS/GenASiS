@@ -241,6 +241,7 @@ contains
     call CSA % UpdateDevice ( )
     call CSA % ExchangeGhostData ( )
     call CSA % ComputeFromInitial ( )
+    call CSA % ApplyBoundaryConditions ( )
     call CSA % UpdateHost ( )
     end associate !-- CSA
 

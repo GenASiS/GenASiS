@@ -589,7 +589,8 @@ contains
     end associate !-- iaB
 
     call CurrentSet_C % ComputeFromConserved ( )
-
+    call CurrentSet_C % ApplyBoundaryConditions ( )
+    
   end subroutine StoreSolution_C
 
 

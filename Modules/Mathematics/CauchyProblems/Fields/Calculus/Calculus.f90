@@ -1,6 +1,6 @@
 module Calculus
 
-!  use Derivatives
+  use Derivatives
   use Integrals
 
 end module Calculus
