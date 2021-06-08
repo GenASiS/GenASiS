@@ -33,6 +33,46 @@ module Boundaries_FSC__Form
       Finalize
   end type Boundaries_FSC_Form
 
+    private :: &
+      CopyField
+
+      private :: &
+        SetLimits, &
+        CopyFieldKernel, &
+        ReverseFieldKernel
+      
+    interface
+
+      module subroutine CopyFieldKernel &
+               ( V, nB, dBE, dBI, oBE, oBI, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          V
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB,  & 
+          dBE, &
+          dBI, &
+          oBE, &
+          oBI
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine CopyFieldKernel
+      
+      module subroutine ReverseFieldKernel &
+               ( V, nB, dBE, oBE, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          V
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB,  & 
+          dBE, &
+          oBE
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ReverseFieldKernel
+    
+    end interface
+
 
 contains
 
@@ -351,4 +391,145 @@ contains
   end subroutine Finalize
 
 
+  subroutine CopyField ( SFSC, C, iF, iD, iC )
+
+    class ( Storage_FSC_Form ), intent ( inout ) :: &
+      SFSC
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iF, &  !-- iField
+      iD, &  !-- iDimension
+      iC     !-- iConnection
+
+    integer ( KDI ), dimension ( 3 ) :: &
+      oBI, &  !-- oBoundaryInterior
+      oBE, &  !-- oBoundaryExterior
+      dBI, &  !-- dBoundaryInterior, i.e. direction
+      dBE, &  !-- dBoundaryExterior, i.e. direction
+      nB      !-- nBoundary
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      F
+
+    associate ( Cy => C % Connectivity )
+    if ( iC == Cy % iaInner ( iD ) &
+         .and. C % iaBrick ( iD ) /= 1 ) return
+    if ( iC == Cy % iaOuter ( iD ) &
+         .and. C % iaBrick ( iD ) /= C % nBricks ( iD ) ) return
+    end associate !-- Cy
+
+    associate ( nCB  =>  C % nCellsBrick )
+    call SetLimits &
+           ( C, nCB, iD, iC, nB, dBE, dBI, oBE, oBI )
+    end associate !-- nCB
+
+    call C % SetFieldPointer ( SFSC % Storage % Value ( :, iF ), F )
+
+    call CopyFieldKernel &
+           ( F, nB, dBE, dBI, oBE, oBI, &
+             UseDeviceOption = SFSC % DeviceMemory )
+
+    nullify ( F )
+
+  end subroutine CopyField
+
+
+  subroutine ReverseField ( SFSC, C, iF, iD, iC )
+
+    class ( Storage_FSC_Form ), intent ( inout ) :: &
+      SFSC
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iF, &  !-- iField
+      iD, &  !-- iDimension
+      iC     !-- iConnection
+
+    integer ( KDI ), dimension ( 3 ) :: &
+      oBI, &  !-- oBoundaryInterior
+      oBE, &  !-- oBoundaryExterior
+      dBI, &  !-- dBoundaryInterior, i.e. direction
+      dBE, &  !-- dBoundaryExterior, i.e. direction
+      nB      !-- nBoundary
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      F
+
+    associate ( Cy => C % Connectivity )
+    if ( iC == Cy % iaInner ( iD ) &
+         .and. C % iaBrick ( iD ) /= 1 ) return
+    if ( iC == Cy % iaOuter ( iD ) &
+         .and. C % iaBrick ( iD ) /= C % nBricks ( iD ) ) return
+    end associate !-- Cy
+
+    associate ( nCB  =>  C % nCellsBrick )
+    call SetLimits &
+           ( C, nCB, iD, iC, nB, dBE, dBI, oBE, oBI )
+    end associate !-- nCB
+
+    call C % SetFieldPointer ( SFSC % Storage % Value ( :, iF ), F )
+
+    call ReverseFieldKernel &
+           ( F, nB, dBE, oBE, &
+             UseDeviceOption = SFSC % DeviceMemory )
+
+    nullify ( F )
+
+  end subroutine ReverseField
+
+
+  subroutine SetLimits &
+               ( C, nCells, iDimension, iConnection, nB, dBE, dBI, oBE, oBI )
+
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCells
+    integer ( KDI ), intent ( in ) :: &
+      iDimension, &
+      iConnection
+    integer ( KDI ), dimension ( 3 ), intent ( out ) :: &
+      nB, &   !-- nBoundary
+      dBI, &  !-- dBoundaryInterior, i.e. direction
+      dBE, &  !-- dBoundaryExterior, i.e. direction
+      oBI, &  !-- oBoundaryInterior
+      oBE     !-- oBoundaryExterior
+
+    integer ( KDI ) :: &
+      jD, kD   !-- jDimension, kDimension
+
+    associate &
+      ( Cy => C % Connectivity, &
+        iD => iDimension, &
+        iC => iConnection )
+
+    jD = mod ( iD, 3 ) + 1
+    kD = mod ( jD, 3 ) + 1
+
+    !-- In setting oBI and oBE, note kernel routine does not inherit lbound
+
+    oBI = C % nGhostLayers
+    dBI = +1
+    if ( iC == Cy % iaOuter ( iD ) ) then
+      oBI ( iD ) = oBI ( iD ) + nCells ( iD ) + 1
+      dBI ( iD ) = -1
+    end if !-- iC
+
+    oBE = oBI
+    dBE = dBI
+    dBE ( iD ) = -dBI ( iD )
+    if ( iC == Cy % iaInner ( iD ) ) then
+      oBE ( iD ) = oBE ( iD ) + 1
+    else if ( iC == Cy % iaOuter ( iD ) ) then
+      oBE ( iD ) = oBE ( iD ) - 1
+    end if !-- iC
+
+    nB ( iD ) = C % nGhostLayers ( iD )
+    nB ( jD ) = nCells ( jD )
+    nB ( kD ) = nCells ( kD )
+
+    end associate !-- Connectivity, etc.
+    
+  end subroutine SetLimits
+
+  
 end module Boundaries_FSC__Form

@@ -15,6 +15,11 @@ Boundaries_FSC__Form.o: \
   Storage_FSC__Form.o \
   Boundaries_FSC__Form.f90
 
+Boundaries_FSC__Kernel.o: \
+  Basics.o \
+  Boundaries_FSC__Form.o \
+  Boundaries_FSC__Kernel.f90
+
 FieldSet_C__Form.o: \
   Basics.o \
   Manifolds.o \
