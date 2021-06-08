@@ -39,6 +39,8 @@ module FieldSet_A__Form
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
+      ApplyBoundaryConditions
+    procedure, public, pass :: &
       UpdateDevice => UpdateDevice_FS
     procedure, public, pass :: &
       UpdateHost => UpdateHost_FS
@@ -323,6 +325,29 @@ contains
     end associate  !-- A
 
   end subroutine ExchangeGhostData
+
+
+  subroutine ApplyBoundaryConditions ( FSA, TimerLevelOption )
+
+    class ( FieldSet_A_Form ), intent ( inout ) :: &
+      FSA
+    integer ( KDI ), intent ( in ), optional :: &
+      TimerLevelOption
+
+   integer ( KDI ) :: &
+     iC  !-- iC
+
+    associate ( A  =>  FSA % Atlas )
+    do iC  =  1, A % nCharts
+      if ( allocated ( FSA % FieldSet_C ( iC ) % Element ) ) then
+        associate ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
+        call FSC % ApplyBoundaryConditions ( )
+        end associate !-- FSC
+      end if  
+    end do !-- iC
+    end associate  !-- A
+
+  end subroutine ApplyBoundaryConditions
 
 
   subroutine UpdateDevice_FS ( FSA, TimerLevelOption )

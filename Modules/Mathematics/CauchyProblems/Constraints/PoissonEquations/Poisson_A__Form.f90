@@ -220,31 +220,15 @@ contains
     class ( FieldSet_A_Form ), intent ( inout ) :: &
       Solution_A
 
-    call Show ( 'Subroutine should be overidden', CONSOLE % WARNING )
-    call Show ( 'Poisson_A__Form', 'module', CONSOLE % WARNING )
-    call Show ( 'ApplyBoundarySolution', 'subroutine', CONSOLE % WARNING )
+    call Solution_A % ApplyBoundaryConditions ( )
 
-    call Solution_A % Show ( )
+    ! call Solution_A % Show ( )
+    ! associate ( SC  =>  Solution_A % FieldSet_C ( 1 ) % Element )
+    ! associate ( SV  =>  SC % Storage_FSC % Storage % Value )
+    ! call Show ( SV ( :, 1 ), SC % Field ( 1 ) )  
+    ! end associate !-- SV
+    ! end associate !-- SC
 
-!     class ( StorageForm ), pointer :: &
-!       Solution_S
-
-!     select type ( Solution )
-!     class is ( Storage_ASC_Form )
-!     Solution_S => Solution % Storage ( )
-
-!     call P % Atlas % ApplyBoundaryConditionsFaces ( Solution_S )
-
-!     class default
-!       call Show ( 'Solution type not supported', CONSOLE % ERROR )
-!       call Show ( 'Poisson_A__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'ExchangeSolution', 'subroutine', &
-!                   CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- Source
-
-!     nullify ( Solution_S )
-    
   end subroutine ApplyBoundarySolution
 
 

@@ -29,12 +29,19 @@ module Boundaries_FSC__Form
       SetEdge
     procedure, public, pass :: &
       Show => Show_BFSC
+    procedure, private, pass ( BFSC ):: &
+      ApplyAll
+    procedure, private, pass ( BFSC ):: &
+      ApplyDimensionConnectivity
+    generic, public :: &
+      Apply => ApplyAll, ApplyDimensionConnectivity
     final :: &
       Finalize
   end type Boundaries_FSC_Form
 
     private :: &
-      CopyField
+      CopyField, &
+      ReverseField
 
       private :: &
         SetLimits, &
@@ -378,6 +385,102 @@ contains
   end subroutine Show_BFSC
 
 
+  subroutine ApplyAll ( SFSC, BFSC, C )
+
+    class ( Storage_FSC_Form ), intent ( inout ) :: &
+      SFSC
+    class ( Boundaries_FSC_Form ), intent ( in ) :: &
+      BFSC
+    class ( Chart_H_Form ), intent ( in ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    do iD  =  1,  C % nDimensions
+      associate &
+        ( iC_I  =>  C % Connectivity % iaInner ( iD ), &
+          iC_O  =>  C % Connectivity % iaOuter ( iD ) )
+      call BFSC % Apply ( SFSC, C, iD, iC_I )
+      call BFSC % Apply ( SFSC, C, iD, iC_O )
+      end associate !-- iC_I, etc.
+    end do
+
+  end subroutine ApplyAll
+
+
+  subroutine ApplyDimensionConnectivity ( SFSC, BFSC, C, iD, iC )
+
+    class ( Storage_FSC_Form ), intent ( inout ) :: &
+      SFSC
+    class ( Boundaries_FSC_Form ), intent ( in ) :: &
+      BFSC
+    class ( Chart_H_Form ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iD, &  !-- iDimension
+      iC     !-- iConnection
+
+    integer ( KDI ) :: &
+      iB, &  !-- iBoundary
+      iS, &  !-- iSelected
+      iF, &  !-- iField
+      iV     !-- iVector
+
+    do iB  =  1,  BFSC % nBoundaries
+
+      select type ( C )
+      class is ( Chart_GS_Form )
+
+        associate ( BC  =>  BFSC % BoundaryCondition ( iC, iB ) )
+        select case ( trim ( BC ) )
+        case ( 'PERIODIC', 'INFLOW' )
+
+          cycle
+
+        case ( 'OUTFLOW' )
+
+          associate ( S  =>  SFSC % Storage )
+          do iS  =  1,  S % nVariables
+            iF  =  S % iaSelected ( iS )
+            call CopyField ( S, C, iF, iD, iC )
+          end do !-- iS
+          end associate !-- S
+
+        case ( 'REFLECTING' )
+
+          associate ( S  =>  SFSC % Storage )
+          do iS  =  1,  S % nVariables
+            iF  =  S % iaSelected ( iS )
+            call CopyField ( S, C, iF, iD, iC )
+            do iV = 1, S % nVectors
+              if ( iF == S % VectorIndices ( iV ) % Value ( iD ) ) &
+                call ReverseField ( S, C, iF, iD, iC )
+            end do !-- iV
+          end do !-- iS
+          end associate !-- S
+
+        case default
+          call Show ( 'BoundaryCondition not recognized', CONSOLE % ERROR )
+          call Show ( BC, 'BoundaryCondition', CONSOLE % ERROR )
+          call Show ( 'Boundaries_FSC__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Apply', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- BC
+        end associate !-- BC
+
+      class default
+        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+        call Show ( 'Boundaries_FSC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Apply', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- C
+
+    end do !-- iB
+
+  end subroutine ApplyDimensionConnectivity
+
+
   impure elemental subroutine Finalize ( BFSC )
 
     type ( Boundaries_FSC_Form ), intent ( inout ) :: &
@@ -391,10 +494,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine CopyField ( SFSC, C, iF, iD, iC )
+  subroutine CopyField ( S, C, iF, iD, iC )
 
-    class ( Storage_FSC_Form ), intent ( inout ) :: &
-      SFSC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
@@ -423,21 +526,21 @@ contains
            ( C, nCB, iD, iC, nB, dBE, dBI, oBE, oBI )
     end associate !-- nCB
 
-    call C % SetFieldPointer ( SFSC % Storage % Value ( :, iF ), F )
+    call C % SetFieldPointer ( S % Value ( :, iF ), F )
 
     call CopyFieldKernel &
            ( F, nB, dBE, dBI, oBE, oBI, &
-             UseDeviceOption = SFSC % DeviceMemory )
+             UseDeviceOption = S % AllocatedDevice )
 
     nullify ( F )
 
   end subroutine CopyField
 
 
-  subroutine ReverseField ( SFSC, C, iF, iD, iC )
+  subroutine ReverseField ( S, C, iF, iD, iC )
 
-    class ( Storage_FSC_Form ), intent ( inout ) :: &
-      SFSC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
@@ -466,11 +569,11 @@ contains
            ( C, nCB, iD, iC, nB, dBE, dBI, oBE, oBI )
     end associate !-- nCB
 
-    call C % SetFieldPointer ( SFSC % Storage % Value ( :, iF ), F )
+    call C % SetFieldPointer ( S % Value ( :, iF ), F )
 
     call ReverseFieldKernel &
            ( F, nB, dBE, oBE, &
-             UseDeviceOption = SFSC % DeviceMemory )
+             UseDeviceOption = S % AllocatedDevice )
 
     nullify ( F )
 

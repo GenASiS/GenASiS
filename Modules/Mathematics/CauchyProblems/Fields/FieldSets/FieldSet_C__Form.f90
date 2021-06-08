@@ -64,6 +64,8 @@ module FieldSet_C__Form
     procedure, public, pass :: &
       FinishGhostExchange
     procedure, public, pass :: &
+      ApplyBoundaryConditions
+    procedure, public, pass :: &
       UpdateDevice => UpdateDevice_FS
     procedure, public, pass :: &
       UpdateHost => UpdateHost_FS
@@ -315,9 +317,10 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       iBoundaryOption
 
-    call FSC % Boundaries_FSC % SetFace &
-           ( FSC % Chart, BoundaryCondition, iDimension, BoundaryOption, &
-             iBoundaryOption )
+    if ( iDimension  <=  FSC % Chart % nDimensions ) &
+      call FSC % Boundaries_FSC % SetFace &
+             ( FSC % Chart, BoundaryCondition, iDimension, BoundaryOption, &
+               iBoundaryOption )
 
   end subroutine SetBoundaryConditionsFace
 
@@ -469,6 +472,16 @@ contains
     end associate !-- GE, etc.
 
   end subroutine FinishGhostExchange
+
+
+  subroutine ApplyBoundaryConditions ( FSC )
+
+    class ( FieldSet_C_Form ), intent ( inout ) :: &
+      FSC
+
+    call FSC % Boundaries_FSC % Apply ( FSC % Storage_FSC, FSC % Chart )
+
+  end subroutine ApplyBoundaryConditions
 
 
   subroutine UpdateDevice_FS ( FSC, TimerLevelOption )
