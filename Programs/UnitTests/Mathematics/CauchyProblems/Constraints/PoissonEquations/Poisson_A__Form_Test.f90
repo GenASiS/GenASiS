@@ -85,6 +85,8 @@ contains
       Solution_A, &
       Reference_A, &
       Difference_A
+    type ( Gradient_A_Form ), allocatable :: &
+      Gradient_A
 
     call Show ( 'Testing homogeneous spheres' )
 
@@ -128,10 +130,14 @@ contains
              NameOption = 'Difference', &
              nFieldsOption = nEquations )
     
+    allocate ( Gradient_A )
+    call Gradient_A % Initialize ( GA, Solution_A )
+
     call SA % AddFieldSet ( Source_A )
     call SA % AddFieldSet ( Solution_A )
     call SA % AddFieldSet ( Reference_A )
     call SA % AddFieldSet ( Difference_A )
+    call SA % AddFieldSet ( Gradient_A )
     call SA % Show ( )
 
     RadiusDensity  =  C % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ]
@@ -151,6 +157,8 @@ contains
 
     call PA % Solve ( Solution_A, Source_A )
     call ComputeError ( Difference_A, Solution_A, Reference_A )
+
+    call Gradient_A % Compute ( iD = 1 )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call SA % Write ( )
