@@ -6,6 +6,11 @@ Gradient_C__Form.o: \
   Streams.o \
   Gradient_C__Form.f90
 
+Gradient_C__Kernel.o: \
+  Basics.o \
+  Gradient_C__Form.o \
+  Gradient_C__Kernel.f90
+
 Derivatives.o: \
   Gradient_C__Form.o \
   Derivatives.f90
