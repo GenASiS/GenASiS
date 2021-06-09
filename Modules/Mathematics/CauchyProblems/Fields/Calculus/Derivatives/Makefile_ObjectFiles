@@ -1,4 +1,5 @@
 DERIVATIVES = \
   Derivatives.o \
+  Gradient_A__Form.o \
   Gradient_C__Kernel.o \
   Gradient_C__Form.o

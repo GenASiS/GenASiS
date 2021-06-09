@@ -2,8 +2,8 @@ Gradient_C__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
-  Geometries.o \
   Streams.o \
+  Geometries.o \
   Gradient_C__Form.f90
 
 Gradient_C__Kernel.o: \
@@ -11,8 +11,17 @@ Gradient_C__Kernel.o: \
   Gradient_C__Form.o \
   Gradient_C__Kernel.f90
 
+Gradient_A__Form.o: \
+  Basics.o \
+  FieldSets.o \
+  Streams.o \
+  Geometries.o \
+  Gradient_C__Form.o \
+  Gradient_A__Form.f90
+
 Derivatives.o: \
   Gradient_C__Form.o \
+  Gradient_A__Form.o \
   Derivatives.f90
 
 Derivatives.a: $(DERIVATIVES)

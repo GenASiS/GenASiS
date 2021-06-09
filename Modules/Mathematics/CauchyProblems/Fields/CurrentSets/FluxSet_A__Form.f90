@@ -104,7 +104,7 @@ contains
 
     do iC  =  1, size ( FSA % FieldSet_C )
       select type ( FSC  =>  FSA % FieldSet_C ( iC ) % Element )
-      class is ( FluxSet_C_Form )
+        class is ( FluxSet_C_Form )
       call FSC % Compute ( iD, TimerLevelOption )
       end select !-- FSC
     end do !-- iC
