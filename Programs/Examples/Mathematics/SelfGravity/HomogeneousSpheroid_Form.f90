@@ -20,6 +20,8 @@ module HomogeneousSpheroid_Form
       Stream_A
     type ( Geometry_F_A_Form ), allocatable :: &
       Geometry_A
+    type ( Gradient_A_Form ), allocatable :: &
+      GradSolution_A
     type ( Poisson_A_Form ), allocatable :: &
       Poisson_A
   contains
@@ -110,6 +112,10 @@ contains
              NameOption = 'Solution', &
              DeviceMemoryOption = PA % Laplacian_M % DeviceMemory, &
              nFieldsOption = nEquations )
+    call HS % Solution_A % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
+    call HS % Solution_A % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
     
     allocate ( HS % Reference_A )
     call HS % Reference_A % Initialize &
@@ -124,11 +130,16 @@ contains
              FieldOption = Field, &
              NameOption = 'Difference', &
              nFieldsOption = nEquations )
-    
+
     call SA % AddFieldSet ( HS % Source_A )
     call SA % AddFieldSet ( HS % Solution_A )
     call SA % AddFieldSet ( HS % Reference_A )
     call SA % AddFieldSet ( HS % Difference_A )
+
+    allocate ( HS % GradSolution_A )
+    associate ( GSA  =>  HS % GradSolution_A )
+    call GSA % Initialize ( GA, HS % Solution_A )
+    call GSA % SetStream ( SA )
 
     call  A % Show ( )
     call GA % Show ( )
@@ -157,6 +168,7 @@ contains
     call HS % SetHomogeneousSpheroids &
            ( SemiMajor, Eccentricity, Density, nEquations )
 
+    end associate !-- GSA
     end associate !-- PA
     end associate !-- GA
     end associate !-- SA
@@ -171,11 +183,22 @@ contains
     class ( HomogeneousSpheroidForm ), intent ( inout ) :: &
       HS
 
+    integer ( KDI ) :: &
+      iD
+
     associate ( PA  =>  HS % Poisson_A )
     call PA % Solve ( HS % Solution_A, HS % Source_A )
     end associate !-- PA
 
     call ComputeError ( HS % Difference_A, HS % Solution_A, HS % Reference_A )
+
+    associate ( nD  =>  HS % Atlas % Chart ( 1 ) % Element % nDimensions )
+    do iD  =  1, nD
+      associate ( GSA  =>  HS % GradSolution_A )
+      call GSA % Compute ( iD )
+      end associate !-- GSA
+    end do !-- iD
+    end associate !-- nD
 
     associate &
       ( GIS  =>  HS % GridImageStream, &
@@ -195,6 +218,8 @@ contains
 
     if ( allocated ( HS % Poisson_A ) ) &
       deallocate ( HS % Poisson_A )
+    if ( allocated ( HS % GradSolution_A ) ) &
+      deallocate ( HS % GradSolution_A )
     if ( allocated ( HS % Geometry_A ) ) &
       deallocate ( HS % Geometry_A )
     if ( allocated ( HS % Stream_A ) ) &

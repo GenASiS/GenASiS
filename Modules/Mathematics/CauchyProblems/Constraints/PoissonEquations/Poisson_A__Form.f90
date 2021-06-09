@@ -220,12 +220,21 @@ contains
     class ( FieldSet_A_Form ), intent ( inout ) :: &
       Solution_A
 
+!    real ( KDR ), dimension ( :, :, : ), pointer :: &
+!      SV_3D
+
     call Solution_A % ApplyBoundaryConditions ( )
 
     ! call Solution_A % Show ( )
     ! associate ( SC  =>  Solution_A % FieldSet_C ( 1 ) % Element )
     ! associate ( SV  =>  SC % Storage_FSC % Storage % Value )
-    ! call Show ( SV ( :, 1 ), SC % Field ( 1 ) )  
+    ! select type ( C  =>  SC % Chart )
+    !  class is ( Chart_GS_Form )
+
+    ! call C % SetFieldPointer ( SV ( :, 1 ), SV_3D )
+    ! call Show ( SV_3D, '>>> ' // trim ( SC % Field ( 1 ) ) )  
+
+    ! end select !-- C
     ! end associate !-- SV
     ! end associate !-- SC
 

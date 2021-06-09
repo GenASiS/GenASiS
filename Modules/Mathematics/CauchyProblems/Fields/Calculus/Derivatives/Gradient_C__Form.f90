@@ -16,11 +16,15 @@ module Gradient_C__Form
       FieldSet_C  => null ( )
     class ( Geometry_F_C_Form ), pointer :: &
       Geometry_C => null ( )
+    type ( FieldSet_C_Element ), dimension ( : ), allocatable :: &
+      Dimension_C
   contains
     procedure, private, pass :: &
       InitializeAllocate_G
     generic, public :: &
       Initialize => InitializeAllocate_G
+    procedure, public, pass :: &
+      SetStream
     procedure, public, pass :: &
       Compute
     final :: &
@@ -115,6 +119,53 @@ contains
   end subroutine InitializeAllocate_G
 
 
+  subroutine SetStream ( GC, SC )
+
+    class ( Gradient_C_Form ), intent ( inout ) :: &
+      GC
+    class ( Stream_C_Form ), intent ( inout ) :: &
+      SC
+
+    integer ( KDI ) :: &
+      iD     !-- iDimension
+    character ( 1 ) :: &
+      DimensionNumber
+
+    associate &
+      ( FC  =>  GC % FieldSet_C )
+    associate &
+      (                 nD  =>  FC % Chart % nDimensions, &
+              DeviceMemory  =>  FC % Storage_FSC % DeviceMemory, &
+              PinnedMemory  =>  FC % Storage_FSC % DeviceMemory, &
+        DevicesCommunicate  =>  FC % GhostExchange_FSC % DevicesCommunicate )
+
+    allocate ( GC % Dimension_C ( nD ) )
+    do iD  =  1, nD
+
+      write ( DimensionNumber, fmt = '(i1.1)' ) iD
+
+      allocate ( GC % Dimension_C ( iD ) % Element )
+
+      associate ( DC  =>  GC % Dimension_C ( iD ) % Element )
+      call DC % Initialize &
+             ( GC % Chart, &
+               FieldOption = GC % Field, &
+               NameOption = trim ( GC % Name ) // '_' // DimensionNumber, &
+               DeviceMemoryOption = DeviceMemory, &
+               PinnedMemoryOption = PinnedMemory, &
+               DevicesCommunicateOption = DevicesCommunicate, &
+               nFieldsOption = GC % nFields )
+      call SC % AddFieldSet ( DC )
+      end associate !-- DC, etc.
+
+    end do !-- iD
+
+    end associate !-- nD, etc.
+    end associate !-- FC
+
+  end subroutine SetStream
+
+
   subroutine Compute ( GC, iD, TimerLevelOption )
 
     class ( Gradient_C_Form ), intent ( inout ) :: &
@@ -181,32 +232,11 @@ contains
     end associate !-- GV, etc.
     end associate !-- GyC, etc.
 
-    ! if ( allocated ( GC % StageDimension_C ) .and. present ( iS_Option ) ) &
-    ! then
-    !   associate &
-    !     ( SDC  =>  GC % StageDimension_C ( iS_Option, iD ) % Element, &
-    !       FSC  =>  GC % FieldSet_C )
-    !   call FSC % Copy ( SDC )
-    !   end associate !-- SDC, etc.
-    ! end if
-
-    ! if ( allocated ( GC % StageDimension_IL_C ) .and. present ( iS_Option ) ) &
-    ! then
-    !   associate &
-    !     ( SDC  =>  GC % StageDimension_IL_C ( iS_Option, iD ) % Element, &
-    !        OC  =>  GC % Output_IL_C )
-    !   call OC % Copy ( SDC )
-    !   end associate !-- SDC, etc.
-    ! end if
-
-    ! if ( allocated ( GC % StageDimension_IR_C ) .and. present ( iS_Option ) ) &
-    ! then
-    !   associate &
-    !     ( SDC  =>  GC % StageDimension_IR_C ( iS_Option, iD ) % Element, &
-    !        OC  =>  GC % Output_IR_C )
-    !   call OC % Copy ( SDC )
-    !   end associate !-- SDC, etc.
-    ! end if
+    if ( allocated ( GC % Dimension_C ) ) then
+      associate ( DC  =>  GC % Dimension_C ( iD ) % Element )
+      call GC % Copy ( DC )
+      end associate !-- DC, etc.
+    end if
 
     ! call T % Stop ( )
 
@@ -217,6 +247,9 @@ contains
 
     type ( Gradient_C_Form ), intent ( inout ) :: &
       GC
+
+    if ( allocated ( GC % Dimension_C ) ) &
+      deallocate ( GC % Dimension_C )
 
     nullify ( GC % Geometry_C )
     nullify ( GC % FieldSet_C )

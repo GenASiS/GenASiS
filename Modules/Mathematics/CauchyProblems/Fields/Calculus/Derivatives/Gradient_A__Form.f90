@@ -22,6 +22,8 @@ module Gradient_A__Form
     generic, public :: &
       Initialize => InitializeAllocate_G
     procedure, public, pass :: &
+      SetStream
+    procedure, public, pass :: &
       Compute
     final :: &
       Finalize
@@ -96,6 +98,28 @@ contains
     end associate !-- nC
 
   end subroutine InitializeAllocate_G
+
+
+  subroutine SetStream ( GA, SA )
+
+    class ( Gradient_A_Form ), intent ( inout ) :: &
+      GA
+    class ( Stream_A_Form ), intent ( inout ) :: &
+      SA
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    do iC  =  1, GA % Atlas % nCharts
+      associate ( SC  =>  SA % Stream_C ( iC ) % Element )
+      select type ( GC  =>  GA % FieldSet_C ( iC ) % Element )
+        class is ( Gradient_C_Form )
+      call GC % SetStream ( SC )
+      end select !-- GC
+      end associate !-- SC
+    end do !-- iC
+
+  end subroutine SetStream
 
 
   subroutine Compute ( GA, iD, TimerLevelOption )
