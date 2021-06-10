@@ -1,6 +1,6 @@
 module Gravitation_NH_A__Form
 
-  !-- Gravitation_Galileo_Atlas_Form
+  !-- Gravitation_NewtonHeader_Atlas_Form
 
   use Basics
   use Mathematics

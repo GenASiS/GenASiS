@@ -105,21 +105,24 @@ contains
   end subroutine InitializeAllocate_FS
 
 
-  subroutine SetStream ( SA, GA )
+  subroutine SetStream ( SA, GA, iaAdditionalOption )
 
     class ( Stream_A_Form ), intent ( inout ) :: &
       SA
     class ( Geometry_F_A_Form ), intent ( in ) :: &
       GA
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaAdditionalOption
 
     integer ( KDI ) :: &
       iC  !-- iChart
 
     do iC  =  1, GA % Atlas % nCharts
-      associate ( SC  =>  SA % Stream_C ( iC ) % Element )
+      associate &
+        ( SC  =>  SA % Stream_C ( iC ) % Element )
       select type ( GC  =>  GA % FieldSet_C ( iC ) % Element )
-      class is ( Geometry_F_C_Form )
-      call GC % SetStream ( SC )
+        class is ( Geometry_F_C_Form )
+      call GC % SetStream ( SC, iaAdditionalOption )
       end select !-- GC
       end associate !-- SC
     end do !-- iC

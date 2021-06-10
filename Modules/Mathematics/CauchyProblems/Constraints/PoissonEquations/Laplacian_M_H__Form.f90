@@ -166,7 +166,7 @@ contains
 
   subroutine Show_L ( L )
 
-    class ( Laplacian_M_H_Form ), intent ( inout ) :: &
+    class ( Laplacian_M_H_Form ), intent ( in ) :: &
       L
 
    character ( LDL ), dimension ( : ), allocatable :: &

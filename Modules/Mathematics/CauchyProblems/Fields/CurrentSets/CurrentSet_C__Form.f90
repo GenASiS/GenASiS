@@ -296,10 +296,6 @@ contains
     class ( CurrentSet_C_Form ), intent ( in ) :: &
       FSC
 
-    integer ( KDI ) :: &
-      iF, &  !-- iField
-      iS     !-- iSelected
-
     call FSC % FieldSet_C_Form % Show ( )
 
     call Show ( FSC %  nPrimitive,  'nPrimitive', FSC % IGNORABILITY )

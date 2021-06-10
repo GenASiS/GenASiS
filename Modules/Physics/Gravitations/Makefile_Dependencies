@@ -20,11 +20,19 @@ Gravitation_NH_A__Form.o: \
   Gravitation_NH_C__Form.o \
   Gravitation_NH_A__Form.f90
 
+Gravitation_NSG_A__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_NH_C__Form.o \
+  Gravitation_NH_A__Form.o \
+  Gravitation_NSG_A__Form.f90
+
 Gravitations.o: \
   Gravitation_G_C__Form.o \
   Gravitation_G_A__Form.o \
   Gravitation_NH_C__Form.o \
   Gravitation_NH_A__Form.o \
+  Gravitation_NSG_A__Form.o \
   Gravitations.f90
 
 Gravitations.a: $(GRAVITATIONS)

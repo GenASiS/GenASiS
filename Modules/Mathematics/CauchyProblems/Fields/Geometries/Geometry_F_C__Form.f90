@@ -304,19 +304,30 @@ contains
   end subroutine InitializeAllocate_FS
 
 
-  subroutine SetStream ( SC, GC )
+  subroutine SetStream ( SC, GC, iaAdditionalOption )
 
     class ( Stream_C_Form ), intent ( inout ) :: &
       SC
     class ( Geometry_F_C_Form ), intent ( in ) :: &
       GC
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaAdditionalOption
 
-    call SC % AddFieldSet &
-           ( GC, &
-             iaSelectedOption &
-               =  [ GC % CENTER_U_1, GC % CENTER_U_2, GC % CENTER_U_3, &
-                    GC % METRIC_F_DD_11, GC % METRIC_F_DD_22, &
-                    GC % METRIC_F_DD_33 ] )
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaSelected
+
+    if ( present ( iaAdditionalOption ) ) then
+      allocate ( iaSelected ( 6 + size ( iaAdditionalOption ) ) )
+      iaSelected ( 7 : )  =  iaAdditionalOption
+    else
+      allocate ( iaSelected ( 6 ) )
+    end if
+
+    iaSelected ( 1 : 6 )  &
+      =  [ GC % CENTER_U_1,     GC % CENTER_U_2,     GC % CENTER_U_3, &
+           GC % METRIC_F_DD_11, GC % METRIC_F_DD_22, GC % METRIC_F_DD_33 ]
+
+    call SC % AddFieldSet ( GC, iaSelectedOption = iaSelected )
 
   end subroutine SetStream
 

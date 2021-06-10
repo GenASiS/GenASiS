@@ -138,7 +138,7 @@ contains
 
   subroutine Show_P ( P )
 
-    class ( Poisson_H_Form ), intent ( inout ) :: &
+    class ( Poisson_H_Form ), intent ( in ) :: &
       P
 
    character ( LDL ), dimension ( : ), allocatable :: &

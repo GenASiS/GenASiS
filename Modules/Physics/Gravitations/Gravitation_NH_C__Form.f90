@@ -147,15 +147,15 @@ contains
 
     call FSC % Geometry_F_C_Form % Initialize &
            ( C, &
-             FieldOption = FieldOption, &
-             VectorOption = VectorOption, &
+             FieldOption = Field, &
+             VectorOption = Vector, &
              NameOption = Name, &
              DeviceMemoryOption = DeviceMemoryOption, &
              PinnedMemoryOption = PinnedMemoryOption, &
              DevicesCommunicateOption = DevicesCommunicateOption, &
              UnitOption = UnitOption, &
-             VectorIndicesOption = VectorIndicesOption, &
-             nFieldsOption = nFieldsOption, &
+             VectorIndicesOption = VectorIndices, &
+             nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
   end subroutine InitializeAllocate_FS
