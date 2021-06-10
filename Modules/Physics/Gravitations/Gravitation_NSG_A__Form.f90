@@ -23,6 +23,8 @@ module Gravitation_NSG_A__Form
       Show => Show_FS
     procedure, public, pass ( GA ) :: &
       SetStream
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Gravitation_NSG_A_Form
@@ -150,11 +152,19 @@ contains
       class is ( Gravitation_NH_C_Form )
 
     call GA % Gravitation_NH_A_Form % SetStream &
-           ( SA, iaAdditionalOption = [ GC % POTENTIAL, GC % FORCE_D ] )
+           ( SA, iaAdditionalOption = [ GC % POTENTIAL ] )
 
     end select !-- GC
 
   end subroutine SetStream
+
+
+  subroutine Compute ( GA )
+
+    class ( Gravitation_NSG_A_Form ), intent ( inout ) :: &
+      GA
+
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( GA )
