@@ -116,7 +116,6 @@ contains
                        % Value ( :, GC % CENTER_U_3 ), &
           Rho  =>  CSC % Storage_FSC % Storage &
                        % Value ( :, CSC % DENSITY_DEFAULT ), &
-            V  =>  CSC % VelocityDefault_U, &
             K  =>  Wavenumber, &
         Abs_K  =>  sqrt ( dot_product ( Wavenumber, Wavenumber ) ), &
         TwoPi  =>  2.0_KDR  *  CONSTANT % PI )
@@ -127,9 +126,7 @@ contains
                                   +  K ( 2 ) * Y  &
                                   +  K ( 3 ) * Z  ) )
 
-    V ( 1 )  =  Speed  *  K ( 1 )  /  Abs_K
-    V ( 2 )  =  Speed  *  K ( 2 )  /  Abs_K
-    V ( 3 )  =  Speed  *  K ( 3 )  /  Abs_K
+    call CSC % SetVelocityDefault ( Wavenumber, Speed )
     
     end associate !-- Rho, etc.
     end select !-- C

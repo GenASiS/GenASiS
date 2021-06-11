@@ -23,9 +23,12 @@ module CurrentSet_C__Form
       N_VECTORS_CS   = N_VECTORS_CS
     !-- Defaults not generally used
     integer ( KDI ) :: &
-      DENSITY_DEFAULT = 0
-    real ( KDR ), dimension ( 3 ) :: &
-      VelocityDefault_U = 0.0_KDR
+      DENSITY_DEFAULT      = 0, &
+      VELOCITY_DEFAULT_U_1 = 0, &
+      VELOCITY_DEFAULT_U_2 = 0, &
+      VELOCITY_DEFAULT_U_3 = 0
+    integer ( KDI ), dimension ( 3 ) :: &
+      VELOCITY_DEFAULT_U = 0
     !-- Primtive and Balanced
     integer ( KDI ) :: &
       nPrimitive = 0, &
@@ -46,6 +49,12 @@ module CurrentSet_C__Form
       InitializeAllocate_CS
     generic, public :: &
       Initialize => InitializeAllocate_CS
+    procedure, private, pass :: &
+      SetVelocityDefault_R  !-- Rectangular
+    procedure, private, pass :: &
+      SetVelocityDefault_S  !-- Spherical
+    generic, public :: &
+      SetVelocityDefault  =>  SetVelocityDefault_R, SetVelocityDefault_S
     procedure, public, pass ( CSC ) :: &
       SetStream
     procedure, private, pass :: &
@@ -72,8 +81,7 @@ module CurrentSet_C__Form
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          D
-        real ( KDR ), intent ( in ) :: &
+          D, &
           V_Dim
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           F_D
@@ -85,7 +93,7 @@ module CurrentSet_C__Form
                ( V_Dim, EF_P, EF_M, UseDeviceOption )
         use Basics
         implicit none
-        real ( KDR ), intent ( in ) :: &
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
           V_Dim
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           EF_P, EF_M
@@ -161,8 +169,18 @@ contains
     if ( present ( nFieldsOption ) ) then
       nFields  =  nFieldsOption
     else
-      CSC % DENSITY_DEFAULT  =  1
-      nFields  =  CSC % N_FIELDS_CS  +  1
+
+      CSC % DENSITY_DEFAULT       =  1
+      CSC % VELOCITY_DEFAULT_U_1  =  2
+      CSC % VELOCITY_DEFAULT_U_2  =  3
+      CSC % VELOCITY_DEFAULT_U_3  =  4
+
+      nFields  =  CSC % N_FIELDS_CS  +  4
+
+      CSC % VELOCITY_DEFAULT_U  =  [ CSC % VELOCITY_DEFAULT_U_1, &
+                                     CSC % VELOCITY_DEFAULT_U_2, &
+                                     CSC % VELOCITY_DEFAULT_U_3 ]
+
     end if
 
     !-- Field names
@@ -172,6 +190,9 @@ contains
     else
       allocate ( Field ( nFields ) )
       Field ( CSC % N_FIELDS_CS + 1 )  =  'Density'
+      Field ( CSC % N_FIELDS_CS + 2 )  =  'Velocity_U_1'
+      Field ( CSC % N_FIELDS_CS + 3 )  =  'Velocity_U_2'
+      Field ( CSC % N_FIELDS_CS + 4 )  =  'Velocity_U_3'
     end if !-- FieldOption
 
     !-- Units
@@ -267,6 +288,64 @@ contains
   end subroutine InitializeAllocate_CS
 
 
+  subroutine SetVelocityDefault_R ( CSC, Direction, Speed )
+
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CSC
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Direction
+    real ( KDR ), intent ( in ) :: &
+      Speed
+
+    associate &
+      ( CSV  =>  CSC % Storage_FSC % Storage % Value )
+    associate &
+      (     V_1  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_1 ), &
+            V_2  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_2 ), &
+            V_3  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_3 ), &
+            K    =>  Direction, &
+        Abs_K    =>  sqrt ( dot_product ( Direction, Direction ) ) )
+
+    V_1  =  Speed  *  K ( 1 )  /  Abs_K
+    V_2  =  Speed  *  K ( 2 )  /  Abs_K
+    V_3  =  Speed  *  K ( 3 )  /  Abs_K
+    
+    end associate !-- V_1, etc.
+    end associate !-- CSV
+
+  end subroutine SetVelocityDefault_R
+
+
+  subroutine SetVelocityDefault_S ( CSC, Speed, Radius )
+
+    class ( CurrentSet_C_Form ), intent ( inout ) :: &
+      CSC
+    real ( KDR ), intent ( in ) :: &
+      Speed, &
+      Radius
+
+    associate &
+      ( GC  =>  CSC % Geometry_C )
+    associate &
+      ( CSV  =>  CSC % Storage_FSC % Storage % Value, &
+         GV  =>   GC % Storage_FSC % Storage % Value )
+    associate &
+      (    V_1  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_1 ), &
+           V_2  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_2 ), &
+           V_3  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_3 ), &
+           R    =>   GV ( :,  GC % CENTER_U_1 ) )
+
+    V_1  =  Speed  *  ( R / Radius )
+    V_2  =  0.0_KDR
+    V_3  =  0.0_KDR
+    
+    end associate !-- V_1, etc.
+    end associate !-- CSV, etc.
+    end associate !-- GC
+
+  end subroutine SetVelocityDefault_S
+
+
   subroutine SetStream ( SC, CSC )
 
     class ( Stream_C_Form ), intent ( inout ) :: &
@@ -336,22 +415,19 @@ contains
     
     integer ( KDI ) :: &
       iDensity
-    real ( KDR ) :: &
-      V_Dim
 
     if ( CSC % DENSITY_DEFAULT > 0 ) then
 
       call Search ( CSC % iaBalanced, CSC % DENSITY_DEFAULT, iDensity )
-
-      V_Dim  =  CSC % VelocityDefault_U ( iD )
 
       associate &
         ( FSS  =>  FSC % Storage_FSC % Storage, &
           CSS  =>  CSC % Storage_FSC % Storage, &
           DeviceMemory  =>  FSC % Storage_FSC % DeviceMemory )
       associate &
-        ( F_D  =>  FSS % Value ( :, iDensity ), &
-            D  =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ) ) 
+        ( F_D      =>  FSS % Value ( :, iDensity ), &
+            D      =>  CSS % Value ( :, CSC % DENSITY_DEFAULT ), & 
+            V_Dim  =>  CSS % Value ( :, CSC % VELOCITY_DEFAULT_U ( iD ) ) ) 
  
       call ComputeFluxesKernel &
              ( D, V_Dim, F_D, UseDeviceOption = DeviceMemory )
@@ -374,19 +450,17 @@ contains
       iaEigenspeeds
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
-    real ( KDR ) :: &
-      V_Dim
 
     if ( CSC % DENSITY_DEFAULT > 0 ) then
 
-      V_Dim  =  CSC % VelocityDefault_U ( iD )
-
       associate &
         ( FSS  =>  FSC % Storage_FSC % Storage, &
+          CSS  =>  CSC % Storage_FSC % Storage, &
           DeviceMemory  =>  CSC % Storage_FSC % DeviceMemory )
       associate &
-        ( EF_P  =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
-          EF_M  =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ) ) 
+        ( EF_P    =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
+          EF_M    =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ), &
+           V_Dim  =>  CSS % Value ( :, CSC % VELOCITY_DEFAULT_U ( iD ) ) ) 
  
       call ComputeEigenspeedsKernel &
              ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
