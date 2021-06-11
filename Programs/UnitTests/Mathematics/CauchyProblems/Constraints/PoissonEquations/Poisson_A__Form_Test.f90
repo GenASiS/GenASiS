@@ -143,7 +143,7 @@ contains
     RadiusDensity  =  C % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ]
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
 
-    Density  =  1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  *  RadiusDensity ** 3 )
+    Density  =  1.0_KDR  /  RadiusDensity ** 3
 
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
@@ -276,9 +276,11 @@ contains
     associate &
       ( SV  =>  SC % Storage_FSC % Storage % Value )
     associate &
-      ( D  =>  SV ( :, iField ) )
+      ( D  =>  SV ( :, iField ), &
+        FourPi  =>  4.0_KDR  *  CONSTANT % PI )
 
     call SetDensityKernel ( R_E, R_W, RadiusDensity, Density, D )
+    D  =  FourPi  *  D
 
     end associate !-- D
     end associate !-- SV
@@ -292,13 +294,15 @@ contains
       ( RV  =>  RC % Storage_FSC % Storage % Value )
     associate &
       ( Phi  =>  RV ( :, iField ), &
-        Pi   =>  CONSTANT % PI )
+        FourPi   =>  4.0_KDR  *  CONSTANT % PI )
 
     where ( R_C  <  RadiusDensity )
-      Phi  =  1.0_KDR / 6.0_KDR  *  Density  *  R_C ** 2  &
-              -  1.0_KDR / 2.0_KDR  *  Density  *  RadiusDensity ** 2
+      Phi  =  1.0_KDR / 6.0_KDR  *  FourPi  *  Density  *  R_C ** 2  &
+              -  1.0_KDR / 2.0_KDR  *  FourPi  *  Density  &
+                                    *  RadiusDensity ** 2
     elsewhere
-      Phi  =  - 1.0_KDR / 3.0_KDR  *  Density  *  RadiusDensity ** 3  /  R_C
+      Phi  =  - 1.0_KDR / 3.0_KDR  *  FourPi  *  Density  &
+                                   *  RadiusDensity ** 3  /  R_C
     end where
 
     end associate !-- Phi, etc.

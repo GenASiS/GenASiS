@@ -24,11 +24,32 @@ module Gravitation_NSG_A__Form
     procedure, public, pass ( GA ) :: &
       SetStream
     procedure, public, pass :: &
-      Compute
+      Solve
     final :: &
       Finalize
   end type Gravitation_NSG_A_Form
 
+    private :: &
+      ComputeSourceKernel
+
+    interface
+
+      module subroutine ComputeSourceKernel &
+               ( M, N, G, S, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M, &
+          N
+        real ( KDR ), intent ( in ) :: &
+          G
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          S
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeSourceKernel
+
+   end interface
 
 contains
 
@@ -159,12 +180,47 @@ contains
   end subroutine SetStream
 
 
-  subroutine Compute ( GA )
+  subroutine Solve ( GA, FA, Constant_G, iBaryonMass, iBaryonDensity )
 
     class ( Gravitation_NSG_A_Form ), intent ( inout ) :: &
       GA
+    class ( FieldSet_A_Form ), intent ( in ) :: &
+      FA
+    real ( KDR ), intent ( in ) :: &
+      Constant_G  !-- Gravitational
+    integer ( KDI ), intent ( in ) :: &
+      iBaryonMass, &
+      iBaryonDensity
 
-  end subroutine Compute
+    integer ( KDI ) :: &
+      iC
+
+    associate ( nC  =>  GA % Atlas % nCharts )
+    do iC  =  1, nC
+      associate &
+        ( FC  =>  FA % FieldSet_C ( iC ) % Element, &
+          SC  =>  GA % Source_A % FieldSet_C ( iC ) % Element )
+      associate &
+        ( FV  =>  FC % Storage_FSC % Storage % Value, &
+          SV  =>  SC % Storage_FSC % Storage % Value )
+
+      call ComputeSourceKernel &
+             ( M = FV ( :, iBaryonMass ), &
+               N = FV ( :, iBaryonDensity ), &
+               G = Constant_G, &
+               S = SV ( :, SC % iaSelected ( 1 ) ), &
+               UseDeviceOption = SC % Storage_FSC % DeviceMemory )
+
+      end associate !-- FV, etc.
+      end associate !-- FC, etc.
+    end do !-- iC
+    end associate !-- nC
+
+    associate ( PA  =>  GA % Poisson_A )
+    call PA % Solve ( GA % Solution_A, GA % Source_A )
+    end associate !-- PA
+
+  end subroutine Solve
 
 
   impure elemental subroutine Finalize ( GA )
