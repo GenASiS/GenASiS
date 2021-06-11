@@ -183,20 +183,23 @@ contains
                        % Value ( :, GC % CENTER_U_3 ), &
           Rho  =>  CSC % Storage_FSC % Storage &
                        % Value ( :, CSC % DENSITY_DEFAULT ), &
-            V  =>  CSC % VelocityDefault_U, &
+          V_1  =>  CSC % Storage_FSC % Storage &
+                       % Value ( :, CSC % VELOCITY_DEFAULT_U_1 ), &
+          V_2  =>  CSC % Storage_FSC % Storage &
+                       % Value ( :, CSC % VELOCITY_DEFAULT_U_2 ), &
+          V_3  =>  CSC % Storage_FSC % Storage &
+                       % Value ( :, CSC % VELOCITY_DEFAULT_U_3 ), &
             K  =>  Wavenumber, &
         Abs_K  =>  sqrt ( dot_product ( Wavenumber, Wavenumber ) ), &
         TwoPi  =>  2.0_KDR  *  CONSTANT % PI )
 
-    V ( 1 )  =  Speed  *  K ( 1 )  /  Abs_K
-    V ( 2 )  =  Speed  *  K ( 2 )  /  Abs_K
-    V ( 3 )  =  Speed  *  K ( 3 )  /  Abs_K
+    call CSC % SetVelocityDefault ( Wavenumber, Speed )
     
     Rho  =  Offset  &
             +  Amplitude  &
-               *  sin ( TwoPi * (    K ( 1 )  *  ( X  -  V ( 1 )  *  T ) &
-                                  +  K ( 2 )  *  ( Y  -  V ( 2 )  *  T ) &
-                                  +  K ( 3 )  *  ( Z  -  V ( 3 )  *  T ) ) )
+               *  sin ( TwoPi * (    K ( 1 )  *  ( X  -  V_1  *  T ) &
+                                  +  K ( 2 )  *  ( Y  -  V_2  *  T ) &
+                                  +  K ( 3 )  *  ( Z  -  V_3  *  T ) ) )
 
     end associate !-- Rho, etc.
     end select !-- GC
@@ -252,8 +255,12 @@ contains
     end select !-- G
 
     call CO % Reduce ( REDUCTION % SUM )
-    call Show (    CO % Incoming % Value (      1 :      nF )  &
-                /  CO % Incoming % Value ( nF + 1 : nF + nF ), 'L1 Error' )
+    associate &
+      ( Norm_D  =>        CO % Incoming % Value (      1 :      nF ), &
+        Norm_R  =>  max ( CO % Incoming % Value ( nF + 1 : nF + nF ), &
+                          sqrt ( tiny ( 0.0_KDR ) ) ) )
+    call Show ( Norm_D  /  Norm_R , 'L1 Error' )
+    end associate !-- Norm_D, etc.
 
     end associate !-- nF
 
