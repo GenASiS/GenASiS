@@ -402,8 +402,16 @@ contains
     class ( FieldSet_C_Form ), intent ( inout ) :: &
       FSC
 
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iF     !-- iField
+
     associate ( FSV  =>  FSC % Storage_FSC % Storage % Value )
-    call Clear ( FSV, UseDeviceOption = FSC % Storage_FSC % DeviceMemory )
+    do iS  =  1,  FSC % nFields
+      iF  =  FSC % iaSelected ( iS )
+      call Clear ( FSV ( :, iF ), &
+                   UseDeviceOption = FSC % Storage_FSC % DeviceMemory )
+    end do !-- iS
     end associate !-- FSV
 
   end subroutine Clear_FS
@@ -415,11 +423,20 @@ contains
       FSC_S, &
       FSC_T
 
+    integer ( KDI ) :: &
+      iS, &    !-- iSelected
+      iF_S, &  !-- iField
+      iF_T
+
     associate &
       ( FSV_S  =>  FSC_S % Storage_FSC % Storage % Value, &
         FSV_T  =>  FSC_T % Storage_FSC % Storage % Value )
-    call Copy ( FSV_S, FSV_T, &
-                UseDeviceOption = FSC_S % Storage_FSC % DeviceMemory )
+    do iS  =  1,  FSC_S % nFields
+      iF_S  =  FSC_S % iaSelected ( iS )
+      iF_T  =  FSC_T % iaSelected ( iS )
+      call Copy ( FSV_S ( :, iF_S ), FSV_T ( :, iF_T ), &
+                  UseDeviceOption = FSC_S % Storage_FSC % DeviceMemory )
+    end do
     end associate !-- FSV_S, etc.
 
   end subroutine Copy_FS
