@@ -49,12 +49,10 @@ module CurrentSet_C__Form
       InitializeAllocate_CS
     generic, public :: &
       Initialize => InitializeAllocate_CS
-    procedure, private, pass :: &
-      SetVelocityDefault_R  !-- Rectangular
-    procedure, private, pass :: &
-      SetVelocityDefault_S  !-- Spherical
-    generic, public :: &
-      SetVelocityDefault  =>  SetVelocityDefault_R, SetVelocityDefault_S
+    procedure, public, pass :: &
+      SetVelocityConstant
+    procedure, public, pass :: &
+      SetVelocityLinear
     procedure, public, pass ( CSC ) :: &
       SetStream
     procedure, private, pass :: &
@@ -214,8 +212,10 @@ contains
         call VectorIndices ( iV ) % Initialize ( VectorIndicesOption ( iV ) )
       end do !-- iV
     else
-      nVectors  =  CSC % N_VECTORS_CS
+      nVectors  =  CSC % N_VECTORS_CS + 1
       allocate ( VectorIndices ( nVectors ) )
+      call VectorIndices ( CSC % N_VECTORS_CS + 1 ) % Initialize &
+             ( CSC % VELOCITY_DEFAULT_U )
     end if
 
     !-- Vector names
@@ -224,11 +224,8 @@ contains
       allocate ( Vector, source = VectorOption )
     else
       allocate ( Vector ( nVectors ) )
+      Vector ( CSC % N_VECTORS_CS + 1 )  =  'Velocity'
     end if !-- FieldOption
-
-    ! Vector ( 1 : CSC % N_VECTORS_CS ) &
-    !   = [ 'FastEigenspeedPlus ', &
-    !       'FastEigenspeedMinus' ]
 
     !-- Primitive fields
 
@@ -288,7 +285,7 @@ contains
   end subroutine InitializeAllocate_CS
 
 
-  subroutine SetVelocityDefault_R ( CSC, Direction, Speed )
+  subroutine SetVelocityConstant ( CSC, Direction, Speed )
 
     class ( CurrentSet_C_Form ), intent ( inout ) :: &
       CSC
@@ -313,16 +310,16 @@ contains
     end associate !-- V_1, etc.
     end associate !-- CSV
 
-  end subroutine SetVelocityDefault_R
+  end subroutine SetVelocityConstant
 
 
-  subroutine SetVelocityDefault_S ( CSC, Speed, Radius )
+  subroutine SetVelocityLinear ( CSC, Speed, Length )
 
     class ( CurrentSet_C_Form ), intent ( inout ) :: &
       CSC
     real ( KDR ), intent ( in ) :: &
       Speed, &
-      Radius
+      Length
 
     associate &
       ( GC  =>  CSC % Geometry_C )
@@ -333,9 +330,9 @@ contains
       (    V_1  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_1 ), &
            V_2  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_2 ), &
            V_3  =>  CSV ( :, CSC % VELOCITY_DEFAULT_U_3 ), &
-           R    =>   GV ( :,  GC % CENTER_U_1 ) )
+           X_1  =>   GV ( :,  GC % CENTER_U_1 ) )
 
-    V_1  =  Speed  *  ( R / Radius )
+    V_1  =  Speed  *  ( X_1 / Length )
     V_2  =  0.0_KDR
     V_3  =  0.0_KDR
     
@@ -343,7 +340,7 @@ contains
     end associate !-- CSV, etc.
     end associate !-- GC
 
-  end subroutine SetVelocityDefault_S
+  end subroutine SetVelocityLinear
 
 
   subroutine SetStream ( SC, CSC )

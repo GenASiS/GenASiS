@@ -193,7 +193,7 @@ contains
         Abs_K  =>  sqrt ( dot_product ( Wavenumber, Wavenumber ) ), &
         TwoPi  =>  2.0_KDR  *  CONSTANT % PI )
 
-    call CSC % SetVelocityDefault ( Wavenumber, Speed )
+    call CSC % SetVelocityConstant ( Wavenumber, Speed )
     
     Rho  =  Offset  &
             +  Amplitude  &

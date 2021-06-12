@@ -153,7 +153,7 @@ contains
                                   +  K ( 2 ) * Y  &
                                   +  K ( 3 ) * Z  ) )
 
-    call CSC % SetVelocityDefault ( Wavenumber, Speed )
+    call CSC % SetVelocityConstant ( Wavenumber, Speed )
     
     end associate !-- Rho, etc.
     end select !-- C
