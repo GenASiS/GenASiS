@@ -1,0 +1,31 @@
+PATH_GENASIS = ../../../../..
+
+all: RectangularContraction
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+RectangularContraction: Basics.a Mathematics.a RectangularContraction.o
+	$(LINK) $(FLAGS) \
+	  -o RectangularContraction_$(MACHINE) \
+	  RectangularContraction.o LinearAdvection_Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f RectangularContraction_*
+
+LinearAdvection_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  LinearAdvection_Form.f90
+
+RectangularContraction.o: \
+  Basics.o \
+  LinearAdvection_Form.o \
+  RectangularContraction.f90
+
