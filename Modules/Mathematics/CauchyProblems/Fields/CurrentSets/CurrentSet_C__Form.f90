@@ -354,8 +354,11 @@ contains
       iaSelected
 
     if ( CSC % DENSITY_DEFAULT  >  0 ) then
-      allocate ( iaSelected ( 1 ) )
+      allocate ( iaSelected ( 4 ) )
       iaSelected ( 1 )  =  CSC % DENSITY_DEFAULT
+      iaSelected ( 2 )  =  CSC % VELOCITY_DEFAULT_U_1
+      iaSelected ( 3 )  =  CSC % VELOCITY_DEFAULT_U_2
+      iaSelected ( 4 )  =  CSC % VELOCITY_DEFAULT_U_3
     else
       allocate ( iaSelected ( 0 ) )
     end if

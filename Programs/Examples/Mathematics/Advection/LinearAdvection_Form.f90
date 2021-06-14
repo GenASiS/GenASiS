@@ -65,7 +65,7 @@ contains
 
     call I % Initialize ( )
     I % SetInitial    =>  SetInitial
-!    I % SetReference  =>  SetReference
+    I % SetReference  =>  SetReference
 
     associate ( CSA  =>  I % CurrentSet_X_A )
     call CSA % SetBoundaryConditionsFace &
@@ -76,6 +76,19 @@ contains
              ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
     end select !-- CoordinateSystem
     end associate !-- CSA
+
+    allocate ( LA % Reference_A )
+    allocate ( LA % Difference_A )
+    associate &
+      ( CSA_R  =>  LA % Reference_A, &
+        CSA_D  =>  LA % Difference_A, &
+         GA    =>  I % Geometry_X_A, &
+         SA    =>  I % Checkpoint_X_A )
+    call CSA_R % Initialize ( GA, NameOption = 'Reference' )
+    call CSA_D % Initialize ( GA, NameOption = 'Difference' )
+    call CSA_R % SetStream ( SA )
+    call CSA_D % SetStream ( SA )
+    end associate !-- GA, etc.
 
     call SetParameters ( LA )
 
