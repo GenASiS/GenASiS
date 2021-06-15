@@ -63,6 +63,27 @@ contains
     allocate ( LA % Integrator )
     associate ( I  =>  LA % Integrator )
 
+    select case ( CoordinateSystem )
+    case ( 'RECTANGULAR' )
+      allocate ( Atlas_SCG_Form :: I % X_A )
+      select type ( A  =>  I % X_A )
+        class is ( Atlas_SCG_Form )
+      call A % Initialize &
+             ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
+               NameOption = 'X', &
+               PeriodicOption = [ .false., .true., .true. ] )
+      end select !-- A
+    case ( 'SPHERICAL' )
+      allocate ( Atlas_SCG_CC_Form :: I % X_A )
+      select type ( A  =>  I % X_A )
+        class is ( Atlas_SCG_CC_Form )
+      call A % Initialize &
+             ( RadiusMax = 10.0_KDR, &
+               RadiusCore = 10.0_KDR / 8.0_KDR, &
+               CommunicatorOption = PROGRAM_HEADER % Communicator )
+      end select !-- A
+    end select !-- CoordinateSystem
+
     call I % Initialize ( )
     I % SetInitial    =>  SetInitial
     I % SetReference  =>  SetReference
@@ -275,9 +296,9 @@ contains
 
     call CSC % SetVelocityLinear ( V_0, L_0 )
 
-    E_T  =  exp ( - V_0 / L_0  *  T )
+    E_T  =  exp ( - D * V_0 / L_0  *  T )
 
-    N_T  =  N_0  *  E_T ** D
+    N_T  =  N_0  *  E_T
     L_T  =  L_0  *  E_T ** ( - 1.0_KDR / D )
 
     where ( X_1  <=  L_T )

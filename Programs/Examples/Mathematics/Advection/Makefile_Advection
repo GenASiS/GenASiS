@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: RectangularContraction RectangularExpansion
+all: RectangularContraction RectangularExpansion SphericalContraction
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -16,6 +16,12 @@ RectangularExpansion: Basics.a Mathematics.a RectangularExpansion.o
 	  RectangularExpansion.o LinearAdvection_Form.o \
 	  Mathematics.a Basics.a $(LIBRARIES)
 
+SphericalContraction: Basics.a Mathematics.a SphericalContraction.o
+	$(LINK) $(FLAGS) \
+	  -o SphericalContraction_$(MACHINE) \
+	  SphericalContraction.o LinearAdvection_Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 
@@ -25,6 +31,7 @@ clean:
 clobber: clean
 	rm -f RectangularContraction_*
 	rm -f RectangularExpansion_*
+	rm -f SphericalContraction_*
 
 LinearAdvection_Form.o: \
   Basics.a \
@@ -40,3 +47,9 @@ RectangularExpansion.o: \
   Basics.o \
   LinearAdvection_Form.o \
   RectangularExpansion.f90
+
+SphericalContraction.o: \
+  Basics.o \
+  LinearAdvection_Form.o \
+  SphericalContraction.f90
+

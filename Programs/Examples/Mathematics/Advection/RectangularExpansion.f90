@@ -7,18 +7,18 @@ program RectangularExpansion
   implicit none
 
   type ( LinearAdvectionForm ), allocatable :: &
-    RC
+    RE
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'RectangularExpansion', DimensionalityOption = '1D' )
 
-  allocate ( RC )
-  call RC % Initialize &
+  allocate ( RE )
+  call RE % Initialize &
          ( CoordinateSystem = 'RECTANGULAR', &
            AdvectionType = 'EXPANSION' )
-  call RC % Evolve ( )
-  deallocate ( RC )
+  call RE % Evolve ( )
+  deallocate ( RE )
 
   deallocate ( PROGRAM_HEADER )
 
