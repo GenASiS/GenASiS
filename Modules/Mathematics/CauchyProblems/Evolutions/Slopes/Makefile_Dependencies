@@ -35,6 +35,7 @@ RiemannSolver_HLL_A__Form.o: \
 
 Slope_H_C__Form.o: \
   Basics.o \
+  Algebra.o \
   Manifolds.o \
   Fields.o \
   Slope_H_C__Form.f90
