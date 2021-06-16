@@ -69,6 +69,15 @@ Slope_DFV_PD_A__Form.o: \
   Slope_DFV_PD_C__Form.o \
   Slope_DFV_PD_A__Form.f90
 
+Slope_DFV_F_A__Form.o: \
+  Basics.o \
+  RiemannSolver_HLL_C__Form.o \
+  RiemannSolver_HLL_A__Form.o \
+  Slope_H_C__Form.o \
+  Slope_H_A__Form.o \
+  Slope_DFV_PD_A__Form.o \
+  Slope_DFV_F_A__Form.f90
+
 Slopes.o: \
   Reconstruction_C__Form.o \
   Reconstruction_A__Form.o \
@@ -78,6 +87,7 @@ Slopes.o: \
   Slope_H_A__Form.o \
   Slope_DFV_PD_C__Form.o \
   Slope_DFV_PD_A__Form.o \
+  Slope_DFV_F_A__Form.o \
   Slopes.f90
 
 Slopes.a: $(SLOPES)

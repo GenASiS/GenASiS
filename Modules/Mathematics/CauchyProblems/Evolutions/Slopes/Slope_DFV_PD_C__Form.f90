@@ -21,9 +21,9 @@ module Slope_DFV_PD_C__Form
       RiemannSolver_C => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_S
+      InitializeAllocate_PD
     generic, public :: &
-      Initialize => InitializeAllocate_S
+      Initialize => InitializeAllocate_PD
     procedure, private, pass :: &
       Show_FSC
     procedure, public, pass :: &
@@ -61,7 +61,7 @@ module Slope_DFV_PD_C__Form
 contains
 
 
-  subroutine InitializeAllocate_S ( SC, RSC, NameOption )
+  subroutine InitializeAllocate_PD ( SC, RSC, NameOption )
 
     class ( Slope_DFV_PD_C_Form ), intent ( inout ) :: &
       SC
@@ -104,7 +104,7 @@ contains
     end associate !-- nB, etc.
     end associate !-- CSC
 
-  end subroutine InitializeAllocate_S
+  end subroutine InitializeAllocate_PD
 
 
   subroutine Show_FSC ( FSC )

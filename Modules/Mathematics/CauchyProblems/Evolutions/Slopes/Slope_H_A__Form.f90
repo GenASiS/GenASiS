@@ -77,6 +77,8 @@ contains
              DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
              nFieldsOption, IgnorabilityOption )
 
+    allocate ( FSA % Component_A ( MAX_COMPONENTS ) )
+
   end subroutine InitializeAllocate_FS
 
 

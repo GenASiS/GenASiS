@@ -19,9 +19,9 @@ module Slope_DFV_PD_A__Form
       RiemannSolver_A => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_S
+      InitializeAllocate_PD
     generic, public :: &
-      Initialize => InitializeAllocate_S
+      Initialize => InitializeAllocate_PD
     final :: &
       Finalize
   end type Slope_DFV_PD_A_Form
@@ -30,7 +30,7 @@ module Slope_DFV_PD_A__Form
 contains
 
 
-  subroutine InitializeAllocate_S ( SA, RSA, NameOption )
+  subroutine InitializeAllocate_PD ( SA, RSA, NameOption )
 
     class ( Slope_DFV_PD_A_Form ), intent ( inout ) :: &
       SA
@@ -89,7 +89,7 @@ contains
 
     end associate !-- nC
 
-  end subroutine InitializeAllocate_S
+  end subroutine InitializeAllocate_PD
 
 
   impure elemental subroutine Finalize ( SA )

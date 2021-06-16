@@ -1,5 +1,6 @@
 SLOPES = \
   Slopes.o \
+  Slope_DFV_F_A__Form.o \
   Slope_DFV_PD_A__Form.o \
   Slope_DFV_PD_C__Kernel.o \
   Slope_DFV_PD_C__Form.o \
