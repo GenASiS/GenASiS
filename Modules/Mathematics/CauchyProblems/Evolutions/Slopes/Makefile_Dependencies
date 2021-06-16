@@ -47,27 +47,27 @@ Slope_H_A__Form.o: \
   Slope_H_C__Form.o \
   Slope_H_A__Form.f90
 
-Slope_DFV_C__Form.o: \
+Slope_DFV_PD_C__Form.o: \
   Basics.o \
   Manifolds.o \
   Fields.o \
   RiemannSolver_HLL_C__Form.o \
   Slope_H_C__Form.o \
-  Slope_DFV_C__Form.f90
+  Slope_DFV_PD_C__Form.f90
 
-Slope_DFV_C__Kernel.o: \
+Slope_DFV_PD_C__Kernel.o: \
   Basics.o \
-  Slope_DFV_C__Form.o \
-  Slope_DFV_C__Kernel.f90
+  Slope_DFV_PD_C__Form.o \
+  Slope_DFV_PD_C__Kernel.f90
 
-Slope_DFV_A__Form.o: \
+Slope_DFV_PD_A__Form.o: \
   Basics.o \
   Fields.o \
   RiemannSolver_HLL_C__Form.o \
   RiemannSolver_HLL_A__Form.o \
   Slope_H_A__Form.o \
-  Slope_DFV_C__Form.o \
-  Slope_DFV_A__Form.f90
+  Slope_DFV_PD_C__Form.o \
+  Slope_DFV_PD_A__Form.f90
 
 Slopes.o: \
   Reconstruction_C__Form.o \
@@ -76,8 +76,8 @@ Slopes.o: \
   RiemannSolver_HLL_A__Form.o \
   Slope_H_C__Form.o \
   Slope_H_A__Form.o \
-  Slope_DFV_C__Form.o \
-  Slope_DFV_A__Form.o \
+  Slope_DFV_PD_C__Form.o \
+  Slope_DFV_PD_A__Form.o \
   Slopes.f90
 
 Slopes.a: $(SLOPES)

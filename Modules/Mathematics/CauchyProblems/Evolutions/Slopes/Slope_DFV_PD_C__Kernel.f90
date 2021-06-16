@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Slope_DFV_C__Form ) Slope_DFV_C__Kernel
+submodule ( Slope_DFV_PD_C__Form ) Slope_DFV_PD_C__Kernel
   
   use Basics
   
@@ -77,4 +77,4 @@ contains
   end procedure ComputeKernel
 
 
-end submodule Slope_DFV_C__Kernel
+end submodule Slope_DFV_PD_C__Kernel

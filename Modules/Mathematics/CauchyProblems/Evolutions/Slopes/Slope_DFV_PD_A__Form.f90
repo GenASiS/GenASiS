@@ -1,18 +1,18 @@
-module Slope_DFV_A__Form
+module Slope_DFV_PD_A__Form
 
-  !-- Slope_DivergenceFiniteVolume_Atlas_Form
+  !-- Slope_DivergenceFiniteVolume_PartialDerivative_Atlas_Form
 
   use Basics
   use Fields
   use RiemannSolver_HLL_C__Form
   use RiemannSolver_HLL_A__Form
   use Slope_H_A__Form
-  use Slope_DFV_C__Form
+  use Slope_DFV_PD_C__Form
 
   implicit none
   private
 
-  type, public, extends ( Slope_H_A_Form ) :: Slope_DFV_A_Form
+  type, public, extends ( Slope_H_A_Form ) :: Slope_DFV_PD_A_Form
     class ( CurrentSet_A_Form ), pointer :: &
       CurrentSet_A => null ( )
     class ( RiemannSolver_HLL_A_Form ), pointer :: &
@@ -24,7 +24,7 @@ module Slope_DFV_A__Form
       Initialize => InitializeAllocate_S
     final :: &
       Finalize
-  end type Slope_DFV_A_Form
+  end type Slope_DFV_PD_A_Form
 
 
 contains
@@ -32,7 +32,7 @@ contains
 
   subroutine InitializeAllocate_S ( SA, RSA, NameOption )
 
-    class ( Slope_DFV_A_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_PD_A_Form ), intent ( inout ) :: &
       SA
     class ( RiemannSolver_HLL_A_Form ), intent ( in ), target :: &
       RSA
@@ -47,9 +47,9 @@ contains
       Name
 
     if ( SA % Type  ==  '' ) &
-      SA % Type  =  'a Slope_DFV_A'
+      SA % Type  =  'a Slope_DFV_PD_A'
 
-    Name  =  'S_DFV_' // trim ( RSA % CurrentSet_A % Name )
+    Name  =  'S_DFV_PD_' // trim ( RSA % CurrentSet_A % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
@@ -73,9 +73,9 @@ contains
     if ( .not. PreviouslyAllocated ) then
       do iC  =  1,  nC
 
-        allocate ( Slope_DFV_C_Form :: SA % FieldSet_C ( iC ) % Element ) 
+        allocate ( Slope_DFV_PD_C_Form :: SA % FieldSet_C ( iC ) % Element ) 
         select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )
-          class is ( Slope_DFV_C_Form )
+          class is ( Slope_DFV_PD_C_Form )
         select type ( RSC  =>  RSA % FieldSet_C ( iC ) % Element )
           class is ( RiemannSolver_HLL_C_Form )
 
@@ -94,7 +94,7 @@ contains
 
   impure elemental subroutine Finalize ( SA )
 
-    type ( Slope_DFV_A_Form ), intent ( inout ) :: &
+    type ( Slope_DFV_PD_A_Form ), intent ( inout ) :: &
       SA
 
     nullify ( SA % RiemannSolver_A )
@@ -103,4 +103,4 @@ contains
   end subroutine Finalize
 
 
-end module Slope_DFV_A__Form
+end module Slope_DFV_PD_A__Form

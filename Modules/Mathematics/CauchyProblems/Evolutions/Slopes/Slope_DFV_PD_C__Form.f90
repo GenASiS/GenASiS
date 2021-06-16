@@ -1,6 +1,6 @@
-module Slope_DFV_C__Form
+module Slope_DFV_PD_C__Form
 
-  !-- Slope_DivergenceFiniteVolume_Chart_Form
+  !-- Slope_DivergenceFiniteVolume_PartialDerivative_Chart_Form
 
   use Basics
   use Manifolds
@@ -11,7 +11,7 @@ module Slope_DFV_C__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_C_Form ) :: Slope_DFV_C_Form
+  type, public, extends ( Slope_H_C_Form ) :: Slope_DFV_PD_C_Form
     integer ( KDI ) :: &
       iTimer       = 0, &
       iTimerKernel = 0
@@ -30,7 +30,7 @@ module Slope_DFV_C__Form
       Compute
     final :: &
       Finalize
-  end type Slope_DFV_C_Form
+  end type Slope_DFV_PD_C_Form
 
     private :: &
       ComputeKernel
@@ -63,7 +63,7 @@ contains
 
   subroutine InitializeAllocate_S ( SC, RSC, NameOption )
 
-    class ( Slope_DFV_C_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_PD_C_Form ), intent ( inout ) :: &
       SC
     class ( RiemannSolver_HLL_C_Form ), intent ( in ), target :: &
       RSC
@@ -74,9 +74,9 @@ contains
       Name
 
     if ( SC % Type  ==  '' ) &
-      SC % Type  =  'a Slope_DFV_C' 
+      SC % Type  =  'a Slope_DFV_PD_C' 
     
-    Name  =  'S_DFV_' // trim ( RSC % CurrentSet_C % Name )
+    Name  =  'S_DFV_PD_' // trim ( RSC % CurrentSet_C % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
@@ -109,7 +109,7 @@ contains
 
   subroutine Show_FSC ( FSC )
 
-    class ( Slope_DFV_C_Form ), intent ( in ) :: &
+    class ( Slope_DFV_PD_C_Form ), intent ( in ) :: &
       FSC
 
     call FSC % FieldSet_C_Form % Show ( )
@@ -120,7 +120,7 @@ contains
 
   subroutine Compute ( SC, TimerLevelOption, iS_Option )
 
-    class ( Slope_DFV_C_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_PD_C_Form ), intent ( inout ) :: &
       SC
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption, &
@@ -200,7 +200,7 @@ contains
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Slope_DFV_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Slope_DFV_PD_C__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- C
@@ -220,7 +220,7 @@ contains
 
   impure elemental subroutine Finalize ( SC )
 
-    type ( Slope_DFV_C_Form ), intent ( inout ) :: &
+    type ( Slope_DFV_PD_C_Form ), intent ( inout ) :: &
       SC
 
     nullify ( SC % RiemannSolver_C )
@@ -228,4 +228,4 @@ contains
   end subroutine Finalize
 
 
-end module Slope_DFV_C__Form
+end module Slope_DFV_PD_C__Form
