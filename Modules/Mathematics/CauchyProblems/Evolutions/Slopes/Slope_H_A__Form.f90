@@ -21,6 +21,8 @@ module Slope_H_A__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
+    procedure, public, pass ( SA ) :: &
+      SetStream
     procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
@@ -80,6 +82,27 @@ contains
     allocate ( FSA % Component_A ( MAX_COMPONENTS ) )
 
   end subroutine InitializeAllocate_FS
+
+
+  subroutine SetStream ( SmA, SA )
+
+    class ( Stream_A_Form ), intent ( inout ) :: &
+      SmA
+    class ( Slope_H_A_Form ), intent ( in ) :: &
+      SA
+
+    integer ( KDI ) :: &
+      iC
+
+    call SmA % AddFieldSet ( SA )
+
+    do iC  =  1, SA % nComponents
+      associate ( SCA  =>  SA % Component_A ( iC ) % Element )
+      call SCA % SetStream ( SmA )
+      end associate !-- SCA
+    end do
+
+  end subroutine SetStream
 
 
   subroutine Show_FS ( FSA )
