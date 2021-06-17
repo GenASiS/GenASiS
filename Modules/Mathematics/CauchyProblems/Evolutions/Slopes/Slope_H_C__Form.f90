@@ -25,6 +25,8 @@ module Slope_H_C__Form
       AddComponent
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      Increment
     final :: &
       Finalize
   end type Slope_H_C_Form
@@ -108,7 +110,6 @@ contains
     integer ( KDI ) :: &
       iC  !-- iComponent
 
-call Show ( SC % Name, '>>> Name' )
     if ( SC % nComponents  >  0 ) then
 
       call SC % Clear ( )
@@ -139,6 +140,34 @@ call Show ( SC % Name, '>>> Name' )
     end if
 
   end subroutine Compute
+
+
+  subroutine Increment ( SC, SSC, B, iS )
+
+    class ( Slope_H_C_Form ), intent ( inout ) :: &
+      SC  !-- SlopeChart
+    class ( Slope_H_C_Form ), intent ( in ) :: &
+      SSC  !-- SlopeStageChart
+    real ( KDR ) :: &
+      B  !-- RungeKutta weight
+    integer ( KDI ) :: &
+      iS  !-- RungeKutta iStage
+
+    associate &
+      (  SV  =>   SC % Storage_FSC % Storage % Value, &
+        SSV  =>  SSC % Storage_FSC % Storage % Value )
+
+    if ( iS  ==  1 )  &
+      call Clear ( SV, &
+                   UseDeviceOption = SC % Storage_FSC % DeviceMemory )
+
+    call MultiplyAdd &
+           ( SV, SSV, B, &
+             UseDeviceOption = SC % Storage_FSC % DeviceMemory )
+    
+    end associate !-- SV, etc.
+
+  end subroutine Increment
 
 
   subroutine Finalize ( SC )

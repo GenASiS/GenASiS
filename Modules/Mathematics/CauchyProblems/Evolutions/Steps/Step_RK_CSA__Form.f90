@@ -19,9 +19,9 @@ module Step_RK_CSA__Form
       CurrentSet_A
     class ( RiemannSolver_HLL_A_Form ), allocatable :: &
       RiemannSolver_A
-    type ( FieldSet_A_Element ), dimension ( : ), allocatable :: &
-      Slope_A  !-- Some extension of FieldSet_A_Form that computes slopes
-    class ( FieldSet_A_Form ), allocatable :: &
+    type ( Slope_H_A_Element ), dimension ( : ), allocatable :: &
+      Slope_A
+    class ( Slope_H_A_Form ), allocatable :: &
       SlopeSum_A
     type ( FieldSet_A_Element ), dimension ( : ), allocatable :: &
       SolutionStage_A
@@ -60,8 +60,6 @@ module Step_RK_CSA__Form
       ComputeStage_C
     procedure, public, nopass :: &
       IncrementSolution_C
-    procedure, public, nopass :: &
-      IncrementSlopeSum_C
   end type Step_RK_CSA_Form
 
 
@@ -135,7 +133,7 @@ contains
 
     !-- RiemannSolver
 
-    if ( .not. allocated ( S % Slope_A ) ) then
+    if ( .not. allocated ( S % RiemannSolver_A ) ) then
       allocate ( S % RiemannSolver_A )
       associate ( RSA  =>  S % RiemannSolver_A )
       call RSA % Initialize ( CSA )
@@ -149,13 +147,14 @@ contains
       allocate ( S % Slope_A ( nS ) )
       do iS  =  1,  nS
         write ( StageNumber, fmt = '(i1.1)' ) iS
-        allocate ( Slope_DFV_A_Form :: S % Slope_A ( iS ) % Element )
+        allocate ( Slope_DFV_F_A_Form :: S % Slope_A ( iS ) % Element )
         select type ( SA  =>  S % Slope_A ( iS ) % Element )
-          class is ( Slope_DFV_A_Form )
-        associate ( RSA  =>  S % RiemannSolver_A )
+          class is ( Slope_DFV_F_A_Form )
+        associate &
+          ( RSA  =>  S % RiemannSolver_A )
         call SA % Initialize &
                ( RSA, &
-                 NameOption = 'S_DFV_' // StageNumber // '_' &
+                 NameOption = 'S_DFV_F_' // StageNumber // '_' &
                                 // trim ( CSA % Name ) )
         end associate !-- RSA
         end select !-- SA
@@ -171,12 +170,12 @@ contains
   end subroutine Initialize_CSA
 
 
-  subroutine SetStream ( S, SA, StagesOption )
+  subroutine SetStream ( S, SmA, StagesOption )
 
     class ( Step_RK_CSA_Form ), intent ( inout ) :: &
       S
     class ( Stream_A_Form ), intent ( inout ) :: &
-      SA
+      SmA
     logical ( KDL ), intent ( in ), optional :: &
       StagesOption
 
@@ -187,10 +186,8 @@ contains
     character ( 1 ) :: &
       StageNumber
 
-    allocate ( S % SlopeSum_A )
     associate &
       ( CSA    =>  S % CurrentSet_A, &
-        SSA    =>  S % SlopeSum_A, &
          SA_1  =>  S % Slope_A ( 1 ) % Element )
     associate &
       ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
@@ -199,15 +196,19 @@ contains
               PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
         DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
 
-    call SSA % Initialize &
-           ( SA_1 % Atlas, &
-             FieldOption = SC % Field, &
-             NameOption = 'S_H_Sum_' // trim ( CSA % Name ), &
-             DeviceMemoryOption = DeviceMemory, &
-             PinnedMemoryOption = PinnedMemory, &
-             DevicesCommunicateOption = DevicesCommunicate, &
-             nFieldsOption = SC % nFields )
-    call SA % AddFieldSet ( SSA )
+    if ( .not. allocated ( S % SlopeSum_A ) ) then
+      allocate ( Slope_DFV_F_A_Form :: S % SlopeSum_A )
+      select type ( SSA  =>  S % SlopeSum_A )
+        class is ( Slope_DFV_F_A_Form )
+      associate &
+        ( RSA  =>  S % RiemannSolver_A )
+      call SSA % Initialize &
+             ( RSA, &
+               NameOption = 'S_DFV_F_' // trim ( CSA % Name ) )
+      call SSA % SetStream ( SmA )
+      end associate !-- RSA
+      end select !-- SSA
+    end if !-- allocated SlopeSum_A
 
     Stages  =  .false.
     if ( present ( StagesOption ) ) &
@@ -217,10 +218,6 @@ contains
     if ( Stages ) then
 
       associate ( nS  =>  S % nStages )
-
-      do iS  =  1,  nS
-        call SA % AddFieldSet ( S % Slope_A ( iS ) % Element )
-      end do !-- iS
 
       allocate ( S % SolutionStage_A ( nS ) )
       do iS  =  1, nS
@@ -236,15 +233,21 @@ contains
                  PinnedMemoryOption = PinnedMemory, &
                  DevicesCommunicateOption = DevicesCommunicate, &
                  nFieldsOption = SC % nFields )
-        call SA % AddFieldSet ( SSA )
+        call SmA % AddFieldSet ( SSA )
         end associate !-- SSA
       end do !-- iS
 
-      end associate !-- nS
-
       associate ( RSA  =>  S % RiemannSolver_A )
-      call RSA % SetStream ( SA, S % nStages )
+      call RSA % SetStream ( SmA, nS )
       end associate !-- RSA
+
+      do iS  =  1,  nS
+        associate ( SA  =>  S % Slope_A ( iS ) % Element )
+        call SA % SetStream ( SmA )
+        end associate !-- SA
+      end do !-- iS
+
+      end associate !-- nS
 
     end if
 
@@ -271,6 +274,8 @@ contains
     do iS  =  1, S % nStages
       call S % Slope_A ( iS ) % Element % Show ( )
     end do !-- iS
+    if ( allocated ( S % SlopeSum_A ) ) &
+      call S % SlopeSum_A % Show ( )
 
   end subroutine Show_S
 
@@ -513,20 +518,17 @@ contains
 
       end associate !-- Solution_C, etc.
 
-      !-- For diagnostic streaming (i.e., I/O)
-      if ( allocated ( S % SlopeSum_A ) ) then
-        associate &
-          ( SlopeSum_C  =>  S % SlopeSum_A % FieldSet_C ( iC ) % Element, &
-               Slope_C  =>  S % Slope_A ( iS ) % Element &
-                              % FieldSet_C ( iC ) % Element )
-
-        call S % IncrementSlopeSum_C ( SlopeSum_C, Slope_C, B, iS )
-
-        end associate !-- Solution_C, etc.
-      end if 
-
     end do !-- iC
     end associate !-- nC
+
+    !-- For diagnostic streaming (i.e., I/O)
+    if ( allocated ( S % SlopeSum_A ) ) then
+      associate &
+        (  SA  =>  S % SlopeSum_A, &
+          SSA  =>  S % Slope_A ( iS ) % Element )
+      call SA % Increment ( SSA, B, iS )
+      end associate !-- SA, etc.
+    end if
 
   end subroutine IncrementSolution
 
@@ -672,34 +674,6 @@ contains
     end associate !-- SV, etc.
 
   end subroutine IncrementSolution_C
-
-
-  subroutine IncrementSlopeSum_C ( SlopeSum_C, Slope_C, B, iS )
-
-    class ( FieldSet_C_Form ), intent ( inout ) :: &
-      SlopeSum_C
-    class ( FieldSet_C_Form ), intent ( in ) :: &
-      Slope_C
-    real ( KDR ), intent ( in ) :: &
-      B
-    integer ( KDI ), intent ( in ) :: &
-      iS
-
-    associate &
-      ( KSV  =>  SlopeSum_C % Storage_FSC % Storage % Value, &
-         KV  =>     Slope_C % Storage_FSC % Storage % Value )
-
-    if ( iS  ==  1 )  &
-      call Clear ( KSV, &
-                   UseDeviceOption = SlopeSum_C % Storage_FSC % DeviceMemory )
-
-    call MultiplyAdd &
-           ( KSV, KV, B, &
-             UseDeviceOption = SlopeSum_C % Storage_FSC % DeviceMemory )
-    
-    end associate !-- SV, etc.
-
-  end subroutine IncrementSlopeSum_C
 
 
 end module Step_RK_CSA__Form

@@ -68,7 +68,9 @@ program Step_RK_CSA__Form_Test
 
   allocate ( S )
   call S % Initialize ( CSA )
-  call S % SetStream ( SA, StagesOption = .true. )
+  call S % SetStream ( SA )
+!  call S % SetStream ( SA, StagesOption = .true. )
+!-- Also command line option StreamStages=T
 
   call   A % Show ( )
   call CSA % Show ( )

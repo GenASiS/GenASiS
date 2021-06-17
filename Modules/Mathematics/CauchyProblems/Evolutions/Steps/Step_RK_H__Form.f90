@@ -64,20 +64,20 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
-      A_Option
+      A_Option  !-- RungeKutta matrix
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      B_Option
+      B_Option  !-- RungeKutta weights
     real ( KDR ), dimension ( 2 : ), intent ( in ), optional :: &
-      C_Option
+      C_Option  !-- RungeKutta nodes
 
     integer ( KDI ) :: &
       iS
     real ( KDR ), dimension ( :, : ), allocatable :: &
-      A
+      A  !-- RungeKutta matrix
     real ( KDR ), dimension ( : ), allocatable :: &
-      B
+      B  !-- RungeKutta weights
     real ( KDR ), dimension ( : ), allocatable :: &
-      C
+      C  !-- RungeKutta nodes
 
     S % IGNORABILITY  =  CONSOLE % INFO_1
 

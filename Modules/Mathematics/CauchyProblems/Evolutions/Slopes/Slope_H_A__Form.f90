@@ -27,6 +27,8 @@ module Slope_H_A__Form
       Show => Show_FS
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      Increment
     final :: &
       Finalize
   end type Slope_H_A_Form
@@ -144,6 +146,47 @@ contains
     end do !-- iC
 
   end subroutine Compute
+
+
+  subroutine Increment ( SA, SSA, B, iS )
+
+    class ( Slope_H_A_Form ), intent ( inout ) :: &
+      SA  !-- SlopeAtlas
+    class ( Slope_H_A_Form ), intent ( in ) :: &
+      SSA  !-- SlopeStageAtlas
+    real ( KDR ) :: &
+      B  !-- RungeKutta weight
+    integer ( KDI ) :: &
+      iS  !-- RungeKutta iStage
+
+    integer ( KDI ) :: &
+      iC  !-- iChart
+
+    !-- This slope
+
+    do iC  =  1, size ( SA % FieldSet_C )
+      select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )
+        class is ( Slope_H_C_Form )
+      select type ( SSC  =>  SSA % FieldSet_C ( iC ) % Element )
+        class is ( Slope_H_C_Form )
+      call SC % Increment ( SSC, B, iS )
+      end select !-- SCC
+      end select !-- SC
+    end do !-- iC
+
+    !-- Component slopes
+
+    do iC  =  1, SA % nComponents
+      associate &
+        ( SCA  =>  SA % Component_A ( iC ) % Element )
+      associate &
+        ( SSCA  =>  SSA % Component_A ( iC ) % Element )
+      call SCA % Increment ( SSCA, B, iS )
+      end associate !-- SSCA
+      end associate !-- SCA
+    end do !-- iC
+
+  end subroutine Increment
 
 
   subroutine Finalize ( SA )
