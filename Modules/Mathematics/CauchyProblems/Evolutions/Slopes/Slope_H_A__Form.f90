@@ -113,7 +113,8 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call FSA % Show ( )
+    call FSA % FieldSet_A_Form % Show ( )
+    call Show ( FSA % nComponents, 'nComponents' )
  
     do iC  =  1, FSA % nComponents
       associate ( SCA  =>  FSA % Component_A ( iC ) % Element )

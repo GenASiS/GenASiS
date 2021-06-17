@@ -1,4 +1,4 @@
-program Slope_DFV_A__Form_Test
+program Slope_DFV_F_A__Form_Test
 
   !-- Slope_DivergenceFiniteVolume_Atlas__Form_Test
 
@@ -21,12 +21,12 @@ program Slope_DFV_A__Form_Test
     CSA
   type ( RiemannSolver_HLL_A_Form ), allocatable :: &
     RSA
-  type ( Slope_DFV_A_Form ), allocatable :: &
+  type ( Slope_DFV_F_A_Form ), allocatable :: &
     SA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Slope_DFV_A__Form_Test', DimensionalityOption = '2D' )
+         ( 'Slope_DFV_F_A__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -53,13 +53,13 @@ program Slope_DFV_A__Form_Test
 
   allocate ( SA )
   call SA % Initialize ( RSA )
-  call Stream_A % AddFieldSet ( SA )
+  call SA % SetStream ( Stream_A )
 
-  call         A % Show ( )
-  call       CSA % Show ( )
-  call       RSA % Show ( )
-  call        SA % Show ( )
-  call  Stream_A % Show ( )
+  call        A % Show ( )
+  call      CSA % Show ( )
+  call      RSA % Show ( )
+  call       SA % Show ( )
+  call Stream_A % Show ( )
 
   call SetWave ( CSA, GA )
   call TestSlope ( SA )
@@ -152,7 +152,7 @@ contains
 
   subroutine TestSlope ( SA )
 
-    class ( Slope_DFV_A_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_F_A_Form ), intent ( inout ) :: &
       SA
 
     call SA % Compute ( )
@@ -164,4 +164,4 @@ contains
   end subroutine TestSlope
 
 
-end program Slope_DFV_A__Form_Test
+end program Slope_DFV_F_A__Form_Test

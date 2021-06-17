@@ -45,7 +45,7 @@ contains
     if ( SA % Type  ==  '' ) &
       SA % Type  =  'a Slope_DFV_F_A'
 
-    Name  =  'S_DFV_' // trim ( RSA % CurrentSet_A % Name )
+    Name  =  'S_DFV_F_' // trim ( RSA % CurrentSet_A % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
@@ -98,17 +98,31 @@ contains
       end do !-- iC
     end if !-- PreviouslyAllocated
 
-    end associate !-- nC
-
     !-- Slope component: Partial derivative
 
-    associate ( nC  =>  SA % nComponents )
-    nC  =  nC + 1
-    allocate ( Slope_DFV_PD_A_Form :: SA % Component_A ( iC ) % Element )
-    select type ( SPDA  =>  SA % Component_A ( iC ) % Element )
+    associate ( nSC  =>  SA % nComponents )
+    nSC  =  nSC + 1
+    allocate ( Slope_DFV_PD_A_Form :: SA % Component_A ( nSC ) % Element )
+    select type ( SPDA  =>  SA % Component_A ( nSC ) % Element )
       class is ( Slope_DFV_PD_A_Form )
+
     call SPDA % Initialize ( RSA, NameOption )
+
+    do iC  =  1, nC 
+      select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )
+        class is ( Slope_H_C_Form )
+      select type ( SPDC  =>  SPDA % FieldSet_C ( iC ) % Element )
+        class is ( Slope_H_C_Form )
+
+      call SC % AddComponent ( SPDC )
+
+      end select !-- SPDC
+      end select !-- SC
+    end do !-- iC
+
     end select !-- SPDA
+    end associate !-- nSC
+
     end associate !-- nC
 
   end subroutine InitializeAllocate_F

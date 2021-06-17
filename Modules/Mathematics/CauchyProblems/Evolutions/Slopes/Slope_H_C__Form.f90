@@ -108,6 +108,7 @@ contains
     integer ( KDI ) :: &
       iC  !-- iComponent
 
+call Show ( SC % Name, '>>> Name' )
     if ( SC % nComponents  >  0 ) then
 
       call SC % Clear ( )
@@ -131,6 +132,7 @@ contains
     else
       call Show ( 'Slope has no components', CONSOLE % ERROR )
       call Show ( 'Compute must be overridden', CONSOLE % ERROR )
+      call Show ( SC % Name, 'Name', CONSOLE % ERROR )
       call Show ( 'Slope_H_C_Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
