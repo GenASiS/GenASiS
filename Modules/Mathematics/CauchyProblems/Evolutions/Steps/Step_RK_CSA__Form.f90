@@ -57,8 +57,6 @@ module Step_RK_CSA__Form
     procedure, public, nopass :: &
       IncrementIntermediate_C
     procedure, public, nopass :: &
-      ComputeStage_C
-    procedure, public, nopass :: &
       IncrementSolution_C
   end type Step_RK_CSA_Form
 
@@ -475,20 +473,10 @@ contains
       end associate !-- nC
     end if !-- iStage > 1
 
-    associate ( nC  =>  S % CurrentSet_A % Atlas % nCharts )
-    do iC  =  1,  nC
-
-      select type &
-        ( Slope_C  =>  S % Slope_A ( iS ) % Element &
-                         % FieldSet_C ( iC ) % Element )
-      class is ( Slope_H_C_Form )
-
-      call S % ComputeStage_C ( Slope_C, TimerLevelOption, iS_Option = iS )
-
-      end select !-- Slope_C
-
-    end do !-- iC
-    end associate !-- nC
+    associate ( SA  =>  S % Slope_A ( iS ) % Element )
+    call SA % Compute ( TimerLevelOption, iS_Option = iS )
+    call SA % ExchangeGhostData ( TimerLevelOption )
+    end associate !-- SA
 
   end subroutine ComputeStage
 
@@ -636,21 +624,6 @@ contains
     end associate !-- YV, etc.
 
   end subroutine IncrementIntermediate_C
-
-
-  subroutine ComputeStage_C ( Slope_C, TimerLevelOption, iS_Option )
-
-    class ( Slope_H_C_Form ), intent ( inout ) :: &
-      Slope_C
-    integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption, &
-      iS_Option
-
-    call Slope_C % Clear ( )
-    call Slope_C % Compute ( TimerLevelOption, iS_Option )
-    call Slope_C % ExchangeGhostData ( TimerLevelOption )
-
-  end subroutine ComputeStage_C
 
 
   subroutine IncrementSolution_C ( Solution_C, Slope_C, B, dT )

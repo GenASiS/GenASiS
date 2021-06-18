@@ -162,6 +162,8 @@ contains
          GC  =>  SC % CurrentSet_C % Geometry_C, &
           C  =>  SC % Chart )
 
+    call SC % Clear ( )
+
     do iD  =  1, C % nDimensions
 
       call RSC % Compute &
