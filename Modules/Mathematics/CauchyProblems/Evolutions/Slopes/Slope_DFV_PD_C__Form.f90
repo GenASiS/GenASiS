@@ -61,14 +61,14 @@ module Slope_DFV_PD_C__Form
 contains
 
 
-  subroutine InitializeAllocate_PD ( SC, RSC, NameOption )
+  subroutine InitializeAllocate_PD ( SC, RSC, SuffixOption )
 
     class ( Slope_DFV_PD_C_Form ), intent ( inout ) :: &
       SC
     class ( RiemannSolver_HLL_C_Form ), intent ( in ), target :: &
       RSC
     character ( * ), intent ( in ), optional :: &
-      NameOption    
+      SuffixOption    
 
     character ( LDL ) :: &
       Name
@@ -77,8 +77,8 @@ contains
       SC % Type  =  'a Slope_DFV_PD_C' 
     
     Name  =  'S_DFV_PD_' // trim ( RSC % CurrentSet_C % Name )
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
+    if ( present ( SuffixOption ) ) &
+      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     SC % CurrentSet_C     =>  RSC % CurrentSet_C
     SC % RiemannSolver_C  =>  RSC

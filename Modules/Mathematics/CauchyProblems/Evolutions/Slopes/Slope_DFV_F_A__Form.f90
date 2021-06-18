@@ -26,14 +26,14 @@ module Slope_DFV_F_A__Form
 contains
 
 
-  subroutine InitializeAllocate_F ( SA, RSA, NameOption )
+  subroutine InitializeAllocate_F ( SA, RSA, SuffixOption )
 
     class ( Slope_DFV_F_A_Form ), intent ( inout ) :: &
       SA
     class ( RiemannSolver_HLL_A_Form ), intent ( in ), target :: &
       RSA
     character ( * ), intent ( in ), optional :: &
-      NameOption
+      SuffixOption
 
     integer ( KDI ) :: &
       iC !-- iChart
@@ -46,8 +46,8 @@ contains
       SA % Type  =  'a Slope_DFV_F_A'
 
     Name  =  'S_DFV_F_' // trim ( RSA % CurrentSet_A % Name )
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
+    if ( present ( SuffixOption ) ) &
+      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     associate ( nC  =>  RSA % Atlas % nCharts )
 
@@ -106,7 +106,7 @@ contains
     select type ( SPDA  =>  SA % Component_A ( nSC ) % Element )
       class is ( Slope_DFV_PD_A_Form )
 
-    call SPDA % Initialize ( RSA, NameOption )
+    call SPDA % Initialize ( RSA, SuffixOption )
 
     do iC  =  1, nC 
       select type ( SC  =>  SA % FieldSet_C ( iC ) % Element )

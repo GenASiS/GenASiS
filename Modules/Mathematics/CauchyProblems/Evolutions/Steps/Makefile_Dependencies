@@ -6,6 +6,7 @@ Step_RK_CSA__Form.o: \
   Basics.o \
   Algebra.o \
   Fields.o \
+  Slopes.o \
   Step_RK_H__Form.o \
   Step_RK_CSA__Form.f90
 

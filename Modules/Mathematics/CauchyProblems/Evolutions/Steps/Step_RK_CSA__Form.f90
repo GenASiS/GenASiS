@@ -151,9 +151,7 @@ contains
         associate &
           ( RSA  =>  S % RiemannSolver_A )
         call SA % Initialize &
-               ( RSA, &
-                 NameOption = 'S_DFV_F_' // StageNumber // '_' &
-                                // trim ( CSA % Name ) )
+               ( RSA, SuffixOption = StageNumber )
         end associate !-- RSA
         end select !-- SA
       end do !-- iS
@@ -200,9 +198,7 @@ contains
         class is ( Slope_DFV_F_A_Form )
       associate &
         ( RSA  =>  S % RiemannSolver_A )
-      call SSA % Initialize &
-             ( RSA, &
-               NameOption = 'S_DFV_F_' // trim ( CSA % Name ) )
+      call SSA % Initialize ( RSA )
       call SSA % SetStream ( SmA )
       end associate !-- RSA
       end select !-- SSA
