@@ -136,7 +136,7 @@ contains
       associate ( RSA  =>  S % RiemannSolver_A )
       call RSA % Initialize ( CSA )
       end associate !-- RSA
-    end if !-- allocated RiemannSolver
+    end if !-- allocated RiemannSolver_A
 
     !-- Slopes
 
@@ -156,8 +156,19 @@ contains
         end select !-- SA
       end do !-- iS
       end associate !-- nS
-    end if !-- allocated Slope
+    end if !-- allocated Slope_A
 
+    if ( .not. allocated ( S % SlopeSum_A ) ) then
+      allocate ( Slope_DFV_F_A_Form :: S % SlopeSum_A )
+      select type ( SSA  =>  S % SlopeSum_A )
+        class is ( Slope_DFV_F_A_Form )
+      associate &
+        ( RSA  =>  S % RiemannSolver_A )
+      call SSA % Initialize ( RSA )
+      end associate !-- RSA
+      end select !-- SSA
+    end if !-- allocated SlopeSum_A
+    
     !-- Cleanup
 
     end associate !-- nEquations, etc.
@@ -182,27 +193,9 @@ contains
     character ( 1 ) :: &
       StageNumber
 
-    associate &
-      ( CSA    =>  S % CurrentSet_A, &
-         SA_1  =>  S % Slope_A ( 1 ) % Element )
-    associate &
-      ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
-    associate &
-      (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
-              PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
-        DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
-
-    if ( .not. allocated ( S % SlopeSum_A ) ) then
-      allocate ( Slope_DFV_F_A_Form :: S % SlopeSum_A )
-      select type ( SSA  =>  S % SlopeSum_A )
-        class is ( Slope_DFV_F_A_Form )
-      associate &
-        ( RSA  =>  S % RiemannSolver_A )
-      call SSA % Initialize ( RSA )
-      call SSA % SetStream ( SmA )
-      end associate !-- RSA
-      end select !-- SSA
-    end if !-- allocated SlopeSum_A
+    associate ( SSA  =>  S % SlopeSum_A )
+    call SSA % SetStream ( SmA )
+    end associate !-- SSA
 
     Stages  =  .false.
     if ( present ( StagesOption ) ) &
@@ -211,7 +204,17 @@ contains
 
     if ( Stages ) then
 
-      associate ( nS  =>  S % nStages )
+      associate &
+        ( CSA    =>  S % CurrentSet_A, &
+           SA_1  =>  S % Slope_A ( 1 ) % Element )
+      associate &
+        ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
+      associate &
+        (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
+                PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
+          DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
+      associate &
+        ( nS  =>  S % nStages )
 
       allocate ( S % SolutionStage_A ( nS ) )
       do iS  =  1, nS
@@ -242,12 +245,11 @@ contains
       end do !-- iS
 
       end associate !-- nS
+      end associate !-- DeviceMemory, etc.
+      end associate !-- SC
+      end associate !-- CSA, etc.
 
     end if
-
-    end associate !-- DeviceMemory, etc.
-    end associate !-- SC
-    end associate !-- CSA, etc.
 
   end subroutine SetStream
 
