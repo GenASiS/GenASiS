@@ -267,26 +267,6 @@ contains
     end do !-- iC
     end associate !-- nC
 
-    associate ( GtA  =>  GA % Gradient_A )
-    select type ( A  =>  GA % Atlas )
-      class is ( Atlas_SCG_Form )
-    associate &
-      ( C  =>  A % Chart_GS )
-!    do iD = 1, C % nDimensions
-!      call GA % Gradient % Compute ( C, S, iDimension = iD )
-!      call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
-!                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
-!                  UseDeviceOption = G % AllocatedDevice )
-!    end do !-- iD
-    end associate !-- C
-    class default 
-      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Gravitation_NSG_A__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- A
-    end associate !-- GtA
-
   end subroutine Solve
 
 
