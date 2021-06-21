@@ -14,6 +14,10 @@ module Gravitation_NSG_A__Form
     type ( FieldSet_A_Form ), allocatable :: &
       Source_A, &
       Solution_A
+    type ( FieldSet_A_Element ), dimension ( : ), allocatable :: &
+      SolutionGradient_A
+    type ( Gradient_A_Form ), allocatable :: &
+      Gradient_A
     type ( Poisson_A_Form ), allocatable :: &
       Poisson_A
   contains
@@ -82,7 +86,10 @@ contains
       IgnorabilityOption
 
     integer ( KDI ) :: &
+      iD, &
       MaxDegree
+    character ( 1 ) :: &
+      DimensionNumber
 
     if ( FSA % Type  ==  '' ) &
       FSA % Type  =  'a Gravitation_NSG_A'
@@ -105,7 +112,7 @@ contains
              nFieldsOption = 1 )
     end associate !-- SA
 
-    !-- Solution_A
+    !-- Solution_A and SolutionGradient_A
 
     allocate ( FSA % Solution_A )
     associate &
@@ -117,6 +124,19 @@ contains
            ( FSA, &
              iaSelected = [ GC % POTENTIAL ], &
              NameOption = 'GravitationSolution' )
+
+    allocate ( FSA % SolutionGradient_A ( 3 ) )
+    do iD  =  1, 3
+      write ( DimensionNumber, fmt = '(i1.1)' ) iD
+      allocate ( FSA % SolutionGradient_A ( iD ) % Element )
+      associate &
+        ( SGA  =>  FSA % SolutionGradient_A ( iD ) % Element )
+      call SGA % Initialize &
+             ( FSA, &
+               iaSelected = [ GC % POTENTIAL_GRADIENT_D ( iD ) ], &
+               NameOption = 'GravitationGradient_' // DimensionNumber )
+      end associate !-- iD
+    end do !-- iD
 
     select type ( A  =>  SA % Atlas )
     class is ( Atlas_SCG_CC_Form )
@@ -133,6 +153,13 @@ contains
 
     end select !-- GC
     end associate !-- SA
+
+    !-- Gradient_A
+
+    allocate ( FSA % Gradient_A )
+    associate ( GtA  =>  FSA % Gradient_A )
+    call GtA % Initialize ( FSA, FSA % Solution_A )
+    end associate !-- GtA
 
     !-- Poisson_A
 
@@ -173,7 +200,8 @@ contains
       class is ( Gravitation_NH_C_Form )
 
     call GA % Gravitation_NH_A_Form % SetStream &
-           ( SA, iaAdditionalOption = [ GC % POTENTIAL ] )
+           ( SA, iaAdditionalOption = [ GC % POTENTIAL, &
+                                        GC % POTENTIAL_GRADIENT_D ] )
 
     end select !-- GC
 
@@ -193,7 +221,8 @@ contains
       iBaryonDensity
 
     integer ( KDI ) :: &
-      iC
+      iC, &
+      iD
 
     associate ( nC  =>  GA % Atlas % nCharts )
     do iC  =  1, nC
@@ -220,6 +249,44 @@ contains
     call PA % Solve ( GA % Solution_A, GA % Source_A )
     end associate !-- PA
 
+    associate ( nC  =>  GA % Atlas % nCharts )
+    do iC  =  1, nC
+      select type ( GtC  =>  GA % Gradient_A % FieldSet_C ( iC ) % Element )
+        class is ( Gradient_C_Form )
+      do iD  =  1, GtC % Chart % nDimensions
+        associate &
+          ( SGA  =>  GA % SolutionGradient_A ( iD ) % Element )
+        associate &
+          ( SGC  =>  SGA % FieldSet_C ( iC ) % Element )
+        call GtC % Compute ( iD )
+        call GtC % Copy ( SGC )
+        end associate !-- SGC
+        end associate !-- SGA
+      end do !-- iD
+      end select !-- GtC
+    end do !-- iC
+    end associate !-- nC
+
+    associate ( GtA  =>  GA % Gradient_A )
+    select type ( A  =>  GA % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
+!    do iD = 1, C % nDimensions
+!      call GA % Gradient % Compute ( C, S, iDimension = iD )
+!      call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
+!                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
+!                  UseDeviceOption = G % AllocatedDevice )
+!    end do !-- iD
+    end associate !-- C
+    class default 
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Gravitation_NSG_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+    end associate !-- GtA
+
   end subroutine Solve
 
 
@@ -230,6 +297,10 @@ contains
 
     if ( allocated ( GA % Poisson_A ) ) &
       deallocate ( GA % Poisson_A )
+    if ( allocated ( GA % Gradient_A ) ) &
+      deallocate ( GA % Gradient_A )
+    if ( allocated ( GA % SolutionGradient_A ) ) &
+      deallocate ( GA % SolutionGradient_A )
     if ( allocated ( GA % Solution_A ) ) &
       deallocate ( GA % Solution_A )
     if ( allocated ( GA % Source_A ) ) &
