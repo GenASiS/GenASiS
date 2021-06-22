@@ -1,46 +1,39 @@
-Storage_FSC__Form.o: \
+GhostExchange_Form.o: \
   Basics.o \
   Manifolds.o \
-  Storage_FSC__Form.f90
+  GhostExchange_Form.f90
 
-GhostExchange_FSC__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  Storage_FSC__Form.o \
-  GhostExchange_FSC__Form.f90
+# Boundaries_FSC__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   Storage_C__Form.o \
+#   Boundaries_FSC__Form.f90
 
-Boundaries_FSC__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  Storage_FSC__Form.o \
-  Boundaries_FSC__Form.f90
+# Boundaries_FSC__Kernel.o: \
+#   Basics.o \
+#   Boundaries_FSC__Form.o \
+#   Boundaries_FSC__Kernel.f90
 
-Boundaries_FSC__Kernel.o: \
-  Basics.o \
-  Boundaries_FSC__Form.o \
-  Boundaries_FSC__Kernel.f90
+# FieldSet_C__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   Storage_C__Form.o \
+#   GhostExchange_FSC__Form.o \
+#   Boundaries_FSC__Form.o \
+#   FieldSet_C__Form.f90
 
-FieldSet_C__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  Storage_FSC__Form.o \
-  GhostExchange_FSC__Form.o \
-  Boundaries_FSC__Form.o \
-  FieldSet_C__Form.f90
-
-FieldSet_A__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSet_C__Form.o \
-  FieldSet_A__Form.f90
+# FieldSet_A__Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   FieldSet_C__Form.o \
+#   FieldSet_A__Form.f90
 
 FieldSets.o: \
-  Storage_FSC__Form.o \
-  GhostExchange_FSC__Form.o \
-  Boundaries_FSC__Form.o \
-  FieldSet_C__Form.o \
-  FieldSet_A__Form.o \
+  GhostExchange_Form.o \
   FieldSets.f90
+  # Boundaries_FSC__Form.o \
+  # FieldSet_C__Form.o \
+  # FieldSet_A__Form.o \
 
 FieldSets.a: $(FIELD_SETS)
 	ar r FieldSets.a $(FIELD_SETS)

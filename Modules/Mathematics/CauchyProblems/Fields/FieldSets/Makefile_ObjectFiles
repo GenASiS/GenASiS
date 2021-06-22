@@ -1,8 +1,7 @@
 FIELD_SETS = \
   FieldSets.o \
-  FieldSet_A__Form.o \
-  FieldSet_C__Form.o \
-  Boundaries_FSC__Kernel.o \
-  Boundaries_FSC__Form.o \
-  GhostExchange_FSC__Form.o \
-  Storage_FSC__Form.o
+  GhostExchange_Form.o \
+  # FieldSet_A__Form.o \
+  # FieldSet_C__Form.o \
+  # Boundaries_FSC__Kernel.o \
+  # Boundaries_FSC__Form.o \
