@@ -1,7 +1,5 @@
 module GhostExchange_Form
 
-  !-- GhostExchange_FieldSetChart_Form
-
   use Basics
   use Manifolds
 

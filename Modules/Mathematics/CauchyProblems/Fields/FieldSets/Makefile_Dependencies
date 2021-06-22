@@ -3,23 +3,22 @@ GhostExchange_Form.o: \
   Manifolds.o \
   GhostExchange_Form.f90
 
-# Boundaries_FSC__Form.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   Storage_C__Form.o \
-#   Boundaries_FSC__Form.f90
+Boundaries_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Boundaries_Form.f90
 
-# Boundaries_FSC__Kernel.o: \
-#   Basics.o \
-#   Boundaries_FSC__Form.o \
-#   Boundaries_FSC__Kernel.f90
+Boundaries_Kernel.o: \
+  Basics.o \
+  Boundaries_Form.o \
+  Boundaries_Kernel.f90
 
 # FieldSet_C__Form.o: \
 #   Basics.o \
 #   Manifolds.o \
 #   Storage_C__Form.o \
 #   GhostExchange_FSC__Form.o \
-#   Boundaries_FSC__Form.o \
+#   Boundaries_Form.o \
 #   FieldSet_C__Form.f90
 
 # FieldSet_A__Form.o: \
@@ -30,8 +29,8 @@ GhostExchange_Form.o: \
 
 FieldSets.o: \
   GhostExchange_Form.o \
+  Boundaries_Form.o \
   FieldSets.f90
-  # Boundaries_FSC__Form.o \
   # FieldSet_C__Form.o \
   # FieldSet_A__Form.o \
 
