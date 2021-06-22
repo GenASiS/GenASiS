@@ -1,7 +1,6 @@
 FIELD_SETS = \
   FieldSets.o \
+  FieldSet_Form.o \
   Boundaries_Kernel.o \
   Boundaries_Form.o \
-  GhostExchange_Form.o \
-  # FieldSet_A__Form.o \
-  # FieldSet_C__Form.o \
+  GhostExchange_Form.o

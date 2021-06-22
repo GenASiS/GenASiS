@@ -805,7 +805,10 @@ contains
 
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
-    
+
+    if ( Handle > 0 ) &
+      return
+
     PH => PROGRAM_HEADER 
       
     PH % nTimers = PH % nTimers + 1
