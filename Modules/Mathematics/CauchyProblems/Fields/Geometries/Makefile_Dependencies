@@ -1,26 +1,16 @@
-Geometry_F_C__Form.o: \
+Geometry_F__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
-  Streams.o \
-  Geometry_F_C__Form.f90
+  Geometry_F__Form.f90
 
-Geometry_F_C__Kernel.o: \
+Geometry_F__Kernel.o: \
   Basics.o \
-  Geometry_F_C__Form.o \
-  Geometry_F_C__Kernel.f90
-
-Geometry_F_A__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  FieldSets.o \
-  Streams.o \
-  Geometry_F_C__Form.o \
-  Geometry_F_A__Form.f90
+  Geometry_F__Form.o \
+  Geometry_F__Kernel.f90
 
 Geometries.o: \
-  Geometry_F_C__Form.o \
-  Geometry_F_A__Form.o \
+  Geometry_F__Form.o \
   Geometries.f90
 
 Geometries.a: $(GEOMETRIES)

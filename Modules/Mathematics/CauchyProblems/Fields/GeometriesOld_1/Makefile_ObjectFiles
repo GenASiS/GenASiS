@@ -1,0 +1,5 @@
+GEOMETRIES = \
+  Geometries.o \
+  Geometry_F_A__Form.o \
+  Geometry_F_C__Kernel.o \
+  Geometry_F_C__Form.o
