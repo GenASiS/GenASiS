@@ -1,4 +1,0 @@
-STREAMS = \
-  Streams.o \
-  Stream_A__Form.o \
-  Stream_C__Form.o
