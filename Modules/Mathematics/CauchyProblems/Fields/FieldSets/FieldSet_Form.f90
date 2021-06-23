@@ -59,7 +59,7 @@ module FieldSet_Form
     procedure, public, pass ( FS_S ) :: &
       Copy => Copy_FS
     procedure, public, pass :: &
-      SetTimerGhost
+      TimerGhost
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -152,7 +152,7 @@ contains
       FS % DevicesCommunicate  =  DevicesCommunicateOption  
 
     FS % Atlas  =>  A
-    associate ( nC  =>  A % nCharts )
+    associate ( nC  =>  FS % Atlas % nCharts )
 
     associate ( nF  =>  FS % nFields )
     nF  =  1
@@ -512,17 +512,20 @@ contains
   end subroutine Copy_FS
 
 
-  subroutine SetTimerGhost ( FS, TimerLevelOption )
+  function TimerGhost ( FS, TimerLevelOption ) result ( TG )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
     integer ( KDI ), intent ( in ), optional :: &
       TimerLevelOption
+    type ( TimerForm ), pointer :: &
+      TG
 
     character ( LDF ) :: &
       TimerName
 
     associate ( iT  =>  FS % iTimerGhost )
+
     if ( iT == 0 ) then
       TimerName  =  'Ghost_' // trim ( FS % Name )
       if ( present ( TimerLevelOption ) ) then
@@ -531,9 +534,12 @@ contains
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
       end if
     end if
+
+    TG  =>  PROGRAM_HEADER % TimerPointer ( iT )
+
     end associate !-- iT
 
-  end subroutine SetTimerGhost
+  end function TimerGhost
 
 
   subroutine ExchangeGhostData ( FS )

@@ -29,7 +29,7 @@ module PROGRAM_HEADER_Singleton
       MaxThreads = 0, &
       TimerMinLevel = 0, &
       TimerMaxLevel = 0, &
-      ExecutionTimeHandle
+      iTimerExecution = 0
     real ( KDR ) :: &
       TimerDisplayFraction
     character ( LDL ) :: &
@@ -219,8 +219,8 @@ contains
                 CONSOLE % INFO_1 )
 
     call PH % AddTimer &
-           ( 'Execution', Level = 0, Handle = PH % ExecutionTimeHandle )
-    call PH % Timer ( PH % ExecutionTimeHandle ) % Start ( )
+           ( 'Execution', Level = 0, Handle = PH % iTimerExecution )
+    call PH % Timer ( PH % iTimerExecution ) % Start ( )
 
 !    call Show ( 'Initializing PETSc', CONSOLE % INFO_1)
 !    call PETSCINITIALIZE ( PETSC_NULL_CHARACTER, Error )
@@ -805,9 +805,6 @@ contains
 
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
-
-    if ( Handle > 0 ) &
-      return
 
     PH => PROGRAM_HEADER 
       

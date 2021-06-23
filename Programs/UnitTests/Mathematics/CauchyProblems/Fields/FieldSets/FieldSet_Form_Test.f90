@@ -148,8 +148,7 @@ contains
 
     do iGE  =  1, nGhostExchanges
 
-      call FS % SetTimerGhost ( TimerLevelOption = 1 )
-      T  =>  PROGRAM_HEADER % TimerPointer ( FS % iTimerGhost ) 
+      T  =>  FS % TimerGhost ( TimerLevelOption = 1 )
       call T % Start ( )
 
       if ( .not. FS % DevicesCommunicate ) &
@@ -179,7 +178,7 @@ contains
       call FS % UpdateHost ( )
       do iS  =  1, FS % nFields
         iF  =  FS % iaSelected ( iS )
-        associate ( F  =>  FS % Storage ( iC ) % Value ( :, iF ) )
+        associate ( F  =>  FS % Storage ( 1 ) % Value ( :, iF ) )
         call C % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
         call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
