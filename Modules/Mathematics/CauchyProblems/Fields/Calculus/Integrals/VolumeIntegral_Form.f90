@@ -25,14 +25,14 @@ module VolumeIntegral_Form
 contains
 
 
-  subroutine Compute ( VI, IA, GA, ReduceOption, IgnorabilityOption )
+  subroutine Compute ( VI, I, G, ReduceOption, IgnorabilityOption )
 
     class ( VolumeIntegralForm ), intent ( inout ) :: &
       VI
-    class ( FieldSet_A_Form ), intent ( in ) :: &
-      IA  !-- Integrand
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      GA
+    class ( FieldSetForm ), intent ( in ) :: &
+      I  !-- Integrand
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
     logical ( KDL ), intent ( in ), optional :: &
       ReduceOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -58,32 +58,16 @@ contains
       Ignorability = IgnorabilityOption
 
     call Show ( 'Computing an integral', Ignorability )
-    call Show ( IA % Name, 'Integrand', Ignorability )
-    call Show ( IA % Atlas % Name, 'Atlas', Ignorability )
+    call Show ( I % Name, 'Integrand', Ignorability )
+    call Show ( I % Atlas % Name, 'Atlas', Ignorability )
 
-    !-- Integrand
-
-    select type ( A  =>  IA % Atlas )
-    class is ( Atlas_SCG_Form )
-
-    associate ( IC  =>  IA % FieldSet_C ( 1 ) % Element )
-    associate ( IV  =>  IC % Storage_FSC % Storage % Value )
-
-    !-- Geometry
-
-    select type ( GC  =>  GA % FieldSet_C ( 1 ) % Element )
-    class is ( Geometry_F_C_Form )
-
-    associate ( GV  =>  GC % Storage_FSC % Storage % Value )
-
-    !-- Grid
-
-    select type ( C  =>  IC % Chart ) 
-    type is ( Chart_GS_Form )
-
-    !-- Integrals
-
-    associate ( nI  =>  IC % nFields )
+    select type ( A  =>  I % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      (  C   =>  A % Chart_GS, &
+         IV  =>  I % Storage ( 1 ) % Value, &
+         GV  =>  G % Storage ( 1 ) % Value, &
+        nI   =>  I % nFields )
 
     allocate ( VI % Output ( nI ) )
     allocate ( MyIntegral ( nI ) )
@@ -94,11 +78,10 @@ contains
                nOutgoing = [ nI ], nIncoming = [ nI ] )
     end if
 
-
     do iI = 1, nI
-      iF  =  IC % iaSelected ( iI )
+      iF  =  I % iaSelected ( iI )
       call ComputeIntegral_CGS &
-             ( C % ProperCell, IV ( :, iF ), GV ( :, GC % VOLUME ), &
+             ( C % ProperCell, IV ( :, iF ), GV ( :, G % VOLUME ), &
                MyIntegral ( iI ) )
     end do !-- iI
     call Show ( MyIntegral, 'MyIntegral', Ignorability )
@@ -113,20 +96,7 @@ contains
 
     call Show ( VI % Output, 'Integral', Ignorability )
 
-    end associate !-- nI
-
-    class default
-      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'VolumeIntegral_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- C
-
-    end associate !-- GV
-    end select    !-- GC
-
-    end associate !-- IV
-    end associate !-- IC
+    end associate !-- C, etc.
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
