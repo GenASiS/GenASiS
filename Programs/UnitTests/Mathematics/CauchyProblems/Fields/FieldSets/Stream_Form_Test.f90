@@ -26,7 +26,9 @@ program Stream_Form_Test
     FS_234, FS_234_R, &
     FS_5,   FS_5_R
   type ( StreamForm ), allocatable :: &
-    S
+    S, &
+    S_234, &
+    S_5
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -95,12 +97,16 @@ program Stream_Form_Test
          ( FS, iaSelected = [ 5 ], NameOption = 'Fields_5' )
 
   allocate ( S )
-  call S % Initialize ( A, GIS )
+  allocate ( S_234 )
+  allocate ( S_5 )
+  call S     % Initialize ( A, GIS )
+  call S_234 % Initialize ( A, GIS, NameOption = 'Stream_234' )
+  call S_5   % Initialize ( A, GIS, NameOption = 'Stream_5' )
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % AddFieldSet ( FS )
-  call S % AddFieldSet ( FS_234 )
-  call S % AddFieldSet ( FS_5 )
+  call S     % AddFieldSet ( FS )
+  call S_234 % AddFieldSet ( FS_234 )
+  call S_5   % AddFieldSet ( FS_5 )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   call  A     % Show ( )
@@ -108,14 +114,18 @@ program Stream_Form_Test
   call FS_234 % Show ( )
   call FS_5   % Show ( )
   call  S     % Show ( )
+  call  S_234 % Show ( )
+  call  S_5   % Show ( )
 
   nGhostExchanges  =  1000
   call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
 
-  call TestReadWrite ( S, FS,     FS_R )
-  call TestReadWrite ( S, FS_234, FS_234_R )
-  call TestReadWrite ( S, FS_5,   FS_5_R )
+  call TestReadWrite ( S,     FS,     FS_R )
+  call TestReadWrite ( S_234, FS_234, FS_234_R )
+  call TestReadWrite ( S_5,   FS_5,   FS_5_R )
 
+  deallocate ( S_5 )
+  deallocate ( S_234 )
   deallocate ( S )
   deallocate ( FS_5 )
   deallocate ( FS_234 )
