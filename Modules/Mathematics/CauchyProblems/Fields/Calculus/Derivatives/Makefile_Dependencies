@@ -1,0 +1,18 @@
+Gradient_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Gradient_Form.f90
+
+Gradient_Kernel.o: \
+  Basics.o \
+  Gradient_Form.o \
+  Gradient_Kernel.f90
+
+Derivatives.o: \
+  Gradient_Form.o \
+  Derivatives.f90
+
+Derivatives.a: $(DERIVATIVES)
+	ar r Derivatives.a $(DERIVATIVES)
