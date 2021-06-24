@@ -1,4 +1,4 @@
-module Currents_Form
+module CurrentSet_Form
 
   use Basics
   use FieldSets
@@ -7,40 +7,40 @@ module Currents_Form
   implicit none
   private
 
-!     integer ( KDI ), private, parameter :: &
-!       N_FIELDS_CS    = 0, &
-!       N_VECTORS_CS   = 0, &
-!       N_PRIMITIVE_CS = 0, &
-!       N_BALANCED_CS  = 0
+    integer ( KDI ), private, parameter :: &
+      N_FIELDS_CS    = 0, &
+      N_VECTORS_CS   = 0, &
+      N_PRIMITIVE_CS = 0, &
+      N_BALANCED_CS  = 0
 
-!   type, public, extends ( FieldSetForm ) :: CurrentsForm
-!     !-- Fields and vectors
-!     integer ( KDI ) :: &
-!       N_FIELDS_CS    = N_FIELDS_CS, &
-!       N_VECTORS_CS   = N_VECTORS_CS
-!     !-- Defaults not generally used
-!     integer ( KDI ) :: &
-!       DENSITY_DEFAULT      = 0, &
-!       VELOCITY_DEFAULT_U_1 = 0, &
-!       VELOCITY_DEFAULT_U_2 = 0, &
-!       VELOCITY_DEFAULT_U_3 = 0
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       VELOCITY_DEFAULT_U = 0
-!     !-- Primtive and Balanced
-!     integer ( KDI ) :: &
-!       nPrimitive = 0, &
-!       nBalanced  = 0
-!     integer ( KDI ) :: &
-!       N_PRIMITIVE_CS = N_PRIMITIVE_CS, &
-!       N_BALANCED_CS  = N_BALANCED_CS
-!     integer ( KDI ), dimension ( : ), allocatable :: &
-!       iaPrimitive, &
-!       iaBalanced
-!     character ( LDL ), dimension ( : ), allocatable :: &
-!       Primitive, &
-!       Balanced
-!     class ( Geometry_F_orm ), pointer :: &
-!       Geometry_C => null ( )
+  type, public, extends ( FieldSetForm ) :: CurrentSetForm
+    !-- Fields and vectors
+    integer ( KDI ) :: &
+      N_FIELDS_CS    = N_FIELDS_CS, &
+      N_VECTORS_CS   = N_VECTORS_CS
+    !-- Defaults not generally used
+    integer ( KDI ) :: &
+      DENSITY_CS      = 0, &
+      VELOCITY_CS_U_1 = 0, &
+      VELOCITY_CS_U_2 = 0, &
+      VELOCITY_CS_U_3 = 0
+    integer ( KDI ), dimension ( 3 ) :: &
+      VELOCITY_CS_U = 0
+    !-- Primtive and Balanced
+    integer ( KDI ) :: &
+      nPrimitive = 0, &
+      nBalanced  = 0
+    integer ( KDI ) :: &
+      N_PRIMITIVE_CS = N_PRIMITIVE_CS, &
+      N_BALANCED_CS  = N_BALANCED_CS
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaPrimitive, &
+      iaBalanced
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Primitive, &
+      Balanced
+    class ( Geometry_F_Form ), pointer :: &
+      Geometry => null ( )
 !   contains
 !     procedure, private, pass :: &
 !       InitializeAllocate_CS
@@ -50,7 +50,7 @@ module Currents_Form
 !       SetVelocityConstant
 !     procedure, public, pass :: &
 !       SetVelocityLinear
-!     procedure, public, pass ( C ) :: &
+!     procedure, public, pass ( CS ) :: &
 !       SetStream
 !     procedure, private, pass :: &
 !       Show_FS
@@ -58,13 +58,13 @@ module Currents_Form
 !       ComputeFromInitial
 !     procedure, public, pass :: &
 !       ComputeFromConserved
-!     procedure, public, pass ( C ) :: &
+!     procedure, public, pass ( CS ) :: &
 !       ComputeFluxes
-!     procedure, public, pass ( C ) :: &
+!     procedure, public, pass ( CS ) :: &
 !       ComputeEigenspeeds
 !     final :: &
 !       Finalize
-!   end type CurrentsForm
+  end type CurrentSetForm
 
 !     private :: &
 !       ComputeFluxesKernel, &
@@ -102,14 +102,14 @@ module Currents_Form
 
 
 !   subroutine InitializeAllocate_CS &
-!                ( C, GC, FieldOption, VectorOption, NameOption, UnitOption, &
+!                ( CS, G, FieldOption, VectorOption, NameOption, UnitOption, &
 !                  DensityUnitOption, VectorIndicesOption, iaPrimitiveOption, &
 !                  iaBalancedOption, nFieldsOption, IgnorabilityOption )
 
 !     class ( CurrentsForm ), intent ( inout ) :: &
 !       C
-!     class ( Geometry_F_orm ), intent ( in ), target :: &
-!       GC
+!     class ( Geometry_F_Form ), intent ( in ), target :: &
+!       G
 !     character ( * ), dimension ( : ), intent ( in ), optional :: &
 !       FieldOption, &
 !       VectorOption
@@ -145,19 +145,19 @@ module Currents_Form
 !       Field, &
 !       Vector
 
-!     if ( C % Type  ==  '' ) &
-!       C % Type  =  'a Currents_C' 
+!     if ( CS % Type  ==  '' ) &
+!       CS % Type  =  'a Currents' 
     
 !     Name  =  'Currents'
 !     if ( present ( NameOption ) ) &
 !       Name  =  NameOption
 
-!     C % Geometry_C  =>  GC
+!     CS % Geometry  =>  G
 
 !     associate &
-!       ( DeviceMemory  =>  GC % Storage_FSC % DeviceMemory, &
-!         PinnedMemory  =>  GC % Storage_FSC % PinnedMemory, &
-!         DevicesCommunicate  =>  GC % GhostExchange_FSC % DevicesCommunicate ) 
+!       ( DeviceMemory  =>  G % Storage_FSC % DeviceMemory, &
+!         PinnedMemory  =>  G % Storage_FSC % PinnedMemory, &
+!         DevicesCommunicate  =>  G % GhostExchange_FSC % DevicesCommunicate ) 
 
 !     !-- Field indices
 
@@ -165,16 +165,16 @@ module Currents_Form
 !       nFields  =  nFieldsOption
 !     else
 
-!       C % DENSITY_DEFAULT       =  1
-!       C % VELOCITY_DEFAULT_U_1  =  2
-!       C % VELOCITY_DEFAULT_U_2  =  3
-!       C % VELOCITY_DEFAULT_U_3  =  4
+!       CS % DENSITY_CS       =  1
+!       CS % VELOCITY_CS_U_1  =  2
+!       CS % VELOCITY_CS_U_2  =  3
+!       CS % VELOCITY_CS_U_3  =  4
 
-!       nFields  =  C % N_FIELDS_CS  +  4
+!       nFields  =  CS % N_FIELDS_CS  +  4
 
-!       C % VELOCITY_DEFAULT_U  =  [ C % VELOCITY_DEFAULT_U_1, &
-!                                      C % VELOCITY_DEFAULT_U_2, &
-!                                      C % VELOCITY_DEFAULT_U_3 ]
+!       CS % VELOCITY_CS_U  =  [ CS % VELOCITY_CS_U_1, &
+!                                      CS % VELOCITY_CS_U_2, &
+!                                      CS % VELOCITY_CS_U_3 ]
 
 !     end if
 
@@ -184,10 +184,10 @@ module Currents_Form
 !       allocate ( Field, source = FieldOption )
 !     else
 !       allocate ( Field ( nFields ) )
-!       Field ( C % N_FIELDS_CS + 1 )  =  'Density'
-!       Field ( C % N_FIELDS_CS + 2 )  =  'Velocity_U_1'
-!       Field ( C % N_FIELDS_CS + 3 )  =  'Velocity_U_2'
-!       Field ( C % N_FIELDS_CS + 4 )  =  'Velocity_U_3'
+!       Field ( CS % N_FIELDS_CS + 1 )  =  'Density'
+!       Field ( CS % N_FIELDS_CS + 2 )  =  'Velocity_U_1'
+!       Field ( CS % N_FIELDS_CS + 3 )  =  'Velocity_U_2'
+!       Field ( CS % N_FIELDS_CS + 4 )  =  'Velocity_U_3'
 !     end if !-- FieldOption
 
 !     !-- Units
@@ -197,7 +197,7 @@ module Currents_Form
 !     else
 !       allocate ( Unit ( nFields ) )
 !       if ( present ( DensityUnitOption ) ) &
-!         Unit ( C % DENSITY_DEFAULT )  =  DensityUnitOption
+!         Unit ( CS % DENSITY_CS )  =  DensityUnitOption
 !     end if !-- UnitOption
 
 !     !-- Vector indices
@@ -205,14 +205,14 @@ module Currents_Form
 !     if ( present ( VectorIndicesOption ) ) then
 !       nVectors  =  size ( VectorIndicesOption )
 !       allocate ( VectorIndices ( nVectors ) )
-!       do iV  =  C % N_VECTORS_CS + 1,  nVectors 
+!       do iV  =  CS % N_VECTORS_CS + 1,  nVectors 
 !         call VectorIndices ( iV ) % Initialize ( VectorIndicesOption ( iV ) )
 !       end do !-- iV
 !     else
-!       nVectors  =  C % N_VECTORS_CS + 1
+!       nVectors  =  CS % N_VECTORS_CS + 1
 !       allocate ( VectorIndices ( nVectors ) )
-!       call VectorIndices ( C % N_VECTORS_CS + 1 ) % Initialize &
-!              ( C % VELOCITY_DEFAULT_U )
+!       call VectorIndices ( CS % N_VECTORS_CS + 1 ) % Initialize &
+!              ( CS % VELOCITY_CS_U )
 !     end if
 
 !     !-- Vector names
@@ -221,51 +221,51 @@ module Currents_Form
 !       allocate ( Vector, source = VectorOption )
 !     else
 !       allocate ( Vector ( nVectors ) )
-!       Vector ( C % N_VECTORS_CS + 1 )  =  'Velocity'
+!       Vector ( CS % N_VECTORS_CS + 1 )  =  'Velocity'
 !     end if !-- FieldOption
 
 !     !-- Primitive fields
 
 !     if ( present ( iaPrimitiveOption ) ) then
-!       C % nPrimitive  =  size ( iaPrimitiveOption )
-!       allocate ( C % iaPrimitive, source = iaPrimitiveOption )
+!       CS % nPrimitive  =  size ( iaPrimitiveOption )
+!       allocate ( CS % iaPrimitive, source = iaPrimitiveOption )
 !     else
-!       C % nPrimitive  =  C % N_PRIMITIVE_CS + 1
-!       allocate ( C % iaPrimitive ( C % nPrimitive ) )
-!       C % iaPrimitive  =  [ C % DENSITY_DEFAULT ]
+!       CS % nPrimitive  =  CS % N_PRIMITIVE_CS + 1
+!       allocate ( CS % iaPrimitive ( CS % nPrimitive ) )
+!       CS % iaPrimitive  =  [ CS % DENSITY_CS ]
 !     end if !-- iaPrimitiveOption
 
-!     associate ( nP  =>  C % nPrimitive )
-!     allocate ( C % Primitive ( nP ) )
+!     associate ( nP  =>  CS % nPrimitive )
+!     allocate ( CS % Primitive ( nP ) )
 !     do iP  =  1, nP
-!       iF  =  C % iaPrimitive ( iP )
-!       C % Primitive ( iP )  =  Field ( iF )
+!       iF  =  CS % iaPrimitive ( iP )
+!       CS % Primitive ( iP )  =  Field ( iF )
 !     end do !-- iP
 !     end associate !-- nP
 
 !     !-- Balanced fields
 
 !     if ( present ( iaBalancedOption ) ) then
-!       C % nBalanced  =  size ( iaBalancedOption )
-!       allocate ( C % iaBalanced, source = iaBalancedOption )
+!       CS % nBalanced  =  size ( iaBalancedOption )
+!       allocate ( CS % iaBalanced, source = iaBalancedOption )
 !     else
-!       C % nBalanced  =  C % N_BALANCED_CS + 1
-!       allocate ( C % iaBalanced ( C % nBalanced ) )
-!       C % iaBalanced  =  [ C % DENSITY_DEFAULT ]
+!       CS % nBalanced  =  CS % N_BALANCED_CS + 1
+!       allocate ( CS % iaBalanced ( CS % nBalanced ) )
+!       CS % iaBalanced  =  [ CS % DENSITY_CS ]
 !     end if !-- iaBalancedOption
 
-!     associate ( nB  =>  C % nBalanced )
-!     allocate ( C % Balanced ( nB ) )
+!     associate ( nB  =>  CS % nBalanced )
+!     allocate ( CS % Balanced ( nB ) )
 !     do iB  =  1, nB
-!       iF  =  C % iaBalanced ( iB )
-!       C % Balanced ( iB )  =  Field ( iF )
+!       iF  =  CS % iaBalanced ( iB )
+!       CS % Balanced ( iB )  =  Field ( iF )
 !     end do !-- iB
 !     end associate !-- nP
 
 !     !-- FieldSet
 
-!     call C % FieldSetForm % Initialize &
-!            ( GC % Chart, &
+!     call CS % FieldSetForm % Initialize &
+!            ( G % Chart, &
 !              FieldOption = Field, &
 !              VectorOption = Vector, &
 !              NameOption = Name, &
@@ -282,7 +282,7 @@ module Currents_Form
 !   end subroutine InitializeAllocate_CS
 
 
-!   subroutine SetVelocityConstant ( C, Direction, Speed )
+!   subroutine SetVelocityConstant ( CS, Direction, Speed )
 
 !     class ( CurrentsForm ), intent ( inout ) :: &
 !       C
@@ -292,11 +292,11 @@ module Currents_Form
 !       Speed
 
 !     associate &
-!       ( CSV  =>  C % Storage_FSC % Storage % Value )
+!       ( CV  =>  CS % Storage_FSC % Storage % Value )
 !     associate &
-!       (     V_1  =>  CSV ( :, C % VELOCITY_DEFAULT_U_1 ), &
-!             V_2  =>  CSV ( :, C % VELOCITY_DEFAULT_U_2 ), &
-!             V_3  =>  CSV ( :, C % VELOCITY_DEFAULT_U_3 ), &
+!       (     V_1  =>  CV ( :, CS % VELOCITY_CS_U_1 ), &
+!             V_2  =>  CV ( :, CS % VELOCITY_CS_U_2 ), &
+!             V_3  =>  CV ( :, CS % VELOCITY_CS_U_3 ), &
 !             K    =>  Direction, &
 !         Abs_K    =>  sqrt ( dot_product ( Direction, Direction ) ) )
 
@@ -305,12 +305,12 @@ module Currents_Form
 !     V_3  =  Speed  *  K ( 3 )  /  Abs_K
     
 !     end associate !-- V_1, etc.
-!     end associate !-- CSV
+!     end associate !-- CV
 
 !   end subroutine SetVelocityConstant
 
 
-!   subroutine SetVelocityLinear ( C, Speed, Length )
+!   subroutine SetVelocityLinear ( CS, Speed, Length )
 
 !     class ( CurrentsForm ), intent ( inout ) :: &
 !       C
@@ -319,28 +319,28 @@ module Currents_Form
 !       Length
 
 !     associate &
-!       ( GC  =>  C % Geometry_C )
+!       ( G  =>  CS % Geometry )
 !     associate &
-!       ( CSV  =>  C % Storage_FSC % Storage % Value, &
-!          GV  =>   GC % Storage_FSC % Storage % Value )
+!       ( CV  =>  CS % Storage_FSC % Storage % Value, &
+!          GV  =>   G % Storage_FSC % Storage % Value )
 !     associate &
-!       (    V_1  =>  CSV ( :, C % VELOCITY_DEFAULT_U_1 ), &
-!            V_2  =>  CSV ( :, C % VELOCITY_DEFAULT_U_2 ), &
-!            V_3  =>  CSV ( :, C % VELOCITY_DEFAULT_U_3 ), &
-!            X_1  =>   GV ( :,  GC % CENTER_U_1 ) )
+!       (    V_1  =>  CV ( :, CS % VELOCITY_CS_U_1 ), &
+!            V_2  =>  CV ( :, CS % VELOCITY_CS_U_2 ), &
+!            V_3  =>  CV ( :, CS % VELOCITY_CS_U_3 ), &
+!            X_1  =>   GV ( :,  G % CENTER_U_1 ) )
 
 !     V_1  =  Speed  *  ( X_1 / Length )
 !     V_2  =  0.0_KDR
 !     V_3  =  0.0_KDR
     
 !     end associate !-- V_1, etc.
-!     end associate !-- CSV, etc.
-!     end associate !-- GC
+!     end associate !-- CV, etc.
+!     end associate !-- G
 
 !   end subroutine SetVelocityLinear
 
 
-!   subroutine SetStream ( SC, C )
+!   subroutine SetStream ( SC, CS )
 
 !     class ( StreamForm ), intent ( inout ) :: &
 !       SC
@@ -350,18 +350,18 @@ module Currents_Form
 !     integer ( KDI ), dimension ( : ), allocatable :: &
 !       iaSelected
 
-!     if ( C % DENSITY_DEFAULT  >  0 ) then
+!     if ( CS % DENSITY_CS  >  0 ) then
 !       allocate ( iaSelected ( 4 ) )
-!       iaSelected ( 1 )  =  C % DENSITY_DEFAULT
-!       iaSelected ( 2 )  =  C % VELOCITY_DEFAULT_U_1
-!       iaSelected ( 3 )  =  C % VELOCITY_DEFAULT_U_2
-!       iaSelected ( 4 )  =  C % VELOCITY_DEFAULT_U_3
+!       iaSelected ( 1 )  =  CS % DENSITY_CS
+!       iaSelected ( 2 )  =  CS % VELOCITY_CS_U_1
+!       iaSelected ( 3 )  =  CS % VELOCITY_CS_U_2
+!       iaSelected ( 4 )  =  CS % VELOCITY_CS_U_3
 !     else
 !       allocate ( iaSelected ( 0 ) )
 !     end if
 
 !     call SC % AddFieldSet &
-!            ( C, &
+!            ( CS, &
 !              iaSelectedOption  =  iaSelected )
 
 !   end subroutine SetStream
@@ -385,7 +385,7 @@ module Currents_Form
 !   end subroutine Show_FS
 
 
-!   subroutine ComputeFromInitial ( C )
+!   subroutine ComputeFromInitial ( CS )
 
 !     class ( CurrentsForm ), intent ( inout ) :: &
 !       C
@@ -393,7 +393,7 @@ module Currents_Form
 !   end subroutine ComputeFromInitial
 
 
-!   subroutine ComputeFromConserved ( C )
+!   subroutine ComputeFromConserved ( CS )
 
 !     class ( CurrentsForm ), intent ( inout ) :: &
 !       C
@@ -401,7 +401,7 @@ module Currents_Form
 !   end subroutine ComputeFromConserved
 
 
-!   subroutine ComputeFluxes ( FSC, C, iD )
+!   subroutine ComputeFluxes ( FSC, CS, iD )
 
 !     class ( FieldSetForm ), intent ( inout ) :: &
 !       FSC
@@ -413,18 +413,18 @@ module Currents_Form
 !     integer ( KDI ) :: &
 !       iDensity
 
-!     if ( C % DENSITY_DEFAULT > 0 ) then
+!     if ( CS % DENSITY_CS > 0 ) then
 
-!       call Search ( C % iaBalanced, C % DENSITY_DEFAULT, iDensity )
+!       call Search ( CS % iaBalanced, CS % DENSITY_CS, iDensity )
 
 !       associate &
 !         ( FSS  =>  FSC % Storage_FSC % Storage, &
-!           CSS  =>  C % Storage_FSC % Storage, &
+!           CS  =>  CS % Storage_FSC % Storage, &
 !           DeviceMemory  =>  FSC % Storage_FSC % DeviceMemory )
 !       associate &
 !         ( F_D      =>  FSS % Value ( :, iDensity ), &
-!             D      =>  CSS % Value ( :, C % DENSITY_DEFAULT ), & 
-!             V_Dim  =>  CSS % Value ( :, C % VELOCITY_DEFAULT_U ( iD ) ) ) 
+!             D      =>  CS % Value ( :, CS % DENSITY_CS ), & 
+!             V_Dim  =>  CS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
  
 !       call ComputeFluxesKernel &
 !              ( D, V_Dim, F_D, UseDeviceOption = DeviceMemory )
@@ -437,7 +437,7 @@ module Currents_Form
 !   end subroutine ComputeFluxes
 
 
-!   subroutine ComputeEigenspeeds ( FSC, C, iaEigenspeeds, iD )
+!   subroutine ComputeEigenspeeds ( FSC, CS, iaEigenspeeds, iD )
 
 !     class ( FieldSetForm ), intent ( inout ) :: &
 !       FSC
@@ -448,16 +448,16 @@ module Currents_Form
 !     integer ( KDI ), intent ( in ) :: &
 !       iD  !-- iDimension
 
-!     if ( C % DENSITY_DEFAULT > 0 ) then
+!     if ( CS % DENSITY_CS > 0 ) then
 
 !       associate &
 !         ( FSS  =>  FSC % Storage_FSC % Storage, &
-!           CSS  =>  C % Storage_FSC % Storage, &
-!           DeviceMemory  =>  C % Storage_FSC % DeviceMemory )
+!           CS  =>  CS % Storage_FSC % Storage, &
+!           DeviceMemory  =>  CS % Storage_FSC % DeviceMemory )
 !       associate &
 !         ( EF_P    =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
 !           EF_M    =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ), &
-!            V_Dim  =>  CSS % Value ( :, C % VELOCITY_DEFAULT_U ( iD ) ) ) 
+!            V_Dim  =>  CS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
  
 !       call ComputeEigenspeedsKernel &
 !              ( V_Dim, EF_P, EF_M, UseDeviceOption = DeviceMemory )
@@ -470,23 +470,23 @@ module Currents_Form
 !   end subroutine ComputeEigenspeeds
 
 
-!   impure elemental subroutine Finalize ( C )
+!   impure elemental subroutine Finalize ( CS )
 
 !     type ( CurrentsForm ), intent ( inout ) :: &
 !       C
 
-!     nullify ( C % Geometry_C )
+!     nullify ( CS % Geometry )
 
-!     if ( allocated ( C % Balanced ) ) &
-!       deallocate ( C % Balanced )
-!     if ( allocated ( C % Primitive ) ) &
-!       deallocate ( C % Primitive )
-!     if ( allocated ( C % iaBalanced ) ) &
-!       deallocate ( C % iaBalanced )
-!     if ( allocated ( C % iaPrimitive ) ) &
-!       deallocate ( C % iaPrimitive )
+!     if ( allocated ( CS % Balanced ) ) &
+!       deallocate ( CS % Balanced )
+!     if ( allocated ( CS % Primitive ) ) &
+!       deallocate ( CS % Primitive )
+!     if ( allocated ( CS % iaBalanced ) ) &
+!       deallocate ( CS % iaBalanced )
+!     if ( allocated ( CS % iaPrimitive ) ) &
+!       deallocate ( CS % iaPrimitive )
 
 !   end subroutine Finalize
 
   
-end module Currents_Form
+end module CurrentSet_Form

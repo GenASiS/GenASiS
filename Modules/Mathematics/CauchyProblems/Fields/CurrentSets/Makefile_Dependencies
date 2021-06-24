@@ -1,0 +1,31 @@
+CurrentSet_Form.o: \
+  Basics.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSet_Form.f90
+
+CurrentSet_Kernel.o: \
+  Basics.o \
+  CurrentSet_Form.o \
+  CurrentSet_Kernel.f90
+
+FluxSet_Form.o: \
+  Basics.o \
+  FieldSets.o \
+  CurrentSet_Form.o \
+  FluxSet_Form.f90
+
+Eigenspeeds_F_Form.o: \
+  Basics.o \
+  FieldSets.o \
+  CurrentSet_Form.o \
+  Eigenspeeds_F_Form.f90
+
+CurrentSets.o: \
+  CurrentSet_Form.o \
+  CurrentSets.f90
+#  FluxSet_Form.o \
+  Eigenspeeds_F_Form.o \
+
+CurrentSets.a: $(CURRENT_SETS)
+	ar r CurrentSets.a $(CURRENT_SETS)
