@@ -1,0 +1,66 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: CurrentSet_Form_Test #FluxSet_Form_Test \
+  FluxSet_A__Form_Test Eigenspeeds_F_Form_Test Eigenspeeds_F_A__Form_Test
+
+CurrentSet_Form_Test: Basics.a Manifolds.a FieldSets.a Geometries.a \
+  CurrentSets.a CurrentSet_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o CurrentSet_Form_Test_$(MACHINE) \
+          CurrentSet_Form_Test.o CurrentSets.a \
+          Geometries.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+FluxSet_Form_Test: Basics.a Manifolds.a FieldSets.a Geometries.a \
+  CurrentSets.a FluxSet_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluxSet_Form_Test_$(MACHINE) \
+          FluxSet_Form_Test.o CurrentSets.a \
+          Geometries.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+Eigenspeeds_F_Form_Test: Basics.a Manifolds.a FieldSets.a Geometries.a \
+  CurrentSets.a Eigenspeeds_F_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Eigenspeeds_F_Form_Test_$(MACHINE) \
+          Eigenspeeds_F_Form_Test.o CurrentSets.a \
+          Geometries.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f CurrentSet_Form_Test_*
+	rm -f FluxSet_Form_Test_*
+	rm -f Eigenspeeds_F_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELD_SETS)/Makefile_Dependencies
+include $(PATH_GEOMETRIES)/Makefile_Dependencies
+include $(PATH_CALCULUS)/Makefile_Dependencies
+include $(PATH_CURRENT_SETS)/Makefile_Dependencies
+
+CurrentSet_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSets.o \
+  CurrentSet_Form_Test.f90
+
+FluxSet_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSets.o \
+  FluxSet_Form_Test.f90
+
+Eigenspeeds_F_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSets.o \
+  Eigenspeeds_F_Form_Test.f90

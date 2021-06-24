@@ -31,6 +31,8 @@ module FieldSet_Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Field, &
       Vector
+    type ( StorageForm ), pointer :: &
+      Storage_GS => null ( )
     type ( StorageForm ), dimension ( : ), allocatable :: &
       Storage
     class ( GhostExchangeForm ), dimension ( : ), allocatable :: &
@@ -94,7 +96,7 @@ contains
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
                  nFieldsOption, IgnorabilityOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSetForm ), intent ( inout ), target :: &
       FS
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
@@ -256,6 +258,12 @@ contains
     end do !-- iC
 
     end associate !-- nC
+
+    !-- For convenience with a single Chart_GS
+    select type ( A  =>  FS % Atlas )
+    class is ( Atlas_SCG_Form )
+      FS % Storage_GS  =>  FS % Storage ( 1 )
+    end select !-- A
 
   end subroutine InitializeAllocate_FS
 
@@ -659,6 +667,7 @@ contains
 
     nullify ( FS % Primary )
     nullify ( FS % Atlas )
+    nullify ( FS % Storage_GS )
 
     if ( allocated ( FS % Boundaries ) ) &
       deallocate ( FS % Boundaries )

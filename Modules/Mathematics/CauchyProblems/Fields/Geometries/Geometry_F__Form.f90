@@ -176,7 +176,7 @@ contains
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
                  nFieldsOption, IgnorabilityOption )
 
-    class ( Geometry_F_Form ), intent ( inout ) :: &
+    class ( Geometry_F_Form ), intent ( inout ), target :: &
       FS
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
