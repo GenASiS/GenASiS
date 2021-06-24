@@ -3,6 +3,6 @@ module Fields
   use FieldSets
   use Geometries
   use Calculus
-  use CurrentSets
+  use Currents
 
 end module Fields

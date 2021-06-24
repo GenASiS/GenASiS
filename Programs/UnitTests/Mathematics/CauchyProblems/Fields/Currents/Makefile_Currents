@@ -1,0 +1,115 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Currents.a #CurrentSet_C__Form_Test CurrentSet_A__Form_Test FluxSet_C__Form_Test \
+  FluxSet_A__Form_Test Eigenspeeds_F_C__Form_Test Eigenspeeds_F_A__Form_Test
+
+CurrentSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a CurrentSet_C__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o CurrentSet_C__Form_Test_$(MACHINE) \
+          CurrentSet_C__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+CurrentSet_A__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a CurrentSet_A__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o CurrentSet_A__Form_Test_$(MACHINE) \
+          CurrentSet_A__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+FluxSet_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a FluxSet_C__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluxSet_C__Form_Test_$(MACHINE) \
+          FluxSet_C__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+FluxSet_A__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a FluxSet_A__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluxSet_A__Form_Test_$(MACHINE) \
+          FluxSet_A__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+Eigenspeeds_F_C__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a Eigenspeeds_F_C__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Eigenspeeds_F_C__Form_Test_$(MACHINE) \
+          Eigenspeeds_F_C__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+Eigenspeeds_F_A__Form_Test: Basics.a Manifolds.a FieldSets.a Streams.a \
+  Geometries.a CurrentSets.a Eigenspeeds_F_A__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Eigenspeeds_F_A__Form_Test_$(MACHINE) \
+          Eigenspeeds_F_A__Form_Test.o CurrentSets.a \
+          Geometries.a Streams.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f CurrentSet_C__Form_Test_*
+	rm -f CurrentSet_A__Form_Test_*
+	rm -f FluxSet_C__Form_Test_*
+	rm -f FluxSet_A__Form_Test_*
+	rm -f Eigenspeeds_F_C__Form_Test_*
+	rm -f Eigenspeeds_F_A__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELD_SETS)/Makefile_Dependencies
+include $(PATH_GEOMETRIES)/Makefile_Dependencies
+include $(PATH_CALCULUS)/Makefile_Dependencies
+include $(PATH_CURRENTS)/Makefile_Dependencies
+
+CurrentSet_C__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  CurrentSet_C__Form_Test.f90
+
+CurrentSet_A__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  CurrentSet_A__Form_Test.f90
+
+FluxSet_C__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  FluxSet_C__Form_Test.f90
+
+FluxSet_A__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  FluxSet_A__Form_Test.f90
+
+Eigenspeeds_F_C__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  Eigenspeeds_F_C__Form_Test.f90
+
+Eigenspeeds_F_A__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Streams.o \
+  Geometries.o \
+  CurrentSets.o \
+  Eigenspeeds_F_A__Form_Test.f90
+
