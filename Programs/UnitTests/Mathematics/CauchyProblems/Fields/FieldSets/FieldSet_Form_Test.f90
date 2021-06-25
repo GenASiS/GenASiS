@@ -131,7 +131,7 @@ contains
 
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
-      associate ( F  =>  FS % Storage ( 1 ) % Value ( :, iF ) )
+      associate ( F  =>  FS % Storage_GS % Value ( :, iF ) )
       call C % SetFieldPointer ( F, F_3D )
 
       oC  =  ( C % iaBrick  -  1 )  *  nCB
@@ -174,7 +174,7 @@ contains
 
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
-      associate ( F  =>  FS % Storage ( 1 ) % Value ( :, iF ) )
+      associate ( F  =>  FS % Storage_GS % Value ( :, iF ) )
       call C % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
       call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
@@ -186,7 +186,7 @@ contains
       call FS % UpdateHost ( )
       do iS  =  1, FS % nFields
         iF  =  FS % iaSelected ( iS )
-        associate ( F  =>  FS % Storage ( 1 ) % Value ( :, iF ) )
+        associate ( F  =>  FS % Storage_GS % Value ( :, iF ) )
         call C % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
         call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )

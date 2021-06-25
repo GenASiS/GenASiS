@@ -201,8 +201,8 @@ contains
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
       associate &
-        ( F    =>  FS % Storage ( 1 ) % Value ( :, iF ), &
-          F_U  =>  FS % Storage ( 1 ) % Unit ( iF ) )
+        ( F    =>  FS % Storage_GS % Value ( :, iF ), &
+          F_U  =>  FS % Storage_GS % Unit ( iF ) )
       call C % SetFieldPointer ( F, F_3D )
 
       oC  =  ( C % iaBrick  -  1 )  *  nCB
@@ -246,8 +246,8 @@ contains
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
       associate &
-        ( F    =>  FS % Storage ( 1 ) % Value ( :, iF ), &
-          F_U  =>  FS % Storage ( 1 ) % Unit ( iF ) )
+        ( F    =>  FS % Storage_GS % Value ( :, iF ), &
+          F_U  =>  FS % Storage_GS % Unit ( iF ) )
       call C % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
       call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
@@ -260,8 +260,8 @@ contains
       do iS  =  1, FS % nFields
         iF  =  FS % iaSelected ( iS )
         associate &
-          ( F    =>  FS % Storage ( 1 ) % Value ( :, iF ), &
-            F_U  =>  FS % Storage ( 1 ) % Unit ( iF ) )
+          ( F    =>  FS % Storage_GS % Value ( :, iF ), &
+            F_U  =>  FS % Storage_GS % Unit ( iF ) )
         call C % SetFieldPointer ( F, F_3D )
         call Show ( 'Field after update host', CONSOLE % INFO_2 )
         call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
@@ -381,8 +381,8 @@ contains
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
       associate &
-        ( F    =>  FS % Storage ( 1 ) % Value ( :, iF ), &
-          F_U  =>  FS % Storage ( 1 ) % Unit ( iF ) )
+        ( F    =>  FS % Storage_GS % Value ( :, iF ), &
+          F_U  =>  FS % Storage_GS % Unit ( iF ) )
       call C % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after reading', CONSOLE % INFO_2 )
       call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
@@ -426,8 +426,8 @@ contains
     do iS  =  1, nF
       iF  =  FS % iaSelected ( iS )
       associate &
-        ( F_R  =>  FS_R % Storage ( 1 ) % Value ( :, iF ), &
-          F    =>  FS   % Storage ( 1 ) % Value ( :, iF ) )
+        ( F_R  =>  FS_R % Storage_GS % Value ( :, iF ), &
+          F    =>  FS   % Storage_GS % Value ( :, iF ) )
 
       !-- proper cells only
       CO % Outgoing % Value ( iS )  &
