@@ -24,7 +24,6 @@ program Chart_GS__Form_Test
   call C_Base % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
            NameOption = 'C_Base', &
-           PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
 
        MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT

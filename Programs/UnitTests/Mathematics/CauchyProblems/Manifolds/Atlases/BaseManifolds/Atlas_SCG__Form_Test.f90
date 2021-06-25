@@ -24,7 +24,6 @@ program Atlas_SCG__Form_Test
   call Base % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
            NameOption = 'Base', &
-           PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
 
        MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT

@@ -27,7 +27,6 @@ program Atlas_H__Form_Test
   associate ( C_Base  =>  A_Base % Chart ( 1 ) % Element )
   call C_Base % Initialize_H &
          ( NameOption = 'C_Base', &
-           PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
   end associate !-- C_Base
 

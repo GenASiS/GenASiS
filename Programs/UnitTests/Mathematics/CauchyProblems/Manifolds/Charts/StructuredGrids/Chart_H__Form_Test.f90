@@ -18,7 +18,6 @@ program Chart_H__Form_Test
   allocate ( C_Base )
   call C_Base % Initialize_H &
          ( NameOption = 'C_Base', &
-           PeriodicOption = [ .true., .true., .true. ], &
            iDimensionalityOption = 1 )
 
   allocate ( C_Fiber )
@@ -26,7 +25,6 @@ program Chart_H__Form_Test
          ( CoordinateLabelOption = [ 'E' ], &
            CoordinateSystemOption = 'SPHERICAL', &
            NameOption = 'C_Fiber', &
-           PeriodicOption = [ .false. ], &
            iDimensionalityOption = 2 )
 
   call C_Base % Show ( )
