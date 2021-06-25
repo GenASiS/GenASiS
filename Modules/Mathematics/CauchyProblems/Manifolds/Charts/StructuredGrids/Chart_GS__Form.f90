@@ -94,10 +94,9 @@ contains
 
   subroutine Initialize_GS &
                ( C, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
-                 CoordinateSystemOption, NameOption, PeriodicOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nCellsOption, nGhostLayersOption, nBricksOption, &
+                 CoordinateSystemOption, NameOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, nBricksOption, &
                  nBricksCompatibleOption, IgnorabilityOption, &
                  nDimensionsOption, nEqualOption, iDimensionalityOption )
 
@@ -111,8 +110,6 @@ contains
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption, &
       NameOption
-    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
-      PeriodicOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -139,7 +136,7 @@ contains
 
     call C % Initialize_H &
            ( CoordinateLabelOption, CoordinateSystemOption, NameOption, &
-             PeriodicOption, CoordinateUnitOption, IgnorabilityOption, &
+             CoordinateUnitOption, IgnorabilityOption, &
              nDimensionsOption, iDimensionalityOption )
 
     call SetCoordinateMetadata &

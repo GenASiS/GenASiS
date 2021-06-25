@@ -70,8 +70,6 @@ contains
       MaxCoordinate, &
       Ratio, &
       Scale
-    logical ( KDL ), dimension ( 3 ) :: &
-      Periodic
     character ( LDL ) :: &
       CoordinateSystem
     character ( LDL ), dimension ( 3 ) :: &
@@ -87,9 +85,6 @@ contains
     Spacing        =  'EQUAL'
     Spacing ( 1 )  =  'PROPORTIONAL'
     
-    Periodic  =  .false.
-    Periodic ( 3 )  =  .true.
-
     C % RadiusMax    =  RadiusMax
     C % RadiusScale  =  RadiusScale
 
@@ -126,7 +121,6 @@ contains
            ( CommunicatorOption = CommunicatorOption, &
              SpacingOption = Spacing, &
              CoordinateSystemOption = CoordinateSystem, &
-             PeriodicOption = Periodic, &
              CoordinateUnitOption = CoordinateUnitOption, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
