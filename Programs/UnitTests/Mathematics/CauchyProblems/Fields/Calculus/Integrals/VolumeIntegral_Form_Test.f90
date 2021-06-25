@@ -23,8 +23,7 @@ program VolumeIntegral_Form_Test
 
   allocate ( A )
   call A % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
-           PeriodicOption = [ .true., .true., .true. ] )
+         ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( G )
   call G % Initialize ( A )

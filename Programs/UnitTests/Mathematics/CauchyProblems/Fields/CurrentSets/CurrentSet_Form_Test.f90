@@ -30,8 +30,7 @@ program CurrentSet_Form_Test
 
   allocate ( A )
   call A % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
-           PeriodicOption = [ .true., .true., .true. ] )
+         ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( S )
   call S % Initialize ( A, GIS )
