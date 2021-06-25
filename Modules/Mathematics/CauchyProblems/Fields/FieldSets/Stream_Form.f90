@@ -222,14 +222,14 @@ contains
   end subroutine Show_S
 
 
-  function TimerWrite ( S, TimerLevelOption ) result ( TW )
+  function TimerWrite ( S, LevelOption ) result ( T )
 
     class ( StreamForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      LevelOption
     type ( TimerForm ), pointer :: &
-      TW
+      T
 
     character ( LDF ) :: &
       TimerName
@@ -238,14 +238,14 @@ contains
 
     if ( iT == 0 ) then
       TimerName  =  'Write_' // trim ( S % Name )
-      if ( present ( TimerLevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
       end if
     end if
 
-    TW  =>  PROGRAM_HEADER % TimerPointer ( iT )
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
     end associate !-- iT
 

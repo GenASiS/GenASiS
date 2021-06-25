@@ -228,7 +228,7 @@ contains
 
     do iGE  =  1, nGhostExchanges
 
-      T  =>  FS % TimerGhost ( TimerLevelOption = 1 )
+      T  =>  FS % TimerGhost ( LevelOption = 1 )
       call T % Start ( )
 
       if ( .not. FS % DevicesCommunicate ) &
@@ -338,12 +338,12 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    T  =>  S % TimerWrite ( TimerLevelOption = 1 )
+    T  =>  S % TimerWrite ( LevelOption = 1 )
     call T % Start ( )
 
     associate ( GIS  =>  S % GridImageStream ) 
     call GIS % Open ( GIS % ACCESS_CREATE )
-    call  S % Write ( )
+    call   S % Write ( )
     call GIS % Close ( )
     end associate !-- GIS
 
