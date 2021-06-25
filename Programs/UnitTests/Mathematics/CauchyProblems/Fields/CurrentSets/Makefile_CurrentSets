@@ -2,8 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: CurrentSet_Form_Test #FluxSet_Form_Test \
-  FluxSet_A__Form_Test Eigenspeeds_F_Form_Test Eigenspeeds_F_A__Form_Test
+all: CurrentSet_Form_Test FluxSet_Form_Test #Eigenspeeds_Form_Test
 
 CurrentSet_Form_Test: Basics.a Manifolds.a FieldSets.a Geometries.a \
   CurrentSets.a CurrentSet_Form_Test.o

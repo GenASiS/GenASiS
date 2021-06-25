@@ -1,8 +1,7 @@
 CURRENT_SETS = \
   CurrentSets.o \
+  FluxSet_Form.o \
   CurrentSet_Kernel.o \
   CurrentSet_Form.o
   # Eigenspeeds_F_A__Form.o \
   # Eigenspeeds_F_C__Form.o \
-  # FluxSet_A__Form.o \
-  # FluxSet_C__Form.o \

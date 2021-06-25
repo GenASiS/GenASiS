@@ -23,9 +23,9 @@ Eigenspeeds_F_Form.o: \
 
 CurrentSets.o: \
   CurrentSet_Form.o \
+  FluxSet_Form.o \
   CurrentSets.f90
-#  FluxSet_Form.o \
-  Eigenspeeds_F_Form.o \
+#  Eigenspeeds_F_Form.o \
 
 CurrentSets.a: $(CURRENT_SETS)
 	ar r CurrentSets.a $(CURRENT_SETS)

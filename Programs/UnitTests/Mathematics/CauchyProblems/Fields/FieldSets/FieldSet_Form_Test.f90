@@ -111,6 +111,7 @@ contains
 
     call Show ( 'Ghost exchange' )
     call Show ( FS % Name, 'FieldSet' )
+    call Show ( nGhostExchanges, 'nGhostExchanges' )
     call FS % Clear ( )
 
     select type ( A  =>  FS % Atlas )
@@ -168,7 +169,6 @@ contains
       associate ( F  =>  FS % Storage ( 1 ) % Value ( :, iF ) )
       call C % SetFieldPointer ( F, F_3D )
       call Show ( 'Field after ghost exchanges', CONSOLE % INFO_2 )
-      call Show ( nGhostExchanges, 'nGhostExchanges', CONSOLE % INFO_2 )
       call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
       call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
       end associate !-- F
