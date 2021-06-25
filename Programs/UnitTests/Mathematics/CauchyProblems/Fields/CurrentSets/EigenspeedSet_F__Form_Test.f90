@@ -1,4 +1,4 @@
-program FluxSet_Form_Test
+program EigenspeedSet_F__Form_Test
 
   use Basics
   use Manifolds
@@ -20,12 +20,12 @@ program FluxSet_Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( FluxSetForm ), allocatable :: &
-    FS
+  type ( EigenspeedSet_F_Form ), allocatable :: &
+    ES
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FluxSet_Form_Test', DimensionalityOption = '2D' )
+         ( 'EigenspeedSet_F__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -47,15 +47,15 @@ program FluxSet_Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( S )
 
-  allocate ( FS )
-  call FS % Initialize ( CS )
-  call  S % AddFieldSet ( FS )
+  allocate ( ES )
+  call ES % Initialize ( CS )
+  call  S % AddFieldSet ( ES )
 
   call  A % Show ( )
   call  G % Show ( )
   call CS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call FS % Show ( )
+  call ES % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call  S % Show ( )
 
@@ -64,11 +64,11 @@ program FluxSet_Form_Test
   nCompute  =  1000
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
-  call TestFluxes ( FS, S, iD = 1 )
-  call TestFluxes ( FS, S, iD = 2 )
-  call TestFluxes ( FS, S, iD = 3 )
+  call TestEigenspeeds ( ES, S, iD = 1 )
+  call TestEigenspeeds ( ES, S, iD = 2 )
+  call TestEigenspeeds ( ES, S, iD = 3 )
 
-  deallocate ( FS )
+  deallocate ( ES )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( S )
@@ -153,10 +153,10 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestFluxes ( FS, S, iD )
+  subroutine TestEigenspeeds ( ES, S, iD )
 
-    class ( FluxSetForm ), intent ( inout ) :: &
-      FS
+    class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
+      ES
     class ( StreamForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
@@ -167,15 +167,15 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    call Show ( 'Flux computation' )
-    call Show ( FS % Name, 'FluxSet' )
+    call Show ( 'Eigenspeed computation' )
+    call Show ( ES % Name, 'EigenspeedSet' )
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  FS % TimerFluxes ( LevelOption = 1 )
+    T  =>  ES % TimerEigenspeeds ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call FS % Compute ( iD )
+      call ES % Compute ( iD )
     end do
     call T % Stop ( )
 
@@ -186,7 +186,7 @@ contains
     call GIS % Close ( )
     call T % Stop ( )
 
-  end subroutine TestFluxes
+  end subroutine TestEigenspeeds
 
 
-end program FluxSet_Form_Test
+end program EigenspeedSet_F__Form_Test

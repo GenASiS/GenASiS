@@ -18,7 +18,7 @@ module FluxSet_Form
     generic, public :: &
       Initialize => InitializeAllocate_FxS
     procedure, public, pass :: &
-      TimerFlux
+      TimerFluxes
     procedure, public, pass :: &
       Compute
     final :: &
@@ -62,14 +62,14 @@ contains
   end subroutine InitializeAllocate_FxS
 
 
-  function TimerFlux ( FS, TimerLevelOption ) result ( TF )
+  function TimerFluxes ( FS, LevelOption ) result ( T )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
     integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
+      LevelOption
     type ( TimerForm ), pointer :: &
-      TF
+      T
 
     character ( LDF ) :: &
       TimerName
@@ -77,29 +77,27 @@ contains
     associate ( iT  =>  FS % iTimer )
 
     if ( iT == 0 ) then
-      TimerName  =  'Flux_' // trim ( FS % CurrentSet % Name )
-      if ( present ( TimerLevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, TimerLevelOption )
+      TimerName  =  'Fluxes_' // trim ( FS % CurrentSet % Name )
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
       end if
     end if
 
-    TF  =>  PROGRAM_HEADER % TimerPointer ( iT )
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
     end associate !-- iT
 
-  end function TimerFlux
+  end function TimerFluxes
 
 
-  subroutine Compute ( FS, iD, TimerLevelOption )
+  subroutine Compute ( FS, iD )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimensions
-    integer ( KDI ), intent ( in ), optional :: &
-      TimerLevelOption
 
     call Show ( 'Computing ' // trim ( FS % Type ), FS % IGNORABILITY + 3 )
     call Show ( FS % Name, 'Name', FS % IGNORABILITY + 3 )

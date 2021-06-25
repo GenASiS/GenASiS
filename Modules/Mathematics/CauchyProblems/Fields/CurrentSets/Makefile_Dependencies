@@ -15,17 +15,17 @@ FluxSet_Form.o: \
   CurrentSet_Form.o \
   FluxSet_Form.f90
 
-Eigenspeeds_F_Form.o: \
+EigenspeedSet_F__Form.o: \
   Basics.o \
   FieldSets.o \
   CurrentSet_Form.o \
-  Eigenspeeds_F_Form.f90
+  EigenspeedSet_F__Form.f90
 
 CurrentSets.o: \
   CurrentSet_Form.o \
   FluxSet_Form.o \
+  EigenspeedSet_F__Form.o \
   CurrentSets.f90
-#  Eigenspeeds_F_Form.o \
 
 CurrentSets.a: $(CURRENT_SETS)
 	ar r CurrentSets.a $(CURRENT_SETS)
