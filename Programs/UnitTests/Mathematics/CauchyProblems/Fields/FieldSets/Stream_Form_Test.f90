@@ -7,6 +7,7 @@ program Stream_Form_Test
   implicit none
 
   integer ( KDI ) :: &
+    iD, &  !-- iDimension
     nFields, &
     nGhostExchanges
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
@@ -41,8 +42,7 @@ program Stream_Form_Test
 
   allocate ( A )
   call A % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
-           PeriodicOption = [ .true., .true., .true. ] )
+         ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   nFields  =  5
 
@@ -95,6 +95,14 @@ program Stream_Form_Test
          ( FS, iaSelected = [ 2, 3, 4 ], NameOption = 'Fields_234' )
   call FS_5 % Initialize &
          ( FS, iaSelected = [ 5 ], NameOption = 'Fields_5' )
+  do iD  =  1, 3
+    call FS     % SetBoundaryConditionsFace &
+                   ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
+    call FS_234 % SetBoundaryConditionsFace &
+                   ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
+    call FS_5   % SetBoundaryConditionsFace &
+                   ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
+  end do !-- iD
 
   allocate ( S )
   allocate ( S_234 )

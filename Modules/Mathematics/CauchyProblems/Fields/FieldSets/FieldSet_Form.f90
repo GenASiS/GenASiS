@@ -8,6 +8,9 @@ module FieldSet_Form
   implicit none
   private
 
+    integer, private, parameter :: &
+      MAX_DIMENSIONS = 3
+
   type, public :: FieldSetForm
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
@@ -21,6 +24,8 @@ module FieldSet_Form
       DeviceMemory, &
       PinnedMemory, &
       DevicesCommunicate
+    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
+      Periodic = .false.
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
     type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
@@ -373,9 +378,15 @@ contains
     associate &
       ( C  =>  FS % Atlas % Chart ( iC ) % Element, &
         B  =>  FS % Boundaries ( iC ) )
-    if ( iD  <=  C % nDimensions ) &
+    if ( iD  <=  C % nDimensions ) then
       call B % SetFace &
              ( C, BoundaryCondition, iD, BoundaryOption, iBoundaryOption )
+      if (       trim ( BoundaryCondition ( 1 ) )  ==  'PERIODIC'   &
+           .and. trim ( BoundaryCondition ( 2 ) )  ==  'PERIODIC' ) &
+      then
+        FS % Periodic ( iD )  =  .true.
+      end if
+    end if
     end associate !-- C, etc.
 
   end subroutine SetBoundaryConditionsFace
@@ -558,14 +569,8 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
 
-    do iC  =  1,  FS % Atlas % nCharts
-      associate &
-        ( GE  =>  FS % GhostExchange ( iC ), &
-           S  =>  FS % Storage ( iC ), &
-           C  =>  FS % Atlas % Chart ( iC ) % Element )
-      call GE % Exchange ( S, C, FS % DevicesCommunicate )
-      end associate !-- GE, etc.
-    end do !-- iC
+    call FS % StartGhostExchange ( )
+    call FS % FinishGhostExchange ( )
 
   end subroutine ExchangeGhostData
 
@@ -596,14 +601,18 @@ contains
       FS
 
     integer ( KDI ) :: &
-      iC  !-- iChart
+      iC, &  !-- iChart
+      iD     !-- iDimension
 
     do iC  =  1,  FS % Atlas % nCharts
       associate &
-        ( GE  =>  FS % GhostExchange ( iC ), &
+        (  B  =>  FS % Boundaries ( iC ), &
+          GE  =>  FS % GhostExchange ( iC ), &
            S  =>  FS % Storage ( iC ), &
            C  =>  FS % Atlas % Chart ( iC ) % Element )
-      call GE % FinishExchange ( S, C, FS % DevicesCommunicate )
+
+      call GE % FinishExchange ( S, C, FS % Periodic, FS % DevicesCommunicate )
+
       end associate !-- GE, etc.
     end do !-- iC
 

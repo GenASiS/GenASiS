@@ -27,8 +27,6 @@ module GhostExchange_Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      Exchange
-    procedure, public, pass :: &
       StartExchange
     procedure, public, pass :: &
       FinishExchange
@@ -76,24 +74,7 @@ contains
   end subroutine Initialize
 
 
-  subroutine Exchange  ( GE, S, C, DevicesCommunicate )
-
-    class ( GhostExchangeForm ), intent ( inout ) :: &
-      GE
-    class ( StorageForm ), intent ( inout ) :: &
-      S
-    class ( Chart_H_Form ), intent ( in ) :: &
-      C
-    logical ( KDL ), intent ( in ) :: &
-      DevicesCommunicate
-
-    call GE % StartExchange ( C, S, DevicesCommunicate )
-    call GE % FinishExchange ( S, C, DevicesCommunicate )
-   
-  end subroutine Exchange
-
-
-  subroutine StartExchange  ( GE, C, S, DevicesCommunicate )
+  subroutine StartExchange ( GE, C, S, DevicesCommunicate )
 
     class ( GhostExchangeForm ), intent ( inout ) :: &
       GE
@@ -148,7 +129,7 @@ contains
   end subroutine StartExchange
 
 
-  subroutine FinishExchange  ( GE, S, C, DevicesCommunicate )
+  subroutine FinishExchange ( GE, S, C, Periodic, DevicesCommunicate )
 
     class ( GhostExchangeForm ), intent ( inout ) :: &
       GE
@@ -156,6 +137,8 @@ contains
       S
     class ( Chart_H_Form ), intent ( in ) :: &
       C
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      Periodic
     logical ( KDL ), intent ( in ) :: &
       DevicesCommunicate
 
@@ -168,24 +151,24 @@ contains
       !-- Finish faces
       call FinishFace_CGS &
              ( GE % IncomingFace_L_R, GE % OutgoingFace_L_R, S, C, &
-               DevicesCommunicate, TAG_RECEIVE_FACE_L )
+               Periodic, DevicesCommunicate, TAG_RECEIVE_FACE_L )
       call FinishFace_CGS &
              ( GE % IncomingFace_R_L, GE % OutgoingFace_R_L, S, C, &
-               DevicesCommunicate, TAG_RECEIVE_FACE_R )
+               Periodic, DevicesCommunicate, TAG_RECEIVE_FACE_R )
 
       !-- Finish edges
       call FinishEdge_CGS &
              ( GE % IncomingEdge_LL_RR, GE % OutgoingEdge_LL_RR, S, C, &
-               DevicesCommunicate, TAG_RECEIVE_EDGE_LL )
+               Periodic, DevicesCommunicate, TAG_RECEIVE_EDGE_LL )
       call FinishEdge_CGS &
              ( GE % IncomingEdge_RR_LL, GE % OutgoingEdge_RR_LL, S, C, &
-               DevicesCommunicate, TAG_RECEIVE_EDGE_RR )
+               Periodic, DevicesCommunicate, TAG_RECEIVE_EDGE_RR )
       call FinishEdge_CGS &
              ( GE % IncomingEdge_LR_RL, GE % OutgoingEdge_LR_RL, S, C, &
-               DevicesCommunicate, TAG_RECEIVE_EDGE_LR )
+               Periodic, DevicesCommunicate, TAG_RECEIVE_EDGE_LR )
       call FinishEdge_CGS &
              ( GE % IncomingEdge_RL_LR, GE % OutgoingEdge_RL_LR, S, C, &
-               DevicesCommunicate, TAG_RECEIVE_EDGE_RL )
+               Periodic, DevicesCommunicate, TAG_RECEIVE_EDGE_RL )
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
@@ -325,8 +308,8 @@ contains
 
 
   subroutine FinishFace_CGS &
-               ( IncomingFace, OutgoingFace, S, C, DevicesCommunicate, &
-                 TagReceive )
+               ( IncomingFace, OutgoingFace, S, C, Periodic, &
+                 DevicesCommunicate, TagReceive )
 
     type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
       IncomingFace
@@ -336,6 +319,8 @@ contains
       S
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      Periodic
     logical ( KDL ), intent ( in ) :: &
       DevicesCommunicate
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -368,12 +353,12 @@ contains
 
       !-- In setting oReceive, note Copy command does not inherit lbound
       if ( TagReceive ( iD )  ==  TAG_RECEIVE_FACE_L ( iD ) ) then
-        if ( iaB ( iD )  ==  1 .and. .not. C % Periodic ( iD ) ) &
+        if ( iaB ( iD )  ==  1 .and. .not. Periodic ( iD ) ) &
           cycle
         oReceive        =  nGL
         oReceive ( iD ) =  oReceive ( iD )  -  nGL ( iD )
       else if ( TagReceive ( iD )  ==  TAG_RECEIVE_FACE_R ( iD ) ) then
-        if ( iaB ( iD )  ==  nB ( iD ) .and. .not. C % Periodic ( iD ) ) &
+        if ( iaB ( iD )  ==  nB ( iD ) .and. .not. Periodic ( iD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
@@ -527,8 +512,8 @@ contains
 
 
   subroutine FinishEdge_CGS &
-               ( IncomingEdge, OutgoingEdge, S, C, DevicesCommunicate, &
-                 TagReceive )
+               ( IncomingEdge, OutgoingEdge, S, C, Periodic, &
+                 DevicesCommunicate, TagReceive )
 
     type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
       IncomingEdge
@@ -538,6 +523,8 @@ contains
       S
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      Periodic
     logical ( KDL ), intent ( in ) :: &
       DevicesCommunicate
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -586,29 +573,29 @@ contains
       !-- In setting oReceive, note Copy command does not inherit lbound
       if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LL ( kM ) ) then
         if ( iaB ( iD )  ==  1  .and.  iaB ( jD ) == 1  &
-             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
+             .and..not. Periodic ( iD ) .and..not. Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  -  nGL ( iD )
         oReceive ( jD )  =  oReceive ( jD )  -  nGL ( jD )
       else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RR ( kM ) ) then
         if ( iaB ( iD )  ==  nB ( iD )  .and.  iaB ( jD )  ==  nB ( jD )  &
-             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
+             .and..not. Periodic ( iD ) .and..not. Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )
         oReceive ( jD )  =  oReceive ( jD )  +  nCB ( jD )
       else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LR ( kM ) ) then
         if ( iaB ( iD )  ==  1  .and.  iaB ( jD )  ==  nB ( jD )  &
-             .and..not. C % Periodic ( iD ) .and..not. C % Periodic ( jD ) ) &
+             .and..not. Periodic ( iD ) .and..not. Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  -  nGL ( iD )
         oReceive ( jD )  =  oReceive ( jD )  +  nCB ( jD )
       else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RL ( kM ) ) then
         if ( iaB ( iD )  ==  nB ( iD )  .and.  iaB ( jD )  ==  1  &
-             .and. .not. C % Periodic ( iD ) &
-             .and. .not. C % Periodic ( jD ) ) &
+             .and. .not. Periodic ( iD ) &
+             .and. .not. Periodic ( jD ) ) &
           cycle
         oReceive         =  nGL
         oReceive ( iD )  =  oReceive ( iD )  +  nCB ( iD )

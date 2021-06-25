@@ -8,7 +8,7 @@ module Boundaries_Form
 
   type, public :: BoundariesForm
     integer ( KDI ) :: &
-      nBoundaries
+      nBoundaries = 0
     character ( LDL ), dimension ( : ), allocatable :: &
       Boundary
     character ( LDL ), dimension ( :, : ), allocatable :: &
@@ -105,7 +105,6 @@ contains
     B % Boundary ( 1 ) = 'Extent' 
 
     B % BoundaryCondition = ''
-    B % BoundaryCondition ( :, 1 ) = 'PERIODIC'
 
     end associate !-- Cy
 
@@ -335,6 +334,9 @@ contains
         nD  =>  C % nDimensions, &
         BC  =>  B % BoundaryCondition ( :, : ), &
         BN  =>  B % Boundary ( : ) )
+
+    if ( trim ( BC ( 1, 1 ) )  ==  '' ) &
+      return
 
 !    call Show ( 'Boundary conditions', Ignorability )
     call Show ( B % nBoundaries, 'nBoundaries', Ignorability )
