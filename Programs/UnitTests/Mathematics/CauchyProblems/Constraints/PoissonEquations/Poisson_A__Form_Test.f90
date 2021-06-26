@@ -17,10 +17,10 @@ program Poisson_A__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( Stream_A_Form ), allocatable :: &
-    SA
-  type ( Geometry_F_A_Form ), allocatable :: &
-    GA
+  type ( StreamForm ), allocatable :: &
+    S
+  type ( Geometry_F_Form ), allocatable :: &
+    G
   type ( Poisson_A_Form ), allocatable :: &
     PA
 
@@ -39,12 +39,12 @@ program Poisson_A__Form_Test
            RadiusCore = 10.0_KDR / 8.0_KDR, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  allocate ( SA )
-  call SA % Initialize ( A, GIS )
+  allocate ( S )
+  call S % Initialize ( A, GIS )
 
-  allocate ( GA )
-  call GA % Initialize ( A )
-  call GA % SetStream ( SA )
+  allocate ( G )
+  call G % Initialize ( A )
+  call G % SetStream ( S )
 
   nEquations = 3
 
@@ -52,17 +52,17 @@ program Poisson_A__Form_Test
   call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
   allocate ( PA )
-  call PA % Initialize ( GA, 'MULTIPOLE', MaxDegree, nEquations )
+  call PA % Initialize ( G, 'MULTIPOLE', MaxDegree, nEquations )
 
   call  A % Show ( )
-  call GA % Show ( )
+  call G % Show ( )
   call PA % Show ( )
 
   call TestHomogeneousSpheres ( )
 
   deallocate ( PA )
-  deallocate ( GA )
-  deallocate ( SA )
+  deallocate ( G )
+  deallocate ( S )
   deallocate ( A )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
@@ -80,13 +80,13 @@ contains
       Density
     character ( LDL ), dimension ( nEquations ) :: &
       Field
-    type ( FieldSet_A_Form ), allocatable :: &
-      Source_A, &
-      Solution_A, &
-      Reference_A, &
-      Difference_A
-    type ( Gradient_A_Form ), allocatable :: &
-      Gradient_A
+    type ( FieldSetForm ), allocatable :: &
+      Source, &
+      Solution, &
+      Reference, &
+      Difference
+    type ( GradientForm ), allocatable :: &
+      Gradient
 
     call Show ( 'Testing homogeneous spheres' )
 
@@ -96,49 +96,49 @@ contains
                 'HomogeneousSphere_2', &
                 'HomogeneousSphere_3' ]
 
-    allocate ( Source_A )
-    call Source_A % Initialize &
+    allocate ( Source )
+    call Source % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Source', &
              DeviceMemoryOption = PA % Laplacian_M % DeviceMemory, &
              nFieldsOption = nEquations )
     
-    allocate ( Solution_A )
-    call Solution_A % Initialize &
+    allocate ( Solution )
+    call Solution % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Solution', &
              DeviceMemoryOption = PA % Laplacian_M % DeviceMemory, &
              nFieldsOption = nEquations )
-    call Solution_A % SetBoundaryConditionsFace &
-           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
-    call Solution_A % SetBoundaryConditionsFace &
-           ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
+    call Solution % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
+    call Solution % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
     
-    allocate ( Reference_A )
-    call Reference_A % Initialize &
+    allocate ( Reference )
+    call Reference % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Reference', &
              nFieldsOption = nEquations )
     
-    allocate ( Difference_A )
-    call Difference_A % Initialize &
+    allocate ( Difference )
+    call Difference % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Difference', &
              nFieldsOption = nEquations )
     
-    allocate ( Gradient_A )
-    call Gradient_A % Initialize ( GA, Solution_A )
+    allocate ( Gradient )
+    call Gradient % Initialize ( G, Solution )
 
-    call SA % AddFieldSet ( Source_A )
-    call SA % AddFieldSet ( Solution_A )
-    call SA % AddFieldSet ( Reference_A )
-    call SA % AddFieldSet ( Difference_A )
-    call SA % AddFieldSet ( Gradient_A )
-    call SA % Show ( )
+    call S % AddFieldSet ( Source )
+    call S % AddFieldSet ( Solution )
+    call S % AddFieldSet ( Reference )
+    call S % AddFieldSet ( Difference )
+    call S % AddFieldSet ( Gradient )
+    call S % Show ( )
 
     RadiusDensity  =  C % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ]
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
@@ -149,19 +149,19 @@ contains
 
     do iE  =  1, nEquations
       call SetHomogeneousSphere &
-             ( Source_A, Reference_A, GA, &
+             ( Source, Reference, G, &
                Density ( iE ), RadiusDensity ( iE ), iField = iE )
     end do !-- iE
     
-    call Source_A % UpdateDevice ( )
+    call Source % UpdateDevice ( )
 
-    call PA % Solve ( Solution_A, Source_A )
-    call ComputeError ( Difference_A, Solution_A, Reference_A )
+    call PA % Solve ( Solution, Source )
+    call ComputeError ( Difference, Solution, Reference )
 
-    call Gradient_A % Compute ( iD = 1 )
+    call Gradient % Compute ( iD = 1 )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
-    call SA % Write ( )
+    call S % Write ( )
     call GIS % Close ( )
 
     end associate !-- C
@@ -169,12 +169,12 @@ contains
   end subroutine TestHomogeneousSpheres
 
 
-  subroutine ComputeError ( Difference_A, Solution_A, Reference_A )
+  subroutine ComputeError ( Difference, Solution, Reference )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Difference_A, &         
-      Solution_A, &
-      Reference_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Difference, &         
+      Solution, &
+      Reference
 
     real ( KDR ) :: &
       L1_1, &
@@ -184,18 +184,16 @@ contains
       CO
     
     associate &
-      ( SC  =>  Solution_A   % FieldSet_C ( 1 ) % Element, &
-        RC  =>  Reference_A  % FieldSet_C ( 1 ) % Element, &
-        DC  =>  Difference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SV  =>  SC % Storage_FSC % Storage % Value, &
-        RV  =>  RC % Storage_FSC % Storage % Value, &
-        DV  =>  DC % Storage_FSC % Storage % Value )
+      ( SV  =>  Solution % Storage_GS % Value, &
+        RV  =>  Reference % Storage_GS % Value, &
+        DV  =>  Difference % Storage_GS % Value )
 
     call MultiplyAdd ( SV, RV, -1.0_KDR, DV )
 
-    select type ( C  =>  SC % Chart )
-    class is ( Chart_GS_Form ) 
+    select type ( A  =>  Solution % Atlas )
+     class is ( Atlas_SCG_Form ) 
+    associate &
+      ( C  =>  A % Chart_GS )
 
     call CO % Initialize &
            ( C % Communicator, [ 2 * nEquations ], [ 2 * nEquations ] )
@@ -236,22 +234,22 @@ contains
 
     ! Difference % Value = abs ( Difference % Value / Reference % Value )
 
-    end select !-- C
+    end associate !-- C
+    end select !-- A
     end associate !-- SV, etc.
-    end associate !-- SC, etc.
 
   end subroutine ComputeError
 
 
   subroutine SetHomogeneousSphere &
-               ( Source_A, Reference_A, Geometry_A, &
+               ( Source, Reference, Geometry, &
                  Density, RadiusDensity, iField )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Source_A, &
-      Reference_A
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      Geometry_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Source, &
+      Reference
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      Geometry
     real ( KDR ), intent ( in ) :: &
       Density, &
       RadiusDensity
@@ -260,21 +258,17 @@ contains
 
     !-- Geometry
 
-    select type ( GC  =>  Geometry_A % FieldSet_C ( 1 ) % Element )
-      class is ( Geometry_F_C_Form )
     associate &
-      ( GV  =>  GC % Storage_FSC % Storage % Value )
+      ( GV  =>  Geometry % Storage_GS % Value )
     associate &
-      ( R_E  =>  GV ( :, GC % EDGE_I_U ( 1 ) ), &
-        R_W  =>  GV ( :, GC % WIDTH_U  ( 1 ) ), &
-        R_C  =>  GV ( :, GC % CENTER_U ( 1 ) ) )
+      ( R_E  =>  GV ( :, Geometry % EDGE_I_U ( 1 ) ), &
+        R_W  =>  GV ( :, Geometry % WIDTH_U  ( 1 ) ), &
+        R_C  =>  GV ( :, Geometry % CENTER_U ( 1 ) ) )
 
     !-- Source
 
     associate &
-      ( SC  =>  Source_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SV  =>  SC % Storage_FSC % Storage % Value )
+      ( SV  =>  Source % Storage_GS % Value )
     associate &
       ( D  =>  SV ( :, iField ), &
         FourPi  =>  4.0_KDR  *  CONSTANT % PI )
@@ -284,14 +278,11 @@ contains
 
     end associate !-- D
     end associate !-- SV
-    end associate !-- SC
 
     !-- Reference
 
     associate &
-      ( RC  =>  Reference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( RV  =>  RC % Storage_FSC % Storage % Value )
+      ( RV  =>  Reference % Storage_GS % Value )
     associate &
       ( Phi  =>  RV ( :, iField ), &
         FourPi   =>  4.0_KDR  *  CONSTANT % PI )
@@ -307,13 +298,11 @@ contains
 
     end associate !-- Phi, etc.
     end associate !-- RV
-    end associate !-- RC
 
     !-- Cleanup
 
     end associate !-- R_E, etc.
     end associate !-- GV
-    end select !-- GC
 
   end subroutine SetHomogeneousSphere
 

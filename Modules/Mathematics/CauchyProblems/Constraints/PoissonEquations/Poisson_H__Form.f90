@@ -54,19 +54,19 @@ contains
 
 
   subroutine Initialize_H &
-               ( P, GA, SolverType, MaxDegreeOption, nEquationsOption )
+               ( P, G, SolverType, MaxDegreeOption, nEquationsOption )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
     character ( * ), intent ( in ) :: &
       SolverType
     integer ( KDI ), intent ( in ), optional :: &
       MaxDegreeOption, &
       nEquationsOption
 
-    P % IGNORABILITY  =  GA % IGNORABILITY
+    P % IGNORABILITY  =  G % IGNORABILITY
 
     if ( P % Type == '' ) &
       P % Type = 'a Poisson' 
@@ -155,14 +155,14 @@ contains
   end subroutine Show_P
 
 
-  subroutine Solve ( P, Solution_A, Source_A )
+  subroutine Solve ( P, Solution, Source )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
-    class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
+    class ( FieldSetForm ), intent ( in ) :: &
+      Source
 
 !     type ( TimerForm ), pointer :: &
 !       Timer
@@ -173,7 +173,7 @@ contains
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
 
-      call P % Solve_M ( Solution_A, Source_A )
+      call P % Solve_M ( Solution, Source )
 
     case default
       call Show ( 'Solver type not supported', CONSOLE % ERROR )
@@ -205,22 +205,22 @@ contains
   end subroutine Finalize
 
 
-  subroutine Solve_M ( P, Solution_A, Source_A )
+  subroutine Solve_M ( P, Solution, Source )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
-    class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
+    class ( FieldSetForm ), intent ( in ) :: &
+      Source
 
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
     if ( allocated ( P % Laplacian_M ) ) then
       associate ( L  =>  P % Laplacian_M )
-      call L % ComputeMoments ( Source_A )
-      call P % CombineMoments ( Solution_A )
+      call L % ComputeMoments ( Source )
+      call P % CombineMoments ( Solution )
       end associate !-- LA
     else
       call Show ( 'Laplacian_M not allocated', CONSOLE % ERROR )
@@ -232,12 +232,12 @@ contains
   end subroutine Solve_M
 
 
-  subroutine CombineMoments ( P, Solution_A )
+  subroutine CombineMoments ( P, Solution )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
 !     type ( TimerForm ), pointer :: &
 !       Timer, &
@@ -264,23 +264,23 @@ contains
     call Show ( 'Combining Moments', P % IGNORABILITY + 2 )
 
 !     if ( associated ( Timer_CS ) ) call Timer_CS % Start ( )
-    call Solution_A % Clear ( )
+    call Solution % Clear ( )
 !     if ( associated ( Timer_CS ) ) call Timer_CS % Stop ( )
 
 !     if ( associated ( Timer_LS ) ) call Timer_LS % Start ( )
 !     if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
 !       call P % CombineMomentsLocalOld_2 ( Solution )
     if ( allocated ( P % Laplacian_M ) ) then
-      call P % CombineMomentsLocal ( Solution_A )
+      call P % CombineMomentsLocal ( Solution )
     end if
 !     if ( associated ( Timer_LS ) ) call Timer_LS % Stop ( )
 
 !     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
-    call P % ExchangeSolution ( Solution_A )
+    call P % ExchangeSolution ( Solution )
 !     if ( associated ( Timer_ES ) ) call Timer_ES % Stop ( )
 
 !     if ( associated ( Timer_BS ) ) call Timer_BS % Start ( )
-    call P % ApplyBoundarySolution ( Solution_A )
+    call P % ApplyBoundarySolution ( Solution )
 !     if ( associated ( Timer_BS ) ) call Timer_BS % Stop ( )
 
 !     if ( associated ( Timer ) ) call Timer % Stop ( )
@@ -288,12 +288,12 @@ contains
   end subroutine CombineMoments
 
 
-  subroutine CombineMomentsLocal ( P, Solution_A )
+  subroutine CombineMomentsLocal ( P, Solution )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Poisson_H__Form', 'module', CONSOLE % ERROR )
@@ -303,12 +303,12 @@ contains
   end subroutine CombineMomentsLocal
 
 
-  subroutine ExchangeSolution ( P, Solution_A )
+  subroutine ExchangeSolution ( P, Solution )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Poisson_H__Form', 'module', CONSOLE % ERROR )
@@ -318,12 +318,12 @@ contains
   end subroutine ExchangeSolution
 
 
-  subroutine ApplyBoundarySolution ( P, Solution_A )
+  subroutine ApplyBoundarySolution ( P, Solution )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Poisson_H__Form', 'module', CONSOLE % ERROR )

@@ -16,12 +16,12 @@ program Laplacian_M_A__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( Stream_A_Form ), allocatable :: &
-    SA
-  type ( Geometry_F_A_Form ), allocatable :: &
-    GA
+  type ( StreamForm ), allocatable :: &
+    S
+  type ( Geometry_F_Form ), allocatable :: &
+    G
   type ( Laplacian_M_A_Form ), allocatable :: &
-    LA
+    L
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -38,32 +38,32 @@ program Laplacian_M_A__Form_Test
            RadiusCore = 10.0_KDR / 8.0_KDR, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  allocate ( SA )
-  call SA % Initialize ( A, GIS )
+  allocate ( S )
+  call S % Initialize ( A, GIS )
 
-  allocate ( GA )
-  call GA % Initialize ( A )
-  call GA % SetStream ( SA )
+  allocate ( G )
+  call G % Initialize ( A )
+  call G % SetStream ( S )
 
   nEquations = 1
 
   MaxDegree = 3
   call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
-  allocate ( LA )
-  call LA % Initialize ( GA, MaxDegree, nEquations )
+  allocate ( L )
+  call L % Initialize ( G, MaxDegree, nEquations )
 
   call  A % Show ( )
-  call GA % Show ( )
-  call LA % Show ( )
+  call G % Show ( )
+  call L % Show ( )
 
   call TestAssociatedLegendre ( )
   call TestAngularFunctions ( )
   call TestHomogeneousSphere ( )
 
-  deallocate ( LA )
-  deallocate ( GA )
-  deallocate ( SA )
+  deallocate ( L )
+  deallocate ( G )
+  deallocate ( S )
   deallocate ( A )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
@@ -90,28 +90,28 @@ contains
 
     call Show ( X_Random, 'X_Random' )
 
-    call Show ( LA % AssociatedLegendre ( X_Random, 0, 0 ), 'P_0_0 computed' )
+    call Show ( L % AssociatedLegendre ( X_Random, 0, 0 ), 'P_0_0 computed' )
     call Show ( sqrt ( 1.0_KDR / ( 4.0_KDR * Pi ) ), 'P_0_0 expected' )
 
-    call Show ( LA % AssociatedLegendre ( X_Random, 1, 0 ), 'P_1_0 computed' )
+    call Show ( L % AssociatedLegendre ( X_Random, 1, 0 ), 'P_1_0 computed' )
     call Show ( sqrt ( 3.0_KDR / ( 4.0_KDR * Pi ) ) * Cos_X, &
                 'P_1_0 expected' )
 
-    call Show ( LA % AssociatedLegendre ( X_Random, 1, 1 ), 'P_1_1 computed' )
+    call Show ( L % AssociatedLegendre ( X_Random, 1, 1 ), 'P_1_1 computed' )
     call Show ( - sqrt ( 3.0_KDR / ( 8.0_KDR * Pi ) ) * Sin_X, &
                 'P_1_1 expected' )
 
-    call Show ( LA % AssociatedLegendre ( X_Random, 2, 0 ), 'P_2_0 computed' )
+    call Show ( L % AssociatedLegendre ( X_Random, 2, 0 ), 'P_2_0 computed' )
     call Show ( sqrt ( 5.0_KDR / ( 4.0_KDR * Pi ) ) &
                 *  (    ( 3.0_KDR / 2.0_KDR )  *  Cos_X ** 2  &
                      -  ( 1.0_KDR / 2.0_KDR ) ), &
                 'P_2_0 expected' )
 
-    call Show ( LA % AssociatedLegendre ( X_Random, 2, 1 ), 'P_2_1 computed' )
+    call Show ( L % AssociatedLegendre ( X_Random, 2, 1 ), 'P_2_1 computed' )
     call Show ( - sqrt ( 15.0_KDR / ( 8.0_KDR * Pi ) ) * Sin_X * Cos_X, &
                 'P_2_1 expected' )
 
-    call Show ( LA % AssociatedLegendre ( X_Random, 2, 2 ), 'P_2_2 computed' )
+    call Show ( L % AssociatedLegendre ( X_Random, 2, 2 ), 'P_2_2 computed' )
     call Show ( ( 1.0_KDR / 4.0_KDR ) * sqrt ( 15.0_KDR / ( 2.0_KDR * Pi ) ) &
                 *  Sin_X ** 2, &
                 'P_2_2 expected' )
@@ -135,10 +135,10 @@ contains
       GIS_AA
     type ( Atlas_SCG_Form ), allocatable :: &
       AA
-    type ( Geometry_F_A_Form ), allocatable :: &
-      GAA
-    type ( Stream_A_Form ), allocatable :: &
-      SAA
+    type ( Geometry_F_Form ), allocatable :: &
+      GA
+    type ( StreamForm ), allocatable :: &
+      SA
 
     call Show ( 'Testing angular functions' )
 
@@ -174,29 +174,28 @@ contains
                nGhostLayersOption = [ 0, 0, 0 ], &  
                nDimensionsOption = 3 )
 
-      allocate ( GAA )
-      call GAA % Initialize ( AA, NameOption = 'GeometryAngular' )
+      allocate ( GA )
+      call GA % Initialize ( AA, NameOption = 'GeometryAngular' )
     
-      call  AA % Show ( )
-      call GAA % Show ( )
+      call AA % Show ( )
+      call GA % Show ( )
 
-      allocate ( SAA )
-      call SAA % Initialize ( AA, GIS_AA )
+      allocate ( SA )
+      call SA % Initialize ( AA, GIS_AA )
 
-      associate ( SC  =>  SAA % Stream_C ( 1 ) % Element )
-      if ( allocated ( SC % CurveImage ) ) then
-        call SC % CurveImage % AddStorage ( LA % AngularFunctions )
-      else if ( allocated ( SC % GridImage ) ) then
-        call SC % GridImage % AddStorage ( LA % AngularFunctions )
-      end if
-      end associate !-- SC
+      select case ( AA % Chart_GS % nDimensions )
+      case ( 1 )
+        call SA % CurveImage ( 1 ) % AddStorage ( L % AngularFunctions )
+      case default
+        call SA % GridImage ( 1 ) % AddStorage ( L % AngularFunctions )
+      end select
 
       call GIS_AA % Open ( GIS_AA % ACCESS_CREATE )
-      call SAA % Write ( )
+      call SA % Write ( )
       call GIS_AA % Close ( )
 
-      deallocate ( SAA )
-      deallocate ( GAA )
+      deallocate ( SA )
+      deallocate ( GA )
       deallocate ( AA )
       deallocate ( GIS_AA )
 
@@ -216,9 +215,9 @@ contains
       Density
     character ( LDL ), dimension ( 1 ) :: &
       Field
-    type ( FieldSet_A_Form ), allocatable :: &
-      Source_A, &
-      Reference_A
+    type ( FieldSetForm ), allocatable :: &
+      Source, &
+      Reference
 
     call Show ( 'Testing homogeneous sphere' )
 
@@ -226,24 +225,24 @@ contains
 
     Field  =  [ 'HomogeneousSphere' ]
 
-    allocate ( Source_A )
-    call Source_A % Initialize &
+    allocate ( Source )
+    call Source % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Source', &
-             DeviceMemoryOption = LA % DeviceMemory, &
+             DeviceMemoryOption = L % DeviceMemory, &
              nFieldsOption = nEquations )
     
-    allocate ( Reference_A )
-    call Reference_A % Initialize &
+    allocate ( Reference )
+    call Reference % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Reference', &
              nFieldsOption = nEquations )
     
-    call SA % AddFieldSet ( Source_A )
-    call SA % AddFieldSet ( Reference_A )
-    call SA % Show ( )
+    call S % AddFieldSet ( Source )
+    call S % AddFieldSet ( Reference )
+    call S % Show ( )
 
     RadiusDensity = C % MaxCoordinate ( 1 ) / 10.0_KDR
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
@@ -252,15 +251,15 @@ contains
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
     call SetHomogeneousSphere &
-           ( Source_A, Reference_A, GA, Density, RadiusDensity, iField = 1 )
+           ( Source, Reference, G, Density, RadiusDensity, iField = 1 )
 
-    call Source_A % UpdateDevice ( )
+    call Source % UpdateDevice ( )
 
-    call LA % ComputeMoments ( Source_A )
-    call LA % ShowMoments ( )
+    call L % ComputeMoments ( Source )
+    call L % ShowMoments ( )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
-    call SA % Write ( )
+    call S % Write ( )
     call GIS % Close ( )
 
     end associate !-- C
@@ -269,14 +268,14 @@ contains
 
 
   subroutine SetHomogeneousSphere &
-               ( Source_A, Reference_A, Geometry_A, &
+               ( Source, Reference, Geometry, &
                  Density, RadiusDensity, iField )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Source_A, &
-      Reference_A
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      Geometry_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Source, &
+      Reference
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      Geometry
     real ( KDR ), intent ( in ) :: &
       Density, &
       RadiusDensity
@@ -285,21 +284,17 @@ contains
 
     !-- Geometry
 
-    select type ( GC  =>  Geometry_A % FieldSet_C ( 1 ) % Element )
-      class is ( Geometry_F_C_Form )
     associate &
-      ( GV  =>  GC % Storage_FSC % Storage % Value )
+      ( GV  =>  Geometry % Storage_GS % Value )
     associate &
-      ( R_E  =>  GV ( :, GC % EDGE_I_U ( 1 ) ), &
-        R_W  =>  GV ( :, GC % WIDTH_U  ( 1 ) ), &
-        R_C  =>  GV ( :, GC % CENTER_U ( 1 ) ) )
+      ( R_E  =>  GV ( :, Geometry % EDGE_I_U ( 1 ) ), &
+        R_W  =>  GV ( :, Geometry % WIDTH_U  ( 1 ) ), &
+        R_C  =>  GV ( :, Geometry % CENTER_U ( 1 ) ) )
 
     !-- Source
 
     associate &
-      ( SC  =>  Source_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SV  =>  SC % Storage_FSC % Storage % Value )
+      ( SV  =>  Source % Storage_GS % Value )
     associate &
       ( D  =>  SV ( :, iField ) )
 
@@ -307,14 +302,11 @@ contains
 
     end associate !-- D
     end associate !-- SV
-    end associate !-- SC
 
     !-- Reference
 
     associate &
-      ( RC  =>  Reference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( RV  =>  RC % Storage_FSC % Storage % Value )
+      ( RV  =>  Reference % Storage_GS % Value )
     associate &
       ( Phi  =>  RV ( :, iField ), &
         Pi   =>  CONSTANT % PI )
@@ -328,13 +320,11 @@ contains
 
     end associate !-- Phi, etc.
     end associate !-- RV
-    end associate !-- RC
 
     !-- Cleanup
 
     end associate !-- R_E, etc.
     end associate !-- GV
-    end select !-- GC
 
   end subroutine SetHomogeneousSphere
 

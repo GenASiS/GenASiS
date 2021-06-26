@@ -12,16 +12,16 @@ module Laplacian_M_A__Form
 
   type, public, extends ( Laplacian_M_H_Form ) :: Laplacian_M_A_Form
     real ( KDR ), dimension ( :, : ), pointer :: &
-      dSolidAngle => null ( )
+      dSolidAngle_2D => null ( )
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      AngularFunction => null ( )
+      AngularFunction_3D => null ( )
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
-      Source => null ( )
+      Source_4D => null ( )
     type ( StorageForm ), allocatable :: &
       dSolidAngles, &
       AngularFunctions
-    class ( Geometry_F_A_Form ), pointer :: &
-      Geometry_A => null ( )
+    class ( Geometry_F_Form ), pointer :: &
+      Geometry => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -78,12 +78,12 @@ module Laplacian_M_A__Form
 contains
 
 
-  subroutine Initialize ( L, GA, MaxDegree, nEquations )
+  subroutine Initialize ( L, G, MaxDegree, nEquations )
 
     class ( Laplacian_M_A_Form ), intent ( inout ) :: &
       L
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
     integer ( KDI ), intent ( in ) :: &
       MaxDegree, &
       nEquations
@@ -91,7 +91,7 @@ contains
     if ( L % Type  ==  '' ) &
       L % Type  =  'a Laplacian_M_A' 
 
-    call L % Initialize_H ( GA, MaxDegree, nEquations )
+    call L % Initialize_H ( G, MaxDegree, nEquations )
 
   end subroutine Initialize
 
@@ -101,34 +101,31 @@ contains
     type ( Laplacian_M_A_Form ), intent ( inout ) :: &
       L
 
-    nullify ( L % Geometry_A )
+    nullify ( L % Geometry )
 
     if ( allocated ( L % AngularFunctions ) ) &
       deallocate ( L % AngularFunctions )
     if ( allocated ( L % dSolidAngles ) ) &
       deallocate ( L % dSolidAngles )
 
-    nullify ( L % Source )
-    nullify ( L % AngularFunction )
-    nullify ( L % dSolidAngle )
+    nullify ( L % Source_4D )
+    nullify ( L % AngularFunction_3D )
+    nullify ( L % dSolidAngle_2D )
 
   end subroutine Finalize
 
 
-  subroutine SetParameters_A ( L, GA )
+  subroutine SetParameters_A ( L, G )
 
     class ( Laplacian_M_A_Form ), intent ( inout ) :: &
       L
-    class ( Geometry_F_A_Form ), intent ( in ), target :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ), target :: &
+      G
 
-    L % Geometry_A  =>  GA
+    L % Geometry  =>  G
 
-    select type ( A  =>  L % Geometry_A % Atlas )
-    class is ( Atlas_SCG_Form )
-
-    associate &
-      ( GC  =>  GA % FieldSet_C ( 1 ) % Element )
+    select type ( A  =>  L % Geometry % Atlas )
+      class is ( Atlas_SCG_Form )
     associate &
       ( C  =>  A % Chart_GS )
 
@@ -137,9 +134,9 @@ contains
     if ( C % nDimensions  <  2 ) &
       L % MaxDegree  =  0
 
-    L % DeviceMemory        =  GC % Storage_FSC       % DeviceMemory
-    L % PinnedMemory        =  GC % Storage_FSC       % PinnedMemory
-    L % DevicesCommunicate  =  GC % GhostExchange_FSC % DevicesCommunicate
+    L % DeviceMemory        =  G % DeviceMemory
+    L % PinnedMemory        =  G % PinnedMemory
+    L % DevicesCommunicate  =  G % DevicesCommunicate
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
@@ -154,7 +151,6 @@ contains
     end select !-- CoordinateSystem
 
     end associate !-- C
-    end associate !-- GC
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
@@ -186,7 +182,7 @@ contains
         RF_R  =>  L % RadialFunctions_R, &
         RF_I  =>  L % RadialFunctions_I )
 
-    select type ( A  =>  L % Geometry_A % Atlas )
+    select type ( A  =>  L % Geometry % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
       ( C  =>  A % Chart_GS )
@@ -207,7 +203,7 @@ contains
 
     call AssignAngularFunctionPointers &
            ( AF % Value, dSA % Value ( :, 1 ), C % nCellsBrick, &
-             L % nAngularMoments, L % AngularFunction, L % dSolidAngle )
+             L % nAngularMoments, L % AngularFunction_3D, L % dSolidAngle_2D )
 
     associate &
       ( iaB  =>  C % iaBrick, &
@@ -226,8 +222,8 @@ contains
                 nPhi  =  nCB ( 3 ), &
               oTheta  =  nGL ( 2 )  +  ( iaB ( 2 ) - 1 )  *  nCB ( 2 ), &
                 oPhi  =  nGL ( 3 )  +  ( iaB ( 3 ) - 1 )  *  nCB ( 3 ), &
-                  AF  =  L % AngularFunction, &
-                 dSA  =  L % dSolidAngle )
+                  AF  =  L % AngularFunction_3D, &
+                 dSA  =  L % dSolidAngle_2D )
 
     call ComputeRadialFunctions &
            (  R_E  =  C % Edge ( 1 ) % Value, &
@@ -280,21 +276,19 @@ contains
   end subroutine SetKernelFunctions
 
 
-  subroutine ComputeAngularMomentsLocal ( L, Source_A )
+  subroutine ComputeAngularMomentsLocal ( L, Source )
 
     class ( Laplacian_M_A_Form ), intent ( inout ) :: &
       L
-    class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source_A
+    class ( FieldSetForm ), intent ( in ) :: &
+      Source
 
-    select type ( A  =>  L % Geometry_A % Atlas )
+    select type ( A  =>  L % Geometry % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
       ( C  =>  A % Chart_GS )
     associate &
-      ( Source_C  =>  Source_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( Source_S  =>  Source_C % Storage_FSC % Storage )
+      ( Source_S  =>  Source % Storage ( 1 ) )
     associate &
       (  nV => Source_S % nVariables, &
         iaS => Source_S % iaSelected )
@@ -316,15 +310,15 @@ contains
 
     call AssignSourcePointer &
            ( Source_S % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
-             C % nCellsBrick, C % nGhostLayers, L % nEquations, L % Source )
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, L % Source_4D )
 
     end associate !-- nV, etc.
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
       call ComputeAngularMomentsLocal_CGS_S_Kernel &
-             ( L % MyAngularMoment_3D, L % Source, L % AngularFunction, &
-               L % dSolidAngle, C % nCellsBrick, C % nGhostLayers, &
+             ( L % MyAngularMoment_3D, L % Source_4D, L % AngularFunction_3D, &
+               L % dSolidAngle_2D, C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, L % nAngularMoments, &
                oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
                UseDeviceOption = L % DeviceMemory )
@@ -337,7 +331,6 @@ contains
     end select !-- CoordinateSystem
 
     end associate !-- Source_S
-    end associate !-- Source_C
     end associate !-- C
 
     class default

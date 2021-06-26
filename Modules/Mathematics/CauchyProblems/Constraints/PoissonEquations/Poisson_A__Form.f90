@@ -13,9 +13,9 @@ module Poisson_A__Form
 
   type, public, extends ( Poisson_H_Form ) :: Poisson_A_Form
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
-      Solution => null ( )
-    class ( Geometry_F_A_Form ), pointer :: &
-      Geometry_A => null ( )
+      Solution_4D => null ( )
+    class ( Geometry_F_Form ), pointer :: &
+      Geometry => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -69,12 +69,12 @@ contains
 
 
   subroutine Initialize &
-               ( P, GA, SolverType, MaxDegreeOption, nEquationsOption )
+               ( P, G, SolverType, MaxDegreeOption, nEquationsOption )
 
     class ( Poisson_A_Form ), intent ( inout ) :: &
       P
-    class ( Geometry_F_A_Form ), intent ( in ), target :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ), target :: &
+      G
     character ( * ), intent ( in ) :: &
       SolverType
     integer ( KDI ), intent ( in ), optional :: &
@@ -85,16 +85,16 @@ contains
       P % Type = 'a Poisson_A' 
 
      call P % Initialize_H &
-           ( GA, SolverType, MaxDegreeOption, nEquationsOption )
+           ( G, SolverType, MaxDegreeOption, nEquationsOption )
 
-    P % Geometry_A  =>  GA
+    P % Geometry  =>  G
 
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
       allocate ( Laplacian_M_A_Form :: P % Laplacian_M )
       select type ( L => P % Laplacian_M )
       class is ( Laplacian_M_A_Form )
-        call L % Initialize ( GA, P % MaxDegree, P % nEquations )
+        call L % Initialize ( G, P % MaxDegree, P % nEquations )
       end select !-- L
     case default
       call Show ( 'Solver type not recognized', CONSOLE % ERROR )
@@ -112,31 +112,29 @@ contains
     type ( Poisson_A_Form ), intent ( inout ) :: &
       P
 
-    nullify ( P % Geometry_A )
-    nullify ( P % Solution )
+    nullify ( P % Geometry )
+    nullify ( P % Solution_4D )
 
   end subroutine Finalize
 
 
-  subroutine CombineMomentsLocal ( P, Solution_A )
+  subroutine CombineMomentsLocal ( P, Solution )
 
     class ( Poisson_A_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
     call Show ( 'Combining Moments Local', P % IGNORABILITY + 3 )
 
     select type ( L  =>  P % Laplacian_M )
       class is ( Laplacian_M_A_Form )
-    select type ( A  =>  P % Geometry_A % Atlas )
+    select type ( A  =>  P % Geometry % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
       ( C  =>  A % Chart_GS )
     associate &
-      ( SC  =>  Solution_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SS  =>  SC % Storage_FSC % Storage )
+      ( SS  =>  Solution % Storage ( 1 ) )
     associate &
       (  nV => SS % nVariables, &
         iaS => SS % iaSelected )
@@ -157,17 +155,17 @@ contains
 
     call AssignSolutionPointer &
            ( SS % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
-             C % nCellsBrick, C % nGhostLayers, L % nEquations, P % Solution )
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, &
+             P % Solution_4D )
 
     end associate !-- nV, etc.
     end associate !-- SS
-    end associate !-- SC
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
       call CombineMoments_CGS_S_Kernel &
-             ( P % Solution, L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
-               L % AngularFunction, L % RadialFunctions_R % Value, &
+             ( P % Solution_4D, L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
+               L % AngularFunction_3D, L % RadialFunctions_R % Value, &
                L % RadialFunctions_I % Value, &
                L % DeltaFactor % Value ( :, 1 ), &
                C % nCellsBrick, C % nGhostLayers, &
@@ -201,32 +199,32 @@ contains
   end subroutine CombineMomentsLocal
 
 
-  subroutine ExchangeSolution ( P, Solution_A )
+  subroutine ExchangeSolution ( P, Solution )
 
     class ( Poisson_A_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
-    call Solution_A % ExchangeGhostData ( )
+    call Solution % ExchangeGhostData ( )
 
   end subroutine ExchangeSolution
 
 
-  subroutine ApplyBoundarySolution ( P, Solution_A )
+  subroutine ApplyBoundarySolution ( P, Solution )
 
     class ( Poisson_A_Form ), intent ( inout ) :: &
       P
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Solution_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Solution
 
 !    real ( KDR ), dimension ( :, :, : ), pointer :: &
 !      SV_3D
 
-    call Solution_A % ApplyBoundaryConditions ( )
+    call Solution % ApplyBoundaryConditions ( )
 
-    ! call Solution_A % Show ( )
-    ! associate ( SC  =>  Solution_A % FieldSet_C ( 1 ) % Element )
+    ! call Solution % Show ( )
+    ! associate ( SC  =>  Solution % FieldSet_C ( 1 ) % Element )
     ! associate ( SV  =>  SC % Storage_FSC % Storage % Value )
     ! select type ( C  =>  SC % Chart )
     !  class is ( Chart_GS_Form )

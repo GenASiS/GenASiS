@@ -115,17 +115,17 @@ module Laplacian_M_H__Form
 contains
 
 
-  subroutine Initialize_H ( L, GA, MaxDegree, nEquations )
+  subroutine Initialize_H ( L, G, MaxDegree, nEquations )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
     integer ( KDI ), intent ( in ) :: &
       MaxDegree, &
       nEquations
 
-    L % IGNORABILITY  =  GA % IGNORABILITY
+    L % IGNORABILITY  =  G % IGNORABILITY
 
     if ( L % Type  ==  '' ) &
       L % Type  =  'a Laplacian_M' 
@@ -135,7 +135,7 @@ contains
     call Show ( 'Initializing ' // trim ( L % Type ), L % IGNORABILITY )
     call Show ( L % Name, 'Name', L % IGNORABILITY )
 
-    call L % SetParameters ( GA, MaxDegree, nEquations )
+    call L % SetParameters ( G, MaxDegree, nEquations )
     call L % SetKernelFunctions ( )
     call L % AllocateMoments ( )
 
@@ -188,12 +188,12 @@ contains
   end subroutine Show_L
 
 
-  subroutine ComputeMoments ( L, Source_A )
+  subroutine ComputeMoments ( L, Source )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source_A
+    class ( FieldSetForm ), intent ( in ) :: &
+      Source
 
     ! type ( TimerForm ), pointer :: &
     !   Timer, &
@@ -221,7 +221,7 @@ contains
     ! if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     ! if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
-    call L % ComputeAngularMomentsLocal ( Source_A )
+    call L % ComputeAngularMomentsLocal ( Source )
     ! if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     ! if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
@@ -285,12 +285,12 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetParameters ( L, GA, MaxDegree, nEquations )
+  subroutine SetParameters ( L, G, MaxDegree, nEquations )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( Geometry_F_A_Form ), intent ( in ), target :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ), target :: &
+      G
     integer ( KDI ), intent ( in ) :: &
       MaxDegree, &
       nEquations
@@ -310,7 +310,7 @@ contains
     L % MaxDegree  =  MaxDegree
     L % MaxOrder   =  MaxDegree
 
-    call L % SetParameters_A ( GA )
+    call L % SetParameters_A ( G )
 
     associate &
       (  L_Max  =>  L % MaxDegree, &
@@ -388,12 +388,12 @@ contains
   end subroutine SetParameters
 
 
-  subroutine SetParameters_A ( L, GA )
+  subroutine SetParameters_A ( L, G )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( Geometry_F_A_Form ), intent ( in ), target :: &
-      GA
+    class ( Geometry_F_Form ), intent ( in ), target :: &
+      G
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Laplacian_M_H__Form', 'module', CONSOLE % ERROR )
@@ -662,12 +662,12 @@ contains
   end function AssociatedLegendre
 
 
-  subroutine ComputeAngularMomentsLocal ( L, Source_A )
+  subroutine ComputeAngularMomentsLocal ( L, Source )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( FieldSet_A_Form ), intent ( in ) :: &
-      Source_A
+    class ( FieldSetForm ), intent ( in ) :: &
+      Source
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
     call Show ( 'Laplacian_M_H__Form', 'module', CONSOLE % ERROR )
