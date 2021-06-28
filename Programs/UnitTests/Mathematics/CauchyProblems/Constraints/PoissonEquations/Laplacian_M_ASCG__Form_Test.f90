@@ -1,6 +1,6 @@
-program Laplacian_M_A__Form_Test
+program Laplacian_M_ASCG__Form_Test
 
-  !-- Laplacian_Multipole_Atlas__Form_Test
+  !-- Laplacian_Multipole_AtlasSingleChartGrid__Form_Test
 
   use Basics
   use Manifolds
@@ -20,12 +20,12 @@ program Laplacian_M_A__Form_Test
     S
   type ( Geometry_F_Form ), allocatable :: &
     G
-  type ( Laplacian_M_A_Form ), allocatable :: &
+  type ( Laplacian_M_ASCG_Form ), allocatable :: &
     L
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Laplacian_M_A__Form_Test', DimensionalityOption = '2D' )
+         ( 'Laplacian_M_ASCG__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -361,4 +361,4 @@ contains
   end subroutine SetDensityKernel
 
 
-end program Laplacian_M_A__Form_Test
+end program Laplacian_M_ASCG__Form_Test

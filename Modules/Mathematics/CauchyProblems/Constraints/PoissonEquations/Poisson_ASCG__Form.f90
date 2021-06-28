@@ -1,17 +1,17 @@
-module Poisson_A__Form
+module Poisson_ASCG__Form
 
-  !-- Poisson_Atlas__Form
+  !-- Poisson_AtlasSingleChartGrid__Form
 
   use Basics
   use Manifolds
   use Fields
-  use Laplacian_M_A__Form
+  use Laplacian_M_ASCG__Form
   use Poisson_H__Form
 
   implicit none
   private
 
-  type, public, extends ( Poisson_H_Form ) :: Poisson_A_Form
+  type, public, extends ( Poisson_H_Form ) :: Poisson_ASCG_Form
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       Solution_4D => null ( )
     class ( Geometry_F_Form ), pointer :: &
@@ -27,7 +27,7 @@ module Poisson_A__Form
       ExchangeSolution
     procedure, private, pass :: &
       ApplyBoundarySolution
-  end type Poisson_A_Form
+  end type Poisson_ASCG_Form
 
     private :: &
       CombineMoments_CGS_S_Kernel
@@ -71,7 +71,7 @@ contains
   subroutine Initialize &
                ( P, G, SolverType, MaxDegreeOption, nEquationsOption )
 
-    class ( Poisson_A_Form ), intent ( inout ) :: &
+    class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
@@ -91,15 +91,15 @@ contains
 
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
-      allocate ( Laplacian_M_A_Form :: P % Laplacian_M )
+      allocate ( Laplacian_M_ASCG_Form :: P % Laplacian_M )
       select type ( L => P % Laplacian_M )
-      class is ( Laplacian_M_A_Form )
+      class is ( Laplacian_M_ASCG_Form )
         call L % Initialize ( G, P % MaxDegree, P % nEquations )
       end select !-- L
     case default
       call Show ( 'Solver type not recognized', CONSOLE % ERROR )
       call Show ( SolverType, 'Type', CONSOLE % ERROR )
-      call Show ( 'Poisson_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
@@ -109,7 +109,7 @@ contains
 
   impure elemental subroutine Finalize ( P )
 
-    type ( Poisson_A_Form ), intent ( inout ) :: &
+    type ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
 
     nullify ( P % Geometry )
@@ -120,7 +120,7 @@ contains
 
   subroutine CombineMomentsLocal ( P, Solution )
 
-    class ( Poisson_A_Form ), intent ( inout ) :: &
+    class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
@@ -128,7 +128,7 @@ contains
     call Show ( 'Combining Moments Local', P % IGNORABILITY + 3 )
 
     select type ( L  =>  P % Laplacian_M )
-      class is ( Laplacian_M_A_Form )
+      class is ( Laplacian_M_ASCG_Form )
     select type ( A  =>  P % Geometry % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
@@ -141,14 +141,14 @@ contains
  
     if ( nV  /=  L % nEquations ) then
       call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
-      call Show ( 'Poisson_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
     if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
       call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
-      call Show ( 'Poisson_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -175,7 +175,7 @@ contains
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-      call Show ( 'Poisson_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
@@ -184,14 +184,14 @@ contains
 
     class default 
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Poisson_A_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASCG_Form', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
     class default 
       call Show ( 'Laplacian type not recognized', CONSOLE % ERROR )
-      call Show ( 'Poisson_A_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASCG_Form', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- L
@@ -201,7 +201,7 @@ contains
 
   subroutine ExchangeSolution ( P, Solution )
 
-    class ( Poisson_A_Form ), intent ( inout ) :: &
+    class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
@@ -213,7 +213,7 @@ contains
 
   subroutine ApplyBoundarySolution ( P, Solution )
 
-    class ( Poisson_A_Form ), intent ( inout ) :: &
+    class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
@@ -263,4 +263,4 @@ contains
   end subroutine AssignSolutionPointer
 
 
-end module Poisson_A__Form
+end module Poisson_ASCG__Form

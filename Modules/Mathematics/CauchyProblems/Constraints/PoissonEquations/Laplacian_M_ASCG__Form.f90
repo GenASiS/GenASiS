@@ -1,6 +1,6 @@
-module Laplacian_M_A__Form
+module Laplacian_M_ASCG__Form
 
-  !-- Laplacian_Multipole_Atlas__Form
+  !-- Laplacian_Multipole_AtlasSingleChartGrid__Form
 
   use Basics
   use Manifolds
@@ -10,7 +10,7 @@ module Laplacian_M_A__Form
   implicit none
   private
 
-  type, public, extends ( Laplacian_M_H_Form ) :: Laplacian_M_A_Form
+  type, public, extends ( Laplacian_M_H_Form ) :: Laplacian_M_ASCG_Form
     real ( KDR ), dimension ( :, : ), pointer :: &
       dSolidAngle_2D => null ( )
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -33,7 +33,7 @@ module Laplacian_M_A__Form
       SetKernelFunctions
     procedure, private, pass :: &
       ComputeAngularMomentsLocal
-  end type Laplacian_M_A_Form
+  end type Laplacian_M_ASCG_Form
 
 
     private :: &
@@ -80,7 +80,7 @@ contains
 
   subroutine Initialize ( L, G, MaxDegree, nEquations )
 
-    class ( Laplacian_M_A_Form ), intent ( inout ) :: &
+    class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
@@ -98,7 +98,7 @@ contains
 
   impure elemental subroutine Finalize ( L )
 
-    type ( Laplacian_M_A_Form ), intent ( inout ) :: &
+    type ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
 
     nullify ( L % Geometry )
@@ -117,7 +117,7 @@ contains
 
   subroutine SetParameters_A ( L, G )
 
-    class ( Laplacian_M_A_Form ), intent ( inout ) :: &
+    class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
@@ -145,7 +145,7 @@ contains
 
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetParameters_A', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CoordinateSystem
@@ -154,7 +154,7 @@ contains
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetParameters_A', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
@@ -164,7 +164,7 @@ contains
 
   subroutine SetKernelFunctions ( L )
 
-    class ( Laplacian_M_A_Form ), intent ( inout ) :: &
+    class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
 
     integer ( KDI ) :: &
@@ -241,7 +241,7 @@ contains
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetKernelFunctions', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CoordinateSystem
@@ -266,7 +266,7 @@ contains
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetKernelFunctions', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
@@ -278,7 +278,7 @@ contains
 
   subroutine ComputeAngularMomentsLocal ( L, Source )
 
-    class ( Laplacian_M_A_Form ), intent ( inout ) :: &
+    class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
     class ( FieldSetForm ), intent ( in ) :: &
       Source
@@ -295,7 +295,7 @@ contains
  
     if ( nV /= L % nEquations ) then
       call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeAngularMomentsLocal', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -303,7 +303,7 @@ contains
 
     if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
       call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeAngularMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -335,7 +335,7 @@ contains
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Laplacian_M_A__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeAngularMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
@@ -371,7 +371,7 @@ contains
                  L, M, nTheta, nPhi, oTheta, oPhi, &
                  AF, dSA )
 
-    class ( Laplacian_M_A_Form ), intent ( in ) :: &
+    class ( Laplacian_M_ASCG_Form ), intent ( in ) :: &
       LM
     real ( KDR ), dimension ( -oTheta + 1 : ), intent ( in ) :: &
       Theta_E, &  !-- PolarAngle
@@ -517,4 +517,4 @@ contains
   end subroutine AssignSourcePointer
 
 
-end module Laplacian_M_A__Form
+end module Laplacian_M_ASCG__Form

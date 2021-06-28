@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Laplacian_M_A__Form ) Laplacian_M_A__Kernel
+submodule ( Laplacian_M_ASCG__Form ) Laplacian_M_ASCG__Kernel
 
   use Basics
 
@@ -92,4 +92,4 @@ contains
   end procedure ComputeAngularMomentsLocal_CGS_S_Kernel
 
 
-end submodule Laplacian_M_A__Kernel
+end submodule Laplacian_M_ASCG__Kernel

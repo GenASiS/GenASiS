@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Poisson_A__Form ) Poisson_A__Kernel
+submodule ( Poisson_ASCG__Form ) Poisson_ASCG__Kernel
 
   use Basics
   
@@ -101,4 +101,4 @@ contains
   end procedure CombineMoments_CGS_S_Kernel
 
 
-end submodule Poisson_A__Kernel
+end submodule Poisson_ASCG__Kernel

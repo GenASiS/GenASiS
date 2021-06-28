@@ -1,6 +1,6 @@
-program Poisson_A__Form_Test
+program Poisson_ASCG__Form_Test
 
-  !-- Poisson_Atlas__Form_Test
+  !-- Poisson_AtlasSingleChartGrid__Form_Test
 
   use Basics
   use Algebra
@@ -21,12 +21,12 @@ program Poisson_A__Form_Test
     S
   type ( Geometry_F_Form ), allocatable :: &
     G
-  type ( Poisson_A_Form ), allocatable :: &
+  type ( Poisson_ASCG_Form ), allocatable :: &
     PA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Poisson_A__Form_Test', DimensionalityOption = '2D' )
+         ( 'Poisson_ASCG__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -339,4 +339,4 @@ contains
   end subroutine SetDensityKernel
 
 
-end program Poisson_A__Form_Test
+end program Poisson_ASCG__Form_Test
