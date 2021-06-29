@@ -48,15 +48,6 @@ module Stream_Form
       Finalize
   end type StreamForm
 
-!   type, public :: StreamElement
-!     !-- Stream_Chart_Element
-!     class ( StreamForm ), allocatable :: &
-!       Element
-!   contains
-!     final :: &
-!       Finalize_E
-!   end type StreamElement
-
    private :: &
      SetEdgeValues
 
@@ -489,17 +480,6 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
   end subroutine Finalize
-
-
-!   impure elemental subroutine Finalize_E ( SE )
-    
-!     type ( StreamElement ), intent ( inout ) :: &
-!       SE
-
-!     if ( allocated ( SE % Element ) ) &
-!       deallocate ( SE % Element )
-
-!   end subroutine Finalize_E
 
 
   subroutine SetEdgeValues ( Edge, C )
