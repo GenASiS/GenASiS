@@ -1,5 +1,6 @@
 SLOPES = \
   Slopes.o \
+  Slope_H__Form.o \
   RiemannSolver_HLL__Kernel.o \
   RiemannSolver_HLL__Form.o \
   Reconstruction_Kernel.o \
@@ -8,5 +9,3 @@ SLOPES = \
   Slope_DFV_PD_A__Form.o \
   Slope_DFV_PD_C__Kernel.o \
   Slope_DFV_PD_C__Form.o \
-  Slope_H_A__Form.o \
-  Slope_H_C__Form.o \

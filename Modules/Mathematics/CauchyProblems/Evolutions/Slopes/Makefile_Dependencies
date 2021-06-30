@@ -20,19 +20,12 @@ RiemannSolver_HLL__Kernel.o: \
   RiemannSolver_HLL__Form.o \
   RiemannSolver_HLL__Kernel.f90
 
-Slope_H_Form.o: \
+Slope_H__Form.o: \
   Basics.o \
   Algebra.o \
   Manifolds.o \
   Fields.o \
-  Slope_H_Form.f90
-
-Slope_H_A__Form.o: \
-  Basics.o \
-  Manifolds.o \
-  Fields.o \
-  Slope_H_Form.o \
-  Slope_H_A__Form.f90
+  Slope_H__Form.f90
 
 Slope_DFV_PD_Form.o: \
   Basics.o \
@@ -68,9 +61,9 @@ Slope_DFV_F_A__Form.o: \
 Slopes.o: \
   Reconstruction_Form.o \
   RiemannSolver_HLL__Form.o \
+  Slope_H__Form.o \
   Slopes.f90
-#  Slope_H_Form.o \
-  Slope_H_A__Form.o \
+#  Slope_H_A__Form.o \
   Slope_DFV_PD_Form.o \
   Slope_DFV_PD_A__Form.o \
   Slope_DFV_F_A__Form.o \
