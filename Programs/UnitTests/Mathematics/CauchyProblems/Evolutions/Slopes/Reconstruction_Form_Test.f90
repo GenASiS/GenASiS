@@ -8,11 +8,14 @@ program Reconstruction_Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    iD
+    iD, &
+    nCompute
   character ( 1 ), dimension ( 3 ) :: &
     D  =  [ 'X', 'Y', 'Z' ]
   type ( GridImageStreamForm ), allocatable :: &
     GIS
+  type ( TimerForm ), pointer :: &
+    T
   type ( Atlas_SCG_Form ), allocatable :: &
     A
   type ( FieldSetForm ), allocatable :: &
@@ -76,25 +79,27 @@ program Reconstruction_Form_Test
   allocate ( R_0 )
   allocate ( R_1 )
   allocate ( R_2 )
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call R_0 % Initialize &
-         ( G, FS, &
-           NameOption = 'Reconstruction_0', &
-           OrderOption = 0 )
+         ( G, FS, PrefixOption = 'R_0', OrderOption = 0 )
   call R_1 % Initialize &
-         ( G, FS, &
-           NameOption = 'Reconstruction_1', &
-           OrderOption = 1 )
+         ( G, FS, PrefixOption = 'R_1', OrderOption = 1 )
   call R_2 % Initialize &
-         ( G, FS, &
-           NameOption = 'Reconstruction_2', &
-           OrderOption = 2 )
+         ( G, FS, PrefixOption = 'R_2', OrderOption = 2 )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
+  !-- Get all Reconstruction timers initialized
+  T  =>  R_0 % Timer ( LevelOption = 1 )
+  T  =>  R_1 % Timer ( LevelOption = 1 )
+  T  =>  R_2 % Timer ( LevelOption = 1 )
 
   call  A   % Show ( )
   call FS   % Show ( )
   call  G   % Show ( )
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call  R_0 % Show ( )
   call  R_1 % Show ( )
   call  R_2 % Show ( )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
   call  S   % Show ( )
 
   call SetWave ( FS, G )
@@ -102,15 +107,20 @@ program Reconstruction_Form_Test
     call SetReference ( FS_I ( iD ), G, iD )
   end do !-- iD
 
+  nCompute  =  1000
+  call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
+
   call TestReconstruction ( R_0, S, D_IL, D_IR, FS_I )
   call TestReconstruction ( R_1, S, D_IL, D_IR, FS_I )
   call TestReconstruction ( R_2, S, D_IL, D_IR, FS_I )
 
   end associate !-- nD
 
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   deallocate ( R_2 )
   deallocate ( R_1 )
   deallocate ( R_0 )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( G )
   deallocate ( S )
   deallocate ( D_IR, D_IL )
@@ -245,7 +255,10 @@ contains
       FS_I
 
     integer ( KDI ) :: &
-      iD
+      iD, &  !-- iDimension
+      iC     !-- iCompute
+    type ( TimerForm ), pointer :: &
+      T
 
     select type ( A  =>  R % FieldSet % Atlas )
       class is ( Atlas_SCG_Form )
@@ -254,7 +267,18 @@ contains
 
     do iD  =  1, nD
 
-      call R % Compute ( iD )
+      call Show ( 'Computing reconstruction' )
+      call Show ( R % Name, 'Reconstruction' )
+      call Show ( iD, 'iDimension' )
+      call Show ( nCompute, 'nCompute' )
+
+      T  =>  R % Timer ( LevelOption = 1 )
+      call T % Start ( )
+      do iC  =  1,  nCompute
+        call R % Compute ( iD )
+      end do 
+      call T % Stop ( )
+
       call CompareFieldSets ( R % Output_IL, FS_I ( iD ), iD )
       call CompareFieldSets ( R % Output_IR, FS_I ( iD ), iD )
 
@@ -272,9 +296,12 @@ contains
 
     end do !-- iD
 
+    T  =>  S % TimerWrite ( LevelOption = 1 )
+    call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )
     call GIS % Close ( )
+    call T % Stop ( )
 
     end associate !-- nD
     end select !-- A

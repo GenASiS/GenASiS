@@ -1,10 +1,11 @@
-program FluxSet_Form_Test
+program RiemannSolver_HLL__Form_Test
+
+  !-- RiemannSolver_HartenLaxVanLeer__Form_Test
 
   use Basics
   use Manifolds
-  use FieldSets
-  use Geometries
-  use CurrentSets
+  use Fields
+  use Slopes
 
   implicit none
 
@@ -20,12 +21,12 @@ program FluxSet_Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( FluxSetForm ), allocatable :: &
-    FS
+  type ( RiemannSolver_HLL_Form ), allocatable :: &
+    RS
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FluxSet_Form_Test', DimensionalityOption = '2D' )
+         ( 'RiemannSolver_HLL__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -44,20 +45,20 @@ program FluxSet_Form_Test
   call G % SetStream ( S )
 
   allocate ( CS )
-  call CS % Initialize ( G )
+  call CS % Initialize( G )
   call CS % SetStream ( S )
 
-  allocate ( FS )
+  allocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call FS % Initialize ( CS )
+  call RS % Initialize ( CS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
-  call  S % AddFieldSet ( FS )
+  call S % AddFieldSet ( RS )
 
   call  A % Show ( )
   call  G % Show ( )
   call CS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call FS % Show ( )
+  call RS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call  S % Show ( )
 
@@ -66,12 +67,16 @@ program FluxSet_Form_Test
   nCompute  =  1000
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
-  call TestFluxes ( FS, S, iD = 1 )
-  call TestFluxes ( FS, S, iD = 2 )
-  call TestFluxes ( FS, S, iD = 3 )
+  associate ( C  =>  A % Chart_GS )
+  call TestRiemannSolver ( RS, S, iD = 1 )
+  if ( C % nDimensions  >  1 ) &
+    call TestRiemannSolver ( RS, S, iD = 2 )
+  if ( C % nDimensions  >  2 ) &
+    call TestRiemannSolver ( RS, S, iD = 3 )
+  end associate !-- C
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  deallocate ( FS )
+  deallocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( CS )
   deallocate ( G )
@@ -157,10 +162,10 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestFluxes ( FS, S, iD )
+  subroutine TestRiemannSolver ( RS, S, iD )
 
-    class ( FluxSetForm ), intent ( inout ) :: &
-      FS
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
     class ( StreamForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
@@ -171,15 +176,15 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    call Show ( 'FluxSet computation' )
-    call Show ( FS % Name, 'FluxSet' )
+    call Show ( 'RiemannSolver computation' )
+    call Show ( RS % Name, 'RiemannSolver' )
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  FS % Timer ( LevelOption = 1 )
+    T  =>  RS % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call FS % Compute ( iD )
+      call RS % Compute ( iD, T_Option = T )
     end do
     call T % Stop ( )
 
@@ -190,7 +195,7 @@ contains
     call GIS % Close ( )
     call T % Stop ( )
 
-  end subroutine TestFluxes
+  end subroutine TestRiemannSolver
 
 
-end program FluxSet_Form_Test
+end program RiemannSolver_HLL__Form_Test

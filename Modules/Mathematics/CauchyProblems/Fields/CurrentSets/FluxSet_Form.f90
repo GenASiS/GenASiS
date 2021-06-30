@@ -18,7 +18,7 @@ module FluxSet_Form
     generic, public :: &
       Initialize => InitializeAllocate_FxS
     procedure, public, pass :: &
-      TimerFluxes
+      Timer
     procedure, public, pass :: &
       Compute
     final :: &
@@ -29,14 +29,14 @@ module FluxSet_Form
 contains
 
 
-  subroutine InitializeAllocate_FxS ( FS, CS, NameOption )
+  subroutine InitializeAllocate_FxS ( FS, CS, PrefixOption )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
     class ( CurrentSetForm ), intent ( in ), target :: &
       CS
     character ( * ), intent ( in ), optional :: &
-      NameOption
+      PrefixOption
  
     character ( LDL ) :: &
       Name
@@ -45,8 +45,8 @@ contains
       FS % Type  =  'a FluxSet' 
     
     Name  =  'FS_' // trim ( CS % Name )
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
+    if ( present ( PrefixOption ) ) &
+      Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
     FS % CurrentSet  =>  CS
 
@@ -62,7 +62,7 @@ contains
   end subroutine InitializeAllocate_FxS
 
 
-  function TimerFluxes ( FS, LevelOption ) result ( T )
+  function Timer ( FS, LevelOption ) result ( T )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
@@ -77,7 +77,7 @@ contains
     associate ( iT  =>  FS % iTimer )
 
     if ( iT == 0 ) then
-      TimerName  =  'Fluxes_' // trim ( FS % CurrentSet % Name )
+      TimerName  =  FS % Name
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -89,7 +89,7 @@ contains
 
     end associate !-- iT
 
-  end function TimerFluxes
+  end function Timer
 
 
   subroutine Compute ( FS, iD )

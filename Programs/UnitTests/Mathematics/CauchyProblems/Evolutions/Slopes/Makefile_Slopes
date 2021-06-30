@@ -2,9 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Reconstruction_Form_Test #Reconstruction_A__Form_Test \
-  RiemannSolver_HLL_Form_Test RiemannSolver_HLL_A__Form_Test \
-  Slope_DFV_F_A__Form_Test
+all: Reconstruction_Form_Test RiemannSolver_HLL__Form_Test #Slope_DFV_F_A__Form_Test
 
 Reconstruction_Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
   Reconstruction_Form_Test.o
@@ -13,18 +11,11 @@ Reconstruction_Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
           Reconstruction_Form_Test.o Slopes.a \
           Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
-RiemannSolver_HLL_Form_Test: Basics.a Algebra.a Manifolds.a Fields.a \
-  Slopes.a RiemannSolver_HLL_Form_Test.o
+RiemannSolver_HLL__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a \
+  Slopes.a RiemannSolver_HLL__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o RiemannSolver_HLL_Form_Test_$(MACHINE) \
-          RiemannSolver_HLL_Form_Test.o Slopes.a \
-          Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
-
-RiemannSolver_HLL_A__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a \
-  Slopes.a RiemannSolver_HLL_A__Form_Test.o
-	$(LINK) $(FLAGS) \
-          -o RiemannSolver_HLL_A__Form_Test_$(MACHINE) \
-          RiemannSolver_HLL_A__Form_Test.o Slopes.a \
+          -o RiemannSolver_HLL__Form_Test_$(MACHINE) \
+          RiemannSolver_HLL__Form_Test.o Slopes.a \
           Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 Slope_DFV_F_A__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
@@ -39,8 +30,7 @@ clean:
 
 clobber: clean
 	rm -f Reconstruction_Form_Test_*
-	rm -f RiemannSolver_HLL_Form_Test_*
-	rm -f RiemannSolver_HLL_A__Form_Test_*
+	rm -f RiemannSolver_HLL__Form_Test_*
 	rm -f Slope_DFV_F_A__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -56,19 +46,12 @@ Reconstruction_Form_Test.o: \
   Slopes.o \
   Reconstruction_Form_Test.f90
 
-RiemannSolver_HLL_Form_Test.o: \
+RiemannSolver_HLL__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Fields.o \
   Slopes.o \
-  RiemannSolver_HLL_Form_Test.f90
-
-RiemannSolver_HLL_A__Form_Test.o: \
-  Basics.o \
-  Manifolds.o \
-  Fields.o \
-  Slopes.o \
-  RiemannSolver_HLL_A__Form_Test.f90
+  RiemannSolver_HLL__Form_Test.f90
 
 Slope_DFV_F_A__Form_Test.o: \
   Basics.o \

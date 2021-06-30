@@ -30,7 +30,7 @@ module EigenspeedSet_F__Form
     generic, public :: &
       Initialize => InitializeAllocate_ES
     procedure, public, pass :: &
-      TimerEigenspeeds
+      Timer
     procedure, public, pass :: &
       Compute
     final :: &
@@ -42,7 +42,7 @@ contains
 
 
   subroutine InitializeAllocate_ES &
-               ( ES, CS, FieldOption, NameOption, nFieldsOption )
+               ( ES, CS, FieldOption, PrefixOption, nFieldsOption )
 
     class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
       ES
@@ -51,7 +51,7 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
-      NameOption
+      PrefixOption
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
  
@@ -65,9 +65,9 @@ contains
     if ( ES % Type  ==  '' ) &
       ES % Type  =  'an EigenspeedSet_F' 
     
-    Name  =  'E_' // trim ( CS % Name )
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
+    Name  =  'ES_' // trim ( CS % Name )
+    if ( present ( PrefixOption ) ) &
+      Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
     ES % CurrentSet  =>  CS
 
@@ -108,7 +108,7 @@ contains
   end subroutine InitializeAllocate_ES
 
 
-  function TimerEigenspeeds ( ES, LevelOption ) result ( T )
+  function Timer ( ES, LevelOption ) result ( T )
 
     class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
       ES
@@ -123,7 +123,7 @@ contains
     associate ( iT  =>  ES % iTimer )
 
     if ( iT == 0 ) then
-      TimerName  =  'Eigenspeeds_' // trim ( ES % CurrentSet % Name )
+      TimerName  =  ES % Name
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -135,7 +135,7 @@ contains
 
     end associate !-- iT
 
-  end function TimerEigenspeeds
+  end function Timer
 
 
   subroutine Compute ( ES, iD )

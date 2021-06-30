@@ -48,7 +48,9 @@ program EigenspeedSet_F__Form_Test
   call CS % SetStream ( S )
 
   allocate ( ES )
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call ES % Initialize ( CS )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
   call  S % AddFieldSet ( ES )
 
   call  A % Show ( )
@@ -68,7 +70,9 @@ program EigenspeedSet_F__Form_Test
   call TestEigenspeeds ( ES, S, iD = 2 )
   call TestEigenspeeds ( ES, S, iD = 3 )
 
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   deallocate ( ES )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( S )
@@ -167,12 +171,12 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    call Show ( 'Eigenspeed computation' )
+    call Show ( 'EigenspeedSet computation' )
     call Show ( ES % Name, 'EigenspeedSet' )
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  ES % TimerEigenspeeds ( LevelOption = 1 )
+    T  =>  ES % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       call ES % Compute ( iD )

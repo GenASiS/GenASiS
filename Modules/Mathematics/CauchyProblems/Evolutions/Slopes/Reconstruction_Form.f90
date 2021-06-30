@@ -34,7 +34,7 @@ module Reconstruction_Form
     procedure, public, pass :: &
       Show => Show_R
     procedure, public, pass :: &
-      TimerReconstruction
+      Timer
     procedure, public, pass :: &
       Compute
     final :: &
@@ -115,7 +115,7 @@ contains
 
 
   subroutine Initialize &
-               ( R, G, FS, NameOption, OrderOption )
+               ( R, G, FS, PrefixOption, OrderOption )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
@@ -124,7 +124,7 @@ contains
     class ( FieldSetForm ), intent ( in ), target :: &
       FS
     character ( * ), intent ( in ), optional :: &
-      NameOption
+      PrefixOption
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
@@ -137,11 +137,11 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Field
 
-    R % IGNORABILITY  =  FS % IGNORABILITY
+    R % IGNORABILITY  =  FS % IGNORABILITY + 1
 
     R % Name  =  'R_' // trim ( FS % Name )
-    if ( present ( NameOption ) ) &
-      R % Name  =  trim ( NameOption ) // '_' // trim ( FS % Name )
+    if ( present ( PrefixOption ) ) &
+      R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
 
     call Show ( 'Initializing a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
@@ -173,7 +173,7 @@ contains
              DevicesCommunicateOption = FS % DevicesCommunicate, &
              UnitOption = Unit, &
              nFieldsOption = nF, &
-             IgnorabilityOption = FS % IGNORABILITY + 1 )
+             IgnorabilityOption = R % IGNORABILITY )
     call R % Output_IR % Initialize &
            ( FS % Atlas, &
              FieldOption = Field, &
@@ -182,7 +182,7 @@ contains
              DevicesCommunicateOption = FS % DevicesCommunicate, &
              UnitOption = Unit, &
              nFieldsOption = nF, &
-             IgnorabilityOption = FS % IGNORABILITY + 1 )
+             IgnorabilityOption = R % IGNORABILITY )
 
     R % Order  =  2
     if ( present ( OrderOption ) ) &
@@ -286,14 +286,14 @@ contains
 
     call Show ( R % Name, 'Name',  R % IGNORABILITY )
     call Show ( R % Order, 'Order', R % IGNORABILITY )
-    call R % FieldSet % Show ( )
+!    call R % FieldSet % Show ( )
     call R % Output_IL % Show ( )
     call R % Output_IR % Show ( )
 
   end subroutine Show_R
 
 
-  function TimerReconstruction ( R, LevelOption ) result ( T )
+  function Timer ( R, LevelOption ) result ( T )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
@@ -308,7 +308,7 @@ contains
     associate ( iT  =>  R % iTimer )
 
     if ( iT == 0 ) then
-      TimerName  =  'Reconstruction_' // trim ( R % FieldSet % Name )
+      TimerName  =  R % Name
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -320,7 +320,7 @@ contains
 
     end associate !-- iT
 
-  end function TimerReconstruction
+  end function Timer
 
 
   subroutine Compute ( R, iD, iS_Option )
