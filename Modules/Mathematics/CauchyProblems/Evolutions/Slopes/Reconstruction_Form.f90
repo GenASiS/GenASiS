@@ -323,17 +323,16 @@ contains
   end function Timer
 
 
-  subroutine Compute ( R, iD, iS_Option )
+  subroutine Compute ( R, iC, iD, iS_Option )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
     integer ( KDI ), intent ( in ) :: &
-      iD  !-- iDimensions
+      iC, &  !-- iChart
+      iD     !-- iDimensions
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option
 
-    integer ( KDI ) :: &
-      iC  !-- iChart
     real ( KDR ), dimension ( :, :, : ), pointer :: &
        X, &
       dX
@@ -342,60 +341,58 @@ contains
       F_IL, &
       F_IR
 
-    call Show ( 'Computing a Reconstruction', R % IGNORABILITY + 4 )
-    call Show ( R % Name, 'Name', R % IGNORABILITY + 4 )
+    call Show ( 'Computing a Reconstruction', R % IGNORABILITY + 3 )
+    call Show ( R % Name, 'Name', R % IGNORABILITY + 3 )
 
     associate &
       ( G      =>  R % Geometry, &
         FS     =>  R % FieldSet, &
         FS_IL  =>  R % Output_IL, &
         FS_IR  =>  R % Output_IR )
-    do iC  =  1,  FS % Atlas % nCharts
-      associate &
-        ( GV     =>  G     % Storage ( iC ) % Value, &
-          FV     =>  FS    % Storage ( iC ) % Value, &
-          FV_IL  =>  FS_IL % Storage ( iC ) % Value, &
-          FV_IR  =>  FS_IR % Storage ( iC ) % Value )
+    associate &
+      ( GV     =>  G     % Storage ( iC ) % Value, &
+        FV     =>  FS    % Storage ( iC ) % Value, &
+        FV_IL  =>  FS_IL % Storage ( iC ) % Value, &
+        FV_IR  =>  FS_IR % Storage ( iC ) % Value )
 
-      select type ( C  =>  FS % Atlas % Chart ( iC ) % Element )
-      class is ( Chart_GS_Form )
+    select type ( C  =>  FS % Atlas % Chart ( iC ) % Element )
+    class is ( Chart_GS_Form )
 
-        call C % SetFieldPointer ( GV ( :, G % CENTER_U ( iD ) ),  X )
-        call C % SetFieldPointer ( GV ( :, G % WIDTH_U  ( iD ) ), dX )
-        call C % SetFieldPointer ( FV,    F    )
-        call C % SetFieldPointer ( FV_IL, F_IL )
-        call C % SetFieldPointer ( FV_IR, F_IR )
+      call C % SetFieldPointer ( GV ( :, G % CENTER_U ( iD ) ),  X )
+      call C % SetFieldPointer ( GV ( :, G % WIDTH_U  ( iD ) ), dX )
+      call C % SetFieldPointer ( FV,    F    )
+      call C % SetFieldPointer ( FV_IL, F_IL )
+      call C % SetFieldPointer ( FV_IR, F_IR )
 
-        select case ( R % Order )
-        case ( 0 )
-          call ComputeConstant_CGS_Kernel &
-                 ( F, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
-                   F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
-        case ( 1 )
-          call ComputeLinear_CGS_Kernel &
-                 ( F, X, dX, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
-                   F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
-        case ( 2 )
-          call ComputeParabolic_CGS_Kernel &
-                 ( F, X, dX, X, X ** 2, FS % iaSelected, iD, & 
-                   C % nGhostLayers ( iD ), F_IL, F_IR, &
-                   UseDeviceOption = FS % DeviceMemory )
-        case default
-          call Show ( 'Order not implemented', CONSOLE % ERROR )
-          call Show ( 'Reconstruction_Form', 'module', CONSOLE % ERROR )
-          call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end select !-- Order
-
-      class default
-        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      select case ( R % Order )
+      case ( 0 )
+        call ComputeConstant_CGS_Kernel &
+               ( F, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
+                 F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
+      case ( 1 )
+        call ComputeLinear_CGS_Kernel &
+               ( F, X, dX, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
+                 F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
+      case ( 2 )
+        call ComputeParabolic_CGS_Kernel &
+               ( F, X, dX, X, X ** 2, FS % iaSelected, iD, & 
+                 C % nGhostLayers ( iD ), F_IL, F_IR, &
+                 UseDeviceOption = FS % DeviceMemory )
+      case default
+        call Show ( 'Order not implemented', CONSOLE % ERROR )
         call Show ( 'Reconstruction_Form', 'module', CONSOLE % ERROR )
         call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
-      end select !-- C
+      end select !-- Order
+
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Reconstruction_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
     
-      end associate !-- GV, etc.
-    end do !-- iC
+    end associate !-- GV, etc.
     end associate !-- G, etc.
 
     if ( allocated ( R % StageDimension ) .and. present ( iS_Option ) ) &

@@ -358,47 +358,43 @@ contains
   end subroutine ComputeFromConserved
 
 
-  subroutine ComputeFluxes ( FS, CS, iD )
+  subroutine ComputeFluxes ( FS, CS, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
     integer ( KDI ), intent ( in ) :: &
+      iC, &  !-- iChart
       iD  !-- iDimension
     
     integer ( KDI ) :: &
-      iC, &  !-- iChart
       iDensity
 
     if ( CS % DENSITY_CS > 0 ) then
 
       call Search ( CS % iaBalanced, CS % DENSITY_CS, iDensity )
 
-      do iC  =  1,  CS % Atlas % nCharts
-
-        associate &
-          ( FSS  =>  FS % Storage ( iC ), &
-            CSS  =>  CS % Storage ( iC ) )
-        associate &
-          ( F_D      =>  FSS % Value ( :, iDensity ), &
-              D      =>  CSS % Value ( :, CS % DENSITY_CS ), & 
-              V_Dim  =>  CSS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
-   
-        call ComputeFluxesKernel &
-               ( D, V_Dim, F_D, UseDeviceOption = CS % DeviceMemory )
-    
-        end associate !-- F_D, etc.
-        end associate !-- FSS, etc.
-    
-      end do !-- iC
-
+      associate &
+        ( FSS  =>  FS % Storage ( iC ), &
+          CSS  =>  CS % Storage ( iC ) )
+      associate &
+        ( F_D      =>  FSS % Value ( :, iDensity ), &
+            D      =>  CSS % Value ( :, CS % DENSITY_CS ), & 
+            V_Dim  =>  CSS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
+ 
+      call ComputeFluxesKernel &
+             ( D, V_Dim, F_D, UseDeviceOption = CS % DeviceMemory )
+  
+      end associate !-- F_D, etc.
+      end associate !-- FSS, etc.
+  
     end if !-- Density default
 
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeEigenspeeds ( FS, CS, iaEigenspeeds, iD )
+  subroutine ComputeEigenspeeds ( FS, CS, iaEigenspeeds, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
@@ -407,31 +403,25 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaEigenspeeds
     integer ( KDI ), intent ( in ) :: &
-      iD  !-- iDimension
-
-    integer ( KDI ) :: &
-      iC  !-- iChart
+      iC, &  !-- iChart
+      iD     !-- iDimension
 
     if ( CS % DENSITY_CS > 0 ) then
 
-      do iC  =  1,  CS % Atlas % nCharts
-
-        associate &
-          ( FSS  =>  FS % Storage ( iC ), &
-            CSS  =>  CS % Storage ( iC ) )
-        associate &
-          ( EF_P    =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
-            EF_M    =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ), &
-             V_Dim  =>  CSS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
-   
-        call ComputeEigenspeedsKernel &
-               ( V_Dim, EF_P, EF_M, UseDeviceOption = CS % DeviceMemory )
-    
-        end associate !-- EF_P, etc.
-        end associate !-- FSS, etc.
-    
-      end do
-
+      associate &
+        ( FSS  =>  FS % Storage ( iC ), &
+          CSS  =>  CS % Storage ( iC ) )
+      associate &
+        ( EF_P    =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
+          EF_M    =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ), &
+           V_Dim  =>  CSS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
+ 
+      call ComputeEigenspeedsKernel &
+             ( V_Dim, EF_P, EF_M, UseDeviceOption = CS % DeviceMemory )
+  
+      end associate !-- EF_P, etc.
+      end associate !-- FSS, etc.
+  
     end if !-- Density default
 
   end subroutine ComputeEigenspeeds

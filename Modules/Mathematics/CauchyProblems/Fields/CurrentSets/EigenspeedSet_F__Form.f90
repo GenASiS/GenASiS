@@ -138,12 +138,13 @@ contains
   end function Timer
 
 
-  subroutine Compute ( ES, iD )
+  subroutine Compute ( ES, iC, iD )
 
     class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
       ES
     integer ( KDI ), intent ( in ) :: &
-      iD  !-- iDimensions
+      iC, &  !-- iChart
+      iD     !-- iDimensions
 
     call Show ( 'Computing ' // trim ( ES % Type ), ES % IGNORABILITY + 3 )
     call Show ( ES % Name, 'Name', ES % IGNORABILITY + 3 )
@@ -152,7 +153,7 @@ contains
     call CS % ComputeEigenspeeds &
            ( ES, &
              [ ES % EIGENSPEED_FAST_PLUS_U, ES % EIGENSPEED_FAST_MINUS_U ], &
-             iD )
+             iC, iD )
     end associate !-- CS
 
   end subroutine Compute

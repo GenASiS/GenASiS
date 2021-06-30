@@ -315,12 +315,13 @@ contains
   end function TimerKernel
 
 
-  subroutine Compute ( RS, iD, T_Option, iS_Option )
+  subroutine Compute ( RS, iC, iD, T_Option, iS_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
     integer ( KDI ), intent ( in ) :: &
-      iD  !-- iDimensions
+      iC, &  !-- iChart
+      iD     !-- iDimensions
     type ( TimerForm ), intent ( in ), pointer, optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
@@ -334,8 +335,8 @@ contains
       T_RES, &
       T_K
 
-    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 4 )
-    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 4 )
+    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
+    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
 
     associate &
       (  CS  =>  RS % CurrentSet, &
@@ -362,23 +363,23 @@ contains
     end if !-- T_Option
 
     if ( associated ( T_FS ) ) call T_FS % Start ( )
-    call FS % Compute ( iD )
+    call FS % Compute ( iC, iD )
     if ( associated ( T_FS ) ) call T_FS % Stop ( )
 
     if ( associated ( T_ES ) ) call T_ES % Start ( )
-    call ES % Compute ( iD )
+    call ES % Compute ( iC, iD )
     if ( associated ( T_ES ) ) call T_ES % Stop ( )
 
     if ( associated ( T_RBS ) ) call T_RBS % Start ( )
-    call RBS % Compute ( iD )
+    call RBS % Compute ( iC, iD )
     if ( associated ( T_RBS ) ) call T_RBS % Stop ( )
 
     if ( associated ( T_RFS ) ) call T_RFS % Start ( )
-    call RFS % Compute ( iD )
+    call RFS % Compute ( iC, iD )
     if ( associated ( T_RFS ) ) call T_RFS % Stop ( )
 
     if ( associated ( T_RES ) ) call T_RES % Start ( )
-    call RES % Compute ( iD )
+    call RES % Compute ( iC, iD )
     if ( associated ( T_RES ) ) call T_RES % Stop ( )
 
     if ( associated ( T_K ) ) call T_K % Start ( )

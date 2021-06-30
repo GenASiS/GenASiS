@@ -92,18 +92,19 @@ contains
   end function Timer
 
 
-  subroutine Compute ( FS, iD )
+  subroutine Compute ( FS, iC, iD )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
     integer ( KDI ), intent ( in ) :: &
-      iD  !-- iDimensions
+      iC, &  !-- iChart
+      iD     !-- iDimensions
 
     call Show ( 'Computing ' // trim ( FS % Type ), FS % IGNORABILITY + 3 )
     call Show ( FS % Name, 'Name', FS % IGNORABILITY + 3 )
 
     associate ( CS  =>  FS % CurrentSet )
-    call CS % ComputeFluxes ( FS, iD )
+    call CS % ComputeFluxes ( FS, iC, iD )
     end associate !-- CS
 
   end subroutine Compute

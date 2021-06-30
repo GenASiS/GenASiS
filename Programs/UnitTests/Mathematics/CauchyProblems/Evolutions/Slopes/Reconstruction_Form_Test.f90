@@ -275,7 +275,7 @@ contains
       T  =>  R % Timer ( LevelOption = 1 )
       call T % Start ( )
       do iC  =  1,  nCompute
-        call R % Compute ( iD )
+        call R % Compute ( iC = 1, iD = iD )
       end do 
       call T % Stop ( )
 

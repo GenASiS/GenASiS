@@ -179,7 +179,7 @@ contains
     T  =>  ES % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call ES % Compute ( iD )
+      call ES % Compute ( iC = 1, iD = iD )
     end do
     call T % Stop ( )
 
