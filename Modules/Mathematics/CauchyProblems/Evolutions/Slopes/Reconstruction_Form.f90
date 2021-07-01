@@ -139,7 +139,7 @@ contains
 
     R % IGNORABILITY  =  FS % IGNORABILITY + 1
 
-    R % Name  =  'R_' // trim ( FS % Name )
+    R % Name  =  'Rcnstrctn_' // trim ( FS % Name )
     if ( present ( PrefixOption ) ) &
       R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
 

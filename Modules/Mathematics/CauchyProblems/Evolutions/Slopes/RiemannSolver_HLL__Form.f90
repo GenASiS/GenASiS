@@ -109,7 +109,7 @@ contains
     if ( RS % Type  ==  '' ) &
       RS % Type  =  'a RiemannSolver_HLL' 
     
-    Name  =  'RS_' // trim ( CS % Name )
+    Name  =  'RmnnSlvr_' // trim ( CS % Name )
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
@@ -125,7 +125,7 @@ contains
         ES  =>  RS % EigenspeedSet )
     call BS % Initialize &
            ( CS, CS % iaBalanced, &
-             NameOption = 'B_' // trim ( CS % Name ), &
+             NameOption = 'Blncd_' // trim ( CS % Name ), &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     call FS % Initialize ( CS )
     call ES % Initialize ( CS )
@@ -300,7 +300,7 @@ contains
     associate ( iT  =>  RS % iTimerKernel )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_Kernel' 
+      TimerName  =  trim ( RS % Name ) // '_Krnl' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else

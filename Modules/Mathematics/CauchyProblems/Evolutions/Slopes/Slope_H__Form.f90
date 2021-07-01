@@ -185,7 +185,7 @@ contains
     associate ( iT  =>  S % iTimerMultiplyAdd )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_MultiplyAdd' 
+      TimerName  =  trim ( S % Name ) // '_MltplyAdd' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else

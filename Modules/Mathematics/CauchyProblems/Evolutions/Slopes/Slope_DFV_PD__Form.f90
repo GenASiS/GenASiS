@@ -77,7 +77,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_PD' 
     
-    Name  =  'S_DFV_PD_' // trim ( RS % CurrentSet % Name )
+    Name  =  'Slp_DFV_PD_' // trim ( RS % CurrentSet % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -127,7 +127,7 @@ contains
     associate ( iT  =>  S % iTimerKernel )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_Kernel' 
+      TimerName  =  trim ( S % Name ) // '_Krnl' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
