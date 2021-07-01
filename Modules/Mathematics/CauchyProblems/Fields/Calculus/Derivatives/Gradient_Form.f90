@@ -83,7 +83,7 @@ contains
     if ( G % Type  ==  '' ) &
       G % Type  =  'a Gradient' 
     
-    Name  =  'G_' // trim ( FS % Name )
+    Name  =  'Grdnt_' // trim ( FS % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
