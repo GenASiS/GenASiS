@@ -94,7 +94,7 @@ contains
              PinnedMemoryOption = CS % PinnedMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
-             IgnorabilityOption = CS % IGNORABILITY )
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
 
     end associate !-- CS
 
@@ -106,7 +106,7 @@ contains
     class ( Slope_DFV_PD_Form ), intent ( in ) :: &
       FS
 
-    call FS % FieldSetForm % Show ( )
+    call FS % Slope_H_Form % Show ( )
     call FS % RiemannSolver % Show ( )
 
   end subroutine Show_FS

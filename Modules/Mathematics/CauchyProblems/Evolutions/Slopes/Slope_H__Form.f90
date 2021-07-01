@@ -19,7 +19,7 @@ module Slope_H__Form
     integer ( KDI ) :: &
       iTimer            = 0, &
       iTimerMultiplyAdd = 0
-    class ( Slope_H_Element ), dimension ( : ), pointer :: &
+    type ( Slope_H_Element ), dimension ( : ), pointer :: &
       Component => null ( )
   contains
     procedure, private, pass :: &
@@ -41,8 +41,8 @@ module Slope_H__Form
   end type Slope_H_Form
 
   type, public :: Slope_H_Element
-    class ( Slope_H_Form ), pointer :: &
-      Element => null ( )
+    class ( Slope_H_Form ), allocatable :: &
+      Element
   contains
     final :: &
       Finalize_E
@@ -123,12 +123,18 @@ contains
       iC
 
     call FS % FieldSetForm % Show ( )
-    call Show ( FS % nComponents, 'nComponents' )
- 
+
+    call Show ( FS % nComponents, 'nComponents', FS % IGNORABILITY ) 
+    do iC  =  1, FS % nComponents
+      associate ( SC  =>  FS % Component ( iC ) % Element )
+      call Show ( SC % Name, 'Component', FS % IGNORABILITY )
+      end associate !-- SC
+    end do !-- iC
+
     do iC  =  1, FS % nComponents
       associate ( SC  =>  FS % Component ( iC ) % Element )
       call SC % Show ( )
-      end associate !-- SCA
+      end associate !-- SC
     end do !-- iC
 
   end subroutine Show_FS
@@ -227,8 +233,10 @@ contains
           ( SC  =>  S % Component ( iC ) % Element )
 
         if ( present ( T_Option ) ) then
-          T_C  =>  SC % Timer ( LevelOption = T_Option % Level + 1 ) 
+          T_C  =>  SC % Timer ( LevelOption = T_Option % Level + 1 )
+          call T_C % Start ( )
           call SC % Compute ( T_Option = T_C, iS_Option = iS_Option )
+          call T_C % Stop ( )
         else
           call SC % Compute ( iS_Option = iS_Option)
         end if
@@ -240,7 +248,7 @@ contains
 
           if ( associated ( T_MA ) ) call T_MA % Start ( )
           call MultiplyAdd &
-                 ( SV, SV, 1.0_KDR, &
+                 ( SV, SCV, 1.0_KDR, &
                    UseDeviceOption = S % DeviceMemory )
           if ( associated ( T_MA ) ) call T_MA % Stop ( )
 
@@ -308,7 +316,7 @@ contains
   end subroutine Increment
 
 
-  subroutine Finalize ( S )
+  impure elemental subroutine Finalize ( S )
 
     type ( Slope_H_Form ), intent ( inout ) :: &
       S
@@ -324,7 +332,8 @@ contains
     type ( Slope_H_Element ), intent ( inout ) :: &
       SE
 
-    nullify ( SE % Element )
+    if ( allocated ( SE % Element ) ) &
+      deallocate ( SE % Element )
 
   end subroutine Finalize_E
 
