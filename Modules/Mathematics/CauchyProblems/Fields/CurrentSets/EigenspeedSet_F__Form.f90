@@ -65,7 +65,7 @@ contains
     if ( ES % Type  ==  '' ) &
       ES % Type  =  'an EigenspeedSet_F' 
     
-    Name  =  'ES_' // trim ( CS % Name )
+    Name  =  'Egnspds_' // trim ( CS % Name )
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
