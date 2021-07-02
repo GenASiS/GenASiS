@@ -15,6 +15,7 @@ Boundaries_Kernel.o: \
 
 FieldSet_Form.o: \
   Basics.o \
+  Algebra.o \
   Manifolds.o \
   GhostExchange_Form.o \
   Boundaries_Form.o \

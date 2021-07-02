@@ -4,19 +4,19 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: FieldSet_Form_Test Stream_Form_Test
 
-FieldSet_Form_Test: Basics.a Manifolds.a FieldSets.a \
+FieldSet_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
   FieldSet_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FieldSet_Form_Test_$(MACHINE) \
           FieldSet_Form_Test.o FieldSets.a \
-          Manifolds.a Basics.a $(LIBRARIES)
+          Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
-Stream_Form_Test: Basics.a Manifolds.a FieldSets.a \
+Stream_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
   Stream_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Stream_Form_Test_$(MACHINE) \
           Stream_Form_Test.o FieldSets.a \
-          Manifolds.a Basics.a $(LIBRARIES)
+          Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.smod *.ld

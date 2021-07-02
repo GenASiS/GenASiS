@@ -1,6 +1,7 @@
 module FieldSet_Form
 
   use Basics
+  use Algebra
   use Manifolds
   use GhostExchange_Form
   use Boundaries_Form
@@ -76,6 +77,8 @@ module FieldSet_Form
       Clear => Clear_FS
     procedure, public, pass ( FS_S ) :: &
       Copy => Copy_FS
+    procedure, public, pass :: &
+      MultiplyAdd => MultiplyAdd_FS
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -658,6 +661,38 @@ contains
     end do !-- iC
 
   end subroutine Copy_FS
+
+
+  subroutine MultiplyAdd_FS ( FS_A, FS_B, C )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_A
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_B
+    real ( KDR ), intent ( in ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iC, &    !-- iChart
+      iS, &    !-- iSelected
+      iF_A, &  !-- iField
+      iF_B
+
+    do iC  =  1,  FS_A % Atlas % nCharts
+      associate &
+        ( A  =>  FS_A % Storage ( iC ) % Value, &
+          B  =>  FS_B % Storage ( iC ) % Value )
+      do iS  =  1,  FS_A % nFields
+        iF_A  =  FS_A % iaSelected ( iS )
+        iF_B  =  FS_B % iaSelected ( iS )
+        call MultiplyAdd &
+               ( A ( :, iF_A ), B ( :, iF_B ), C, &
+                 UseDeviceOption = FS_A % DeviceMemory )
+      end do !-- iS
+      end associate !-- A, etc.
+    end do !-- iC
+
+  end subroutine MultiplyAdd_FS
 
 
   subroutine ExchangeGhostData ( FS )
