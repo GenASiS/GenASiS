@@ -1,0 +1,568 @@
+module Step_RK_CS__Form
+
+  !-- Step_RungeKutta_CurrentSet_Form
+
+  use Basics
+  use Algebra
+  use Fields
+  use Slopes
+  use Step_RK_H__Form
+
+  implicit none
+  private
+
+  type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_Form
+    type ( FieldSetForm ), allocatable :: &
+      Balanced, &
+      Intermediate, &
+      Solution
+    type ( FieldSetElement ), dimension ( : ), allocatable :: &
+      SolutionStage
+    class ( CurrentSetForm ), pointer :: &
+      CurrentSet
+    class ( RiemannSolver_HLL_Form ), allocatable :: &
+      RiemannSolver
+    class ( Slope_H_Form ), allocatable :: &
+      SlopeSum
+    type ( Slope_H_Element ), dimension ( : ), allocatable :: &
+      SlopeStage
+  contains
+    procedure, private, pass :: &
+      Initialize_CS
+    generic, public :: &
+      Initialize => Initialize_CS
+    procedure, public, pass :: &
+      SetStream
+!    procedure, public, pass :: &
+!      Show => Show_S
+    final :: &
+      Finalize
+    procedure, private, pass :: &
+      LoadSolution
+!     procedure, private, pass :: &
+!       StoreSolution
+    procedure, private, pass :: &
+      InitializeIntermediate
+!     procedure, private, pass :: &
+!       IncrementIntermediate
+!     procedure, private, pass :: &
+!       ComputeStage
+!     procedure, private, pass :: &
+!       IncrementSolution
+!     procedure, public, nopass :: &
+!       StoreSolution_C
+!     procedure, public, nopass :: &
+!       IncrementIntermediate_C
+!     procedure, public, nopass :: &
+!       IncrementSolution_C
+  end type Step_RK_CS_Form
+
+
+contains
+
+
+  subroutine Initialize_CS ( S, CS, NameOption, A_Option, B_Option, C_Option )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    class ( CurrentSetForm ), intent ( in ), target :: &
+      CS
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
+      A_Option
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      B_Option
+    real ( KDR ), dimension ( 2 : ), intent ( in ), optional :: &
+      C_Option
+
+    integer ( KDI ) :: &
+      iS  !-- iStage
+    character ( 1 ) :: &
+      StageNumber
+    character ( LDL ) :: &
+      Name
+
+    if ( S % Type  ==  '' ) &
+      S % Type  =  'a Step_RK_CS'
+
+    Name  =  'Step_' // trim ( CS % Name )
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
+
+    S % CurrentSet  =>  CS
+
+    call S % Step_RK_H_Form % Initialize &
+           ( Name, A_Option, B_Option, C_Option )
+
+    !-- Balanced
+
+    allocate ( S % Balanced )
+    associate ( Blncd  =>  S % Balanced )
+    call Blncd % Initialize &
+           ( CS, iaSelected = CS % iaBalanced, &
+             NameOption = 'Balanced', &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    end associate !-- Blncd
+
+    !-- Intermediate storage
+
+    allocate ( S % Intermediate )
+    associate ( Intmdt  =>  S % Intermediate )
+    call Intmdt % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Balanced, &
+             NameOption = 'Intermediate', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             nFieldsOption = CS % nBalanced, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    end associate !-- Intmdt
+
+    !-- Solution storage
+
+    allocate ( S % Solution )
+    associate ( Sltn  =>  S % Solution )
+    call Sltn % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Balanced, &
+             NameOption = 'Solution', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             nFieldsOption = CS % nBalanced, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    end associate !-- Sltn
+
+    !-- RiemannSolver
+
+    if ( .not. allocated ( S % RiemannSolver ) ) then
+      allocate ( S % RiemannSolver )
+      associate ( RS  =>  S % RiemannSolver )
+      call RS % Initialize ( CS )
+      end associate !-- RSA
+    end if !-- allocated RiemannSolver
+
+    !-- Slopes
+
+    if ( .not. allocated ( S % SlopeStage ) ) then
+      associate ( nS  =>  S % nStages )
+      allocate ( S % SlopeStage ( nS ) )
+      do iS  =  1,  nS
+        write ( StageNumber, fmt = '(i1.1)' ) iS
+        allocate ( Slope_DFV_F_Form :: S % SlopeStage ( iS ) % Element )
+        select type ( SA  =>  S % SlopeStage ( iS ) % Element )
+          class is ( Slope_DFV_F_Form )
+        call SA % Initialize &
+               ( S % RiemannSolver, SuffixOption = StageNumber )
+        end select !-- SA
+      end do !-- iS
+      end associate !-- nS
+    end if !-- allocated SlopeStage
+
+  end subroutine Initialize_CS
+
+
+  subroutine SetStream ( S, Sm, StagesOption )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    class ( StreamForm ), intent ( inout ) :: &
+      Sm
+    logical ( KDL ), intent ( in ), optional :: &
+      StagesOption
+
+    integer ( KDI ) :: &
+      iS  !-- iStage
+    logical ( KDL ) :: &
+      Stages
+    character ( 1 ) :: &
+      StageNumber
+
+    if ( .not. allocated ( S % SlopeSum ) ) then
+      allocate ( Slope_DFV_F_Form :: S % SlopeSum )
+      select type ( SS  =>  S % SlopeSum )
+        class is ( Slope_DFV_F_Form )
+      call SS % Initialize ( S % RiemannSolver )
+      call SS % SetStream ( Sm )
+      end select !-- SS
+    end if !-- allocated SlopeSum
+    
+    Stages  =  .false.
+    if ( present ( StagesOption ) ) &
+      Stages  =  StagesOption
+    call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
+
+!     if ( Stages ) then
+
+!       associate &
+!         ( CS    =>  S % CurrentSet, &
+!            SA_1  =>  S % SlopeStage ( 1 ) % Element )
+!       associate &
+!         ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
+!       associate &
+!         (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
+!                 PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
+!           DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
+!       associate &
+!         ( nS  =>  S % nStages )
+
+!       allocate ( S % SolutionStage ( nS ) )
+!       do iS  =  1, nS
+!         write ( StageNumber, fmt = '(i1.1)' ) iS
+!         allocate ( S % SolutionStage ( iS ) % Element )
+!         associate ( SSA  =>  S % SolutionStage ( iS ) % Element )
+!         call SSA % Initialize &
+!                ( SA_1 % Atlas, &
+!                  FieldOption = SC % Field, &
+!                  NameOption = 'Solution_' // StageNumber // '_' &
+!                               // trim ( CS % Name ), &
+!                  DeviceMemoryOption = DeviceMemory, &
+!                  PinnedMemoryOption = PinnedMemory, &
+!                  DevicesCommunicateOption = DevicesCommunicate, &
+!                  nFieldsOption = SC % nFields )
+!         call Sm % AddFieldSet ( SSA )
+!         end associate !-- SSA
+!       end do !-- iS
+
+!       associate ( RSA  =>  S % RiemannSolver )
+!       call RSA % SetStream ( Sm, nS )
+!       end associate !-- RSA
+
+!       do iS  =  1,  nS
+!         associate ( SA  =>  S % SlopeStage ( iS ) % Element )
+!         call SA % SetStream ( Sm )
+!         end associate !-- SA
+!       end do !-- iS
+
+!       end associate !-- nS
+!       end associate !-- DeviceMemory, etc.
+!       end associate !-- SC
+!       end associate !-- CS, etc.
+
+!     end if
+
+  end subroutine SetStream
+
+
+!   subroutine Show_S ( S )
+
+!     class ( Step_RK_CS_Form ), intent ( in ) :: &
+!       S
+
+!     integer ( KDI ) :: &
+!       iS  !-- iStage
+
+!     call S % Step_RK_H_Form % Show ( )
+
+!     call S % Solution % Show ( )
+!     call S % Intermediate % Show ( )
+!     call S % RiemannSolver % Show ( )
+!     do iS  =  1, S % nStages
+!       call S % SlopeStage ( iS ) % Element % Show ( )
+!     end do !-- iS
+!     if ( allocated ( S % SlopeSum ) ) &
+!       call S % SlopeSum % Show ( )
+
+!   end subroutine Show_S
+
+
+  impure elemental subroutine Finalize ( S )
+
+    type ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % SlopeStage ) ) &
+      deallocate ( S % SlopeStage )
+    if ( allocated ( S % SlopeSum ) ) &
+      deallocate ( S % SlopeSum )
+    if ( allocated ( S % RiemannSolver ) ) &
+      deallocate ( S % RiemannSolver )
+    if ( allocated ( S % SolutionStage ) ) &
+      deallocate ( S % SolutionStage )
+    if ( allocated ( S % Solution ) ) &
+      deallocate ( S % Solution )
+    if ( allocated ( S % Intermediate ) ) &
+      deallocate ( S % Intermediate )
+    if ( allocated ( S % Balanced ) ) &
+      deallocate ( S % Balanced )
+
+    nullify ( S % CurrentSet )
+
+  end subroutine Finalize
+
+
+  subroutine LoadSolution ( S )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+
+    associate &
+      ( Blncd  =>  S % Balanced, &
+        Sltn   =>  S % Solution )
+
+    call Blncd % Copy ( Sltn )
+
+    if ( allocated ( S % SolutionStage ) ) then
+      associate ( SltnStg  =>  S % SolutionStage ( 1 ) % Element )
+
+      call Blncd % Copy ( SltnStg )
+
+      end associate !-- SltnStg
+    end if
+
+    end associate !-- Blncd, etc.
+
+  end subroutine LoadSolution
+
+
+!   subroutine StoreSolution ( S )
+
+!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
+!       S
+
+!     integer ( KDI ) :: &
+!       iC  !-- iChart
+
+!     associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
+!     do iC  =  1,  nC
+!       select type &
+!           ( CurrentSet_C  =>  S % CurrentSet % FieldSet_C ( iC ) % Element )
+!         class is ( CurrentSet_C_Form )
+!       associate &
+!         ( Solution_C  =>  S % Solution % FieldSet_C ( iC ) % Element )
+
+!       call S % StoreSolution_C ( CurrentSet_C, Solution_C )
+
+!       end associate !-- Solution_C
+!       end select !-- CSC
+!     end do !-- iC
+!     end associate !-- nC
+
+!   end subroutine StoreSolution
+
+
+  subroutine InitializeIntermediate ( S, iS )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iStage
+
+    if ( iS  >  1 ) then
+
+      associate &
+        ( Sltn    =>  S % Solution, &
+          Intmdt  =>  S % Intermediate )
+
+      call Sltn % Copy ( Intmdt )
+
+      end associate !-- Sltn, etc.
+    
+    end if !-- iS > 1
+
+  end subroutine InitializeIntermediate
+
+
+!   subroutine IncrementIntermediate ( S, A, dT, iK )
+
+!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
+!       S
+!     real ( KDR ), intent ( in ) :: &
+!        A, &
+!       dT
+!     integer ( KDI ), intent ( in ) :: &
+!       iK
+
+!     integer ( KDI ) :: &
+!       iC  !-- iChart
+
+!     associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
+!     do iC  =  1,  nC
+
+!       associate &
+!         ( Intermediate_C  =>  S % Intermediate % FieldSet_C ( iC ) &
+!                                 % Element, &
+!                  Slope_C  =>  S % SlopeStage ( iK ) % Element &
+!                                 % FieldSet_C ( iC ) % Element )
+
+!       call S % IncrementIntermediate_C ( Intermediate_C, Slope_C, A, dT )
+
+!       end associate !-- Intermediate_C, etc.
+
+!     end do !-- iC
+!     end associate !-- nC
+
+!   end subroutine IncrementIntermediate
+
+
+!   subroutine ComputeStage ( S, T, iS, TimerLevelOption )
+
+!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
+!       S
+!     real ( KDR ), intent ( in ) :: &
+!       T
+!     integer ( KDI ), intent ( in ) :: &
+!       iS  !-- iStage
+!     integer ( KDI ), intent ( in ), optional :: &
+!       TimerLevelOption
+
+!     integer ( KDI ) :: &
+!       iC  !-- iChart
+
+!     if ( iS  >  1 ) then
+!       associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
+!       do iC  =  1,  nC
+!         select type &
+!             ( CurrentSet_C  =>  S % CurrentSet % FieldSet_C ( iC ) % Element )
+!           class is ( CurrentSet_C_Form )
+!         associate &
+!           ( Intermediate_C  =>  S % Intermediate % FieldSet_C ( iC ) &
+!                                   % Element )
+
+!         call S % StoreSolution_C ( CurrentSet_C, Intermediate_C )
+
+!         !-- For diagnostic streaming (i.e., I/O)
+!         if ( allocated ( S % SolutionStage ) ) then
+!           associate &
+!             ( SolutionStage_C  =>  S % SolutionStage ( iS ) % Element &
+!                                      % FieldSet_C ( iC ) % Element )
+
+!           call S % LoadSolution_C ( SolutionStage_C, CurrentSet_C )
+
+!           end associate !-- SolutionStage_C
+!         end if !-- allocated S % SolutionStage
+
+!         end associate !-- Solution_C
+!         end select !-- CSC
+!       end do !-- iC
+!       end associate !-- nC
+!     end if !-- iStage > 1
+
+!     associate ( SA  =>  S % SlopeStage ( iS ) % Element )
+!     call SA % Compute ( TimerLevelOption, iS_Option = iS )
+!     call SA % ExchangeGhostData ( TimerLevelOption )
+!     end associate !-- SA
+
+!   end subroutine ComputeStage
+
+
+!   subroutine IncrementSolution ( S, B, dT, iS )
+
+!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
+!       S
+!     real ( KDR ), intent ( in ) :: &
+!        B, &
+!       dT
+!     integer ( KDI ), intent ( in ) :: &
+!       iS
+
+!     integer ( KDI ) :: &
+!       iC  !-- iChart
+
+!     associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
+!     do iC  =  1,  nC
+
+!       associate &
+!         ( Solution_C  =>  S % Solution % FieldSet_C ( iC ) % Element, &
+!              Slope_C  =>  S % SlopeStage ( iS ) % Element &
+!                             % FieldSet_C ( iC ) % Element )
+
+!       call S % IncrementSolution_C ( Solution_C, Slope_C, B, dT )
+
+!       end associate !-- Solution_C, etc.
+
+!     end do !-- iC
+!     end associate !-- nC
+
+!     !-- For diagnostic streaming (i.e., I/O)
+!     if ( allocated ( S % SlopeSum ) ) then
+!       associate &
+!         (  SA  =>  S % SlopeSum, &
+!           SSA  =>  S % SlopeStage ( iS ) % Element )
+!       call SA % Increment ( SSA, B, iS )
+!       end associate !-- SA, etc.
+!     end if
+
+!   end subroutine IncrementSolution
+
+
+!   subroutine StoreSolution_C ( CurrentSet_C, Solution_C )
+
+!     class ( CurrentSet_C_Form ), intent ( inout ) :: &
+!       CurrentSet_C
+!     type ( FieldSet_C_Form ), intent ( in ) :: &
+!       Solution_C
+
+!     integer ( KDI ) :: &
+!       iB  !-- iBalanced
+      
+!     associate ( iaB  =>  CurrentSet_C % iaBalanced )
+!     do iB  =  1,  CurrentSet_C % nBalanced
+      
+!       associate &
+!         ( SV  => Solution_C % Storage_FSC % Storage &
+!                    % Value ( :, iB ), &
+!           CV  => CurrentSet_C % Storage_FSC % Storage &
+!                    % Value ( :, iaB ( iB ) ) )
+      
+!       call Copy ( SV, CV, &
+!                   UseDeviceOption = Solution_C % Storage_FSC % DeviceMemory )
+      
+!       end associate !-- CV, etc.
+      
+!     end do !-- iB
+!     end associate !-- iaB
+
+!     call CurrentSet_C % ComputeFromConserved ( )
+!     call CurrentSet_C % ApplyBoundaryConditions ( )
+    
+!   end subroutine StoreSolution_C
+
+
+!   subroutine IncrementIntermediate_C ( Intermediate_C, Slope_C, A, dT )
+
+!     type ( FieldSet_C_Form ), intent ( inout ) :: &
+!       Intermediate_C
+!     class ( FieldSet_C_Form ), intent ( in ) :: &
+!       Slope_C
+!     real ( KDR ), intent ( in ) :: &
+!        A, &
+!       dT
+
+!     associate &
+!       ( YV  =>  Intermediate_C % Storage_FSC % Storage % Value, &
+!         KV  =>  Slope_C % Storage_FSC % Storage % Value )
+    
+!     call MultiplyAdd &
+!            ( YV, KV, dT * A, &
+!              UseDeviceOption = Intermediate_C % Storage_FSC % DeviceMemory )
+    
+!     end associate !-- YV, etc.
+
+!   end subroutine IncrementIntermediate_C
+
+
+!   subroutine IncrementSolution_C ( Solution_C, Slope_C, B, dT )
+
+!     type ( FieldSet_C_Form ), intent ( inout ) :: &
+!       Solution_C
+!     class ( FieldSet_C_Form ), intent ( in ) :: &
+!       Slope_C
+!     real ( KDR ), intent ( in ) :: &
+!        B, &
+!       dT
+
+!     associate &
+!       ( SV  => Solution_C % Storage_FSC % Storage % Value, &
+!         KV  =>    Slope_C % Storage_FSC % Storage % Value )
+    
+!     call MultiplyAdd &
+!            ( SV, KV, dT * B, &
+!              UseDeviceOption = Solution_C % Storage_FSC % DeviceMemory )
+    
+!     end associate !-- SV, etc.
+
+!   end subroutine IncrementSolution_C
+
+
+end module Step_RK_CS__Form
