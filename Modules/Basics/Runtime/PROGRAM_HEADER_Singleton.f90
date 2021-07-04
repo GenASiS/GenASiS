@@ -1157,8 +1157,21 @@ contains
           MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
       end do !-- iT
       
-      call Show ( 'Mean Timers, and significant MAX - MEAN', &
-                  Ignorability )
+      call Show ( 'Significant Mean Timers', Ignorability )
+      do iT = 1, PH % nTimers
+        if ( iT == 1 ) &
+          ExecutionTime = MeanTimer ( iT ) % TotalTime
+        if ( MeanTimer ( iT ) % Level  &
+               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
+             .or. ( MeanTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
+                    .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
+                            >=  PH % TimerDisplayFraction ) ) &
+        then
+          call MeanTimer ( iT ) % ShowTotal ( Ignorability )
+        end if
+      end do !-- iT
+
+      call Show ( 'Significant MAX - MEAN', Ignorability )
       do iT = 1, PH % nTimers
         MaxMinusMean  =  MaxTimer ( iT ) % TotalTime &
                          -  MeanTimer ( iT ) % TotalTime
@@ -1170,7 +1183,6 @@ contains
                     .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
                             >=  PH % TimerDisplayFraction ) ) &
         then
-          call MeanTimer ( iT ) % ShowTotal ( Ignorability )
           MaxMinusMeanFraction  &
             =  abs ( MaxMinusMean % Number ) &
                     /  max ( MeanTimer ( iT ) % TotalTime % Number, &
@@ -1181,11 +1193,6 @@ contains
             call Show ( MaxMinusMean, &
                         'MAX - MEAN ' // MeanTimer ( iT ) % Name, &
                         Ignorability )
-        else
-          call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
-          call Show ( MaxMinusMean, &
-                      'MAX - MEAN ' // MeanTimer ( iT ) % Name, &
-                      Ignorability + 1 )
         end if
       end do !-- iT
 
