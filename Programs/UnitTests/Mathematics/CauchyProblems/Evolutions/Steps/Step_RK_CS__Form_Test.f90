@@ -53,6 +53,10 @@ program Step_RK_CS__Form_Test
   allocate ( CS )
   call CS % Initialize( G )
   call CS % SetStream ( Sm )
+  do iD  =  1, 3
+    call CS % SetBoundaryConditionsFace &
+           ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
+  end do !-- iD
 
   allocate ( ES ( 3 ) )
   do iD  =  1, 3

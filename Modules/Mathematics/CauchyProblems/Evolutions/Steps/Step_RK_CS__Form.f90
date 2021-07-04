@@ -43,16 +43,14 @@ module Step_RK_CS__Form
 !       StoreSolution
     procedure, private, pass :: &
       InitializeIntermediate
-!     procedure, private, pass :: &
-!       IncrementIntermediate
-!     procedure, private, pass :: &
-!       ComputeStage
+    procedure, private, pass :: &
+      IncrementIntermediate
+    procedure, private, pass :: &
+      ComputeStage
 !     procedure, private, pass :: &
 !       IncrementSolution
 !     procedure, public, nopass :: &
 !       StoreSolution_C
-!     procedure, public, nopass :: &
-!       IncrementIntermediate_C
 !     procedure, public, nopass :: &
 !       IncrementSolution_C
   end type Step_RK_CS_Form
@@ -297,16 +295,15 @@ contains
       S
 
     associate &
-      ( Blncd  =>  S % Balanced, &
-        Sltn   =>  S % Solution )
+      ( B   =>  S % Balanced, &
+        Sn  =>  S % Solution )
 
-    call Blncd % Copy ( Sltn )
+    call B % Copy ( Sn )
 
+    !-- For diagnostic I/O
     if ( allocated ( S % SolutionStage ) ) then
-      associate ( SltnStg  =>  S % SolutionStage ( 1 ) % Element )
-
-      call Blncd % Copy ( SltnStg )
-
+      associate ( Sn_Stg  =>  S % SolutionStage ( 1 ) % Element )
+      call B % Copy ( Sn_Stg )
       end associate !-- SltnStg
     end if
 
@@ -349,101 +346,109 @@ contains
       iS  !-- iStage
 
     if ( iS  >  1 ) then
-
       associate &
-        ( Sltn    =>  S % Solution, &
-          Intmdt  =>  S % Intermediate )
+        ( Sn  =>  S % Solution, &
+          Y   =>  S % Intermediate )
 
-      call Sltn % Copy ( Intmdt )
+      call Sn % Copy ( Y )
 
-      end associate !-- Sltn, etc.
-    
+      end associate !-- Sn, etc.
     end if !-- iS > 1
 
   end subroutine InitializeIntermediate
 
 
-!   subroutine IncrementIntermediate ( S, A, dT, iK )
+  subroutine IncrementIntermediate ( S, A, dT, iK )
 
-!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
-!       S
-!     real ( KDR ), intent ( in ) :: &
-!        A, &
-!       dT
-!     integer ( KDI ), intent ( in ) :: &
-!       iK
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+       A, &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iK
 
-!     integer ( KDI ) :: &
-!       iC  !-- iChart
+    associate &
+      ( Y  =>  S % Intermediate, &
+        K  =>  S % SlopeStage ( iK ) % Element )
 
-!     associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
-!     do iC  =  1,  nC
+    call Y % MultiplyAdd ( K, dT * A )
 
-!       associate &
-!         ( Intermediate_C  =>  S % Intermediate % FieldSet_C ( iC ) &
-!                                 % Element, &
-!                  Slope_C  =>  S % SlopeStage ( iK ) % Element &
-!                                 % FieldSet_C ( iC ) % Element )
+    end associate !-- Y, etc.
 
-!       call S % IncrementIntermediate_C ( Intermediate_C, Slope_C, A, dT )
-
-!       end associate !-- Intermediate_C, etc.
-
-!     end do !-- iC
-!     end associate !-- nC
-
-!   end subroutine IncrementIntermediate
+  end subroutine IncrementIntermediate
 
 
-!   subroutine ComputeStage ( S, T, iS, TimerLevelOption )
+  subroutine ComputeStage ( S, T, iS, T_Option )
 
-!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
-!       S
-!     real ( KDR ), intent ( in ) :: &
-!       T
-!     integer ( KDI ), intent ( in ) :: &
-!       iS  !-- iStage
-!     integer ( KDI ), intent ( in ), optional :: &
-!       TimerLevelOption
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      T
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iStage
+    type ( TimerForm ), intent ( in ), pointer, optional :: &
+      T_Option
 
-!     integer ( KDI ) :: &
-!       iC  !-- iChart
+    integer ( KDI ) :: &
+      iC  !-- iChart
+    type ( TimerForm ), pointer :: &
+      T_C, &
+      T_EG
 
-!     if ( iS  >  1 ) then
-!       associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
-!       do iC  =  1,  nC
-!         select type &
-!             ( CurrentSet_C  =>  S % CurrentSet % FieldSet_C ( iC ) % Element )
-!           class is ( CurrentSet_C_Form )
-!         associate &
-!           ( Intermediate_C  =>  S % Intermediate % FieldSet_C ( iC ) &
-!                                   % Element )
+    associate ( K  =>  S % SlopeStage ( iS ) % Element )
 
-!         call S % StoreSolution_C ( CurrentSet_C, Intermediate_C )
+    if ( iS  >  1 ) then
 
-!         !-- For diagnostic streaming (i.e., I/O)
-!         if ( allocated ( S % SolutionStage ) ) then
-!           associate &
-!             ( SolutionStage_C  =>  S % SolutionStage ( iS ) % Element &
-!                                      % FieldSet_C ( iC ) % Element )
+      associate ( K_1  =>  S % SlopeStage ( 1 ) % Element )
+      call K % CloneTimers ( K_1 )
+      end associate !-- K_1
 
-!           call S % LoadSolution_C ( SolutionStage_C, CurrentSet_C )
+      associate &
+        ( Y   =>  S % Intermediate, &
+          B   =>  S % Balanced, &
+          CS  =>  S % CurrentSet )
 
-!           end associate !-- SolutionStage_C
-!         end if !-- allocated S % SolutionStage
+      call Y % Copy ( B )
+      call CS % ComputeFromConserved ( )
+      call CS % ApplyBoundaryConditions ( )
+    
+      !-- For diagnostic I/O
+      if ( allocated ( S % SolutionStage ) ) then
+        associate ( Sn_Stg  =>  S % SolutionStage ( iS ) % Element )
+        call B % Copy ( Sn_Stg )
+        end associate !-- Sn_Stg
+      end if
 
-!         end associate !-- Solution_C
-!         end select !-- CSC
-!       end do !-- iC
-!       end associate !-- nC
-!     end if !-- iStage > 1
+      end associate !-- Y, etc.
+ 
+    end if !-- iStage > 1
 
-!     associate ( SA  =>  S % SlopeStage ( iS ) % Element )
-!     call SA % Compute ( TimerLevelOption, iS_Option = iS )
-!     call SA % ExchangeGhostData ( TimerLevelOption )
-!     end associate !-- SA
+    !-- Compute slope
 
-!   end subroutine ComputeStage
+    if ( present ( T_Option ) ) then
+      T_C  =>  K % Timer ( LevelOption = T_Option % Level + 1 )
+      call T_C % Start ( )
+    else
+      T_C   =>  null ( )
+    end if
+    call K % Compute ( T_Option, iS_Option = iS )
+    if ( associated ( T_C ) ) call T_C % Stop ( )
+
+    !-- Slope ghost exchange
+
+    if ( present ( T_Option ) ) then
+      T_EG  =>  K % TimerGhost ( LevelOption = T_Option % Level + 1 )
+      call T_EG % Start ( )
+    else
+      T_EG  =>  null ( )
+    end if
+    call K % ExchangeGhostData ( )
+    if ( associated ( T_EG ) ) call T_EG % Stop ( )
+
+    end associate !-- K
+
+  end subroutine ComputeStage
 
 
 !   subroutine IncrementSolution ( S, B, dT, iS )
@@ -517,29 +522,6 @@ contains
 !     call CurrentSet_C % ApplyBoundaryConditions ( )
     
 !   end subroutine StoreSolution_C
-
-
-!   subroutine IncrementIntermediate_C ( Intermediate_C, Slope_C, A, dT )
-
-!     type ( FieldSet_C_Form ), intent ( inout ) :: &
-!       Intermediate_C
-!     class ( FieldSet_C_Form ), intent ( in ) :: &
-!       Slope_C
-!     real ( KDR ), intent ( in ) :: &
-!        A, &
-!       dT
-
-!     associate &
-!       ( YV  =>  Intermediate_C % Storage_FSC % Storage % Value, &
-!         KV  =>  Slope_C % Storage_FSC % Storage % Value )
-    
-!     call MultiplyAdd &
-!            ( YV, KV, dT * A, &
-!              UseDeviceOption = Intermediate_C % Storage_FSC % DeviceMemory )
-    
-!     end associate !-- YV, etc.
-
-!   end subroutine IncrementIntermediate_C
 
 
 !   subroutine IncrementSolution_C ( Solution_C, Slope_C, B, dT )

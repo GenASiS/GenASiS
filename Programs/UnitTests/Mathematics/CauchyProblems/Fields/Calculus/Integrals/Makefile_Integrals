@@ -5,11 +5,11 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: VolumeIntegral_Form_Test #SurfaceIntegral_Form_Test \
      SphericalAverage_Form_Test
 
-VolumeIntegral_Form_Test: Basics.a Manifolds.a FieldSets.a Geometries.a \
-  Integrals.a VolumeIntegral_Form_Test.o
+VolumeIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Integrals.a VolumeIntegral_Form_Test.o
 	$(LINK) $(FLAGS) -o VolumeIntegral_Form_Test_$(MACHINE) \
           VolumeIntegral_Form_Test.o Integrals.a \
-          Geometries.a FieldSets.a Manifolds.a Basics.a $(LIBRARIES)
+          Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 # SurfaceIntegral_Form_Test: Basics.a Manifolds.a SurfaceIntegral_Form_Test.o
 # 	$(LINK) $(FLAGS) -o SurfaceIntegral_Form_Test_$(MACHINE) \
@@ -30,6 +30,7 @@ clobber: clean
 #	rm -f SphericalAverage_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies 
+include $(PATH_ALGEBRA)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies 
 include $(PATH_FIELD_SETS)/Makefile_Dependencies 
 include $(PATH_GEOMETRIES)/Makefile_Dependencies 

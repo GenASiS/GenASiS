@@ -4,12 +4,12 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Step_RK_H__Form_Test Step_RK_CS__Form_Test
 
-Step_RK_H__Form_Test: Basics.a Manifolds.a Fields.a Slopes.a Steps.a \
+Step_RK_H__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a Steps.a \
   Step_RK_H__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Step_RK_H__Form_Test_$(MACHINE) \
           Step_RK_H__Form_Test.o Steps.a \
-          Slopes.a Fields.a Manifolds.a Basics.a $(LIBRARIES)
+          Slopes.a Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 Step_RK_CS__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
   Steps.a Step_RK_CS__Form_Test.o

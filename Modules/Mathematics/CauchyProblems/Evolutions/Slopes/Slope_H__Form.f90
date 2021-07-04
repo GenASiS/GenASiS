@@ -3,7 +3,6 @@ module Slope_H__Form
   !-- Slope_Header__Form
 
   use Basics
-  use Algebra
   use Manifolds
   use Fields
 
@@ -19,6 +18,8 @@ module Slope_H__Form
     integer ( KDI ) :: &
       iTimer            = 0, &
       iTimerMultiplyAdd = 0
+    character ( LDL ) :: &
+      TimerName = ''
     type ( Slope_H_Element ), dimension ( : ), pointer :: &
       Component => null ( )
   contains
@@ -32,6 +33,8 @@ module Slope_H__Form
       Timer
     procedure, private, pass :: &
       TimerMultiplyAdd
+    procedure, public, pass :: &
+      CloneTimers
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
@@ -87,6 +90,9 @@ contains
              DeviceMemoryOption, PinnedMemoryOption, &
              DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
              nFieldsOption, IgnorabilityOption )
+
+    if ( FS % TimerName  ==  '' ) &
+      FS % TimerName  =  FS % Name
 
     allocate ( FS % Component ( MAX_COMPONENTS ) )
 
@@ -155,7 +161,7 @@ contains
     associate ( iT  =>  S % iTimer )
 
     if ( iT == 0 ) then
-      TimerName  =  S % Name
+      TimerName  =  S % TimerName
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -185,7 +191,7 @@ contains
     associate ( iT  =>  S % iTimerMultiplyAdd )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_MltplyAdd' 
+      TimerName  =  trim ( S % TimerName ) // '_MltplyAdd' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -200,6 +206,30 @@ contains
   end function TimerMultiplyAdd
 
 
+  subroutine CloneTimers ( S, S_S )
+
+    class ( Slope_H_Form ), intent ( inout ) :: &
+      S
+    class ( Slope_H_Form ), intent ( in ) :: &
+      S_S  !-- S_Source
+
+    integer ( KDI ) :: &
+      iC  !-- iComponent
+
+    S % iTimer             =  S_S % iTimer
+    S % iTimerMultiplyAdd  =  S_S % iTimerMultiplyAdd
+
+    do iC  =  1, S % nComponents
+      associate &
+        ( SC    =>  S   % Component ( iC ) % Element, &
+          SC_S  =>  S_S % Component ( iC ) % Element )
+      call SC % CloneTimers ( SC_S )
+      end associate !-- SC, etc.
+    end do !-- iC
+
+  end subroutine CloneTimers
+
+
   subroutine Compute ( S, T_Option, iS_Option )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
@@ -210,8 +240,7 @@ contains
       iS_Option
 
     integer ( KDI ) :: &
-      iC, &  !-- iComponent
-      iCrt   !-- iChart
+      iC  !-- iComponent
     type ( TimerForm ), pointer :: &
       T_MA, &
       T_C
@@ -241,19 +270,9 @@ contains
           call SC % Compute ( iS_Option = iS_Option)
         end if
 
-        do iCrt  =  1,  S % Atlas % nCharts
-          associate &
-            (  SV  =>   S % Storage ( iCrt ) % Value, &
-              SCV  =>  SC % Storage ( iCrt ) % Value )
-
-          if ( associated ( T_MA ) ) call T_MA % Start ( )
-          call MultiplyAdd &
-                 ( SV, SCV, 1.0_KDR, &
-                   UseDeviceOption = S % DeviceMemory )
-          if ( associated ( T_MA ) ) call T_MA % Stop ( )
-
-        end associate !-- SV, etc.
-        end do !-- iCrt
+        if ( associated ( T_MA ) ) call T_MA % Start ( )
+        call S % MultiplyAdd ( SC, 1.0_KDR )
+        if ( associated ( T_MA ) ) call T_MA % Stop ( )
 
         end associate !-- SC
       end do !-- iC
@@ -282,24 +301,12 @@ contains
       iS  !-- RungeKutta iStage
 
     integer ( KDI ) :: &
-      iC, &  !-- iComponent
-      iCrt   !-- iChart
+      iC  !-- iComponent
 
     !-- This slope
 
     call S % Clear ( )
-
-    do iCrt  =  1,  S % Atlas % nCharts
-      associate &
-        (  SV  =>   S % Storage ( iCrt ) % Value, &
-          SSV  =>  SS % Storage ( iCrt ) % Value )
-
-      call MultiplyAdd &
-             ( SV, SSV, B, &
-               UseDeviceOption = S % DeviceMemory )
-    
-      end associate !-- SV, etc.
-    end do !-- iCrt
+    call S % MultiplyAdd ( SS, B )
 
     !-- Component slopes
 

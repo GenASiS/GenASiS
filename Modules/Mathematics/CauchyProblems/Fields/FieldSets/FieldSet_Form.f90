@@ -20,7 +20,7 @@ module FieldSet_Form
     integer ( KDI ) :: &
       iTimerGhost    = 0, &
       iTimerGhost_UH = 0, &  !-- UpdateHost
-      iTimerGhost_EG  = 0, &  !-- Exchange
+      iTimerGhost_EG = 0, &  !-- Exchange
       iTimerGhost_UD = 0     !-- UpdateDevice
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaSelected

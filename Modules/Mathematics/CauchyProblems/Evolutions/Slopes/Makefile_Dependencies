@@ -22,7 +22,6 @@ RiemannSolver_HLL__Kernel.o: \
 
 Slope_H__Form.o: \
   Basics.o \
-  Algebra.o \
   Manifolds.o \
   Fields.o \
   Slope_H__Form.f90
