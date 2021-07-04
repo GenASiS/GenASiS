@@ -264,7 +264,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  RS % iTimer )
@@ -294,7 +294,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  RS % iTimerKernel )

@@ -71,7 +71,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  FS % iTimer )

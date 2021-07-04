@@ -74,6 +74,8 @@ module FieldSet_Form
     procedure, public, pass :: &
       TimerGhost_UD
     procedure, public, pass :: &
+      CloneGhostTimers
+    procedure, public, pass :: &
       Clear => Clear_FS
     procedure, public, pass ( FS_S ) :: &
       Copy => Copy_FS
@@ -491,22 +493,29 @@ contains
   end subroutine Show_FS
 
 
-  function TimerGhost ( FS, LevelOption ) result ( T )
+  function TimerGhost ( FS, NameRootOption, LevelOption ) result ( T )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
+    character ( * ), intent ( in ), optional :: &
+      NameRootOption
     integer ( KDI ), intent ( in ), optional :: &
       LevelOption
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
+      NameRoot, &
       TimerName
+
+    NameRoot  =  FS % Name
+    if ( present ( NameRootOption ) ) &
+      NameRoot  =  NameRootOption
 
     associate ( iT  =>  FS % iTimerGhost )
 
     if ( iT == 0 ) then
-      TimerName  =  'Ghost_' // trim ( FS % Name )
+      TimerName  =  'Ghst_' // trim ( NameRoot )
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -530,13 +539,17 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
+    type ( TimerForm ), pointer :: &
+      T_G
+
+    T_G  =>  FS % TimerGhost ( )
 
     associate ( iT  =>  FS % iTimerGhost_UH )
 
     if ( iT == 0 ) then
-      TimerName  =  'Ghost_' // trim ( FS % Name ) // '_UH'
+      TimerName  =  trim ( T_G % Name ) // '_UH'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -560,13 +573,17 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
+    type ( TimerForm ), pointer :: &
+      T_G
+
+    T_G  =>  FS % TimerGhost ( )
 
     associate ( iT  =>  FS % iTimerGhost_EG )
 
     if ( iT == 0 ) then
-      TimerName  =  'Ghost_' // trim ( FS % Name ) // '_EG'
+      TimerName  =  trim ( T_G % Name ) // '_EG'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -590,13 +607,17 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
+    type ( TimerForm ), pointer :: &
+      T_G
+
+    T_G  =>  FS % TimerGhost ( )
 
     associate ( iT  =>  FS % iTimerGhost_UD )
 
     if ( iT == 0 ) then
-      TimerName  =  'Ghost_' // trim ( FS % Name ) // '_UD'
+      TimerName  =  trim ( T_G % Name ) // '_UD'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -609,6 +630,21 @@ contains
     end associate !-- iT
 
   end function TimerGhost_UD
+
+
+  subroutine CloneGhostTimers ( FS, FS_S )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_S
+
+    FS % iTimerGhost     =  FS_S % iTimerGhost
+    FS % iTimerGhost_UH  =  FS_S % iTimerGhost_UH
+    FS % iTimerGhost_EG  =  FS_S % iTimerGhost_EG
+    FS % iTimerGhost_UD  =  FS_S % iTimerGhost_UD
+
+  end subroutine CloneGhostTimers
 
 
   subroutine Clear_FS ( FS )

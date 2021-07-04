@@ -33,8 +33,8 @@ module Step_RK_CS__Form
       Initialize => Initialize_CS
     procedure, public, pass :: &
       SetStream
-!    procedure, public, pass :: &
-!      Show => Show_S
+    procedure, public, pass :: &
+      Show => Show_S
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -242,26 +242,26 @@ contains
   end subroutine SetStream
 
 
-!   subroutine Show_S ( S )
+  subroutine Show_S ( S )
 
-!     class ( Step_RK_CS_Form ), intent ( in ) :: &
-!       S
+    class ( Step_RK_CS_Form ), intent ( in ) :: &
+      S
 
-!     integer ( KDI ) :: &
-!       iS  !-- iStage
+    integer ( KDI ) :: &
+      iS  !-- iStage
 
-!     call S % Step_RK_H_Form % Show ( )
+    call S % Step_RK_H_Form % Show ( )
 
-!     call S % Solution % Show ( )
-!     call S % Intermediate % Show ( )
-!     call S % RiemannSolver % Show ( )
-!     do iS  =  1, S % nStages
-!       call S % SlopeStage ( iS ) % Element % Show ( )
-!     end do !-- iS
-!     if ( allocated ( S % SlopeSum ) ) &
-!       call S % SlopeSum % Show ( )
+    call S % Solution % Show ( )
+    call S % Intermediate % Show ( )
+    call S % RiemannSolver % Show ( )
+    do iS  =  1, S % nStages
+      call S % SlopeStage ( iS ) % Element % Show ( )
+    end do !-- iS
+    if ( allocated ( S % SlopeSum ) ) &
+      call S % SlopeSum % Show ( )
 
-!   end subroutine Show_S
+  end subroutine Show_S
 
 
   impure elemental subroutine Finalize ( S )
@@ -432,13 +432,15 @@ contains
     else
       T_C   =>  null ( )
     end if
-    call K % Compute ( T_Option, iS_Option = iS )
+    call K % Compute ( T_Option = T_C, iS_Option = iS )
     if ( associated ( T_C ) ) call T_C % Stop ( )
 
     !-- Slope ghost exchange
 
     if ( present ( T_Option ) ) then
-      T_EG  =>  K % TimerGhost ( LevelOption = T_Option % Level + 1 )
+      T_EG  =>  K % TimerGhost &
+                  ( NameRootOption = K % TimerName, &
+                    LevelOption = T_Option % Level + 1 )
       call T_EG % Start ( )
     else
       T_EG  =>  null ( )

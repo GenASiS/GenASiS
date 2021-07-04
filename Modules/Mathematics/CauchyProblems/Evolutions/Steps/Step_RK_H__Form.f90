@@ -418,16 +418,10 @@ contains
       T_LI    =>  S % Timer_LI   ( LevelOption = T_Option % Level + 1 )
       T_II    =>  S % Timer_II   ( LevelOption = T_Option % Level + 1 )
       T_II_A  =>  S % Timer_II_A ( LevelOption = T_Option % Level + 1 )
-      T_CS    =>  S % Timer_CS   ( LevelOption = T_Option % Level + 1 )
-      T_IS_B  =>  S % Timer_IS_B ( LevelOption = T_Option % Level + 1 )
-      T_SF    =>  S % Timer_SF   ( LevelOption = T_Option % Level + 1 )
     else
       T_LI    =>  null ( )
       T_II    =>  null ( )
       T_II_A  =>  null ( )
-      T_CS    =>  null ( )
-      T_IS_B  =>  null ( )
-      T_SF    =>  null ( )
     end if
 
     !-- Set  Solution  =  Y_N  (old value)
@@ -460,7 +454,8 @@ contains
       end do !-- iK
       if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
 
-      if ( associated ( T_CS ) ) then
+      if ( present ( T_Option ) ) then
+        T_CS  =>  S % Timer_CS ( LevelOption = T_Option % Level + 1 )
         call T_CS % Start ( )
         call S % ComputeStage ( T, iS, T_Option = T_CS )
         call T_CS % Stop ( )
@@ -469,6 +464,14 @@ contains
       end if
 
     end do !-- iS
+
+    if ( present ( T_Option ) ) then
+      T_IS_B  =>  S % Timer_IS_B ( LevelOption = T_Option % Level + 1 )
+      T_SF    =>  S % Timer_SF   ( LevelOption = T_Option % Level + 1 )
+    else
+      T_IS_B  =>  null ( )
+      T_SF    =>  null ( )
+    end if
 
     if ( associated ( T_IS_B ) ) call T_IS_B % Start ( )
     !-- Assemble stages

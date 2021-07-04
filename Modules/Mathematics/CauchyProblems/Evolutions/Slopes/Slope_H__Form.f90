@@ -155,7 +155,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer )
@@ -185,7 +185,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimerMultiplyAdd )
@@ -218,6 +218,8 @@ contains
 
     S % iTimer             =  S_S % iTimer
     S % iTimerMultiplyAdd  =  S_S % iTimerMultiplyAdd
+
+    call S % CloneGhostTimers ( S_S )
 
     do iC  =  1, S % nComponents
       associate &

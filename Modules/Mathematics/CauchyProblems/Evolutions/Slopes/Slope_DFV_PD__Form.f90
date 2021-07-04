@@ -28,6 +28,8 @@ module Slope_DFV_PD__Form
     procedure, private, pass :: &
       TimerKernel
     procedure, public, pass :: &
+      CloneTimers
+    procedure, public, pass :: &
       Compute
     final :: &
       Finalize
@@ -124,13 +126,13 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimerKernel )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_Krnl' 
+      TimerName  =  trim ( S % TimerName ) // '_Krnl' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -143,6 +145,28 @@ contains
     end associate !-- iT
 
   end function TimerKernel
+
+
+  subroutine CloneTimers ( S, S_S )
+
+    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+      S
+    class ( Slope_H_Form ), intent ( in ) :: &
+      S_S  !-- S_Source
+
+    integer ( KDI ) :: &
+      iC  !-- iComponent
+
+    call S % Slope_H_Form % CloneTimers ( S_S )
+
+    select type ( S_S )
+    class is ( Slope_DFV_PD_Form )
+
+    S % iTimerKernel  =  S_S % iTimerKernel
+
+    end select !-- S_S
+
+  end subroutine CloneTimers
 
 
   subroutine Compute ( S, T_Option, iS_Option )
