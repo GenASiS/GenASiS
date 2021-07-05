@@ -397,7 +397,7 @@ contains
     real ( KDR ), intent ( in ) :: &
       T, &
       dT
-    type ( TimerForm ), intent ( in ), pointer, optional :: &
+    type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     integer ( KDI ) :: &
@@ -577,7 +577,7 @@ contains
       T
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
-    type ( TimerForm ), intent ( in ), pointer, optional :: &
+    type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     call Show ( 'ComputeStage should be overridden', CONSOLE % WARNING )

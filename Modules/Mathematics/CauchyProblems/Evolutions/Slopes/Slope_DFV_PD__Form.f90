@@ -173,7 +173,7 @@ contains
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
-    type ( TimerForm ), intent ( in ), pointer, optional :: &
+    type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option

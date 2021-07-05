@@ -387,7 +387,7 @@ contains
       T
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
-    type ( TimerForm ), intent ( in ), pointer, optional :: &
+    type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     integer ( KDI ) :: &

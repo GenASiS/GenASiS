@@ -322,7 +322,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD     !-- iDimensions
-    type ( TimerForm ), intent ( in ), pointer, optional :: &
+    type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option
