@@ -17,6 +17,8 @@ module Chart_H__Form
       nDimensions
     type ( MeasuredValueForm ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateUnit
+    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
+      Periodic = .false.
     character ( LDL ) :: &
       Type = '', &
       Name, &
@@ -121,6 +123,8 @@ contains
                 C % IGNORABILITY )
     call Show ( C % CoordinateUnit ( : nD ), 'CoordinateUnit', &
                 C % IGNORABILITY )
+
+    call Show ( C % Periodic, 'Periodic', C % IGNORABILITY )
 
     call C % Connectivity % Show ( C % IGNORABILITY + 1 )
 

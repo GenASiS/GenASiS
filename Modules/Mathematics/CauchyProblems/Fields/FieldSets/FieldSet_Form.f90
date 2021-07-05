@@ -9,9 +9,6 @@ module FieldSet_Form
   implicit none
   private
 
-    integer, private, parameter :: &
-      MAX_DIMENSIONS = 3
-
   type, public :: FieldSetForm
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
@@ -28,8 +25,6 @@ module FieldSet_Form
       DeviceMemory, &
       PinnedMemory, &
       DevicesCommunicate
-    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
-      Periodic = .false.
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
     type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
@@ -398,7 +393,7 @@ contains
       if (       trim ( BoundaryCondition ( 1 ) )  ==  'PERIODIC'   &
            .and. trim ( BoundaryCondition ( 2 ) )  ==  'PERIODIC' ) &
       then
-        FS % Periodic ( iD )  =  .true.
+        C % Periodic ( iD )  =  .true.
       end if
     end if
     end associate !-- C, etc.
@@ -781,7 +776,7 @@ contains
            S  =>  FS % Storage ( iC ), &
            C  =>  FS % Atlas % Chart ( iC ) % Element )
 
-      call GE % FinishExchange ( S, C, FS % Periodic, FS % DevicesCommunicate )
+      call GE % FinishExchange ( S, C, C % Periodic, FS % DevicesCommunicate )
 
       end associate !-- GE, etc.
     end do !-- iC
