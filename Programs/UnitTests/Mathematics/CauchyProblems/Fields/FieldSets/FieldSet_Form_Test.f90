@@ -115,7 +115,7 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       F_3D  !-- Field
     type ( TimerForm ), pointer :: &
-      T_G, T_G_UH, T_G_EG, T_G_UD
+      T_G
 
     call Show ( 'Ghost exchange' )
     call Show ( FS % Name, 'FieldSet' )
@@ -156,39 +156,10 @@ contains
     call FS % UpdateDevice ( )
 
     do iGE  =  1, nGhostExchanges
-
-      T_G  =>  FS % TimerGhost    ( LevelOption = 1 )
-
-      if ( FS % DeviceMemory .and. .not. FS % DevicesCommunicate ) then
-        T_G_UH  =>  FS % TimerGhost_UH ( LevelOption = T_G % Level + 1 )
-        T_G_EG  =>  FS % TimerGhost_EG ( LevelOption = T_G % Level + 1 )
-        T_G_UD  =>  FS % TimerGhost_UD ( LevelOption = T_G % Level + 1 )
-      else
-        T_G_UH  =>  null ( )
-        T_G_EG  =>  null ( )
-        T_G_UD  =>  null ( )
-      end if
-
+      T_G  =>  FS % TimerGhost ( LevelOption = 1 )
       call T_G % Start ( )
-
-      if ( .not. FS % DevicesCommunicate ) then
-        if ( associated ( T_G_UH ) ) call T_G_UH % Start ( ) 
-        call FS % UpdateHost ( )
-        if ( associated ( T_G_UH ) ) call T_G_UH % Stop ( ) 
-      end if
-
-      if ( associated ( T_G_EG ) ) call T_G_EG % Start ( ) 
-      call FS % ExchangeGhostData ( )
-      if ( associated ( T_G_EG ) ) call T_G_EG % Stop ( ) 
-
-      if ( .not. FS % DevicesCommunicate ) then
-        if ( associated ( T_G_UD ) ) call T_G_UD % Start ( ) 
-        call FS % UpdateDevice ( )
-        if ( associated ( T_G_UD ) ) call T_G_UD % Stop ( ) 
-      end if
-
+      call FS % ExchangeGhostData ( T_Option = T_G )
       call T_G % Stop ( )
-
     end do !-- iGE
 
     do iS  =  1, FS % nFields

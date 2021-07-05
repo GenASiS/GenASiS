@@ -62,11 +62,11 @@ module FieldSet_Form
       Show => Show_FS
     procedure, public, pass :: &
       TimerGhost
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       TimerGhost_UH
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       TimerGhost_EG
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       TimerGhost_UD
     procedure, public, pass :: &
       CloneGhostTimers
@@ -726,28 +726,52 @@ contains
   end subroutine MultiplyAdd_FS
 
 
-  subroutine ExchangeGhostData ( FS )
+  subroutine ExchangeGhostData ( FS, T_Option )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     integer ( KDI ) :: &
       iC  !-- iChart
 
-    call FS % StartGhostExchange ( )
-    call FS % FinishGhostExchange ( )
+    call FS % StartGhostExchange ( T_Option )
+    call FS % FinishGhostExchange ( T_Option )
 
   end subroutine ExchangeGhostData
 
 
-  subroutine StartGhostExchange ( FS )
+  subroutine StartGhostExchange ( FS, T_Option )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     integer ( KDI ) :: &
       iC  !-- iChart
+    type ( TimerForm ), pointer :: &
+      T_UH, &
+      T_EG
 
+    if ( FS % DeviceMemory .and. .not. FS % DevicesCommunicate &
+         .and. present ( T_Option ) ) &
+    then
+      T_UH  =>  FS % TimerGhost_UH ( LevelOption = T_Option % Level + 1 )
+      T_EG  =>  FS % TimerGhost_EG ( LevelOption = T_Option % Level + 1 )
+    else
+      T_UH  =>  null ( )
+      T_EG  =>  null ( )
+    end if
+
+    if ( .not. FS % DevicesCommunicate ) then
+      if ( associated ( T_UH ) ) call T_UH % Start ( ) 
+      call FS % UpdateHost ( )
+      if ( associated ( T_UH ) ) call T_UH % Stop ( ) 
+    end if
+
+    if ( associated ( T_EG ) ) call T_EG % Start ( ) 
     do iC  =  1,  FS % Atlas % nCharts
       associate &
         ( GE  =>  FS % GhostExchange ( iC ), &
@@ -756,30 +780,52 @@ contains
       call GE % StartExchange ( C, S, FS % DevicesCommunicate )
       end associate !-- GE, etc.
     end do !-- iC
+    if ( associated ( T_EG ) ) call T_EG % Stop ( ) 
 
   end subroutine StartGhostExchange
 
 
-  subroutine FinishGhostExchange ( FS )
+  subroutine FinishGhostExchange ( FS, T_Option )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
       iD     !-- iDimension
+    type ( TimerForm ), pointer :: &
+      T_EG, &
+      T_UD
 
+    if ( FS % DeviceMemory .and. .not. FS % DevicesCommunicate &
+         .and. present ( T_Option ) ) &
+    then
+      T_EG  =>  FS % TimerGhost_EG ( LevelOption = T_Option % Level + 1 )
+      T_UD  =>  FS % TimerGhost_UD ( LevelOption = T_Option % Level + 1 )
+    else
+      T_EG  =>  null ( )
+      T_UD  =>  null ( )
+    end if
+
+    if ( associated ( T_EG ) ) call T_EG % Start ( ) 
     do iC  =  1,  FS % Atlas % nCharts
       associate &
         (  B  =>  FS % Boundaries ( iC ), &
           GE  =>  FS % GhostExchange ( iC ), &
            S  =>  FS % Storage ( iC ), &
            C  =>  FS % Atlas % Chart ( iC ) % Element )
-
       call GE % FinishExchange ( S, C, C % Periodic, FS % DevicesCommunicate )
-
       end associate !-- GE, etc.
     end do !-- iC
+    if ( associated ( T_EG ) ) call T_EG % Stop ( ) 
+
+    if ( .not. FS % DevicesCommunicate ) then
+      if ( associated ( T_UD ) ) call T_UD % Start ( ) 
+      call FS % UpdateDevice ( )
+      if ( associated ( T_UD ) ) call T_UD % Stop ( ) 
+    end if
 
   end subroutine FinishGhostExchange
 
