@@ -1,6 +1,7 @@
 Step_RK_H__Form.o: \
   Basics.o \
   Manifolds.o \
+  Fields.o \
   Slopes.o \
   Step_RK_H__Form.f90
 

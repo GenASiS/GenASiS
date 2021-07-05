@@ -307,7 +307,6 @@ contains
 
     !-- This slope
 
-    call S % Clear ( )
     call S % MultiplyAdd ( SS, B )
 
     !-- Component slopes

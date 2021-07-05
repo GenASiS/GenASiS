@@ -28,8 +28,6 @@ module Step_RK_CS__Form
     generic, public :: &
       Initialize => Initialize_CS
     procedure, public, pass :: &
-      SetStream
-    procedure, public, pass :: &
       Show => Show_S
     final :: &
       Finalize
@@ -156,106 +154,16 @@ contains
   end subroutine Initialize_CS
 
 
-  subroutine SetStream ( S, Sm, StagesOption )
-
-    class ( Step_RK_CS_Form ), intent ( inout ) :: &
-      S
-    class ( StreamForm ), intent ( inout ) :: &
-      Sm
-    logical ( KDL ), intent ( in ), optional :: &
-      StagesOption
-
-    integer ( KDI ) :: &
-      iS  !-- iStage
-    logical ( KDL ) :: &
-      Stages
-    character ( 1 ) :: &
-      StageNumber
-
-    if ( .not. allocated ( S % SlopeSum ) ) then
-      allocate ( Slope_DFV_F_Form :: S % SlopeSum )
-      select type ( SS  =>  S % SlopeSum )
-        class is ( Slope_DFV_F_Form )
-      call SS % Initialize ( S % RiemannSolver )
-      call SS % SetStream ( Sm )
-      end select !-- SS
-    end if !-- allocated SlopeSum
-    
-    ! Stages  =  .false.
-    ! if ( present ( StagesOption ) ) &
-    !   Stages  =  StagesOption
-    ! call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
-
-!     if ( Stages ) then
-
-!       associate &
-!         ( CS    =>  S % CurrentSet, &
-!            SA_1  =>  S % SlopeStage ( 1 ) % Element )
-!       associate &
-!         ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
-!       associate &
-!         (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
-!                 PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
-!           DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
-!       associate &
-!         ( nS  =>  S % nStages )
-
-!       allocate ( S % SolutionStage ( nS ) )
-!       do iS  =  1, nS
-!         write ( StageNumber, fmt = '(i1.1)' ) iS
-!         allocate ( S % SolutionStage ( iS ) % Element )
-!         associate ( SSA  =>  S % SolutionStage ( iS ) % Element )
-!         call SSA % Initialize &
-!                ( SA_1 % Atlas, &
-!                  FieldOption = SC % Field, &
-!                  NameOption = 'Solution_' // StageNumber // '_' &
-!                               // trim ( CS % Name ), &
-!                  DeviceMemoryOption = DeviceMemory, &
-!                  PinnedMemoryOption = PinnedMemory, &
-!                  DevicesCommunicateOption = DevicesCommunicate, &
-!                  nFieldsOption = SC % nFields )
-!         call Sm % AddFieldSet ( SSA )
-!         end associate !-- SSA
-!       end do !-- iS
-
-!       associate ( RSA  =>  S % RiemannSolver )
-!       call RSA % SetStream ( Sm, nS )
-!       end associate !-- RSA
-
-!       do iS  =  1,  nS
-!         associate ( SA  =>  S % SlopeStage ( iS ) % Element )
-!         call SA % SetStream ( Sm )
-!         end associate !-- SA
-!       end do !-- iS
-
-!       end associate !-- nS
-!       end associate !-- DeviceMemory, etc.
-!       end associate !-- SC
-!       end associate !-- CS, etc.
-
-!     end if
-
-  end subroutine SetStream
-
-
   subroutine Show_S ( S )
 
     class ( Step_RK_CS_Form ), intent ( in ) :: &
       S
-
-    integer ( KDI ) :: &
-      iS  !-- iStage
 
     call S % Step_RK_H_Form % Show ( )
 
     call S % Solution % Show ( )
     call S % Intermediate % Show ( )
     call S % RiemannSolver % Show ( )
-    do iS  =  1, S % nStages
-      call S % SlopeStage ( iS ) % Element % Show ( )
-    end do !-- iS
-    if ( allocated ( S % SlopeSum ) ) &
-      call S % SlopeSum % Show ( )
 
   end subroutine Show_S
 
@@ -437,13 +345,6 @@ contains
         K  =>  S % SlopeStage ( iS ) % Element )
 
     call Y % MultiplyAdd ( K, dT * B )
-
-    !-- For diagnostic streaming (i.e., I/O)
-    if ( allocated ( S % SlopeSum ) ) then
-      associate ( K_Sum  =>  S % SlopeSum )
-      call K_Sum % Increment ( K, B, iS )
-      end associate !-- K_Sum
-    end if
 
     end associate !-- Y, etc.
 

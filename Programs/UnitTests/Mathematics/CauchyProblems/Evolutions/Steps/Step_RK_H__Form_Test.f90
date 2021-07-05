@@ -4,20 +4,19 @@ program Step_RK_H__Form_Test
 
   use Basics
   use Manifolds
+  use Fields
   use Steps
 
   implicit none
 
-  type ( Atlas_SCG_Form ), allocatable :: &
-    Atlas
-  real ( KDR ), dimension ( 2 : 2, 1 : 1 ) :: &
-    A
-  real ( KDR ), dimension ( 2 : 2 ) :: &
-    C
-  real ( KDR ), dimension ( 1 : 2 ) :: &
-    B
+  type ( GridImageStreamForm ), allocatable :: &
+    GIS
   type ( TimerForm ), pointer :: &
     T
+  type ( Atlas_SCG_Form ), allocatable :: &
+    A
+  type ( StreamForm ), allocatable :: &
+    Sm
   type ( Step_RK_H_Form ), allocatable :: &
     S
 
@@ -25,22 +24,29 @@ program Step_RK_H__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( 'Step_RK_H__Form_Test', DimensionalityOption = '2D' )
 
-  call Clear ( A )
-  A ( 2, 1 ) = 1.0_KDR
+  allocate ( GIS )
+  call GIS % Initialize &
+         ( PROGRAM_HEADER % Name, &
+           CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  B ( 1 ) = 0.5_KDR
-  B ( 2 ) = 0.5_KDR
-
-  C ( 2 ) = 1.0_KDR
-    
-  allocate ( Atlas )
-  call Atlas % Initialize &
+  allocate ( A )
+  call A % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  allocate ( S )
-  call S % Initialize ( Atlas, A_Option = A, B_Option = B, C_Option = C )
+  allocate ( Sm )
+  call Sm % Initialize ( A, GIS )
 
-  call S % Show ( )
+  allocate ( S )
+  call S % Initialize ( A )
+  call S % SetStream ( Sm )
+
+  call S  % Show ( )
+  call Sm % Show ( )
+
+  T  =>  S % TimerSlopeSum ( LevelOption = 1 )
+  call T % Start ( )
+  call S % ComputeSlopeSum ( )
+  call T % Stop ( )
 
   T  =>  S % Timer ( LevelOption = 1 )
   call T % Start ( )
@@ -48,6 +54,9 @@ program Step_RK_H__Form_Test
   call T % Stop ( )
 
   deallocate ( S )
+  deallocate ( Sm )
+  deallocate ( A )
+  deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
 end program Step_RK_H__Form_Test

@@ -35,6 +35,7 @@ include $(PATH_STEPS)/Makefile_Dependencies
 Step_RK_H__Form_Test.o: \
   Basics.o \
   Manifolds.o \
+  Fields.o \
   Steps.o \
   Step_RK_H__Form_Test.f90
 
