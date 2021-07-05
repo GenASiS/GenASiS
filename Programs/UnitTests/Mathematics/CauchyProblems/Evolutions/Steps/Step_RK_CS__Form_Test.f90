@@ -183,11 +183,11 @@ contains
 
     Time  =  0.0_KDR
 
-    ! call GIS % Open ( GIS % ACCESS_CREATE )
-    ! call SA % Write &
-    !        ( TimeOption = Time  *  UNIT % IDENTITY, &
-    !          CycleNumberOption = 0 )
-    ! call GIS % Close ( )
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call Sm % Write &
+           ( TimeOption = Time  *  UNIT % IDENTITY, &
+             CycleNumberOption = 0 )
+    call GIS % Close ( )
 
     CourantFactor  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter ( CourantFactor, 'CourantFactor' )
@@ -213,11 +213,14 @@ contains
 
       Time  =  Time + TimeStep
 
-      ! call GIS % Open ( GIS % ACCESS_CREATE )
-      ! call SA % Write &
-      !        ( TimeOption = Time  *  UNIT % IDENTITY, &
-      !          CycleNumberOption = 0 )
-      ! call GIS % Close ( )
+      T  =>  Sm % TimerWrite ( LevelOption = 1 )
+      call T % Start ( )
+      call GIS % Open ( GIS % ACCESS_CREATE )
+      call Sm % Write &
+             ( TimeOption = Time  *  UNIT % IDENTITY, &
+               CycleNumberOption = iC )
+      call GIS % Close ( )
+      call T % Stop ( )
 
     end do !-- iS
 
