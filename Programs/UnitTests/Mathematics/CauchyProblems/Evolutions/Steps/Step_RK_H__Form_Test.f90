@@ -3,10 +3,13 @@ program Step_RK_H__Form_Test
   !-- Step_RK_Header__Form_Test
 
   use Basics
+  use Manifolds
   use Steps
 
   implicit none
 
+  type ( Atlas_SCG_Form ), allocatable :: &
+    Atlas
   real ( KDR ), dimension ( 2 : 2, 1 : 1 ) :: &
     A
   real ( KDR ), dimension ( 2 : 2 ) :: &
@@ -30,8 +33,12 @@ program Step_RK_H__Form_Test
 
   C ( 2 ) = 1.0_KDR
     
+  allocate ( Atlas )
+  call Atlas % Initialize &
+         ( CommunicatorOption = PROGRAM_HEADER % Communicator )
+
   allocate ( S )
-  call S % Initialize ( A_Option = A, B_Option = B, C_Option = C )
+  call S % Initialize ( Atlas, A_Option = A, B_Option = B, C_Option = C )
 
   call S % Show ( )
 

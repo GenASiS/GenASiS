@@ -3,6 +3,8 @@ module Step_RK_H__Form
   !-- Step_RungeKutta_Header_Form
 
   use Basics
+  use Manifolds
+  use Slopes
   
   implicit none
   private
@@ -27,6 +29,14 @@ module Step_RK_H__Form
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    class ( Atlas_H_Form ), pointer :: &
+      Atlas => null ( )
+    class ( Slope_H_Form ), allocatable :: &
+      SlopeSum
+    type ( Slope_H_Element ), dimension ( : ), allocatable :: &
+      SlopeStage
+    procedure ( SS ), pointer :: &
+      SetSlope => null ( )
   contains
     procedure, private, pass :: &
       Initialize_H
@@ -66,14 +76,35 @@ module Step_RK_H__Form
       StoreSolution
   end type Step_RK_H_Form
 
+  interface
+
+    subroutine SS ( S, iS, Sp )
+      use Basics
+      use Slopes
+      import Step_RK_H_Form
+      implicit none
+      class ( Step_RK_H_Form ), intent ( in ) :: &
+        S
+      integer ( KDI ), intent ( in ) :: &
+        iS
+      class ( Slope_H_Form ), intent ( out ), allocatable :: &
+        Sp
+    end subroutine SS
+
+  end interface
+
+    private :: &
+      SetSlope_H
 
 contains
 
 
-  subroutine Initialize_H ( S, NameOption, A_Option, B_Option, C_Option )
+  subroutine Initialize_H ( S, Atlas, NameOption, A_Option, B_Option, C_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
+    class ( Atlas_H_Form ), intent ( in ), target :: &
+      Atlas
     character ( * ), intent ( in ), optional :: &
       NameOption
     real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
@@ -145,6 +176,16 @@ contains
     allocate ( S % C ( 2 : nS ) )
     S % C  =  C
 
+    S % Atlas  =>  Atlas
+
+    if ( .not. associated ( S % SetSlope ) ) &
+      S % SetSlope  =>  SetSlope_H
+
+    allocate ( S % SlopeStage ( nS ) )
+    do iS  =  1,  nS
+      call S % SetSlope ( iS, S % SlopeStage ( iS ) % Element )
+    end do !-- iS
+
     end associate !-- nS
 
   end subroutine Initialize_H
@@ -189,7 +230,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer )
@@ -219,7 +260,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer_LI )
@@ -249,7 +290,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer_II )
@@ -279,7 +320,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer_II_A )
@@ -309,7 +350,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer_CS )
@@ -339,7 +380,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer_IS_B )
@@ -369,7 +410,7 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
+    character ( LDL ) :: &
       TimerName
 
     associate ( iT  =>  S % iTimer_SF )
@@ -496,6 +537,10 @@ contains
     type ( Step_RK_H_Form ), intent ( inout ) :: &
       S
 
+    if ( allocated ( S % SlopeStage ) ) &
+      deallocate ( S % SlopeStage )
+    if ( allocated ( S % SlopeSum ) ) &
+      deallocate ( S % SlopeSum )
     if ( allocated ( S % A ) ) &
       deallocate ( S % A )
     if ( allocated ( S % B ) ) &
@@ -602,6 +647,36 @@ contains
     call Show ( 'StoreSolution', 'subroutine', CONSOLE % WARNING )
 
   end subroutine StoreSolution
+
+
+  subroutine SetSlope_H ( S, iS, Sp )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iS
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      Sp
+
+    character ( 1 ) :: &
+      StageNumber
+    character ( LDL ) :: &
+      Name
+
+    allocate ( Slope_H_Form :: Sp )
+    associate ( A  =>  S % Atlas )
+
+    write ( StageNumber, fmt = '(i1.1)' ) iS
+    Name  =  'Slope_' // StageNumber
+
+    call Sp % Initialize &
+           ( A, &
+             NameOption = Name, &
+             IgnorabilityOption = A % IGNORABILITY + 1 )
+
+    end associate !-- A
+
+  end subroutine SetSlope_H
 
 
 end module Step_RK_H__Form

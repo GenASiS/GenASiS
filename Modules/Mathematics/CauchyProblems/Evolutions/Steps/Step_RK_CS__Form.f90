@@ -22,10 +22,6 @@ module Step_RK_CS__Form
       CurrentSet
     class ( RiemannSolver_HLL_Form ), allocatable :: &
       RiemannSolver
-    class ( Slope_H_Form ), allocatable :: &
-      SlopeSum
-    type ( Slope_H_Element ), dimension ( : ), allocatable :: &
-      SlopeStage
   contains
     procedure, private, pass :: &
       Initialize_CS
@@ -87,7 +83,11 @@ contains
     S % CurrentSet  =>  CS
 
     call S % Step_RK_H_Form % Initialize &
-           ( Name, A_Option, B_Option, C_Option )
+           ( CS % Atlas, &
+             NameOption = Name, &
+             A_Option = A_Option, &
+             B_Option = B_Option, &
+             C_Option = C_Option )
 
     !-- Balanced
 
@@ -181,10 +181,10 @@ contains
       end select !-- SS
     end if !-- allocated SlopeSum
     
-    Stages  =  .false.
-    if ( present ( StagesOption ) ) &
-      Stages  =  StagesOption
-    call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
+    ! Stages  =  .false.
+    ! if ( present ( StagesOption ) ) &
+    !   Stages  =  StagesOption
+    ! call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
 
 !     if ( Stages ) then
 
@@ -265,10 +265,6 @@ contains
     type ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % SlopeStage ) ) &
-      deallocate ( S % SlopeStage )
-    if ( allocated ( S % SlopeSum ) ) &
-      deallocate ( S % SlopeSum )
     if ( allocated ( S % RiemannSolver ) ) &
       deallocate ( S % RiemannSolver )
     if ( allocated ( S % SolutionStage ) ) &
