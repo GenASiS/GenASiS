@@ -39,8 +39,6 @@ module Step_RK_CS__Form
       Finalize
     procedure, private, pass :: &
       LoadSolution
-!     procedure, private, pass :: &
-!       StoreSolution
     procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
@@ -49,10 +47,8 @@ module Step_RK_CS__Form
       ComputeStage
     procedure, private, pass :: &
       IncrementSolution
-!     procedure, public, nopass :: &
-!       StoreSolution_C
-!     procedure, public, nopass :: &
-!       IncrementSolution_C
+    procedure, private, pass :: &
+      StoreSolution
   end type Step_RK_CS_Form
 
 
@@ -312,32 +308,6 @@ contains
   end subroutine LoadSolution
 
 
-!   subroutine StoreSolution ( S )
-
-!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
-!       S
-
-!     integer ( KDI ) :: &
-!       iC  !-- iChart
-
-!     associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
-!     do iC  =  1,  nC
-!       select type &
-!           ( CurrentSet_C  =>  S % CurrentSet % FieldSet_C ( iC ) % Element )
-!         class is ( CurrentSet_C_Form )
-!       associate &
-!         ( Solution_C  =>  S % Solution % FieldSet_C ( iC ) % Element )
-
-!       call S % StoreSolution_C ( CurrentSet_C, Solution_C )
-
-!       end associate !-- Solution_C
-!       end select !-- CSC
-!     end do !-- iC
-!     end associate !-- nC
-
-!   end subroutine StoreSolution
-
-
   subroutine InitializeIntermediate ( S, iS )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
@@ -405,7 +375,7 @@ contains
       end associate !-- K_1
 
       associate &
-        ( Y_I   =>  S % Intermediate, &
+        (  Y_I  =>  S % Intermediate, &
           CS_B  =>  S % Balanced, &
           CS    =>  S % CurrentSet )
 
@@ -484,60 +454,23 @@ contains
   end subroutine IncrementSolution
 
 
-!   subroutine StoreSolution_C ( CurrentSet_C, Solution_C )
+  subroutine StoreSolution ( S )
 
-!     class ( CurrentSet_C_Form ), intent ( inout ) :: &
-!       CurrentSet_C
-!     type ( FieldSet_C_Form ), intent ( in ) :: &
-!       Solution_C
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
 
-!     integer ( KDI ) :: &
-!       iB  !-- iBalanced
-      
-!     associate ( iaB  =>  CurrentSet_C % iaBalanced )
-!     do iB  =  1,  CurrentSet_C % nBalanced
-      
-!       associate &
-!         ( SV  => Solution_C % Storage_FSC % Storage &
-!                    % Value ( :, iB ), &
-!           CV  => CurrentSet_C % Storage_FSC % Storage &
-!                    % Value ( :, iaB ( iB ) ) )
-      
-!       call Copy ( SV, CV, &
-!                   UseDeviceOption = Solution_C % Storage_FSC % DeviceMemory )
-      
-!       end associate !-- CV, etc.
-      
-!     end do !-- iB
-!     end associate !-- iaB
+    associate &
+      (  Y    =>  S % Solution, &
+        CS_B  =>  S % Balanced, &
+        CS    =>  S % CurrentSet )
 
-!     call CurrentSet_C % ComputeFromBalanced ( )
-!     call CurrentSet_C % ApplyBoundaryConditions ( )
-    
-!   end subroutine StoreSolution_C
-
-
-!   subroutine IncrementSolution_C ( Solution_C, Slope_C, B, dT )
-
-!     type ( FieldSet_C_Form ), intent ( inout ) :: &
-!       Solution_C
-!     class ( FieldSet_C_Form ), intent ( in ) :: &
-!       Slope_C
-!     real ( KDR ), intent ( in ) :: &
-!        B, &
-!       dT
-
-!     associate &
-!       ( SV  => Solution_C % Storage_FSC % Storage % Value, &
-!         KV  =>    Slope_C % Storage_FSC % Storage % Value )
-    
-!     call MultiplyAdd &
-!            ( SV, KV, dT * B, &
-!              UseDeviceOption = Solution_C % Storage_FSC % DeviceMemory )
-    
-!     end associate !-- SV, etc.
-
-!   end subroutine IncrementSolution_C
+    call  Y % Copy ( CS_B )
+    call CS % ComputeFromBalanced ( )
+    call CS % ApplyBoundaryConditions ( )
+  
+    end associate !-- Y, etc.
+ 
+  end subroutine StoreSolution
 
 
 end module Step_RK_CS__Form

@@ -55,8 +55,6 @@ module Step_RK_H__Form
     procedure, private, pass :: &
       LoadSolution
     procedure, private, pass :: &
-      StoreSolution
-    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -64,6 +62,8 @@ module Step_RK_H__Form
       ComputeStage
     procedure, private, pass :: &
       IncrementSolution
+    procedure, private, pass :: &
+      StoreSolution
   end type Step_RK_H_Form
 
 
@@ -524,18 +524,6 @@ contains
   end subroutine LoadSolution
 
 
-  subroutine StoreSolution ( S )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-
-    call Show ( 'StoreSolution should be overridden', CONSOLE % WARNING )
-    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
-    call Show ( 'StoreSolution', 'subroutine', CONSOLE % WARNING )
-
-  end subroutine StoreSolution
-
-
   subroutine InitializeIntermediate ( S, iS )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
@@ -602,6 +590,18 @@ contains
     call Show ( 'IncrementSolution', 'subroutine', CONSOLE % WARNING )
 
   end subroutine IncrementSolution
+
+
+  subroutine StoreSolution ( S )
+
+    class ( Step_RK_H_Form ), intent ( inout ) :: &
+      S
+
+    call Show ( 'StoreSolution should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'StoreSolution', 'subroutine', CONSOLE % WARNING )
+
+  end subroutine StoreSolution
 
 
 end module Step_RK_H__Form
