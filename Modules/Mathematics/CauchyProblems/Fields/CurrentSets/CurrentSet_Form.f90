@@ -55,7 +55,7 @@ module CurrentSet_Form
     procedure, public, pass :: &
       ComputeFromInitial
     procedure, public, pass :: &
-      ComputeFromConserved
+      ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
       ComputeFluxes
     procedure, public, pass ( CS ) :: &
@@ -350,12 +350,12 @@ contains
   end subroutine ComputeFromInitial
 
 
-  subroutine ComputeFromConserved ( CS )
+  subroutine ComputeFromBalanced ( CS )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
 
-  end subroutine ComputeFromConserved
+  end subroutine ComputeFromBalanced
 
 
   subroutine ComputeFluxes ( FS, CS, iC, iD )

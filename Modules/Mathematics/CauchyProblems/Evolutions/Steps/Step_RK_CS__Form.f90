@@ -47,8 +47,8 @@ module Step_RK_CS__Form
       IncrementIntermediate
     procedure, private, pass :: &
       ComputeStage
-!     procedure, private, pass :: &
-!       IncrementSolution
+    procedure, private, pass :: &
+      IncrementSolution
 !     procedure, public, nopass :: &
 !       StoreSolution_C
 !     procedure, public, nopass :: &
@@ -295,19 +295,19 @@ contains
       S
 
     associate &
-      ( B   =>  S % Balanced, &
-        Sn  =>  S % Solution )
+      ( CS_B  =>  S % Balanced, &
+        Y     =>  S % Solution )
 
-    call B % Copy ( Sn )
+    call CS_B % Copy ( Y )
 
     !-- For diagnostic I/O
     if ( allocated ( S % SolutionStage ) ) then
-      associate ( Sn_Stg  =>  S % SolutionStage ( 1 ) % Element )
-      call B % Copy ( Sn_Stg )
+      associate ( Y_Stg  =>  S % SolutionStage ( 1 ) % Element )
+      call CS_B % Copy ( Y_Stg )
       end associate !-- SltnStg
     end if
 
-    end associate !-- Blncd, etc.
+    end associate !-- CS_B, etc.
 
   end subroutine LoadSolution
 
@@ -347,12 +347,12 @@ contains
 
     if ( iS  >  1 ) then
       associate &
-        ( Sn  =>  S % Solution, &
-          Y   =>  S % Intermediate )
+        ( Y    =>  S % Solution, &
+          Y_I  =>  S % Intermediate )
 
-      call Sn % Copy ( Y )
+      call Y % Copy ( Y_I )
 
-      end associate !-- Sn, etc.
+      end associate !-- Y, etc.
     end if !-- iS > 1
 
   end subroutine InitializeIntermediate
@@ -369,12 +369,12 @@ contains
       iK
 
     associate &
-      ( Y  =>  S % Intermediate, &
-        K  =>  S % SlopeStage ( iK ) % Element )
+      ( Y_I  =>  S % Intermediate, &
+        K    =>  S % SlopeStage ( iK ) % Element )
 
-    call Y % MultiplyAdd ( K, dT * A )
+    call Y_I % MultiplyAdd ( K, dT * A )
 
-    end associate !-- Y, etc.
+    end associate !-- Y_I, etc.
 
   end subroutine IncrementIntermediate
 
@@ -405,22 +405,22 @@ contains
       end associate !-- K_1
 
       associate &
-        ( Y   =>  S % Intermediate, &
-          B   =>  S % Balanced, &
-          CS  =>  S % CurrentSet )
+        ( Y_I   =>  S % Intermediate, &
+          CS_B  =>  S % Balanced, &
+          CS    =>  S % CurrentSet )
 
-      call Y % Copy ( B )
-      call CS % ComputeFromConserved ( )
+      call Y_I % Copy ( CS_B )
+      call CS % ComputeFromBalanced ( )
       call CS % ApplyBoundaryConditions ( )
     
       !-- For diagnostic I/O
       if ( allocated ( S % SolutionStage ) ) then
-        associate ( Sn_Stg  =>  S % SolutionStage ( iS ) % Element )
-        call B % Copy ( Sn_Stg )
-        end associate !-- Sn_Stg
+        associate ( Y_Stg  =>  S % SolutionStage ( iS ) % Element )
+        call Y_I % Copy ( Y_Stg )
+        end associate !-- Y_Stg
       end if
 
-      end associate !-- Y, etc.
+      end associate !-- Y_I, etc.
  
     end if !-- iStage > 1
 
@@ -453,44 +453,35 @@ contains
   end subroutine ComputeStage
 
 
-!   subroutine IncrementSolution ( S, B, dT, iS )
+  subroutine IncrementSolution ( S, B, dT, iS )
 
-!     class ( Step_RK_CS_Form ), intent ( inout ) :: &
-!       S
-!     real ( KDR ), intent ( in ) :: &
-!        B, &
-!       dT
-!     integer ( KDI ), intent ( in ) :: &
-!       iS
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+       B, &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iS
 
-!     integer ( KDI ) :: &
-!       iC  !-- iChart
+    integer ( KDI ) :: &
+      iC  !-- iChart
 
-!     associate ( nC  =>  S % CurrentSet % Atlas % nCharts )
-!     do iC  =  1,  nC
+    associate &
+      ( Y  =>  S % Solution, &
+        K  =>  S % SlopeStage ( iS ) % Element )
 
-!       associate &
-!         ( Solution_C  =>  S % Solution % FieldSet_C ( iC ) % Element, &
-!              Slope_C  =>  S % SlopeStage ( iS ) % Element &
-!                             % FieldSet_C ( iC ) % Element )
+    call Y % MultiplyAdd ( K, dT * B )
 
-!       call S % IncrementSolution_C ( Solution_C, Slope_C, B, dT )
+    !-- For diagnostic streaming (i.e., I/O)
+    if ( allocated ( S % SlopeSum ) ) then
+      associate ( K_Sum  =>  S % SlopeSum )
+      call K_Sum % Increment ( K, B, iS )
+      end associate !-- K_Sum
+    end if
 
-!       end associate !-- Solution_C, etc.
+    end associate !-- Y, etc.
 
-!     end do !-- iC
-!     end associate !-- nC
-
-!     !-- For diagnostic streaming (i.e., I/O)
-!     if ( allocated ( S % SlopeSum ) ) then
-!       associate &
-!         (  SA  =>  S % SlopeSum, &
-!           SSA  =>  S % SlopeStage ( iS ) % Element )
-!       call SA % Increment ( SSA, B, iS )
-!       end associate !-- SA, etc.
-!     end if
-
-!   end subroutine IncrementSolution
+  end subroutine IncrementSolution
 
 
 !   subroutine StoreSolution_C ( CurrentSet_C, Solution_C )
@@ -520,7 +511,7 @@ contains
 !     end do !-- iB
 !     end associate !-- iaB
 
-!     call CurrentSet_C % ComputeFromConserved ( )
+!     call CurrentSet_C % ComputeFromBalanced ( )
 !     call CurrentSet_C % ApplyBoundaryConditions ( )
     
 !   end subroutine StoreSolution_C
