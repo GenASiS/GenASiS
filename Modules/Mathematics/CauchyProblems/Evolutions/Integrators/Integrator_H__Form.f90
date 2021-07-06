@@ -384,7 +384,6 @@ contains
         GIS  =>  I % GridImageStream )
     call S_X % Initialize ( A_X, GIS, NameOption = 'X' )
     call I % Geometry_X % SetStream ( S_X )
-    call I % Step_X % SetStream ( S_X )
     end associate !--SA
     
   end subroutine Initialize_H
