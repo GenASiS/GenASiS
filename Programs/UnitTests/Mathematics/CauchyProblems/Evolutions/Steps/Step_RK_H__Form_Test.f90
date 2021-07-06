@@ -37,7 +37,7 @@ program Step_RK_H__Form_Test
   call Sm % Initialize ( A, GIS )
 
   allocate ( S )
-  call S % Initialize ( A )
+  call S % Initialize_H ( A )
   call S % SetStream ( Sm )
 
   call S  % Show ( )

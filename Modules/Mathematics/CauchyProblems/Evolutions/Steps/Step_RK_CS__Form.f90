@@ -45,6 +45,8 @@ module Step_RK_CS__Form
       StoreSolution
   end type Step_RK_CS_Form
 
+    private :: &
+      SetSlope_CS
 
 contains
 
@@ -80,28 +82,21 @@ contains
 
     S % CurrentSet  =>  CS
 
-    call S % Step_RK_H_Form % Initialize &
-           ( CS % Atlas, &
-             NameOption = Name, &
-             A_Option = A_Option, &
-             B_Option = B_Option, &
-             C_Option = C_Option )
-
     !-- Balanced
 
     allocate ( S % Balanced )
-    associate ( Blncd  =>  S % Balanced )
-    call Blncd % Initialize &
+    associate ( CS_B  =>  S % Balanced )
+    call CS_B % Initialize &
            ( CS, iaSelected = CS % iaBalanced, &
              NameOption = 'Balanced', &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
-    end associate !-- Blncd
+    end associate !-- CS_B
 
     !-- Intermediate storage
 
     allocate ( S % Intermediate )
-    associate ( Intmdt  =>  S % Intermediate )
-    call Intmdt % Initialize &
+    associate ( Y_I  =>  S % Intermediate )
+    call Y_I % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Balanced, &
              NameOption = 'Intermediate', &
@@ -109,13 +104,13 @@ contains
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
-    end associate !-- Intmdt
+    end associate !-- Y_I
 
     !-- Solution storage
 
     allocate ( S % Solution )
-    associate ( Sltn  =>  S % Solution )
-    call Sltn % Initialize &
+    associate ( Y  =>  S % Solution )
+    call Y % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Balanced, &
              NameOption = 'Solution', &
@@ -123,7 +118,7 @@ contains
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
-    end associate !-- Sltn
+    end associate !-- Y
 
     !-- RiemannSolver
 
@@ -134,22 +129,17 @@ contains
       end associate !-- RSA
     end if !-- allocated RiemannSolver
 
-    !-- Slopes
+    !-- Header
 
-    if ( .not. allocated ( S % SlopeStage ) ) then
-      associate ( nS  =>  S % nStages )
-      allocate ( S % SlopeStage ( nS ) )
-      do iS  =  1,  nS
-        write ( StageNumber, fmt = '(i1.1)' ) iS
-        allocate ( Slope_DFV_F_Form :: S % SlopeStage ( iS ) % Element )
-        select type ( SA  =>  S % SlopeStage ( iS ) % Element )
-          class is ( Slope_DFV_F_Form )
-        call SA % Initialize &
-               ( S % RiemannSolver, SuffixOption = StageNumber )
-        end select !-- SA
-      end do !-- iS
-      end associate !-- nS
-    end if !-- allocated SlopeStage
+    if ( .not. associated ( S % SetSlope ) ) &
+      S % SetSlope  =>  SetSlope_CS
+
+    call S % Initialize_H &
+           ( CS % Atlas, &
+             NameOption = Name, &
+             A_Option = A_Option, &
+             B_Option = B_Option, &
+             C_Option = C_Option )
 
   end subroutine Initialize_CS
 
@@ -202,9 +192,9 @@ contains
 
     !-- For diagnostic I/O
     if ( allocated ( S % SolutionStage ) ) then
-      associate ( Y_Stg  =>  S % SolutionStage ( 1 ) % Element )
-      call CS_B % Copy ( Y_Stg )
-      end associate !-- SltnStg
+      associate ( Y_S  =>  S % SolutionStage ( 1 ) % Element )
+      call CS_B % Copy ( Y_S )
+      end associate !-- Y_S
     end if
 
     end associate !-- CS_B, etc.
@@ -289,9 +279,9 @@ contains
     
       !-- For diagnostic I/O
       if ( allocated ( S % SolutionStage ) ) then
-        associate ( Y_Stg  =>  S % SolutionStage ( iS ) % Element )
-        call Y_I % Copy ( Y_Stg )
-        end associate !-- Y_Stg
+        associate ( Y_S  =>  S % SolutionStage ( iS ) % Element )
+        call Y_I % Copy ( Y_S )
+        end associate !-- Y_S
       end if
 
       end associate !-- Y_I, etc.
@@ -368,6 +358,37 @@ contains
     end associate !-- Y, etc.
  
   end subroutine StoreSolution
+
+
+  subroutine SetSlope_CS ( S, K, iS_Option )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option
+
+    character ( 1 ) :: &
+      StageNumber
+
+    allocate ( Slope_DFV_F_Form :: K )
+    select type ( K )
+      class is ( Slope_DFV_F_Form )
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    if ( present ( iS_Option ) ) then
+      write ( StageNumber, fmt = '(i1.1)' ) iS_Option
+      call K % Initialize ( S % RiemannSolver, SuffixOption = StageNumber )
+    else
+      call K % Initialize ( S % RiemannSolver )
+    end if
+
+    end select !-- S
+    end select !-- K
+
+  end subroutine SetSlope_CS
 
 
 end module Step_RK_CS__Form

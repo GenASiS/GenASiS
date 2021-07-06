@@ -38,7 +38,9 @@ module Slope_H__Form
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
-      Increment
+      ClearRecursive
+    procedure, public, pass :: &
+      MultiplyAddRecursive
     final :: &
       Finalize
   end type Slope_H_Form
@@ -291,7 +293,32 @@ contains
   end subroutine Compute
 
 
-  subroutine Increment ( S, SS, B, iS )
+  subroutine ClearRecursive ( S )
+
+    class ( Slope_H_Form ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC  !-- iComponent
+
+    !-- This slope
+
+    call S % Clear ( )
+
+    !-- Component slopes
+
+    do iC  =  1, S % nComponents
+      associate ( SC  =>   S % Component ( iC ) % Element )
+
+      call SC % ClearRecursive ( )
+
+      end associate !-- SCA
+    end do !-- iC
+
+  end subroutine ClearRecursive
+
+
+  subroutine MultiplyAddRecursive ( S, SS, B )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S  !-- Slope
@@ -299,8 +326,6 @@ contains
       SS  !-- SlopeStage
     real ( KDR ) :: &
       B  !-- RungeKutta weight
-    integer ( KDI ) :: &
-      iS  !-- RungeKutta iStage
 
     integer ( KDI ) :: &
       iC  !-- iComponent
@@ -316,12 +341,12 @@ contains
         (  SC  =>   S % Component ( iC ) % Element, &
           SSC  =>  SS % Component ( iC ) % Element )
 
-      call SC % Increment ( SSC, B, iS )
+      call SC % MultiplyAddRecursive ( SSC, B )
 
       end associate !-- SCA
     end do !-- iC
 
-  end subroutine Increment
+  end subroutine MultiplyAddRecursive
 
 
   impure elemental subroutine Finalize ( S )

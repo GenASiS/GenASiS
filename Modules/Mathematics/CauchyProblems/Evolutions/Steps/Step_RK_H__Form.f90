@@ -40,10 +40,8 @@ module Step_RK_H__Form
     procedure ( SS ), pointer :: &
       SetSlope => null ( )
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
-    generic, public :: &
-      Initialize => Initialize_H
     procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
@@ -86,7 +84,7 @@ module Step_RK_H__Form
 
   interface
 
-    subroutine SS ( S, Sp, iS_Option )
+    subroutine SS ( S, K, iS_Option )
       use Basics
       use Slopes
       import Step_RK_H_Form
@@ -94,7 +92,7 @@ module Step_RK_H__Form
       class ( Step_RK_H_Form ), intent ( in ) :: &
         S
       class ( Slope_H_Form ), intent ( out ), allocatable :: &
-        Sp
+        K
       integer ( KDI ), intent ( in ), optional :: &
         iS_Option
     end subroutine SS
@@ -191,6 +189,7 @@ contains
 
     allocate ( S % SlopeStage ( nS ) )
     do iS  =  1,  nS
+call Show ( iS, '>>> iS' )
       call S % SetSlope ( S % SlopeStage ( iS ) % Element, iS_Option = iS )
     end do !-- iS
 
@@ -669,11 +668,11 @@ contains
 
     associate ( K_Sum  =>  S % SlopeSum )
 
-    call K_Sum % Clear ( )
+    call K_Sum % ClearRecursive ( )
 
     do iS  =  1,  S % nStages
       associate ( K  =>  S % SlopeStage ( iS ) % Element )
-      call K_Sum % Increment ( K, S % B ( iS ), iS )
+      call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
       end associate !-- K
     end do !-- iS
 
@@ -799,12 +798,12 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine SetSlope_H ( S, Sp, iS_Option )
+  subroutine SetSlope_H ( S, K, iS_Option )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
     class ( Slope_H_Form ), intent ( out ), allocatable :: &
-      Sp
+      K
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option
 
@@ -813,7 +812,7 @@ contains
     character ( LDL ) :: &
       Name
 
-    allocate ( Slope_H_Form :: Sp )
+    allocate ( Slope_H_Form :: K )
     associate ( A  =>  S % Atlas )
 
     Name  =  'Slope'
@@ -822,7 +821,7 @@ contains
       Name  =  trim ( Name ) // '_' // StageNumber
     end if
 
-    call Sp % Initialize &
+    call K % Initialize &
            ( A, &
              NameOption = Name, &
              IgnorabilityOption = A % IGNORABILITY + 1 )
