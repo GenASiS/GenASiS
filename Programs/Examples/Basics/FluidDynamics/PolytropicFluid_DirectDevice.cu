@@ -213,9 +213,15 @@ void ApplyBoundaryConditionsReflectingPolytropic_C
   
   int *d_nB, *d_oBE, *d_oBI;
   
+  /*
   hipHostMalloc ( &d_nB,  3 * sizeof ( int ) );
   hipHostMalloc ( &d_oBE, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_oBI, 3 * sizeof ( int ) );
+  */
+  
+  hipMalloc ( &d_nB,  3 * sizeof ( int ) );
+  hipMalloc ( &d_oBE, 3 * sizeof ( int ) );
+  hipMalloc ( &d_oBI, 3 * sizeof ( int ) );
   
   hipMemcpy ( d_nB, nB, 3 * sizeof ( int ), hipMemcpyDefault );
   hipMemcpy ( d_oBE, oBE, 3 * sizeof ( int ), hipMemcpyDefault );

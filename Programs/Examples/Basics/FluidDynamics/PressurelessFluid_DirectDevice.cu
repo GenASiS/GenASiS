@@ -180,9 +180,14 @@ void ApplyBoundaryConditionsReflectingPressureless_C
   
   int *d_nB, *d_oBE, *d_oBI;
   
+  /*
   hipHostMalloc ( &d_nB,  3 * sizeof ( int ) );
   hipHostMalloc ( &d_oBE, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_oBI, 3 * sizeof ( int ) );
+  */
+  hipMalloc ( &d_nB,  3 * sizeof ( int ) );
+  hipMalloc ( &d_oBE, 3 * sizeof ( int ) );
+  hipMalloc ( &d_oBI, 3 * sizeof ( int ) );
   
   hipMemcpy ( d_nB, nB, 3 * sizeof ( int ), hipMemcpyDefault );
   hipMemcpy ( d_oBE, oBE, 3 * sizeof ( int ), hipMemcpyDefault );
@@ -263,10 +268,17 @@ void ComputeRiemannSolverInputPressureless_C
   
   int *d_lV, *d_uV, *d_iaS_M, *d_iaS_P; 
   
+  /*
   hipHostMalloc ( &d_lV, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_uV, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_iaS_M, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_iaS_P, 3 * sizeof ( int ) );
+  */
+  
+  hipMalloc ( &d_lV, 3 * sizeof ( int ) );
+  hipMalloc ( &d_uV, 3 * sizeof ( int ) );
+  hipMalloc ( &d_iaS_M, 3 * sizeof ( int ) );
+  hipMalloc ( &d_iaS_P, 3 * sizeof ( int ) );
   
   hipMemcpy ( d_lV, lV, 3 * sizeof ( int ), hipMemcpyDefault );
   hipMemcpy ( d_uV, uV, 3 * sizeof ( int ), hipMemcpyDefault );

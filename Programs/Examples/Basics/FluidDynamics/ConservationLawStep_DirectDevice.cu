@@ -107,15 +107,21 @@ void ComputeDifferences_C
   
   int *d_lV, *d_uV, *d_iaS; 
   
+  /*
   hipHostMalloc ( &d_lV, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_uV, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_iaS, 3 * sizeof ( int ) );
+  */
+  hipMalloc ( &d_lV, 3 * sizeof ( int ) );
+  hipMalloc ( &d_uV, 3 * sizeof ( int ) );
+  hipMalloc ( &d_iaS, 3 * sizeof ( int ) );
   
   hipMemcpy ( d_lV, lV, 3 * sizeof ( int ), hipMemcpyDefault );
   hipMemcpy ( d_uV, uV, 3 * sizeof ( int ), hipMemcpyDefault );
+  
+  iaS [ iD - 1 ] = -1;
   hipMemcpy ( d_iaS, iaS, 3 * sizeof ( int ), hipMemcpyDefault );
   
-  d_iaS [ iD - 1 ] = -1;
   hipLaunchKernelGGL 
     ( ( ComputeDifferencesLeftDeviceKernel ), 
       dim3 ( grid_Dim ), dim3 ( block_Dim ), 0, 0, 
@@ -123,7 +129,9 @@ void ComputeDifferences_C
 
   DeviceSynchronize (  );
 
-  d_iaS [ iD - 1 ] = +1;
+  iaS [ iD - 1 ] = +1;
+  hipMemcpy ( d_iaS, iaS, 3 * sizeof ( int ), hipMemcpyDefault );
+  
   hipLaunchKernelGGL 
     ( ( ComputeDifferencesRightDeviceKernel ), 
         dim3 ( grid_Dim ), dim3 ( block_Dim ), 0, 0,
@@ -278,9 +286,14 @@ void ComputeFluxes_C
   
   int *d_lV, *d_uV, *d_iaS; 
   
+  /*
   hipHostMalloc ( &d_lV, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_uV, 3 * sizeof ( int ) );
   hipHostMalloc ( &d_iaS, 3 * sizeof ( int ) );
+  */
+  hipMalloc ( &d_lV, 3 * sizeof ( int ) );
+  hipMalloc ( &d_uV, 3 * sizeof ( int ) );
+  hipMalloc ( &d_iaS, 3 * sizeof ( int ) );
   
   hipMemcpy ( d_lV, lV, 3 * sizeof ( int ), hipMemcpyDefault );
   hipMemcpy ( d_uV, uV, 3 * sizeof ( int ), hipMemcpyDefault );

@@ -193,7 +193,7 @@ contains
     iaS ( iD ) = -1
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
+    !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS ) 
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
