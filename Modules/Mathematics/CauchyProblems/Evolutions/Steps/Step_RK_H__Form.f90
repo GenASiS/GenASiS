@@ -41,7 +41,7 @@ module Step_RK_H__Form
       SetSlope => null ( )
   contains
     procedure, public, pass :: &
-      Initialize_H
+      Initialize_H  !-- Do not overload: needs overriding of SetSlope
     procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
@@ -189,7 +189,6 @@ contains
 
     allocate ( S % SlopeStage ( nS ) )
     do iS  =  1,  nS
-call Show ( iS, '>>> iS' )
       call S % SetSlope ( S % SlopeStage ( iS ) % Element, iS_Option = iS )
     end do !-- iS
 
