@@ -149,7 +149,18 @@ contains
     class ( Step_RK_CS_Form ), intent ( in ) :: &
       S
 
+   character ( LDL ), dimension ( : ), allocatable :: &
+     TypeWord, &
+     TypePiece
+
     call S % Step_RK_H_Form % Show ( )
+
+    call Split ( S % RiemannSolver % Type, ' ', TypeWord )
+    call Split ( TypeWord ( 2 ), '_', TypePiece )
+    call Show ( TypePiece ( 2 ), 'RiemannSolver Type', S % IGNORABILITY )
+
+    call Show ( S % RiemannSolver % Reconstruction_BS % Order, &
+                'Reconstruction Order', S % IGNORABILITY )
 
     call S % Solution % Show ( )
     call S % Intermediate % Show ( )
