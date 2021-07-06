@@ -1,6 +1,6 @@
 module Atlas_SCG_CE__Form
 
-  !-- Atlas_SingleChartGrid_ChartExcision_Form
+  !-- Atlas_SingleChartGrid_CentralExcision_Form
 
   use Basics
   use Charts
@@ -30,7 +30,7 @@ contains
                  CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
                  nCellsPolarOption, nEqualOption )
 
-    class ( Atlas_SCG_CE_Form ), intent ( inout ) :: &
+    class ( Atlas_SCG_CE_Form ), intent ( inout ), target :: &
       A
     real ( KDR ), intent ( in ) :: &
       RadiusMax, &
