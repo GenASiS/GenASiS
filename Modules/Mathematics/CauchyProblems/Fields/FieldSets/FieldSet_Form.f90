@@ -547,7 +547,7 @@ contains
     associate ( iT  =>  FS % iTimerGhost_UH )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( T_G % Name ) // '_UH'
+      TimerName  =  trim ( T_G % Name ) // '_UpdtHst'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -581,7 +581,7 @@ contains
     associate ( iT  =>  FS % iTimerGhost_EG )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( T_G % Name ) // '_EG'
+      TimerName  =  trim ( T_G % Name ) // '_Exchng'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -615,7 +615,7 @@ contains
     associate ( iT  =>  FS % iTimerGhost_UD )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( T_G % Name ) // '_UD'
+      TimerName  =  trim ( T_G % Name ) // '_UpdtDvc'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
