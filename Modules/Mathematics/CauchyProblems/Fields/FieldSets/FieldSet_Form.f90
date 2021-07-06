@@ -358,6 +358,9 @@ contains
              FieldOption = FS_S % Field, &
              VectorOption = Vector_T, &
              NameOption = Name, &
+             DeviceMemoryOption = FS_S % DeviceMemory, &
+             PinnedMemoryOption = FS_S % PinnedMemory, &
+             DevicesCommunicateOption = FS_S % DevicesCommunicate, &
              UnitOption = FS_S % Unit, &
              VectorIndicesOption = VectorIndices_T, &
              nFieldsOption = size ( FS_T % iaSelected ), &
