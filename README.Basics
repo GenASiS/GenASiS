@@ -1,4 +1,33 @@
-README: BUILDING GENASIS APPLICATIONS, EXAMPLES, AND/OR UNIT TESTS
+--------------------------------------------------------------------------
+GenASiS Basics: What is it
+--------------------------------------------------------------------------
+The Basics division of GenASiS implements utilitarian functionalities
+required for large-scale physics simulations on distributed-memory
+supercomputers. It contains classes such as physical units and constants,
+display to screen or standard output device, exploitation of hardware
+accelerators (e.g. GPUs), message passing, I/O to disk, and runtime
+parameter management and usage statistics. 
+
+These classes are used in higher-level divisions of GenASiS: Mathematics and
+Physics. 
+
+Example problems implemented in Basics (e.g. FluidDynamics) use these
+functionalities with a more simplified distributed mesh and solvers. These
+solvers mimic the more sophisticated ones in higher-level divisions,
+allowing these example problems to be used as proxy applications. 
+
+
+--------------------------------------------------------------------------
+HIP Branch
+--------------------------------------------------------------------------
+
+In this HIP branch, the computation kernels in Basics FluidDynamic exmple
+problems were ported to HIP for offloading to GPUs. This may be used as 
+comparisons with the OpenMP offload version in the main branch. 
+
+
+--------------------------------------------------------------------------
+Building Applications, Examples, and/or Unit Tests
 --------------------------------------------------------------------------
 
 A machine-specific Makefile is needed to build GenASiS programs. Several 
