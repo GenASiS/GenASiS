@@ -1,0 +1,8 @@
+GRAVITATIONS = \
+  Gravitations.o \
+  Gravitation_G__Form.o
+#  Gravitation_NSG_A__Kernel.o \
+  Gravitation_NSG_A__Form.o \
+  Gravitation_NH_A__Form.o \
+  Gravitation_NH_C__Form.o \
+  Gravitation_G_A__Form.o \
