@@ -1,0 +1,81 @@
+PATH_GENASIS = ../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Universes.a #FluidBox_Form_Test #FluidSymmetricCurvilinear_Form_Test \
+     FluidCentralExcision_Form_Test FluidCentralCore_Form_Test
+
+FluidBox_Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
+  Fluids.a Universes.a FluidBox_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidBox_Form_Test_$(MACHINE) \
+          FluidBox_Form_Test.o Universes.a \
+          Fluids.a Gravitations.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+FluidSymmetricCurvilinear_Form_Test: ThirdParty.a Basics.a Mathematics.a \
+  Spaces.a StressEnergies.a FluidSymmetricCurvilinear_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidSymmetricCurvilinear_Form_Test_$(MACHINE) \
+          FluidSymmetricCurvilinear_Form_Test.o \
+          FluidSymmetricCurvilinear_Form.o ApplyGravity_F__Command.o \
+          StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+FluidCentralExcision_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  StressEnergies.a FluidCentralExcision_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidCentralExcision_Form_Test_$(MACHINE) \
+          FluidCentralExcision_Form_Test.o FluidCentralExcision_Form.o \
+          FluidCentral_Template.o ApplyGravity_F__Command.o \
+          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
+          Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+FluidCentralCore_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  StressEnergies.a FluidCentralCore_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidCentralCore_Form_Test_$(MACHINE) \
+          FluidCentralCore_Form_Test.o FluidCentralCore_Form.o \
+          FluidCentral_Template.o ApplyGravity_F__Command.o \
+          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
+          Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+clean: clean_ThirdParty
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f FluidBox_Form_Test_*
+	rm -f FluidSymmetricCurvilinear_Form_Test_*
+	rm -f FluidCentralExcision_Form_Test_*
+	rm -f FluidCentralCore_Form_Test_*
+
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include $(PATH_GRAVITATIONS)/Makefile_Dependencies
+include $(PATH_FLUIDS)/Makefile_Dependencies
+include $(PATH_UNIVERSES)/Makefile_Dependencies
+
+FluidBox_Form_Test.o: \
+  Basics.o \
+  FluidBox_Form.o \
+  FluidBox_Form_Test.f90
+
+FluidSymmetricCurvilinear_Form_Test.o: \
+  Basics.o \
+  FluidSymmetricCurvilinear_Form.o \
+  FluidSymmetricCurvilinear_Form_Test.f90
+
+FluidCentralExcision_Form_Test.o: \
+  Basics.o \
+  FluidCentralExcision_Form.o \
+  FluidCentralExcision_Form_Test.f90
+
+FluidCentralCore_Form_Test.o: \
+  Basics.o \
+  Mathematics.o \
+  StressEnergies.o \
+  FluidCentralCore_Form.o \
+  FluidCentralCore_Form_Test.f90
