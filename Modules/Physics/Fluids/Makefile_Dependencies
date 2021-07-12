@@ -2,30 +2,21 @@ Units_F__Form.o: \
   Basics.o \
   Units_F__Form.f90
 
-Fluid_D_C__Form.o: \
+Fluid_D__Form.o: \
   Basics.o \
   Mathematics.o \
   Gravitations.o \
   Units_F__Form.o \
-  Fluid_D_C__Form.f90
+  Fluid_D__Form.f90
 
-Fluid_D_C__Kernel.o: \
+Fluid_D__Kernel.o: \
   Basics.o \
-  Fluid_D_C__Form.o \
-  Fluid_D_C__Kernel.f90
-
-Fluid_D_A__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Gravitations.o \
-  Units_F__Form.o \
-  Fluid_D_C__Form.o \
-  Fluid_D_A__Form.f90
+  Fluid_D__Form.o \
+  Fluid_D__Kernel.f90
 
 Fluids.o: \
   Units_F__Form.o \
-  Fluid_D_C__Form.o \
-  Fluid_D_A__Form.o \
+  Fluid_D__Form.o \
   Fluids.f90
 
 Fluids.a: $(FLUIDS)

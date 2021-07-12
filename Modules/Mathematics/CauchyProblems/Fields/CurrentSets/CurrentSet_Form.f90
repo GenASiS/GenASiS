@@ -366,7 +366,7 @@ contains
       CS
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
-      iD  !-- iDimension
+      iD     !-- iDimension
     
     integer ( KDI ) :: &
       iDensity

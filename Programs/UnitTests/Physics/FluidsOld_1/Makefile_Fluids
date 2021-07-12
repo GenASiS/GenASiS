@@ -2,17 +2,17 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Fluids.a Fluid_D__Form_Test #FluidFeatures_P__Form_Test Fluid_P_I__Form_Test \
+all: Fluid_D_C__Form_Test #FluidFeatures_P__Form_Test Fluid_P_I__Form_Test \
      Fluid_P_HN__Form_Test Tally_F_D__Form_Test Tally_F_P__Form_Test \
      Tally_F_P_HN__Form_Test Sources_F__Form_Test Fluid_CSL__Form_Test \
      Sources_F_CSL__Form_Test FluidFeatures_CSL__Form_Test \
      Fluid_ASC__Form_Test
 
-Fluid_D__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
-  Fluids.a Fluid_D__Form_Test.o
+Fluid_D_C__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
+  Fluids.a Fluid_D_C__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o Fluid_D__Form_Test_$(MACHINE) \
-          Fluid_D__Form_Test.o Fluids.a \
+          -o Fluid_D_C__Form_Test_$(MACHINE) \
+          Fluid_D_C__Form_Test.o Fluids.a \
           Gravitations.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 # FluidFeatures_P__Form_Test: ThirdParty.a Basics.a Mathematics.a \
@@ -139,7 +139,7 @@ clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f Fluid_D__Form_Test_*
+	rm -f Fluid_D_C__Form_Test_*
 # 	rm -f FluidFeatures_P__Form_Test_*
 # 	rm -f Fluid_P_I__Form_Test_*
 # 	rm -f Fluid_P_HN__Form_Test_*
@@ -164,7 +164,7 @@ Fluid_D__Form_Test.o: \
   Mathematics.o \
   Gravitations.o \
   Fluids.o \
-  Fluid_D__Form_Test.f90
+  Fluid_D_C__Form_Test.f90
 
 # FluidFeatures_P__Form_Test.o: \
 #   Basics.o \
