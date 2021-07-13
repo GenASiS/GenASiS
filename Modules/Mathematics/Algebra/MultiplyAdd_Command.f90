@@ -28,7 +28,7 @@ module MultiplyAdd_Command
 contains
 
 
-  subroutine MultiplyAddReal_1D ( A, B, C, D )
+  subroutine MultiplyAddReal_1D ( A, B, C, D, UseDeviceOption )
   
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       A, &
@@ -37,19 +37,36 @@ contains
       C
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       D
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
                       
     integer ( KDI ) :: &
       iV, &
       nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      D ( iV ) =  A ( iV )  +  C * B ( iV )
-    end do
-    !$OMP end parallel do
-  
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        D ( iV ) =  A ( iV )  +  C * B ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else 
+      !$OMP parallel do private ( iV )
+      do iV = 1, nV
+        D ( iV ) =  A ( iV )  +  C * B ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+    
   end subroutine MultiplyAddReal_1D
 
 

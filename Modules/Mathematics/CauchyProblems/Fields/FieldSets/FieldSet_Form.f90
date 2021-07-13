@@ -74,8 +74,12 @@ module FieldSet_Form
       Clear => Clear_FS
     procedure, public, pass ( FS_S ) :: &
       Copy => Copy_FS
-    procedure, public, pass :: &
-      MultiplyAdd => MultiplyAdd_FS
+    procedure, private, pass :: &
+      MultiplyAdd_FS
+    procedure, private, pass :: &
+      MultiplyAddInPlace_FS
+    generic, public :: &
+      MultiplyAdd => MultiplyAdd_FS, MultiplyAddInPlace_FS
     procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
@@ -697,7 +701,43 @@ contains
   end subroutine Copy_FS
 
 
-  subroutine MultiplyAdd_FS ( FS_A, FS_B, C )
+  subroutine MultiplyAdd_FS ( FS_D, FS_A, FS_B, C )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_D
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_A, &
+      FS_B
+    real ( KDR ), intent ( in ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iC, &    !-- iChart
+      iS, &    !-- iSelected
+      iF_A, &  !-- iField
+      iF_B, &
+      iF_D
+
+    do iC  =  1,  FS_A % Atlas % nCharts
+      associate &
+        ( A  =>  FS_A % Storage ( iC ) % Value, &
+          B  =>  FS_B % Storage ( iC ) % Value, &
+          D  =>  FS_D % Storage ( iC ) % Value )
+      do iS  =  1,  FS_D % nFields
+        iF_A  =  FS_A % iaSelected ( iS )
+        iF_B  =  FS_B % iaSelected ( iS )
+        iF_D  =  FS_D % iaSelected ( iS )
+        call MultiplyAdd &
+               ( A ( :, iF_A ), B ( :, iF_B ), C, D ( :, iF_D ), &
+                 UseDeviceOption = FS_D % DeviceMemory )
+      end do !-- iS
+      end associate !-- A, etc.
+    end do !-- iC
+
+  end subroutine MultiplyAdd_FS
+
+
+  subroutine MultiplyAddInPlace_FS ( FS_A, FS_B, C )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS_A
@@ -726,7 +766,7 @@ contains
       end associate !-- A, etc.
     end do !-- iC
 
-  end subroutine MultiplyAdd_FS
+  end subroutine MultiplyAddInPlace_FS
 
 
   subroutine ExchangeGhostData ( FS, T_Option )

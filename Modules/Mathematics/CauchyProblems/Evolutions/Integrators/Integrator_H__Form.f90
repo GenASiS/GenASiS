@@ -65,6 +65,8 @@ module Integrator_H__Form
       Geometry_X
     class ( Step_RK_H_Form ), allocatable :: &
       Step_X
+    class ( * ), pointer :: &
+      System => null ( )
     procedure ( SI ), public, pointer :: &
       SetInitial => null ( )
     procedure ( RI ), public, pointer :: &
@@ -504,6 +506,7 @@ contains
     if ( allocated ( I % GridImageStream ) ) &
       deallocate ( I % GridImageStream )
 
+    nullify ( I % System )
     nullify ( I % Communicator )
 
     call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
