@@ -13,8 +13,8 @@ FluidBox_Form.o: \
 
 Universes.o: \
   Universe_H__Form.o \
+  FluidBox_Form.o \
   Universes.f90
-#  FluidBox_Form.o \
 
 Universes.a: $(UNIVERSES)
 	ar r Universes.a $(UNIVERSES)
