@@ -46,10 +46,10 @@ program FieldSet_Form_Test
   DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
-  PinnedMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
-  call PROGRAM_HEADER % GetParameter ( PinnedMemory, 'PinnedMemory' )
-
-  DevicesCommunicate  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
+  PinnedMemory        =  DeviceMemory
+  DevicesCommunicate  =  DeviceMemory
+  call PROGRAM_HEADER % GetParameter &
+         ( PinnedMemory, 'PinnedMemory' )
   call PROGRAM_HEADER % GetParameter &
          ( DevicesCommunicate, 'DevicesCommunicate' )
 
