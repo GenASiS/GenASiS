@@ -11,19 +11,19 @@ module HomogeneousSpheroid_Form
       GridImageStream
     type ( Atlas_SCG_CC_Form ), allocatable :: &
       Atlas
-    type ( FieldSet_A_Form ), allocatable :: &
-      Source_A, &
-      Solution_A, &
-      Reference_A, &
-      Difference_A
-    type ( Stream_A_Form ), allocatable :: &
-      Stream_A
-    type ( Geometry_F_A_Form ), allocatable :: &
-      Geometry_A
-    type ( Gradient_A_Form ), allocatable :: &
-      GradSolution_A
-    type ( Poisson_A_Form ), allocatable :: &
-      Poisson_A
+    type ( FieldSetForm ), allocatable :: &
+      Source, &
+      Solution, &
+      Reference, &
+      Difference
+    type ( StreamForm ), allocatable :: &
+      Stream
+    type ( Geometry_F_Form ), allocatable :: &
+      Geometry
+    type ( GradientForm ), allocatable :: &
+      GradSolution
+    type ( Poisson_ASCG_Form ), allocatable :: &
+      Poisson
   contains
     procedure, public, pass :: &
       Initialize
@@ -74,77 +74,79 @@ contains
              RadiusCore = 10.0_KDR / 8.0_KDR, &
              CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-    allocate ( HS % Stream_A )
-    associate ( SA  =>  HS % Stream_A )
-    call SA % Initialize ( A, GIS )
+    allocate ( HS % Stream )
+    associate ( S  =>  HS % Stream )
+    call S % Initialize ( A, GIS )
 
-    allocate ( HS % Geometry_A )
-    associate ( GA  =>  HS % Geometry_A )
-    call GA % Initialize ( A )
-    call GA % SetStream ( SA )
+    allocate ( HS % Geometry )
+    associate ( G  =>  HS % Geometry )
+    call G % Initialize ( A )
+    call G % SetStream ( S )
 
     nEquations = 3
 
     MaxDegree = 12
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
-    allocate ( HS % Poisson_A )
-    associate ( PA  =>  HS % Poisson_A )
-    call PA % Initialize ( GA, 'MULTIPOLE', MaxDegree, nEquations )
+    allocate ( HS % Poisson )
+    associate ( P  =>  HS % Poisson )
+    call P % Initialize ( G, 'MULTIPOLE', MaxDegree, nEquations )
 
     allocate ( Field ( nEquations ) )
     Field  =  [ 'OblateSpheroid_1', &
                 'OblateSpheroid_2', &
                 'ProlateSpheroid ' ]
 
-    allocate ( HS % Source_A )
-    call HS % Source_A % Initialize &
+    allocate ( HS % Source )
+    call HS % Source % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Source', &
-             DeviceMemoryOption = PA % Laplacian_M % DeviceMemory, &
+             DeviceMemoryOption = P % Laplacian_M % DeviceMemory, &
              nFieldsOption = nEquations )
     
-    allocate ( HS % Solution_A )
-    call HS % Solution_A % Initialize &
+    allocate ( HS % Solution )
+    call HS % Solution % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Solution', &
-             DeviceMemoryOption = PA % Laplacian_M % DeviceMemory, &
+             DeviceMemoryOption = P % Laplacian_M % DeviceMemory, &
              nFieldsOption = nEquations )
-    call HS % Solution_A % SetBoundaryConditionsFace &
-           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
-    call HS % Solution_A % SetBoundaryConditionsFace &
-           ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
+    call HS % Solution % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
+    call HS % Solution % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
+    call HS % Solution % SetBoundaryConditionsFace &
+           ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 3 )
     
-    allocate ( HS % Reference_A )
-    call HS % Reference_A % Initialize &
+    allocate ( HS % Reference )
+    call HS % Reference % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Reference', &
              nFieldsOption = nEquations )
     
-    allocate ( HS % Difference_A )
-    call HS % Difference_A % Initialize &
+    allocate ( HS % Difference )
+    call HS % Difference % Initialize &
            ( A, &
              FieldOption = Field, &
              NameOption = 'Difference', &
              nFieldsOption = nEquations )
 
-    call SA % AddFieldSet ( HS % Source_A )
-    call SA % AddFieldSet ( HS % Solution_A )
-    call SA % AddFieldSet ( HS % Reference_A )
-    call SA % AddFieldSet ( HS % Difference_A )
+    call S % AddFieldSet ( HS % Source )
+    call S % AddFieldSet ( HS % Solution )
+    call S % AddFieldSet ( HS % Reference )
+    call S % AddFieldSet ( HS % Difference )
 
-    allocate ( HS % GradSolution_A )
-    associate ( GSA  =>  HS % GradSolution_A )
-    call GSA % Initialize ( GA, HS % Solution_A )
-    call GSA % SetStream ( SA )
+    allocate ( HS % GradSolution )
+    associate ( GS  =>  HS % GradSolution )
+    call GS % Initialize ( G, HS % Solution )
+    call GS % SetStream ( S )
 
-    call  A % Show ( )
-    call GA % Show ( )
-    call PA % Show ( )
-    call SA % Show ( )
+    call A % Show ( )
+    call G % Show ( )
+    call P % Show ( )
+    call S % Show ( )
 
     call Show ( 'Spheroid Parameters' )
 
@@ -157,7 +159,7 @@ contains
 
     allocate ( Eccentricity ( nEquations ) )
     Eccentricity  =  sqrt ( 1.0_KDR &
-                           - [ 0.7_KDR ** 2, 0.2_KDR ** 2, 0.2_KDR ** 2 ] )
+                            - [ 0.7_KDR ** 2, 0.2_KDR ** 2, 0.2_KDR ** 2 ] )
     call PROGRAM_HEADER % GetParameter ( Eccentricity, 'Eccentricity' )
     call Show ( Eccentricity, 'Eccentricity' )
 
@@ -168,10 +170,10 @@ contains
     call HS % SetHomogeneousSpheroids &
            ( SemiMajor, Eccentricity, Density, nEquations )
 
-    end associate !-- GSA
-    end associate !-- PA
-    end associate !-- GA
-    end associate !-- SA
+    end associate !-- GS
+    end associate !-- P
+    end associate !-- G
+    end associate !-- S
     end associate !-- A
     end associate !-- GIS
 
@@ -186,25 +188,25 @@ contains
     integer ( KDI ) :: &
       iD
 
-    associate ( PA  =>  HS % Poisson_A )
-    call PA % Solve ( HS % Solution_A, HS % Source_A )
-    end associate !-- PA
+    associate ( P  =>  HS % Poisson )
+    call P % Solve ( HS % Solution, HS % Source )
+    end associate !-- P
 
-    call ComputeError ( HS % Difference_A, HS % Solution_A, HS % Reference_A )
+    call ComputeError ( HS % Difference, HS % Solution, HS % Reference )
 
     associate ( nD  =>  HS % Atlas % Chart ( 1 ) % Element % nDimensions )
     do iD  =  1, nD
-      associate ( GSA  =>  HS % GradSolution_A )
-      call GSA % Compute ( iD )
-      end associate !-- GSA
+      associate ( GS  =>  HS % GradSolution )
+      call GS % Compute ( iD )
+      end associate !-- GS
     end do !-- iD
     end associate !-- nD
 
     associate &
       ( GIS  =>  HS % GridImageStream, &
-         SA  =>  HS % Stream_A )
+          S  =>  HS % Stream )
     call GIS % Open ( GIS % ACCESS_CREATE )
-    call SA % Write ( )
+    call S % Write ( )
     call GIS % Close ( )
     end associate !-- GIS, etc.
 
@@ -216,22 +218,22 @@ contains
     type ( HomogeneousSpheroidForm ), intent ( inout ) :: &
       HS
 
-    if ( allocated ( HS % Poisson_A ) ) &
-      deallocate ( HS % Poisson_A )
-    if ( allocated ( HS % GradSolution_A ) ) &
-      deallocate ( HS % GradSolution_A )
-    if ( allocated ( HS % Geometry_A ) ) &
-      deallocate ( HS % Geometry_A )
-    if ( allocated ( HS % Stream_A ) ) &
-      deallocate ( HS % Stream_A )
-    if ( allocated ( HS % Difference_A ) ) &
-      deallocate ( HS % Difference_A )
-    if ( allocated ( HS % Reference_A ) ) &
-      deallocate ( HS % Reference_A )
-    if ( allocated ( HS % Solution_A ) ) &
-      deallocate ( HS % Solution_A )
-    if ( allocated ( HS % Source_A ) ) &
-      deallocate ( HS % Source_A )
+    if ( allocated ( HS % Poisson ) ) &
+      deallocate ( HS % Poisson )
+    if ( allocated ( HS % GradSolution ) ) &
+      deallocate ( HS % GradSolution )
+    if ( allocated ( HS % Geometry ) ) &
+      deallocate ( HS % Geometry )
+    if ( allocated ( HS % Stream ) ) &
+      deallocate ( HS % Stream )
+    if ( allocated ( HS % Difference ) ) &
+      deallocate ( HS % Difference )
+    if ( allocated ( HS % Reference ) ) &
+      deallocate ( HS % Reference )
+    if ( allocated ( HS % Solution ) ) &
+      deallocate ( HS % Solution )
+    if ( allocated ( HS % Source ) ) &
+      deallocate ( HS % Source )
     if ( allocated ( HS % Atlas ) ) &
       deallocate ( HS % Atlas )
     if ( allocated ( HS % GridImageStream ) ) &
@@ -271,24 +273,24 @@ contains
 
     do iE  =  1, nEquations
       call SetHomogeneousSpheroidKernel &
-             ( HS % Source_A, HS % Reference_A, HS % Geometry_A, &
+             ( HS % Source, HS % Reference, HS % Geometry, &
                Density, SemiMajor ( iE), SemiMinor ( iE ), iE )
     end do
 
-    call HS % Source_A % UpdateDevice ( )
+    call HS % Source % UpdateDevice ( )
 
   end subroutine SetHomogeneousSpheroids
 
 
   subroutine SetHomogeneousSpheroidKernel &
-               ( Source_A, Reference_A, GA, Density, a_1, a_3, &
+               ( Source, Reference, G, Density, a_1, a_3, &
                  iField )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Source_A, &
-      Reference_A
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      GA
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Source, &
+      Reference
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
     real ( KDR ), intent ( in ) :: &
       Density, &
       a_1, &
@@ -341,15 +343,13 @@ contains
 
     !-- Geometry
 
-    select type ( C  =>  GA % Atlas % Chart ( 1 ) % Element )
-    class is ( Chart_GS_Form )
-
-    select type ( GC  =>  GA % FieldSet_C ( 1 ) % Element )
-      class is ( Geometry_F_C_Form )
+    select type ( A  =>  G % Atlas )
+      class is ( Atlas_SCG_Form )
     associate &
-      ( GV  =>  GC % Storage_FSC % Storage % Value )
+      ( C   =>  A % Chart_GS, &
+        GV  =>  G % Storage_GS % Value )
     associate &
-      ( dV  =>  GV ( :, GC % VOLUME ) )
+      ( dV  =>  GV ( :, G % VOLUME ) )
 
     allocate ( VF ( size ( dV ) ) )
     call Clear ( VF )
@@ -364,8 +364,8 @@ contains
 
       if ( .not. C % ProperCell ( iC ) ) cycle
 
-       X  =  GV ( iC, GC % CENTER_U_1 : GC % CENTER_U_3 )
-      dX  =  GV ( iC, GC %  WIDTH_U_1 : GC %  WIDTH_U_3 )
+       X  =  GV ( iC, G % CENTER_U_1 : G % CENTER_U_3 )
+      dX  =  GV ( iC, G %  WIDTH_U_1 : G %  WIDTH_U_3 )
 
       X_I  =  X  -  0.5_KDR * dX
       X_O  =  X  +  0.5_KDR * dX
@@ -430,8 +430,8 @@ contains
     end do !-- iC
 
     associate &
-      (     R  =>  GV ( :, GC % CENTER_U ( 1 ) ), &
-        Theta  =>  GV ( :, GC % CENTER_U ( 2 ) ) )
+      (     R  =>  GV ( :, G % CENTER_U ( 1 ) ), &
+        Theta  =>  GV ( :, G % CENTER_U ( 2 ) ) )
 
     allocate &
       ( rho_sq  ( size ( R ) ) , &
@@ -439,22 +439,18 @@ contains
         l       ( size ( R ) ), &
         C_I_vec ( size ( R ) ) )
          
-
     rho_sq  =  ( R * sin ( Theta ) ) ** 2
-    Z_sq    =  ( R * cos ( Theta ) ) ** 2
+      Z_sq  =  ( R * cos ( Theta ) ) ** 2
 
     end associate !-- R, etc.
     end associate !-- dV
-    end associate !-- GV
-    end select !-- GC
-    end select !-- C
+    end associate !-- C, etc.
+    end select !-- A
 
     !-- Source
 
     associate &
-      ( SC  =>  Source_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SV  =>  SC % Storage_FSC % Storage % Value )
+      ( SV  =>  Source % Storage_GS % Value )
     associate &
       ( D  =>  SV ( :, iField ) )
 
@@ -462,7 +458,6 @@ contains
 
     end associate !-- D
     end associate !-- SV
-    end associate !-- SC
 
     !-- Reference
 
@@ -484,15 +479,13 @@ contains
     end if
 
     associate &
-      ( RC  =>  Reference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( RV  =>  RC % Storage_FSC % Storage % Value )
+      ( RV  =>  Reference % Storage_GS % Value )
     associate &
       ( Phi  =>  RV ( :, iField ) )
 
     where ( rho_sq / a_1_sq + Z_sq / a_3_sq <= 1.0_KDR )
       Phi  =   - Density * Pi &
-                   * ( C_I * a_1_sq  - C_A * rho_sq - C_B * Z_sq )
+                 * ( C_I * a_1_sq  - C_A * rho_sq - C_B * Z_sq )
     end where
 
     l = 0.0_KDR
@@ -536,17 +529,16 @@ contains
 
     end associate !-- Phi
     end associate !-- RV
-    end associate !-- RC
 
   end subroutine SetHomogeneousSpheroidKernel
 
 
-  subroutine ComputeError ( Difference_A, Solution_A, Reference_A )
+  subroutine ComputeError ( Difference, Solution, Reference )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Difference_A, &         
-      Solution_A, &
-      Reference_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Difference, &         
+      Solution, &
+      Reference
 
     integer ( KDI ) :: &
       nEquations
@@ -557,21 +549,16 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
+    nEquations  =  Solution % nFields
+
+    call Difference % MultiplyAdd ( Solution, Reference, -1.0_KDR )
+
+    select type ( A  =>  Difference % Atlas )
+      class is ( Atlas_SCG_Form )
     associate &
-      ( SC  =>  Solution_A   % FieldSet_C ( 1 ) % Element, &
-        RC  =>  Reference_A  % FieldSet_C ( 1 ) % Element, &
-        DC  =>  Difference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SV  =>  SC % Storage_FSC % Storage % Value, &
-        RV  =>  RC % Storage_FSC % Storage % Value, &
-        DV  =>  DC % Storage_FSC % Storage % Value )
-
-    nEquations  =  SC % nFields
-
-    call MultiplyAdd ( SV, RV, -1.0_KDR, DV )
-
-    select type ( C  =>  SC % Chart )
-    class is ( Chart_GS_Form ) 
+      ( C   =>  A % Chart_GS, &
+        RV  =>  Reference % Storage_GS % Value, &
+        DV  =>  Difference % Storage_GS % Value )
 
     call CO % Initialize &
            ( C % Communicator, [ 2 * nEquations ], [ 2 * nEquations ] )
@@ -612,9 +599,8 @@ contains
 
     ! Difference % Value = abs ( Difference % Value / Reference % Value )
 
-    end select !-- C
-    end associate !-- SV, etc.
-    end associate !-- SC, etc.
+    end associate !-- C, etc.
+    end select !-- A
 
   end subroutine ComputeError
 
