@@ -1,17 +1,19 @@
-program RectangularContraction
+program RectangularContraction_VLC
+
+  !-- RectangularContraction_VelocityLinearConstant
 
   use Basics
   use Mathematics
-  use LinearAdvection_Form
+  use ImposedAdvection_VL__Form
 
   implicit none
 
-  type ( LinearAdvectionForm ), allocatable :: &
+  type ( ImposedAdvection_VL_Form ), allocatable :: &
     RC
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'RectangularContraction', DimensionalityOption = '1D' )
+         ( 'RectangularContraction_VLC', DimensionalityOption = '1D' )
 
   allocate ( RC )
   call RC % Initialize &
@@ -22,4 +24,4 @@ program RectangularContraction
 
   deallocate ( PROGRAM_HEADER )
 
-end program RectangularContraction
+end program RectangularContraction_VLC

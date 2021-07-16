@@ -35,8 +35,8 @@ contains
 
   subroutine Initialize_GS_C &
                ( C, RadiusMin, RadiusMax, RadiusScale, CommunicatorOption, &
-                 CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsPolarOption, nEqualOption )
+                 NameOption, CoordinateUnitOption, RadialRatioOption, &
+                 nGhostLayersOption, nCellsPolarOption, nEqualOption )
 
     class ( Chart_GS_C_Form ), intent ( inout ) :: &
       C
@@ -46,6 +46,8 @@ contains
       RadiusScale
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      NameOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -121,6 +123,7 @@ contains
            ( CommunicatorOption = CommunicatorOption, &
              SpacingOption = Spacing, &
              CoordinateSystemOption = CoordinateSystem, &
+             NameOption = NameOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &

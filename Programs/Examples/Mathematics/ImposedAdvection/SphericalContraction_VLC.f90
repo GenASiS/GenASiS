@@ -1,17 +1,19 @@
-program SphericalContraction
+program SphericalContraction_VLC
+
+  !-- SphericalContraction_VelocityLinearConstant
 
   use Basics
   use Mathematics
-  use LinearAdvection_Form
+  use ImposedAdvection_VL__Form
 
   implicit none
 
-  type ( LinearAdvectionForm ), allocatable :: &
+  type ( ImposedAdvection_VL_Form ), allocatable :: &
     SC
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'SphericalContraction', DimensionalityOption = '1D' )
+         ( 'SphericalContraction_VLC', DimensionalityOption = '1D' )
 
   allocate ( SC )
   call SC % Initialize &
@@ -22,4 +24,4 @@ program SphericalContraction
 
   deallocate ( PROGRAM_HEADER )
 
-end program SphericalContraction
+end program SphericalContraction_VLC

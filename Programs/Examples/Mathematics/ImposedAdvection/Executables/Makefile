@@ -4,4 +4,4 @@ PURPOSE = DEBUG
 
 FFLAGS  = $(FORTRAN_$(PURPOSE))
 
-include ../Makefile_Advection
+include ../Makefile_ImposedAdvection

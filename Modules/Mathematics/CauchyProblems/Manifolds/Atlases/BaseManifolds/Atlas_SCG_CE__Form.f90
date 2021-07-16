@@ -26,7 +26,7 @@ contains
 
 
   subroutine Initialize_SCG_CE &
-               ( A, RadiusMax, RadiusExcision, CommunicatorOption, &
+               ( A, RadiusMax, RadiusExcision, CommunicatorOption, NameOption, &
                  CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
                  nCellsPolarOption, nEqualOption )
 
@@ -37,6 +37,8 @@ contains
       RadiusExcision
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      NameOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -73,6 +75,7 @@ contains
       call C % Initialize &
              ( RadiusMax, RadiusExcision, &
                CommunicatorOption = CommunicatorOption, &
+               NameOption = NameOption, &
                CoordinateUnitOption = CoordinateUnitOption, &
                RadialRatioOption = RadialRatioOption, &
                nGhostLayersOption = nGhostLayersOption, &

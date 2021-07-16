@@ -31,7 +31,7 @@ contains
 
 
   subroutine Initialize_GS_CC &
-               ( C, RadiusMax, RadiusCore, CommunicatorOption, &
+               ( C, RadiusMax, RadiusCore, CommunicatorOption, NameOption, &
                  CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
                  nCellsPolarOption, nEqualOption  )
 
@@ -42,6 +42,8 @@ contains
       RadiusCore
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      NameOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -58,10 +60,11 @@ contains
     call C % SetCore ( RadiusCore, nCellsPolarOption )
 
     call C % Chart_GS_C_Form % Initialize &
-           ( CommunicatorOption = CommunicatorOption, &
-             RadiusMin = 0.0_KDR, &
+           ( RadiusMin = 0.0_KDR, &
              RadiusMax = RadiusMax, &
              RadiusScale = RadiusCore, &
+             CommunicatorOption = CommunicatorOption, &
+             NameOption = NameOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
              RadialRatioOption = RadialRatioOption, &
              nGhostLayersOption = nGhostLayersOption, &

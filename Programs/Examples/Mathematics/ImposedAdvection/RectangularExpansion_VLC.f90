@@ -1,17 +1,19 @@
-program RectangularExpansion
+program RectangularExpansion_VLC
+
+  !-- RectangularExpansion_VelocityLinearConstant
 
   use Basics
   use Mathematics
-  use LinearAdvection_Form
+  use ImposedAdvection_VL__Form
 
   implicit none
 
-  type ( LinearAdvectionForm ), allocatable :: &
+  type ( ImposedAdvection_VL_Form ), allocatable :: &
     RE
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'RectangularExpansion', DimensionalityOption = '1D' )
+         ( 'RectangularExpansion_VLC', DimensionalityOption = '1D' )
 
   allocate ( RE )
   call RE % Initialize &
@@ -22,4 +24,4 @@ program RectangularExpansion
 
   deallocate ( PROGRAM_HEADER )
 
-end program RectangularExpansion
+end program RectangularExpansion_VLC

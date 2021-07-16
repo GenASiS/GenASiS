@@ -46,8 +46,6 @@ module CurrentSet_Form
       InitializeAllocate_CS
     generic, public :: &
       Initialize => InitializeAllocate_CS
-!     procedure, public, pass :: &
-!       SetVelocityLinear
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass :: &
@@ -267,36 +265,6 @@ contains
              IgnorabilityOption = IgnorabilityOption )
 
   end subroutine InitializeAllocate_CS
-
-
-!   subroutine SetVelocityLinear ( CS, Speed, Length )
-
-!     class ( CurrentSetForm ), intent ( inout ) :: &
-!       C
-!     real ( KDR ), intent ( in ) :: &
-!       Speed, &
-!       Length
-
-!     associate &
-!       ( G  =>  CS % Geometry )
-!     associate &
-!       ( CV  =>  CS % Storage_FS % Storage % Value, &
-!          GV  =>   G % Storage_FS % Storage % Value )
-!     associate &
-!       (    V_1  =>  CV ( :, CS % VELOCITY_CS_U_1 ), &
-!            V_2  =>  CV ( :, CS % VELOCITY_CS_U_2 ), &
-!            V_3  =>  CV ( :, CS % VELOCITY_CS_U_3 ), &
-!            X_1  =>   GV ( :,  G % CENTER_U_1 ) )
-
-!     V_1  =  Speed  *  ( X_1 / Length )
-!     V_2  =  0.0_KDR
-!     V_3  =  0.0_KDR
-    
-!     end associate !-- V_1, etc.
-!     end associate !-- CV, etc.
-!     end associate !-- G
-
-!   end subroutine SetVelocityLinear
 
 
   subroutine SetStream ( S, CS )

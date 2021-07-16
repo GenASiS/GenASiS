@@ -28,8 +28,8 @@ contains
 
   subroutine Initialize_GS_CE &
                ( C, RadiusMax, RadiusExcision, CommunicatorOption, &
-                 CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsPolarOption, nEqualOption  )
+                 NameOption, CoordinateUnitOption, RadialRatioOption, &
+                 nGhostLayersOption, nCellsPolarOption, nEqualOption  )
 
     class ( Chart_GS_CE_Form ), intent ( inout ) :: &
       C
@@ -38,6 +38,8 @@ contains
       RadiusExcision
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      NameOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -54,10 +56,11 @@ contains
     C % RadiusExcision  =  RadiusExcision
 
     call C % Chart_GS_C_Form % Initialize &
-           ( CommunicatorOption = CommunicatorOption, &
-             RadiusMin = RadiusExcision, &
+           ( RadiusMin = RadiusExcision, &
              RadiusMax = RadiusMax, &
              RadiusScale = RadiusExcision, &
+             CommunicatorOption = CommunicatorOption, &
+             NameOption = NameOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
              RadialRatioOption = RadialRatioOption, &
              nGhostLayersOption = nGhostLayersOption, &

@@ -1,12 +1,14 @@
 program SphericalExpansion
 
+  !-- SphericalContraction_VelocityLinearConstant
+
   use Basics
   use Mathematics
-  use LinearAdvection_Form
+  use ImposedAdvection_VL__Form
 
   implicit none
 
-  type ( LinearAdvectionForm ), allocatable :: &
+  type ( ImposedAdvection_VL_Form ), allocatable :: &
     SC
 
   allocate ( PROGRAM_HEADER )
