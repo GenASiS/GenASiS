@@ -1,4 +1,4 @@
-program Gravitation_NSG_A__Form_Test
+program Gravitation_N_SG__Form_Test
 
   !-- Gravitation_NewtonSelfGravity_Atlas__Form_Test
 
@@ -12,14 +12,14 @@ program Gravitation_NSG_A__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( Stream_A_Form ), allocatable :: &
-    SA
-  type ( Gravitation_NSG_A_Form ), allocatable :: &
-    GA
+  type ( StreamForm ), allocatable :: &
+    S
+  type ( Gravitation_N_SG_Form ), allocatable :: &
+    G
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Gravitation_NSG_A__Form_Test', DimensionalityOption = '2D' )
+         ( 'Gravitation_N_SG__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -32,21 +32,21 @@ program Gravitation_NSG_A__Form_Test
            RadiusCore = 10.0_KDR / 8.0_KDR, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  allocate ( SA )
-  call SA % Initialize ( A, GIS )
+  allocate ( S )
+  call S % Initialize ( A, GIS )
 
-  allocate ( GA )
-  call GA % Initialize ( A )
-  call GA % SetStream ( SA )
-  call SA % AddFieldSet ( GA % Source_A )
+  allocate ( G )
+  call G % Initialize ( A )
+  call G % SetStream ( S )
+  call S % AddFieldSet ( G % Source )
 
   call  A % Show ( )
-  call GA % Show ( )
+  call G % Show ( )
 
   call TestHomogeneousSpheres ( )
 
-  deallocate ( GA )
-  deallocate ( SA )
+  deallocate ( G )
+  deallocate ( S )
   deallocate ( A )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
@@ -60,67 +60,67 @@ contains
     integer ( KDI ) :: &
       iHS
     real ( KDR ), dimension ( 3 ) :: &
-      RadiusDensity, &
+      Radius, &
       Density
-    type ( FieldSet_A_Form ), allocatable :: &
-      Fluid_A, &
-      Reference_A, &
-      Difference_A
+    type ( FieldSetForm ), allocatable :: &
+      Fluid, &
+      Reference, &
+      Difference
 
     call Show ( 'Testing homogeneous spheres' )
 
     associate ( C  =>  A % Chart_GS )
     
-    allocate ( Fluid_A )
-    call Fluid_A % Initialize &
+    allocate ( Fluid )
+    call Fluid % Initialize &
            ( A, &
              FieldOption = [ 'BaryonMass   ', 'BaryonDensity' ], &
              NameOption = 'Fluid', &
              nFieldsOption = 2 )
     
-    allocate ( Reference_A )
-    call Reference_A % Initialize &
+    allocate ( Reference )
+    call Reference % Initialize &
            ( A, &
              FieldOption = [ 'Potential' ], &
              NameOption = 'Reference', &
              nFieldsOption = 1 )
     
-    allocate ( Difference_A )
-    call Difference_A % Initialize &
+    allocate ( Difference )
+    call Difference % Initialize &
            ( A, &
              FieldOption = [ 'Potential' ], &
              NameOption = 'Difference', &
              nFieldsOption = 1 )
     
-    call SA % AddFieldSet ( Fluid_A )
-    call SA % AddFieldSet ( Reference_A )
-    call SA % AddFieldSet ( Difference_A )
-    call SA % Show ( )
+    call S % AddFieldSet ( Fluid )
+    call S % AddFieldSet ( Reference )
+    call S % AddFieldSet ( Difference )
+    call S % Show ( )
 
-    RadiusDensity  =  C % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ]
-    call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
+    Radius  =  C % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ]
+    call PROGRAM_HEADER % GetParameter ( Radius, 'Radius' )
 
-    Density  =  1.0_KDR  /  RadiusDensity ** 3
+    Density  =  1.0_KDR  /  Radius ** 3
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
     do iHS  =  1, 3
 
       call SetHomogeneousSphere &
-             ( Fluid_A, Reference_A, GA, &
-               Density ( iHS ), RadiusDensity ( iHS )  )
+             ( Fluid, Reference, G, &
+               Density ( iHS ), Radius ( iHS )  )
     
-      call Fluid_A % UpdateDevice ( )
+      call Fluid % UpdateDevice ( )
 
-      call GA % Solve &
-             ( Fluid_A, Constant_G = 1.0_KDR, iBaryonMass = 1, &
+      call G % Solve &
+             ( Fluid, Constant_G = 1.0_KDR, iBaryonMass = 1, &
                iBaryonDensity = 2 )
 
-      call Show ( RadiusDensity ( iHS ), 'Radius', nLeadingLinesOption = 2 )
+      call Show ( Radius ( iHS ), 'Radius', nLeadingLinesOption = 2 )
       call Show ( Density ( iHS ), 'Density' )
-      call ComputeError ( Difference_A, GA % Solution_A, Reference_A )
+      call ComputeError ( Difference, G % Solution, Reference )
 
       call GIS % Open ( GIS % ACCESS_CREATE )
-      call SA % Write ( )
+      call S % Write ( )
       call GIS % Close ( )
 
     end do !-- iHS
@@ -130,12 +130,12 @@ contains
   end subroutine TestHomogeneousSpheres
 
 
-  subroutine ComputeError ( Difference_A, Solution_A, Reference_A )
+  subroutine ComputeError ( Difference, Solution, Reference )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Difference_A, &         
-      Solution_A, &
-      Reference_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Difference, &         
+      Solution, &
+      Reference
 
     real ( KDR ) :: &
       L1
@@ -143,19 +143,17 @@ contains
       CO
     
     associate &
-      ( SC  =>  Solution_A   % FieldSet_C ( 1 ) % Element, &
-        RC  =>  Reference_A  % FieldSet_C ( 1 ) % Element, &
-        DC  =>  Difference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( SV  =>  SC % Storage_FSC % Storage &
-                   % Value ( :, SC % iaSelected ( 1 ) ), &
-        RV  =>  RC % Storage_FSC % Storage % Value ( :, 1 ), &
-        DV  =>  DC % Storage_FSC % Storage % Value ( :, 1 ) )
+      ( SV  =>  Solution % Storage_GS % Value &
+                  ( :, Solution % iaSelected ( 1 ) ), &
+        RV  =>  Reference  % Storage_GS % Value ( :, 1 ), &
+        DV  =>  Difference % Storage_GS % Value ( :, 1 ) )
 
     call MultiplyAdd ( SV, RV, -1.0_KDR, DV )
 
-    select type ( C  =>  SC % Chart )
-    class is ( Chart_GS_Form ) 
+    select type ( A  =>  S % Atlas )
+      class is ( Atlas_SCG_Form ) 
+    associate &
+      ( C  =>  A % Chart_GS )
 
     call CO % Initialize &
            ( C % Communicator, [ 2 ], [ 2 ] )
@@ -175,81 +173,71 @@ contains
 
     call Show ( L1, '*** L1 error', nTrailingLinesOption = 2 )
 
-    end select !-- C
+    end associate !-- C
+    end select !-- A
     end associate !-- SV, etc.
-    end associate !-- SC, etc.
 
   end subroutine ComputeError
 
 
   subroutine SetHomogeneousSphere &
-               ( Fluid_A, Reference_A, Geometry_A, &
-                 Density, RadiusDensity )
+               ( Fluid, Reference, Geometry, Density, Radius )
 
-    class ( FieldSet_A_Form ), intent ( inout ) :: &
-      Fluid_A, &
-      Reference_A
-    class ( Geometry_F_A_Form ), intent ( in ) :: &
-      Geometry_A
+    class ( FieldSetForm ), intent ( inout ) :: &
+      Fluid, &
+      Reference
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      Geometry
     real ( KDR ), intent ( in ) :: &
       Density, &
-      RadiusDensity
+      Radius
 
     !-- Geometry
 
-    select type ( GC  =>  Geometry_A % FieldSet_C ( 1 ) % Element )
-      class is ( Geometry_F_C_Form )
     associate &
-      ( GV  =>  GC % Storage_FSC % Storage % Value )
+      ( GV  =>  Geometry % Storage_GS % Value )
     associate &
-      ( R_E  =>  GV ( :, GC % EDGE_I_U ( 1 ) ), &
-        R_W  =>  GV ( :, GC % WIDTH_U  ( 1 ) ), &
-        R_C  =>  GV ( :, GC % CENTER_U ( 1 ) ) )
+      ( R_E  =>  GV ( :, G % EDGE_I_U ( 1 ) ), &
+        R_W  =>  GV ( :, G % WIDTH_U  ( 1 ) ), &
+        R_C  =>  GV ( :, G % CENTER_U ( 1 ) ) )
 
     !-- Fluid
 
     associate &
-      ( FC  =>  Fluid_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( FV  =>  FC % Storage_FSC % Storage % Value )
+      ( FV  =>  Fluid % Storage_GS % Value )
     associate &
       ( M  =>  FV ( :, 1 ), &
         D  =>  FV ( :, 2 ) )
 
-    call SetDensityKernel ( R_E, R_W, RadiusDensity, Density, M, D )
+    call SetDensityKernel ( R_E, R_W, Radius, Density, M, D )
 
-    end associate !-- D
-    end associate !-- SV
-    end associate !-- SC
+    end associate !-- M, etc.
+    end associate !-- FV
 
     !-- Reference
 
     associate &
-      ( RC  =>  Reference_A % FieldSet_C ( 1 ) % Element )
-    associate &
-      ( RV  =>  RC % Storage_FSC % Storage % Value )
+      ( RV  =>  Reference % Storage_GS % Value )
     associate &
       ( Phi      =>  RV ( :, 1 ), &
         FourPi   =>  4.0_KDR * CONSTANT % PI )
 
-    where ( R_C  <  RadiusDensity )
+    where ( R_C  <  Radius )
       Phi  =  1.0_KDR / 6.0_KDR  *  FourPi  *  Density  *  R_C ** 2  &
               -  1.0_KDR / 2.0_KDR  *  FourPi  *  Density  &
-                                    *  RadiusDensity ** 2
+                                    *  Radius ** 2
     elsewhere
       Phi  =  - 1.0_KDR / 3.0_KDR  *  FourPi  *  Density  &
-                                   *  RadiusDensity ** 3  /  R_C
+                                   *  Radius ** 3  /  R_C
     end where
 
     end associate !-- Phi, etc.
     end associate !-- RV
-    end associate !-- RC
 
     !-- Cleanup
 
     end associate !-- R_E, etc.
     end associate !-- GV
-    end select !-- GC
 
   end subroutine SetHomogeneousSphere
 
@@ -291,4 +279,4 @@ contains
   end subroutine SetDensityKernel
 
 
-end program Gravitation_NSG_A__Form_Test
+end program Gravitation_N_SG__Form_Test

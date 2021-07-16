@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Gravitation_NSG_A__Form ) Gravitation_NSG_A__Kernel
+submodule ( Gravitation_N_SG__Form ) Gravitation_N_SG__Kernel
 
   use Basics
   implicit none
@@ -51,4 +51,4 @@ contains
   end procedure ComputeSourceKernel
 
 
-end submodule Gravitation_NSG_A__Kernel
+end submodule Gravitation_N_SG__Kernel

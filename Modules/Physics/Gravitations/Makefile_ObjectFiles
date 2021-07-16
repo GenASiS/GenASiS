@@ -1,7 +1,6 @@
 GRAVITATIONS = \
   Gravitations.o \
+  Gravitation_N_SG__Kernel.o \
+  Gravitation_N_SG__Form.o \
   Gravitation_N_H__Form.o \
   Gravitation_G__Form.o
-#  Gravitation_NSG_A__Kernel.o \
-  Gravitation_NSG_A__Form.o \
-  Gravitation_NH_A__Form.o \

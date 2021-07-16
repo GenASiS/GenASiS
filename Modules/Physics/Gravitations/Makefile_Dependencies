@@ -8,24 +8,22 @@ Gravitation_N_H__Form.o: \
   Mathematics.o \
   Gravitation_N_H__Form.f90
 
-Gravitation_NSG_A__Form.o: \
+Gravitation_N_SG__Form.o: \
   Basics.o \
   Mathematics.o \
-  Gravitation_NH_C__Form.o \
-  Gravitation_NH_A__Form.o \
-  Gravitation_NSG_A__Form.f90
+  Gravitation_N_H__Form.o \
+  Gravitation_N_SG__Form.f90
 
-Gravitation_NSG_A__Kernel.o: \
+Gravitation_N_SG__Kernel.o: \
   Basics.o \
-  Gravitation_NSG_A__Form.o \
-  Gravitation_NSG_A__Kernel.f90
+  Gravitation_N_SG__Form.o \
+  Gravitation_N_SG__Kernel.f90
 
 Gravitations.o: \
   Gravitation_G__Form.o \
+  Gravitation_N_SG__Form.o \
   Gravitation_N_H__Form.o \
   Gravitations.f90
-#  Gravitation_NH_A__Form.o \
-  Gravitation_NSG_A__Form.o \
 
 Gravitations.a: $(GRAVITATIONS)
 	ar r Gravitations.a $(GRAVITATIONS)
