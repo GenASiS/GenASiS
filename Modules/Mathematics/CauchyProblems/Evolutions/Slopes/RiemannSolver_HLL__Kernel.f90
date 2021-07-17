@@ -64,7 +64,7 @@ contains
         AP_I ( iV )  =  max ( 0.0_KDR, + EP_IL ( iV ), + EP_IR ( iV ) )
         AM_I ( iV )  =  max ( 0.0_KDR, - EM_IL ( iV ), - EM_IR ( iV ) )
       end do
-      !$OMP  end parallel do
+      !$OMP end parallel do
     
       !$OMP parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
@@ -81,7 +81,7 @@ contains
 
         end do
       end do
-      !$OMP  end parallel do
+      !$OMP end parallel do
     
     end if
 

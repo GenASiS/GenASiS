@@ -26,6 +26,10 @@ module Gravitation_N_H__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
+    procedure, public, pass ( G ) :: &
+      SetStream
+    procedure, public, pass :: &
+      Solve
     final :: &
       Finalize
   end type Gravitation_N_H_Form
@@ -159,6 +163,41 @@ contains
              IgnorabilityOption = IgnorabilityOption )
 
   end subroutine InitializeAllocate_FS
+
+
+  subroutine SetStream ( S, G, iaAdditionalOption )
+
+    class ( StreamForm ), intent ( inout ) :: &
+      S
+    class ( Gravitation_N_H_Form ), intent ( in ) :: &
+      G
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaAdditionalOption
+
+    call G % SetStream &
+           ( S, iaAdditionalOption = [ G % POTENTIAL, &
+                                       G % POTENTIAL_GRADIENT_D ] )
+
+  end subroutine SetStream
+
+
+  subroutine Solve ( G, F, Constant_G, iBaryonMass, iBaryonDensity )
+
+    class ( Gravitation_N_H_Form ), intent ( inout ) :: &
+      G
+    class ( FieldSetForm ), intent ( in ) :: &
+      F  !-- Fluid
+    real ( KDR ), intent ( in ) :: &
+      Constant_G  !-- Gravitational
+    integer ( KDI ), intent ( in ) :: &
+      iBaryonMass, &
+      iBaryonDensity
+
+    call Show ( 'Solve should be overridden', CONSOLE % WARNING )
+    call Show ( 'Gravitation_N_H__Form', 'module', CONSOLE % WARNING )
+    call Show ( 'Solve', 'subroutine', CONSOLE % WARNING )
+
+  end subroutine Solve
 
 
   impure elemental subroutine Finalize ( G )

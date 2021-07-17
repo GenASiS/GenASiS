@@ -24,8 +24,6 @@ module Gravitation_N_SG__Form
       InitializeAllocate_FS
     procedure, public, pass :: &
       Show => Show_FS
-    procedure, public, pass ( G ) :: &
-      SetStream
     procedure, public, pass :: &
       Solve
     final :: &
@@ -194,22 +192,6 @@ contains
     call FS % Poisson % Show ( )
 
   end subroutine Show_FS
-
-
-  subroutine SetStream ( S, G, iaAdditionalOption )
-
-    class ( StreamForm ), intent ( inout ) :: &
-      S
-    class ( Gravitation_N_SG_Form ), intent ( in ) :: &
-      G
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      iaAdditionalOption
-
-    call G % Gravitation_N_H_Form % SetStream &
-           ( S, iaAdditionalOption = [ G % POTENTIAL, &
-                                       G % POTENTIAL_GRADIENT_D ] )
-
-  end subroutine SetStream
 
 
   subroutine Solve ( G, F, Constant_G, iBaryonMass, iBaryonDensity )
