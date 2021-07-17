@@ -40,7 +40,7 @@ program Gravitation_N_SG__Form_Test
   call G % SetStream ( S )
   call S % AddFieldSet ( G % Source )
 
-  call  A % Show ( )
+  call A % Show ( )
   call G % Show ( )
 
   call TestHomogeneousSpheres ( )
@@ -106,8 +106,7 @@ contains
     do iHS  =  1, 3
 
       call SetHomogeneousSphere &
-             ( Fluid, Reference, G, &
-               Density ( iHS ), Radius ( iHS )  )
+             ( Fluid, Reference, G, Density ( iHS ), Radius ( iHS )  )
     
       call Fluid % UpdateDevice ( )
 

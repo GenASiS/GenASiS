@@ -191,8 +191,8 @@ contains
       T_RS, &
       T_K
 
-    call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 3 )
-    call Show ( S % Name, 'Name', S % IGNORABILITY + 3 )
+    call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
       ( RS  =>  S % RiemannSolver, &

@@ -249,6 +249,9 @@ contains
       T_MA, &
       T_C
 
+    call Show ( 'Computing a Slope_H', S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+
     if ( S % nComponents  >  0 ) then
 
       if ( present ( T_Option ) ) then

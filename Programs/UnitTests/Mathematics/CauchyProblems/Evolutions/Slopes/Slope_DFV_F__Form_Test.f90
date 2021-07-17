@@ -47,7 +47,7 @@ program Slope_DFV_F__Form_Test
   call G % SetStream ( Sm )
 
   allocate ( CS )
-  call CS % Initialize( G )
+  call CS % Initialize ( G )
   call CS % SetStream ( Sm )
 
   allocate ( RS )

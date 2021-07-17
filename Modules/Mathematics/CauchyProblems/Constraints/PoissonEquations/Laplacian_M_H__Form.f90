@@ -210,7 +210,7 @@ contains
 
     ! if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Computing Moments', L % IGNORABILITY + 2 )
+    call Show ( 'Computing Moments', L % IGNORABILITY + 4 )
 
     associate &
       (   AM  =>  L %   AngularMoments, &

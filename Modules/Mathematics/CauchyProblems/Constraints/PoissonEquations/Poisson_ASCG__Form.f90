@@ -125,7 +125,7 @@ contains
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
 
-    call Show ( 'Combining Moments Local', P % IGNORABILITY + 3 )
+    call Show ( 'Combining Moments Local', P % IGNORABILITY + 5 )
 
     select type ( L  =>  P % Laplacian_M )
       class is ( Laplacian_M_ASCG_Form )

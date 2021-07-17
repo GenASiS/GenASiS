@@ -1,6 +1,6 @@
 module Slope_DFV_C_N__Form
 
-  !-- Slope_DivergenceFiniteVolume_Curvilinear_Newton__Form
+  !-- Slope_DivergenceFiniteVolume_Curvili_Newton__Form
 
   use Basics
   use Mathematics
@@ -78,13 +78,15 @@ contains
 
 
   subroutine InitializeAllocate_C_N &
-               ( S, Fluid, iVelocity_F, iMomentum_B, &
+               ( S, Fluid, Constant_G, iVelocity_F, iMomentum_B, &
                  iBaryonMass_F, iBaryonDensity_F, iEnergy_B, SuffixOption )
 
     class ( Slope_DFV_C_N_Form ), intent ( inout ) :: &
       S
     class ( CurrentSetForm ), intent ( in ), target :: &
       Fluid
+    real ( KDR ), intent ( in ) :: &
+      Constant_G
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iVelocity_F, &
       iMomentum_B
@@ -109,6 +111,8 @@ contains
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % Fluid  =>  Fluid
+
+    S % Constant_G  =  Constant_G
 
     S % iBaryonMass_F     =  iBaryonMass_F
     S % iBaryonDensity_F  =  iBaryonDensity_F
@@ -144,6 +148,9 @@ contains
 
     integer ( KDI ) :: &
       iC
+
+    call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
       ( F  =>  S % Fluid )
@@ -200,6 +207,11 @@ contains
       end select !-- C
     end do !-- iC
 
+    class default
+      call Show ( 'Newtonian gravitation expected', CONSOLE % ERROR )
+      call Show ( 'Slope_DFV_C_N__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
     end select !-- G
     end associate !-- F
 

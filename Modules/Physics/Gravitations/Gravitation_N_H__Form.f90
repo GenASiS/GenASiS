@@ -174,7 +174,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaAdditionalOption
 
-    call G % SetStream &
+    call G % Geometry_F_Form % SetStream &
            ( S, iaAdditionalOption = [ G % POTENTIAL, &
                                        G % POTENTIAL_GRADIENT_D ] )
 

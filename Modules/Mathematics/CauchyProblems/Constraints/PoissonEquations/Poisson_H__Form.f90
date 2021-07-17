@@ -214,8 +214,8 @@ contains
     class ( FieldSetForm ), intent ( in ) :: &
       Source
 
-    call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
-    call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
+    call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 3 )
+    call Show ( P % Name, 'Name', P % IGNORABILITY + 3 )
 
     if ( allocated ( P % Laplacian_M ) ) then
       associate ( L  =>  P % Laplacian_M )
@@ -261,7 +261,7 @@ contains
 
 !     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Combining Moments', P % IGNORABILITY + 2 )
+    call Show ( 'Combining Moments', P % IGNORABILITY + 4 )
 
 !     if ( associated ( Timer_CS ) ) call Timer_CS % Start ( )
     call Solution % Clear ( )
