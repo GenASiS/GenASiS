@@ -132,9 +132,6 @@ contains
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsOption
 
-!     integer ( KDI ) :: &
-!       iD  !-- iDimension
-    
     associate ( I  =>  FB % Integrator )
 
     allocate ( Atlas_SCG_Form  ::  I % X )
@@ -150,14 +147,6 @@ contains
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsOption )
-
-!     if ( allocated ( FB % BoundaryConditionsFace ) ) then
-!       do iD = 1, PS % nDimensions
-!         call PS % SetBoundaryConditionsFace &
-!                ( FB % BoundaryConditionsFace ( iD ) % Value, &
-!                  iDimension = iD )
-!       end do !-- iD
-!     end if !-- BoundaryConditions
 
     end select !-- PS
     end associate !-- I 

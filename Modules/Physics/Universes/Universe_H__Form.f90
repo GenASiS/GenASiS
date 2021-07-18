@@ -18,6 +18,8 @@ module Universe_H__Form
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    character ( LDL ), dimension ( : ), allocatable :: &
+      dT_Label
     class ( Integrator_H_Form ), allocatable :: &
       Integrator
   contains
@@ -110,6 +112,8 @@ contains
 
     if ( allocated ( U % Integrator ) ) &
       deallocate ( U % Integrator )
+    if ( allocated ( U % dT_Label ) ) &
+      deallocate ( U % dT_Label )
 
     if ( U % Name == '' ) &
       return
