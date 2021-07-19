@@ -27,18 +27,27 @@ module Universe_F_C__Form
       AllocateIntegrator => AllocateIntegrator_F_C
     procedure, public, pass :: &
       InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeGravitation
+    procedure, public, pass :: &
+      InitializeFluid
+    procedure, public, pass :: &
+      InitializeStep
     procedure, private, pass :: &
       InitializeAtlas
   end type Universe_F_C_Form
+
+    private :: &
+      SetSlope_N_SG
 
 
 contains
 
 
   subroutine Initialize_F_C &
-               ( U, FluidType, GravitationType, NameOption, RadiusMaxOption, &
-                 RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
-                 nCellsPolarOption )
+               ( U, FluidType, GravitationType, NameOption, FinishTimeOption, &
+                 RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
+                 RadialRatioOption, nCellsPolarOption, nWriteOption )
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
@@ -48,12 +57,14 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption, &
       RadiusMaxOption, &
       RadiusCoreOption, &
       RadiusExcisionOption, &
       RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsPolarOption
+      nCellsPolarOption, &
+      nWriteOption
 
     character ( LDL ) :: &
       Name
@@ -75,6 +86,21 @@ contains
              RadiusExcisionOption = RadiusExcisionOption, &
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
+    call U % InitializeGravitation &
+           ( GravitationType )
+    call U % InitializeFluid &
+           ( FluidType )
+    call U % InitializeStep &
+           ( )
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+    call I % Initialize &
+           ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
+             T_FinishOption = FinishTimeOption, &
+!             CourantFactorOption = CourantFactorOption, &
+             nWriteOption = nWriteOption )
+    end select !-- I
 
   end subroutine Initialize_F_C
 
@@ -166,6 +192,149 @@ contains
   end subroutine InitializePositionSpace
 
 
+  subroutine InitializeGravitation ( U, GravitationType )
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+    character ( * ), intent ( in ) :: &
+      GravitationType
+
+    associate ( I  =>  U % Integrator )
+
+    select case ( trim ( GravitationType ) )
+    case ( 'GALILEO' )
+      allocate ( Gravitation_G_Form  ::  I % Geometry_X )
+      select type ( G  =>  I % Geometry_X )
+        class is ( Gravitation_G_Form )
+      call G % Initialize &
+             ( I % X, &
+               DeviceMemoryOption = U % DeviceMemory, &
+               PinnedMemoryOption = U % PinnedMemory, &
+               DevicesCommunicateOption = U % DevicesCommunicate )
+      end select !-- G
+    case ( 'NEWTON_SG' )
+      allocate ( Gravitation_N_SG_Form  ::  I % Geometry_X )
+      select type ( G  =>  I % Geometry_X )
+        class is ( Gravitation_N_SG_Form )
+      call G % Initialize &
+             ( I % X, &
+               DeviceMemoryOption = U % DeviceMemory, &
+               PinnedMemoryOption = U % PinnedMemory, &
+               DevicesCommunicateOption = U % DevicesCommunicate )
+      end select !-- G
+    case default
+      call Show ( 'GravitationType not recognized', CONSOLE % ERROR )
+      call Show ( GravitationType, 'GravitationType', CONSOLE % ERROR )
+      call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeGravitation', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- GravitationType
+
+    end associate !-- I
+
+  end subroutine InitializeGravitation
+
+
+  subroutine InitializeFluid ( U, FluidType )
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+    character ( * ), intent ( in )  :: &
+      FluidType
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( G  =>  I % Geometry_X )
+
+    ! if ( .not. FC % Dimensionless ) then
+
+    !   FC % Units % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
+    !   FC % Units % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
+    !   FC % Units % MassDensity    =  UNIT % MASS_DENSITY_CGS
+    !   FC % Units % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
+    !   FC % Units % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
+
+    !   FC % Units % Velocity_U  &
+    !     =  FC % Units % Coordinate_PS  /  FC % Units % Time
+
+    !   FC % Units % MomentumDensity_D  &
+    !     =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
+    !        *  FC % Units % Velocity_U
+    !   FC % Units % MomentumDensity_D ( 2 )  &
+    !     =  FC % Units % MomentumDensity_D ( 2 )  &
+    !        *  FC % Units % Coordinate_PS ( 1 ) ** 2
+    !   FC % Units % MomentumDensity_D ( 3 )  &
+    !     =  FC % Units % MomentumDensity_D ( 3 )  &
+    !        *  FC % Units % Coordinate_PS ( 1 ) ** 2
+
+    !   FC % Units % MomentumDensity_U  &
+    !     =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
+    !        *  FC % Units % Velocity_U
+    !   FC % Units % MomentumDensity_U ( 2 )  &
+    !     =  FC % Units % MomentumDensity_U ( 2 )  &
+    !        /  FC % Units % Coordinate_PS ( 1 ) ** 2
+    !   FC % Units % MomentumDensity_U ( 3 )  &
+    !     =  FC % Units % MomentumDensity_U ( 3 )  &
+    !        /  FC % Units % Coordinate_PS ( 1 ) ** 2
+
+    !   FC % Units % Number           =  UNIT % SOLAR_BARYON_NUMBER
+    !   FC % Units % Energy           =  UNIT % ENERGY_SOLAR_MASS
+    !   FC % Units % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
+    !   FC % Units % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
+
+    ! end if
+
+    select case ( trim ( FluidType ) )
+    case ( 'DUST' )
+      allocate ( Fluid_D_Form  ::  I % CurrentSet_X )
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_D_Form )
+      call F % Initialize ( G, U % Units_F )
+      end select !-- G
+    case default
+      call Show ( 'FluidType not recognized', CONSOLE % ERROR )
+      call Show ( FluidType, 'FluidType', CONSOLE % ERROR )
+      call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeFluid', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FluidType
+
+    end associate !-- G
+    end select !-- I
+
+  end subroutine InitializeFluid
+
+
+  subroutine InitializeStep ( U )
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+
+    allocate ( Step_RK_CS_Form :: I % Step_X )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_Form )
+
+    select type ( G  =>  I % Geometry_X )
+    class is ( Gravitation_N_SG_Form )
+      S % SetSlope  =>  SetSlope_N_SG
+    end select !-- G
+
+    call S % Initialize ( F )
+
+    end select !-- S
+
+    end associate !-- F
+    end select !-- I
+
+  end subroutine InitializeStep
+
+
   subroutine InitializeAtlas &
                ( U, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
                  RadialRatioOption, nCellsPolarOption )
@@ -185,6 +354,74 @@ contains
       call Show ( 'InitializeAtlas', 'subroutine', CONSOLE % WARNING )
 
   end subroutine InitializeAtlas
+
+
+  subroutine SetSlope_N_SG ( S, K, iS_Option )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum_B
+    real ( KDR ) :: &
+      Constant_G
+    character ( 1 ) :: &
+      StageNumber
+
+    allocate ( Slope_DFV_N_Form :: K )
+    select type ( K )
+      class is ( Slope_DFV_N_Form )
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_D_Form ) 
+
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B ( 1 ) )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B ( 2 ) )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B ( 3 ) )
+
+    !-- FIXME: more general fluid
+    iEnergy_B  =  0
+    
+    !-- FIXME: nontrivial units
+    Constant_G  =  1.0_KDR
+
+    if ( present ( iS_Option ) ) then
+      write ( StageNumber, fmt = '(i1.1)' ) iS_Option
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               Constant_G  =  Constant_G, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B, &
+               SuffixOption = StageNumber )
+    else
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               Constant_G  =  Constant_G, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
+    end if
+
+    end select !-- F
+    end select !-- S
+    end select !-- K
+
+  end subroutine SetSlope_N_SG
 
 
 end module Universe_F_C__Form

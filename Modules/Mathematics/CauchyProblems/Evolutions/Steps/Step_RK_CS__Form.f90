@@ -126,7 +126,7 @@ contains
       allocate ( S % RiemannSolver )
       associate ( RS  =>  S % RiemannSolver )
       call RS % Initialize ( CS )
-      end associate !-- RSA
+      end associate !-- RS
     end if !-- allocated RiemannSolver
 
     !-- Header
