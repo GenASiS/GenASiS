@@ -7,7 +7,7 @@ module PlaneWave_Form
   implicit none
   private
 
-  type, public, extends ( FluidBoxForm ) :: PlaneWaveForm
+  type, public, extends ( Universe_F_B_Form ) :: PlaneWaveForm
     real ( KDR ) :: &
       Speed
     real ( KDR ), dimension ( 3 ) :: &
@@ -27,7 +27,7 @@ module PlaneWave_Form
   end type PlaneWaveForm
 
     private :: &
-      InitializeFluidBox, &
+      InitializeUniverse, &
       InitializeDiagnostics, &
       SetInitial, &
       SetReference
@@ -58,7 +58,7 @@ contains
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    call InitializeFluidBox ( U, Name )
+    call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
 
     if ( .not. associated ( U % Integrator % SetInitial ) ) &
@@ -146,7 +146,7 @@ contains
   end function Waveform
 
 
-  subroutine InitializeFluidBox ( PW, Name )
+  subroutine InitializeUniverse ( PW, Name )
 
     class ( PlaneWaveForm ), intent ( inout ) :: &
       PW
@@ -175,7 +175,7 @@ contains
              
     PW % Integrator % SetReference  =>  SetReference
 
-  end subroutine InitializeFluidBox
+  end subroutine InitializeUniverse
 
 
   subroutine InitializeDiagnostics ( PW )

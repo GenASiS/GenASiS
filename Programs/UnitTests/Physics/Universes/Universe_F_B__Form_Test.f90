@@ -1,16 +1,18 @@
-program FluidBox_Form_Test
+program Universe_F_B__Form_Test
+
+  !-- Universe_Fluid_Box__Form_Test
 
   use Basics
-  use FluidBox_Form
+  use Universe_F_B__Form
 
   implicit none
 
-  type ( FluidBoxForm ), allocatable :: &
+  type ( Universe_F_B_Form ), allocatable :: &
     FB
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FluidBox_Form_Test', DimensionalityOption = '2D' )
+         ( 'Universe_F_B__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( FB )
   call FB % Initialize &
@@ -21,4 +23,4 @@ program FluidBox_Form_Test
 
   deallocate ( PROGRAM_HEADER )
 
-end program FluidBox_Form_Test
+end program Universe_F_B__Form_Test

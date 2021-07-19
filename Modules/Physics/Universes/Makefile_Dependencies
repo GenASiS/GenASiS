@@ -3,13 +3,13 @@ Universe_H__Form.o: \
   Mathematics.o \
   Universe_H__Form.f90
 
-FluidBox_Form.o: \
+Universe_F_B__Form.o: \
   Basics.o \
   Mathematics.o \
   Gravitations.o \
   Fluids.o \
   Universe_H__Form.o \
-  FluidBox_Form.f90
+  Universe_F_B__Form.f90
 
 FluidCentral_H__Form.o: \
   Basics.o \
@@ -21,7 +21,7 @@ FluidCentral_H__Form.o: \
 
 Universes.o: \
   Universe_H__Form.o \
-  FluidBox_Form.o \
+  Universe_F_B__Form.o \
   FluidCentral_H__Form.o \
   Universes.f90
 

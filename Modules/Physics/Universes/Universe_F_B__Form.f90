@@ -1,4 +1,6 @@
-module FluidBox_Form
+module Universe_F_B__Form
+
+  !-- Universe_Fluid_Box__Form
 
   use Basics
   use Mathematics
@@ -9,20 +11,20 @@ module FluidBox_Form
   implicit none
   private
 
-  type, public, extends ( Universe_H_Form ) :: FluidBoxForm
+  type, public, extends ( Universe_H_Form ) :: Universe_F_B_Form
     type ( Units_F_Form ), dimension ( : ), allocatable :: &
       Units_F
   contains
     procedure, private, pass :: &
-      Initialize_FB
+      Initialize_F_B
     generic, public :: &
-      Initialize => Initialize_FB
+      Initialize => Initialize_F_B
     final :: &
       Finalize
     procedure, private, pass :: &
-      AllocateIntegrator_FB
+      AllocateIntegrator_F_B
     generic, public :: &
-      AllocateIntegrator => AllocateIntegrator_FB
+      AllocateIntegrator => AllocateIntegrator_F_B
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
@@ -31,20 +33,20 @@ module FluidBox_Form
       InitializeFluid
     procedure, public, pass :: &
       InitializeStep
-   end type FluidBoxForm
+   end type Universe_F_B_Form
 
 
 contains
 
 
-  subroutine Initialize_FB &
-               ( FB, FluidType, GravitationType, NameOption, &
+  subroutine Initialize_F_B &
+               ( U, FluidType, GravitationType, NameOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  nCellsOption, nWriteOption )
 !                 CourantFactorOption, UniformAccelerationOption, &
 
-    class ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
     character ( * ), intent ( in )  :: &
       FluidType, &
       GravitationType
@@ -65,85 +67,85 @@ contains
     character ( LDL ) :: &
       Name
 
-    if ( FB % Type  ==  '' ) &
-      FB % Type  =  'a FluidBox'
+    if ( U % Type  ==  '' ) &
+      U % Type  =  'a Universe_F_B'
 
-    Name  =  'FluidBox'
+    Name  =  'Universe_F_B'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    call FB % Universe_H_Form % Initialize ( NameOption = Name )
+    call U % Universe_H_Form % Initialize ( NameOption = Name )
 
-    call FB % AllocateIntegrator &
+    call U % AllocateIntegrator &
            ( )
-    call FB % InitializePositionSpace &
+    call U % InitializePositionSpace &
            ( MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsOption )
-    call FB % InitializeGravitation &
+    call U % InitializeGravitation &
            ( GravitationType )
 !              UniformAccelerationOption = UniformAccelerationOption, &
-    call FB % InitializeFluid &
+    call U % InitializeFluid &
            ( FluidType )
-    call FB % InitializeStep &
+    call U % InitializeStep &
            ( )
 
-    select type ( I  =>  FB % Integrator )
+    select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     call I % Initialize &
-           ( Unit_T_Option = FB % Units_F ( 1 ) % Time, &
+           ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
 !             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
     end select !-- I
 
-  end subroutine Initialize_FB
+  end subroutine Initialize_F_B
 
 
-  impure elemental subroutine Finalize ( FB )
+  impure elemental subroutine Finalize ( U )
 
-    type ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    type ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
 
-    if ( allocated ( FB % Units_F ) ) &
-      deallocate ( FB % Units_F )
+    if ( allocated ( U % Units_F ) ) &
+      deallocate ( U % Units_F )
 
   end subroutine Finalize
 
 
-  subroutine AllocateIntegrator_FB ( FB )
+  subroutine AllocateIntegrator_F_B ( U )
 
-    class ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
 
-    allocate ( Integrator_CS_Form :: FB % Integrator )
+    allocate ( Integrator_CS_Form :: U % Integrator )
 
-  end subroutine AllocateIntegrator_FB
+  end subroutine AllocateIntegrator_F_B
 
 
   subroutine InitializePositionSpace &
-               ( FB, MinCoordinateOption, MaxCoordinateOption, nCellsOption )
+               ( U, MinCoordinateOption, MaxCoordinateOption, nCellsOption )
 
-    class ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsOption
 
-    associate ( I  =>  FB % Integrator )
+    associate ( I  =>  U % Integrator )
 
     allocate ( Atlas_SCG_Form  ::  I % X )
     select type ( PS  =>  I % X )
       class is ( Atlas_SCG_Form )
 
-    allocate ( FB % Units_F ( 1 ) )
+    allocate ( U % Units_F ( 1 ) )
 
     call PS % Initialize &
            ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
              NameOption = 'PositionSpace', &
-             CoordinateUnitOption = FB % Units_F ( 1 ) % Coordinate_PS, &
+             CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsOption )
@@ -154,16 +156,16 @@ contains
   end subroutine InitializePositionSpace
 
 
-  subroutine InitializeGravitation ( FB, GravitationType )
+  subroutine InitializeGravitation ( U, GravitationType )
 
-    class ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
     character ( * ), intent ( in ) :: &
       GravitationType
 !     real ( KDR ), intent ( in ), optional :: &
 !       UniformAccelerationOption
 
-    associate ( I  =>  FB % Integrator )
+    associate ( I  =>  U % Integrator )
 
     select case ( trim ( GravitationType ) )
     case ( 'GALILEO' )
@@ -172,14 +174,14 @@ contains
         class is ( Gravitation_G_Form )
       call G % Initialize &
              ( I % X, &
-               DeviceMemoryOption = FB % DeviceMemory, &
-               PinnedMemoryOption = FB % PinnedMemory, &
-               DevicesCommunicateOption = FB % DevicesCommunicate )
+               DeviceMemoryOption = U % DeviceMemory, &
+               PinnedMemoryOption = U % PinnedMemory, &
+               DevicesCommunicateOption = U % DevicesCommunicate )
       end select !-- G
     case default
       call Show ( 'GravitationType not recognized', CONSOLE % ERROR )
       call Show ( GravitationType, 'GravitationType', CONSOLE % ERROR )
-      call Show ( 'FluidBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeGravitation', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- GravitationType
@@ -189,14 +191,14 @@ contains
   end subroutine InitializeGravitation
 
 
-  subroutine InitializeFluid ( FB, FluidType )
+  subroutine InitializeFluid ( U, FluidType )
 
-    class ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
     character ( * ), intent ( in )  :: &
       FluidType
 
-    select type ( I  =>  FB % Integrator )
+    select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     associate &
       ( G  =>  I % Geometry_X )
@@ -206,12 +208,12 @@ contains
       allocate ( Fluid_D_Form  ::  I % CurrentSet_X )
       select type ( F  =>  I % CurrentSet_X )
         class is ( Fluid_D_Form )
-      call F % Initialize ( G, FB % Units_F )
+      call F % Initialize ( G, U % Units_F )
       end select !-- G
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )
       call Show ( FluidType, 'FluidType', CONSOLE % ERROR )
-      call Show ( 'FluidBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeFluid', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- FluidType
@@ -222,12 +224,12 @@ contains
   end subroutine InitializeFluid
 
 
-  subroutine InitializeStep ( FB )
+  subroutine InitializeStep ( U )
 
-    class ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
 
-    select type ( I  =>  FB % Integrator )
+    select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     associate &
       ( F  =>  I % CurrentSet_X )
@@ -249,4 +251,4 @@ contains
   end subroutine InitializeStep
 
 
-end module FluidBox_Form
+end module Universe_F_B__Form
