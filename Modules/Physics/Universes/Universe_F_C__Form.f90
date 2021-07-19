@@ -1,4 +1,6 @@
-module FluidCentral_H__Form
+module Universe_F_C__Form
+
+  !-- Universe_Fluid_Central__Form
 
   use Basics
   use Mathematics
@@ -9,37 +11,37 @@ module FluidCentral_H__Form
   implicit none
   private
 
-  type, public, extends ( Universe_H_Form ) :: FluidCentral_H_Form
+  type, public, extends ( Universe_H_Form ) :: Universe_F_C_Form
     type ( Units_F_Form ), dimension ( : ), allocatable :: &
       Units_F
   contains
     procedure, private, pass :: &
-      Initialize_FC
+      Initialize_F_C
     generic, public :: &
-      Initialize => Initialize_FC
+      Initialize => Initialize_F_C
     final :: &
       Finalize
     procedure, private, pass :: &
-      AllocateIntegrator_FC
+      AllocateIntegrator_F_C
     generic, public :: &
-      AllocateIntegrator => AllocateIntegrator_FC
+      AllocateIntegrator => AllocateIntegrator_F_C
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, private, pass :: &
       InitializeAtlas
-  end type FluidCentral_H_Form
+  end type Universe_F_C_Form
 
 
 contains
 
 
-  subroutine Initialize_FC &
-               ( FC, FluidType, GravitationType, NameOption, RadiusMaxOption, &
+  subroutine Initialize_F_C &
+               ( U, FluidType, GravitationType, NameOption, RadiusMaxOption, &
                  RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
                  nCellsPolarOption )
 
-    class ( FluidCentral_H_Form ), intent ( inout ) :: &
-      FC
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
     character ( * ), intent ( in )  :: &
       FluidType, &
       GravitationType
@@ -56,60 +58,60 @@ contains
     character ( LDL ) :: &
       Name
 
-    if ( FC % Type == '' ) &
-      FC % Type = 'a FluidCentral'
+    if ( U % Type == '' ) &
+      U % Type = 'a FluidCentral'
 
     Name  =  'FluidCentral'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    call FC % Universe_H_Form % Initialize ( NameOption = Name )
+    call U % Universe_H_Form % Initialize ( NameOption = Name )
 
-    call FC % AllocateIntegrator &
+    call U % AllocateIntegrator &
            ( )
-    call FC % InitializePositionSpace &
+    call U % InitializePositionSpace &
            ( RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadiusExcisionOption = RadiusExcisionOption, &
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
 
-  end subroutine Initialize_FC
+  end subroutine Initialize_F_C
 
 
-  impure elemental subroutine Finalize ( FC )
+  impure elemental subroutine Finalize ( U )
 
-    type ( FluidCentral_H_Form ), intent ( inout ) :: &
-      FC
+    type ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
 
-    if ( allocated ( FC % Units_F ) ) &
-      deallocate ( FC % Units_F )
+    if ( allocated ( U % Units_F ) ) &
+      deallocate ( U % Units_F )
 
   end subroutine Finalize
 
 
-  subroutine AllocateIntegrator_FC ( FC )
+  subroutine AllocateIntegrator_F_C ( U )
 
-    class ( FluidCentral_H_Form ), intent ( inout ) :: &
-      FC
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
 
-    allocate ( Integrator_CS_Form :: FC % Integrator )
+    allocate ( Integrator_CS_Form :: U % Integrator )
 
-    if ( allocated ( FC % dT_Label ) ) then
-      associate ( I => FC % Integrator )
-      allocate ( I % dT_Label, source = FC % dT_Label )
+    if ( allocated ( U % dT_Label ) ) then
+      associate ( I => U % Integrator )
+      allocate ( I % dT_Label, source = U % dT_Label )
       end associate !-- I
     end if
 
-  end subroutine AllocateIntegrator_FC
+  end subroutine AllocateIntegrator_F_C
 
 
   subroutine InitializePositionSpace &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
+               ( U, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
                  RadialRatioOption, nCellsPolarOption )
 
-    class ( FluidCentral_H_Form ), intent ( inout ) :: &
-      FC
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
@@ -118,30 +120,30 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
-    ! if ( .not. FC % Dimensionless ) then
-    !   FC % Units % Time &
+    ! if ( .not. U % Dimensionless ) then
+    !   U % Units % Time &
     !     =  UNIT % SECOND
-    !   FC % Units % Length &
+    !   U % Units % Length &
     !     =  UNIT % KILOMETER
-    !   FC % Units % Coordinate_PS  &
+    !   U % Units % Coordinate_PS  &
     !     =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     ! end if
 
-    call FC % InitializeAtlas &
+    call U % InitializeAtlas &
            ( RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadiusExcisionOption = RadiusExcisionOption, &
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
 
-    ! select type ( PS => FC % Integrator % PositionSpace )
+    ! select type ( PS => U % Integrator % PositionSpace )
     ! class is ( Atlas_SC_Form )
 
     ! allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
     ! select type ( GA => PS % Geometry_ASC )
     ! class is ( Geometry_ASC_Form )
 
-    ! call FC % InitializeGeometry &
+    ! call U % InitializeGeometry &
     !        ( GA, PS, GeometryType, &
     !          UsePinnedMemoryOption = GeometryUseDeviceOption, &
     !          CentralMassOption = CentralMassOption )
@@ -153,9 +155,9 @@ contains
     !     call GA % AllocateDevice ( )
     ! end if
 
-    ! FC % UseCoarsening = .true.
-    ! call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
-    ! if ( FC % UseCoarsening ) &
+    ! U % UseCoarsening = .true.
+    ! call PROGRAM_HEADER % GetParameter ( U % UseCoarsening, 'UseCoarsening' )
+    ! if ( U % UseCoarsening ) &
     !   call PS % SetCoarsening ( )
 
     ! end select !-- GA
@@ -165,11 +167,11 @@ contains
 
 
   subroutine InitializeAtlas &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
+               ( U, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
                  RadialRatioOption, nCellsPolarOption )
 
-      class ( FluidCentral_H_Form ), intent ( inout ) :: &
-        FC
+      class ( Universe_F_C_Form ), intent ( inout ) :: &
+        U
       real ( KDR ), intent ( in ), optional :: &
         RadiusMaxOption, &
         RadiusCoreOption, &
@@ -179,10 +181,10 @@ contains
         nCellsPolarOption
 
       call Show ( 'InitializeAtlas should be overridden', CONSOLE % WARNING )
-      call Show ( 'FluidCentral_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'Universe_F_C__Form', 'module', CONSOLE % WARNING )
       call Show ( 'InitializeAtlas', 'subroutine', CONSOLE % WARNING )
 
   end subroutine InitializeAtlas
 
 
-end module FluidCentral_H__Form
+end module Universe_F_C__Form
