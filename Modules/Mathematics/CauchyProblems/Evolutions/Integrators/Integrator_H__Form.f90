@@ -384,7 +384,7 @@ contains
       ( S_X  =>  I % Checkpoint_X, &
         A_X  =>  I % X, &
         GIS  =>  I % GridImageStream )
-    call S_X % Initialize ( A_X, GIS, NameOption = 'X' )
+    call S_X % Initialize ( A_X, GIS, NameOption = A_X % Name )
     call I % Geometry_X % SetStream ( S_X )
     end associate !--SA
     
