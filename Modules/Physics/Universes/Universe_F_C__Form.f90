@@ -93,11 +93,24 @@ contains
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
+
+    if ( .not. allocated ( I % dT_Label ) ) then
+      if ( any ( trim ( GravitationType ) == [ 'NEWTON_SG' ] ) ) then
+        allocate ( I % dT_Label ( 2 ) )
+        I % dT_Label ( 1 )  =  'Fluid advection'
+        I % dT_Label ( 2 )  =  'Gravitation acceleration'
+      else
+        allocate ( I % dT_Label ( 1 ) )
+        I % dT_Label ( 1 )  =  'Fluid advection'
+      end if
+    end if
+
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
 !             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
     end select !-- I
 
   end subroutine Initialize_F_C

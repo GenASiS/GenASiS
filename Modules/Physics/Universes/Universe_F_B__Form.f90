@@ -92,11 +92,18 @@ contains
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
+
+    if ( .not. allocated ( I % dT_Label ) ) then
+      allocate ( I % dT_Label ( 1 ) )
+      I % dT_Label ( 1 ) = 'Fluid advection'
+    end if
+
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
 !             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
     end select !-- I
 
   end subroutine Initialize_F_B
