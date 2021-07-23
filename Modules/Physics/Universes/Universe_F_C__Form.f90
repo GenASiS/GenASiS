@@ -15,10 +15,8 @@ module Universe_F_C__Form
     type ( Units_F_Form ), dimension ( : ), allocatable :: &
       Units_F
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_F_C
-    generic, public :: &
-      Initialize => Initialize_F_C
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -70,9 +68,9 @@ contains
       Name
 
     if ( U % Type == '' ) &
-      U % Type = 'a FluidCentral'
+      U % Type = 'a Universe_F_C'
 
-    Name  =  'FluidCentral'
+    Name  =  'Universe'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

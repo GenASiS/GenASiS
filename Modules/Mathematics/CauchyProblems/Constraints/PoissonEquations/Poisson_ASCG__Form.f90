@@ -82,7 +82,7 @@ contains
       nEquationsOption
 
     if ( P % Type == '' ) &
-      P % Type = 'a Poisson_A' 
+      P % Type = 'a Poisson_ASCG' 
 
      call P % Initialize_H &
            ( G, SolverType, MaxDegreeOption, nEquationsOption )

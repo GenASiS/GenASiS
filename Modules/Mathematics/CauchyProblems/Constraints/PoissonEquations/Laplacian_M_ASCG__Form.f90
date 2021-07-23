@@ -89,7 +89,7 @@ contains
       nEquations
 
     if ( L % Type  ==  '' ) &
-      L % Type  =  'a Laplacian_M_A' 
+      L % Type  =  'a Laplacian_M_ASCG' 
 
     call L % Initialize_H ( G, MaxDegree, nEquations )
 
