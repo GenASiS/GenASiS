@@ -19,7 +19,7 @@ program VolumeIntegral_Form_Test
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'VolumeIntegral__Form_Test', DimensionalityOption = '2D' )
+         ( 'VolumeIntegral_Form_Test', DimensionalityOption = '2D' )
 
   allocate ( A )
   call A % Initialize &
