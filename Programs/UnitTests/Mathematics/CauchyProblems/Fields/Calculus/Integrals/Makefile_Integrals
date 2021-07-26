@@ -2,8 +2,8 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: VolumeIntegral_Form_Test #SurfaceIntegral_Form_Test \
-     SphericalAverage_Form_Test
+all: VolumeIntegral_Form_Test #SphericalAverage_Form_Test #SurfaceIntegral_Form_Test \
+     
 
 VolumeIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
   Geometries.a Integrals.a VolumeIntegral_Form_Test.o

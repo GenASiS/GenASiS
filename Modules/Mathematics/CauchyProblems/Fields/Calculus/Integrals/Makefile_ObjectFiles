@@ -1,5 +1,5 @@
 INTEGRALS = \
   Integrals.o \
+  SphericalAverage_Form.o \
   VolumeIntegral_Form.o
-#  SphericalAverage_Form.o \
 #  SurfaceIntegral_Form.o \
