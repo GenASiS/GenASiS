@@ -36,7 +36,8 @@ contains
   subroutine Initialize_GS_C &
                ( C, RadiusMin, RadiusMax, RadiusScale, CommunicatorOption, &
                  NameOption, CoordinateUnitOption, RadialRatioOption, &
-                 nGhostLayersOption, nCellsPolarOption, nEqualOption )
+                 nGhostLayersOption, nCellsPolarOption, nEqualOption, &
+                 nDimensionsOption )
 
     class ( Chart_GS_C_Form ), intent ( inout ) :: &
       C
@@ -56,7 +57,8 @@ contains
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption, &
-      nEqualOption
+      nEqualOption, &
+      nDimensionsOption
 
     integer ( KDI ) :: &
       nCellsRadial, &
@@ -132,7 +134,8 @@ contains
              nCellsOption = nCells, &
              nGhostLayersOption = nGhostLayersOption, &
              nBricksOption = nBricks, &
-             nEqualOption = nEqualOption )
+             nEqualOption = nEqualOption, &
+             nDimensionsOption = nDimensionsOption )
 
     if ( C % nBricks ( 2 )  /=  1  .or.  C % nBricks ( 3 ) /= 1 ) then
       call Show ( 'Decomposition in angle not allowed', CONSOLE % ERROR )

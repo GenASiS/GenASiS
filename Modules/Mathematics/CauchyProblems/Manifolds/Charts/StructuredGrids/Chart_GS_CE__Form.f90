@@ -29,7 +29,7 @@ contains
   subroutine Initialize_GS_CE &
                ( C, RadiusMax, RadiusExcision, CommunicatorOption, &
                  NameOption, CoordinateUnitOption, RadialRatioOption, &
-                 nGhostLayersOption, nCellsPolarOption, nEqualOption  )
+                 nGhostLayersOption, nCellsPolarOption, nDimensionsOption )
 
     class ( Chart_GS_CE_Form ), intent ( inout ) :: &
       C
@@ -48,7 +48,7 @@ contains
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption, &
-      nEqualOption
+      nDimensionsOption
 
     if ( C % Type  ==  '' ) &
       C % Type  =  'a Chart_GS_CE'
@@ -64,7 +64,8 @@ contains
              CoordinateUnitOption = CoordinateUnitOption, &
              RadialRatioOption = RadialRatioOption, &
              nGhostLayersOption = nGhostLayersOption, &
-             nCellsPolarOption = nCellsPolarOption )
+             nCellsPolarOption = nCellsPolarOption, &
+             nDimensionsOption = nDimensionsOption )
 
   end subroutine Initialize_GS_CE
 

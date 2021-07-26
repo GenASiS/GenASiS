@@ -15,8 +15,10 @@ module Atlas_SCG_CC__Form
   contains
     procedure, private, pass :: &
       Initialize_SCG_CC
+    procedure, private, pass :: &
+      Initialize_SCG_CC_SA  !-- SphericalAverage
     generic, public :: &
-      Initialize => Initialize_SCG_CC
+      Initialize => Initialize_SCG_CC, Initialize_SCG_CC_SA
     final :: &
       Finalize
   end type Atlas_SCG_CC_Form
@@ -28,7 +30,7 @@ contains
   subroutine Initialize_SCG_CC &
                ( A, RadiusMax, RadiusCore, CommunicatorOption, NameOption, &
                  CoordinateUnitOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsPolarOption, nEqualOption )
+                 nCellsPolarOption, nEqualOption, nDimensionsOption )
 
     class ( Atlas_SCG_CC_Form ), intent ( inout ), target :: &
       A
@@ -47,7 +49,8 @@ contains
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption, &
-      nEqualOption
+      nEqualOption, &
+      nDimensionsOption
 
     logical :: &
       PreviouslyAllocated
@@ -65,7 +68,7 @@ contains
       allocate ( Chart_GS_CC_Form :: A % Chart ( 1 ) % Element )
     end if
 
-    call A % Atlas_SCG_Form % Initialize ( )
+    call A % Atlas_SCG_Form % Initialize ( NameOption = NameOption )
 
     if ( .not. PreviouslyAllocated ) then
 
@@ -80,7 +83,8 @@ contains
                RadialRatioOption = RadialRatioOption, &
                nGhostLayersOption = nGhostLayersOption, &
                nCellsPolarOption = nCellsPolarOption, &
-               nEqualOption = nEqualOption )
+               nEqualOption = nEqualOption, &
+               nDimensionsOption = nDimensionsOption )
 
       end select !--  C
 
@@ -92,6 +96,32 @@ contains
     end select !-- C
       
   end subroutine Initialize_SCG_CC
+
+
+  subroutine Initialize_SCG_CC_SA ( A, A_S )
+
+    class ( Atlas_SCG_CC_Form ), intent ( inout ) :: &
+      A
+    class ( Atlas_SCG_CC_Form ), intent ( in ) :: &
+      A_S  !-- Source
+
+    associate ( C_S  =>  A_S % Chart_GS_CC )
+
+    call A % Initialize &
+           ( RadiusMax = C_S % RadiusMax, &
+             RadiusCore = C_S % RadiusScale, &
+             CommunicatorOption = C_S % Communicator, &
+             NameOption = trim ( A_S % Name ) // '_SA', &
+             CoordinateUnitOption = C_S % CoordinateUnit, &
+             RadialRatioOption = C_S % RadialRatio, &
+             nGhostLayersOption = C_S % nGhostLayers, &
+             nCellsPolarOption = C_S % nCellsPolar, &
+             nEqualOption = C_S % nEqual, &
+             nDimensionsOption = 1 )
+
+    end associate !-- C_S
+
+  end subroutine Initialize_SCG_CC_SA
 
 
   impure elemental subroutine Finalize ( A )
