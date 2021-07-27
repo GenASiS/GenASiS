@@ -19,7 +19,7 @@ program SphericalAverage_Form_Test
   type ( FieldSetForm ), allocatable :: &
     FS
   type ( SphericalAverageForm ), allocatable :: &
-    FS_SA
+    SA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize ( 'SphericalAverage_Form_Test' )
@@ -44,13 +44,15 @@ program SphericalAverage_Form_Test
   call G_SA % Initialize ( A_SA )
 
   allocate ( FS )
-  allocate ( FS_SA )
   call FS % Initialize &
          ( A, &
            FieldOption = [ 'Sphere   ', 'Spheroid ', 'Ellipsoid' ], &
            NameOption = 'Integrand', &
            nFieldsOption = 3 )
-  call FS_SA % Initialize ( G, FS, A_SA )
+
+  allocate ( SA )
+  call SA % Initialize ( G, FS, A_SA )
+  associate ( FS_SA  =>  SA % FieldSet_SA )
 
   call A     % Show ( )
   call A_SA  % Show ( )
@@ -59,7 +61,9 @@ program SphericalAverage_Form_Test
   call FS    % Show ( )
   call FS_SA % Show ( )
 
-  deallocate ( FS_SA )
+  end associate !-- FS_SA
+
+  deallocate ( SA )
   deallocate ( FS )
   deallocate ( G_SA )
   deallocate ( G )
