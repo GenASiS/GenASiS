@@ -18,6 +18,9 @@ program SphericalAverage_Form_Test
     G_SA
   type ( FieldSetForm ), allocatable :: &
     FS
+  type ( StreamForm ), allocatable :: &
+    S, &
+    S_SA
   type ( SphericalAverageForm ), allocatable :: &
     SA
 
@@ -29,8 +32,7 @@ program SphericalAverage_Form_Test
          ( PROGRAM_HEADER % Name, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  allocate ( A )
-  allocate ( A_SA )
+  allocate ( A, A_SA )
   call A % Initialize &
          ( RadiusMax = 10.0_KDR, &
            RadiusCore = 10.0_KDR / 8.0_KDR, &
@@ -38,10 +40,15 @@ program SphericalAverage_Form_Test
            NameOption = 'PositionSpace' )
   call A_SA % Initialize ( A )
 
-  allocate ( G )
-  allocate ( G_SA )
-  call G % Initialize ( A )
-  call G_SA % Initialize ( A_SA )
+  allocate ( S, S_SA )
+  call S    % Initialize ( A,    GIS )
+  call S_SA % Initialize ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
+
+  allocate ( G, G_SA )
+  call G    % Initialize ( A )
+  call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
+  call S    % AddFieldSet ( G )
+  call S_SA % AddFieldSet ( G_SA )
 
   allocate ( FS )
   call FS % Initialize &
@@ -49,27 +56,104 @@ program SphericalAverage_Form_Test
            FieldOption = [ 'Sphere   ', 'Spheroid ', 'Ellipsoid' ], &
            NameOption = 'Integrand', &
            nFieldsOption = 3 )
+  call S % AddFieldSet ( FS )
 
   allocate ( SA )
   call SA % Initialize ( G, FS, A_SA )
   associate ( FS_SA  =>  SA % FieldSet_SA )
+  call S_SA % AddFieldSet ( FS_SA )
 
-  call A     % Show ( )
-  call A_SA  % Show ( )
-  call G     % Show ( )
-  call G_SA  % Show ( )
+  call  A    % Show ( )
+  call  A_SA % Show ( )
+  call  G    % Show ( )
+  call  G_SA % Show ( )
   call FS    % Show ( )
   call FS_SA % Show ( )
+  call  S    % Show ( )
+  call  S_SA % Show ( )
 
   end associate !-- FS_SA
 
+  call SetFields ( )
+
+  call GIS % Open ( GIS % ACCESS_CREATE )
+  call S    % Write ( )
+  call S_SA % Write ( )
+  call GIS % Close ( )
+
   deallocate ( SA )
   deallocate ( FS )
-  deallocate ( G_SA )
-  deallocate ( G )
-  deallocate ( A_SA )
-  deallocate ( A )
+  deallocate ( G, G_SA )
+  deallocate ( S, S_SA )
+  deallocate ( A, A_SA )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
+
+
+contains
+
+
+  subroutine SetFields ( )
+
+    real ( KDR ) :: &
+      A1, A2, A3
+    real ( KDR ), dimension ( : ), allocatable :: &
+      X, Y, Z
+
+    associate &
+      ( C      =>  A % Chart_GS_CC, &
+        nV     =>  G % Storage_GS % nValues, &
+        R      =>  G % Storage_GS % Value ( :, G % CENTER_U ( 1 ) ), &
+        Theta  =>  G % Storage_GS % Value ( :, G % CENTER_U ( 2 ) ), &
+        Phi    =>  G % Storage_GS % Value ( :, G % CENTER_U ( 3 ) ), &
+        Sphere     =>  FS % Storage_GS % Value ( :, 1 ), &
+        Spheroid   =>  FS % Storage_GS % Value ( :, 2 ), &
+        Ellipsoid  =>  FS % Storage_GS % Value ( :, 3 ) )
+
+    A1  =  0.6_KDR  *  C % MaxCoordinate ( 1 )
+    A2  =  0.4_KDR  *  C % MaxCoordinate ( 1 )
+    A3  =  0.2_KDR  *  C % MaxCoordinate ( 1 )
+
+    allocate ( X ( nV ), Y ( nV ), Z ( nV ) )
+
+    select case ( C % nDimensions )
+    case ( 1 )
+      X  =  R
+      Y  =  0.0_KDR
+      Z  =  0.0_KDR
+    case ( 2 )
+      X  =  R * Sin ( Theta )
+      Y  =  0.0_KDR
+      Z  =  R * Cos ( Theta )
+    case ( 3 )
+      X  =  R * Sin ( Theta ) * Cos ( Phi )
+      Y  =  R * Sin ( Theta ) * Sin ( Phi )
+      Z  =  R * Cos ( Theta )
+    end select !-- nDimensions
+
+    where ( ( X ** 2  +  Y ** 2  +  Z ** 2 ) / A1 ** 2  <  1.0_KDR )
+      Sphere  =  1.0_KDR
+    elsewhere
+      Sphere  =  0.0_KDR
+    end where
+
+    where ( ( X ** 2  +  Y ** 2 ) / A1 ** 2  &
+            +  Z ** 2 / A2 ** 2  <  1.0_KDR )
+      Spheroid  =  1.0_KDR
+    elsewhere
+      Spheroid  =  0.0_KDR
+    end where
+
+    where ( X ** 2 / A1 ** 2  +  Y ** 2 / A2 ** 2 &
+            +  Z ** 2 / A3 ** 2  <  1.0_KDR )
+      Ellipsoid  =  1.0_KDR
+    elsewhere
+      Ellipsoid  =  0.0_KDR
+    end where
+
+    end associate !-- C, etc.
+
+  end subroutine SetFields
+
 
 end program SphericalAverage_Form_Test
