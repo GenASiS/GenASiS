@@ -54,7 +54,6 @@ program SphericalAverage_Form_Test
   call FS % Initialize &
          ( A, &
            FieldOption = [ 'Sphere   ', 'Spheroid ', 'Ellipsoid' ], &
-           NameOption = 'Integrand', &
            nFieldsOption = 3 )
   call S % AddFieldSet ( FS )
 
@@ -76,6 +75,8 @@ program SphericalAverage_Form_Test
 
   call SetFields ( )
 
+  call SA % Compute ( IgnorabilityOption = CONSOLE % INFO_1 )
+
   call GIS % Open ( GIS % ACCESS_CREATE )
   call S    % Write ( )
   call S_SA % Write ( )
@@ -83,9 +84,9 @@ program SphericalAverage_Form_Test
 
   deallocate ( SA )
   deallocate ( FS )
-  deallocate ( G, G_SA )
-  deallocate ( S, S_SA )
-  deallocate ( A, A_SA )
+  deallocate ( G_SA, G )
+  deallocate ( S_SA, S )
+  deallocate ( A_SA, A )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 

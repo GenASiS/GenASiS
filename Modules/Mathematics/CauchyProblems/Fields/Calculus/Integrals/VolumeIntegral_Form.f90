@@ -53,11 +53,11 @@ contains
     if ( present ( ReduceOption ) ) &
       Reduce = ReduceOption
 
-    Ignorability = CONSOLE % INFO_5
+    Ignorability  =  CONSOLE % INFO_5
     if ( present ( IgnorabilityOption ) ) &
-      Ignorability = IgnorabilityOption
+      Ignorability  =  IgnorabilityOption
 
-    call Show ( 'Computing an integral', Ignorability )
+    call Show ( 'Computing a VolumeIntegral', Ignorability )
     call Show ( I % Name, 'Integrand', Ignorability )
     call Show ( I % Atlas % Name, 'Atlas', Ignorability )
 
