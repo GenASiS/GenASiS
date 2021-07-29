@@ -483,12 +483,14 @@ contains
   end subroutine InitializeAtlas
 
 
-  subroutine Analyze_C ( I )
+  subroutine Analyze_C ( I, T_A )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
+    type ( TimerForm ), intent ( in ) :: &
+      T_A
 
-    call I % Analyze_H ( )
+    call I % Analyze_H ( T_A )
 
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )

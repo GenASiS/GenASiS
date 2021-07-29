@@ -169,11 +169,14 @@ module Integrator_H__Form
         T_Restart
     end subroutine RI
 
-    subroutine A ( I )
+    subroutine A ( I, T_A )
+      use Basics
       import Integrator_H_Form
       implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
+      type ( TimerForm ), intent ( in ) :: &
+        T_A
     end subroutine A
     
     subroutine W ( I, T_W )
@@ -986,7 +989,7 @@ contains
 !     if ( associated ( Timer_T ) ) call Timer_T % Stop ( )   
 
     call T_A % Start ( )   
-    call I % Analyze ( )
+    call I % Analyze ( T_A )
     call T_A % Stop ( )   
 
     if ( .not. I % NoWrite .and. .not. I % Restart ) then
@@ -1151,13 +1154,25 @@ contains
   end subroutine UpdateHost_H
 
 
-  subroutine Analyze_H ( I )
+  subroutine Analyze_H ( I, T_A )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
+    type ( TimerForm ), intent ( in ) :: &
+      T_A
+
+    type ( TimerForm ), pointer :: &
+      T_SS
 
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
+
+    associate ( Sp_X  =>  I % Step_X )
+    T_SS  =>  Sp_X % TimerSlopeSum ( LevelOption = T_A % Level + 1 )
+    call T_SS % Start ( )
+    call Sp_X % ComputeSlopeSum ( )
+    call T_SS % Stop ( )
+    end associate !-- Sp_X
 
   end subroutine Analyze_H
 
@@ -1170,7 +1185,6 @@ contains
       T_W
 
     type ( TimerForm ), pointer :: &
-      T_SS, &
       T_X
 
     ! if ( allocated ( I % MomentumSpace ) ) then
@@ -1179,13 +1193,6 @@ contains
     !     call MS % MarkFibersWritten ( )
     !   end select !-- MS
     ! end if !-- MomentumSpace
-
-    associate ( Sp_X  =>  I % Step_X )
-    T_SS  =>  Sp_X % TimerSlopeSum ( LevelOption = T_W % Level + 1 )
-    call T_SS % Start ( )
-    call Sp_X % ComputeSlopeSum ( )
-    call T_SS % Stop ( )
-    end associate !-- Sp_X
 
     associate ( GIS => I % GridImageStream )
     associate ( S_X  =>  I % Checkpoint_X )
