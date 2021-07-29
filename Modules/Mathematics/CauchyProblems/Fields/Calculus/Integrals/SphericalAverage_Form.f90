@@ -20,10 +20,8 @@ module SphericalAverage_Form
     class ( FieldSetForm ), pointer :: &
       FieldSet => null ( )
   contains
-    procedure, private, pass :: &
-      Initialize_SA
-    generic, public :: &
-      Initialize => Initialize_SA
+    procedure, public, pass :: &
+      Initialize
     procedure, public, pass :: &
       Compute
     final :: &
@@ -38,11 +36,11 @@ module SphericalAverage_Form
 contains
 
 
-  subroutine Initialize_SA ( SA, G, FS, A_SA, iaAverageOption )
+  subroutine Initialize ( SA, G, FS, A_SA, iaAverageOption )
 
     class ( SphericalAverageForm ), intent ( inout ) :: &
       SA
-    class ( Geometry_F_Form ), intent ( in ), target :: &
+    class ( Geometry_F_Form ), intent ( in ) :: &
       G
     class ( FieldSetForm ), intent ( in ), target :: &
       FS
@@ -78,7 +76,7 @@ contains
       end associate !-- FS_SA
     end if !-- allocated FS_SA
 
-  end subroutine Initialize_SA
+  end subroutine Initialize
 
 
   subroutine Compute ( SA, IgnorabilityOption )

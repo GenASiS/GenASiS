@@ -110,6 +110,12 @@ contains
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              NameOption = 'PositionSpace' )
 
+    allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_SA )
+    select type ( PS_SA  =>  U % PositionSpace_SA )
+      class is ( Atlas_SCG_CC_Form )
+    call PS_SA % Initialize ( PS )
+    end select !-- PS_SA
+
     ! if ( FC % Dimensionless ) then
 
     !   call PS % CreateChart_CC ( )

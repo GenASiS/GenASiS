@@ -12,11 +12,20 @@ module Universe_F_C__Form
   private
 
   type, public, extends ( Universe_H_Form ) :: Universe_F_C_Form
+    class ( Atlas_SCG_Form ), allocatable :: &
+      PositionSpace_SA  !-- SphericalAverage
+    type ( StreamForm ), allocatable :: &
+      Stream_SA
+    type ( SphericalAverageForm ), allocatable :: &
+      SA_Gravitation, &
+      SA_Fluid
     type ( Units_F_Form ), dimension ( : ), allocatable :: &
       Units_F
   contains
     procedure, public, pass :: &
       Initialize_F_C
+    procedure, public, pass :: &
+      Show => Show_U
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -111,9 +120,44 @@ contains
 !             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
+    allocate ( U % Stream_SA )
+    associate &
+      (   A_SA  =>  U % PositionSpace_SA, &
+          S_SA  =>  U % Stream_SA, &
+        GIS     =>  I % GridImageStream, &
+          S     =>  I % Checkpoint_X )
+
+    call S_SA % Initialize &
+           ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
+
+    select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+      class is ( Geometry_F_Form )
+    select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+      class is ( Fluid_D_Form )
+    call G_SA % SetStream ( S_SA )
+    call F_SA % SetStream ( S_SA )
+    end select !-- F_SA
+    end select !-- G_SA
+    end associate !-- A_SA, etc.
+
     end select !-- I
 
   end subroutine Initialize_F_C
+
+
+  subroutine Show_U ( U )
+
+    class ( Universe_F_C_Form ), intent ( in ) :: &
+      U
+
+    call U % Universe_H_Form % Show ( )
+
+    call U % PositionSpace_SA % Show ( )
+    call U % SA_Gravitation % FieldSet_SA % Show ( )
+    call U % SA_Fluid % FieldSet_SA % Show ( )
+    call U % Stream_SA % Show ( )
+
+  end subroutine Show_U
 
 
   impure elemental subroutine Finalize ( U )
@@ -123,7 +167,15 @@ contains
 
     if ( allocated ( U % Units_F ) ) &
       deallocate ( U % Units_F )
-
+    if ( allocated ( U % SA_Fluid ) ) &
+      deallocate ( U % SA_Fluid )
+    if ( allocated ( U % SA_Gravitation ) ) &
+      deallocate ( U % SA_Gravitation )
+    if ( allocated ( U % Stream_SA ) ) &
+      deallocate ( U % Stream_SA )
+    if ( allocated ( U % PositionSpace_SA ) ) &
+      deallocate ( U % PositionSpace_SA )
+    
   end subroutine Finalize
 
 
@@ -210,10 +262,14 @@ contains
     character ( * ), intent ( in ) :: &
       GravitationType
 
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaAverage
+
     associate ( I  =>  U % Integrator )
 
     select case ( trim ( GravitationType ) )
     case ( 'GALILEO' )
+
       allocate ( Gravitation_G_Form  ::  I % Geometry_X )
       select type ( G  =>  I % Geometry_X )
         class is ( Gravitation_G_Form )
@@ -222,8 +278,25 @@ contains
                DeviceMemoryOption = U % DeviceMemory, &
                PinnedMemoryOption = U % PinnedMemory, &
                DevicesCommunicateOption = U % DevicesCommunicate )
+
+      allocate ( iaAverage ( 0 ) )
+
+      allocate ( U % SA_Gravitation )
+      associate &
+        ( SA     =>  U % SA_Gravitation, &
+           A_SA  =>  U % PositionSpace_SA )
+      allocate ( Gravitation_G_Form :: SA % FieldSet_SA )
+      select type ( G_SA  =>  SA % FieldSet_SA )
+        type is ( Gravitation_G_Form )
+      call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
+      call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
+      end select !-- G_SA
+      end associate !-- SA, etc.
+
       end select !-- G
+
     case ( 'NEWTON_SG' )
+
       allocate ( Gravitation_N_SG_Form  ::  I % Geometry_X )
       select type ( G  =>  I % Geometry_X )
         class is ( Gravitation_N_SG_Form )
@@ -232,7 +305,24 @@ contains
                DeviceMemoryOption = U % DeviceMemory, &
                PinnedMemoryOption = U % PinnedMemory, &
                DevicesCommunicateOption = U % DevicesCommunicate )
+
+      allocate &
+        ( iaAverage, source = [ G % POTENTIAL, G % POTENTIAL_GRADIENT_D ] )
+
+      allocate ( U % SA_Gravitation )
+      associate &
+        ( SA     =>  U % SA_Gravitation, &
+           A_SA  =>  U % PositionSpace_SA )
+      allocate ( Gravitation_N_H_Form :: SA % FieldSet_SA )
+      select type ( G_SA  =>  SA % FieldSet_SA )
+        type is ( Gravitation_N_H_Form )
+      call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
+      call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
+      end select !-- G_SA
+      end associate !-- SA, etc.
+
       end select !-- G
+
     case default
       call Show ( 'GravitationType not recognized', CONSOLE % ERROR )
       call Show ( GravitationType, 'GravitationType', CONSOLE % ERROR )
@@ -298,11 +388,30 @@ contains
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )
+
       allocate ( Fluid_D_Form  ::  I % CurrentSet_X )
       select type ( F  =>  I % CurrentSet_X )
         class is ( Fluid_D_Form )
       call F % Initialize ( G, U % Units_F )
-      end select !-- G
+
+      allocate ( U % SA_Fluid )
+      associate &
+        ( SA     =>  U % SA_Fluid, &
+           A_SA  =>  U % PositionSpace_SA )
+      allocate ( Fluid_D_Form :: SA % FieldSet_SA )
+      select type ( F_SA  =>  SA % FieldSet_SA )
+        type is ( Fluid_D_Form )
+      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+        class is ( Geometry_F_Form )
+      call F_SA % Initialize &
+             ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+      call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+      end select !-- G_SA
+      end select !-- F_SA
+      end associate !-- SA, etc.
+
+      end select !-- F
+      
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )
       call Show ( FluidType, 'FluidType', CONSOLE % ERROR )
