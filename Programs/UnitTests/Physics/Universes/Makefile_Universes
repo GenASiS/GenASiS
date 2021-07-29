@@ -73,5 +73,7 @@ FluidCentralExcision_Form_Test.o: \
 
 Universe_F_CC__Form_Test.o: \
   Basics.o \
+  Mathematics.o \
+  Fluids.o \
   Universe_F_CC__Form.o \
   Universe_F_CC__Form_Test.f90

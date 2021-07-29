@@ -42,6 +42,8 @@ module Universe_F_C__Form
       InitializeStep
     procedure, private, pass :: &
       InitializeAtlas
+    procedure, public, nopass :: &
+      Analyze_C
   end type Universe_F_C_Form
 
     private :: &
@@ -114,11 +116,15 @@ contains
       end if
     end if
 
+    I % Analyze  =>  Analyze_C
+
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
 !             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
+    !-- SphericalAverage Stream
 
     allocate ( U % Stream_SA )
     associate &
@@ -138,6 +144,7 @@ contains
     call F_SA % SetStream ( S_SA )
     end select !-- F_SA
     end select !-- G_SA
+
     end associate !-- A_SA, etc.
 
     end select !-- I
@@ -474,6 +481,24 @@ contains
       call Show ( 'InitializeAtlas', 'subroutine', CONSOLE % WARNING )
 
   end subroutine InitializeAtlas
+
+
+  subroutine Analyze_C ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    call I % Analyze_H ( )
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_C_Form )
+
+    call U % SA_Gravitation % Compute ( )
+    call U % SA_Fluid % Compute ( )
+
+    end select !-- U
+
+  end subroutine Analyze_C
 
 
   subroutine SetSlope_N_SG ( S, K, iS_Option )

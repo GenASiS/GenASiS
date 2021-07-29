@@ -134,7 +134,7 @@ module Integrator_H__Form
       ResetInitial_H
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
-    procedure, private, pass :: &   !-- 3
+    procedure, public, pass :: &   !-- 3
       Analyze_H
     procedure, private, pass :: &   !-- 3
       Write_H
