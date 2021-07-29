@@ -44,6 +44,8 @@ module Universe_F_C__Form
       InitializeAtlas
     procedure, public, nopass :: &
       Analyze_C
+    procedure, public, nopass :: &
+      Write_C
   end type Universe_F_C_Form
 
     private :: &
@@ -117,6 +119,7 @@ contains
     end if
 
     I % Analyze  =>  Analyze_C
+    I % Write    =>  Write_C
 
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
@@ -501,6 +504,44 @@ contains
     end select !-- U
 
   end subroutine Analyze_C
+
+
+  subroutine Write_C ( I, T_W )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    type ( TimerForm ), intent ( in ) :: &
+      T_W
+
+    type ( TimerForm ), pointer :: &
+      T_PS
+
+    !-- Reproduce and expand Write_H functionality rather than call Write_H 
+    !   functionality to avoid multiple GIS % Open calls.
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_C_Form )
+    associate &
+      ( GIS     =>  I % GridImageStream, &
+          S_PS  =>  I % Checkpoint_X, &
+          S_SA  =>  U % Stream_SA )
+    T_PS  =>  S_PS % TimerWrite ( LevelOption = T_W % Level + 1 )
+    call T_PS % Start ( )
+
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call S_PS % Write &
+           ( TimeOption  =  I % T  /  I % Unit_T, &
+             CycleNumberOption  =  I % iCycle )
+    call S_SA % Write &
+           ( TimeOption  =  I % T  /  I % Unit_T, &
+             CycleNumberOption  =  I % iCycle )
+    call GIS % Close ( )
+
+    call T_PS % Stop ( )
+    end associate !-- GIS, etc.
+    end select !-- U
+
+  end subroutine Write_C
 
 
   subroutine SetSlope_N_SG ( S, K, iS_Option )

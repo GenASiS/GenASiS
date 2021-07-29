@@ -110,9 +110,9 @@ module Integrator_H__Form
       Timer_AC
     procedure, private, pass :: &
       Timer_UH
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Timer_A
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Timer_W
     procedure, private, pass :: &
       Timer_CC

@@ -9,7 +9,10 @@ program Universe_F_CC__Form_Test
 
   implicit none
 
-  type ( Universe_F_CC_Form ), allocatable :: &
+  type ( TimerForm ), pointer :: &
+    T_A, &
+    T_W
+  type ( Universe_F_CC_Form ), allocatable, target :: &
     U
 
   allocate ( PROGRAM_HEADER )
@@ -21,8 +24,26 @@ program Universe_F_CC__Form_Test
          ( FluidType = 'DUST', &
            GravitationType = 'NEWTON_SG' )
   call U % Show ( )
-  deallocate ( U )
 
+  associate ( I  =>  U % Integrator )
+
+  I % System  =>  U
+
+  call SetFluid ( )
+
+  T_A  =>  I % Timer_A ( )
+  call T_A % Start ( )
+  call I % Analyze ( T_A )
+  call T_A % Stop ( )
+
+  T_W  =>  I % Timer_W ( )
+  call T_W % Start ( )
+  call I % Write ( T_W )
+  call T_W % Stop ( )
+
+  end associate !-- I
+
+  deallocate ( U )
   deallocate ( PROGRAM_HEADER )
 
 
@@ -37,6 +58,8 @@ contains
       dS
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       S_1, S_2, S_3
+
+    call Show ( 'Setting Fluid' )
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
