@@ -63,7 +63,7 @@ contains
              nWriteOption = nWriteOption ) 
 
     associate ( I  =>  U % Integrator )
-    I % Set_T_CheckpointInterval => Set_T_CheckpointInterval
+    I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
     end associate !-- I
 
   end subroutine Initialize_F_CC
@@ -152,9 +152,9 @@ contains
 
     ! integer ( KDI ) :: &
     !   iRadius
-    ! real ( KDR ) :: &
-    !   GravitationalConstant, &
-    !   BaryonMass, &
+    real ( KDR ) :: &
+      Constant_G, &
+      Mass_B!, &
     !   VelocityMax, &
     !   VelocityMaxRadius, &
     !   NumberDensityAve, &
@@ -172,16 +172,12 @@ contains
       class is ( Integrator_CS_Form )
     select type ( F => I % CurrentSet_X )
       class is ( Fluid_D_Form )
+    select type ( U  =>  I % System )
+      class is ( Universe_F_C_Form )
 
-    ! select type ( FC => I % Universe )
-    ! class is ( FluidCentralCoreForm )
-
-    ! GravitationalConstant  =  CONSTANT % GRAVITATIONAL
-    !            BaryonMass  =  CONSTANT % ATOMIC_MASS_UNIT 
-    ! if ( FC % Dimensionless ) then
-    !   GravitationalConstant  =  1.0_KDR
-    !              BaryonMass  =  1.0_KDR
-    ! end if
+    !-- FIXME: nontrivial units
+    Constant_G  =  1.0_KDR
+        Mass_B  =  1.0_KDR
 
     ! G_SA  =>  FC % PositionSpace_SA % Geometry ( )
     ! F_SA  =>  FC % Fluid_ASC_SA % Fluid_D ( )
@@ -256,6 +252,7 @@ contains
     !-- Cleanup
 
     ! end select !-- FC
+    end select !-- U
     end select !-- F
     end select !-- I
 

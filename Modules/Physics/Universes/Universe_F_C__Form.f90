@@ -118,9 +118,6 @@ contains
       end if
     end if
 
-    I % Analyze  =>  Analyze_C
-    I % Write    =>  Write_C
-
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
@@ -149,6 +146,9 @@ contains
     end select !-- G_SA
 
     end associate !-- A_SA, etc.
+
+    I % Analyze  =>  Analyze_C
+    I % Write    =>  Write_C
 
     end select !-- I
 
