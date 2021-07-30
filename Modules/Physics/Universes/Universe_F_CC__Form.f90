@@ -18,6 +18,10 @@ module Universe_F_CC__Form
       Initialize_F_CC
     generic, public :: &
       Initialize => Initialize_F_CC
+    final :: &
+      Finalize
+    procedure, public, pass :: &
+      SetBoundaryConditions
     procedure, private, pass :: &
       InitializeAtlas
   end type Universe_F_CC_Form
@@ -67,6 +71,37 @@ contains
     end associate !-- I
 
   end subroutine Initialize_F_CC
+
+
+  impure elemental subroutine Finalize ( U )
+
+    type ( Universe_F_CC_Form ), intent ( inout ) :: &
+      U
+
+  end subroutine Finalize
+
+
+  subroutine SetBoundaryConditions ( U )
+
+    class ( Universe_F_CC_Form ), intent ( inout ) :: &
+      U
+    
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 3 )
+    end associate !-- F
+
+    end select !-- I
+
+  end subroutine SetBoundaryConditions
 
 
   subroutine InitializeAtlas &

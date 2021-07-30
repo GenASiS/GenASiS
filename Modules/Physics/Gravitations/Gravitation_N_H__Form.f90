@@ -4,6 +4,7 @@ module Gravitation_N_H__Form
 
   use Basics
   use Mathematics
+  use Gravitation_G__Form
 
   implicit none
   private
@@ -12,7 +13,7 @@ module Gravitation_N_H__Form
       N_FIELDS_N  = 4, &
       N_VECTORS_N = 1
 
-  type, public, extends ( Geometry_F_Form ) :: Gravitation_N_H_Form
+  type, public, extends ( Gravitation_G_Form ) :: Gravitation_N_H_Form
     integer ( KDI ) :: &
       N_FIELDS_N = N_FIELDS_N, &
       N_VECTORS_N = N_VECTORS_N
@@ -149,7 +150,7 @@ contains
 
     !-- Geometry_F
 
-    call FS % Geometry_F_Form % Initialize &
+    call FS % Gravitation_G_Form % Initialize &
            ( A, &
              FieldOption = Field, &
              VectorOption = VectorOption, &

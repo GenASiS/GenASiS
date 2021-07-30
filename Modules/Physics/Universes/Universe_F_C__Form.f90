@@ -39,6 +39,8 @@ module Universe_F_C__Form
     procedure, public, pass :: &
       InitializeFluid
     procedure, public, pass :: &
+      SetBoundaryConditions
+    procedure, public, pass :: &
       InitializeStep
     procedure, private, pass :: &
       InitializeAtlas
@@ -101,6 +103,8 @@ contains
            ( GravitationType )
     call U % InitializeFluid &
            ( FluidType )
+    call U % SetBoundaryConditions &
+           ( )
     call U % InitializeStep &
            ( )
 
@@ -434,6 +438,19 @@ contains
     end select !-- I
 
   end subroutine InitializeFluid
+
+
+  subroutine SetBoundaryConditions ( U )
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+
+    call Show ( 'SetBoundaryConditions should be overridden', &
+                CONSOLE % WARNING )
+    call Show ( 'Universe_F_C__Form', 'module', CONSOLE % WARNING )
+    call Show ( 'SetBoundaryConditions', 'subroutine', CONSOLE % WARNING )
+
+  end subroutine SetBoundaryConditions
 
 
   subroutine InitializeStep ( U )

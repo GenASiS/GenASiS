@@ -6,6 +6,7 @@ Gravitation_G__Form.o: \
 Gravitation_N_H__Form.o: \
   Basics.o \
   Mathematics.o \
+  Gravitation_G__Form.o \
   Gravitation_N_H__Form.f90
 
 Gravitation_N_SG__Form.o: \

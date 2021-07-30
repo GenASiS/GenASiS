@@ -148,17 +148,6 @@ contains
              NameOption = Name, &
              nCellsPolarOption = 128 )
 
-    ! select type ( I  =>  OS % Integrator )
-    !   class is ( Integrator_CS_Form )
-    ! associate &
-    !   ( F  =>  I % CurrentSet_X )
-    ! do iD  =  1, 3
-    !   call F % SetBoundaryConditionsFace &
-    !          ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
-    ! end do !-- iD
-    ! end associate !-- F
-    ! end select !-- I
-             
     ! OS % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
