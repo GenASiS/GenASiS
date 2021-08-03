@@ -399,6 +399,9 @@ contains
     integer ( KDI ) :: &
       iC
 
+    call Show ( 'ComputeFromInitial', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
@@ -458,6 +461,9 @@ contains
 
     integer ( KDI ) :: &
       iC
+
+    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     do iC  =  1, CS % Atlas % nCharts
 

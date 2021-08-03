@@ -355,12 +355,12 @@ contains
     real ( KDR ) :: &
       Abs_K
 
-    nV = size ( X )
+    nV  =  size ( X )
     
-    Abs_K = sqrt ( dot_product ( K, K ) )
+    Abs_K  =  sqrt ( dot_product ( K, K ) )
 
     !$OMP parallel do &
-    !$OMP schedule ( OMP_SCHEDULE_HOST )
+    !$OMP schedule ( OMP_SCHEDULE_HOST ) firstprivate ( Abs_K )
     do iV  =  1,  nV
 
       if ( .not. ProperCell ( iV ) ) &

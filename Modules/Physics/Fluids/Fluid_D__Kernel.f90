@@ -138,6 +138,8 @@ contains
           S_3 ( iV )  =  0.0_KDR
         end if
 
+call Show ( M ( iV ), '>>> M' )
+call Show ( D ( iV ), '>>> D' )
         N ( iV )    =  D ( iV )
         V_1 ( iV )  =  M_UU_11 ( iV )  &
                        *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )

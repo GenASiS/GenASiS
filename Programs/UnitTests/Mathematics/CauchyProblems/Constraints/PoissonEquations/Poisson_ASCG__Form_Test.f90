@@ -323,7 +323,7 @@ contains
     real ( KDR ) :: &
       R_I, R_O
 
-    do iV  =  1, size ( R_E )
+    do iV  =  1, size ( D )
       R_I  =  R_E ( iV )
       R_O  =  R_E ( iV )  +  R_W ( iV )
       if ( R_O  <=  RD ) then

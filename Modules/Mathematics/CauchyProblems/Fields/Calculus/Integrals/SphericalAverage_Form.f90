@@ -267,7 +267,11 @@ contains
 
     FourPi  =  4.0_KDR  *  CONSTANT % PI
 
-    F_SA  =  0.0_KDR
+    !-- Clear variables to be averaged before reduction below
+    do iS  =  1, size ( iaAvg )
+      iF  =  iaAvg ( iS )
+      F_SA ( :, 1, 1, iF )  =  0.0_KDR
+    end do !-- iS
 
     !$OMP parallel do collapse ( 4 ) &
     !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF ) &

@@ -10,10 +10,10 @@ module OppenheimerSnyder_Form
   private
 
   type, public, extends ( Universe_F_CC_Form ) :: OppenheimerSnyderForm
-  !   real ( KDR ) :: &
-  !     DensityInitial, &
-  !     RadiusInitial, &
-  !     TimeScale
+    real ( KDR ) :: &
+      DensityInitial, &
+      RadiusInitial, &
+      TimeScale
   !   type ( RootFinderForm ), allocatable :: &
   !     RootFinder
     type ( Fluid_D_Form ), allocatable :: &
@@ -29,16 +29,16 @@ module OppenheimerSnyder_Form
   end type OppenheimerSnyderForm
 
     private :: &
-      InitializeUniverse!, &
+      InitializeUniverse, &
       ! InitializeDiagnostics, &
-      ! SetInitial, &
+      SetInitial!, &
       ! SetReference
 
-      ! private :: &
-      !   SetFluid
+      private :: &
+        SetFluid
 
-      !   private :: &
-      !     SetFluidKernel
+        private :: &
+          SetFluidKernel
 
 contains
 
@@ -63,8 +63,10 @@ contains
     call InitializeUniverse ( U, Name )
 !    call InitializeDiagnostics ( U )
 
-!    if ( .not. associated ( U % Integrator % SetInitial ) ) &
-!      U % Integrator % SetInitial  =>  SetInitial
+   if ( .not. associated ( U % Integrator % SetInitial ) ) &
+     U % Integrator % SetInitial  =>  SetInitial
+
+    U % Integrator % System  =>  U
 
   end subroutine Initialize_H
 
@@ -151,6 +153,197 @@ contains
     ! OS % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
+
+
+  subroutine SetInitial ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    real ( KDR ) :: &
+      Pi, &
+      Mass, &
+      DensityFactor, &
+      RadiusFactor, &
+      Eta
+
+    select type ( OS  =>  I % System )
+      class is ( OppenheimerSnyderForm )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
+
+    call Show ( 'Setting OppenheimerSnyder' )
+
+    associate &
+      ( R_Max => C % MaxCoordinate ( 1 ), &
+          R_0 => OS % RadiusInitial, &
+          D_0 => OS % DensityInitial, &
+          Tau => OS % TimeScale, &
+            M => Mass, &
+           DF => DensityFactor, &
+           RF => RadiusFactor )
+
+     Pi  =  CONSTANT % PI
+      M  =  1.0_KDR
+    D_0  =  1.0e-3_KDR
+     DF  =  1.0e2_KDR
+    call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
+    call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
+    call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
+
+    Tau    =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
+      R_0  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
+     RF    =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
+    Eta    =  acos ( 2.0 * RF  -  1.0 )
+
+    I % T_Finish  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
+
+    call Show ( M, 'Mass' )
+    call Show ( D_0, 'DensityInitial' )
+    call Show ( R_0, 'RadiusInitial' )
+    call Show ( DF, 'DensityFactor' )
+    call Show ( RF, 'RadiusFactor' )
+    call Show ( Pi / 2  *  Tau, 'CollapseTime' )
+
+    if ( R_0 > R_Max  ) then
+      call Show ( 'RadiusInitial too large', CONSOLE % ERROR )
+      call Show ( R_0, 'RadiusInitial', CONSOLE % ERROR )
+      call Show ( C % MaxCoordinate ( 1 ), 'RadiusMax', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+!    allocate ( OS % RootFinder )
+!    associate ( RF => OS % RootFinder )
+!    call RF % Initialize ( OS )
+!    RF % EvaluateZero  =>  EvaluateZeroEta
+
+    call SetFluid ( OS, F )
+
+    end associate !-- R_Max, etc.
+
+    end associate !-- C
+    end select !-- A
+    end select !-- F
+    end select !-- I
+    end select !-- OS
+
+  end subroutine SetInitial
+
+
+  subroutine SetFluid ( OS, F )
+
+    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
+      OS
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+
+    real ( KDR ) :: &
+      Pi, &
+      Eta, &
+      Radius, &
+      Density
+
+    Pi  =  CONSTANT % PI
+
+    associate &
+!      ( RF   => OS % RootFinder, &
+      (  D_0 => OS % DensityInitial, &
+         R_0 => OS % RadiusInitial )
+
+!    call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
+
+!    Radius   =  0.5 * R_0 * ( 1 + cos ( Eta ) )
+!    Density  =  D_0 * ( R_0 / Radius ) ** 3
+    Radius   =  R_0
+    Density  =  D_0
+
+    end associate !-- RF, etc.
+
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS, &
+        G  =>  F % Geometry )
+    associate &
+      ( FV  =>  F % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
+
+!  subroutine SetFluidKernel &
+!               ( ProperCell, R_E, R_W, R_D, Density, N, VX, VY, VZ )
+   call SetFluidKernel &
+          ( ProperCell = C % ProperCell, &
+            R_E = GV ( :, G % EDGE_I_U ( 1 ) ), &
+            R_W = GV ( :, G % WIDTH_U  ( 1 ) ), &
+            R_D = Radius, &
+            Density = Density, &
+            N = FV ( :, F % BARYON_DENSITY_C ), &
+            VX = FV ( :, F % VELOCITY_U_1 ), &
+            VY = FV ( :, F % VELOCITY_U_2 ), &
+            VZ = FV ( :, F % VELOCITY_U_3 ) )
+
+    end associate !-- FV, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine SetFluid
+
+
+  subroutine SetFluidKernel &
+               ( ProperCell, R_E, R_W, R_D, Density, N, VX, VY, VZ )
+
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      ProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R_E, &
+      R_W
+    real ( KDR ), intent ( in ) :: &
+      R_D, &
+      Density
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      VX, VY, VZ
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nV
+    real ( KDR ) :: &
+      R_I, R_O
+
+    nV  =  size ( N )
+
+    !$OMP parallel do &
+    !$OMP schedule ( OMP_SCHEDULE_HOST )
+    do iV  =  1,  nV
+
+      if ( .not. ProperCell ( iV ) ) &
+        cycle
+
+      R_I  =  R_E ( iV )
+      R_O  =  R_E ( iV )  +  R_W ( iV )
+      if ( R_O  <=  R_D ) then
+        N ( iV )  =  Density
+      else if ( R_I  <  R_D .and. R_O  >  R_D ) then
+        N ( iV )  =  Density * ( R_D ** 3  -  R_I ** 3 ) &
+                     / ( R_O ** 3  -  R_I ** 3 )
+      else
+        N ( iV )  =  0.0_KDR
+      end if
+
+      VX ( iV )  =  0.0_KDR
+      VY ( iV )  =  0.0_KDR
+      VZ ( iV )  =  0.0_KDR
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine SetFluidKernel
 
 
 end module OppenheimerSnyder_Form
