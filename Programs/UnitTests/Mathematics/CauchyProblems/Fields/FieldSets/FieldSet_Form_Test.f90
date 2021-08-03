@@ -120,7 +120,7 @@ contains
     call Show ( 'Ghost exchange' )
     call Show ( FS % Name, 'FieldSet' )
     call Show ( nGhostExchanges, 'nGhostExchanges' )
-    call FS % Clear ( )
+    call FS % Clear ( UseDeviceOption = .false. )
 
     select type ( A  =>  FS % Atlas )
       class is ( Atlas_SCG_Form )
@@ -161,6 +161,9 @@ contains
       call FS % ExchangeGhostData ( T_Option = T_G )
       call T_G % Stop ( )
     end do !-- iGE
+    
+    if ( FS % DevicesCommunicate ) &
+      call FS % UpdateHost ( )
 
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
@@ -171,20 +174,7 @@ contains
       call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
       end associate !-- F
     end do !-- iF
-
-    if ( FS % DevicesCommunicate ) then
-      call FS % UpdateHost ( )
-      do iS  =  1, FS % nFields
-        iF  =  FS % iaSelected ( iS )
-        associate ( F  =>  FS % Storage_GS % Value ( :, iF ) )
-        call C % SetFieldPointer ( F, F_3D )
-        call Show ( 'Field after update host', CONSOLE % INFO_2 )
-        call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
-        call ShowField ( F_3D, C % nGhostLayers, C % nDimensions )
-        end associate !-- F
-      end do !-- iF
-    end if !-- DevicesCommunicate
-
+    
     end associate !-- nCB
     end associate !-- C
     end select !-- A

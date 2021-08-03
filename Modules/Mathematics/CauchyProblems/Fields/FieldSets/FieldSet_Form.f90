@@ -649,22 +649,30 @@ contains
   end subroutine CloneGhostTimers
 
 
-  subroutine Clear_FS ( FS )
+  subroutine Clear_FS ( FS, UseDeviceOption )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
       iS, &  !-- iSelected
       iF     !-- iField
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = FS % DeviceMemory
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     do iC  =  1,  FS % Atlas % nCharts
       associate ( FSV  =>  FS % Storage ( iC ) % Value )
       do iS  =  1,  FS % nFields
         iF  =  FS % iaSelected ( iS )
         call Clear ( FSV ( :, iF ), &
-                     UseDeviceOption = FS % DeviceMemory )
+                     UseDeviceOption = UseDevice )
       end do !-- iS
       end associate !-- FSV
     end do !-- iC
