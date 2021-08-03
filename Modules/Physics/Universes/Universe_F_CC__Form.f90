@@ -4,6 +4,7 @@ module Universe_F_CC__Form
 
   use Basics
   use Mathematics
+  use Gravitations
   use Fluids
   use Universe_F_C__Form
 
@@ -185,37 +186,91 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    ! integer ( KDI ) :: &
+    integer ( KDI ) :: &
+      iP, &  !-- iProcess
+      oC, &  !-- oCell
+      oI     !-- oIncoming
     !   iRadius
     real ( KDR ) :: &
-      Constant_G, &
-      Mass_B!, &
+      Constant_G
     !   VelocityMax, &
     !   VelocityMaxRadius, &
     !   NumberDensityAve, &
     !   NumberDensityMax, &
     !   TimeScaleVelocity, &
     !   TimeScaleDensity
-    ! type ( CollectiveOperation_R_Form ), allocatable :: &
-    !   CO
-    ! class ( GeometryFlatForm ), pointer :: &
-    !   G_SA
-    ! class ( Fluid_D_Form ), pointer :: &
-    !   F_SA
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Radius, &
+      Density, &
+      Velocity
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      Outgoing_2D, &
+      Incoming_2D
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      CO
 
-    select type ( I )
-      class is ( Integrator_CS_Form )
-    select type ( F => I % CurrentSet_X )
-      class is ( Fluid_D_Form )
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )
+    select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+      class is ( Fluid_D_Form )
+    select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+      class is ( Gravitation_G_Form )
+    select type ( A_SA  =>  F_SA % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C_SA    =>  A_SA % Chart_GS, &
+        G_SA_V  =>  G_SA % Storage_GS % Value, &
+        F_SA_V  =>  F_SA % Storage_GS % Value )
+    associate &
+      ( nGL  =>  C_SA % nGhostLayers ( 1 ), &
+        nC   =>  C_SA % nCells ( 1 ), &
+        nCB  =>  C_SA % nCellsBrick ( 1 ), &
+        nP   =>  C_SA % Communicator % Size, &
+        nF   =>  3, &
+         R   =>  G_SA_V ( :, G_SA % CENTER_U_1 ), &
+         M   =>  F_SA_V ( :, F_SA % BARYON_MASS ), &
+         N   =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
+         V   =>  F_SA_V ( :, F_SA % VELOCITY_U_1 ) )
+
+    !-- Gather spherically averaged density and velocity
+    !   (assume decomposition in spherical shells)
+
+    allocate ( CO )
+    call CO % Initialize &
+           ( C_SA % Communicator, &
+             nOutgoing = [ nF * nCB ], nIncoming = [ nF * nC ] )
+
+    oC  =  C_SA % nGhostLayers ( 1 )
+    Outgoing_2D ( 1 : nCB, 1 : 3 )  &
+      =>  CO % Outgoing % Value
+    Outgoing_2D ( 1 : nCB, 1 )  &
+      =   R ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 2 )  &
+      =   M ( nGL + 1 : nGL + nCB )  *  N ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 3 )  &
+      =   V ( nGL + 1 : nGL + nCB )
+
+call Show ( Outgoing_2D, '>>> Outgoing_2D' )
+
+    call CO % Gather ( )
+
+    allocate ( Radius ( nC ), Density ( nC ), Velocity ( nC ) )
+    do iP  =  0,  nP - 1
+      oC  =  iP * nCB
+      oI  =  oC * nF
+      Incoming_2D ( 1 : nCB, 1 : nF )  &
+        =>  CO % Incoming % Value ( oI + 1 : oI + nCB * nF ) 
+      Radius   ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 1 )
+      Density  ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 2 )
+      Velocity ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 3 )
+    end do !-- iP
+
+call Show ( Radius,  '>>> Radius' )
+call Show ( Density, '>>> Density' )
+call Show ( Velocity, '>>> Velocity' )
 
     !-- FIXME: nontrivial units
     Constant_G  =  1.0_KDR
-        Mass_B  =  1.0_KDR
-
-    ! G_SA  =>  FC % PositionSpace_SA % Geometry ( )
-    ! F_SA  =>  FC % Fluid_ASC_SA % Fluid_D ( )
 
     ! !-- Velocity
 
@@ -286,12 +341,15 @@ contains
 
     !-- Cleanup
 
-    ! end select !-- FC
-    end select !-- U
-    end select !-- F
-    end select !-- I
+    deallocate ( Velocity, Density, Radius )
+    deallocate ( CO )
 
-    ! nullify ( G_SA, F_SA )
+    end associate !-- nC, etc.
+    end associate !-- C_SA
+    end select !-- A_SA
+    end select !-- G_SA
+    end select !-- F_SA
+    end select !-- U
 
   end subroutine Set_T_CheckpointInterval
 

@@ -54,7 +54,7 @@ contains
       Name
 
     if ( U % Type  ==  '' ) &
-      U % Type  =  'a OppenheimerSnyder'
+      U % Type  =  'an OppenheimerSnyder'
 
     Name  =  'OppenheimerSnyder'
     if ( present ( NameOption ) ) &

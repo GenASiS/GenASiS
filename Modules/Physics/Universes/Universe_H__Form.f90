@@ -35,6 +35,8 @@ module Universe_H__Form
       Finalize
   end type Universe_H_Form
 
+    private :: &
+      ShowSystem
 
 contains
 
@@ -100,6 +102,11 @@ contains
     class ( Universe_H_Form ), intent ( inout ) :: &
       U
 
+    associate ( I  =>  U % Integrator )
+    if ( .not. associated ( I % ShowSystem ) ) &
+      I % ShowSystem  =>  ShowSystem
+    end associate !-- I
+
     call U % Integrator % Evolve ( )
 
   end subroutine Evolve
@@ -122,6 +129,21 @@ contains
     call Show ( U % Name, 'Name', U % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  subroutine ShowSystem ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    select type ( U  =>  I % System )
+      class is ( Universe_H_Form )
+
+    call U % Show ( )
+
+    end select !-- U
+
+  end subroutine ShowSystem
 
 
 end module Universe_H__Form

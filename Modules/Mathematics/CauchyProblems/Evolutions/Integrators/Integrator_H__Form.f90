@@ -71,6 +71,8 @@ module Integrator_H__Form
       SetInitial => null ( )
     procedure ( RI ), public, pointer :: &
       ResetInitial => null ( )
+    procedure ( SS ), public, pointer :: &
+      ShowSystem => null ( )
     procedure ( A ), public, pointer :: &
       Analyze => null ( )
     procedure ( W ), public, pointer :: &
@@ -132,6 +134,8 @@ module Integrator_H__Form
       SetInitial_H
     procedure, private, pass :: &   !-- 3
       ResetInitial_H
+    procedure, private, pass :: &  !-- 3
+      ShowSystem_H
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
     procedure, public, pass :: &   !-- 3
@@ -168,6 +172,13 @@ module Integrator_H__Form
       type ( MeasuredValueForm ), intent ( out ) :: &
         T_Restart
     end subroutine RI
+
+    subroutine SS ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( in ) :: &
+        I
+    end subroutine SS
 
     subroutine A ( I, T_A )
       use Basics
@@ -855,6 +866,13 @@ contains
       I % ResetInitial  =>  ResetInitial_H
     end if
 
+    if ( .not. associated ( I % ShowSystem ) ) then
+      call Show ( 'ShowSystem method unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % ShowSystem  =>  ShowSystem_H
+    end if
+
     if ( .not. associated ( I % Analyze ) ) then
       call Show ( 'Analyze method unset', CONSOLE % WARNING )
       call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
@@ -905,7 +923,7 @@ contains
       I % T        =  I % T_Start
     end if !-- restart
 
-    call I % Show ( )
+    call I % ShowSystem ( )
 
   end subroutine PrepareInitial
 
@@ -1140,6 +1158,16 @@ contains
     !          MeanTimeOption = MeanTime )
  
   end subroutine ResetInitial_H
+
+
+  subroutine ShowSystem_H ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    call I % Show ( )
+
+  end subroutine ShowSystem_H
 
 
   subroutine UpdateHost_H ( I )

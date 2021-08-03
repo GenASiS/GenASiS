@@ -120,8 +120,8 @@ contains
     call C_SA % SetFieldPointer ( FV_SA, F_SA )
 
     call ComputeAverage_CGS &
-           ( F, SA % dSolidAngle, SA % iaAverage, C % nCellsBrick, &
-             C % nGhostLayers, F_SA ) 
+           ( F_SA, F, SA % dSolidAngle, SA % iaAverage, C % nCellsBrick, &
+             C % nGhostLayers ) 
 
     end associate !-- FV, etc.
     end select !-- C_SA
@@ -246,8 +246,10 @@ contains
   end subroutine ComputeSolidAngle
 
 
-  subroutine ComputeAverage_CGS ( F, dSA, iaAvg, nC, oC, F_SA )
+  subroutine ComputeAverage_CGS ( F_SA, F, dSA, iaAvg, nC, oC )
 
+    real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+      F_SA
     real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
       F
     real ( KDR ), dimension ( :, : ), intent ( in ) :: &
@@ -255,8 +257,6 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaAvg, &
       nC, oC  !-- nCells, oCell
-    real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
-      F_SA
 
     integer ( KDI ) :: &
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
@@ -267,7 +267,7 @@ contains
 
     FourPi  =  4.0_KDR  *  CONSTANT % PI
 
-    !-- Clear variables to be averaged before reduction below
+    !-- Clear variables to be averaged
     do iS  =  1, size ( iaAvg )
       iF  =  iaAvg ( iS )
       F_SA ( :, 1, 1, iF )  =  0.0_KDR
@@ -297,7 +297,11 @@ contains
     end do !-- iS
     !$OMP  end parallel do      
 
-    F_SA  =  F_SA  /  FourPi 
+    !-- Normalize variables to be averaged
+    do iS  =  1, size ( iaAvg )
+      iF  =  iaAvg ( iS )
+      F_SA ( :, 1, 1, iF )  =  F_SA  ( :, 1, 1, iF )  /  FourPi
+    end do !-- iS
 
   end subroutine ComputeAverage_CGS
 

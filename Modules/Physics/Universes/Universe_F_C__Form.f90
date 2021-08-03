@@ -533,6 +533,7 @@ contains
      
     !-- Spherical average
 
+
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )
     select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
