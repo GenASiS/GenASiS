@@ -188,21 +188,25 @@ contains
 
     integer ( KDI ) :: &
       iP, &  !-- iProcess
+      iR, &  !-- iRadius
+      iC, &  !-- iCell
       oC, &  !-- oCell
       oI     !-- oIncoming
-    !   iRadius
     real ( KDR ) :: &
-      Constant_G
-    !   VelocityMax, &
-    !   VelocityMaxRadius, &
-    !   NumberDensityAve, &
-    !   NumberDensityMax, &
-    !   TimeScaleVelocity, &
-    !   TimeScaleDensity
+      Constant_G, &
+      D_Min, &
+      V_Max, &
+      R_V_Max, &
+      B_V_Max, &
+      N_V_Max, &
+      N_Max, &
+      T_V, &
+      T_N
     real ( KDR ), dimension ( : ), allocatable :: &
-      Radius, &
-      Density, &
-      Velocity
+       R, &
+      dV, &
+       N, &
+       V
     real ( KDR ), dimension ( :, : ), pointer :: &
       Outgoing_2D, &
       Incoming_2D
@@ -220,17 +224,19 @@ contains
     associate &
       ( C_SA    =>  A_SA % Chart_GS, &
         G_SA_V  =>  G_SA % Storage_GS % Value, &
-        F_SA_V  =>  F_SA % Storage_GS % Value )
+        F_SA_V  =>  F_SA % Storage_GS % Value, &
+        M_B     =>  F_SA % BaryonMassReference, &
+        N_Min   =>  F_SA % BaryonDensityMin )
     associate &
-      ( nGL  =>  C_SA % nGhostLayers ( 1 ), &
-        nC   =>  C_SA % nCells ( 1 ), &
-        nCB  =>  C_SA % nCellsBrick ( 1 ), &
-        nP   =>  C_SA % Communicator % Size, &
-        nF   =>  3, &
-         R   =>  G_SA_V ( :, G_SA % CENTER_U_1 ), &
-         M   =>  F_SA_V ( :, F_SA % BARYON_MASS ), &
-         N   =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
-         V   =>  F_SA_V ( :, F_SA % VELOCITY_U_1 ) )
+      ( nGL   =>  C_SA % nGhostLayers ( 1 ), &
+        nC    =>  C_SA % nCells ( 1 ), &
+        nCB   =>  C_SA % nCellsBrick ( 1 ), &
+        nP    =>  C_SA % Communicator % Size, &
+        nF    =>  4, &
+         R_P  =>  G_SA_V ( :, G_SA % CENTER_U_1 ), &
+        dV_P  =>  G_SA_V ( :, G_SA % VOLUME ), &
+         N_P  =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
+         V_P  =>  F_SA_V ( :, F_SA % VELOCITY_U_1 ) )
 
     !-- Gather spherically averaged density and velocity
     !   (assume decomposition in spherical shells)
@@ -241,91 +247,74 @@ contains
              nOutgoing = [ nF * nCB ], nIncoming = [ nF * nC ] )
 
     oC  =  C_SA % nGhostLayers ( 1 )
-    Outgoing_2D ( 1 : nCB, 1 : 3 )  &
-      =>  CO % Outgoing % Value
-    Outgoing_2D ( 1 : nCB, 1 )  &
-      =   R ( nGL + 1 : nGL + nCB )
-    Outgoing_2D ( 1 : nCB, 2 )  &
-      =   M ( nGL + 1 : nGL + nCB )  *  N ( nGL + 1 : nGL + nCB )
-    Outgoing_2D ( 1 : nCB, 3 )  &
-      =   V ( nGL + 1 : nGL + nCB )
-
-call Show ( Outgoing_2D, '>>> Outgoing_2D' )
+    Outgoing_2D ( 1 : nCB, 1 : nF )  =>  CO % Outgoing % Value
+    Outgoing_2D ( 1 : nCB, 1 )      =    R_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 2 )      =   dV_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 3 )      =    N_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 4 )      =    V_P ( nGL + 1 : nGL + nCB )
 
     call CO % Gather ( )
 
-    allocate ( Radius ( nC ), Density ( nC ), Velocity ( nC ) )
+    allocate ( R ( nC ), dV ( nC ), N ( nC ), V ( nC ) )
     do iP  =  0,  nP - 1
       oC  =  iP * nCB
       oI  =  oC * nF
       Incoming_2D ( 1 : nCB, 1 : nF )  &
         =>  CO % Incoming % Value ( oI + 1 : oI + nCB * nF ) 
-      Radius   ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 1 )
-      Density  ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 2 )
-      Velocity ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 3 )
+       R ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 1 )
+      dV ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 2 )
+       N ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 3 )
+       V ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 4 )
     end do !-- iP
 
-call Show ( Radius,  '>>> Radius' )
-call Show ( Density, '>>> Density' )
-call Show ( Velocity, '>>> Velocity' )
+    !-- Velocity
+
+    V_Max  =  maxval ( abs ( V ) )
+
+    iR  =  nC
+    do iC  =  nC, 1, -1
+      if ( N ( iC )  >  1.01_KDR  *  N_Min ) then
+        if ( V ( iC )  ==  V_Max ) then
+          iR  =  iC
+          exit
+        end if
+      end if
+    end do !-- iC
+
+    R_V_Max  =  R ( iR )
+
+    !-- Density
+
+    B_V_Max  =  sum ( N ( : iR )  *  dV ( : iR ) )
+
+    N_V_Max  =  B_V_Max  /  sum ( dV ( : iR ) )
+
+    N_Max  =  maxval ( N )
+
+    !-- Time scales and CheckpointTimeInterval
+
+    T_V  =  R_V_Max  /  max ( V_Max, sqrt ( tiny ( 0.0_KDR ) ) )
 
     !-- FIXME: nontrivial units
     Constant_G  =  1.0_KDR
 
-    ! !-- Velocity
+    T_N  =  ( Constant_G * M_B * min ( N_V_Max, N_Max ) ) ** ( -0.5_KDR )
 
-    ! iRadius &
-    !   =  maxloc ( abs ( F_SA % Value ( :,  F_SA % VELOCITY_U ( 1 ) ) ), &
-    !               dim = 1 )
-    ! VelocityMaxRadius &
-    !   =  G_SA % Value ( iRadius, G_SA % CENTER_U ( 1 ) )
-    ! VelocityMax  &
-    !   =  max ( maxval ( abs ( F_SA % Value ( :, F_SA % VELOCITY_U ( 1 ) ) ) ), &
-    !            sqrt ( tiny ( 0.0_KDR ) ) )  
+    I % T_CheckpointInterval  =  min ( T_V, T_N )  /  I % nWrite
 
-    ! !-- Density
+    !-- Display
 
-    ! select type ( TI => FA % TallyInterior )
-    ! class is ( Tally_F_D_Form )
-    !   NumberDensityAve  =  TI % Value ( TI % BARYON_NUMBER ) &
-    !                  / ( 4.0_KDR / 3.0_KDR  *  CONSTANT % PI  &
-    !                      *  VelocityMaxRadius ** 3 )
-    ! end select !-- TI
-
-    ! NumberDensityMax  &
-    !   =  max ( maxval ( F_SA % Value ( :, F_SA % COMOVING_BARYON_DENSITY ) ), &
-    !            sqrt ( tiny ( 0.0_KDR ) ) )
-
-    ! !-- Time scales and CheckpointTimeInterval
-
-    ! TimeScaleVelocity &
-    !   =  VelocityMaxRadius  /  VelocityMax
-    ! TimeScaleDensity &
-    !   =  ( GravitationalConstant * BaryonMass &
-    !        * min ( NumberDensityAve, NumberDensityMax ) ) &
-    !      ** ( -0.5_KDR )
-
-    ! allocate ( CO )
-    ! associate ( C => I % PositionSpace % Communicator ) 
-    ! call CO % Initialize &
-    !        ( C, nOutgoing = [ 1 ], nIncoming = [ 1 ], &
-    !          RootOption = CONSOLE % DisplayRank )
-    ! end associate !-- C
-
-    ! CO % Outgoing % Value ( 1 )  &
-    !   =  min ( TimeScaleVelocity, TimeScaleDensity )  /  I % nWrite
-
-    ! call CO % Broadcast ( )
-
-    ! I % CheckpointTimeInterval  =  CO % Incoming % Value ( 1 )
-
-    ! !-- Display
-
-    ! call Show ( 'Time Scales', I % IGNORABILITY )
-    ! call Show ( VelocityMaxRadius, FC % Units % Coordinate_PS ( 1 ), &
-    !             'VelocityMaxRadius', I % IGNORABILITY )
-    ! call Show ( VelocityMax, FC % Units % Velocity_U ( 1 ), &
-    !             'VelocityMax', I % IGNORABILITY )
+    call Show ( 'Time Scales', I % IGNORABILITY )
+    call Show ( V_Max, F_SA % Unit ( F_SA % VELOCITY_U_1, 1 ), &
+                'VelocityMax', I % IGNORABILITY )
+    call Show ( R_V_Max, G_SA % Unit ( G_SA % CENTER_U_1, 1 ), &
+                'RadiusVelocityMax', I % IGNORABILITY )
+    call Show ( B_V_Max, &
+                'BaryonsVelocityMax', I % IGNORABILITY )
+    call Show ( N_V_Max, F_SA % Unit ( F_SA % BARYON_DENSITY_C, 1 ), &
+                'DensityVelocityMax', I % IGNORABILITY )
+    call Show ( N_Max, F_SA % Unit ( F_SA % BARYON_DENSITY_C, 1 ), &
+                'DensityMax', I % IGNORABILITY )
     ! call Show ( NumberDensityAve, FC % Units % NumberDensity, &
     !             'NumberDensityAve', I % IGNORABILITY )
     ! call Show ( NumberDensityMax, FC % Units % NumberDensity, &
@@ -334,14 +323,14 @@ call Show ( Velocity, '>>> Velocity' )
     !             'MassDensityAve', I % IGNORABILITY )
     ! call Show ( BaryonMass * NumberDensityMax, FC % Units % MassDensity, &
     !             'MassDensityMax', I % IGNORABILITY )
-    ! call Show ( TimeScaleVelocity, I % TimeUnit, &
-    !             'TimeScaleVelocity', I % IGNORABILITY )
-    ! call Show ( TimeScaleDensity, I % TimeUnit, &
-    !             'TimeScaleDensity', I % IGNORABILITY )
+    call Show ( T_V, I % Unit_T, &
+                'T_Velocity', I % IGNORABILITY )
+    call Show ( T_N, I % Unit_T, &
+                'T_Density', I % IGNORABILITY )
 
     !-- Cleanup
 
-    deallocate ( Velocity, Density, Radius )
+    deallocate ( V, N, dV, R )
     deallocate ( CO )
 
     end associate !-- nC, etc.
