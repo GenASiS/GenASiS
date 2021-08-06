@@ -27,8 +27,35 @@ module Universe_F_CC__Form
       InitializeAtlas
   end type Universe_F_CC_Form
 
+    private :: &
+      Set_T_CheckpointInterval
+
       private :: &
-        Set_T_CheckpointInterval
+        Compute_dT_G_CGS_Kernel
+
+    interface
+    
+      module subroutine Compute_dT_G_CGS_Kernel &
+               ( dT, ProperCell, GradPhi_1, GradPhi_2, GradPhi_3, &
+                 M_UU_11, M_UU_22, M_UU_33, dX_1, dX_2, dX_3, &
+                 nDimensions, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          GradPhi_1, GradPhi_2, GradPhi_3, &
+          M_UU_11, M_UU_22, M_UU_33, &
+          dX_1, dX_2, dX_3
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_G_CGS_Kernel
+
+    end interface
 
 contains
 

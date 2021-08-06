@@ -38,32 +38,32 @@ module Integrator_CS__Form
     private :: &
       Compute_dT_Local
 
-    private :: &
-      Compute_dT_CGS_Kernel
+      private :: &
+        Compute_dT_CGS_Kernel
 
-  interface
-  
-    module subroutine Compute_dT_CGS_Kernel &
-             ( dT, ProperCell, &
-               FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, dX_1, dX_2, dX_3, &
-               nDimensions, UseDeviceOption )
-    use Basics
-    implicit none
-    real ( KDR ), intent ( inout ) :: &
-      dT
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      ProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3, &
-      dX_1, dX_2, dX_3
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-    end subroutine Compute_dT_CGS_Kernel
+    interface
+    
+      module subroutine Compute_dT_CGS_Kernel &
+               ( dT, ProperCell, &
+                 FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, dX_1, dX_2, dX_3, &
+                 nDimensions, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          FEP_1, FEP_2, FEP_3, &
+          FEM_1, FEM_2, FEM_3, &
+          dX_1, dX_2, dX_3
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_CGS_Kernel
 
-  end interface
+    end interface
 
 contains
 
