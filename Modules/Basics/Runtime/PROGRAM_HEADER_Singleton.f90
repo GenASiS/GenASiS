@@ -815,6 +815,7 @@ contains
 
     call Show ( 'Adding a Timer', CONSOLE % INFO_2 )
     call Show ( PH % Timer ( Handle ) % Name, 'Name', CONSOLE % INFO_2 )
+    call Show ( PH % Timer ( Handle ) % Level, 'Level', CONSOLE % INFO_2 )
 
   end subroutine AddTimer
 

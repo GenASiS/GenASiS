@@ -37,8 +37,8 @@ module Timer_Form
       RestoreTotal
   end type TimerForm
 
-    character ( 8 ), private, parameter :: &
-      Suffix = '::::::::'
+    character ( 10 ), private, parameter :: &
+      Suffix = '::::::::::'
     
 contains
 
