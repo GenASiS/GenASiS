@@ -172,7 +172,7 @@ contains
 
     call C % Chart_GS_Form % Show ( )
 
-    call Show ( 'Chart_GS_C parameters' )
+    call Show ( 'Chart_GS_C Proper Parameters' )
     call Show ( C % nCellsPolar, 'nCellsPolar', C % IGNORABILITY )
     call Show ( C % RadiusScale, C % CoordinateUnit ( 1 ), 'RadiusScale', &
                 C % IGNORABILITY )

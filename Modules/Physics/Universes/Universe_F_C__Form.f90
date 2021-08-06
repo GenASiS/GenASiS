@@ -12,6 +12,8 @@ module Universe_F_C__Form
   private
 
   type, public, extends ( Universe_H_Form ) :: Universe_F_C_Form
+    real ( KDR ) :: &
+      GravityFactor = 0.0_KDR
     class ( Atlas_SCG_Form ), allocatable :: &
       PositionSpace_SA  !-- SphericalAverage
     type ( StreamForm ), allocatable :: &
@@ -116,6 +118,11 @@ contains
         allocate ( I % dT_Label ( 2 ) )
         I % dT_Label ( 1 )  =  'Fluid advection'
         I % dT_Label ( 2 )  =  'Gravitation acceleration'
+        U % GravityFactor = 0.7_KDR
+    !    if ( present ( GravityFactorOption ) ) &
+    !      U % GravityFactor = GravityFactorOption
+        call PROGRAM_HEADER % GetParameter &
+               ( U % GravityFactor, 'GravityFactor' )
       else
         allocate ( I % dT_Label ( 1 ) )
         I % dT_Label ( 1 )  =  'Fluid advection'
@@ -165,6 +172,11 @@ contains
       U
 
     call U % Universe_H_Form % Show ( )
+
+    call Show ( 'Universe_F_C Proper Parameters' )
+
+    if ( U % GravityFactor  >  0.0_KDR ) &
+      call Show ( U % GravityFactor, 'GravityFactor' )
 
     call U % PositionSpace_SA % Show ( )
     call U % SA_Gravitation % FieldSet_SA % Show ( )

@@ -83,7 +83,7 @@ contains
 
     call C % Chart_GS_C_Form % Show ( )
 
-    call Show ( 'Chart_GS_CC parameters' )
+    call Show ( 'Chart_GS_CC Proper Parameters' )
     call Show ( C % RadiusCore, C % CoordinateUnit ( 1 ), 'RadiusCore' )
     call Show ( C % nCellsCore, 'nCellsCore' )
 

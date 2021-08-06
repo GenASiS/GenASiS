@@ -12,8 +12,6 @@ module Universe_F_CC__Form
   private
 
   type, public, extends ( Universe_F_C_Form ) :: Universe_F_CC_Form
-    real ( KDR ) :: &
-      GravityFactor
   contains
     procedure, private, pass :: &
       Initialize_F_CC
@@ -25,6 +23,8 @@ module Universe_F_CC__Form
       SetBoundaryConditions
     procedure, private, pass :: &
       InitializeAtlas
+    procedure, public, pass :: &
+      Compute_dT_G_CGS
   end type Universe_F_CC_Form
 
     private :: &
@@ -206,6 +206,69 @@ contains
     end associate !-- I
 
   end subroutine InitializeAtlas
+
+
+  subroutine Compute_dT_G_CGS ( U, dT, iC, T_Option )
+
+    class ( Universe_F_CC_Form ), intent ( inout ) :: &
+      U
+    real ( KDR ), intent ( inout ) :: &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    ! associate &
+    !   ( ES_1  =>  I % EigenspeedSet_X ( 1 ), &
+    !     ES_2  =>  I % EigenspeedSet_X ( 2 ), &
+    !     ES_3  =>  I % EigenspeedSet_X ( 3 ), &
+    !      G    =>  I % Geometry_X )
+
+    ! select type ( A  =>  G % Atlas )
+    !   class is ( Atlas_SCG_Form )
+    ! associate &
+    !   ( C  =>  A % Chart_GS )
+
+    ! call ES_1 % Compute ( iC = 1, iD = 1 )
+    ! call ES_2 % Compute ( iC = 1, iD = 2 )
+    ! call ES_3 % Compute ( iC = 1, iD = 3 )
+
+    ! associate &
+    !   ( EV_1  =>  ES_1 % Storage ( 1 ) % Value, &
+    !     EV_2  =>  ES_2 % Storage ( 1 ) % Value, &
+    !     EV_3  =>  ES_3 % Storage ( 1 ) % Value, &
+    !     GV    =>   G   % Storage ( 1 ) % Value )
+
+    ! call Compute_dT_CGS_Kernel &
+    !        ( dT, C % ProperCell, &
+    !          EV_1 ( :, ES_1 % EIGENSPEED_FAST_PLUS_U ), &
+    !          EV_2 ( :, ES_2 % EIGENSPEED_FAST_PLUS_U ), &
+    !          EV_3 ( :, ES_3 % EIGENSPEED_FAST_PLUS_U ), &
+    !          EV_1 ( :, ES_1 % EIGENSPEED_FAST_MINUS_U ), &
+    !          EV_2 ( :, ES_2 % EIGENSPEED_FAST_MINUS_U ), &
+    !          EV_3 ( :, ES_3 % EIGENSPEED_FAST_MINUS_U ), &
+    !          GV ( :, G % WIDTH_U_1 ), &
+    !          GV ( :, G % WIDTH_U_2 ), &
+    !          GV ( :, G % WIDTH_U_3 ), &
+    !          C % nDimensions, &
+    !          UseDeviceOption = G % DeviceMemory )
+
+    ! end associate !-- EV, etc.
+    ! end associate !-- C
+
+    ! class default
+    !   call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+    !   call Show ( 'Integrator_CS_Form', 'module', CONSOLE % ERROR )
+    !   call Show ( 'Compute_dT_CGS', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select !-- A
+
+    ! end associate !-- ES_1, etc.
+
+    dT  =  U % GravityFactor  *  dT
+    
+  end subroutine Compute_dT_G_CGS
 
 
   subroutine Set_T_CheckpointInterval ( I )

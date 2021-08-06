@@ -77,7 +77,7 @@ contains
 
     call C % Chart_GS_C_Form % Show ( )
 
-    call Show ( 'Chart_GS_CE parameters' )
+    call Show ( 'Chart_GS_CE Proper Parameters' )
     call Show ( C % RadiusExcision, C % CoordinateUnit ( 1 ), 'RadiusExcision' )
 
   end subroutine Show_C
