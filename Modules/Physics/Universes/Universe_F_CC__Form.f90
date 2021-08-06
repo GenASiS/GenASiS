@@ -28,7 +28,8 @@ module Universe_F_CC__Form
   end type Universe_F_CC_Form
 
     private :: &
-      Set_T_CheckpointInterval
+      Set_T_CheckpointInterval, &
+      Compute_dT_Local
 
       private :: &
         Compute_dT_G_CGS_Kernel
@@ -96,6 +97,7 @@ contains
 
     associate ( I  =>  U % Integrator )
     I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
+    I % Compute_dT_Local          =>  Compute_dT_Local
     end associate !-- I
 
   end subroutine Initialize_F_CC
@@ -219,52 +221,38 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
-    ! associate &
-    !   ( ES_1  =>  I % EigenspeedSet_X ( 1 ), &
-    !     ES_2  =>  I % EigenspeedSet_X ( 2 ), &
-    !     ES_3  =>  I % EigenspeedSet_X ( 3 ), &
-    !      G    =>  I % Geometry_X )
+    select type ( G  =>  U % Integrator % Geometry_X )
+      class is ( Gravitation_N_H_Form )
+    select type ( A  =>  G % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS, &
+        GV  =>  G % Storage_GS % Value )
 
-    ! select type ( A  =>  G % Atlas )
-    !   class is ( Atlas_SCG_Form )
-    ! associate &
-    !   ( C  =>  A % Chart_GS )
+    call Compute_dT_G_CGS_Kernel &
+           ( dT, C % ProperCell, &
+             GV ( :, G % POTENTIAL_GRADIENT_D_1 ), &
+             GV ( :, G % POTENTIAL_GRADIENT_D_2 ), &
+             GV ( :, G % POTENTIAL_GRADIENT_D_3 ), &
+             GV ( :, G % METRIC_F_UU_11 ), &
+             GV ( :, G % METRIC_F_UU_22 ), &
+             GV ( :, G % METRIC_F_UU_33 ), &
+             GV ( :, G % WIDTH_U_1 ), &
+             GV ( :, G % WIDTH_U_2 ), &
+             GV ( :, G % WIDTH_U_3 ), &
+             C % nDimensions, &
+             UseDeviceOption = G % DeviceMemory )
 
-    ! call ES_1 % Compute ( iC = 1, iD = 1 )
-    ! call ES_2 % Compute ( iC = 1, iD = 2 )
-    ! call ES_3 % Compute ( iC = 1, iD = 3 )
+    end associate !-- C, etc.
 
-    ! associate &
-    !   ( EV_1  =>  ES_1 % Storage ( 1 ) % Value, &
-    !     EV_2  =>  ES_2 % Storage ( 1 ) % Value, &
-    !     EV_3  =>  ES_3 % Storage ( 1 ) % Value, &
-    !     GV    =>   G   % Storage ( 1 ) % Value )
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Universe_F_CC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_G_CGS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
 
-    ! call Compute_dT_CGS_Kernel &
-    !        ( dT, C % ProperCell, &
-    !          EV_1 ( :, ES_1 % EIGENSPEED_FAST_PLUS_U ), &
-    !          EV_2 ( :, ES_2 % EIGENSPEED_FAST_PLUS_U ), &
-    !          EV_3 ( :, ES_3 % EIGENSPEED_FAST_PLUS_U ), &
-    !          EV_1 ( :, ES_1 % EIGENSPEED_FAST_MINUS_U ), &
-    !          EV_2 ( :, ES_2 % EIGENSPEED_FAST_MINUS_U ), &
-    !          EV_3 ( :, ES_3 % EIGENSPEED_FAST_MINUS_U ), &
-    !          GV ( :, G % WIDTH_U_1 ), &
-    !          GV ( :, G % WIDTH_U_2 ), &
-    !          GV ( :, G % WIDTH_U_3 ), &
-    !          C % nDimensions, &
-    !          UseDeviceOption = G % DeviceMemory )
-
-    ! end associate !-- EV, etc.
-    ! end associate !-- C
-
-    ! class default
-    !   call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-    !   call Show ( 'Integrator_CS_Form', 'module', CONSOLE % ERROR )
-    !   call Show ( 'Compute_dT_CGS', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- A
-
-    ! end associate !-- ES_1, etc.
+    end select !-- G
 
     dT  =  U % GravityFactor  *  dT
     
@@ -431,6 +419,30 @@ contains
     end select !-- U
 
   end subroutine Set_T_CheckpointInterval
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    call I % Compute_dT_CGS ( dT_Candidate ( 1 ), iC, T_Option )
+    end select !-- I
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_CC_Form )
+    call U % Compute_dT_G_CGS ( dT_Candidate ( 2 ), iC, T_Option )
+    end select !-- U
+
+  end subroutine Compute_dT_Local
 
 
 end module Universe_F_CC__Form
