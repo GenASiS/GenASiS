@@ -372,6 +372,9 @@ contains
     end if
 
     F % BaryonDensityMin  =  sqrt ( tiny ( 0.0_KDR ) )
+    call PROGRAM_HEADER % GetParameter &
+           ( F % BaryonDensityMin, 'BaryonDensityMin' )
+call Show ( F % BaryonDensityMin, '>>> BaryonDensityMin' )
 
   end subroutine InitializeAllocate_F
 

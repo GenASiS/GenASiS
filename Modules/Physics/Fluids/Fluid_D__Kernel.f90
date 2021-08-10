@@ -138,8 +138,6 @@ contains
           S_3 ( iV )  =  0.0_KDR
         end if
 
-call Show ( M ( iV ), '>>> M' )
-call Show ( D ( iV ), '>>> D' )
         N ( iV )    =  D ( iV )
         V_1 ( iV )  =  M_UU_11 ( iV )  &
                        *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
@@ -165,12 +163,18 @@ call Show ( D ( iV ), '>>> D' )
         end if
 
         N ( iV )    =  D ( iV )
+if ( D ( iV )  >  0.0_KDR ) then
         V_1 ( iV )  =  M_UU_11 ( iV )  &
                        *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
         V_2 ( iV )  =  M_UU_22 ( iV )  &
                        *  S_2 ( iV )  /  ( M ( iV )  *  D ( iV ) )
         V_3 ( iV )  =  M_UU_33 ( iV )  &
                        *  S_3 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+else
+  V_1 ( iV )  =  0.0_KDR
+  V_2 ( iV )  =  0.0_KDR
+  V_3 ( iV )  =  0.0_KDR
+end if
 
       end do !-- iV
       !$OMP end parallel do
