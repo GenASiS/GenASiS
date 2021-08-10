@@ -453,8 +453,10 @@ contains
         call T_AC % Start ( )
         call I % AdministerCheckpoint ( T_AC )
         call T_AC % Stop ( )
-        call Show ( 'dT_Ratio too small', CONSOLE % WARNING )
-        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
+        call Show ( '*** dT_Ratio too small', CONSOLE % WARNING, &
+                    nLeadingLinesOption = 2 )
+        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING, &
+                    nTrailingLinesOption = 2 )
         exit
       end if
 
