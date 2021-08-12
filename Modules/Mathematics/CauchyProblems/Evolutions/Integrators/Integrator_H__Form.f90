@@ -416,6 +416,7 @@ contains
       T_E, &
       T_AC, &
       T_CC, &
+      T_A, &
       T_W
 
 !     call I % InitializeTimeSeries ( )
@@ -461,10 +462,17 @@ contains
       end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then
-        T_W   =>  I % Timer_W ( LevelOption = T_AC % Level + 1 )
+
+        T_A   =>  I % Timer_A  ( )
+        call T_A % Start ( )
+        call I % Analyze ( T_A )
+        call T_A % Stop ( )
+
+        T_W   =>  I % Timer_W ( )
         call T_W % Start ( )
         call I % Write ( T_W )
         call T_W % Stop ( )
+
       end if
 
       if ( I % CheckpointDue ) then
