@@ -157,9 +157,6 @@ contains
     select type ( G  =>  F % Geometry )
       class is ( Gravitation_N_H_Form )
 
-    call G % Solve &
-           ( F, S % Constant_G, S % iBaryonMass_F, S % iBaryonDensity_F )
-
     do iC  =  1,  S % Atlas % nCharts
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
         class is ( Chart_GS_Form )

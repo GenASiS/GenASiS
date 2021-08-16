@@ -524,25 +524,6 @@ contains
 
     call I % Analyze_H ( T_A )
 
-    !-- Gravitation
-
-    select type ( I )
-      class is ( Integrator_CS_Form )
-    select type ( G  =>  I % Geometry_X )
-      class is ( Gravitation_N_H_Form )
-    select type ( F  =>  I % CurrentSet_X )
-      class is ( Fluid_D_Form )
-
-    !-- FIXME Constant_G
-    call G % Solve &
-           ( F, Constant_G = 1.0_KDR, &
-             iBaryonMass = F % BARYON_MASS, &
-             iBaryonDensity = F % BARYON_DENSITY_B )
-
-    end select !-- F
-    end select !-- G
-    end select !-- I
-     
     !-- Spherical average
 
 

@@ -195,6 +195,7 @@ contains
       iBaryonDensity
 
     call Show ( 'Solve should be overridden', CONSOLE % WARNING )
+    call Show ( G % Name, 'Name', CONSOLE % WARNING )
     call Show ( 'Gravitation_N_H__Form', 'module', CONSOLE % WARNING )
     call Show ( 'Solve', 'subroutine', CONSOLE % WARNING )
 

@@ -454,6 +454,15 @@ call Show ( F % BaryonDensityMin, '>>> BaryonDensityMin' )
 
     end do !-- iC
 
+    select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_N_H_Form )
+    !-- FIXME Constant_G
+    call G % Solve &
+           ( CS, Constant_G = 1.0_KDR, &
+             iBaryonMass = CS % BARYON_MASS, &
+             iBaryonDensity = CS % BARYON_DENSITY_B )
+    end select !-- G
+
   end subroutine ComputeFromInitial
 
 
@@ -467,6 +476,15 @@ call Show ( F % BaryonDensityMin, '>>> BaryonDensityMin' )
 
     call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_N_H_Form )
+    !-- FIXME Constant_G
+    call G % Solve &
+           ( CS, Constant_G = 1.0_KDR, &
+             iBaryonMass = CS % BARYON_MASS, &
+             iBaryonDensity = CS % BARYON_DENSITY_B )
+    end select !-- G
 
     do iC  =  1, CS % Atlas % nCharts
 
