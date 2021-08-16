@@ -53,8 +53,23 @@ contains
     character ( * ), intent ( in ) :: &
       CoordinateSystem, &
       AdvectionType
+      
+    logical ( KDL ) :: &
+      DeviceMemory, &   
+      PinnedMemory, &   
+      DevicesCommunicate
 
     call Show ( 'Initializing an ImposedAdvection_VL' )
+    
+    DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
+    call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+    PinnedMemory        =  DeviceMemory    
+    DevicesCommunicate  =  DeviceMemory    
+    call PROGRAM_HEADER % GetParameter &   
+           ( PinnedMemory, 'PinnedMemory' )
+    call PROGRAM_HEADER % GetParameter &
+           ( DevicesCommunicate, 'DevicesCommunicate' )
 
     IA % CoordinateSystem  =  CoordinateSystem
     IA % AdvectionType     =  AdvectionType
@@ -87,7 +102,11 @@ contains
 
     allocate ( I % Geometry_X )
     associate ( G  =>  I % Geometry_X )
-    call G % Initialize ( I % X )
+    call G % Initialize &
+           ( I % X, &
+             DeviceMemoryOption = DeviceMemory, &
+             PinnedMemoryOption = PinnedMemory, &
+             DevicesCommunicateOption = DevicesCommunicate )
     end associate !-- G
 
     allocate ( CurrentSet_VLC_Form :: I % CurrentSet_X )
@@ -337,8 +356,11 @@ contains
     integer ( KDI ) :: &
       iS, &  !-- iSelected
       iF     !-- iField
+    real ( KDR ), dimension ( FS_R % nFields ) :: &
+      Norm_D, &
+      Norm_R
     type ( CollectiveOperation_R_Form ) :: &
-      CO 
+      CO
 
     call Show ( 'Computing error' )
     call Show ( FS_R % Name, 'FieldSet' )
@@ -354,13 +376,13 @@ contains
     call CO % Initialize &
            ( Cr, nOutgoing = [ 2 * nF ], nIncoming = [ 2 * nF ] )
     end associate !-- Cr
-
+    
     do iS  =  1, nF
       iF  =  FS_R % iaSelected ( iS )
       associate &
         ( F_D  =>  FS_D % Storage_GS % Value ( :, iF ), &
           F_R  =>  FS_R % Storage_GS % Value ( :, iF ) )
-
+      
       !-- proper cells only
       CO % Outgoing % Value ( iS )  &
         =  sum ( pack ( abs ( F_D ), mask = C % ProperCell ) )
@@ -373,14 +395,13 @@ contains
 
       end associate !-- F_R, etc.
     end do !-- iS
-
+    
     call CO % Reduce ( REDUCTION % SUM )
-    associate &
-      ( Norm_D  =>        CO % Incoming % Value (      1 :      nF ), &
-        Norm_R  =>  max ( CO % Incoming % Value ( nF + 1 : nF + nF ), &
-                          sqrt ( tiny ( 0.0_KDR ) ) ) )
+    Norm_D  =        CO % Incoming % Value (      1 :      nF )
+    Norm_R  =  max ( CO % Incoming % Value ( nF + 1 : nF + nF ), &
+                     sqrt ( tiny ( 0.0_KDR ) ) )
+                         
     call Show ( Norm_D  /  Norm_R , 'L1 Error' )
-    end associate !-- Norm_D, etc.
 
     end associate !-- C
     end select !-- A
