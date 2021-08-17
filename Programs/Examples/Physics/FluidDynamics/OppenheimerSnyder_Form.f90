@@ -11,9 +11,11 @@ module OppenheimerSnyder_Form
 
   type, public, extends ( Universe_F_CC_Form ) :: OppenheimerSnyderForm
     real ( KDR ) :: &
+      Mass, &
       DensityInitial, &
       RadiusInitial, &
-      TimeScale
+      TimeScale, &
+      AtmosphereParameter
   !   type ( RootFinderForm ), allocatable :: &
   !     RootFinder
     type ( Fluid_D_Form ), allocatable :: &
@@ -162,7 +164,6 @@ contains
 
     real ( KDR ) :: &
       Pi, &
-      Mass, &
       DensityFactor, &
       RadiusFactor, &
       Eta
@@ -185,7 +186,8 @@ contains
           R_0 => OS % RadiusInitial, &
           D_0 => OS % DensityInitial, &
           Tau => OS % TimeScale, &
-            M => Mass, &
+           AP => OS % AtmosphereParameter, &
+            M => OS % Mass, &
            DF => DensityFactor, &
            RF => RadiusFactor )
 
@@ -193,9 +195,11 @@ contains
       M  =  1.0_KDR
     D_0  =  1.0e-3_KDR
      DF  =  1.0e2_KDR
+     AP  =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
     call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
     call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
+    call PROGRAM_HEADER % GetParameter (  AP, 'AtmosphereParameter' )
 
     Tau    =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
       R_0  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
@@ -210,6 +214,7 @@ contains
     call Show ( DF, 'DensityFactor' )
     call Show ( RF, 'RadiusFactor' )
     call Show ( Pi / 2  *  Tau, 'CollapseTime' )
+    call Show ( AP, 'AtmosphereParameter' )
 
     if ( R_0 > R_Max  ) then
       call Show ( 'RadiusInitial too large', CONSOLE % ERROR )
@@ -276,17 +281,20 @@ contains
         GV  =>  G % Storage_GS % Value )
 
 !  subroutine SetFluidKernel &
-!               ( ProperCell, R_E, R_W, R_D, Density, N, VX, VY, VZ )
+!               ( ProperCell, R_E, R_W, R_D, Density, N, V_1, V_2, V_3 )
    call SetFluidKernel &
           ( ProperCell = C % ProperCell, &
-            R_E = GV ( :, G % EDGE_I_U ( 1 ) ), &
-            R_W = GV ( :, G % WIDTH_U  ( 1 ) ), &
+            R_E = GV ( :, G % EDGE_I_U_1 ), &
+            R_W = GV ( :, G % WIDTH_U_1 ), &
+            R_C = GV ( :, G % CENTER_U_1 ), &
             R_D = Radius, &
-            Density = Density, &
+            D = Density, &
+            M = OS % Mass, &
+            AP = OS % AtmosphereParameter, &
             N = FV ( :, F % BARYON_DENSITY_C ), &
-            VX = FV ( :, F % VELOCITY_U_1 ), &
-            VY = FV ( :, F % VELOCITY_U_2 ), &
-            VZ = FV ( :, F % VELOCITY_U_3 ) )
+            V_1 = FV ( :, F % VELOCITY_U_1 ), &
+            V_2 = FV ( :, F % VELOCITY_U_2 ), &
+            V_3 = FV ( :, F % VELOCITY_U_3 ) )
 
     end associate !-- FV, etc.
     end associate !-- C, etc.
@@ -296,19 +304,22 @@ contains
 
 
   subroutine SetFluidKernel &
-               ( ProperCell, R_E, R_W, R_D, Density, N, VX, VY, VZ )
+               ( ProperCell, R_E, R_W, R_C, R_D, D, M, AP, N, V_1, V_2, V_3 )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R_E, &
-      R_W
+      R_W, &
+      R_C
     real ( KDR ), intent ( in ) :: &
       R_D, &
-      Density
+      D, &
+      M, &
+      AP
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       N, &
-      VX, VY, VZ
+      V_1, V_2, V_3
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -322,23 +333,26 @@ contains
     !$OMP schedule ( OMP_SCHEDULE_HOST )
     do iV  =  1,  nV
 
-      if ( .not. ProperCell ( iV ) ) &
-        cycle
+!-- Establish atmosphere at outer radial boundary   
+!      if ( .not. ProperCell ( iV ) ) &
+!        cycle
 
       R_I  =  R_E ( iV )
       R_O  =  R_E ( iV )  +  R_W ( iV )
       if ( R_O  <=  R_D ) then
-        N ( iV )  =  Density
+        N   ( iV )  =  D
+        V_1 ( iV )  =  0.0_KDR
       else if ( R_I  <  R_D .and. R_O  >  R_D ) then
-        N ( iV )  =  Density * ( R_D ** 3  -  R_I ** 3 ) &
-                     / ( R_O ** 3  -  R_I ** 3 )
+        N   ( iV )  =  D * ( R_D ** 3  -  R_I ** 3 ) &
+                       / ( R_O ** 3  -  R_I ** 3 )
+        V_1 ( iV )  =  0.0_KDR
       else
-        N ( iV )  =  0.0_KDR
+        N   ( iV )  =  AP  *  D  *  ( R_C ( iV ) / R_D ) ** ( -1.5_KDR )
+        V_1 ( iV )  =  - sqrt ( 2.0_KDR * M / R_C ( iV ) )
       end if
 
-      VX ( iV )  =  0.0_KDR
-      VY ( iV )  =  0.0_KDR
-      VZ ( iV )  =  0.0_KDR
+      V_2 ( iV )  =  0.0_KDR
+      V_3 ( iV )  =  0.0_KDR
 
     end do !-- iV
     !$OMP end parallel do
