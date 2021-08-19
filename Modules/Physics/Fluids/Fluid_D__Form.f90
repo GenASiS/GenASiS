@@ -44,8 +44,12 @@ module Fluid_D__Form
       InitializeAllocate_F
     generic, public :: &
       Initialize => InitializeAllocate_F
+    procedure, public, pass :: &
+      SetBaryonDensityMin
     procedure, public, pass ( CS ) :: &
       SetStream
+    procedure, public, pass :: &
+      Show => Show_FS
     procedure, public, pass :: &
       ComputeFromInitial
     procedure, public, pass :: &
@@ -374,9 +378,26 @@ contains
     F % BaryonDensityMin  =  sqrt ( tiny ( 0.0_KDR ) )
     call PROGRAM_HEADER % GetParameter &
            ( F % BaryonDensityMin, 'BaryonDensityMin' )
-call Show ( F % BaryonDensityMin, '>>> BaryonDensityMin' )
 
   end subroutine InitializeAllocate_F
+
+
+  subroutine SetBaryonDensityMin ( F, BaryonDensityMin )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      BaryonDensityMin
+
+    F % BaryonDensityMin = BaryonDensityMin
+
+    call Show ( 'Setting BaryonDensityMin of a Fluid', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % BaryonDensityMin, &
+                F % Unit ( F % BARYON_DENSITY_C, 1 ), 'BaryonDensityMin', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetBaryonDensityMin
 
 
   subroutine SetStream ( S, CS )
@@ -392,6 +413,20 @@ call Show ( F % BaryonDensityMin, '>>> BaryonDensityMin' )
                =  [ CS % BARYON_DENSITY_C, CS % VELOCITY_U ] )
 
   end subroutine SetStream
+
+
+  subroutine Show_FS ( FS )
+
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      FS
+
+    call FS % CurrentSetForm % Show ( )
+
+    call Show ( FS % BaryonDensityMin, &
+                FS % Unit ( FS % BARYON_DENSITY_C, 1 ), 'BaryonDensityMin', &
+                FS % IGNORABILITY )
+
+  end subroutine Show_FS
 
 
   subroutine ComputeFromInitial ( CS )
