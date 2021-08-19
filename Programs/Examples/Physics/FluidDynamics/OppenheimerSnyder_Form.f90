@@ -152,6 +152,16 @@ contains
              NameOption = Name, &
              nCellsPolarOption = 128 )
 
+    !-- Modify from default OUTFLOW to INFLOW outer radial boundary condition
+    select type ( I  =>  OS % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'INFLOW    ' ], iC = 1, iD = 1 )
+    end associate !-- F
+    end select !-- I
+
     ! OS % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
