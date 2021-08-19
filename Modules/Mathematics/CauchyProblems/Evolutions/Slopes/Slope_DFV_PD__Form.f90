@@ -227,6 +227,11 @@ contains
 
         if ( associated ( T_K ) ) call T_K % Start ( )
 
+        call S % Storage ( iC ) % ReassociateHost &
+                 ( AssociateVariablesOption = .false. )
+        call RS % Storage ( iC ) % ReassociateHost &
+                 ( AssociateVariablesOption = .false. )
+        
         associate &
           (  SV  =>   S % Storage ( iC ) % Value, &
             RSV  =>  RS % Storage ( iC ) % Value, &
@@ -239,7 +244,7 @@ contains
           call C % SetFieldPointer ( RSV ( :, : ), F_I )
           call C % SetFieldPointer (  GV ( :, G % AREA_I_D ( iD ) ), A_I )
           call C % SetFieldPointer (  GV ( :, G % VOLUME ), V )
-
+          
           call ComputeKernel &
                  ( S_4D, F_I, A_I, V, iD, C % nGhostLayers ( iD ), &
                    UseDeviceOption = S % DeviceMemory )
@@ -252,6 +257,11 @@ contains
         end select !-- C
 
         end associate !-- SV, etc.
+        
+        call S % Storage ( iC ) % ReassociateHost &
+                 ( AssociateVariablesOption = .true. )
+        call RS % Storage ( iC ) % ReassociateHost &
+                 ( AssociateVariablesOption = .true. )
 
         if ( associated ( T_K ) ) call T_K % Stop ( )
 

@@ -354,6 +354,13 @@ contains
         FV     =>  FS    % Storage ( iC ) % Value, &
         FV_IL  =>  FS_IL % Storage ( iC ) % Value, &
         FV_IR  =>  FS_IR % Storage ( iC ) % Value )
+        
+    call FS % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .false. )
+    call FS_IL % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .false. )
+    call FS_IR % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .false. )
 
     select type ( C  =>  FS % Atlas % Chart ( iC ) % Element )
     class is ( Chart_GS_Form )
@@ -374,6 +381,8 @@ contains
                ( F, X, dX, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
                  F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
       case ( 2 )
+        !-- FIXME: should not pass ( X ** 2 ) as argument to avoid
+        !          automatic array on stack in offload
         call ComputeParabolic_CGS_Kernel &
                ( F, X, dX, X, X ** 2, FS % iaSelected, iD, & 
                  C % nGhostLayers ( iD ), F_IL, F_IR, &
@@ -392,6 +401,13 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
     
+    call FS % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .true. )
+    call FS_IL % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .true. )
+    call FS_IR % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .true. )
+
     end associate !-- GV, etc.
     end associate !-- G, etc.
 
