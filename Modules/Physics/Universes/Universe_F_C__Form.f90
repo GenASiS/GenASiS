@@ -118,7 +118,7 @@ contains
         allocate ( I % dT_Label ( 2 ) )
         I % dT_Label ( 1 )  =  'Fluid advection'
         I % dT_Label ( 2 )  =  'Gravitation acceleration'
-        U % GravityFactor = 0.7_KDR
+        U % GravityFactor = 0.01_KDR
     !    if ( present ( GravityFactorOption ) ) &
     !      U % GravityFactor = GravityFactorOption
         call PROGRAM_HEADER % GetParameter &
