@@ -44,7 +44,7 @@ contains
     if ( FS % Type  ==  '' ) &
       FS % Type  =  'a FluxSet' 
     
-    Name  =  'Flxs_' // trim ( CS % Name )
+    Name  =  'F_' // trim ( CS % Name )
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 

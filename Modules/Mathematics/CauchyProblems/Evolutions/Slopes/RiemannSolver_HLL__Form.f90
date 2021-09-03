@@ -109,7 +109,7 @@ contains
     if ( RS % Type  ==  '' ) &
       RS % Type  =  'a RiemannSolver_HLL' 
     
-    Name  =  'RmnnSlvr_' // trim ( CS % Name )
+    Name  =  'RS_' // trim ( CS % Name )
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
@@ -125,7 +125,7 @@ contains
         ES  =>  RS % EigenspeedSet )
     call BS % Initialize &
            ( CS, CS % iaBalanced, &
-             NameOption = 'Blncd_' // trim ( CS % Name ), &
+             NameOption = 'B_' // trim ( CS % Name ), &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     call FS % Initialize ( CS )
     call ES % Initialize ( CS )
@@ -198,13 +198,19 @@ contains
       nS  !-- nStages
 
     integer ( KDI ) :: &
+      iC, &  !-- iChart
       iS, &  !-- iStage
-      iD     !-- iDimension
+      iD, &  !-- iDimension
+      nD     !-- nDimensions
     character ( 1 ) :: &
       StageNumber, &
       DimensionNumber
 
-    associate ( nD  =>  3 )
+    associate ( A  =>  RS % Atlas )
+    nD  =  A % Chart ( 1 ) % Element % nDimensions
+    do iC  =  2, A % nCharts
+      nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
+    end do
 
     allocate ( RS % StageDimension ( nS, nD ) )
     do iS  =  1, nS
@@ -226,7 +232,7 @@ contains
       end do !-- iD
     end do !-- iS
 
-    end associate !-- nD
+    end associate !-- A
 
     associate &
       ( RBS  =>  RS % Reconstruction_BS, &
@@ -325,7 +331,7 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
+      iS_Option  !-- iStage_Option
 
     type ( TimerForm ), pointer :: &
       T_FS, &
@@ -371,15 +377,15 @@ contains
     if ( associated ( T_ES ) ) call T_ES % Stop ( )
 
     if ( associated ( T_RBS ) ) call T_RBS % Start ( )
-    call RBS % Compute ( iC, iD )
+    call RBS % Compute ( iC, iD, iS_Option )
     if ( associated ( T_RBS ) ) call T_RBS % Stop ( )
 
     if ( associated ( T_RFS ) ) call T_RFS % Start ( )
-    call RFS % Compute ( iC, iD )
+    call RFS % Compute ( iC, iD, iS_Option )
     if ( associated ( T_RFS ) ) call T_RFS % Stop ( )
 
     if ( associated ( T_RES ) ) call T_RES % Start ( )
-    call RES % Compute ( iC, iD )
+    call RES % Compute ( iC, iD, iS_Option )
     if ( associated ( T_RES ) ) call T_RES % Stop ( )
 
     if ( associated ( T_K ) ) call T_K % Start ( )

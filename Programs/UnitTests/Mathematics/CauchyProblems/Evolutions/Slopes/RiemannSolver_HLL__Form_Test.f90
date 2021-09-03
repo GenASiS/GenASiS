@@ -12,11 +12,13 @@ program RiemannSolver_HLL__Form_Test
   integer ( KDI ) :: &
     nCompute
   type ( GridImageStreamForm ), allocatable :: &
-    GIS
+    GIS, &
+    GIS_SD  !-- StageDimension
   type ( Atlas_SCG_Form ), allocatable :: &
     A
   type ( StreamForm ), allocatable :: &
-    S
+    S, &
+    S_SD  !-- StageDimension
   type ( Geometry_F_Form ), allocatable :: &
     G
   type ( CurrentSetForm ), allocatable :: &
@@ -29,8 +31,12 @@ program RiemannSolver_HLL__Form_Test
          ( 'RiemannSolver_HLL__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
+  allocate ( GIS_SD )
   call GIS % Initialize &
          ( PROGRAM_HEADER % Name, &
+           CommunicatorOption = PROGRAM_HEADER % Communicator )
+  call GIS_SD % Initialize &
+         ( 'RiemannSolver_SD_Test', &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( A )
@@ -38,7 +44,9 @@ program RiemannSolver_HLL__Form_Test
          ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( S )
-  call S % Initialize ( A, GIS )
+  allocate ( S_SD )
+  call S    % Initialize ( A, GIS )
+  call S_SD % Initialize ( A, GIS_SD )
 
   allocate ( G )
   call G % Initialize ( A )
@@ -68,11 +76,15 @@ program RiemannSolver_HLL__Form_Test
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
   associate ( C  =>  A % Chart_GS )
-  call TestRiemannSolver ( RS, S, iD = 1 )
+
+  call TestRiemannSolver ( iD = 1 )
   if ( C % nDimensions  >  1 ) &
-    call TestRiemannSolver ( RS, S, iD = 2 )
+    call TestRiemannSolver ( iD = 2 )
   if ( C % nDimensions  >  2 ) &
-    call TestRiemannSolver ( RS, S, iD = 3 )
+    call TestRiemannSolver ( iD = 3 )
+
+  call TestStageDimension ( C % nDimensions )
+
   end associate !-- C
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
@@ -80,8 +92,10 @@ program RiemannSolver_HLL__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( CS )
   deallocate ( G )
+  deallocate ( S_SD )
   deallocate ( S )
   deallocate ( A )
+  deallocate ( GIS_SD )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
@@ -162,12 +176,8 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestRiemannSolver ( RS, S, iD )
+  subroutine TestRiemannSolver ( iD )
 
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
-    class ( StreamForm ), intent ( inout ) :: &
-      S
     integer ( KDI ), intent ( in ) :: &
       iD
 
@@ -196,6 +206,29 @@ contains
     call T % Stop ( )
 
   end subroutine TestRiemannSolver
+
+
+  subroutine TestStageDimension ( nD )
+
+    integer ( KDI ), intent ( in ) :: &
+      nD
+
+    call Show ( 'RiemannSolver computation with StageDimension' )
+    call Show ( RS % Name, 'RiemannSolver' )
+
+    call RS % SetStream ( S_SD, nS = 1 )  !-- nStages = 1
+
+    call RS % Compute ( iC = 1, iD = 1, iS_Option = 1 )
+    if ( nD  >  1 )  &
+      call RS % Compute ( iC = 1, iD = 2, iS_Option = 1 )
+    if ( nD  >  2 )  &
+      call RS % Compute ( iC = 1, iD = 3, iS_Option = 1 )
+
+    call GIS_SD % Open ( GIS_SD % ACCESS_CREATE )
+    call S_SD % Write ( )
+    call GIS_SD % Close ( )
+
+  end subroutine TestStageDimension
 
 
 end program RiemannSolver_HLL__Form_Test

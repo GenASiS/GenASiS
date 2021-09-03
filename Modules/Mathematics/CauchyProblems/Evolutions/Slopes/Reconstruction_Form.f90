@@ -139,7 +139,7 @@ contains
 
     R % IGNORABILITY  =  FS % IGNORABILITY + 1
 
-    R % Name  =  'Rcnstrctn_' // trim ( FS % Name )
+    R % Name  =  'R_' // trim ( FS % Name )
     if ( present ( PrefixOption ) ) &
       R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
 
@@ -204,14 +204,20 @@ contains
       nS  !-- nStages
 
     integer ( KDI ) :: &
+      iC, &  !-- iChart
       iS, &  !-- iStage
-      iD     !-- iDimension
+      iD, &  !-- iDimension
+      nD     !-- nDimensions
     character ( 1 ) :: &
       StageNumber, &
       DimensionNumber
 
     associate ( FS  =>  R % FieldSet )
-    associate ( nD  =>  3 )
+    associate ( A  =>  FS % Atlas )
+    nD  =  A % Chart ( 1 ) % Element % nDimensions
+    do iC  =  2, A % nCharts
+      nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
+    end do
 
     allocate ( R % StageDimension ( nS, nD ) )
     allocate ( R % StageDimension_IL ( nS, nD ) )
@@ -271,7 +277,7 @@ contains
       end do !-- iD
     end do !-- iS
 
-    end associate !-- nD
+    end associate !-- A
     end associate !-- FS
 
   end subroutine SetStream
