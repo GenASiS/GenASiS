@@ -179,7 +179,7 @@ contains
              DeviceMemoryOption = CS % DeviceMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = nFields, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
+             IgnorabilityOption = CS % IGNORABILITY )
 
     end associate !-- nB
     end associate !-- RBS, etc.
@@ -226,7 +226,8 @@ contains
                               // DimensionNumber, &
                  DeviceMemoryOption = RS % DeviceMemory, &
                  DevicesCommunicateOption = RS % DevicesCommunicate, &
-                 nFieldsOption = RS % nFields )
+                 nFieldsOption = RS % nFields, &
+                 IgnorabilityOption = RS % IGNORABILITY + 1 )
         call S % AddFieldSet ( SDC )
         end associate !-- SDC
       end do !-- iD

@@ -137,7 +137,7 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Field
 
-    R % IGNORABILITY  =  FS % IGNORABILITY + 1
+    R % IGNORABILITY  =  FS % Atlas % IGNORABILITY
 
     R % Name  =  'R_' // trim ( FS % Name )
     if ( present ( PrefixOption ) ) &
@@ -173,7 +173,7 @@ contains
              DevicesCommunicateOption = FS % DevicesCommunicate, &
              UnitOption = Unit, &
              nFieldsOption = nF, &
-             IgnorabilityOption = R % IGNORABILITY )
+             IgnorabilityOption = R % IGNORABILITY + 1 )
     call R % Output_IR % Initialize &
            ( FS % Atlas, &
              FieldOption = Field, &
@@ -182,7 +182,7 @@ contains
              DevicesCommunicateOption = FS % DevicesCommunicate, &
              UnitOption = Unit, &
              nFieldsOption = nF, &
-             IgnorabilityOption = R % IGNORABILITY )
+             IgnorabilityOption = R % IGNORABILITY + 1 )
 
     R % Order  =  2
     if ( present ( OrderOption ) ) &
@@ -242,7 +242,8 @@ contains
                               // StageNumber // '_' // DimensionNumber, &
                  DeviceMemoryOption = FS % DeviceMemory, &
                  DevicesCommunicateOption = FS % DevicesCommunicate, &
-                 nFieldsOption = size ( FS % Field ) )
+                 nFieldsOption = size ( FS % Field ), &
+                 IgnorabilityOption = R % IGNORABILITY + 1 )
         call S % AddFieldSet ( SD, iaSelectedOption = FS % iaSelected )
         end associate !-- SD, etc.
 
@@ -256,7 +257,8 @@ contains
                               // DimensionNumber, &
                  DeviceMemoryOption = FS % DeviceMemory, &
                  DevicesCommunicateOption = FS % DevicesCommunicate, &
-                 nFieldsOption = O % nFields )
+                 nFieldsOption = O % nFields, &
+                 IgnorabilityOption = R % IGNORABILITY + 1 )
         call S % AddFieldSet ( SD )
         end associate !-- SD, etc.
 
@@ -270,7 +272,8 @@ contains
                               // DimensionNumber, &
                  DeviceMemoryOption = FS % DeviceMemory, &
                  DevicesCommunicateOption = FS % DevicesCommunicate, &
-                 nFieldsOption = O % nFields )
+                 nFieldsOption = O % nFields, &
+                 IgnorabilityOption = R % IGNORABILITY + 1 )
         call S % AddFieldSet ( SD )
         end associate !-- SD, etc.
 
@@ -290,7 +293,7 @@ contains
 
     call Show ( 'Reconstruction Parameters', R % IGNORABILITY )
 
-    call Show ( R % Name, 'Name',  R % IGNORABILITY )
+    call Show ( R % Name,  'Name',  R % IGNORABILITY )
     call Show ( R % Order, 'Order', R % IGNORABILITY )
 !    call R % FieldSet % Show ( )
     call R % Output_IL % Show ( )

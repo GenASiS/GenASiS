@@ -46,7 +46,7 @@ program RiemannSolver_HLL__Form_Test
   allocate ( S )
   allocate ( S_SD )
   call S    % Initialize ( A, GIS )
-  call S_SD % Initialize ( A, GIS_SD )
+  call S_SD % Initialize ( A, GIS_SD, NameOption = trim ( S % Name ) // '_SD' )
 
   allocate ( G )
   call G % Initialize ( A )
@@ -216,7 +216,9 @@ contains
     call Show ( 'RiemannSolver computation with StageDimension' )
     call Show ( RS % Name, 'RiemannSolver' )
 
+    call CONSOLE % SetVerbosity ( 'INFO_2' )
     call RS % SetStream ( S_SD, nS = 1 )  !-- nStages = 1
+    call CONSOLE % SetVerbosity ( 'INFO_1' )
 
     call RS % Compute ( iC = 1, iD = 1, iS_Option = 1 )
     if ( nD  >  1 )  &
