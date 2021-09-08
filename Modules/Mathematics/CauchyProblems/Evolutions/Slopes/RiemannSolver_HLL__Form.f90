@@ -22,7 +22,10 @@ module RiemannSolver_HLL__Form
     integer ( KDI ) :: &
       iTimer       = 0, &
       iTimerKernel = 0
+    character ( LDL ) :: &
+      ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
+      PrimitiveSet, &
       BalancedSet
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
@@ -31,6 +34,7 @@ module RiemannSolver_HLL__Form
     class ( EigenspeedSet_F_Form ), allocatable :: &
       EigenspeedSet
     class ( ReconstructionForm ), allocatable :: &
+      Reconstruction_PS, &
       Reconstruction_BS, &
       Reconstruction_FS, &
       Reconstruction_ES
@@ -86,7 +90,8 @@ contains
 
 
   subroutine InitializeAllocate_RS &
-               ( RS, CS, FieldOption, PrefixOption, nFieldsOption )
+               ( RS, CS, FieldOption, ReconstructedSetOption, PrefixOption, &
+                 nFieldsOption )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -95,6 +100,7 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
+      ReconstructedSetOption, &
       PrefixOption
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
@@ -115,32 +121,68 @@ contains
 
     RS % CurrentSet  =>  CS
 
-    allocate &
-      ( RS % BalancedSet, &
-        RS % FluxSet, &
-        RS % EigenspeedSet )
-    associate &
-      ( BS  =>  RS % BalancedSet, &
-        FS  =>  RS % FluxSet, &
-        ES  =>  RS % EigenspeedSet )
-    call BS % Initialize &
-           ( CS, CS % iaBalanced, &
-             NameOption = 'B_' // trim ( CS % Name ), &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
-    call FS % Initialize ( CS )
-    call ES % Initialize ( CS )
+    RS % ReconstructedSet  =  'FLUXES'
+    if ( present ( ReconstructedSetOption ) ) &
+      RS % ReconstructedSet  =  ReconstructedSetOption
+    call PROGRAM_HEADER % GetParameter &
+      ( RS % ReconstructedSet, 'ReconstructedSet' )
 
-    allocate &
-      ( RS % Reconstruction_BS, &
-        RS % Reconstruction_FS, &
-        RS % Reconstruction_ES )
-    associate &
-      ( RBS  =>  RS % Reconstruction_BS, &
-        RFS  =>  RS % Reconstruction_FS, &
-        RES  =>  RS % Reconstruction_ES )
-    call RBS % Initialize ( CS % Geometry, BS )
-    call RFS % Initialize ( CS % Geometry, FS )
-    call RES % Initialize ( CS % Geometry, ES )
+    select case ( trim ( RS % ReconstructedSet ) )
+    case ( 'FLUXES' )
+
+      allocate &
+        ( RS % BalancedSet, &
+          RS % FluxSet, &
+          RS % EigenspeedSet )
+      associate &
+        ( BS  =>  RS % BalancedSet, &
+          FS  =>  RS % FluxSet, &
+          ES  =>  RS % EigenspeedSet )
+      call BS % Initialize &
+             ( CS, CS % iaBalanced, &
+               NameOption = 'B_' // trim ( CS % Name ), &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )
+      call FS % Initialize ( CS )
+      call ES % Initialize ( CS )
+
+      allocate &
+        ( RS % Reconstruction_BS, &
+          RS % Reconstruction_FS, &
+          RS % Reconstruction_ES )
+      associate &
+        ( RBS  =>  RS % Reconstruction_BS, &
+          RFS  =>  RS % Reconstruction_FS, &
+          RES  =>  RS % Reconstruction_ES )
+      call RBS % Initialize ( CS % Geometry, BS )
+      call RFS % Initialize ( CS % Geometry, FS )
+      call RES % Initialize ( CS % Geometry, ES )
+
+      end associate !-- RBS, etc.
+      end associate !-- BS, etc.
+
+    case ( 'PRIMITIVE' )
+
+      allocate ( RS % PrimitiveSet )
+      associate ( PS  =>  RS % PrimitiveSet )
+      call PS % Initialize &
+             ( CS, CS % iaPrimitive, &
+               NameOption = 'P_' // trim ( CS % Name ), &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )
+
+      allocate ( RS % Reconstruction_PS )
+      associate ( RPS  =>  RS % Reconstruction_PS )
+      call RPS % Initialize ( CS % Geometry, PS )
+
+      end associate !-- RPS
+      end associate !-- PS
+
+    case default
+      call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
+      call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
+      call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeAllocate_RS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- ReconstructedSet
 
     associate ( nB  =>  CS % nBalanced )
 
@@ -182,8 +224,6 @@ contains
              IgnorabilityOption = CS % IGNORABILITY )
 
     end associate !-- nB
-    end associate !-- RBS, etc.
-    end associate !-- BS, etc.
 
   end subroutine InitializeAllocate_RS
 
@@ -253,11 +293,24 @@ contains
       FS
 
     call FS % FieldSetForm % Show ( )
-    call FS % FluxSet % Show ( )
-    call FS % EigenspeedSet % Show ( )
-    call FS % Reconstruction_BS % Show ( )
-    call FS % Reconstruction_FS % Show ( )
-    call FS % Reconstruction_ES % Show ( )
+    call Show ( FS % ReconstructedSet, 'ReconstructedSet', FS % IGNORABILITY )
+
+    select case ( trim ( FS % ReconstructedSet ) )
+    case ( 'FLUXES' )
+      call FS % FluxSet % Show ( )
+      call FS % EigenspeedSet % Show ( )
+      call FS % Reconstruction_BS % Show ( )
+      call FS % Reconstruction_FS % Show ( )
+      call FS % Reconstruction_ES % Show ( )
+    case ( 'PRIMITIVE' )
+      call FS % Reconstruction_PS % Show ( )
+    case default
+      call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
+      call Show ( FS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
+      call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Show_FS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- ReconstructedSet
 
   end subroutine Show_FS
 
@@ -443,12 +496,16 @@ contains
       deallocate ( RS % Reconstruction_FS )
     if ( allocated ( RS % Reconstruction_BS ) ) &
       deallocate ( RS % Reconstruction_BS )
+    if ( allocated ( RS % Reconstruction_PS ) ) &
+      deallocate ( RS % Reconstruction_PS )
     if ( allocated ( RS % EigenspeedSet ) ) &
       deallocate ( RS % EigenspeedSet )
     if ( allocated ( RS % FluxSet ) ) &
       deallocate ( RS % FluxSet )
     if ( allocated ( RS % BalancedSet ) ) &
       deallocate ( RS % BalancedSet )
+    if ( allocated ( RS % PrimitiveSet ) ) &
+      deallocate ( RS % PrimitiveSet )
 
     nullify ( RS % CurrentSet )
 
