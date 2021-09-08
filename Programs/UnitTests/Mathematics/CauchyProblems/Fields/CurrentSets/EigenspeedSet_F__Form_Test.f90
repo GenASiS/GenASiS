@@ -49,7 +49,7 @@ program EigenspeedSet_F__Form_Test
 
   allocate ( ES )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call ES % Initialize ( CS )
+  call ES % Initialize ( CS, CS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call  S % AddFieldSet ( ES )
 

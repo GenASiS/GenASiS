@@ -10,6 +10,8 @@ module FluxSet_Form
   type, public, extends ( FieldSetForm ) :: FluxSetForm
     integer ( KDI ) :: &
       iTimer = 0
+    class ( FieldSetForm ), pointer :: &
+      FieldSet_CS => null ( )
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
   contains
@@ -29,12 +31,14 @@ module FluxSet_Form
 contains
 
 
-  subroutine InitializeAllocate_FxS ( FS, CS, PrefixOption )
+  subroutine InitializeAllocate_FxS ( FS, CS, FS_CS, PrefixOption )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
     class ( CurrentSetForm ), intent ( in ), target :: &
       CS
+    class ( FieldSetForm ), intent ( in ), target :: &
+      FS_CS
     character ( * ), intent ( in ), optional :: &
       PrefixOption
  
@@ -48,7 +52,8 @@ contains
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
-    FS % CurrentSet  =>  CS
+    FS % FieldSet_CS  =>  FS_CS
+    FS % CurrentSet   =>  CS
 
     call FS % FieldSetForm % Initialize &
            ( CS % Atlas, &
@@ -103,9 +108,11 @@ contains
     call Show ( 'Computing ' // trim ( FS % Type ), FS % IGNORABILITY + 3 )
     call Show ( FS % Name, 'Name', FS % IGNORABILITY + 3 )
 
-    associate ( CS  =>  FS % CurrentSet )
-    call CS % ComputeFluxes ( FS, iC, iD )
-    end associate !-- CS
+    associate &
+      ( CS     =>  FS % CurrentSet, &
+        FS_CS  =>  FS % FieldSet_CS )
+    call CS % ComputeFluxes ( FS, FS_CS, iC, iD )
+    end associate !-- CS, etc.
 
   end subroutine Compute
 
@@ -116,6 +123,7 @@ contains
       FS
 
     nullify ( FS % CurrentSet )
+    nullify ( FS % FieldSet_CS )
 
   end subroutine Finalize
 

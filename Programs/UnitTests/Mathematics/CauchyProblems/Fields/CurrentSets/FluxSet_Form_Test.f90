@@ -49,7 +49,7 @@ program FluxSet_Form_Test
 
   allocate ( FS )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call FS % Initialize ( CS )
+  call FS % Initialize ( CS, CS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call  S % AddFieldSet ( FS )
 

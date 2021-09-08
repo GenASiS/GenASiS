@@ -53,6 +53,8 @@ module CurrentSet_Form
     procedure, public, pass :: &
       ComputeFromInitial
     procedure, public, pass :: &
+      ComputeFromPrimitive
+    procedure, public, pass :: &
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
       ComputeFluxes
@@ -217,9 +219,9 @@ contains
       CS % nPrimitive  =  size ( iaPrimitiveOption )
       allocate ( CS % iaPrimitive, source = iaPrimitiveOption )
     else
-      CS % nPrimitive  =  CS % N_PRIMITIVE_CS + 1
+      CS % nPrimitive  =  CS % N_PRIMITIVE_CS + 4
       allocate ( CS % iaPrimitive ( CS % nPrimitive ) )
-      CS % iaPrimitive  =  [ CS % DENSITY_CS ]
+      CS % iaPrimitive  =  [ CS % DENSITY_CS, CS % VELOCITY_CS_U ]
     end if !-- iaPrimitiveOption
 
     associate ( nP  =>  CS % nPrimitive )
@@ -318,6 +320,16 @@ contains
   end subroutine ComputeFromInitial
 
 
+  subroutine ComputeFromPrimitive ( FS_CS, CS )
+
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      FS_CS
+    class ( CurrentSetForm ), intent ( in ) :: &
+      CS
+
+  end subroutine ComputeFromPrimitive
+
+
   subroutine ComputeFromBalanced ( CS )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
@@ -326,12 +338,14 @@ contains
   end subroutine ComputeFromBalanced
 
 
-  subroutine ComputeFluxes ( FS, CS, iC, iD )
+  subroutine ComputeFluxes ( FS, CS, FS_CS, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_CS
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD     !-- iDimension
@@ -344,8 +358,8 @@ contains
       call Search ( CS % iaBalanced, CS % DENSITY_CS, iDensity )
 
       associate &
-        ( FSS  =>  FS % Storage ( iC ), &
-          CSS  =>  CS % Storage ( iC ) )
+        ( FSS  =>  FS    % Storage ( iC ), &
+          CSS  =>  FS_CS % Storage ( iC ) )
       associate &
         ( F_D      =>  FSS % Value ( :, iDensity ), &
             D      =>  CSS % Value ( :, CS % DENSITY_CS ), & 
@@ -362,12 +376,14 @@ contains
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeEigenspeeds ( FS, CS, iaEigenspeeds, iC, iD )
+  subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
-      FS
+      ES
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_CS
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaEigenspeeds
     integer ( KDI ), intent ( in ) :: &
@@ -377,11 +393,11 @@ contains
     if ( CS % DENSITY_CS > 0 ) then
 
       associate &
-        ( FSS  =>  FS % Storage ( iC ), &
-          CSS  =>  CS % Storage ( iC ) )
+        ( ESS  =>  ES    % Storage ( iC ), &
+          CSS  =>  FS_CS % Storage ( iC ) )
       associate &
-        ( EF_P    =>  FSS % Value ( :, iaEigenspeeds ( 1 ) ), &
-          EF_M    =>  FSS % Value ( :, iaEigenspeeds ( 2 ) ), &
+        ( EF_P    =>  ESS % Value ( :, iaEigenspeeds ( 1 ) ), &
+          EF_M    =>  ESS % Value ( :, iaEigenspeeds ( 2 ) ), &
            V_Dim  =>  CSS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
  
       call ComputeEigenspeedsKernel &

@@ -22,6 +22,8 @@ module EigenspeedSet_F__Form
     integer ( KDI ) :: &
       EIGENSPEED_FAST_PLUS_U  = 0, &
       EIGENSPEED_FAST_MINUS_U = 0
+    class ( FieldSetForm ), pointer :: &
+      FieldSet_CS => null ( )
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
   contains
@@ -42,12 +44,14 @@ contains
 
 
   subroutine InitializeAllocate_ES &
-               ( ES, CS, FieldOption, PrefixOption, nFieldsOption )
+               ( ES, CS, FS_CS, FieldOption, PrefixOption, nFieldsOption )
 
     class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
       ES
     class ( CurrentSetForm ), intent ( in ), target :: &
       CS
+    class ( FieldSetForm ), intent ( in ), target :: &
+      FS_CS
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
@@ -69,7 +73,8 @@ contains
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
-    ES % CurrentSet  =>  CS
+    ES % FieldSet_CS  =>  FS_CS
+    ES % CurrentSet   =>  CS
 
     !-- Field indices
 
@@ -149,12 +154,14 @@ contains
     call Show ( 'Computing ' // trim ( ES % Type ), ES % IGNORABILITY + 3 )
     call Show ( ES % Name, 'Name', ES % IGNORABILITY + 3 )
 
-    associate ( CS  =>  ES % CurrentSet )
+    associate &
+      ( CS     =>  ES % CurrentSet, &
+        FS_CS  =>  ES % FieldSet_CS )
     call CS % ComputeEigenspeeds &
-           ( ES, &
+           ( ES, FS_CS, &
              [ ES % EIGENSPEED_FAST_PLUS_U, ES % EIGENSPEED_FAST_MINUS_U ], &
              iC, iD )
-    end associate !-- CS
+    end associate !-- CS, etc.
 
   end subroutine Compute
 
@@ -165,6 +172,7 @@ contains
       ES
 
     nullify ( ES % CurrentSet )
+    nullify ( ES % FieldSet_CS )
 
   end subroutine Finalize
 
