@@ -13,13 +13,17 @@ module Reconstruction_Form
       Order
     integer ( KDI ) :: &
       iTimer = 0
+    integer ( KDL ), dimension ( : ), allocatable :: &
+      iaSelected
+    logical ( KDL ) :: &
+      AllocatedOutput
     character ( LDL ) :: &
       Name
     class ( FieldSetForm ), pointer :: &
       FieldSet  => null ( )
-    class ( FieldSetForm ), allocatable :: &
-      Output_IL, &
-      Output_IR 
+    class ( FieldSetForm ), pointer :: &
+      Output_IL => null ( ), &
+      Output_IR => null ( )
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
     type ( FieldSetElement ), dimension ( :, : ), allocatable :: &
@@ -49,13 +53,14 @@ module Reconstruction_Form
     interface
   
       module subroutine ComputeConstant_CGS_Kernel &
-               ( F, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+               ( F, iaSlctd, iaSlctd_R, iD, oV, F_IL, F_IR, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
           F
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          iaSlctd
+          iaSlctd, &
+          iaSlctd_R
         integer ( KDI ), intent ( in ) :: &
           iD, &
           oV   
@@ -66,7 +71,8 @@ module Reconstruction_Form
       end subroutine ComputeConstant_CGS_Kernel
 
       module subroutine ComputeLinear_CGS_Kernel &
-               ( F, X, dX, XA, iaSlctd, iD, oV, F_IL, F_IR, UseDeviceOption )
+               ( F, X, dX, XA, iaSlctd, iaSlctd_R, iD, oV, F_IL, F_IR, &
+                 UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
@@ -76,7 +82,8 @@ module Reconstruction_Form
           dX, &
            XA
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          iaSlctd
+          iaSlctd, &
+          iaSlctd_R
         integer ( KDI ), intent ( in ) :: &
           iD, &
           oV   
@@ -87,7 +94,7 @@ module Reconstruction_Form
       end subroutine ComputeLinear_CGS_Kernel
 
       module subroutine ComputeParabolic_CGS_Kernel &
-               ( F, X, dX, XA, X2A, iaSlctd, iD, oV, F_IL, F_IR, &
+               ( F, X, dX, XA, X2A, iaSlctd, iaSlctd_R, iD, oV, F_IL, F_IR, &
                  UseDeviceOption )
         use Basics
         implicit none
@@ -99,7 +106,8 @@ module Reconstruction_Form
            XA, &
            X2A
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          iaSlctd
+          iaSlctd, &
+          iaSlctd_R
         integer ( KDI ), intent ( in ) :: &
           iD, &
           oV   
@@ -149,6 +157,8 @@ contains
     R % FieldSet  =>  FS
     R % Geometry  =>   G
 
+    R % AllocatedOutput  =  .true.
+
     associate &
       ( nC  =>  FS % Atlas % nCharts, &
         nF  =>  FS % nFields )
@@ -189,7 +199,9 @@ contains
       R % Order  =  OrderOption
     call PROGRAM_HEADER % GetParameter ( R % Order, 'ReconstructionOrder' )
 
-  end associate !-- nC, etc.
+    allocate ( R % iaSelected, source = R % Output_IL % iaSelected )
+ 
+    end associate !-- nC, etc.
   
   end subroutine Initialize
 
@@ -383,17 +395,19 @@ contains
       select case ( R % Order )
       case ( 0 )
         call ComputeConstant_CGS_Kernel &
-               ( F, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
-                 F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
+               ( F, FS % iaSelected, R % iaSelected, iD, &
+                 C % nGhostLayers ( iD ), F_IL, F_IR, &
+                 UseDeviceOption = FS % DeviceMemory )
       case ( 1 )
         call ComputeLinear_CGS_Kernel &
-               ( F, X, dX, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
-                 F_IL, F_IR, UseDeviceOption = FS % DeviceMemory )
+               ( F, X, dX, X, FS % iaSelected, R % iaSelected, iD, &
+                 C % nGhostLayers ( iD ), F_IL, F_IR, &
+                 UseDeviceOption = FS % DeviceMemory )
       case ( 2 )
         !-- FIXME: should not pass ( X ** 2 ) as argument to avoid
         !          automatic array on stack in offload
         call ComputeParabolic_CGS_Kernel &
-               ( F, X, dX, X, X ** 2, FS % iaSelected, iD, & 
+               ( F, X, dX, X, X ** 2, FS % iaSelected, R % iaSelected, iD, & 
                  C % nGhostLayers ( iD ), F_IL, F_IR, &
                  UseDeviceOption = FS % DeviceMemory )
       case default
@@ -462,13 +476,19 @@ contains
     if ( allocated ( R % StageDimension_IL ) ) &
       deallocate ( R % StageDimension_IL )
 
-    if ( allocated ( R % Output_IR ) ) &
+    if ( R % AllocatedOutput ) then
       deallocate ( R % Output_IR )
-    if ( allocated ( R % Output_IL ) ) &
       deallocate ( R % Output_IL )
+    else
+      nullify ( R % Output_IR )
+      nullify ( R % Output_IL )
+    end if
 
     nullify ( R % Geometry )
     nullify ( R % FieldSet )
+
+    if ( allocated ( R % iaSelected ) ) &
+      deallocate ( R % iaSelected )
 
     call Show ( 'Finalizing a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )

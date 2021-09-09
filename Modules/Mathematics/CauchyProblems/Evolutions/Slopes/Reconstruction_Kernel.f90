@@ -14,6 +14,7 @@ contains
     integer ( KDI ) :: &
       iS, &
       iF, &
+      iF_R, &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       iaS, &
@@ -43,20 +44,21 @@ contains
     if ( UseDevice ) then
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iF, iaVP )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iF, iF_R, iaVP )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
             do iV  =  lV ( 1 ),  uV ( 1 )
 
-              iF  =  iaSlctd ( iS )
+              iF    =  iaSlctd   ( iS )
+              iF_R  =  iaSlctd_R ( iS )
 
               iaVP  =  [ iV, jV, kV ]  +  iaS
 
-              F_IR ( iV, jV, kV, iS )  &
+              F_IR ( iV, jV, kV, iF_R )  &
                 =  F ( iV, jV, kV, iF )
 
-              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
+              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
                 =  F ( iV, jV, kV, iF )                    
 
             end do !-- iV
@@ -68,22 +70,23 @@ contains
     else !-- use host
               
       !$OMP parallel do collapse ( 4 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF, iaVP )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF, iF_R, iaVP )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
             do iV  =  lV ( 1 ),  uV ( 1 )
 
-              iF  =  iaSlctd ( iS )
+              iF    =  iaSlctd   ( iS )
+              iF_R  =  iaSlctd_R ( iS )
 
               iaVP  =  [ iV, jV, kV ]  +  iaS
 
-              F_IR ( iV, jV, kV, iS )  &
+              F_IR ( iV, jV, kV, iF_R )  &
                 =  F ( iV, jV, kV, iF )
 
-              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
-                =  F ( iV, jV, kV, iF )
-                    
+              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
+                =  F ( iV, jV, kV, iF )                    
+
             end do !-- iV
           end do !-- jV
         end do !-- kV
@@ -99,6 +102,7 @@ contains
     integer ( KDI ) :: &
       iS, &
       iF, &
+      iF_R, &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       iaS, &
@@ -137,14 +141,15 @@ contains
               
       !$OMP parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO ) &
+      !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
       !$OMP private ( xAM, xAC, xAP, xI, xO, c0, c1 )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
             do iV  =  lV ( 1 ),  uV ( 1 )
 
-              iF  =  iaSlctd ( iS )
+              iF    =  iaSlctd   ( iS )
+              iF_R  =  iaSlctd_R ( iS )
 
               iaVP  =  [ iV, jV, kV ]  +  iaS
               iaVM  =  [ iV, jV, kV ]  -  iaS
@@ -202,10 +207,10 @@ contains
 
               end if  !-- Local extremum
 
-              F_IR ( iV, jV, kV, iS )  &
+              F_IR ( iV, jV, kV, iF_R )  &
                 =  c0  +  c1 * xI
 
-              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
+              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
                 =  c0  +  c1 * xO
 
 !call Show ( '>>> Final values' )
@@ -228,6 +233,7 @@ contains
     integer ( KDI ) :: &
       iS, &
       iF, &
+      iF_R, &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       iaS, &
@@ -269,7 +275,7 @@ contains
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO ) &
+      !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
       !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, xE ) &
       !$OMP private ( c0, c1, c2, c2_S, d ) &
       !$OMP firstprivate ( SqrtTiny, iaS )
@@ -278,7 +284,8 @@ contains
           do jV  =  lV ( 2 ),  uV ( 2 )
             do iV  =  lV ( 1 ),  uV ( 1 )
 
-              iF  =  iaSlctd ( iS )
+              iF    =  iaSlctd   ( iS )
+              iF_R  =  iaSlctd_R ( iS )
 
               iaVP  =  [ iV, jV, kV ]  +  iaS
               iaVM  =  [ iV, jV, kV ]  -  iaS
@@ -433,10 +440,10 @@ contains
 
               end if  !-- Local extremum
 
-              F_IR ( iV, jV, kV, iS )  &
+              F_IR ( iV, jV, kV, iF_R )  &
                 =  c0  +  c1 * xI  +  c2 * xI**2
 
-              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
+              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
                 =  c0  +  c1 * xO  +  c2 * xO**2
 
 !call Show ( '>>> Final values' )
@@ -453,7 +460,7 @@ contains
               
       !$OMP parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO ) &
+      !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
       !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, xE ) &
       !$OMP private ( c0, c1, c2, c2_S, d ) &
       !$OMP firstprivate ( SqrtTiny )
@@ -462,7 +469,8 @@ contains
           do jV  =  lV ( 2 ),  uV ( 2 )
             do iV  =  lV ( 1 ),  uV ( 1 )
 
-              iF  =  iaSlctd ( iS )
+              iF    =  iaSlctd   ( iS )
+              iF_R  =  iaSlctd_R ( iS )
 
               iaVP  =  [ iV, jV, kV ]  +  iaS
               iaVM  =  [ iV, jV, kV ]  -  iaS
@@ -617,10 +625,10 @@ contains
 
               end if  !-- Local extremum
 
-              F_IR ( iV, jV, kV, iS )  &
+              F_IR ( iV, jV, kV, iF_R )  &
                 =  c0  +  c1 * xI  +  c2 * xI**2
 
-              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iS )  &
+              F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
                 =  c0  +  c1 * xO  +  c2 * xO**2
 
 !call Show ( '>>> Final values' )
