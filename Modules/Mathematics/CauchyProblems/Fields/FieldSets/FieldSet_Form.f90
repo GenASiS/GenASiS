@@ -680,18 +680,26 @@ contains
   end subroutine Clear_FS
 
 
-  subroutine Copy_FS ( FS_T, FS_S )
+  subroutine Copy_FS ( FS_T, FS_S, UseDeviceOption )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS_T
     class ( FieldSetForm ), intent ( in ) :: &
       FS_S
-
+    logical ( KDL ), intent ( in ), optional :: &
+       UseDeviceOption
+    
     integer ( KDI ) :: &
       iC, &    !-- iChart
       iS, &    !-- iSelected
       iF_S, &  !-- iField
       iF_T
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = FS_S % DeviceMemory
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     do iC  =  1,  FS_S % Atlas % nCharts
       associate &
@@ -701,7 +709,7 @@ contains
         iF_S  =  FS_S % iaSelected ( iS )
         iF_T  =  FS_T % iaSelected ( iS )
         call Copy ( FSV_S ( :, iF_S ), FSV_T ( :, iF_T ), &
-                    UseDeviceOption = FS_S % DeviceMemory )
+                    UseDeviceOption = UseDevice )
       end do !-- iS
       end associate !-- FSV_S, etc.
     end do !-- iC
@@ -709,7 +717,7 @@ contains
   end subroutine Copy_FS
 
 
-  subroutine MultiplyAdd_FS ( FS_D, FS_A, FS_B, C )
+  subroutine MultiplyAdd_FS ( FS_D, FS_A, FS_B, C, UseDeviceOption )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS_D
@@ -718,13 +726,21 @@ contains
       FS_B
     real ( KDR ), intent ( in ) :: &
       C
-
+    logical ( KDL ), intent ( in ), optional :: &
+       UseDeviceOption
+    
     integer ( KDI ) :: &
       iC, &    !-- iChart
       iS, &    !-- iSelected
       iF_A, &  !-- iField
       iF_B, &
       iF_D
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = FS_D % DeviceMemory
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     do iC  =  1,  FS_A % Atlas % nCharts
       associate &
@@ -737,7 +753,7 @@ contains
         iF_D  =  FS_D % iaSelected ( iS )
         call MultiplyAdd &
                ( A ( :, iF_A ), B ( :, iF_B ), C, D ( :, iF_D ), &
-                 UseDeviceOption = FS_D % DeviceMemory )
+                 UseDeviceOption = UseDevice )
       end do !-- iS
       end associate !-- A, etc.
     end do !-- iC
@@ -745,7 +761,7 @@ contains
   end subroutine MultiplyAdd_FS
 
 
-  subroutine MultiplyAddInPlace_FS ( FS_A, FS_B, C )
+  subroutine MultiplyAddInPlace_FS ( FS_A, FS_B, C, UseDeviceOption )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS_A
@@ -753,12 +769,20 @@ contains
       FS_B
     real ( KDR ), intent ( in ) :: &
       C
-
+    logical ( KDL ), intent ( in ), optional :: &
+       UseDeviceOption
+    
     integer ( KDI ) :: &
       iC, &    !-- iChart
       iS, &    !-- iSelected
       iF_A, &  !-- iField
       iF_B
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = FS_A % DeviceMemory
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     do iC  =  1,  FS_A % Atlas % nCharts
       associate &
@@ -769,7 +793,7 @@ contains
         iF_B  =  FS_B % iaSelected ( iS )
         call MultiplyAdd &
                ( A ( :, iF_A ), B ( :, iF_B ), C, &
-                 UseDeviceOption = FS_A % DeviceMemory )
+                 UseDeviceOption = UseDevice )
       end do !-- iS
       end associate !-- A, etc.
     end do !-- iC
