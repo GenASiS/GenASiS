@@ -142,8 +142,8 @@ contains
              ( CS, CS % iaBalanced, &
                NameOption = 'B_' // trim ( CS % Name ), &
                IgnorabilityOption = CS % IGNORABILITY + 1 )
-      call FS % Initialize ( CS )
-      call ES % Initialize ( CS )
+      call FS % Initialize ( CS, CS )
+      call ES % Initialize ( CS, CS )
 
       allocate &
         ( RS % Reconstruction_BS, &
