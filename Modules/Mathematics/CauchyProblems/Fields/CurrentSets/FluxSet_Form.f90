@@ -48,9 +48,9 @@ contains
     if ( FS % Type  ==  '' ) &
       FS % Type  =  'a FluxSet' 
     
-    Name  =  'F_' // trim ( CS % Name )
+    Name  =  'F_' // trim ( FS_CS % Name )
     if ( present ( PrefixOption ) ) &
-      Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
+      Name  =  trim ( PrefixOption ) // '_' // trim ( FS_CS % Name )
 
     FS % FieldSet_CS  =>  FS_CS
     FS % CurrentSet   =>  CS

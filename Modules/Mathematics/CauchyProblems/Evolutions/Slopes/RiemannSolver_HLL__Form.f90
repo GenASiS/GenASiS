@@ -31,9 +31,11 @@ module RiemannSolver_HLL__Form
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
     class ( FluxSetForm ), allocatable :: &
-      FluxSet
+      FluxSet, &
+      FluxSet_IL, FluxSet_IR
     class ( EigenspeedSet_F_Form ), allocatable :: &
-      EigenspeedSet
+      EigenspeedSet, &
+      EigenspeedSet_IL, EigenspeedSet_IR
     class ( ReconstructionForm ), allocatable :: &
       Reconstruction_PS, &
       Reconstruction_BS, &
@@ -61,13 +63,17 @@ module RiemannSolver_HLL__Form
   end type RiemannSolver_HLL_Form
 
     private :: &
-      ComputeKernel
+      ComputeFluxes!, &
+!      ComputePrimitive
+
+      private :: &
+        ComputeKernel
 
     interface
       
       module subroutine ComputeKernel &
                ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
-                 F_I, AP_I, AM_I, UseDeviceOption )
+                 iaBalanced, F_I, AP_I, AM_I, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
@@ -76,6 +82,8 @@ module RiemannSolver_HLL__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           EP_IL, EP_IR, &
           EM_IL, EM_IR
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaBalanced
         real ( KDR ), dimension ( :, : ), intent ( out ) :: &
           F_I
         real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -170,9 +178,13 @@ contains
                NameOption = 'P_' // trim ( CS % Name ), &
                IgnorabilityOption = CS % IGNORABILITY + 1 )
 
-    allocate ( RS % CurrentSet_IL )
-    allocate ( RS % CurrentSet_IR )
-    call RS % CurrentSet_IL % Initialize &
+    allocate &
+      ( RS % CurrentSet_IL, &
+        RS % CurrentSet_IR )
+    associate &
+      ( CS_IL  =>  RS % CurrentSet_IL, &
+        CS_IR  =>  RS % CurrentSet_IR )
+    call CS_IL % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Field, &
              NameOption = trim ( CS % Name ) // '_IL', &
@@ -181,7 +193,7 @@ contains
              UnitOption = CS % Unit, &
              nFieldsOption = CS % nFields, &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
-    call RS % CurrentSet_IR % Initialize &
+    call CS_IR % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Field, &
              NameOption = trim ( CS % Name ) // '_IR', &
@@ -194,10 +206,26 @@ contains
       allocate ( RS % Reconstruction_PS )
       associate ( RPS  =>  RS % Reconstruction_PS )
       call RPS % Initialize &
-             ( CS % Geometry, PS, RS % CurrentSet_IL, RS % CurrentSet_IR, &
-               CS % iaPrimitive )
+             ( CS % Geometry, PS, CS_IL, CS_IR, CS % iaPrimitive )
 
+      allocate &
+        ( RS % FluxSet_IL, &
+          RS % FluxSet_IR, &
+          RS % EigenspeedSet_IL, &
+          RS % EigenspeedSet_IR )
+      associate &
+        ( FS_IL  =>  RS % FluxSet_IL, &
+          FS_IR  =>  RS % FluxSet_IR, &
+          ES_IL  =>  RS % EigenspeedSet_IL, &
+          ES_IR  =>  RS % EigenspeedSet_IR )
+      call FS_IL % Initialize ( CS, CS_IL )
+      call FS_IR % Initialize ( CS, CS_IR )
+      call ES_IL % Initialize ( CS, CS_IL )
+      call ES_IR % Initialize ( CS, CS_IR )
+
+      end associate !-- FS_IL, etc.
       end associate !-- RPS
+      end associate !-- CS_IL, etc.
       end associate !-- PS
 
     case default
@@ -299,14 +327,27 @@ contains
 
     end associate !-- A
 
-    associate &
-      ( RBS  =>  RS % Reconstruction_BS, &
-        RFS  =>  RS % Reconstruction_FS, &
-        RES  =>  RS % Reconstruction_ES )
-    call RBS % SetStream ( S, nS )
-    call RFS % SetStream ( S, nS )
-    call RES % SetStream ( S, nS )
-    end associate !-- RBS, etc.
+    select case ( trim ( RS % ReconstructedSet ) )
+    case ( 'FLUXES' )
+      associate &
+        ( RBS  =>  RS % Reconstruction_BS, &
+          RFS  =>  RS % Reconstruction_FS, &
+          RES  =>  RS % Reconstruction_ES )
+      call RBS % SetStream ( S, nS )
+      call RFS % SetStream ( S, nS )
+      call RES % SetStream ( S, nS )
+      end associate !-- RBS, etc.
+    case ( 'PRIMITIVE' )
+      associate ( RPS  =>  RS % Reconstruction_PS )
+      call RPS % SetStream ( S, nS )
+      end associate !-- RPS
+    case default
+      call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
+      call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
+      call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetStream', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- ReconstructedSet
 
   end subroutine SetStream
 
@@ -328,6 +369,10 @@ contains
       call FS % Reconstruction_ES % Show ( )
     case ( 'PRIMITIVE' )
       call FS % Reconstruction_PS % Show ( )
+      call FS % FluxSet_IL % Show ( )
+      call FS % FluxSet_IR % Show ( )
+      call FS % EigenspeedSet_IL % Show ( )
+      call FS % EigenspeedSet_IR % Show ( )
     case default
       call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
       call Show ( FS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
@@ -411,6 +456,82 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option  !-- iStage_Option
 
+    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
+    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
+
+    select case ( trim ( RS % ReconstructedSet ) )
+    case ( 'FLUXES' )
+      call ComputeFluxes ( RS, iC, iD, T_Option, iS_Option )
+    case default
+      call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
+      call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
+      call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- ReconstructedSet
+
+    if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
+      associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
+      call RS % Copy ( SDC )
+      end associate !-- SDC
+    end if
+
+  end subroutine Compute
+
+
+  impure elemental subroutine Finalize ( RS )
+
+    type ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+
+    if ( allocated ( RS % StageDimension ) ) &
+      deallocate ( RS % StageDimension )
+    if ( allocated ( RS % Reconstruction_ES ) ) &
+      deallocate ( RS % Reconstruction_ES )
+    if ( allocated ( RS % Reconstruction_FS ) ) &
+      deallocate ( RS % Reconstruction_FS )
+    if ( allocated ( RS % Reconstruction_BS ) ) &
+      deallocate ( RS % Reconstruction_BS )
+    if ( allocated ( RS % Reconstruction_PS ) ) &
+      deallocate ( RS % Reconstruction_PS )
+    if ( allocated ( RS % EigenspeedSet_IR ) ) &
+      deallocate ( RS % EigenspeedSet_IR )
+    if ( allocated ( RS % EigenspeedSet_IL ) ) &
+      deallocate ( RS % EigenspeedSet_IL )
+    if ( allocated ( RS % EigenspeedSet ) ) &
+      deallocate ( RS % EigenspeedSet )
+    if ( allocated ( RS % FluxSet_IR ) ) &
+      deallocate ( RS % FluxSet_IR )
+    if ( allocated ( RS % FluxSet_IL ) ) &
+      deallocate ( RS % FluxSet_IL )
+    if ( allocated ( RS % FluxSet ) ) &
+      deallocate ( RS % FluxSet )
+    if ( allocated ( RS % CurrentSet_IR ) ) &
+      deallocate ( RS % CurrentSet_IR )
+    if ( allocated ( RS % CurrentSet_IL ) ) &
+      deallocate ( RS % CurrentSet_IL )
+    if ( allocated ( RS % BalancedSet ) ) &
+      deallocate ( RS % BalancedSet )
+    if ( allocated ( RS % PrimitiveSet ) ) &
+      deallocate ( RS % PrimitiveSet )
+
+    nullify ( RS % CurrentSet )
+
+  end subroutine Finalize
+
+
+  subroutine ComputeFluxes ( RS, iC, iD, T_Option, iS_Option )
+
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+    integer ( KDI ), intent ( in ) :: &
+      iC, &  !-- iChart
+      iD     !-- iDimensions
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option  !-- iStage_Option
+
     type ( TimerForm ), pointer :: &
       T_FS, &
       T_ES, &
@@ -418,9 +539,6 @@ contains
       T_RFS, &
       T_RES, &
       T_K
-
-    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
-    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
 
     associate &
       (  CS  =>  RS % CurrentSet, &
@@ -490,7 +608,8 @@ contains
 
     call ComputeKernel &
            ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
-             F_I, AP_I, AM_I, UseDeviceOption = RS % DeviceMemory )
+             RS % FluxSet % iaSelected, F_I, AP_I, AM_I, &
+             UseDeviceOption = RS % DeviceMemory )
 
     end associate !-- F_I, etc.
     end associate !-- RSV, etc.
@@ -504,40 +623,7 @@ contains
       end associate !-- SDC
     end if
 
-  end subroutine Compute
-
-
-  impure elemental subroutine Finalize ( RS )
-
-    type ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
-
-    if ( allocated ( RS % StageDimension ) ) &
-      deallocate ( RS % StageDimension )
-    if ( allocated ( RS % Reconstruction_ES ) ) &
-      deallocate ( RS % Reconstruction_ES )
-    if ( allocated ( RS % Reconstruction_FS ) ) &
-      deallocate ( RS % Reconstruction_FS )
-    if ( allocated ( RS % Reconstruction_BS ) ) &
-      deallocate ( RS % Reconstruction_BS )
-    if ( allocated ( RS % Reconstruction_PS ) ) &
-      deallocate ( RS % Reconstruction_PS )
-    if ( allocated ( RS % EigenspeedSet ) ) &
-      deallocate ( RS % EigenspeedSet )
-    if ( allocated ( RS % FluxSet ) ) &
-      deallocate ( RS % FluxSet )
-    if ( allocated ( RS % CurrentSet_IR ) ) &
-      deallocate ( RS % CurrentSet_IR )
-    if ( allocated ( RS % CurrentSet_IL ) ) &
-      deallocate ( RS % CurrentSet_IL )
-    if ( allocated ( RS % BalancedSet ) ) &
-      deallocate ( RS % BalancedSet )
-    if ( allocated ( RS % PrimitiveSet ) ) &
-      deallocate ( RS % PrimitiveSet )
-
-    nullify ( RS % CurrentSet )
-
-  end subroutine Finalize
+  end subroutine ComputeFluxes
 
 
 end module RiemannSolver_HLL__Form

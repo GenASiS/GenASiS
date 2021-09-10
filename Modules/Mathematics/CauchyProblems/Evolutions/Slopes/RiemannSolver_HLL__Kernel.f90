@@ -14,6 +14,7 @@ contains
     integer ( KDI ) :: &
       iV, &
       iF, &
+      iF_B, &
       nV, &
       nF
     real ( KDR ) :: &
@@ -41,15 +42,17 @@ contains
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP firstprivate ( SqrtTiny )
+      !$OMP private ( iF_B ) firstprivate ( SqrtTiny )
       do iF  =  1,  nF
         do iV  =  1,  nV
+
+          iF_B  =  iaBalanced ( iF )
 
           F_I ( iV, iF ) &
             =  (    AP_I ( iV )  *  F_IL ( iV, iF ) &
                  +  AM_I ( iV )  *  F_IR ( iV, iF ) &
                  -  AP_I ( iV )  *  AM_I ( iV ) &
-                    *  ( U_IR ( iV, iF )  -  U_IL ( iV, iF ) ) ) &
+                    *  ( U_IR ( iV, iF_B )  -  U_IL ( iV, iF_B ) ) ) &
                /  max ( AP_I ( iV )  +  AM_I ( iV ),  SqrtTiny )
 
         end do
@@ -68,15 +71,17 @@ contains
     
       !$OMP parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP firstprivate ( SqrtTiny )
+      !$OMP private ( iF_B ) firstprivate ( SqrtTiny )
       do iF  =  1,  nF
         do iV  =  1,  nV
+
+          iF_B  =  iaBalanced ( iF )
 
           F_I ( iV, iF ) &
             =  (    AP_I ( iV )  *  F_IL ( iV, iF ) &
                  +  AM_I ( iV )  *  F_IR ( iV, iF ) &
                  -  AP_I ( iV )  *  AM_I ( iV ) &
-                    *  ( U_IR ( iV, iF )  -  U_IL ( iV, iF ) ) ) &
+                    *  ( U_IR ( iV, iF_B )  -  U_IL ( iV, iF_B ) ) ) &
                /  max ( AP_I ( iV )  +  AM_I ( iV ),  SqrtTiny )
 
         end do

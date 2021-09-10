@@ -69,9 +69,9 @@ contains
     if ( ES % Type  ==  '' ) &
       ES % Type  =  'an EigenspeedSet_F' 
     
-    Name  =  'E_' // trim ( CS % Name )
+    Name  =  'E_' // trim ( FS_CS % Name )
     if ( present ( PrefixOption ) ) &
-      Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
+      Name  =  trim ( PrefixOption ) // '_' // trim ( FS_CS % Name )
 
     ES % FieldSet_CS  =>  FS_CS
     ES % CurrentSet   =>  CS
