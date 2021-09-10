@@ -31,8 +31,12 @@ module Reconstruction_Form
       StageDimension_IR, &
       StageDimension
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      InitializeAllocate
+    procedure, private, pass :: &
+      InitializeAssociate
+    generic, public :: &
+      Initialize => InitializeAllocate
     procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
@@ -122,7 +126,7 @@ module Reconstruction_Form
 contains
 
 
-  subroutine Initialize &
+  subroutine InitializeAllocate &
                ( R, G, FS, PrefixOption, OrderOption )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
@@ -151,7 +155,7 @@ contains
     if ( present ( PrefixOption ) ) &
       R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
 
-    call Show ( 'Initializing a Reconstruction', R % IGNORABILITY )
+    call Show ( 'InitializeAllocating a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
    
     R % FieldSet  =>  FS
@@ -203,7 +207,51 @@ contains
  
     end associate !-- nC, etc.
   
-  end subroutine Initialize
+  end subroutine InitializeAllocate
+
+
+  subroutine InitializeAssociate &
+               ( R, G, FS, O_IL, O_IR, iaS, PrefixOption, OrderOption )
+
+    class ( ReconstructionForm ), intent ( inout ) :: &
+      R
+    class ( Geometry_F_Form ), intent ( in ), target :: &
+      G
+    class ( FieldSetForm ), intent ( in ), target :: &
+      FS, &
+      O_IL, O_IR
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaS
+    character ( * ), intent ( in ), optional :: &
+      PrefixOption
+    integer ( KDI ), intent ( in ), optional :: &
+      OrderOption
+
+    R % IGNORABILITY  =  FS % Atlas % IGNORABILITY
+
+    R % Name  =  'R_' // trim ( FS % Name )
+    if ( present ( PrefixOption ) ) &
+      R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
+
+    call Show ( 'InitializeAssociating a Reconstruction', R % IGNORABILITY )
+    call Show ( R % Name, 'Name', R % IGNORABILITY )
+   
+    R % FieldSet  =>  FS
+    R % Geometry  =>   G
+
+    R % AllocatedOutput  =  .false.
+
+    R % Output_IL  =>  O_IL
+    R % Output_IL  =>  O_IR
+
+    R % Order  =  2
+    if ( present ( OrderOption ) ) &
+      R % Order  =  OrderOption
+    call PROGRAM_HEADER % GetParameter ( R % Order, 'ReconstructionOrder' )
+
+    allocate ( R % iaSelected, source = iaS )
+ 
+  end subroutine InitializeAssociate
 
 
   subroutine SetStream ( R, S, nS )
