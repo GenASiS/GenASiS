@@ -36,7 +36,7 @@ module Reconstruction_Form
     procedure, private, pass :: &
       InitializeAssociate
     generic, public :: &
-      Initialize => InitializeAllocate
+      Initialize => InitializeAllocate, InitializeAssociate
     procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
@@ -242,7 +242,7 @@ contains
     R % AllocatedOutput  =  .false.
 
     R % Output_IL  =>  O_IL
-    R % Output_IL  =>  O_IR
+    R % Output_IR  =>  O_IR
 
     R % Order  =  2
     if ( present ( OrderOption ) ) &
@@ -353,8 +353,10 @@ contains
 
     call Show ( 'Reconstruction Parameters', R % IGNORABILITY )
 
-    call Show ( R % Name,  'Name',  R % IGNORABILITY )
-    call Show ( R % Order, 'Order', R % IGNORABILITY )
+    call Show ( R % Name,       'Name',  R % IGNORABILITY )
+    call Show ( R % Order,      'Order', R % IGNORABILITY )
+    call Show ( R % iaSelected, 'iaSelected', R % IGNORABILITY + 1 )
+
 !    call R % FieldSet % Show ( )
     call R % Output_IL % Show ( )
     call R % Output_IR % Show ( )

@@ -26,7 +26,8 @@ module RiemannSolver_HLL__Form
       ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
       PrimitiveSet, &
-      BalancedSet
+      BalancedSet, &
+      CurrentSet_IL, CurrentSet_IR
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
     class ( FluxSetForm ), allocatable :: &
@@ -169,9 +170,32 @@ contains
                NameOption = 'P_' // trim ( CS % Name ), &
                IgnorabilityOption = CS % IGNORABILITY + 1 )
 
+    allocate ( RS % CurrentSet_IL )
+    allocate ( RS % CurrentSet_IR )
+    call RS % CurrentSet_IL % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Field, &
+             NameOption = trim ( CS % Name ) // '_IL', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             UnitOption = CS % Unit, &
+             nFieldsOption = CS % nFields, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    call RS % CurrentSet_IR % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Field, &
+             NameOption = trim ( CS % Name ) // '_IR', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             UnitOption = CS % Unit, &
+             nFieldsOption = CS % nFields, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+
       allocate ( RS % Reconstruction_PS )
       associate ( RPS  =>  RS % Reconstruction_PS )
-      call RPS % Initialize ( CS % Geometry, PS )
+      call RPS % Initialize &
+             ( CS % Geometry, PS, RS % CurrentSet_IL, RS % CurrentSet_IR, &
+               CS % iaPrimitive )
 
       end associate !-- RPS
       end associate !-- PS
@@ -502,6 +526,10 @@ contains
       deallocate ( RS % EigenspeedSet )
     if ( allocated ( RS % FluxSet ) ) &
       deallocate ( RS % FluxSet )
+    if ( allocated ( RS % CurrentSet_IR ) ) &
+      deallocate ( RS % CurrentSet_IR )
+    if ( allocated ( RS % CurrentSet_IL ) ) &
+      deallocate ( RS % CurrentSet_IL )
     if ( allocated ( RS % BalancedSet ) ) &
       deallocate ( RS % BalancedSet )
     if ( allocated ( RS % PrimitiveSet ) ) &
