@@ -284,8 +284,8 @@ contains
         CS_D  =>  IA % Difference )
     
     call SetCurrentSet_VLC ( CS_R, IA, I % T )
-
-    call CS_D % MultiplyAdd ( CS, CS_R, -1.0_KDR )
+    
+    call CS_D % MultiplyAdd ( CS, CS_R, -1.0_KDR, UseDeviceOption = .false. )
 
     call ComputeError ( CS_D, CS_R )
 
