@@ -20,8 +20,9 @@ module RiemannSolver_HLL__Form
       ALPHA_MINUS_U   = 0, &
       N_SOLVER_SPEEDS = 0
     integer ( KDI ) :: &
-      iTimer       = 0, &
-      iTimerKernel = 0
+      iTimer     = 0, &
+      iTimer_CFP = 0, &
+      iTimer_K   = 0
     character ( LDL ) :: &
       ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
@@ -55,7 +56,9 @@ module RiemannSolver_HLL__Form
     procedure, public, pass :: &
       Timer
     procedure, private, pass :: &
-      TimerKernel
+      Timer_CFP
+    procedure, private, pass :: &
+      Timer_K
     procedure, public, pass :: &
       Compute
     final :: &
@@ -63,8 +66,8 @@ module RiemannSolver_HLL__Form
   end type RiemannSolver_HLL_Form
 
     private :: &
-      ComputeFluxes!, &
-!      ComputePrimitive
+      ComputeWithReconstructedFluxes, &
+      ComputeWithReconstructedPrimitive
 
       private :: &
         ComputeKernel
@@ -414,7 +417,7 @@ contains
   end function Timer
 
 
-  function TimerKernel ( RS, LevelOption ) result ( T )
+  function Timer_CFP ( RS, LevelOption ) result ( T )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -426,10 +429,10 @@ contains
     character ( LDL ) :: &
       TimerName
 
-    associate ( iT  =>  RS % iTimerKernel )
+    associate ( iT  =>  RS % iTimer_CFP )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_Krnl' 
+      TimerName  =  trim ( RS % Name ) // '_CFP' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -441,7 +444,37 @@ contains
 
     end associate !-- iT
 
-  end function TimerKernel
+  end function Timer_CFP
+
+
+  function Timer_K ( RS, LevelOption ) result ( T )
+
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+    integer ( KDI ), intent ( in ), optional :: &
+      LevelOption
+    type ( TimerForm ), pointer :: &
+      T
+
+    character ( LDL ) :: &
+      TimerName
+
+    associate ( iT  =>  RS % iTimer_K )
+
+    if ( iT == 0 ) then
+      TimerName  =  trim ( RS % Name ) // '_K' 
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+
+    end associate !-- iT
+
+  end function Timer_K
 
 
   subroutine Compute ( RS, iC, iD, T_Option, iS_Option )
@@ -461,7 +494,9 @@ contains
 
     select case ( trim ( RS % ReconstructedSet ) )
     case ( 'FLUXES' )
-      call ComputeFluxes ( RS, iC, iD, T_Option, iS_Option )
+      call ComputeWithReconstructedFluxes ( RS, iC, iD, T_Option, iS_Option )
+    case ( 'PRIMITIVE' )
+      call ComputeWithReconstructedPrimitive ( RS, iC, iD, T_Option, iS_Option )
     case default
       call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
       call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
@@ -520,7 +555,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeFluxes ( RS, iC, iD, T_Option, iS_Option )
+  subroutine ComputeWithReconstructedFluxes ( RS, iC, iD, T_Option, iS_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -554,7 +589,7 @@ contains
       T_RBS  =>  RBS % Timer ( LevelOption = T_Option % Level + 1 )
       T_RFS  =>  RFS % Timer ( LevelOption = T_Option % Level + 1 )
       T_RES  =>  RES % Timer ( LevelOption = T_Option % Level + 1 )
-      T_K    =>   RS % TimerKernel ( LevelOption = T_Option % Level + 1 )
+      T_K    =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
     else
       T_FS   =>  null ( )
       T_ES   =>  null ( )
@@ -586,13 +621,13 @@ contains
 
     if ( associated ( T_K ) ) call T_K % Start ( )
     associate &
-      ( RSV     =>  RS % Storage ( 1 ) % Value, &
-        RBV_IL  =>  RBS % Output_IL % Storage ( 1 ) % Value, &
-        RBV_IR  =>  RBS % Output_IR % Storage ( 1 ) % Value, &
-        RFV_IL  =>  RFS % Output_IL % Storage ( 1 ) % Value, &
-        RFV_IR  =>  RFS % Output_IR % Storage ( 1 ) % Value, &
-        REV_IL  =>  RES % Output_IL % Storage ( 1 ) % Value, &
-        REV_IR  =>  RES % Output_IR % Storage ( 1 ) % Value )
+      ( RSV     =>  RS % Storage ( iC ) % Value, &
+        RBV_IL  =>  RBS % Output_IL % Storage ( iC ) % Value, &
+        RBV_IR  =>  RBS % Output_IR % Storage ( iC ) % Value, &
+        RFV_IL  =>  RFS % Output_IL % Storage ( iC ) % Value, &
+        RFV_IR  =>  RFS % Output_IR % Storage ( iC ) % Value, &
+        REV_IL  =>  RES % Output_IL % Storage ( iC ) % Value, &
+        REV_IR  =>  RES % Output_IR % Storage ( iC ) % Value )
     associate &
       (  F_I   =>  RSV ( :, 1 : CS % nBalanced ), &
         AP_I   =>  RSV ( :, RS % ALPHA_PLUS_U ), &
@@ -623,7 +658,112 @@ contains
       end associate !-- SDC
     end if
 
-  end subroutine ComputeFluxes
+  end subroutine ComputeWithReconstructedFluxes
+
+
+  subroutine ComputeWithReconstructedPrimitive &
+               ( RS, iC, iD, T_Option, iS_Option )
+
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+    integer ( KDI ), intent ( in ) :: &
+      iC, &  !-- iChart
+      iD     !-- iDimensions
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option  !-- iStage_Option
+
+    type ( TimerForm ), pointer :: &
+      T_RPS, &
+      T_CFP, &
+      T_FS, &
+      T_ES, &
+      T_K
+
+    associate &
+      (  CS     =>  RS % CurrentSet, &
+         CS_IL  =>  RS % CurrentSet_IL, &
+         CS_IR  =>  RS % CurrentSet_IR, &
+         FS_IL  =>  RS % FluxSet_IL, &
+         FS_IR  =>  RS % FluxSet_IR, &
+         ES_IL  =>  RS % EigenspeedSet_IL, &
+         ES_IR  =>  RS % EigenspeedSet_IR, &
+        RPS     =>  RS % Reconstruction_PS )
+
+    if ( present ( T_Option ) ) then
+      T_RPS  =>  RPS    % Timer     ( LevelOption = T_Option % Level + 1 )
+      T_CFP  =>   RS    % Timer_CFP ( LevelOption = T_Option % Level + 1 )
+      T_FS   =>   FS_IL % Timer     ( LevelOption = T_Option % Level + 1 )
+      T_ES   =>   ES_IL % Timer     ( LevelOption = T_Option % Level + 1 )
+      T_K    =>   RS    % Timer_K   ( LevelOption = T_Option % Level + 1 )
+    else
+      T_RPS  =>  null ( )
+      T_CFP  =>  null ( )
+      T_FS   =>  null ( )
+      T_ES   =>  null ( )
+      T_K    =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_RPS ) ) call T_RPS % Start ( )
+    call RPS % Compute ( iC, iD, iS_Option )
+    if ( associated ( T_RPS ) ) call T_RPS % Stop ( )
+
+    if ( associated ( T_CFP ) ) call T_CFP % Start ( )
+    call CS % ComputeFromPrimitive ( CS_IL )
+    call CS % ComputeFromPrimitive ( CS_IR )
+    if ( associated ( T_CFP ) ) call T_CFP % Stop ( )
+
+    if ( associated ( T_FS ) ) call T_FS % Start ( )
+    call FS_IL % Compute ( iC, iD )
+    call FS_IR % Compute ( iC, iD )
+    if ( associated ( T_FS ) ) call T_FS % Stop ( )
+
+    if ( associated ( T_ES ) ) call T_ES % Start ( )
+    call ES_IL % Compute ( iC, iD )
+    call ES_IR % Compute ( iC, iD )
+    if ( associated ( T_ES ) ) call T_ES % Stop ( )
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    associate &
+      ( RSV     =>  RS % Storage ( iC ) % Value, &
+        CSV_IL  =>  RS % CurrentSet_IL % Storage ( iC ) % Value, &
+        CSV_IR  =>  RS % CurrentSet_IR % Storage ( iC ) % Value, &
+        RFV_IL  =>  RS % FluxSet_IL % Storage ( iC ) % Value, &
+        RFV_IR  =>  RS % FluxSet_IR % Storage ( iC ) % Value, &
+        REV_IL  =>  RS % EigenspeedSet_IL % Storage ( iC ) % Value, &
+        REV_IR  =>  RS % EigenspeedSet_IR % Storage ( iC ) % Value )
+    associate &
+      (  F_I   =>  RSV ( :, 1 : CS % nBalanced ), &
+        AP_I   =>  RSV ( :, RS % ALPHA_PLUS_U ), &
+        AM_I   =>  RSV ( :, RS % ALPHA_MINUS_U ), &
+         F_IL  =>  RFV_IL ( :, : ), &
+         F_IR  =>  RFV_IR ( :, : ), &
+         U_IL  =>  CSV_IL ( :, : ), &
+         U_IR  =>  CSV_IR ( :, : ), &
+        EP_IL  =>  REV_IL ( :, ES_IL % EIGENSPEED_FAST_PLUS_U ), &
+        EP_IR  =>  REV_IR ( :, ES_IR % EIGENSPEED_FAST_PLUS_U ), &
+        EM_IL  =>  REV_IL ( :, ES_IL % EIGENSPEED_FAST_MINUS_U ), &
+        EM_IR  =>  REV_IR ( :, ES_IR % EIGENSPEED_FAST_MINUS_U ) )
+
+    call ComputeKernel &
+           ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
+             CS % iaBalanced, F_I, AP_I, AM_I, &
+             UseDeviceOption = RS % DeviceMemory )
+
+    end associate !-- F_I, etc.
+    end associate !-- RSV, etc.
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+    end associate !-- CS, etc.
+
+    if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
+      associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
+      call RS % Copy ( SDC )
+      end associate !-- SDC
+    end if
+
+  end subroutine ComputeWithReconstructedPrimitive
 
 
 end module RiemannSolver_HLL__Form

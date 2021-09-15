@@ -52,7 +52,7 @@ module CurrentSet_Form
       Show => Show_CS
     procedure, public, pass :: &
       ComputeFromInitial
-    procedure, public, pass :: &
+    procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
     procedure, public, pass :: &
       ComputeFromBalanced
@@ -322,7 +322,7 @@ contains
 
   subroutine ComputeFromPrimitive ( FS_CS, CS )
 
-    class ( CurrentSetForm ), intent ( inout ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
       FS_CS
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
