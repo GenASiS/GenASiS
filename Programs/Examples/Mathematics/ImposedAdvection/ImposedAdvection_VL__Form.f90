@@ -36,6 +36,7 @@ module ImposedAdvection_VL__Form
     private :: &
       SetParameters, &
       SetInitial, &
+      ShowSystem, &
       SetReference
 
       private :: &
@@ -131,9 +132,9 @@ contains
     end select !-- CS
 
     call I % Initialize ( T_FinishOption = IA % T_Finish )
-    call I % Show ( )
     I % System        =>  IA
     I % SetInitial    =>  SetInitial
+    I % ShowSystem    =>  ShowSystem
     I % SetReference  =>  SetReference
 
     allocate ( IA % Reference )
@@ -232,13 +233,6 @@ contains
     N_0  =  1.0_KDR
     call PROGRAM_HEADER % GetParameter ( N_0, 'DensityInitial' )
 
-    call Show ( 'ImposedAdvection_VL_ Parameters' )
-    call Show ( IA % CoordinateSystem, 'CoordinateSystem' )
-    call Show ( IA % AdvectionType,    'AdvectionType' )
-    call Show ( V_0, 'SpeedInitial' )
-    call Show ( L_0, 'LengthInitial' )
-    call Show ( N_0, 'DensityInitial' )
-
     end associate !-- V_0, etc.
     end associate !-- C
     end select !-- A
@@ -266,6 +260,26 @@ contains
     end select !-- IA
 
   end subroutine SetInitial
+
+
+  subroutine ShowSystem ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    select type ( IA  =>  I % System )
+      class is ( ImposedAdvection_VL_Form )
+    call Show ( 'ImposedAdvection_VL Parameters' )
+    call Show ( IA % CoordinateSystem, 'CoordinateSystem' )
+    call Show ( IA % AdvectionType,    'AdvectionType' )
+    call Show ( IA % SpeedInitial, 'SpeedInitial' )
+    call Show ( IA % LengthInitial, 'LengthInitial' )
+    call Show ( IA % DensityInitial, 'DensityInitial' )
+    end select !-- IA
+
+    call I % ShowSystem_H ( )
+
+  end subroutine ShowSystem
 
 
   subroutine SetReference ( I )
