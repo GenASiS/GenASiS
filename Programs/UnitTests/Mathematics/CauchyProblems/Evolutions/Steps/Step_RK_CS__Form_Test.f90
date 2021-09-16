@@ -62,7 +62,7 @@ program Step_RK_CS__Form_Test
   do iD  =  1, 3
     write ( Dimension, fmt = '(i1.1)' ) iD
     call ES ( iD ) % Initialize &
-           ( CS, PrefixOption = 'Egnspd_' // Dimension )
+           ( CS, CS, PrefixOption = 'Egnspd_' // Dimension )
   end do !-- iD
 
   allocate ( S )

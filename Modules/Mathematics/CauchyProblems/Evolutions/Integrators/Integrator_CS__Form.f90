@@ -149,7 +149,7 @@ contains
         ( ES  =>  I % EigenspeedSet_X ( iD ), &
           CS  =>  I % CurrentSet_X )
       write ( Dimension, fmt = '(i1.1)' ) iD
-      call ES % Initialize ( CS, PrefixOption = 'Egnspd_' // Dimension ) 
+      call ES % Initialize ( CS, CS, PrefixOption = 'E_' // Dimension ) 
       end associate !-- ES, etc.
     end do !-- iD
 

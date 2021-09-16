@@ -155,13 +155,6 @@ contains
 
     call S % Step_RK_H_Form % Show ( )
 
-    call Split ( S % RiemannSolver % Type, ' ', TypeWord )
-    call Split ( TypeWord ( 2 ), '_', TypePiece )
-    call Show ( TypePiece ( 2 ), 'RiemannSolver Type', S % IGNORABILITY )
-
-    call Show ( S % RiemannSolver % Reconstruction_BS % Order, &
-                'Reconstruction Order', S % IGNORABILITY )
-
     call S % Solution % Show ( )
     call S % Intermediate % Show ( )
     call S % RiemannSolver % Show ( )
@@ -393,7 +386,8 @@ contains
       write ( StageNumber, fmt = '(i1.1)' ) iS_Option
       call K % Initialize ( S % RiemannSolver, SuffixOption = StageNumber )
     else
-      call K % Initialize ( S % RiemannSolver )
+      call K % Initialize ( S % RiemannSolver, &
+                            IgnorabilityOption = S % IGNORABILITY )
     end if
 
     end select !-- S

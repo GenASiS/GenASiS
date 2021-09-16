@@ -84,6 +84,13 @@ contains
       nFieldsOption, &
       IgnorabilityOption
 
+    integer ( KDI ) :: &
+      Ignorability
+
+    Ignorability  =  A % IGNORABILITY + 1
+    if ( present ( IgnorabilityOption ) ) &
+      Ignorability  =  IgnorabilityOption
+
     if ( FS % Type  ==  '' ) &
       FS % Type  =  'a Slope_H' 
     
@@ -91,7 +98,7 @@ contains
            ( A, FieldOption, VectorOption, NameOption, &
              DeviceMemoryOption, PinnedMemoryOption, &
              DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-             nFieldsOption, IgnorabilityOption )
+             nFieldsOption, IgnorabilityOption = Ignorability )
 
     if ( FS % TimerName  ==  '' ) &
       FS % TimerName  =  FS % Name

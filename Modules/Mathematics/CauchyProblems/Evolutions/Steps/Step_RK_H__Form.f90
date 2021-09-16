@@ -823,7 +823,7 @@ contains
     call K % Initialize &
            ( A, &
              NameOption = Name, &
-             IgnorabilityOption = A % IGNORABILITY + 1 )
+             IgnorabilityOption = A % IGNORABILITY )
 
     end associate !-- A
 

@@ -57,7 +57,7 @@ program Slope_DFV_F__Form_Test
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Initialize ( RS )
+  call S % Initialize ( RS, IgnorabilityOption = A % IGNORABILITY )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call S % SetStream ( Sm )
 
@@ -65,7 +65,8 @@ program Slope_DFV_F__Form_Test
   call  G % Show ( )
   call CS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Show ( )
+  call RS % Show ( )
+  call  S % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call Sm % Show ( )
 

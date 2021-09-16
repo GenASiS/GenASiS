@@ -23,8 +23,6 @@ module Slope_DFV_PD__Form
       InitializeAllocate_PD
     generic, public :: &
       Initialize => InitializeAllocate_PD
-    procedure, public, pass :: &
-      Show => Show_FS
     procedure, private, pass :: &
       TimerKernel
     procedure, public, pass :: &
@@ -64,7 +62,7 @@ module Slope_DFV_PD__Form
 contains
 
 
-  subroutine InitializeAllocate_PD ( S, RS, SuffixOption )
+  subroutine InitializeAllocate_PD ( S, RS, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
@@ -72,6 +70,8 @@ contains
       RS
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     character ( LDL ) :: &
       Name
@@ -80,9 +80,9 @@ contains
       S % Type  =  'a Slope_DFV_PD' 
     
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'Slp_DFV_PD_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  'S_DFV_PD_' // trim ( RS % CurrentSet % Name )
 
-    Name  =  'Slp_DFV_PD_' // trim ( RS % CurrentSet % Name )
+    Name  =  'S_DFV_PD_' // trim ( RS % CurrentSet % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -99,22 +99,11 @@ contains
              PinnedMemoryOption = CS % PinnedMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
+             IgnorabilityOption = IgnorabilityOption )
 
     end associate !-- CS
 
   end subroutine InitializeAllocate_PD
-
-
-  subroutine Show_FS ( FS )
-
-    class ( Slope_DFV_PD_Form ), intent ( in ) :: &
-      FS
-
-    call FS % Slope_H_Form % Show ( )
-    call FS % RiemannSolver % Show ( )
-
-  end subroutine Show_FS
 
 
   function TimerKernel ( S, LevelOption ) result ( T )

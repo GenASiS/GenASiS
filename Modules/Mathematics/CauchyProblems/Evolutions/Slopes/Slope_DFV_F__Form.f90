@@ -24,14 +24,16 @@ module Slope_DFV_F__Form
 contains
 
 
-  subroutine InitializeAllocate_F ( S, RS, SuffixOption )
+  subroutine InitializeAllocate_F ( S, RS, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_F_Form ), intent ( inout ) :: &
       S
-    class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
+    class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       RS
     character ( * ), intent ( in ), optional :: &
       SuffixOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     character ( LDL ) :: &
       Name
@@ -40,9 +42,9 @@ contains
       S % Type  =  'a Slope_DFV_F'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'Slp_DFV_F_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  'S_DFV_F_' // trim ( RS % CurrentSet % Name )
 
-    Name  =  'Slp_DFV_F_' // trim ( RS % CurrentSet % Name )
+    Name  =  'S_DFV_F_' // trim ( RS % CurrentSet % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -56,7 +58,7 @@ contains
              PinnedMemoryOption = CS % PinnedMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
+             IgnorabilityOption = IgnorabilityOption )
 
     end associate !-- CS
 

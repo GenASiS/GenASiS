@@ -55,7 +55,6 @@ program Integrator_CS__Form_Test
   call CS_D % SetStream ( S )
   end associate !-- G, etc.
 
-  call I % Show ( )
   call CS_R % Show ( )
   call CS_D % Show ( )
 
