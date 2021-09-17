@@ -8,8 +8,13 @@ module PlaneWave_Form
   private
 
   type, public, extends ( Universe_F_B_Form ) :: PlaneWaveForm
+    integer ( KDI ) :: &
+      nPeriods
+    integer ( KDI ), dimension ( 3 ) :: &
+      nWavelengths
     real ( KDR ) :: &
-      Speed
+      Speed, &
+      Period
     real ( KDR ), dimension ( 3 ) :: &
       Wavenumber
     type ( Fluid_D_Form ), allocatable :: &
@@ -22,6 +27,8 @@ module PlaneWave_Form
       ComputeError
     final :: &
       Finalize
+    procedure, public, nopass :: &
+      ShowSystem
     procedure, private, pass :: &
       Waveform
   end type PlaneWaveForm
@@ -60,9 +67,6 @@ contains
 
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
-
-    if ( .not. associated ( U % Integrator % SetInitial ) ) &
-      U % Integrator % SetInitial  =>  SetInitial
 
   end subroutine Initialize_H
 
@@ -128,6 +132,25 @@ contains
   end subroutine Finalize
 
 
+  subroutine ShowSystem ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    select type ( PW  =>  I % System )
+      class is ( PlaneWaveForm )
+
+    call PW % Universe_H_Form % ShowSystem ( I )
+
+    call Show ( PW % nWavelengths, 'nWavelengths' )
+    call Show ( PW % nPeriods,     'nPeriods' )
+    call Show ( PW % Period,       'Period' )
+
+    end select !-- PW
+
+  end subroutine ShowSystem
+
+
   function Waveform ( PW, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
@@ -173,6 +196,11 @@ contains
     end associate !-- F
     end select !-- I
              
+    if ( .not. associated ( PW % Integrator % SetInitial ) ) &
+      PW % Integrator % SetInitial  =>  SetInitial
+    if ( .not. associated ( PW % Integrator % ShowSystem ) ) &
+      PW % Integrator % ShowSystem  =>  ShowSystem
+
     PW % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
@@ -207,13 +235,6 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    integer ( KDI ) :: &
-      nPeriods
-    integer ( KDI ), dimension ( 3 ) :: &
-      nWavelengths
-    real ( KDR ) :: &
-      Period
-
     select type ( PW  =>  I % System )
       class is ( PlaneWaveForm )
     select type ( I )
@@ -225,15 +246,13 @@ contains
     associate &
       ( C  =>  A % Chart_GS )
 
-    call Show ( 'Setting PlaneWave' )
-
-    nWavelengths = 0
-    nWavelengths ( 1  :  C % nDimensions )  =  1
-    call PROGRAM_HEADER % GetParameter ( nWavelengths, 'nWavelengths' )
+    PW % nWavelengths = 0
+    PW % nWavelengths ( 1  :  C % nDimensions )  =  1
+    call PROGRAM_HEADER % GetParameter ( PW % nWavelengths, 'nWavelengths' )
 
     associate ( BoxSize  =>  C % MaxCoordinate  -  C % MinCoordinate )
     where ( BoxSize  >  0.0_KDR )
-      PW % Wavenumber  =  nWavelengths / BoxSize
+      PW % Wavenumber  =  PW % nWavelengths / BoxSize
     elsewhere
       PW % Wavenumber  =  0.0_KDR
     end where
@@ -245,14 +264,12 @@ contains
       ( K      =>  PW % Wavenumber, &
         Abs_K  =>  sqrt ( dot_product ( PW % Wavenumber, PW % Wavenumber ) ), &
         V      =>  PW % Speed )
-    Period  =  1.0_KDR / ( Abs_K * V )
-    call Show ( Period, 'Period' )
+    PW % Period  =  1.0_KDR / ( Abs_K * V )
 
-    nPeriods  =  1
-    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
-    call Show ( nPeriods, 'nPeriods' )
+    PW % nPeriods  =  1
+    call PROGRAM_HEADER % GetParameter ( PW % nPeriods, 'nPeriods' )
 
-    I % T_Finish  =  nPeriods * Period
+    I % T_Finish  =  PW % nPeriods  *  PW % Period
 
     call SetFluid ( PW, F )
 

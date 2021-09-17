@@ -33,10 +33,9 @@ module Universe_H__Form
       Evolve
     final :: &
       Finalize
-  end type Universe_H_Form
-
-    private :: &
+    procedure, public, nopass :: &
       ShowSystem
+  end type Universe_H_Form
 
 contains
 
@@ -91,8 +90,6 @@ contains
                 'PinnedMemory', U % IGNORABILITY ) 
     call Show ( U % DevicesCommunicate, &
                 'DevicesCommunicate', U % IGNORABILITY ) 
-
-    call U % Integrator % Show ( )
 
   end subroutine Show_U
 

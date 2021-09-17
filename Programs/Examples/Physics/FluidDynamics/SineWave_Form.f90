@@ -13,10 +13,12 @@ module SineWave_Form
   contains
     procedure, private, pass :: &
       Initialize_H
-    procedure, private, pass :: &
-      Waveform
     final :: &
       Finalize
+    procedure, public, nopass :: &
+      ShowSystem
+    procedure, private, pass :: &
+      Waveform
   end type SineWaveForm
 
 
@@ -40,9 +42,36 @@ contains
 
     call U % PlaneWaveForm % Initialize ( NameOption = 'SineWave' )
 
-    U % Integrator % System  =>  U
+    U % Integrator % System      =>  U
+    U % Integrator % ShowSystem  =>  ShowSystem
 
   end subroutine Initialize_H
+
+
+  impure elemental subroutine Finalize ( SW )
+    
+    type ( SineWaveForm ), intent ( inout ) :: &
+      SW
+
+  end subroutine Finalize
+
+
+  subroutine ShowSystem ( I )
+
+    class ( Integrator_H_Form ), intent ( in ) :: &
+      I
+
+    select type ( SW  =>  I % System )
+      class is ( SineWaveForm )
+
+    call SW % PlaneWaveForm % ShowSystem ( I )
+
+    call Show ( SW % Offset,    'Offset' )
+    call Show ( SW % Amplitude, 'Amplitude' )
+
+    end select !-- SW
+
+  end subroutine ShowSystem
 
 
   function Waveform ( PW, X ) result ( W )
@@ -70,14 +99,6 @@ contains
     end associate !-- O, etc.
 
   end function Waveform
-
-
-  impure elemental subroutine Finalize ( SW )
-    
-    type ( SineWaveForm ), intent ( inout ) :: &
-      SW
-
-  end subroutine Finalize
 
 
 end module SineWave_Form

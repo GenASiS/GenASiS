@@ -277,8 +277,6 @@ contains
     call Show ( IA % DensityInitial, 'DensityInitial' )
     end select !-- IA
 
-    call I % ShowSystem_H ( )
-
   end subroutine ShowSystem
 
 

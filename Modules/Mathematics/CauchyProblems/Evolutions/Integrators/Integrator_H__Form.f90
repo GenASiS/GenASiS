@@ -134,7 +134,7 @@ module Integrator_H__Form
       SetInitial_H
     procedure, private, pass :: &   !-- 3
       ResetInitial_H
-    procedure, public, pass :: &  !-- 3
+    procedure, private, pass :: &  !-- 3
       ShowSystem_H
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
@@ -934,6 +934,7 @@ contains
     end if !-- restart
 
     call I % ShowSystem ( )
+    call I % Show ( )
 
   end subroutine PrepareInitial
 
@@ -1174,8 +1175,6 @@ contains
 
     class ( Integrator_H_Form ), intent ( in ) :: &
       I
-
-    call I % Show ( )
 
   end subroutine ShowSystem_H
 

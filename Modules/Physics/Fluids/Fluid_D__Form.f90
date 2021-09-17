@@ -52,6 +52,8 @@ module Fluid_D__Form
       Show => Show_FS
     procedure, public, pass :: &
       ComputeFromInitial
+    procedure, public, pass ( CS ) :: &
+      ComputeFromPrimitive
     procedure, public, pass :: &
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
@@ -434,10 +436,34 @@ contains
     class ( Fluid_D_Form ), intent ( inout ) :: &
       CS
 
+    call Show ( 'ComputeFromInitial', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    call CS % ComputeFromPrimitive ( CS )
+
+    select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_N_H_Form )
+    !-- FIXME Constant_G
+    call G % Solve &
+           ( CS, Constant_G = 1.0_KDR, &
+             iBaryonMass = CS % BARYON_MASS, &
+             iBaryonDensity = CS % BARYON_DENSITY_B )
+    end select !-- G
+
+  end subroutine ComputeFromInitial
+
+
+  subroutine ComputeFromPrimitive ( FS_CS, CS )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_CS
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      CS
+
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'ComputeFromInitial', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     do iC  =  1, CS % Atlas % nCharts
@@ -489,16 +515,7 @@ contains
 
     end do !-- iC
 
-    select type ( G  =>  CS % Geometry )
-      class is ( Gravitation_N_H_Form )
-    !-- FIXME Constant_G
-    call G % Solve &
-           ( CS, Constant_G = 1.0_KDR, &
-             iBaryonMass = CS % BARYON_MASS, &
-             iBaryonDensity = CS % BARYON_DENSITY_B )
-    end select !-- G
-
-  end subroutine ComputeFromInitial
+  end subroutine ComputeFromPrimitive
 
 
   subroutine ComputeFromBalanced ( CS )
@@ -573,12 +590,14 @@ contains
   end subroutine ComputeFromBalanced
 
 
-  subroutine ComputeFluxes ( FS, CS, iC, iD )
+  subroutine ComputeFluxes ( FS, CS, FS_CS, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
     class ( Fluid_D_Form ), intent ( in ) :: &
       CS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_CS
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD     !-- iDimension
@@ -621,12 +640,14 @@ contains
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeEigenspeeds ( FS, CS, iaEigenspeeds, iC, iD )
+  subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
-      FS
+      ES
     class ( Fluid_D_Form ), intent ( in ) :: &
       CS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_CS
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaEigenspeeds
     integer ( KDI ), intent ( in ) :: &
@@ -634,11 +655,11 @@ contains
       iD     !-- iDimension
 
     associate &
-      ( FSV  =>  FS % Storage ( iC ) % Value, &
-        CSV  =>  CS % Storage ( iC ) % Value )
+      ( ESV  =>  ES    % Storage ( iC ) % Value, &
+        CSV  =>  FS_CS % Storage ( iC ) % Value )
     associate &
-      ( EF_P    =>  FSV ( :, iaEigenspeeds ( 1 ) ), &
-        EF_M    =>  FSV ( :, iaEigenspeeds ( 2 ) ), & 
+      ( EF_P    =>  ESV ( :, iaEigenspeeds ( 1 ) ), &
+        EF_M    =>  ESV ( :, iaEigenspeeds ( 2 ) ), & 
          V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
  
     call ComputeEigenspeeds_G_Kernel &
