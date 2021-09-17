@@ -280,18 +280,18 @@ contains
     end do
 
     allocate ( R % StageDimension ( nS, nD ) )
-    allocate ( R % StageDimension_IL ( nS, nD ) )
-    allocate ( R % StageDimension_IR ( nS, nD ) )
+    if ( R % AllocatedOutput ) then
+      allocate ( R % StageDimension_IL ( nS, nD ) )
+      allocate ( R % StageDimension_IR ( nS, nD ) )
+    end if !-- AllocatedOutput
     do iS  =  1, nS
       do iD  =  1, nD
 
         write ( StageNumber, fmt = '(i1.1)' ) iS
         write ( DimensionNumber, fmt = '(i1.1)' ) iD
 
-        allocate ( R % StageDimension ( iS, iD ) % Element )
-        allocate ( R % StageDimension_IL ( iS, iD ) % Element )
-        allocate ( R % StageDimension_IR ( iS, iD ) % Element )
-
+        allocate &
+          ( R % StageDimension ( iS, iD ) % Element )
         associate &
           ( SD  =>  R % StageDimension ( iS, iD ) % Element, &
             FS  =>  R % FieldSet )
@@ -307,35 +307,43 @@ contains
         call S % AddFieldSet ( SD, iaSelectedOption = FS % iaSelected )
         end associate !-- SD, etc.
 
-        associate &
-          ( SD  =>  R % StageDimension_IL ( iS, iD ) % Element, &
-             O  =>  R % Output_IL )
-        call SD % Initialize &
-               ( O % Atlas, &
-                 FieldOption = O % Field, &
-                 NameOption = trim ( O % Name ) // '_' // StageNumber // '_' &
-                              // DimensionNumber, &
-                 DeviceMemoryOption = FS % DeviceMemory, &
-                 DevicesCommunicateOption = FS % DevicesCommunicate, &
-                 nFieldsOption = O % nFields, &
-                 IgnorabilityOption = R % IGNORABILITY + 1 )
-        call S % AddFieldSet ( SD )
-        end associate !-- SD, etc.
+        if ( R % AllocatedOutput ) then
 
-        associate &
-          ( SD  =>  R % StageDimension_IR ( iS, iD ) % Element, &
-             O  =>  R % Output_IR )
-        call SD % Initialize &
-               ( O % Atlas, &
-                 FieldOption = O % Field, &
-                 NameOption = trim ( O % Name ) // '_' // StageNumber // '_' &
-                              // DimensionNumber, &
-                 DeviceMemoryOption = FS % DeviceMemory, &
-                 DevicesCommunicateOption = FS % DevicesCommunicate, &
-                 nFieldsOption = O % nFields, &
-                 IgnorabilityOption = R % IGNORABILITY + 1 )
-        call S % AddFieldSet ( SD )
-        end associate !-- SD, etc.
+          allocate &
+            ( R % StageDimension_IL ( iS, iD ) % Element )
+          associate &
+            ( SD  =>  R % StageDimension_IL ( iS, iD ) % Element, &
+               O  =>  R % Output_IL )
+          call SD % Initialize &
+                 ( O % Atlas, &
+                   FieldOption = O % Field, &
+                   NameOption = trim ( O % Name ) // '_' // StageNumber // '_' &
+                                // DimensionNumber, &
+                   DeviceMemoryOption = FS % DeviceMemory, &
+                   DevicesCommunicateOption = FS % DevicesCommunicate, &
+                   nFieldsOption = O % nFields, &
+                   IgnorabilityOption = R % IGNORABILITY + 1 )
+          call S % AddFieldSet ( SD )
+          end associate !-- SD, etc.
+
+          allocate &
+            ( R % StageDimension_IR ( iS, iD ) % Element )
+          associate &
+            ( SD  =>  R % StageDimension_IR ( iS, iD ) % Element, &
+               O  =>  R % Output_IR )
+          call SD % Initialize &
+                 ( O % Atlas, &
+                   FieldOption = O % Field, &
+                   NameOption = trim ( O % Name ) // '_' // StageNumber // '_' &
+                                // DimensionNumber, &
+                   DeviceMemoryOption = FS % DeviceMemory, &
+                   DevicesCommunicateOption = FS % DevicesCommunicate, &
+                   nFieldsOption = O % nFields, &
+                   IgnorabilityOption = R % IGNORABILITY + 1 )
+          call S % AddFieldSet ( SD )
+          end associate !-- SD, etc.
+
+        end if !-- AllocatedOutput
 
       end do !-- iD
     end do !-- iS

@@ -281,7 +281,7 @@ contains
           call SC % Compute ( T_Option = T_C, iS_Option = iS_Option )
           call T_C % Stop ( )
         else
-          call SC % Compute ( iS_Option = iS_Option)
+          call SC % Compute ( iS_Option = iS_Option )
         end if
 
         if ( associated ( T_MA ) ) call T_MA % Start ( )
