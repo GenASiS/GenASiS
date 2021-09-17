@@ -28,6 +28,8 @@ module Step_RK_CS__Form
     generic, public :: &
       Initialize => Initialize_CS
     procedure, public, pass :: &
+      SetStream
+    procedure, public, pass :: &
       Show => Show_S
     final :: &
       Finalize
@@ -142,6 +144,38 @@ contains
              C_Option = C_Option )
 
   end subroutine Initialize_CS
+
+
+  subroutine SetStream ( S, Sm, StagesOption )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    class ( StreamForm ), intent ( inout ) :: &
+      Sm
+    logical ( KDL ), intent ( in ), optional :: &
+      StagesOption
+
+    integer ( KDI ) :: &
+      iS  !-- iStage
+    logical ( KDL ) :: &
+      Stages
+    character ( 1 ) :: &
+      StageNumber
+
+    Stages  =  .false.
+    if ( present ( StagesOption ) ) &
+      Stages  =  StagesOption
+    call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
+
+    call S % SetStream_H ( Sm, StagesOption = Stages )
+
+    if ( Stages ) then
+      associate ( RSA  =>  S % RiemannSolver )
+      call RSA % SetStream ( Sm, S % nStages )
+      end associate !-- RSA
+    end if !-- Stages
+
+  end subroutine SetStream
 
 
   subroutine Show_S ( S )

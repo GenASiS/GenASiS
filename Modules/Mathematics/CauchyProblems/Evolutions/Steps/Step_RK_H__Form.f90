@@ -43,7 +43,9 @@ module Step_RK_H__Form
     procedure, public, pass :: &
       Initialize_H  !-- Do not overload: needs overriding of SetSlope
     procedure, public, pass :: &
-      SetStream
+      SetStream_H
+    procedure, public, pass :: &
+      SetStream => SetStream_H
     procedure, public, pass :: &
       Show => Show_S
     procedure, public, pass :: &
@@ -197,7 +199,7 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine SetStream ( S, Sm, StagesOption )
+  subroutine SetStream_H ( S, Sm, StagesOption )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -223,9 +225,8 @@ contains
     ! Stages  =  .false.
     ! if ( present ( StagesOption ) ) &
     !   Stages  =  StagesOption
-    ! call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
 
-!     if ( Stages ) then
+    ! if ( Stages ) then
 
 !       associate &
 !         ( CS    =>  S % CurrentSet, &
@@ -236,8 +237,8 @@ contains
 !         (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
 !                 PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
 !           DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
-!       associate &
-!         ( nS  =>  S % nStages )
+      ! associate &
+      !   ( nS  =>  S % nStages )
 
 !       allocate ( S % SolutionStage ( nS ) )
 !       do iS  =  1, nS
@@ -257,9 +258,9 @@ contains
 !         end associate !-- SSA
 !       end do !-- iS
 
-!       associate ( RSA  =>  S % RiemannSolver )
-!       call RSA % SetStream ( Sm, nS )
-!       end associate !-- RSA
+      ! associate ( RSA  =>  S % RiemannSolver )
+      ! call RSA % SetStream ( Sm, nS )
+      ! end associate !-- RSA
 
 !       do iS  =  1,  nS
 !         associate ( SA  =>  S % SlopeStage ( iS ) % Element )
@@ -272,9 +273,9 @@ contains
 !       end associate !-- SC
 !       end associate !-- CS, etc.
 
-!     end if
+!     end if !-- Stages
 
-  end subroutine SetStream
+  end subroutine SetStream_H
 
 
   subroutine Show_S ( S )
