@@ -469,9 +469,9 @@ contains
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
-        (   CSV  =>  CS % Storage ( iC ) % Value, &
-          M_Ref  =>  CS % BaryonMassReference, &
-          N_Min  =>  CS % BaryonDensityMin )
+        (   CSV  =>  FS_CS % Storage ( iC ) % Value, &
+          M_Ref  =>  CS    % BaryonMassReference, &
+          N_Min  =>  CS    % BaryonDensityMin )
       associate &
         ( M    =>  CSV ( :, CS % BARYON_MASS ), &
           N    =>  CSV ( :, CS % BARYON_DENSITY_C ), &
@@ -617,8 +617,8 @@ contains
            ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_3, iMomentum ( 3 ) )
 
     associate &
-      ( FSV  =>  FS % Storage ( iC ) % Value, &
-        CSV  =>  CS % Storage ( iC ) % Value )
+      ( FSV  =>  FS    % Storage ( iC ) % Value, &
+        CSV  =>  FS_CS % Storage ( iC ) % Value )
     associate &
       ( F_D      =>  FSV ( :, iDensity ), &
         F_S_1    =>  FSV ( :, iMomentum ( 1 ) ), &
