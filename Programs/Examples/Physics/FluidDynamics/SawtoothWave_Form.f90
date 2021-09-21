@@ -13,6 +13,8 @@ module SawtoothWave_Form
   contains
     procedure, private, pass :: &
       Initialize_H
+    procedure, public, pass :: &
+      Show => Show_U
     procedure, private, pass :: &
       Waveform
     final :: &
@@ -45,6 +47,27 @@ contains
   end subroutine Initialize_H
 
 
+  subroutine Show_U ( U )
+
+    class ( SawtoothWaveForm ), intent ( in ) :: &
+      U
+
+    call U % PlaneWaveForm % Show ( )
+
+    call Show ( U % Offset,    'Offset' )
+    call Show ( U % Amplitude, 'Amplitude' )
+
+  end subroutine Show_U
+
+
+  impure elemental subroutine Finalize ( SW )
+    
+    type ( SawtoothWaveForm ), intent ( inout ) :: &
+      SW
+
+  end subroutine Finalize
+
+
   function Waveform ( PW, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
@@ -70,14 +93,6 @@ contains
     end associate !-- O, etc.
 
   end function Waveform
-
-
-  impure elemental subroutine Finalize ( SW )
-    
-    type ( SawtoothWaveForm ), intent ( inout ) :: &
-      SW
-
-  end subroutine Finalize
 
 
 end module SawtoothWave_Form

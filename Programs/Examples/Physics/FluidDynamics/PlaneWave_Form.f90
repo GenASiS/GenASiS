@@ -24,11 +24,11 @@ module PlaneWave_Form
     procedure, private, pass :: &
       Initialize_H
     procedure, public, pass :: &
+      Show => Show_U
+    procedure, public, pass :: &
       ComputeError
     final :: &
       Finalize
-    procedure, public, nopass :: &
-      ShowSystem
     procedure, private, pass :: &
       Waveform
   end type PlaneWaveForm
@@ -69,6 +69,20 @@ contains
     call InitializeDiagnostics ( U )
 
   end subroutine Initialize_H
+
+
+  subroutine Show_U ( U )
+
+    class ( PlaneWaveForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_H_Form % Show ( )
+
+    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( U % nPeriods,     'nPeriods' )
+    call Show ( U % Period,       'Period' )
+
+  end subroutine Show_U
 
 
   subroutine ComputeError ( PW )
@@ -132,25 +146,6 @@ contains
   end subroutine Finalize
 
 
-  subroutine ShowSystem ( I )
-
-    class ( Integrator_H_Form ), intent ( in ) :: &
-      I
-
-    select type ( PW  =>  I % System )
-      class is ( PlaneWaveForm )
-
-    call PW % Universe_H_Form % ShowSystem ( I )
-
-    call Show ( PW % nWavelengths, 'nWavelengths' )
-    call Show ( PW % nPeriods,     'nPeriods' )
-    call Show ( PW % Period,       'Period' )
-
-    end select !-- PW
-
-  end subroutine ShowSystem
-
-
   function Waveform ( PW, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
@@ -198,8 +193,6 @@ contains
              
     if ( .not. associated ( PW % Integrator % SetInitial ) ) &
       PW % Integrator % SetInitial  =>  SetInitial
-    if ( .not. associated ( PW % Integrator % ShowSystem ) ) &
-      PW % Integrator % ShowSystem  =>  ShowSystem
 
     PW % Integrator % SetReference  =>  SetReference
 
