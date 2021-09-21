@@ -6,9 +6,14 @@ MultiplyAdd_Command.o: \
   Basics.o \
   MultiplyAdd_Command.f90
 
+RootFinder_Form.o: \
+  Basics.o \
+  RootFinder_Form.f90
+
 Algebra.o: \
   Add_Command.o \
   MultiplyAdd_Command.o \
+  RootFinder_Form.o \
   Algebra.f90
 
 Algebra.a: $(ALGEBRA)

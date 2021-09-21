@@ -1,4 +1,5 @@
 ALGEBRA = \
   Algebra.o \
+  RootFinder_Form.o \
   MultiplyAdd_Command.o \
   Add_Command.o
