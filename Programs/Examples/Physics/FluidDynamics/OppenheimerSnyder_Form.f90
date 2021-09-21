@@ -18,8 +18,8 @@ module OppenheimerSnyder_Form
       RadiusFactor, &
       TimeScale, &
       AtmosphereParameter
-  !   type ( RootFinderForm ), allocatable :: &
-  !     RootFinder
+    type ( RootFinderForm ), allocatable :: &
+      RootFinder
     type ( Fluid_D_Form ), allocatable :: &
       Reference, &
       Difference
@@ -36,11 +36,12 @@ module OppenheimerSnyder_Form
 
     private :: &
       InitializeUniverse, &
-      ! InitializeDiagnostics, &
-      SetInitial!, &
-      ! SetReference
+      InitializeDiagnostics, &
+      SetInitial, &
+      SetReference
 
       private :: &
+        EvaluateZeroEta, &
         SetFluid, &
         SetBaryonDensityMin
 
@@ -68,7 +69,7 @@ contains
       Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
-!    call InitializeDiagnostics ( U )
+    call InitializeDiagnostics ( U )
 
    if ( .not. associated ( U % Integrator % SetInitial ) ) &
      U % Integrator % SetInitial  =>  SetInitial
@@ -158,8 +159,8 @@ contains
       deallocate ( OS % Difference )
     if ( allocated ( OS % Reference ) ) &
       deallocate ( OS % Reference )
-    ! if ( allocated ( OS % RootFinder ) ) &
-    !   deallocate ( OS % RootFinder )
+    if ( allocated ( OS % RootFinder ) ) &
+      deallocate ( OS % RootFinder )
 
   end subroutine Finalize
 
@@ -170,9 +171,6 @@ contains
       OS
     character ( * ), intent ( in )  :: &
       Name
-
-    ! integer ( KDI ) :: &
-    !   iD
 
     call OS % Initialize &
            ( FluidType = 'DUST', &
@@ -190,9 +188,33 @@ contains
     end associate !-- F
     end select !-- I
 
-    ! OS % Integrator % SetReference  =>  SetReference
+    OS % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
+
+
+  subroutine InitializeDiagnostics ( OS )
+
+    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
+      OS
+
+    allocate &
+      ( OS % Reference, &
+        OS % Difference )
+    associate &
+      ( F_R  =>  OS % Reference, &
+        F_D  =>  OS % Difference, &
+        G    =>  OS % Integrator % Geometry_X, &
+        S    =>  OS % Integrator % Checkpoint_X )
+
+    call F_R % Initialize ( G, OS % Units_F, NameOption = 'Reference' )
+    call F_D % Initialize ( G, OS % Units_F, NameOption = 'Difference' )
+    call F_R % SetStream ( S )
+    call F_D % SetStream ( S )
+
+    end associate !-- FA_R, etc.
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetInitial ( I )
@@ -250,10 +272,11 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-!    allocate ( OS % RootFinder )
-!    associate ( RF => OS % RootFinder )
-!    call RF % Initialize ( OS )
-!    RF % EvaluateZero  =>  EvaluateZeroEta
+    allocate ( OS % RootFinder )
+    associate ( RF => OS % RootFinder )
+    call RF % Initialize ( OS )
+    RF % EvaluateZero  =>  EvaluateZeroEta
+    end associate !-- RF
 
     call SetFluid ( OS, F )
     call SetBaryonDensityMin ( OS, F )
@@ -267,6 +290,56 @@ contains
     end select !-- OS
 
   end subroutine SetInitial
+
+
+  subroutine SetReference ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( OS  =>  I % System )
+      class is ( OppenheimerSnyderForm )
+    select type ( I  =>  OS % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+    associate &
+      ( F_R  =>  OS % Reference, &
+        F_D  =>  OS % Difference )
+
+    call SetFluid ( OS, F_R )
+
+    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR )
+
+    end associate !-- F_R, etc.
+    end select !-- F
+    end select !-- I
+    end select !-- OS
+
+  end subroutine SetReference
+
+
+  subroutine EvaluateZeroEta ( OS, Eta, Zero )
+
+    class ( * ), intent ( in ) :: &
+      OS
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ), intent ( out ) :: &
+      Zero
+
+    select type ( OS )
+      class is ( OppenheimerSnyderForm )
+    associate &
+      ( Tau  => OS % TimeScale, &
+        T    => OS % Integrator % T )
+
+    Zero  =  2.0 * T / Tau  -  ( Eta  +  sin ( Eta ) )
+
+    end associate !-- Tau, etc.
+    end select !-- OS
+    
+  end subroutine EvaluateZeroEta
 
 
   subroutine SetFluid ( OS, F )
@@ -285,16 +358,14 @@ contains
     Pi  =  CONSTANT % PI
 
     associate &
-!      ( RF   => OS % RootFinder, &
-      (  D_0 => OS % DensityInitial, &
+      ( RF   => OS % RootFinder, &
+         D_0 => OS % DensityInitial, &
          R_0 => OS % RadiusInitial )
 
-!    call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
+    call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
 
-!    Radius   =  0.5 * R_0 * ( 1 + cos ( Eta ) )
-!    Density  =  D_0 * ( R_0 / Radius ) ** 3
-    Radius   =  R_0
-    Density  =  D_0
+    Radius   =  0.5 * R_0 * ( 1 + cos ( Eta ) )
+    Density  =  D_0 * ( R_0 / Radius ) ** 3
 
     end associate !-- RF, etc.
 
@@ -307,8 +378,6 @@ contains
       ( FV  =>  F % Storage_GS % Value, &
         GV  =>  G % Storage_GS % Value )
 
-!  subroutine SetFluidKernel &
-!               ( ProperCell, R_E, R_W, R_D, Density, N, V_1, V_2, V_3 )
    call SetFluidKernel &
           ( ProperCell = C % ProperCell, &
             R_E = GV ( :, G % EDGE_I_U_1 ), &

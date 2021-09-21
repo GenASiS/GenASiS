@@ -15,7 +15,7 @@ program OppenheimerSnyder
   allocate ( OS )
   call OS % Initialize ( PROGRAM_HEADER % Name )
   call OS % Evolve ( )
-!  call OS % ComputeError ( )
+  call OS % ComputeError ( )
   deallocate ( OS )
 
   deallocate ( PROGRAM_HEADER )
