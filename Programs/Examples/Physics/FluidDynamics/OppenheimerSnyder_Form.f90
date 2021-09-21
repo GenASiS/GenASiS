@@ -14,6 +14,8 @@ module OppenheimerSnyder_Form
       Mass, &
       DensityInitial, &
       RadiusInitial, &
+      DensityFactor, &
+      RadiusFactor, &
       TimeScale, &
       AtmosphereParameter
   !   type ( RootFinderForm ), allocatable :: &
@@ -28,6 +30,8 @@ module OppenheimerSnyder_Form
       ComputeError
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
   end type OppenheimerSnyderForm
 
     private :: &
@@ -72,6 +76,29 @@ contains
     U % Integrator % System  =>  U
 
   end subroutine Initialize_H
+
+
+  subroutine ShowParameters ( U )
+
+    class ( OppenheimerSnyderForm ), intent ( in ) :: &
+      U
+
+    real ( KDR ) :: &
+      Pi
+
+    call U % Universe_F_CC_Form % ShowParameters ( )
+
+    Pi  =  CONSTANT % PI
+
+    call Show ( U % Mass, 'Mass' )
+    call Show ( U % DensityInitial, 'DensityInitial' )
+    call Show ( U % RadiusInitial, 'RadiusInitial' )
+    call Show ( U % DensityFactor, 'DensityFactor' )
+    call Show ( U % RadiusFactor, 'RadiusFactor' )
+    call Show ( Pi / 2  *  U % TimeScale, 'CollapseTime' )
+    call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
+
+  end subroutine ShowParameters
 
 
   subroutine ComputeError ( OS )
@@ -175,8 +202,6 @@ contains
 
     real ( KDR ) :: &
       Pi, &
-      DensityFactor, &
-      RadiusFactor, &
       Eta
 
     select type ( OS  =>  I % System )
@@ -190,8 +215,6 @@ contains
     associate &
       ( C  =>  A % Chart_GS )
 
-    call Show ( 'Setting OppenheimerSnyder' )
-
     associate &
       ( R_Max => C % MaxCoordinate ( 1 ), &
           R_0 => OS % RadiusInitial, &
@@ -199,8 +222,8 @@ contains
           Tau => OS % TimeScale, &
            AP => OS % AtmosphereParameter, &
             M => OS % Mass, &
-           DF => DensityFactor, &
-           RF => RadiusFactor )
+           DF => OS % DensityFactor, &
+           RF => OS % RadiusFactor )
 
      Pi  =  CONSTANT % PI
       M  =  1.0_KDR
@@ -218,14 +241,6 @@ contains
     Eta    =  acos ( 2.0 * RF  -  1.0 )
 
     I % T_Finish  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
-
-    call Show ( M, 'Mass' )
-    call Show ( D_0, 'DensityInitial' )
-    call Show ( R_0, 'RadiusInitial' )
-    call Show ( DF, 'DensityFactor' )
-    call Show ( RF, 'RadiusFactor' )
-    call Show ( Pi / 2  *  Tau, 'CollapseTime' )
-    call Show ( AP, 'AtmosphereParameter' )
 
     if ( R_0 > R_Max  ) then
       call Show ( 'RadiusInitial too large', CONSOLE % ERROR )

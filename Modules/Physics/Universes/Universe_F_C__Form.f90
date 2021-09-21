@@ -46,6 +46,8 @@ module Universe_F_C__Form
       InitializeStep
     procedure, private, pass :: &
       InitializeAtlas
+    procedure, public, pass :: &
+      ShowParameters
     procedure, public, nopass :: &
       Analyze_C
     procedure, public, nopass :: &
@@ -173,10 +175,7 @@ contains
 
     call U % Universe_H_Form % Show ( )
 
-    call Show ( 'Universe_F_C Proper Parameters' )
-
-    if ( U % GravityFactor  >  0.0_KDR ) &
-      call Show ( U % GravityFactor, 'GravityFactor' )
+    call U % ShowParameters ( )
 
     call U % PositionSpace_SA % Show ( )
     call U % SA_Gravitation % FieldSet_SA % Show ( )
@@ -513,6 +512,17 @@ contains
       call Show ( 'InitializeAtlas', 'subroutine', CONSOLE % WARNING )
 
   end subroutine InitializeAtlas
+
+
+  subroutine ShowParameters ( U )
+
+      class ( Universe_F_C_Form ), intent ( in ) :: &
+        U
+
+    if ( U % GravityFactor  >  0.0_KDR ) &
+      call Show ( U % GravityFactor, 'GravityFactor' )
+
+  end subroutine ShowParameters
 
 
   subroutine Analyze_C ( I, T_A )
