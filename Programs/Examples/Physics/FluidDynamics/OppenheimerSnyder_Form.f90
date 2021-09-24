@@ -331,8 +331,8 @@ contains
     select type ( OS )
       class is ( OppenheimerSnyderForm )
     associate &
-      ( Tau  => OS % TimeScale, &
-        T    => OS % Integrator % T )
+      ( Tau  =>  OS % TimeScale, &
+        T    =>  OS % Integrator % T )
 
     Zero  =  2.0 * T / Tau  -  ( Eta  +  sin ( Eta ) )
 
@@ -353,19 +353,22 @@ contains
       Pi, &
       Eta, &
       Radius, &
-      Density
+      Density, &
+      Velocity
 
     Pi  =  CONSTANT % PI
 
     associate &
-      ( RF   => OS % RootFinder, &
-         D_0 => OS % DensityInitial, &
-         R_0 => OS % RadiusInitial )
+      (  RF    =>  OS % RootFinder, &
+          D_0  =>  OS % DensityInitial, &
+          R_0  =>  OS % RadiusInitial, &
+        Tau    =>  OS % TimeScale )
 
     call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
 
-    Radius   =  0.5 * R_0 * ( 1 + cos ( Eta ) )
-    Density  =  D_0 * ( R_0 / Radius ) ** 3
+    Radius    =  0.5 * R_0 * ( 1 + cos ( Eta ) )
+    Density   =        D_0 * ( R_0 / Radius ) ** 3
+    Velocity  =    -   R_0 * sin ( Eta )  /  ( Tau * ( 1 + cos ( Eta ) ) )
 
     end associate !-- RF, etc.
 
@@ -385,6 +388,7 @@ contains
             R_C = GV ( :, G % CENTER_U_1 ), &
             R_D = Radius, &
             D = Density, &
+            V = Velocity, &
             M = OS % Mass, &
             AP = OS % AtmosphereParameter, &
             N = FV ( :, F % BARYON_DENSITY_C ), &
@@ -436,7 +440,7 @@ contains
 
 
   subroutine SetFluidKernel &
-               ( ProperCell, R_E, R_W, R_C, R_D, D, M, AP, N, V_1, V_2, V_3 )
+               ( ProperCell, R_E, R_W, R_C, R_D, D, V, M, AP, N, V_1, V_2, V_3 )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
@@ -447,6 +451,7 @@ contains
     real ( KDR ), intent ( in ) :: &
       R_D, &
       D, &
+      V, &
       M, &
       AP
     real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -473,11 +478,11 @@ contains
       R_O  =  R_E ( iV )  +  R_W ( iV )
       if ( R_O  <=  R_D ) then
         N   ( iV )  =  D
-        V_1 ( iV )  =  0.0_KDR
+        V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
       else if ( R_I  <  R_D .and. R_O  >  R_D ) then
         N   ( iV )  =  D * ( R_D ** 3  -  R_I ** 3 ) &
                        / ( R_O ** 3  -  R_I ** 3 )
-        V_1 ( iV )  =  0.0_KDR
+        V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
       else
         N   ( iV )  =  AP  *  D  *  ( R_C ( iV ) / R_D ) ** ( -1.5_KDR )
         V_1 ( iV )  =  - sqrt ( 2.0_KDR * M / R_C ( iV ) )
