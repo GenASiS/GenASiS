@@ -414,7 +414,9 @@ contains
 
     real ( KDR ), dimension ( :, :, : ), pointer :: &
        X, &
-      dX
+      dX, &
+       XA, &
+       X2A
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       F, &
       F_IL, &
@@ -444,8 +446,10 @@ contains
     select type ( C  =>  FS % Atlas % Chart ( iC ) % Element )
     class is ( Chart_GS_Form )
 
-      call C % SetFieldPointer ( GV ( :, G % CENTER_U ( iD ) ),  X )
-      call C % SetFieldPointer ( GV ( :, G % WIDTH_U  ( iD ) ), dX )
+      call C % SetFieldPointer ( GV ( :, G % CENTER_U ( iD ) ),    X )
+      call C % SetFieldPointer ( GV ( :, G % WIDTH_U  ( iD ) ),   dX )
+      call C % SetFieldPointer ( GV ( :, G % AVERAGE_1_U ( iD ) ), XA )
+      call C % SetFieldPointer ( GV ( :, G % AVERAGE_2_U ( iD ) ), X2A )
       call C % SetFieldPointer ( FV,    F    )
       call C % SetFieldPointer ( FV_IL, F_IL )
       call C % SetFieldPointer ( FV_IR, F_IR )
@@ -458,14 +462,12 @@ contains
                  UseDeviceOption = FS % DeviceMemory )
       case ( 1 )
         call ComputeLinear_CGS_Kernel &
-               ( F, X, dX, X, FS % iaSelected, R % iaSelected, iD, &
+               ( F, X, dX, XA, FS % iaSelected, R % iaSelected, iD, &
                  C % nGhostLayers ( iD ), F_IL, F_IR, &
                  UseDeviceOption = FS % DeviceMemory )
       case ( 2 )
-        !-- FIXME: should not pass ( X ** 2 ) as argument to avoid
-        !          automatic array on stack in offload
         call ComputeParabolic_CGS_Kernel &
-               ( F, X, dX, X, X ** 2, FS % iaSelected, R % iaSelected, iD, & 
+               ( F, X, dX, XA, X2A, FS % iaSelected, R % iaSelected, iD, & 
                  C % nGhostLayers ( iD ), F_IL, F_IR, &
                  UseDeviceOption = FS % DeviceMemory )
       case default

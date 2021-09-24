@@ -10,7 +10,7 @@ module Geometry_F__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_F  = 19, &
+      N_FIELDS_F  = 25, &
       N_VECTORS_F =  0
 
   type, public, extends ( FieldSetForm ) :: Geometry_F_Form
@@ -19,21 +19,27 @@ module Geometry_F__Form
       N_VECTORS_F = N_VECTORS_F
     integer ( KDI ) :: &
       !-- Coordinate fields
-      EDGE_I_U_1   = 0, &
-      EDGE_I_U_2   = 0, &
-      EDGE_I_U_3   = 0, &
-      WIDTH_U_1    = 0, &
-      WIDTH_U_2    = 0, &
-      WIDTH_U_3    = 0, &
-      CENTER_U_1   = 0, &
-      CENTER_U_2   = 0, &
-      CENTER_U_3   = 0
+      EDGE_I_U_1 = 0, &
+      EDGE_I_U_2 = 0, &
+      EDGE_I_U_3 = 0, &
+      WIDTH_U_1  = 0, &
+      WIDTH_U_2  = 0, &
+      WIDTH_U_3  = 0, &
+      CENTER_U_1 = 0, &
+      CENTER_U_2 = 0, &
+      CENTER_U_3 = 0
     integer ( KDI ) :: &
       !-- Finite volume fields
       AREA_I_D_1   = 0, &
       AREA_I_D_2   = 0, &
       AREA_I_D_3   = 0, &
-      VOLUME       = 0
+      VOLUME       = 0, &
+      AVERAGE_1_U_1 = 0, &
+      AVERAGE_1_U_2 = 0, &
+      AVERAGE_1_U_3 = 0, &
+      AVERAGE_2_U_1 = 0, &
+      AVERAGE_2_U_2 = 0, &
+      AVERAGE_2_U_3 = 0
     integer ( KDI ) :: &
       !-- Flat metric fields
       METRIC_F_DD_11 = 0, &
@@ -46,7 +52,9 @@ module Geometry_F__Form
       EDGE_I_U, &
       WIDTH_U, &
       CENTER_U, &
-      AREA_I_D
+      AREA_I_D, &
+      AVERAGE_1_U, &
+      AVERAGE_2_U
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
@@ -74,47 +82,60 @@ module Geometry_F__Form
     interface
       
       module subroutine Compute_FV_R_Kernel &
-               ( W_1, W_2, W_3, nD, A_I_1, A_I_2, A_I_3, V )
+               ( W_1, W_2, W_3, E_I_1, E_I_2, E_I_3, nD, &
+                 A_I_1, A_I_2, A_I_3, V, &
+                 AV_1_1, AV_1_2, AV_1_3, AV_2_1, AV_2_2, AV_2_3 )
         !-- Compute_FiniteVolume_Rectangular_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          W_1, W_2, W_3
+          W_1, W_2, W_3, &
+          E_I_1, E_I_2, E_I_3
         integer ( KDI ), intent ( in ) :: &
           nD
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           A_I_1, A_I_2, A_I_3, &
-          V
+          V, &
+          AV_1_1, AV_1_2, AV_1_3, &
+          AV_2_1, AV_2_2, AV_2_3
       end subroutine Compute_FV_R_Kernel
 
       module subroutine Compute_FV_C_Kernel &
-               ( W_1, W_2, W_3, E_I_1, nD, A_I_1, A_I_2, A_I_3, V )
+               ( W_1, W_2, W_3, E_I_1, E_I_2, E_I_3, nD, &
+                 A_I_1, A_I_2, A_I_3, V, &
+                 AV_1_1, AV_1_2, AV_1_3, AV_2_1, AV_2_2, AV_2_3 )
         !-- Compute_FiniteVolume_Cylindrical_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           W_1, W_2, W_3, &
-          E_I_1
+          E_I_1, E_I_2, E_I_3
         integer ( KDI ), intent ( in ) :: &
           nD
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           A_I_1, A_I_2, A_I_3, &
-          V
+          V, &
+          AV_1_1, AV_1_2, AV_1_3, &
+          AV_2_1, AV_2_2, AV_2_3
       end subroutine Compute_FV_C_Kernel
 
       module subroutine Compute_FV_S_Kernel &
-               ( W_1, W_2, W_3, E_I_1, E_I_2, nD, A_I_1, A_I_2, A_I_3, V )
+               ( W_1, W_2, W_3, E_I_1, E_I_2, E_I_3, nD, &
+                 A_I_1, A_I_2, A_I_3, V, &
+                 AV_1_1, AV_1_2, AV_1_3, AV_2_1, AV_2_2, AV_2_3 )
         !-- Compute_FiniteVolume_Spherical_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           W_1, W_2, W_3, &
-          E_I_1, E_I_2
+          E_I_1, E_I_2, E_I_3
         integer ( KDI ), intent ( in ) :: &
           nD
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           A_I_1, A_I_2, A_I_3, &
-          V
+          V, &
+          AV_1_1, AV_1_2, AV_1_3, &
+          AV_2_1, AV_2_2, AV_2_3
       end subroutine Compute_FV_S_Kernel
 
       module subroutine Compute_M_R_Kernel &
@@ -228,21 +249,35 @@ contains
     FS % AREA_I_D_2      =  11
     FS % AREA_I_D_3      =  12
     FS % VOLUME          =  13
-    FS % METRIC_F_DD_11  =  14
-    FS % METRIC_F_DD_22  =  15
-    FS % METRIC_F_DD_33  =  16
-    FS % METRIC_F_UU_11  =  17
-    FS % METRIC_F_UU_22  =  18
-    FS % METRIC_F_UU_33  =  19
+    FS % AVERAGE_1_U_1   =  14
+    FS % AVERAGE_1_U_2   =  15
+    FS % AVERAGE_1_U_3   =  16
+    FS % AVERAGE_2_U_1   =  17
+    FS % AVERAGE_2_U_2   =  18
+    FS % AVERAGE_2_U_3   =  19
+    FS % METRIC_F_DD_11  =  20
+    FS % METRIC_F_DD_22  =  21
+    FS % METRIC_F_DD_33  =  22
+    FS % METRIC_F_UU_11  =  23
+    FS % METRIC_F_UU_22  =  24
+    FS % METRIC_F_UU_33  =  25
 
     nFields  =  FS % N_FIELDS_F
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
-    FS % EDGE_I_U  =  [ FS % EDGE_I_U_1, FS % EDGE_I_U_2, FS % EDGE_I_U_3 ]
-    FS % WIDTH_U   =  [ FS % WIDTH_U_1,  FS % WIDTH_U_2,  FS % WIDTH_U_3  ]
-    FS % CENTER_U  =  [ FS % CENTER_U_1, FS % CENTER_U_2, FS % CENTER_U_3 ]
-    FS % AREA_I_D  =  [ FS % AREA_I_D_1, FS % AREA_I_D_2, FS % AREA_I_D_3 ]
+    FS % EDGE_I_U  &
+      =  [ FS % EDGE_I_U_1, FS % EDGE_I_U_2, FS % EDGE_I_U_3 ]
+    FS % WIDTH_U  &
+      =  [ FS % WIDTH_U_1, FS % WIDTH_U_2, FS % WIDTH_U_3  ]
+    FS % CENTER_U  &
+      =  [ FS % CENTER_U_1, FS % CENTER_U_2, FS % CENTER_U_3 ]
+    FS % AREA_I_D  &
+      =  [ FS % AREA_I_D_1, FS % AREA_I_D_2, FS % AREA_I_D_3 ]
+    FS % AVERAGE_1_U  &
+      =  [ FS % AVERAGE_1_U_1, FS % AVERAGE_1_U_2, FS % AVERAGE_1_U_3 ]
+    FS % AVERAGE_2_U  &
+      =  [ FS % AVERAGE_2_U_1, FS % AVERAGE_2_U_2, FS % AVERAGE_2_U_3 ]
 
     !-- Field names
 
@@ -266,6 +301,12 @@ contains
           'Area_I_D_2    ', &
           'Area_I_D_3    ', &
           'Volume        ', &
+          'Average_1_U_1 ', &
+          'Average_1_U_2 ', &
+          'Average_1_U_3 ', &
+          'Average_2_U_1 ', &
+          'Average_2_U_2 ', &
+          'Average_2_U_3 ', &
           'Metric_F_DD_11', &
           'Metric_F_DD_22', &
           'Metric_F_DD_33', &
@@ -540,11 +581,20 @@ contains
              ( GV ( :, G % WIDTH_U_1 ), &
                GV ( :, G % WIDTH_U_2 ), &
                GV ( :, G % WIDTH_U_3 ), &
+               GV ( :, G % EDGE_I_U_1 ), &
+               GV ( :, G % EDGE_I_U_2 ), &
+               GV ( :, G % EDGE_I_U_3 ), &
                C % nDimensions, &
                GV ( :, G % AREA_I_D_1 ), &
                GV ( :, G % AREA_I_D_2 ), &
                GV ( :, G % AREA_I_D_3 ), &
-               GV ( :, G % VOLUME ) )
+               GV ( :, G % VOLUME ), &
+               GV ( :, G % AVERAGE_1_U_1 ), &
+               GV ( :, G % AVERAGE_1_U_2 ), &
+               GV ( :, G % AVERAGE_1_U_3 ), &
+               GV ( :, G % AVERAGE_2_U_1 ), &
+               GV ( :, G % AVERAGE_2_U_2 ), &
+               GV ( :, G % AVERAGE_2_U_3 ) )
       call Compute_M_R_Kernel &
              ( GV ( :, G % METRIC_F_DD_11 ), &
                GV ( :, G % METRIC_F_DD_22 ), &
@@ -558,11 +608,19 @@ contains
                GV ( :, G % WIDTH_U_2 ), &
                GV ( :, G % WIDTH_U_3 ), &
                GV ( :, G % EDGE_I_U_1 ), &
+               GV ( :, G % EDGE_I_U_2 ), &
+               GV ( :, G % EDGE_I_U_3 ), &
                C % nDimensions, &
                GV ( :, G % AREA_I_D_1 ), &
                GV ( :, G % AREA_I_D_2 ), &
                GV ( :, G % AREA_I_D_3 ), &
-               GV ( :, G % VOLUME ) )
+               GV ( :, G % VOLUME ), &
+               GV ( :, G % AVERAGE_1_U_1 ), &
+               GV ( :, G % AVERAGE_1_U_2 ), &
+               GV ( :, G % AVERAGE_1_U_3 ), &
+               GV ( :, G % AVERAGE_2_U_1 ), &
+               GV ( :, G % AVERAGE_2_U_2 ), &
+               GV ( :, G % AVERAGE_2_U_3 ) )
       call Compute_M_C_Kernel &
              ( GV ( :, G % CENTER_U_1 ), &
                C % nDimensions, &
@@ -579,11 +637,18 @@ contains
                GV ( :, G % WIDTH_U_3 ), &
                GV ( :, G % EDGE_I_U_1 ), &
                GV ( :, G % EDGE_I_U_2 ), &
+               GV ( :, G % EDGE_I_U_3 ), &
                C % nDimensions, &
                GV ( :, G % AREA_I_D_1 ), &
                GV ( :, G % AREA_I_D_2 ), &
                GV ( :, G % AREA_I_D_3 ), &
-               GV ( :, G % VOLUME ) )
+               GV ( :, G % VOLUME ), &
+               GV ( :, G % AVERAGE_1_U_1 ), &
+               GV ( :, G % AVERAGE_1_U_2 ), &
+               GV ( :, G % AVERAGE_1_U_3 ), &
+               GV ( :, G % AVERAGE_2_U_1 ), &
+               GV ( :, G % AVERAGE_2_U_2 ), &
+               GV ( :, G % AVERAGE_2_U_3 ) )
       call Compute_M_S_Kernel &
              ( GV ( :, G % CENTER_U_1 ), &
                GV ( :, G % CENTER_U_2 ), &
