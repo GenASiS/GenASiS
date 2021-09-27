@@ -133,7 +133,7 @@ contains
 
     RS % CurrentSet  =>  CS
 
-    RS % ReconstructedSet  =  'FLUXES'
+    RS % ReconstructedSet  =  'PRIMITIVE'
     if ( present ( ReconstructedSetOption ) ) &
       RS % ReconstructedSet  =  ReconstructedSetOption
     call PROGRAM_HEADER % GetParameter &
