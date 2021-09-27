@@ -59,13 +59,16 @@ contains
       end select
 
       AV_1_1 ( iV )  =  ( X_I  +  X_O )  /  2.0_KDR
-      AV_2_1 ( iV )  =  ( X_I ** 2  +  X_I * X_O  +  X_O ** 2 )  /  3.0_KDR
+!      AV_2_1 ( iV )  =  ( X_I ** 2  +  X_I * X_O  +  X_O ** 2 )  /  3.0_KDR
+      AV_2_1 ( iV )  =  ( ( X_I  +  X_O )  /  2.0_KDR ) ** 2
 
       AV_1_2 ( iV )  =  ( Y_I  +  Y_O )  /  2.0_KDR
-      AV_2_2 ( iV )  =  ( Y_I ** 2  +  Y_I * Y_O  +  Y_O ** 2 )  /  3.0_KDR
+!      AV_2_2 ( iV )  =  ( Y_I ** 2  +  Y_I * Y_O  +  Y_O ** 2 )  /  3.0_KDR
+      AV_2_2 ( iV )  =  ( ( Y_I  +  Y_O )  /  2.0_KDR ) ** 2
 
       AV_1_3 ( iV )  =  ( Z_I  +  Z_O )  /  2.0_KDR
-      AV_2_3 ( iV )  =  ( Z_I ** 2  +  Z_I * Z_O  +  Z_O ** 2 )  /  3.0_KDR
+!      AV_2_3 ( iV )  =  ( Z_I ** 2  +  Z_I * Z_O  +  Z_O ** 2 )  /  3.0_KDR
+      AV_2_3 ( iV )  =  ( ( Z_I  +  Z_O )  /  2.0_KDR ) ** 2
 
     end do
     !$OMP end parallel do
@@ -126,14 +129,18 @@ contains
 
       AV_1_1 ( iV )  =  2.0_KDR  *  ( RP_O ** 3  -  RP_I ** 3 )  &
                         /  ( 3.0_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) )
-      AV_2_1 ( iV )  =  2.0_KDR  *  ( RP_O ** 4  -  RP_I ** 4 )  &
-                        /  ( 4.0_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) )
+!      AV_2_1 ( iV )  =  2.0_KDR  *  ( RP_O ** 4  -  RP_I ** 4 )  &
+!                        /  ( 4.0_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) )
+      AV_2_1 ( iV )  =  ( 2.0_KDR  *  ( RP_O ** 3  -  RP_I ** 3 )  &
+                          /  ( 3.0_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) ) ) ** 2
 
-      AV_1_2 ( iV )  =  ( Z_I  +  Z_O )  /  2.0_KDR
-      AV_2_2 ( iV )  =  ( Z_I ** 2  +  Z_I * Z_O  +  Z_O ** 2 )  /  3.0_KDR
+      AV_1_2 ( iV )  =    ( Z_I  +  Z_O )  /  2.0_KDR
+!      AV_2_2 ( iV )  =  ( Z_I ** 2  +  Z_I * Z_O  +  Z_O ** 2 )  /  3.0_KDR
+      AV_2_2 ( iV )  =  ( ( Z_I  +  Z_O )  /  2.0_KDR ) ** 2
 
-      AV_1_3 ( iV )  =  ( Ph_I  +  Ph_O )  /  2.0_KDR
-      AV_2_3 ( iV )  =  ( Ph_I ** 2  +  Ph_I * Ph_O  +  Ph_O ** 2 )  /  3.0_KDR
+      AV_1_3 ( iV )  =    ( Ph_I  +  Ph_O )  /  2.0_KDR
+!      AV_2_3 ( iV )  =  ( Ph_I ** 2  +  Ph_I * Ph_O  +  Ph_O ** 2 )  /  3.0_KDR
+      AV_2_3 ( iV )  =  ( ( Ph_I  +  Ph_O )  /  2.0_KDR ) ** 2
 
     end do
     !$OMP end parallel do
@@ -206,25 +213,39 @@ contains
                          *  ( C_I  -  C_O )  *  dPh
       end select
 
+!      AV_1_1 ( iV )  =    ( R_I  +  R_O )  /  2.0_KDR
+!      AV_2_1 ( iV )  =  ( ( R_I  +  R_O )  /  2.0_KDR ) ** 2
+
       AV_1_1 ( iV )  =  3.0_KDR  *  ( R_O ** 4  -  R_I ** 4 )  &
                         /  ( 4.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) )
-      AV_2_1 ( iV )  =  3.0_KDR  *  ( R_O ** 5  -  R_I ** 5 )  &
-                        /  ( 5.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) )
+!      AV_2_1 ( iV )  =  3.0_KDR  *  ( R_O ** 5  -  R_I ** 5 )  &
+!                        /  ( 5.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) )
+      AV_2_1 ( iV )  =  ( 3.0_KDR  *  ( R_O ** 4  -  R_I ** 4 )  &
+                          /  ( 4.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) ) ) ** 2
 
       if ( nD  >  1 ) then
+
+!        AV_1_2 ( iV )  =    ( Th_I  +  Th_O )  /  2.0_KDR
+!        AV_2_2 ( iV )  =  ( ( Th_I  +  Th_O )  /  2.0_KDR ) ** 2
+
         AV_1_2 ( iV )  =  ( S_O  -  S_I  +  Th_I * C_I  -  Th_O * C_O )  &
                           /  ( C_I  -  C_O )
-        AV_2_2 ( iV )  =  ( 2.0_KDR * S_O  -  2.0_KDR * S_I  &
-                            +  ( Th_I ** 2  -  2.0_KDR ) * C_I  &
-                            -  ( Th_O ** 2  -  2.0_KDR ) * C_O )  &
-                          /  ( C_I  -  C_O )
+        ! AV_2_2 ( iV )  =  ( 2.0_KDR * S_O  -  2.0_KDR * S_I  &
+        !                     +  ( Th_I ** 2  -  2.0_KDR ) * C_I  &
+        !                     -  ( Th_O ** 2  -  2.0_KDR ) * C_O )  &
+        !                   /  ( C_I  -  C_O )
+        AV_2_2 ( iV )  =  ( ( S_O  -  S_I  +  Th_I * C_I  -  Th_O * C_O )  &
+                            /  ( C_I  -  C_O ) ) ** 2
+
       end if
 
       if ( nD  >  2 ) then
-        AV_1_3 ( iV )  =  ( Ph_I  +  Ph_O )  &
-                          /  2.0_KDR
-        AV_2_3 ( iV )  =  ( Ph_I ** 2  +  Ph_I * Ph_O  +  Ph_O ** 2 )  &
-                          /  3.0_KDR
+
+        AV_1_3 ( iV )  =    ( Ph_I  +  Ph_O )  /  2.0_KDR
+!        AV_2_3 ( iV )  =  ( Ph_I ** 2  +  Ph_I * Ph_O  +  Ph_O ** 2 )  &
+!                          /  3.0_KDR
+        AV_2_3 ( iV )  =  ( ( Ph_I  +  Ph_O )  /  2.0_KDR ) ** 2
+
       end if
 
     end do
