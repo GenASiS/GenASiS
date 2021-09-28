@@ -17,7 +17,7 @@ module Fluid_D__Form
       N_BALANCED_D  = 4
 
   type, public, extends ( CurrentSetForm ) :: Fluid_D_Form
-    integer ( KDI ), private :: &
+    integer ( KDI ) :: &
       N_FIELDS_D    = N_FIELDS_D, &
       N_VECTORS_D   = N_VECTORS_D, &
       N_PRIMITIVE_D = N_PRIMITIVE_D, &

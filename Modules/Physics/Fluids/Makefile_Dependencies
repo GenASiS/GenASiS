@@ -14,9 +14,27 @@ Fluid_D__Kernel.o: \
   Fluid_D__Form.o \
   Fluid_D__Kernel.f90
 
+Fluid_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_D__Form.o \
+  Fluid_P__Form.f90
+
+Fluid_P_I__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P__Form.o \
+  Fluid_P__Form.f90
+
 Fluids.o: \
   Units_F__Form.o \
   Fluid_D__Form.o \
+  Fluid_P__Form.o \
+  Fluid_P_I__Form.o \
   Fluids.f90
 
 Fluids.a: $(FLUIDS)
