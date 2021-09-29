@@ -1,11 +1,24 @@
 PATH_GENASIS = ../../../../..
 
+#-- Do not link to HDF5 or Lapack
+HDF5_DIR =
+LAPACK_DIR =
+
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
+  DeviceInterface_Test \
   AllocateDevice_Command_Test AssociateHost_Command_Test \
   DeallocateDevice_Command_Test DisassociateHost_Command_Test \
-  UpdateDevice_Command_Test AllocateHost_Command_Test
+  UpdateDevice_Command_Test AllocateHost_Command_Test \
+  DeviceAddress_Function_Test 
+
+DeviceInterface_Test: DeviceInterface_Test.o
+	$(LINK) $(FLAGS) \
+          -o DeviceInterface_Test_$(MACHINE) \
+          DeviceInterface_Test.o \
+          Device_C_OMP.o $(Device_Interface).o Device_OMP.o \
+          $(SPECIFIERS) $(LIBRARIES)
 
 AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
 	$(LINK) $(FLAGS) \
@@ -50,7 +63,7 @@ AllocateHost_Command_Test: AllocateHost_Command_Test.o
           AssociateHost_Command.o DisassociateHost_Command.o \
           UpdateDevice_Command.o UpdateHost_Command.o \
           AllocateHost_Command.o DeallocateHost_Command.o Device_C_OMP.o \
-          Device_CUDA.o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
+          $(Device_Interface).o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
 
 DeviceAddress_Function_Test: DeviceAddress_Function_Test.o
 	$(LINK) $(FLAGS) \
@@ -58,7 +71,7 @@ DeviceAddress_Function_Test: DeviceAddress_Function_Test.o
           DeviceAddress_Function_Test.o \
           AllocateDevice_Command.o AssociateHost_Command.o \
           OnDevice_Function.o DeviceAddress_Function.o Device_C_OMP.o \
-          Device_CUDA.o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
+          $(Device_Interface).o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
 
 
 clean:
@@ -74,6 +87,13 @@ clobber: clean
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
 include $(PATH_DEVICES)/Makefile_Dependencies
+
+DeviceInterface_Test.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  $(Device_Interface).o \
+  Device_OMP.o \
+  DeviceInterface_Test.f90
 
 AllocateDevice_Command_Test.o: \
   AllocateDevice_Command.o \

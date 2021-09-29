@@ -67,11 +67,12 @@ program AllocateHost_Command_Test
   
   implicit none
   
+  integer ( KDI ), parameter :: &
+    N_VALUES = 256 ** 3, &
+    N_VARIABLES = 20
   integer ( KDI ) :: &
     iV, &
-    iVrbl, &
-    nValues = 2000, &
-    nVrbls
+    iVrbl
   real ( KDR ) :: &
     StartTime, &
     TotalTime, &
@@ -91,7 +92,7 @@ program AllocateHost_Command_Test
   
   call AllocateHost ( Pi_Value_1D, [ 10 ] )
   call AllocateHost ( Pi_Value_2D, [ 5, 10 ] )
-  
+
   Pi_Value_1D = [ ( iV * 2, iV = 1, size ( Pi_Value_1D ) ) ]
   Pi_Value_2D = reshape ( [ ( iV * 3, iV = 1, size ( Pi_Value_2D ) ) ], [ 5, 10 ] )
   
@@ -101,8 +102,9 @@ program AllocateHost_Command_Test
   call DeallocateHost ( Pi_Value_2D )
   call DeallocateHost ( Pi_Value_1D )
   
-  call AllocateHost ( Pi_Value_2D, [ nValues, nValues ] )
-  allocate ( Pa_Value_2D ( nValues, nValues ) )
+  
+  call AllocateHost ( Pi_Value_2D, [ N_VALUES, N_VARIABLES ] )
+  allocate ( Pa_Value_2D ( N_VALUES, N_VARIABLES ) )
   
   call random_number ( Pi_Value_2D )
   call random_number ( Pa_Value_2D )
@@ -112,18 +114,19 @@ program AllocateHost_Command_Test
   call AllocateDevice ( Pa_Value_2D, d_Pa_Value_2D )
   
   !-- Multiple 1D memory on device
-  nVrbls = size ( Pi_Value_2D, dim = 2 )
-  allocate ( d_Pi_Value_1D ( nVrbls ) )
-  do iVrbl = 1, nVrbls
+  allocate ( d_Pi_Value_1D ( N_VARIABLES ) )
+  do iVrbl = 1, N_VARIABLES
     call AllocateDevice ( Pi_Value_2D ( :, iVrbl ), d_Pi_Value_1D ( iVrbl ) )
   end do
   
-  DataSize_GB = 1.0_KDR * nValues ** 2 * 8 / 1.0e9_KDR
+  DataSize_GB = 1.0_KDR * N_VALUES * N_VARIABLES * 8 / 1.0e9_KDR
   print*, 'Data size (GB)', DataSize_GB
+  print*, ''
    
   !-- Timing pinned memory update Host-to-Device
   StartTime = OMP_GET_WTIME ( )
   call UpdateDevice ( Pi_Value_2D, d_Pi_Value_2D )
+  !$OMP barrier
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Pinned memory Data Transfer'
   print*, 'Host-to-Device Time (s)        :', TotalTime
@@ -131,21 +134,23 @@ program AllocateHost_Command_Test
   print*, ''
   
   !-- Timing pageable memory update Host-to-Device
-!  StartTime = OMP_GET_WTIME ( )
-!  call UpdateDevice ( Pa_Value_2D, d_Pa_Value_2D )
-!  TotalTime = OMP_GET_WTIME ( ) - StartTime
-!  print*, 'Pageable memory Data Transfer'
-!  print*, 'Host-to-Device Time (s)        :', TotalTime
-!  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
-!  print*, ''
+  StartTime = OMP_GET_WTIME ( )
+  call UpdateDevice ( Pa_Value_2D, d_Pa_Value_2D )
+  !$OMP barrier
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Pageable memory Data Transfer'
+  print*, 'Host-to-Device Time (s)        :', TotalTime
+  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, ''
   
   !-- Timing pageable memory update Host-to-Device loop
   StartTime = OMP_GET_WTIME ( )
   !$OMP parallel do
-  do iVrbl = 1, nVrbls
+  do iVrbl = 1, N_VARIABLES
     call UpdateDevice ( Pi_Value_2D ( :, iVrbl ), d_Pi_Value_1D ( iVrbl ) )
   end do
   !$OMP end parallel do
+  !$OMP barrier
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Pinnned memory Data Transfer Loop'
   print*, 'Host-to-Device Time (s)        :', TotalTime
@@ -155,6 +160,7 @@ program AllocateHost_Command_Test
   !-- Timing pinned memory update Device-To-Host
   StartTime = OMP_GET_WTIME ( )
   call UpdateHost ( d_Pi_Value_2D, Pi_Value_2D )
+  !$OMP barrier
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Pinned memory Data Transfer'
   print*, 'Device-to-Host Time (s)        :', TotalTime
@@ -162,21 +168,23 @@ program AllocateHost_Command_Test
   print*, ''
   
   !-- Timing pageable memory update Device-To-Host
-!  StartTime = OMP_GET_WTIME ( )
-!  call UpdateHost ( d_Pa_Value_2D, Pa_Value_2D )
-!  TotalTime = OMP_GET_WTIME ( ) - StartTime
-!  print*, 'Pageable memory Data Transfer'
-!  print*, 'Device-to-Host Time (s)        :', TotalTime
-!  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
-!  print*, ''
+  StartTime = OMP_GET_WTIME ( )
+  call UpdateHost ( d_Pa_Value_2D, Pa_Value_2D )
+  !$OMP barrier
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Pageable memory Data Transfer'
+  print*, 'Device-to-Host Time (s)        :', TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, ''
   
   !-- Timing pageable memory update Device-To-Host Loop
   StartTime = OMP_GET_WTIME ( )
   !$OMP parallel do
-  do iVrbl = 1, nVrbls
+  do iVrbl = 1, N_VARIABLES
     call UpdateHost ( d_Pi_Value_1D ( iVrbl ), Pi_Value_2D ( :, iVrbl ) )
   end do
   !$OMP end parallel do
+  !$OMP barrier
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Pinned memory Data Transfer Loop'
   print*, 'Device-to-Host Time (s)        :', TotalTime
@@ -185,7 +193,7 @@ program AllocateHost_Command_Test
   
   call DeallocateDevice ( d_Pa_Value_2D )
   call DeallocateDevice ( d_Pi_Value_2D )
-  do iVrbl = 1, nVrbls 
+  do iVrbl = 1, N_VARIABLES 
     call DeallocateDevice ( d_Pi_Value_1D ( iVrbl ) )
   end do
   
