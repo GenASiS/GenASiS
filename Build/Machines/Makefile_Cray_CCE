@@ -48,27 +48,19 @@ endif
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 #-- The following stanzas check whether we are building with CUDA or HIP
-ifeq ($(CRAY_ACCEL_TARGET), nvidia70)
+ifeq ( $(findstring nvidia,${CRAY_ACCEL_TARGET}), nvidia)
   DEVICE_CUDA    = 1
   DEVICE_COMPILE = nvcc -c
   INCLUDE_DEVICE = -I${CUDA_ROOT}/include
   LIBRARY_DEVICE = -L${CUDA_ROOT}/lib64 -lcudart
 endif
 
-ifeq ($(CRAY_ACCEL_TARGET), amd_gfx908)
+ifeq ($(findstring amd,${CRAY_ACCEL_TARGET}), amd)
   DEFINES       += -D__HIP_PLATFORM_HCC__
   DEVICE_HIP     = 1
   DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
   INCLUDE_DEVICE = -I${ROCM_PATH}/include
   LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lamdhip64
-endif
-
-ifeq ($(CRAY_ACCEL_TARGET), amd_gfx906)
-  DEFINES       += -D__HIP_PLATFORM_HCC__
-  DEVICE_HIP     = 1
-  DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
-  INCLUDE_DEVICE = -I${ROCM_PATH}/include
-  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lhcc
 endif
 
 ifeq ($(ENABLE_OMP), 1)
