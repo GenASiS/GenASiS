@@ -1,5 +1,9 @@
 PATH_GENASIS = ../../../../..
 
+#-- Avoid linking in HDF5 and LAPACK
+LAPACK_DIR = 
+HDF5_DIR = 
+
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
@@ -56,7 +60,7 @@ PROGRAM_HEADER_Singleton_Test: Specifiers.a Devices.a DataManagement.a \
           PROGRAM_HEADER_Singleton_Test.o PROGRAM_HEADER_Singleton.o \
           InitializeRandomSeed_Command.o \
           GetMemoryUsage_Command.o Timer_Form.o WallTime_Function.o \
-          CommandLineOptions_Form.o \
+          CommandLineOptions_Form.o InitializeRandomSeed_Command.o \
           FileSystem.a MessagePassing.a Display.a DataManagement.a \
           Devices.a Specifiers.a $(LIBRARIES)
 
