@@ -373,10 +373,10 @@ contains
 
     class ( Laplacian_M_ASCG_Form ), intent ( in ) :: &
       LM
-    real ( KDR ), dimension ( -oTheta + 1 : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       Theta_E, &  !-- PolarAngle
       Theta_C
-    real ( KDR ), dimension ( -oPhi + 1 : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       Phi_W, &    !-- AzimuthalAngle
       Phi_C
     integer ( KDI ), intent ( in ) :: &
@@ -405,11 +405,11 @@ contains
 
     if ( nTheta > 1 ) then
       do iTheta  =  1, nTheta
-        Th_I  =  Theta_E ( iTheta )
-        Th_O  =  Theta_E ( iTheta + 1 )
+        Th_I  =  Theta_E ( oTheta + iTheta )
+        Th_O  =  Theta_E ( oTheta + iTheta + 1 )
         if ( nPhi > 1 ) then
           do iPhi  =  1, nPhi
-            dPh  =  Phi_W ( iPhi )
+            dPh  =  Phi_W ( oPhi + iPhi )
             dSA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
           end do !-- iPhi
         else !-- axisymmetry
@@ -425,11 +425,14 @@ contains
       do iL  =  iM, L
         if ( nTheta > 1 ) then
           do iTheta  =  1, nTheta
-            P  =  LM % AssociatedLegendre ( cos ( Theta_C ( iTheta ) ), iL, iM )
+            P  =  LM % AssociatedLegendre &
+                         ( cos ( Theta_C ( oTheta + iTheta ) ), iL, iM )
             if ( nPhi > 1 ) then
               do iPhi  =  1, nPhi
-                AF ( iTheta, iPhi, iA     )  =  P * cos ( iM * Phi_C ( iPhi ) )
-                AF ( iTheta, iPhi, iA + 1 )  =  P * sin ( iM * Phi_C ( iPhi ) )
+                AF ( iTheta, iPhi, iA     )  &
+                  =  P * cos ( iM * Phi_C ( oPhi + iPhi ) )
+                AF ( iTheta, iPhi, iA + 1 )  &
+                  =  P * sin ( iM * Phi_C ( oPhi + iPhi ) )
               end do !-- iPhi
             else !-- axisymmetry
               AF ( iTheta, 1, iA     )  =  P
@@ -451,7 +454,7 @@ contains
   subroutine ComputeRadialFunctions &
                ( R_E, R_C, L, M, nR, oR, dR33, RF_R, RF_I )
 
-    real ( KDR ), dimension ( -oR + 1 : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       R_E, &
       R_C
     integer ( KDI ), intent ( in ) :: &
@@ -472,8 +475,8 @@ contains
       R_I, R_O
 
     do iR  =  1, nR
-      R_I  =  R_E ( iR )
-      R_O  =  R_E ( iR + 1 )
+      R_I  =  R_E ( oR + iR )
+      R_O  =  R_E ( oR + iR + 1 )
       dR33 ( iR, 1 )  =  ( R_O ** 3  -  R_I ** 3 )  /  3.0_KDR
     end do !-- nRC
 
@@ -481,10 +484,10 @@ contains
     do iM  =  0, M
       do iL  =  iM, L
         do iR  =  1, nR
-          RF_R ( iR, iA     )  =  R_C ( iR ) ** iL
-          RF_R ( iR, iA + 1 )  =  R_C ( iR ) ** iL
-          RF_I ( iR, iA     )  =  R_C ( iR ) ** ( - ( iL + 1 ) )
-          RF_I ( iR, iA + 1 )  =  R_C ( iR ) ** ( - ( iL + 1 ) ) 
+          RF_R ( iR, iA     )  =  R_C ( oR + iR ) ** iL
+          RF_R ( iR, iA + 1 )  =  R_C ( oR + iR ) ** iL
+          RF_I ( iR, iA     )  =  R_C ( oR + iR ) ** ( - ( iL + 1 ) )
+          RF_I ( iR, iA + 1 )  =  R_C ( oR + iR ) ** ( - ( iL + 1 ) ) 
         end do !-- iR
         iA  =  iA + 2 !-- Cos, Sin
       end do !-- iL
