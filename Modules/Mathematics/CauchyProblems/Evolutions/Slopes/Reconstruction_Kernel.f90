@@ -43,7 +43,7 @@ contains
     
     if ( UseDevice ) then
     
-      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iF, iF_R, iaVP )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
@@ -65,7 +65,7 @@ contains
           end do !-- jV
         end do !-- kV
       end do !-- iS
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
       
     else !-- use host
               
@@ -136,8 +136,8 @@ contains
     iaS ( iD )  =  1
     
     if ( UseDevice ) then
-    
-      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
       !$OMP private ( xAM, xAC, xAP, xI, xO, c0, c1 )
@@ -219,7 +219,7 @@ contains
           end do !-- jV
         end do !-- kV
       end do !-- iS
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
 
     else !-- use host
               
@@ -357,7 +357,7 @@ contains
 
     if ( UseDevice ) then
     
-      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
       !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, xE ) &
@@ -538,8 +538,8 @@ contains
           end do !-- jV
         end do !-- kV
       end do !-- iS
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-      
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
+    
     else !-- use host
               
       !$OMP parallel do collapse ( 4 ) &

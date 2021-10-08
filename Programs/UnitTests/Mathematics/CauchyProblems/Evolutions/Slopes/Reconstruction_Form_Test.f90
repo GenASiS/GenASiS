@@ -12,6 +12,10 @@ program Reconstruction_Form_Test
     nCompute
   character ( 1 ), dimension ( 3 ) :: &
     D  =  [ 'X', 'Y', 'Z' ]
+  logical ( KDL ) :: &
+    DeviceMemory, &
+    PinnedMemory, &
+    DevicesCommunicate
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( TimerForm ), pointer :: &
@@ -43,8 +47,22 @@ program Reconstruction_Form_Test
   call A % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
+  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+  PinnedMemory        =  DeviceMemory
+  DevicesCommunicate  =  DeviceMemory
+  call PROGRAM_HEADER % GetParameter &
+         ( PinnedMemory, 'PinnedMemory' )
+  call PROGRAM_HEADER % GetParameter &
+         ( DevicesCommunicate, 'DevicesCommunicate' )
+
   allocate ( FS )
-  call FS % Initialize ( A )
+  call FS % Initialize &
+         ( A, &
+           DeviceMemoryOption = DeviceMemory, &
+           PinnedMemoryOption = PinnedMemory, &
+           DevicesCommunicateOption = DevicesCommunicate )
   do iD  =  1, 3
     call FS % SetBoundaryConditionsFace &
            ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
@@ -73,7 +91,11 @@ program Reconstruction_Form_Test
   end do !-- iD
 
   allocate ( G )
-  call G % Initialize ( A )
+  call G % Initialize &
+         ( A, &
+           DeviceMemoryOption = DeviceMemory, &
+           PinnedMemoryOption = PinnedMemory, &
+           DevicesCommunicateOption = DevicesCommunicate )
   call G % SetStream ( S )
 
   allocate ( R_0 )
@@ -106,6 +128,9 @@ program Reconstruction_Form_Test
   do iD = 1, nD
     call SetReference ( FS_I ( iD ), G, iD )
   end do !-- iD
+  
+  call FS % UpdateDevice ( )
+  call G  % UpdateDevice ( )
 
   nCompute  =  1000
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
@@ -209,7 +234,7 @@ contains
     end associate !-- GV, etc.
     end associate !-- C
     end select !-- A
-
+    
   end subroutine SetWave
 
 
@@ -278,6 +303,9 @@ contains
         call R % Compute ( iC = 1, iD = iD )
       end do 
       call T % Stop ( )
+      
+      call R % Output_IL % UpdateHost ( )
+      call R % Output_IR % UpdateHost ( )
 
       call CompareFieldSets ( R % Output_IL, FS_I ( iD ), iD )
       call CompareFieldSets ( R % Output_IR, FS_I ( iD ), iD )

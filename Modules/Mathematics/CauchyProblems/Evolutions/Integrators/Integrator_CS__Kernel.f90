@@ -36,7 +36,7 @@ contains
       if ( UseDevice ) then
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse )
+        !$OMP& reduction ( max : dT_Inverse ) MAP_DT_INVERSE 
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -68,7 +68,7 @@ contains
       if ( UseDevice ) then
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse )
+        !$OMP& reduction ( max : dT_Inverse ) MAP_DT_INVERSE
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -106,7 +106,7 @@ contains
       if ( UseDevice ) then
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse )
+        !$OMP& reduction ( max : dT_Inverse ) MAP_DT_INVERSE
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &

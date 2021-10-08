@@ -4,6 +4,7 @@ include $(PATH_GEOMETRIES)/Makefile_ObjectFiles
 include $(PATH_FIELD_SETS)/Makefile_ObjectFiles
 
 FIELDS = \
+  Fields.o \
   $(CURRENT_SETS) \
   $(CALCULUS) \
   $(GEOMETRIES) \
