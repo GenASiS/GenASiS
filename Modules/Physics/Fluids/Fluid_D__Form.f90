@@ -37,7 +37,7 @@ module Fluid_D__Form
       VELOCITY_U, &
       MOMENTUM_DENSITY_D
     real ( KDR ) :: &
-      BaryonMassReference, &
+      BaryonMass, &
       BaryonDensityMin
   contains
     procedure, private, pass :: &
@@ -372,9 +372,9 @@ contains
     !-- Parameters
 
     if ( Units_F ( 1 ) % BaryonMass % Number  ==  1.0_KDR ) then
-      F % BaryonMassReference  =  1.0_KDR
+      F % BaryonMass  =  1.0_KDR
     else
-      F % BaryonMassReference  =  CONSTANT % ATOMIC_MASS_UNIT
+      F % BaryonMass  =  CONSTANT % ATOMIC_MASS_UNIT
     end if
 
     F % BaryonDensityMin  =  sqrt ( tiny ( 0.0_KDR ) )
@@ -424,6 +424,9 @@ contains
 
     call FS % CurrentSetForm % Show ( )
 
+    call Show ( FS % BaryonMass, &
+                FS % Unit ( FS % BARYON_MASS, 1 ), 'BaryonMass', &
+                FS % IGNORABILITY )
     call Show ( FS % BaryonDensityMin, &
                 FS % Unit ( FS % BARYON_DENSITY_C, 1 ), 'BaryonDensityMin', &
                 FS % IGNORABILITY )
@@ -470,7 +473,7 @@ contains
 
       associate &
         (   CSV  =>  FS_CS % Storage ( iC ) % Value, &
-          M_Ref  =>  CS    % BaryonMassReference, &
+          M_Ref  =>  CS    % BaryonMass, &
           N_Min  =>  CS    % BaryonDensityMin )
       associate &
         ( M    =>  CSV ( :, CS % BARYON_MASS ), &
@@ -542,7 +545,7 @@ contains
 
       associate &
         (   CSV  =>  CS % Storage ( iC ) % Value, &
-          M_Ref  =>  CS % BaryonMassReference, &
+          M_Ref  =>  CS % BaryonMass, &
           N_Min  =>  CS % BaryonDensityMin )
       associate &
         ( M    =>  CSV ( :, CS % BARYON_MASS ), &

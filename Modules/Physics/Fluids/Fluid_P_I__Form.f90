@@ -124,6 +124,8 @@ contains
              nFieldsOption = nFieldsOption, &
              IgnorabilityOption = IgnorabilityOption )
 
+    !-- Parameters
+
     F % AdiabaticIndex  =  1.4_KDR
     call PROGRAM_HEADER % GetParameter &
            ( F % AdiabaticIndex, 'AdiabaticIndex' )
