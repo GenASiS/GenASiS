@@ -204,7 +204,7 @@ contains
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
     type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
-      Unit
+      FieldUnit
     character ( LDL ) :: &
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -267,29 +267,29 @@ contains
     associate ( nC  =>  G % Atlas % nCharts )
 
     if ( present ( UnitOption ) ) then
-      allocate ( Unit, source = UnitOption )
+      allocate ( FieldUnit, source = UnitOption )
     else
-      allocate ( Unit ( nFields, nC ) )
+      allocate ( FieldUnit ( nFields, nC ) )
     end if !-- FieldOption
 
     do iC  =  1, nC
-      Unit ( F % BARYON_DENSITY_C, iC ) &
+      FieldUnit ( F % BARYON_DENSITY_C, iC ) &
         =  Units_F ( iC ) % NumberDensity
-      Unit ( F % BARYON_DENSITY_B, iC ) &
+      FieldUnit ( F % BARYON_DENSITY_B, iC ) &
         =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % NumberDensity
-      Unit ( F % BARYON_MASS, iC ) &
+      FieldUnit ( F % BARYON_MASS, iC ) &
         =  Units_F ( iC ) % BaryonMass
-      Unit ( F % VELOCITY_U_1, iC ) &
+      FieldUnit ( F % VELOCITY_U_1, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 1 )
-      Unit ( F % VELOCITY_U_2, iC ) &
+      FieldUnit ( F % VELOCITY_U_2, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 2 )
-      Unit ( F % VELOCITY_U_3, iC ) &
+      FieldUnit ( F % VELOCITY_U_3, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 3 )
-      Unit ( F % MOMENTUM_DENSITY_D_1, iC ) &
+      FieldUnit ( F % MOMENTUM_DENSITY_D_1, iC ) &
         =  Units_F ( iC ) % MomentumDensity_D ( 1 )
-      Unit ( F % MOMENTUM_DENSITY_D_2, iC ) &
+      FieldUnit ( F % MOMENTUM_DENSITY_D_2, iC ) &
         =  Units_F ( iC ) % MomentumDensity_D ( 2 )
-      Unit ( F % MOMENTUM_DENSITY_D_3, iC ) &
+      FieldUnit ( F % MOMENTUM_DENSITY_D_3, iC ) &
         =  Units_F ( iC ) % MomentumDensity_D ( 3 )
     end do !-- iC
 
@@ -362,7 +362,7 @@ contains
              FieldOption = Field, &
              VectorOption = Vector, &
              NameOption = Name, &
-             UnitOption = Unit, &
+             UnitOption = FieldUnit, &
              VectorIndicesOption = VectorIndices, &
              iaPrimitiveOption = iaPrimitive, &
              iaBalancedOption = iaBalanced, &
@@ -371,7 +371,7 @@ contains
 
     !-- Parameters
 
-    if ( Units_F ( 1 ) % BaryonMass % Number  ==  1.0_KDR ) then
+    if ( Units_F ( 1 ) % BaryonMass  ==  UNIT % IDENTITY ) then
       F % BaryonMass  =  1.0_KDR
     else
       F % BaryonMass  =  CONSTANT % ATOMIC_MASS_UNIT

@@ -24,6 +24,7 @@ module Fluid_P_I__Form
       N_FIELDS_I    = N_FIELDS_I, &
       N_VECTORS_I   = N_VECTORS_I
     real ( KDR ) :: &
+      BoltzmannConstant, &
       AdiabaticIndex!, &
     !   MeanMolecularWeight, &
     !   SpecificHeatVolume, &  !-- per baryon
@@ -126,6 +127,12 @@ contains
 
     !-- Parameters
 
+    if ( Units_F ( 1 ) % Temperature  ==  UNIT % IDENTITY ) then
+      F % BoltzmannConstant  =  1.0_KDR
+    else
+      F % BoltzmannConstant  =  CONSTANT % BOLTZMANN
+    end if
+
     F % AdiabaticIndex  =  1.4_KDR
     call PROGRAM_HEADER % GetParameter &
            ( F % AdiabaticIndex, 'AdiabaticIndex' )
@@ -156,6 +163,9 @@ contains
 
     call FS % Fluid_D_Form % Show ( )
 
+    call Show ( FS % BoltzmannConstant, &
+                FS % Unit ( FS % ENTROPY_PER_BARYON, 1 ), &
+                'BoltzmannConstant', FS % IGNORABILITY )
     call Show ( FS % AdiabaticIndex, 'AdiabaticIndex', FS % IGNORABILITY )
 
   end subroutine Show_FS

@@ -166,10 +166,8 @@ contains
         =  Units_F ( iC ) % EnergyDensity
       FieldUnit ( F % TEMPERATURE, iC ) &
         =  Units_F ( iC ) % Temperature
-      if ( Units_F ( iC ) % Temperature % Label /= '' ) then
-        FieldUnit ( F % ENTROPY_PER_BARYON, iC ) &
-          =  UNIT % BOLTZMANN
-      end if
+      FieldUnit ( F % ENTROPY_PER_BARYON, iC ) &
+        =  Units_F ( iC ) % Energy  /  Units_F ( iC ) % Temperature
       FieldUnit ( F % SOUND_SPEED, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 1 )
       FieldUnit ( F % MACH_NUMBER, iC ) &
