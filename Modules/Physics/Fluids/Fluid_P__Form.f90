@@ -37,8 +37,6 @@ module Fluid_P__Form
     procedure, private, pass :: &
       InitializeAllocate_F
   !   procedure, public, pass :: &
-  !     SetPrimitiveConservedTemplate_P
-  !   procedure, public, pass :: &
   !     ComputeFromInitial
   !   procedure ( CFT ), public, pass ( C ), deferred :: &
   !     ComputeFromTemperature

@@ -24,19 +24,16 @@ module Fluid_P_I__Form
       N_FIELDS_I    = N_FIELDS_I, &
       N_VECTORS_I   = N_VECTORS_I
     real ( KDR ) :: &
-      BoltzmannConstant, &
-      AdiabaticIndex, &
-      MeanMolecularWeight, &
-      SpecificHeatVolume, &  !-- per baryon
-      FiducialBaryonDensity, &
-      FiducialPressure
+      AdiabaticIndex!, &
+    !   MeanMolecularWeight, &
+    !   SpecificHeatVolume, &  !-- per baryon
+    !   FiducialBaryonDensity, &
+    !   FiducialPressure
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
-  !   procedure, public, pass :: &
-  !     SetPrimitiveConserved
-  !   procedure, public, pass :: &
-  !     SetAdiabaticIndex
+    procedure, public, pass :: &
+      SetAdiabaticIndex
   !   procedure, public, pass :: &
   !     SetMeanMolecularWeight
   !   procedure, public, pass :: &
@@ -45,6 +42,8 @@ module Fluid_P_I__Form
   !     SetFiducialParameters
   !   procedure, public, pass :: &
   !     SetOutput
+    procedure, public, pass :: &
+      Show => Show_FS
   !   procedure, public, pass ( C ) :: &
   !     ComputeFromTemperature
   !   procedure, public, pass ( C ) :: &
@@ -125,9 +124,41 @@ contains
              nFieldsOption = nFieldsOption, &
              IgnorabilityOption = IgnorabilityOption )
 
+    F % AdiabaticIndex  =  1.4_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( F % AdiabaticIndex, 'AdiabaticIndex' )
+
   end subroutine InitializeAllocate_F
 
   
+  subroutine SetAdiabaticIndex ( F, AdiabaticIndex )
+
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      AdiabaticIndex
+
+    F % AdiabaticIndex  =  AdiabaticIndex
+
+    call Show ( 'Setting AdiabaticIndex of a Fluid_P_I', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % AdiabaticIndex, 'AdiabaticIndex', F % IGNORABILITY + 1 )
+
+  end subroutine SetAdiabaticIndex
+
+
+  subroutine Show_FS ( FS )
+
+    class ( Fluid_P_I_Form ), intent ( in ) :: &
+      FS
+
+    call FS % Fluid_D_Form % Show ( )
+
+    call Show ( FS % AdiabaticIndex, 'AdiabaticIndex', FS % IGNORABILITY )
+
+  end subroutine Show_FS
+
+
   impure elemental subroutine Finalize ( F )
 
     type ( Fluid_P_I_Form ), intent ( inout ) :: &

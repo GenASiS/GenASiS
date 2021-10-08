@@ -391,7 +391,7 @@ contains
     real ( KDR ), intent ( in ) :: &
       BaryonDensityMin
 
-    F % BaryonDensityMin = BaryonDensityMin
+    F % BaryonDensityMin  =  BaryonDensityMin
 
     call Show ( 'Setting BaryonDensityMin of a Fluid', F % IGNORABILITY + 1 )
     call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
