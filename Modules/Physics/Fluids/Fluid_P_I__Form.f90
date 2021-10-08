@@ -41,8 +41,8 @@ module Fluid_P_I__Form
       SetSpecificHeatVolume
     procedure, public, pass :: &
       SetFiducialParameters
-  !   procedure, public, pass :: &
-  !     SetOutput
+    procedure, public, pass ( CS ) :: &
+      SetStream
     procedure, public, pass :: &
       Show => Show_FS
   !   procedure, public, pass ( C ) :: &
@@ -256,6 +256,23 @@ contains
                 'FiducialPressure', F % IGNORABILITY + 1 )
 
   end subroutine SetFiducialParameters
+
+
+  subroutine SetStream ( S, CS )
+
+    class ( StreamForm ), intent ( inout ) :: &
+      S
+    class ( Fluid_P_I_Form ), intent ( in ) :: &
+      CS
+
+    call S % AddFieldSet &
+           ( CS, &
+             iaSelectedOption &
+               =  [ CS % BARYON_DENSITY_C, CS % VELOCITY_U, &
+                    CS % ENERGY_DENSITY_C, CS % PRESSURE, CS % TEMPERATURE, &
+                    CS % MACH_NUMBER, CS % ENTROPY_PER_BARYON ] )
+
+  end subroutine SetStream
 
 
   subroutine Show_FS ( FS )
