@@ -47,18 +47,16 @@ module Fluid_P_I__Form
       Show => Show_FS
     procedure, public, pass :: &
       ComputeFromTemperature
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeFromPrimitiveCommon
+    procedure, public, pass ( CS ) :: &
+      ComputeFromPrimitive
   !   procedure, public, pass ( C ) :: &
   !     ComputeFromConservedCommon
   !   procedure, public, pass ( C ) :: &
   !     ComputeRawFluxes
     procedure, public, nopass :: &
       Apply_EOS_I_T_Kernel
-  !   procedure, public, nopass :: &
-  !     Apply_EOS_I_SB_E_Kernel
-  !   procedure, public, nopass :: &
-  !     Apply_EOS_I_E_Kernel
+    procedure, public, nopass :: &
+      Apply_EOS_I_E_Kernel
     final :: &
       Finalize
   end type Fluid_P_I_Form
@@ -67,13 +65,13 @@ module Fluid_P_I__Form
   interface
   
     module subroutine Apply_EOS_I_T_Kernel &
-                 ( P, E, SB, CS, M, N, T, Gamma, C_V, N0, P0, UseDeviceOption )
+                 ( P, E, SB, SS, M, N, T, Gamma, C_V, N0, P0, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         P, &
         E, &
         SB, &
-        CS
+        SS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         N, &
@@ -86,6 +84,27 @@ module Fluid_P_I__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_I_T_Kernel
+
+    module subroutine Apply_EOS_I_E_Kernel &
+                 ( P, T, SB, SS, M, N, E, Gamma, C_V, N0, P0, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        P, &
+        T, &
+        SB, &
+        SS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        E
+      real ( KDR ), intent ( in ) :: &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_E_Kernel
 
  end interface
 
@@ -346,7 +365,11 @@ contains
         (    FV  =>  F % Storage ( iC ) % Value, &
             GSV  =>  G % Storage ( iC ) % Value, &
           M_Ref  =>  F % BaryonMass, &
-          N_Min  =>  F % BaryonDensityMin )
+          N_Min  =>  F % BaryonDensityMin, &
+          Gamma  =>  F % AdiabaticIndex, &
+          C_V    =>  F % SpecificHeatVolume, &
+          N_0    =>  F % FiducialBaryonDensity, &
+          P_0    =>  F % FiducialPressure )
       associate &
         ( M    =>  FV ( :, F % BARYON_MASS ), &
           N    =>  FV ( :, F % BARYON_DENSITY_C ), &
@@ -362,7 +385,7 @@ contains
           P    =>  FV ( :, F % PRESSURE ), &
           T    =>  FV ( :, F % TEMPERATURE ), &
           SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
-          CS   =>  FV ( :, F % SOUND_SPEED ), &
+          SS   =>  FV ( :, F % SOUND_SPEED ), &
           MN   =>  FV ( :, F % MACH_NUMBER ), &
           M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
           M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
@@ -371,11 +394,10 @@ contains
       call F % Compute_M_Kernel &
              ( M_Ref, M, UseDeviceOption = F % DeviceMemory )
       call F % Apply_EOS_I_T_Kernel &
-             ( P, E, SB, CS, M, N, T, F % AdiabaticIndex, &
-               F % SpecificHeatVolume, F % FiducialBaryonDensity, &
-               F % FiducialPressure, UseDeviceOption = F % DeviceMemory )
+             ( P, E, SB, SS, M, N, T, Gamma, C_V, N_0, P_0, &
+               UseDeviceOption = F % DeviceMemory )
       call F % Compute_D_S_G_G_Kernel & 	 	 
-             ( N, V_1, V_2, V_3, M, E, CS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+             ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
                D, S_1, S_2, S_3, G, MN, UseDeviceOption = F % DeviceMemory )
 
       end associate !-- M, etc.
@@ -386,6 +408,72 @@ contains
     end associate !-- G
 
   end subroutine ComputeFromTemperature
+
+
+  subroutine ComputeFromPrimitive ( FS_CS, CS )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_CS
+    class ( Fluid_P_I_Form ), intent ( in ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    associate ( G  =>  CS % Geometry )
+
+    do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        (   CSV  =>  FS_CS % Storage ( iC ) % Value, &
+            GSV  =>  G % Storage ( iC ) % Value, &
+          M_Ref  =>  CS % BaryonMass, &
+          N_Min  =>  CS % BaryonDensityMin, &
+          Gamma  =>  CS % AdiabaticIndex, &
+          C_V    =>  CS % SpecificHeatVolume, &
+          N_0    =>  CS % FiducialBaryonDensity, &
+          P_0    =>  CS % FiducialPressure )
+      associate &
+        ( M    =>  CSV ( :, CS % BARYON_MASS ), &
+          N    =>  CSV ( :, CS % BARYON_DENSITY_C ), &
+          V_1  =>  CSV ( :, CS % VELOCITY_U_1 ), &
+          V_2  =>  CSV ( :, CS % VELOCITY_U_2 ), &
+          V_3  =>  CSV ( :, CS % VELOCITY_U_3 ), &
+          D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
+          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
+          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+          E    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          G    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          P    =>  CSV ( :, CS % PRESSURE ), &
+          T    =>  CSV ( :, CS % TEMPERATURE ), &
+          SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+          SS   =>  CSV ( :, CS % SOUND_SPEED ), &
+          MN   =>  CSV ( :, CS % MACH_NUMBER ), &
+          M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+          M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+          M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
+   
+      call CS % Compute_M_Kernel &
+             ( M_Ref, M, UseDeviceOption = CS % DeviceMemory )
+      call CS % Apply_EOS_I_E_Kernel &
+             ( P, T, SB, SS, M, N, E, Gamma, C_V, N_0, P_0, &
+               UseDeviceOption = CS % DeviceMemory )
+      call CS % Compute_D_S_G_G_Kernel & 	 	 
+             ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+               D, S_1, S_2, S_3, G, MN, UseDeviceOption = CS % DeviceMemory )
+
+      end associate !-- M, etc.
+      end associate !-- CSV, etc.
+
+    end do !-- iC
+
+    end associate !-- G
+
+  end subroutine ComputeFromPrimitive
 
 
   impure elemental subroutine Finalize ( F )
