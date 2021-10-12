@@ -49,16 +49,16 @@ module Fluid_P_I__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeFromConservedCommon
+    procedure, public, pass :: &
+      ComputeFromBalanced
   !   procedure, public, pass ( C ) :: &
   !     ComputeRawFluxes
+    final :: &
+      Finalize
     procedure, public, nopass :: &
       Apply_EOS_I_T_Kernel
     procedure, public, nopass :: &
       Apply_EOS_I_E_Kernel
-    final :: &
-      Finalize
   end type Fluid_P_I_Form
 
 
@@ -357,13 +357,10 @@ contains
     call Show ( 'ComputeFromTemperature', CONSOLE % INFO_6 )
     call Show ( F % Name, 'Fluid', CONSOLE % INFO_6 )
 
-    associate ( G  =>  F % Geometry )
-
     do iC  =  1, F % Atlas % nCharts
 
       associate &
         (    FV  =>  F % Storage ( iC ) % Value, &
-            GSV  =>  G % Storage ( iC ) % Value, &
           M_Ref  =>  F % BaryonMass, &
           N_Min  =>  F % BaryonDensityMin, &
           Gamma  =>  F % AdiabaticIndex, &
@@ -386,26 +383,42 @@ contains
           T    =>  FV ( :, F % TEMPERATURE ), &
           SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
           SS   =>  FV ( :, F % SOUND_SPEED ), &
-          MN   =>  FV ( :, F % MACH_NUMBER ), &
-          M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
-          M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
-          M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
+          MN   =>  FV ( :, F % MACH_NUMBER ) )
    
       call F % Compute_M_Kernel &
              ( M_Ref, M, UseDeviceOption = F % DeviceMemory )
       call F % Apply_EOS_I_T_Kernel &
              ( P, E, SB, SS, M, N, T, Gamma, C_V, N_0, P_0, &
                UseDeviceOption = F % DeviceMemory )
-      call F % Compute_D_S_G_G_Kernel & 	 	 
-             ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+
+      select type ( Gn  =>  F % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Gn % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, Gn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
+
+        call F % Compute_D_S_G_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
                D, S_1, S_2, S_3, G, MN, UseDeviceOption = F % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Fluid_P_I__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromTemperature', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Gn
 
       end associate !-- M, etc.
       end associate !-- FV, etc.
 
     end do !-- iC
-
-    end associate !-- G
 
   end subroutine ComputeFromTemperature
 
@@ -423,13 +436,10 @@ contains
     call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
-    associate ( G  =>  CS % Geometry )
-
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
         (   CSV  =>  FS_CS % Storage ( iC ) % Value, &
-            GSV  =>  G % Storage ( iC ) % Value, &
           M_Ref  =>  CS % BaryonMass, &
           N_Min  =>  CS % BaryonDensityMin, &
           Gamma  =>  CS % AdiabaticIndex, &
@@ -452,28 +462,130 @@ contains
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
           SS   =>  CSV ( :, CS % SOUND_SPEED ), &
-          MN   =>  CSV ( :, CS % MACH_NUMBER ), &
-          M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
-          M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
-          M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
+          MN   =>  CSV ( :, CS % MACH_NUMBER ) )
    
       call CS % Compute_M_Kernel &
              ( M_Ref, M, UseDeviceOption = CS % DeviceMemory )
       call CS % Apply_EOS_I_E_Kernel &
              ( P, T, SB, SS, M, N, E, Gamma, C_V, N_0, P_0, &
                UseDeviceOption = CS % DeviceMemory )
-      call CS % Compute_D_S_G_G_Kernel & 	 	 
-             ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
-               D, S_1, S_2, S_3, G, MN, UseDeviceOption = CS % DeviceMemory )
+
+      select type ( Gn  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Gn % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, Gn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
+
+        call CS % Compute_D_S_G_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+                 D, S_1, S_2, S_3, G, MN, UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Fluid_P_I__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Gn
 
       end associate !-- M, etc.
       end associate !-- CSV, etc.
 
     end do !-- iC
 
-    end associate !-- G
-
   end subroutine ComputeFromPrimitive
+
+
+  subroutine ComputeFromBalanced ( CS )
+
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_N_H_Form )
+    !-- FIXME Constant_G
+    call G % Solve &
+           ( CS, Constant_G = 1.0_KDR, &
+             iBaryonMass = CS % BARYON_MASS, &
+             iBaryonDensity = CS % BARYON_DENSITY_B )
+    end select !-- G
+
+    do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        (   CSV  =>  CS % Storage ( iC ) % Value, &
+          M_Ref  =>  CS % BaryonMass, &
+          N_Min  =>  CS % BaryonDensityMin, &
+          Gamma  =>  CS % AdiabaticIndex, &
+          C_V    =>  CS % SpecificHeatVolume, &
+          N_0    =>  CS % FiducialBaryonDensity, &
+          P_0    =>  CS % FiducialPressure )
+      associate &
+        ( M    =>  CSV ( :, CS % BARYON_MASS ), &
+          N    =>  CSV ( :, CS % BARYON_DENSITY_C ), &
+          V_1  =>  CSV ( :, CS % VELOCITY_U_1 ), &
+          V_2  =>  CSV ( :, CS % VELOCITY_U_2 ), &
+          V_3  =>  CSV ( :, CS % VELOCITY_U_3 ), &
+          D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
+          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
+          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+          E    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          G    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          P    =>  CSV ( :, CS % PRESSURE ), &
+          T    =>  CSV ( :, CS % TEMPERATURE ), &
+          SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+          SS   =>  CSV ( :, CS % SOUND_SPEED ), &
+          MN   =>  CSV ( :, CS % MACH_NUMBER ) )
+   
+      select type ( Gn  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Gn % Storage ( iC ) % Value )
+        associate &
+          ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
+            M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
+            M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+
+        call CS % Compute_N_V_E_G_Kernel &
+               ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
+                 N, V_1, V_2, V_3, E, UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_UU_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Fluid_P_I__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Gn
+
+      call CS % Compute_M_Kernel &
+             ( M_Ref, M, UseDeviceOption = CS % DeviceMemory )
+      call CS % Apply_EOS_I_E_Kernel &
+             ( P, T, SB, SS, M, N, E, Gamma, C_V, N_0, P_0, &
+               UseDeviceOption = CS % DeviceMemory )
+
+      end associate !-- M, etc.
+      end associate !-- CSV, etc.
+
+    end do !-- iC
+
+  end subroutine ComputeFromBalanced
 
 
   impure elemental subroutine Finalize ( F )

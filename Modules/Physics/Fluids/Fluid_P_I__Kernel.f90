@@ -33,7 +33,8 @@ contains
       !          work better
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
@@ -58,7 +59,8 @@ contains
     else
 
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
@@ -106,7 +108,8 @@ contains
     if ( UseDevice ) then
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
@@ -132,7 +135,8 @@ contains
     else
 
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 

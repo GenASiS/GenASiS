@@ -51,10 +51,8 @@ module Fluid_P__Form
   !     ComputeCenterStatesTemplate_P
     procedure, public, nopass :: &
       Compute_D_S_G_G_Kernel
-  !   procedure, public, nopass :: &
-  !     Compute_DS_G_Kernel
-  !   procedure, public, nopass :: &
-  !     Compute_N_V_E_G_Kernel
+    procedure, public, nopass :: &
+      Compute_N_V_E_G_Kernel
   !   procedure, public, nopass :: &
   !     Compute_SB_G_Kernel
   !   procedure, public, nopass :: &
@@ -90,6 +88,29 @@ module Fluid_P__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Compute_D_S_G_G_Kernel 	 	 
+
+    module subroutine Compute_N_V_E_G_Kernel &
+             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
+               N, V_1, V_2, V_3, E, UseDeviceOption )
+      !-- Compute_DensityC_Velocity_EnergyC_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        D, &
+        S_1, S_2, S_3, &
+        G
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        M_UU_11, M_UU_22, M_UU_33
+      real ( KDR ), intent ( in ) :: &
+        N_Min
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        N, &
+        V_1, V_2, V_3, &
+        E
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_N_V_E_G_Kernel
 
   end interface
 

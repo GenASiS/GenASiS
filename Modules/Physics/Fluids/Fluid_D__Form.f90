@@ -85,7 +85,7 @@ module Fluid_D__Form
     module subroutine Compute_D_S_G_Kernel & 	 	 
              ( N, V_1, V_2, V_3, M, M_DD_11, M_DD_22, M_DD_33, N_Min, &
                D, S_1, S_2, S_3, UseDeviceOption )
-      !-- Compute_ConservedDensity_Momentum_Galileo_Kernel
+      !-- Compute_DensityB_Momentum_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
@@ -106,7 +106,7 @@ module Fluid_D__Form
     module subroutine Compute_N_V_G_Kernel &
              ( D, S_1, S_2, S_3, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
                N, V_1, V_2, V_3, UseDeviceOption )
-      !-- Compute_ComovingBaryonDensity_Velocity_Galileo_Kernel
+      !-- Compute_DensityC_Velocity_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -511,7 +511,7 @@ contains
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
         call Show ( 'Fluid_D__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeFromInitial', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- G
 
@@ -580,7 +580,7 @@ contains
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
         call Show ( 'Fluid_D__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeFromInitial', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- G
 

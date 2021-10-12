@@ -27,14 +27,16 @@ contains
     
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP firstprivate ( M_Ref )
       do iV = 1, nV
         M ( iV )  =  M_Ref
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP firstprivate ( M_Ref )
       do iV = 1, nV
         M ( iV )  =  M_Ref
       end do !-- iV
@@ -46,7 +48,7 @@ contains
 
   module procedure Compute_D_S_G_Kernel
  	 
-    !-- Compute_ConservedDensity_Momentum_Galileo_Kernel
+    !-- Compute_DensityB_Momentum_Galileo_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -63,7 +65,8 @@ contains
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( N ( iV )  <  N_Min ) then
@@ -85,7 +88,8 @@ contains
     else 
 
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( N ( iV )  <  N_Min ) then
@@ -111,7 +115,7 @@ contains
 
   module procedure Compute_N_V_G_Kernel
 
-    !-- Compute_ComovingBaryonDensity_Velocity_Galileo
+    !-- Compute_DensityC_Velocity_Galileo
 
     integer ( KDI ) :: &
       iV, &
@@ -128,7 +132,8 @@ contains
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( D ( iV )  <  N_Min ) then
@@ -152,7 +157,8 @@ contains
     else
 
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( D ( iV )  <  N_Min ) then
