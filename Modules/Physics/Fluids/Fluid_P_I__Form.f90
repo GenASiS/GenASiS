@@ -335,13 +335,16 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromTemperature', CONSOLE % INFO_6 )
     call Show ( F % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    associate ( G  =>  F % Geometry )
 
     do iC  =  1, F % Atlas % nCharts
 
       associate &
         (    FV  =>  F % Storage ( iC ) % Value, &
+            GSV  =>  G % Storage ( iC ) % Value, &
           M_Ref  =>  F % BaryonMass, &
           N_Min  =>  F % BaryonDensityMin )
       associate &
@@ -360,7 +363,10 @@ contains
           T    =>  FV ( :, F % TEMPERATURE ), &
           SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
           CS   =>  FV ( :, F % SOUND_SPEED ), &
-          MN   =>  FV ( :, F % MACH_NUMBER ) )
+          MN   =>  FV ( :, F % MACH_NUMBER ), &
+          M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+          M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+          M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
    
       call F % Compute_M_Kernel &
              ( M_Ref, M, UseDeviceOption = F % DeviceMemory )
@@ -368,11 +374,16 @@ contains
              ( P, E, SB, CS, M, N, T, F % AdiabaticIndex, &
                F % SpecificHeatVolume, F % FiducialBaryonDensity, &
                F % FiducialPressure, UseDeviceOption = F % DeviceMemory )
+      call F % Compute_D_S_G_G_Kernel & 	 	 
+             ( N, V_1, V_2, V_3, M, E, CS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+               D, S_1, S_2, S_3, G, MN, UseDeviceOption = F % DeviceMemory )
 
       end associate !-- M, etc.
       end associate !-- FV, etc.
 
     end do !-- iC
+
+    end associate !-- G
 
   end subroutine ComputeFromTemperature
 

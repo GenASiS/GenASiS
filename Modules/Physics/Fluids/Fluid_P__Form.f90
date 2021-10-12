@@ -48,8 +48,8 @@ module Fluid_P__Form
   !     ComputeRawFluxesTemplate_P
   !   procedure, public, pass ( C ) :: &
   !     ComputeCenterStatesTemplate_P
-  !   procedure, public, nopass :: &
-  !     Compute_G_G_Kernel
+    procedure, public, nopass :: &
+      Compute_D_S_G_G_Kernel
   !   procedure, public, nopass :: &
   !     Compute_DS_G_Kernel
   !   procedure, public, nopass :: &
@@ -61,6 +61,36 @@ module Fluid_P__Form
     final :: &
       Finalize
   end type Fluid_P_Form
+
+
+  interface
+
+    module subroutine Compute_D_S_G_G_Kernel & 	 	 
+             ( N, V_1, V_2, V_3, M, E, CS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
+               D, S_1, S_2, S_3, G, MN, UseDeviceOption )
+      !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+        N, & 	 	 
+        V_1, V_2, V_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        M, &
+        E, &
+        CS, &
+        M_DD_11, M_DD_22, M_DD_33
+      real ( KDR ), intent ( in ) :: &
+        N_Min
+      real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
+        D, & 	 	 
+        S_1, S_2, S_3, &
+        G, &
+        MN
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_D_S_G_G_Kernel 	 	 
+
+  end interface
 
 
 contains
