@@ -30,14 +30,15 @@ module Fluid_P__Form
       ENTROPY_PER_BARYON = 0, &
       SOUND_SPEED        = 0, &
       MACH_NUMBER        = 0
-!    logical ( KDL ) :: &
-!      UseInitialTemperature, &
-!      UseEntropy
+   logical ( KDL ) :: &
+     UseInitialTemperature
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
-  !   procedure, public, pass :: &
-  !     ComputeFromInitial
+    procedure, public, pass :: &
+      SetUseInitialTemperature
+    procedure, public, pass :: &
+      ComputeFromInitial
     procedure, public, pass :: &
       ComputeFromTemperature
   !   procedure, public, pass ( C ) :: &
@@ -254,9 +255,57 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
+    !-- Parameters
+
+    F % UseInitialTemperature  =  .false.
+
   end subroutine InitializeAllocate_F
 
-  
+
+  subroutine SetUseInitialTemperature ( F, UseInitialTemperature )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+    logical ( KDL ), intent ( in ) :: &
+      UseInitialTemperature
+
+    F % UseInitialTemperature  =  UseInitialTemperature
+
+    call Show ( 'Setting UseInitialTemperatre of a Fluid_P', &
+                F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % UseInitialTemperature, 'UseInitialTemperature', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetUseInitialTemperature
+
+
+  subroutine ComputeFromInitial ( CS )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      CS
+
+    call Show ( 'ComputeFromInitial', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    if ( CS % UseInitialTemperature ) then
+      call CS % ComputeFromTemperature ( )
+    else
+      call CS % ComputeFromPrimitive ( CS )
+    end if
+
+    select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_N_H_Form )
+    !-- FIXME Constant_G
+    call G % Solve &
+           ( CS, Constant_G = 1.0_KDR, &
+             iBaryonMass = CS % BARYON_MASS, &
+             iBaryonDensity = CS % BARYON_DENSITY_B )
+    end select !-- G
+
+  end subroutine ComputeFromInitial
+
+
   subroutine ComputeFromTemperature ( F )
 
     class ( Fluid_P_Form ), intent ( inout ) :: &
