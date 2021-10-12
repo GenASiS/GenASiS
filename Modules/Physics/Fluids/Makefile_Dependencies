@@ -30,6 +30,11 @@ Fluid_P_I__Form.o: \
   Fluid_P__Form.o \
   Fluid_P__Form.f90
 
+Fluid_P_I__Kernel.o: \
+  Basics.o \
+  Fluid_P_I__Form.o \
+  Fluid_P_I__Kernel.f90
+
 Fluids.o: \
   Units_F__Form.o \
   Fluid_D__Form.o \

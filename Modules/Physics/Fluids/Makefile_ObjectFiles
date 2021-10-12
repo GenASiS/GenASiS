@@ -1,5 +1,6 @@
 FLUIDS = \
   Fluids.o \
+  Fluid_P_I__Kernel.o \
   Fluid_P_I__Form.o \
   Fluid_P__Form.o \
   Fluid_D__Kernel.o \

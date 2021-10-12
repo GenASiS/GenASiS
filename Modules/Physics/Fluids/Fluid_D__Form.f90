@@ -62,6 +62,8 @@ module Fluid_D__Form
       ComputeEigenspeeds
     final :: &
       Finalize
+    procedure, public, nopass :: &
+      Compute_M_Kernel
   end type Fluid_D_Form
 
 

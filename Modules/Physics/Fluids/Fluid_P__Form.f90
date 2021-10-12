@@ -38,8 +38,8 @@ module Fluid_P__Form
       InitializeAllocate_F
   !   procedure, public, pass :: &
   !     ComputeFromInitial
-  !   procedure ( CFT ), public, pass ( C ), deferred :: &
-  !     ComputeFromTemperature
+    procedure, public, pass :: &
+      ComputeFromTemperature
   !   procedure, public, pass ( C ) :: &
   !     ComputeFluxes
   !   procedure, public, pass ( C ) :: &
@@ -227,6 +227,18 @@ contains
   end subroutine InitializeAllocate_F
 
   
+  subroutine ComputeFromTemperature ( F )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+
+    call Show ( 'ComputeFromTemperature should be overridden', &
+                CONSOLE % WARNING)
+    call Show ( F % Name, 'Fluid', CONSOLE % WARNING )
+
+  end subroutine ComputeFromTemperature
+
+
   impure elemental subroutine Finalize ( F )
 
     type ( Fluid_P_Form ), intent ( inout ) :: &

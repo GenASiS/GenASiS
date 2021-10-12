@@ -45,16 +45,16 @@ module Fluid_P_I__Form
       SetStream
     procedure, public, pass :: &
       Show => Show_FS
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeFromTemperature
+    procedure, public, pass :: &
+      ComputeFromTemperature
   !   procedure, public, pass ( C ) :: &
   !     ComputeFromPrimitiveCommon
   !   procedure, public, pass ( C ) :: &
   !     ComputeFromConservedCommon
   !   procedure, public, pass ( C ) :: &
   !     ComputeRawFluxes
-  !   procedure, public, nopass :: &
-  !     Apply_EOS_I_T_Kernel
+    procedure, public, nopass :: &
+      Apply_EOS_I_T_Kernel
   !   procedure, public, nopass :: &
   !     Apply_EOS_I_SB_E_Kernel
   !   procedure, public, nopass :: &
@@ -62,6 +62,32 @@ module Fluid_P_I__Form
     final :: &
       Finalize
   end type Fluid_P_I_Form
+
+
+  interface
+  
+    module subroutine Apply_EOS_I_T_Kernel &
+                 ( P, E, SB, CS, M, N, T, Gamma, C_V, N0, P0, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        P, &
+        E, &
+        SB, &
+        CS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        T
+      real ( KDR ), intent ( in ) :: &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_T_Kernel
+
+ end interface
 
 
 contains
@@ -299,6 +325,56 @@ contains
                 'FiducialPressure', FS % IGNORABILITY )
 
   end subroutine Show_FS
+
+
+  subroutine ComputeFromTemperature ( F )
+
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( F % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    do iC  =  1, F % Atlas % nCharts
+
+      associate &
+        (    FV  =>  F % Storage ( iC ) % Value, &
+          M_Ref  =>  F % BaryonMass, &
+          N_Min  =>  F % BaryonDensityMin )
+      associate &
+        ( M    =>  FV ( :, F % BARYON_MASS ), &
+          N    =>  FV ( :, F % BARYON_DENSITY_C ), &
+          V_1  =>  FV ( :, F % VELOCITY_U_1 ), &
+          V_2  =>  FV ( :, F % VELOCITY_U_2 ), &
+          V_3  =>  FV ( :, F % VELOCITY_U_3 ), &
+          D    =>  FV ( :, F % BARYON_DENSITY_B ), &
+          S_1  =>  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
+          S_2  =>  FV ( :, F % MOMENTUM_DENSITY_D_2 ), &
+          S_3  =>  FV ( :, F % MOMENTUM_DENSITY_D_3 ), &
+          E    =>  FV ( :, F % ENERGY_DENSITY_C ), &
+          G    =>  FV ( :, F % ENERGY_DENSITY_B ), &
+          P    =>  FV ( :, F % PRESSURE ), &
+          T    =>  FV ( :, F % TEMPERATURE ), &
+          SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
+          CS   =>  FV ( :, F % SOUND_SPEED ), &
+          MN   =>  FV ( :, F % MACH_NUMBER ) )
+   
+      call F % Compute_M_Kernel &
+             ( M_Ref, M, UseDeviceOption = F % DeviceMemory )
+      call F % Apply_EOS_I_T_Kernel &
+             ( P, E, SB, CS, M, N, T, F % AdiabaticIndex, &
+               F % SpecificHeatVolume, F % FiducialBaryonDensity, &
+               F % FiducialPressure, UseDeviceOption = F % DeviceMemory )
+
+      end associate !-- M, etc.
+      end associate !-- FV, etc.
+
+    end do !-- iC
+
+  end subroutine ComputeFromTemperature
 
 
   impure elemental subroutine Finalize ( F )
