@@ -34,8 +34,10 @@ contains
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
+      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
       do iV = 1, nValues
+
+        M ( iV )  =  M_Ref
 
         E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
 
@@ -60,8 +62,10 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
+      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
       do iV = 1, nValues
+
+        M ( iV )  =  M_Ref
 
         E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
 
@@ -109,8 +113,10 @@ contains
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
+      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
       do iV = 1, nValues
+
+        M ( iV )  =  M_Ref
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
@@ -136,8 +142,10 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-      !$OMP firstprivate ( SqrtHuge, Gamma, C_V, N0, P0 )
+      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
       do iV = 1, nValues
+
+        M ( iV )  =  M_Ref
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 

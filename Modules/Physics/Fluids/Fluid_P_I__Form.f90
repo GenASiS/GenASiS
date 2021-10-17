@@ -55,28 +55,29 @@ module Fluid_P_I__Form
   !     ComputeRawFluxes
     final :: &
       Finalize
-    procedure, public, nopass :: &
-      Apply_EOS_I_T_Kernel
-    procedure, public, nopass :: &
-      Apply_EOS_I_E_Kernel
   end type Fluid_P_I_Form
 
-
+    private :: &
+      Apply_EOS_I_T_Kernel, &
+      Apply_EOS_I_E_Kernel
+      
   interface
   
     module subroutine Apply_EOS_I_T_Kernel &
-                 ( P, E, SB, SS, M, N, T, Gamma, C_V, N0, P0, UseDeviceOption )
+             ( M, P, E, SB, SS, N, T, M_Ref, Gamma, C_V, N0, P0, &
+               UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M, &
         P, &
         E, &
         SB, &
         SS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
-        M, &
         N, &
         T
       real ( KDR ), intent ( in ) :: &
+        M_Ref, &
         Gamma, &
         C_V, &
         N0, &
@@ -86,18 +87,20 @@ module Fluid_P_I__Form
     end subroutine Apply_EOS_I_T_Kernel
 
     module subroutine Apply_EOS_I_E_Kernel &
-                 ( P, T, SB, SS, M, N, E, Gamma, C_V, N0, P0, UseDeviceOption )
+             ( M, P, T, SB, SS, N, E, M_Ref, Gamma, C_V, N0, P0, &
+               UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M, &
         P, &
         T, &
         SB, &
         SS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
-        M, &
         N, &
         E
       real ( KDR ), intent ( in ) :: &
+        M_Ref, &
         Gamma, &
         C_V, &
         N0, &
@@ -385,10 +388,8 @@ contains
           SS   =>  FV ( :, F % SOUND_SPEED ), &
           MN   =>  FV ( :, F % MACH_NUMBER ) )
    
-      call F % Compute_M_Kernel &
-             ( M_Ref, M, UseDeviceOption = F % DeviceMemory )
-      call F % Apply_EOS_I_T_Kernel &
-             ( P, E, SB, SS, M, N, T, Gamma, C_V, N_0, P_0, &
+      call Apply_EOS_I_T_Kernel &
+             ( M, P, E, SB, SS, N, T, M_Ref, Gamma, C_V, N_0, P_0, &
                UseDeviceOption = F % DeviceMemory )
 
       select type ( Gn  =>  F % Geometry )
@@ -464,10 +465,8 @@ contains
           SS   =>  CSV ( :, CS % SOUND_SPEED ), &
           MN   =>  CSV ( :, CS % MACH_NUMBER ) )
    
-      call CS % Compute_M_Kernel &
-             ( M_Ref, M, UseDeviceOption = CS % DeviceMemory )
-      call CS % Apply_EOS_I_E_Kernel &
-             ( P, T, SB, SS, M, N, E, Gamma, C_V, N_0, P_0, &
+      call Apply_EOS_I_E_Kernel &
+             ( M, P, T, SB, SS, N, E, M_Ref, Gamma, C_V, N_0, P_0, &
                UseDeviceOption = CS % DeviceMemory )
 
       select type ( Gn  =>  CS % Geometry )
@@ -574,10 +573,8 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
 
-      call CS % Compute_M_Kernel &
-             ( M_Ref, M, UseDeviceOption = CS % DeviceMemory )
-      call CS % Apply_EOS_I_E_Kernel &
-             ( P, T, SB, SS, M, N, E, Gamma, C_V, N_0, P_0, &
+      call Apply_EOS_I_E_Kernel &
+             ( M, P, T, SB, SS, N, E, M_Ref, Gamma, C_V, N_0, P_0, &
                UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
