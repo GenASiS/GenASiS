@@ -43,14 +43,12 @@ module Fluid_P__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFluxes
+    procedure, public, pass ( CS ) :: &
+      ComputeEigenspeeds
   !   procedure, public, pass ( C ) :: &
   !     ComputeCenterStates
   !   procedure, public, pass ( C ) :: &
   !     ComputeCenterStatesTemplate_P
-  !   procedure, public, nopass :: &
-  !     Compute_SB_G_Kernel
-  !   procedure, public, nopass :: &
-  !     Compute_FE_P_G_Kernel
     final :: &
       Finalize
     procedure, public, nopass :: &
@@ -59,6 +57,8 @@ module Fluid_P__Form
       Compute_N_V_E_G_Kernel
     procedure, public, nopass :: &
       Compute_FS_G_Kernel
+    procedure, public, nopass :: &
+      Compute_ES_G_Kernel
   end type Fluid_P_Form
 
 
@@ -134,6 +134,21 @@ module Fluid_P__Form
         UseDeviceOption
     end subroutine Compute_FS_G_Kernel
 
+    module subroutine Compute_ES_G_Kernel &
+             ( V_Dim, SS, M_UU_Dim, EF_P, EF_M, UseDeviceOption )
+      !-- Compute_EigenspeedSet_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        V_Dim, &
+        SS, &
+        M_UU_Dim
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        EF_P, EF_M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_ES_G_Kernel
+    
   end interface
 
 
@@ -415,6 +430,43 @@ contains
     end associate !-- FSV, etc.
 
   end subroutine ComputeFluxes
+
+
+  subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      ES
+    class ( Fluid_P_Form ), intent ( in ) :: &
+      CS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_CS
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaEigenspeeds
+    integer ( KDI ), intent ( in ) :: &
+      iC, &  !-- iChart
+      iD     !-- iDimension
+
+    associate ( G  =>  CS % Geometry )
+    associate &
+      ( ESV  =>  ES    % Storage ( iC ) % Value, &
+        CSV  =>  FS_CS % Storage ( iC ) % Value, &
+        GSV  =>  G     % Storage ( iC ) % Value )
+    associate &
+      (   EF_P    =>  ESV ( :, iaEigenspeeds ( 1 ) ), &
+          EF_M    =>  ESV ( :, iaEigenspeeds ( 2 ) ), & 
+           V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ), &
+          SS      =>  CSV ( :, CS % SOUND_SPEED ), &
+        M_UU_Dim  =>  GSV ( :, G % METRIC_F_UU ( iD ) ) )
+ 
+    call Compute_ES_G_Kernel &
+           ( V_Dim, SS, M_UU_Dim, EF_P, EF_M, &
+             UseDeviceOption = CS % DeviceMemory )
+  
+    end associate !-- EF_P, etc.
+    end associate !-- ESV, etc.
+    end associate !-- G
+
+  end subroutine ComputeEigenspeeds
 
 
   impure elemental subroutine Finalize ( F )

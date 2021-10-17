@@ -54,7 +54,9 @@ module Geometry_F__Form
       CENTER_U, &
       AREA_I_D, &
       AVERAGE_1_U, &
-      AVERAGE_2_U
+      AVERAGE_2_U, &
+      METRIC_F_DD, &
+      METRIC_F_UU
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
@@ -278,6 +280,10 @@ contains
       =  [ FS % AVERAGE_1_U_1, FS % AVERAGE_1_U_2, FS % AVERAGE_1_U_3 ]
     FS % AVERAGE_2_U  &
       =  [ FS % AVERAGE_2_U_1, FS % AVERAGE_2_U_2, FS % AVERAGE_2_U_3 ]
+    FS % METRIC_F_DD  &
+      =  [ FS % METRIC_F_DD_11, FS % METRIC_F_DD_22, FS % METRIC_F_DD_33 ]
+    FS % METRIC_F_UU  &
+      =  [ FS % METRIC_F_UU_11, FS % METRIC_F_UU_22, FS % METRIC_F_UU_33 ]
 
     !-- Field names
 
