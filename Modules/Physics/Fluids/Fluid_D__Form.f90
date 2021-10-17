@@ -68,8 +68,8 @@ module Fluid_D__Form
       Compute_M_Kernel, &
       Compute_D_S_G_Kernel, &
       Compute_N_V_G_Kernel, &
-      ComputeFluxes_G_Kernel, &
-      ComputeEigenspeeds_G_Kernel
+      Compute_FS_G_Kernel, &
+      Compute_ES_G_Kernel
 
   interface
   
@@ -128,10 +128,10 @@ module Fluid_D__Form
         UseDeviceOption
     end subroutine Compute_N_V_G_Kernel
 
-    module subroutine ComputeFluxes_G_Kernel &
+    module subroutine Compute_FS_G_Kernel &
              ( D, S_1, S_2, S_3, V_Dim, F_D, F_S_1, F_S_2, F_S_3, &
                UseDeviceOption )
-      !-- ComputeFluxes_Galileo_Kernel
+      !-- Compute_FluxSet_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -143,11 +143,11 @@ module Fluid_D__Form
         F_S_1, F_S_2, F_S_3
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeFluxes_G_Kernel
+    end subroutine Compute_FS_G_Kernel
 
-    module subroutine ComputeEigenspeeds_G_Kernel &
+    module subroutine Compute_ES_G_Kernel &
              ( V_Dim, EF_P, EF_M, UseDeviceOption )
-      !-- Compute_Eigenspeeds_Galileo_Kernel
+      !-- Compute_EigenspeedSet_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -156,7 +156,7 @@ module Fluid_D__Form
         EF_P, EF_M
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeEigenspeeds_G_Kernel
+    end subroutine Compute_ES_G_Kernel
     
   end interface
 
@@ -639,7 +639,7 @@ contains
           S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
           V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
  
-    call ComputeFluxes_G_Kernel &
+    call Compute_FS_G_Kernel &
            ( D, S_1, S_2, S_3, V_Dim, F_D, F_S_1, F_S_2, F_S_3, &
              UseDeviceOption = CS % DeviceMemory )
   
@@ -671,7 +671,7 @@ contains
         EF_M    =>  ESV ( :, iaEigenspeeds ( 2 ) ), & 
          V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
  
-    call ComputeEigenspeeds_G_Kernel &
+    call Compute_ES_G_Kernel &
            ( V_Dim, EF_P, EF_M, UseDeviceOption = CS % DeviceMemory )
   
     end associate !-- EF_P, etc.

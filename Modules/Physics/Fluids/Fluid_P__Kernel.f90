@@ -170,9 +170,9 @@ contains
   end procedure Compute_N_V_E_G_Kernel
 
 
-  module procedure ComputeFluxes_G_Kernel
+  module procedure Compute_FS_G_Kernel
 
-    !-- ComputeFluxes_Galileo_Kernel
+    !-- Compute_FluxSet_Galileo_Kernel
 
     integer :: &
       Delta_1, Delta_2, Delta_3
@@ -235,7 +235,7 @@ contains
     
     end if
 
-  end procedure ComputeFluxes_G_Kernel
+  end procedure Compute_FS_G_Kernel
 
 
 end submodule Fluid_P__Kernel

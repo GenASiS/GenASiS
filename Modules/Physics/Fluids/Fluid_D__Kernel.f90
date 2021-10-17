@@ -184,9 +184,9 @@ contains
   end procedure Compute_N_V_G_Kernel
 
 
-  module procedure ComputeFluxes_G_Kernel
+  module procedure Compute_FS_G_Kernel
 
-    !-- ComputeFluxes_Galileo_Kernel
+    !-- Compute_FluxSet_Galileo_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -226,12 +226,12 @@ contains
     
     end if
 
-  end procedure ComputeFluxes_G_Kernel
+  end procedure Compute_FS_G_Kernel
 
 
-  module procedure ComputeEigenspeeds_G_Kernel
+  module procedure Compute_ES_G_Kernel
 
-    !-- ComputeEigenspeeds_Galileo_Kernel
+    !-- Compute_EigenspeedSet_Galileo_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -263,7 +263,7 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure ComputeEigenspeeds_G_Kernel
+  end procedure Compute_ES_G_Kernel
 
 
 end submodule Fluid_D__Kernel

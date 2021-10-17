@@ -58,7 +58,7 @@ module Fluid_P__Form
     procedure, public, nopass :: &
       Compute_N_V_E_G_Kernel
     procedure, public, nopass :: &
-      ComputeFluxes_G_Kernel
+      Compute_FS_G_Kernel
   end type Fluid_P_Form
 
 
@@ -112,10 +112,10 @@ module Fluid_P__Form
         UseDeviceOption
     end subroutine Compute_N_V_E_G_Kernel
 
-    module subroutine ComputeFluxes_G_Kernel &
+    module subroutine Compute_FS_G_Kernel &
              ( D, S_1, S_2, S_3, G, P, V_Dim, iDim, &
                F_D, F_S_1, F_S_2, F_S_3, F_G, UseDeviceOption )
-      !-- ComputeFluxes_Galileo_Kernel
+      !-- Compute_FluxSet_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -132,7 +132,7 @@ module Fluid_P__Form
         F_G
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeFluxes_G_Kernel
+    end subroutine Compute_FS_G_Kernel
 
   end interface
 
@@ -407,7 +407,7 @@ contains
           P      =>  CSV ( :, CS % PRESSURE ), &
           V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
  
-    call ComputeFluxes_G_Kernel &
+    call Compute_FS_G_Kernel &
            ( D, S_1, S_2, S_3, G, P, V_Dim, iD, F_D, F_S_1, F_S_2, F_S_3, F_G, &
              UseDeviceOption = CS % DeviceMemory )
   
