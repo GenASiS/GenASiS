@@ -51,8 +51,6 @@ module Fluid_P_I__Form
       ComputeFromPrimitive
     procedure, public, pass :: &
       ComputeFromBalanced
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeRawFluxes
     final :: &
       Finalize
   end type Fluid_P_I_Form
