@@ -303,7 +303,7 @@ contains
       ( C_SA    =>  A_SA % Chart_GS, &
         G_SA_V  =>  G_SA % Storage_GS % Value, &
         F_SA_V  =>  F_SA % Storage_GS % Value, &
-        M_B     =>  F_SA % BaryonMassReference, &
+        M_B     =>  F_SA % BaryonMass, &
         N_Min   =>  F_SA % BaryonDensityMin )
     associate &
       ( nGL   =>  C_SA % nGhostLayers ( 1 ), &

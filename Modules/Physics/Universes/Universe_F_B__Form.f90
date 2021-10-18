@@ -217,6 +217,12 @@ contains
         class is ( Fluid_D_Form )
       call F % Initialize ( G, U % Units_F )
       end select !-- G
+    case ( 'IDEAL' )
+      allocate ( Fluid_P_I_Form  ::  I % CurrentSet_X )
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_I_Form )
+      call F % Initialize ( G, U % Units_F )
+      end select !-- G
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )
       call Show ( FluidType, 'FluidType', CONSOLE % ERROR )
