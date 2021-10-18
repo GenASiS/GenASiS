@@ -191,9 +191,7 @@ contains
     end associate !-- F
     end select !-- I
              
-    if ( .not. associated ( PW % Integrator % SetInitial ) ) &
-      PW % Integrator % SetInitial  =>  SetInitial
-
+    PW % Integrator % SetInitial    =>  SetInitial
     PW % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse

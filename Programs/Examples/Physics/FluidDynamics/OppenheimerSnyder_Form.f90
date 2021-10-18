@@ -71,11 +71,6 @@ contains
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
 
-   if ( .not. associated ( U % Integrator % SetInitial ) ) &
-     U % Integrator % SetInitial  =>  SetInitial
-
-    U % Integrator % System  =>  U
-
   end subroutine Initialize_H
 
 
@@ -167,7 +162,7 @@ contains
 
   subroutine InitializeUniverse ( OS, Name )
 
-    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
+    class ( OppenheimerSnyderForm ), intent ( inout ), target :: &
       OS
     character ( * ), intent ( in )  :: &
       Name
@@ -188,7 +183,9 @@ contains
     end associate !-- F
     end select !-- I
 
+    OS % Integrator % SetInitial    =>  SetInitial
     OS % Integrator % SetReference  =>  SetReference
+    OS % Integrator % System        =>  OS
 
   end subroutine InitializeUniverse
 

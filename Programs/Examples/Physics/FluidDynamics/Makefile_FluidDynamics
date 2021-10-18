@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder #RiemannProblem RayleighTaylor \
+all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder RiemannProblem #RayleighTaylor \
      SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
      ODE_Solve 
 
@@ -21,8 +21,7 @@ SawtoothWaveAdvection: ThirdParty.a GenASiS.a SawtoothWaveAdvection.o
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FLAGS) \
            -o OppenheimerSnyder_$(MACHINE) \
-           OppenheimerSnyder.o \
-	   OppenheimerSnyder_Form.o \
+           OppenheimerSnyder.o OppenheimerSnyder_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
