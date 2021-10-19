@@ -62,20 +62,21 @@ module Fluid_P_I__Form
   interface
   
     module subroutine Apply_EOS_I_T_Kernel &
-             ( M, P, E, SB, SS, N, T, M_Ref, Gamma, C_V, N0, P0, &
+             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0, &
                UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         M, &
-        P, &
+        N, &
         E, &
+        P, &
+        T, &
         SB, &
         SS
-      real ( KDR ), dimension ( : ), intent ( in ) :: &
-        N, &
-        T
       real ( KDR ), intent ( in ) :: &
         M_Ref, &
+        N_Min, &
+        T_Min, &
         Gamma, &
         C_V, &
         N0, &
@@ -85,20 +86,21 @@ module Fluid_P_I__Form
     end subroutine Apply_EOS_I_T_Kernel
 
     module subroutine Apply_EOS_I_E_Kernel &
-             ( M, P, T, SB, SS, N, E, M_Ref, Gamma, C_V, N0, P0, &
+             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
                UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         M, &
+        N, &
+        E, &
         P, &
         T, &
         SB, &
         SS
-      real ( KDR ), dimension ( : ), intent ( in ) :: &
-        N, &
-        E
       real ( KDR ), intent ( in ) :: &
         M_Ref, &
+        N_Min, &
+        E_Min, &
         Gamma, &
         C_V, &
         N0, &
@@ -316,7 +318,7 @@ contains
              iaSelectedOption &
                =  [ CS % BARYON_DENSITY_C, CS % VELOCITY_U, &
                     CS % ENERGY_DENSITY_C, CS % PRESSURE, CS % TEMPERATURE, &
-                    CS % MACH_NUMBER, CS % ENTROPY_PER_BARYON ] )
+                    CS % ENTROPY_PER_BARYON ] )
 
   end subroutine SetStream
 
@@ -326,7 +328,7 @@ contains
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       FS
 
-    call FS % Fluid_D_Form % Show ( )
+    call FS % Fluid_P_Form % Show ( )
 
     call Show ( FS % BoltzmannConstant, &
                 FS % Unit ( FS % ENTROPY_PER_BARYON, 1 ), &
@@ -364,6 +366,8 @@ contains
         (    FV  =>  F % Storage ( iC ) % Value, &
           M_Ref  =>  F % BaryonMass, &
           N_Min  =>  F % BaryonDensityMin, &
+          E_Min  =>  F % EnergyDensityMin, &
+          T_Min  =>  F % TemperatureMin, &
           Gamma  =>  F % AdiabaticIndex, &
           C_V    =>  F % SpecificHeatVolume, &
           N_0    =>  F % FiducialBaryonDensity, &
@@ -383,12 +387,11 @@ contains
           P    =>  FV ( :, F % PRESSURE ), &
           T    =>  FV ( :, F % TEMPERATURE ), &
           SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
-          SS   =>  FV ( :, F % SOUND_SPEED ), &
-          MN   =>  FV ( :, F % MACH_NUMBER ) )
+          SS   =>  FV ( :, F % SOUND_SPEED ) )
    
       call Apply_EOS_I_T_Kernel &
-             ( M, P, E, SB, SS, N, T, M_Ref, Gamma, C_V, N_0, P_0, &
-               UseDeviceOption = F % DeviceMemory )
+             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, T_Min, Gamma, C_V, &
+               N_0, P_0, UseDeviceOption = F % DeviceMemory )
 
       select type ( Gn  =>  F % Geometry )
       class is ( Gravitation_G_Form )
@@ -401,8 +404,9 @@ contains
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call F % Compute_D_S_G_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
-               D, S_1, S_2, S_3, G, MN, UseDeviceOption = F % DeviceMemory )
+               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, &
+                 UseDeviceOption = F % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
         end associate !-- GSV
@@ -441,6 +445,7 @@ contains
         (   CSV  =>  FS_CS % Storage ( iC ) % Value, &
           M_Ref  =>  CS % BaryonMass, &
           N_Min  =>  CS % BaryonDensityMin, &
+          E_Min  =>  CS % EnergyDensityMin, &
           Gamma  =>  CS % AdiabaticIndex, &
           C_V    =>  CS % SpecificHeatVolume, &
           N_0    =>  CS % FiducialBaryonDensity, &
@@ -460,12 +465,11 @@ contains
           P    =>  CSV ( :, CS % PRESSURE ), &
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
-          SS   =>  CSV ( :, CS % SOUND_SPEED ), &
-          MN   =>  CSV ( :, CS % MACH_NUMBER ) )
-   
+          SS   =>  CSV ( :, CS % SOUND_SPEED ) )
+
       call Apply_EOS_I_E_Kernel &
-             ( M, P, T, SB, SS, N, E, M_Ref, Gamma, C_V, N_0, P_0, &
-               UseDeviceOption = CS % DeviceMemory )
+             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
+               N_0, P_0, UseDeviceOption = CS % DeviceMemory )
 
       select type ( Gn  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -478,8 +482,9 @@ contains
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call CS % Compute_D_S_G_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, M, E, SS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
-                 D, S_1, S_2, S_3, G, MN, UseDeviceOption = CS % DeviceMemory )
+               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, &
+                 UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
         end associate !-- GSV
@@ -525,6 +530,7 @@ contains
         (   CSV  =>  CS % Storage ( iC ) % Value, &
           M_Ref  =>  CS % BaryonMass, &
           N_Min  =>  CS % BaryonDensityMin, &
+          E_Min  =>  CS % EnergyDensityMin, &
           Gamma  =>  CS % AdiabaticIndex, &
           C_V    =>  CS % SpecificHeatVolume, &
           N_0    =>  CS % FiducialBaryonDensity, &
@@ -544,8 +550,7 @@ contains
           P    =>  CSV ( :, CS % PRESSURE ), &
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
-          SS   =>  CSV ( :, CS % SOUND_SPEED ), &
-          MN   =>  CSV ( :, CS % MACH_NUMBER ) )
+          SS   =>  CSV ( :, CS % SOUND_SPEED ) )
    
       select type ( Gn  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -558,8 +563,9 @@ contains
             M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
 
         call CS % Compute_N_V_E_G_Kernel &
-               ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
-                 N, V_1, V_2, V_3, E, UseDeviceOption = CS % DeviceMemory )
+               ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, N, V_1, V_2, V_3, E, &
+                 UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_UU_11, etc.
         end associate !-- GSV
@@ -572,8 +578,8 @@ contains
       end select !-- Gn
 
       call Apply_EOS_I_E_Kernel &
-             ( M, P, T, SB, SS, N, E, M_Ref, Gamma, C_V, N_0, P_0, &
-               UseDeviceOption = CS % DeviceMemory )
+             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
+               N_0, P_0, UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
       end associate !-- CSV, etc.

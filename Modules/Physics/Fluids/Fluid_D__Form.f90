@@ -383,7 +383,7 @@ contains
       F % BaryonMass  =  CONSTANT % ATOMIC_MASS_UNIT
     end if
 
-    F % BaryonDensityMin  =  sqrt ( tiny ( 0.0_KDR ) )
+    F % BaryonDensityMin  =  1.0e2_KDR * sqrt ( tiny ( 0.0_KDR ) )
     call PROGRAM_HEADER % GetParameter &
            ( F % BaryonDensityMin, 'BaryonDensityMin' )
 

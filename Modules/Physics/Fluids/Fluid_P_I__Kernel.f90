@@ -14,16 +14,12 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
-    real ( KDR ) :: &
-      SqrtHuge
     logical ( KDL ) :: &
       UseDevice
 
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
-
-    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
 
     nValues = size ( P )
     
@@ -34,26 +30,24 @@ contains
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
+      !$OMP firstprivate ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
+
+        if ( N ( iV )  <  N_Min ) &
+          N ( iV )  =  N_Min
+        if ( T ( iV )  <  T_Min ) &
+          T ( iV )  =  T_Min
 
         E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
 
-          SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                      *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-          SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-        else
-          SB ( iV )  =  - SqrtHuge
-          SS ( iV )  =    0.0_KDR
-        end if
+        SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -62,26 +56,24 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
+      !$OMP firstprivate ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
+
+        if ( N ( iV )  <  N_Min ) &
+          N ( iV )  =  N_Min
+        if ( T ( iV )  <  T_Min ) &
+          T ( iV )  =  T_Min
 
         E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
 
-          SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                      *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-          SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-        else
-          SB ( iV )  =  - SqrtHuge
-          SS ( iV )  =    0.0_KDR
-        end if
+        SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
       end do !-- iV
       !$OMP end parallel do
@@ -96,8 +88,6 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
-    real ( KDR ) :: &
-      SqrtHuge
     logical ( KDL ) :: &
       UseDevice
 
@@ -105,35 +95,30 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
-
     nValues = size ( P )
 
     if ( UseDevice ) then
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
+      !$OMP firstprivate ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
 
+        if ( N ( iV )  <  N_Min ) &
+          N ( iV )  =  N_Min
+        if ( E ( iV )  <  E_Min ) &
+          E ( iV )  =  E_Min
+
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
 
-           T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
+        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
 
-          SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                      *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-          SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-        else
-           T ( iV )  =    0.0_KDR
-          SB ( iV )  =  - SqrtHuge
-          SS ( iV )  =    0.0_KDR
-        end if
+        SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -142,27 +127,24 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, Gamma, C_V, N0, P0, SqrtHuge )
+      !$OMP firstprivate ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
 
+        if ( N ( iV )  <  N_Min ) &
+          N ( iV )  =  N_Min
+        if ( E ( iV )  <  E_Min ) &
+          E ( iV )  =  E_Min
+
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
 
-           T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
+        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
 
-          SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                      *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-          SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-        else
-           T ( iV )  =    0.0_KDR
-          SB ( iV )  =  - SqrtHuge
-          SS ( iV )  =    0.0_KDR
-        end if
+        SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
       end do !-- iV
       !$OMP end parallel do

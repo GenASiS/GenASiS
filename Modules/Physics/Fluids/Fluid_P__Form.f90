@@ -13,8 +13,8 @@ module Fluid_P__Form
 
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_P = 1, &
-      N_BALANCED_P = 1, &
-      N_FIELDS_P    = 7, &
+      N_BALANCED_P  = 1, &
+      N_FIELDS_P    = 6, &
       N_VECTORS_P   = 0
 
   type, public, extends ( Fluid_D_Form ) :: Fluid_P_Form
@@ -28,15 +28,23 @@ module Fluid_P__Form
       PRESSURE           = 0, &
       TEMPERATURE        = 0, &
       ENTROPY_PER_BARYON = 0, &
-      SOUND_SPEED        = 0, &
-      MACH_NUMBER        = 0
+      SOUND_SPEED        = 0
+   real ( KDR ) :: &
+     EnergyDensityMin, &
+     TemperatureMin
    logical ( KDL ) :: &
      UseInitialTemperature
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
     procedure, public, pass :: &
+      SetEnergyDensityMin
+    procedure, public, pass :: &
+      SetTemperatureMin
+    procedure, public, pass :: &
       SetUseInitialTemperature
+    procedure, public, pass :: &
+      Show => Show_FS
     procedure, public, pass :: &
       ComputeFromInitial
     procedure, public, pass :: &
@@ -65,33 +73,33 @@ module Fluid_P__Form
   interface
 
     module subroutine Compute_D_S_G_G_Kernel & 	 	 
-             ( N, V_1, V_2, V_3, M, E, CS, M_DD_11, M_DD_22, M_DD_33, N_Min, &
-               D, S_1, S_2, S_3, G, MN, UseDeviceOption )
+             ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+               N_Min, E_Min, D, S_1, S_2, S_3, G, UseDeviceOption )
       !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
         N, & 	 	 
-        V_1, V_2, V_3
+        V_1, V_2, V_3, &
+        E
       real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
         M, &
-        E, &
-        CS, &
+        SS, &
         M_DD_11, M_DD_22, M_DD_33
       real ( KDR ), intent ( in ) :: &
-        N_Min
+        N_Min, &
+        E_Min
       real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
         D, & 	 	 
         S_1, S_2, S_3, &
-        G, &
-        MN
+        G
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Compute_D_S_G_G_Kernel 	 	 
 
     module subroutine Compute_N_V_E_G_Kernel &
-             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
-               N, V_1, V_2, V_3, E, UseDeviceOption )
+             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, N, V_1, V_2, V_3, E, UseDeviceOption )
       !-- Compute_DensityC_Velocity_EnergyC_Galileo_Kernel
       use Basics
       implicit none
@@ -103,7 +111,8 @@ module Fluid_P__Form
         M, &
         M_UU_11, M_UU_22, M_UU_33
       real ( KDR ), intent ( in ) :: &
-        N_Min
+        N_Min, &
+        E_Min
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         N, &
         V_1, V_2, V_3, &
@@ -213,7 +222,6 @@ contains
     F % TEMPERATURE         =  oF + 4
     F % ENTROPY_PER_BARYON  =  oF + 5
     F % SOUND_SPEED         =  oF + 6
-    F % MACH_NUMBER         =  oF + 7
 
     nFields  =  oF  +  F % N_FIELDS_P
     if ( present ( nFieldsOption ) ) &
@@ -233,8 +241,7 @@ contains
           'Pressure        ', &
           'Temperature     ', &
           'EntropyPerBaryon', &
-          'SoundSpeed      ', &
-          'MachNumber      ' ]
+          'SoundSpeed      ' ]
 
     !-- Units
 
@@ -259,8 +266,6 @@ contains
         =  Units_F ( iC ) % Energy  /  Units_F ( iC ) % Temperature
       FieldUnit ( F % SOUND_SPEED, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 1 )
-      FieldUnit ( F % MACH_NUMBER, iC ) &
-        =  UNIT % IDENTITY
     end do !-- iC
 
     end associate !-- nC
@@ -315,9 +320,48 @@ contains
 
     !-- Parameters
 
+    F % EnergyDensityMin  =  1.0e-10_KDR  *  F % BaryonDensityMin
+    F % TemperatureMin    =  F % EnergyDensityMin  /  F % BaryonDensityMin
+
     F % UseInitialTemperature  =  .false.
 
   end subroutine InitializeAllocate_F
+
+
+  subroutine SetEnergyDensityMin ( F, EnergyDensityMin )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      EnergyDensityMin
+
+    F % EnergyDensityMin  =  EnergyDensityMin
+
+    call Show ( 'Setting EnergyDensityMin of a Fluid', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % EnergyDensityMin, &
+                F % Unit ( F % ENERGY_DENSITY_C, 1 ), 'EnergyDensityMin', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetEnergyDensityMin
+
+
+  subroutine SetTemperatureMin ( F, TemperatureMin )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      TemperatureMin
+
+    F % TemperatureMin  =  TemperatureMin
+
+    call Show ( 'Setting TemperatureMin of a Fluid', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % TemperatureMin, &
+                F % Unit ( F % TEMPERATURE, 1 ), 'TemperatureMin', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetTemperatureMin
 
 
   subroutine SetUseInitialTemperature ( F, UseInitialTemperature )
@@ -336,6 +380,25 @@ contains
                 F % IGNORABILITY + 1 )
 
   end subroutine SetUseInitialTemperature
+
+
+  subroutine Show_FS ( FS )
+
+    class ( Fluid_P_Form ), intent ( in ) :: &
+      FS
+
+    call FS % Fluid_D_Form % Show ( )
+
+    call Show ( FS % EnergyDensityMin, &
+                FS % Unit ( FS % ENERGY_DENSITY_C, 1 ), 'EnergyDensityMin', &
+                FS % IGNORABILITY )
+    call Show ( FS % TemperatureMin, &
+                FS % Unit ( FS % TEMPERATURE, 1 ), 'TemperatureMin', &
+                FS % IGNORABILITY )
+    call Show ( FS % UseInitialTemperature, 'UseInitialTemperature', &
+                FS % IGNORABILITY )
+
+  end subroutine Show_FS
 
 
   subroutine ComputeFromInitial ( CS )
