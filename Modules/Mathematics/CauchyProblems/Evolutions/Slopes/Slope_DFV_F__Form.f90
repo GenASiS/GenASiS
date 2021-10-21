@@ -6,6 +6,7 @@ module Slope_DFV_F__Form
   use RiemannSolver_HLL__Form
   use Slope_H__Form
   use Slope_DFV_PD__Form
+  use Slope_DFV_C_F__Form
 
   implicit none
   private
@@ -60,20 +61,27 @@ contains
              nFieldsOption = CS % nBalanced, &
              IgnorabilityOption = IgnorabilityOption )
 
-    end associate !-- CS
-
-    !-- Slope component: Partial derivative
+    !-- Slope components: Partial derivative and flat connection
 
     associate ( nSC  =>  S % nComponents )
+
     nSC  =  nSC + 1
     allocate ( Slope_DFV_PD_Form :: S % Component ( nSC ) % Element )
     select type ( SPD  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_PD_Form )
-
     call SPD % Initialize ( RS, SuffixOption )
-
     end select !-- SPD
+
+    nSC  =  nSC + 1
+    allocate ( Slope_DFV_C_F_Form :: S % Component ( nSC ) % Element )
+    select type ( SCF  =>  S % Component ( nSC ) % Element )
+      class is ( Slope_DFV_C_F_Form )
+    call SCF % Initialize ( CS, SuffixOption )
+    end select !-- SCF
+
     end associate !-- nSC
+
+    end associate !-- CS
 
   end subroutine InitializeAllocate_F
 
