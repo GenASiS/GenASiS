@@ -80,7 +80,8 @@ contains
     !-- Compute_Spherical_Kernel
 
     integer ( KDI ) :: &
-      iV, jV, kV
+      iV, jV, kV, &
+      dJ
     integer ( KDI ), dimension ( 3 ) :: &
       iaS, &
       iaVP, &
@@ -101,11 +102,17 @@ contains
     where ( shape ( S_M_1 )  >  1 )
       uV  =  shape ( S_M_1 )  -  oV
     end where
-      
+
+    if ( count ( lV > 1 )  ==  1 ) then
+      dJ  =  0  !-- 1D
+    else
+      dJ  =  1  !-- 2D or 3D
+    end if
+  
     if ( UseDevice ) then
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) firstprivate ( dJ )
       do kV  =  lV ( 3 ),  uV ( 3 ) 
         do jV  =  lV ( 2 ),  uV ( 2 )
           do iV  =  lV ( 1 ),  uV ( 1 )
@@ -118,7 +125,7 @@ contains
  
             S_M_2 ( iV, jV, kV )  &
               =  S_UD_33 ( iV, jV, kV )  &
-                 *  ( A_I_2 ( iV, jV + 1, kV )  -  A_I_2 ( iV, jV, kV ) )  &
+                 *  ( A_I_2 ( iV, jV + dJ, kV )  -  A_I_2 ( iV, jV, kV ) )  &
                  /  V ( iV, jV, kV )
  
           end do !-- iV
@@ -129,7 +136,7 @@ contains
     else !-- use host
               
       !$OMP parallel do collapse ( 3 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) firstprivate ( dJ )
       do kV  =  lV ( 3 ),  uV ( 3 ) 
         do jV  =  lV ( 2 ),  uV ( 2 )
           do iV  =  lV ( 1 ),  uV ( 1 )
@@ -142,7 +149,7 @@ contains
  
             S_M_2 ( iV, jV, kV )  &
               =  S_UD_33 ( iV, jV, kV )  &
-                 *  ( A_I_2 ( iV, jV + 1, kV )  -  A_I_2 ( iV, jV, kV ) )  &
+                 *  ( A_I_2 ( iV, jV + dJ, kV )  -  A_I_2 ( iV, jV, kV ) )  &
                  /  V ( iV, jV, kV )
  
           end do !-- iV

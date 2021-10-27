@@ -60,6 +60,8 @@ module Fluid_D__Form
       ComputeFluxes
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
+    procedure, public, pass ( CS ) :: &
+      ComputeStresses
     final :: &
       Finalize
   end type Fluid_D_Form
@@ -69,7 +71,8 @@ module Fluid_D__Form
       Compute_D_S_G_Kernel, &
       Compute_N_V_G_Kernel, &
       Compute_FS_G_Kernel, &
-      Compute_ES_G_Kernel
+      Compute_ES_G_Kernel, &
+      Compute_S_UD_Kernel
 
   interface
   
@@ -157,7 +160,21 @@ module Fluid_D__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Compute_ES_G_Kernel
-    
+
+    module subroutine Compute_S_UD_Kernel &
+             ( V_2, V_3, S_2, S_3, S_UD_22, S_UD_33, UseDeviceOption )
+      !-- Compute_Stress_UD_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        V_2, V_3, &
+        S_2, S_3
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        S_UD_22, S_UD_33
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_S_UD_Kernel
+
   end interface
 
 
@@ -678,6 +695,43 @@ contains
     end associate !-- FSV, etc.
 
   end subroutine ComputeEigenspeeds
+
+
+  subroutine ComputeStresses ( S_UD, CS, iC, iMomentum_1, iMomentum_2 )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      S_UD
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      CS
+    integer ( KDI ), intent ( in ) :: &
+      iC  !-- iChart
+    integer ( KDI ), intent ( out ) :: &
+      iMomentum_1, iMomentum_2
+
+    call Search &
+           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_1, iMomentum_1 )
+    call Search &
+           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_2, iMomentum_2 )
+
+    associate &
+      (  S_UD_V  =>   S_UD % Storage ( iC ) % Value, &
+        CSV      =>  CS    % Storage ( iC ) % Value )
+    associate &
+      ( S_UD_22  =>  S_UD_V ( :, 1 ), &
+        S_UD_33  =>  S_UD_V ( :, 2 ), &
+           V_2   =>  CSV ( :, CS % VELOCITY_U_2 ), &
+           V_3   =>  CSV ( :, CS % VELOCITY_U_3 ), &
+           S_2   =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+           S_3   =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ) )
+ 
+    call Compute_S_UD_Kernel &
+           ( V_2, V_3, S_2, S_3, S_UD_22, S_UD_33, &
+             UseDeviceOption = CS % DeviceMemory )
+
+    end associate !-- S_UD_22, etc.
+    end associate !-- S_UD_V, etc.
+
+  end subroutine ComputeStresses
 
 
   impure elemental subroutine Finalize ( F )
