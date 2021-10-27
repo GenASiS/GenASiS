@@ -272,4 +272,39 @@ contains
   end procedure Compute_ES_G_Kernel
 
 
+  module procedure Compute_S_UD_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( S_UD_22 )
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        S_UD_22 ( iV )  =  V_2 ( iV )  *  S_2 ( iV )  +  P ( iV )
+        S_UD_33 ( iV )  =  V_3 ( iV )  *  S_3 ( iV )  +  P ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        S_UD_22 ( iV )  =  V_2 ( iV )  *  S_2 ( iV )  +  P ( iV )
+        S_UD_33 ( iV )  =  V_3 ( iV )  *  S_3 ( iV )  +  P ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+
+  end procedure Compute_S_UD_Kernel
+
+
 end submodule Fluid_P__Kernel
