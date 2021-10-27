@@ -199,9 +199,9 @@ contains
     call S % Clear ( )
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-    do iC  =  1,  RS % Atlas % nCharts
+    do iC  =  1,  S % Atlas % nCharts
        
-      associate ( C  =>  S % Atlas % Chart ( 1 ) % Element )
+      associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
       do iD  =  1, C % nDimensions
 
         if ( associated ( T_RS ) ) then

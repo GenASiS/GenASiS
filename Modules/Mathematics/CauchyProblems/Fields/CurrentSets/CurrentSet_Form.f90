@@ -60,6 +60,8 @@ module CurrentSet_Form
       ComputeFluxes
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
+    procedure, public, pass ( CS ) :: &
+      ComputeStresses
     final :: &
       Finalize
   end type CurrentSetForm
@@ -409,6 +411,25 @@ contains
     end if !-- Density default
 
   end subroutine ComputeEigenspeeds
+
+
+  subroutine ComputeStresses ( S_UD, CS, iC, iMomentum_1, iMomentum_2 )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      S_UD
+    class ( CurrentSetForm ), intent ( in ) :: &
+      CS
+    integer ( KDI ), intent ( in ) :: &
+      iC  !-- iChart
+    integer ( KDI ), intent ( out ) :: &
+      iMomentum_1, iMomentum_2
+
+    call Show ( 'ComputeStresses should be overridden', CONSOLE % WARNING )
+    call Show ( 'CurrentSet_Form', 'module', CONSOLE % WARNING )
+
+    call S_UD % Clear ( )
+
+  end subroutine ComputeStresses
 
 
   impure elemental subroutine Finalize ( CS )

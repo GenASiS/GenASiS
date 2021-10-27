@@ -11,8 +11,10 @@ module Slope_DFV_C_F__Form
   private
 
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_C_F_Form
+    integer ( KDI ) :: &
+      iTimerKernel = 0
     type ( FieldSetForm ), allocatable :: &
-      Stress
+      Stress_UD
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
   contains
@@ -20,9 +22,58 @@ module Slope_DFV_C_F__Form
       InitializeAllocate_C_F
     generic, public :: &
       Initialize => InitializeAllocate_C_F
+    procedure, private, pass :: &
+      TimerKernel
+    procedure, public, pass :: &
+      CloneTimers
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Slope_DFV_C_F_Form
+
+    private :: &
+      Compute_C_Kernel, &
+      Compute_S_Kernel
+
+    interface
+
+      module subroutine Compute_C_Kernel &
+               ( S_M_1, S_UD_33, A_I_1, V, oV, UseDeviceOption )
+        !-- Compute_Cylindrical_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          S_M_1
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          S_UD_33, &
+          A_I_1, &
+          V
+        integer ( KDI ), intent ( in ) :: &
+          oV
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_C_Kernel
+
+      module subroutine Compute_S_Kernel &
+               ( S_M_1, S_M_2, S_UD_22, S_UD_33, A_I_1, A_I_2, V, oV, &
+                 UseDeviceOption )
+        !-- Compute_Spherical_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          S_M_1, S_M_2
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          S_UD_22, S_UD_33, &
+          A_I_1, A_I_2, &
+          V
+        integer ( KDI ), intent ( in ) :: &
+          oV
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_S_Kernel
+
+    end interface
 
 
 contains
@@ -64,18 +115,166 @@ contains
              nFieldsOption = CS % nBalanced, &
              IgnorabilityOption = IgnorabilityOption )
 
-    allocate ( S % Stress )
-    associate ( SS  =>  S % Stress )
-    call SS % Initialize &
+    allocate ( S % Stress_UD )
+    associate ( S_UD  =>  S % Stress_UD )
+    call S_UD % Initialize &
            ( CS % Atlas, &
-             FieldOption = [ 'Stress_22', 'Stress_33' ], &
-             NameOption = 'Stress', &
+             FieldOption = [ 'Stress_UD_22', 'Stress_UD_33' ], &
+             NameOption = 'Stress_UD', &
              DeviceMemoryOption = CS % DeviceMemory, &
              nFieldsOption = 2, &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
-    end associate !-- SSS
+    end associate !-- S_UD
 
   end subroutine InitializeAllocate_C_F
+
+
+  function TimerKernel ( S, LevelOption ) result ( T )
+
+    class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ), optional :: &
+      LevelOption
+    type ( TimerForm ), pointer :: &
+      T
+
+    character ( LDL ) :: &
+      TimerName
+
+    associate ( iT  =>  S % iTimerKernel )
+
+    if ( iT == 0 ) then
+      TimerName  =  trim ( S % TimerName ) // '_Krnl' 
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+
+    end associate !-- iT
+
+  end function TimerKernel
+
+
+  subroutine CloneTimers ( S, S_S )
+
+    class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
+      S
+    class ( Slope_H_Form ), intent ( in ) :: &
+      S_S  !-- S_Source
+
+    integer ( KDI ) :: &
+      iC  !-- iComponent
+
+    call S % Slope_H_Form % CloneTimers ( S_S )
+
+    select type ( S_S )
+    class is ( Slope_DFV_C_F_Form )
+
+    S % iTimerKernel  =  S_S % iTimerKernel
+
+    end select !-- S_S
+
+  end subroutine CloneTimers
+
+
+  subroutine Compute ( S, T_Option, iS_Option )
+
+    class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
+      S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option
+
+    integer ( KDI ) :: &
+      iC, &  !-- iChart
+      iMomentum_1, &
+      iMomentum_2
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      A_I_1, A_I_2, &
+      V, &
+      S_UD_22, &
+      S_UD_33, &
+      S_M_1, &
+      S_M_2
+    type ( TimerForm ), pointer :: &
+      T_K
+
+    call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+
+    associate &
+      ( CS     =>  S % CurrentSet, &
+         S_UD  =>  S % Stress_UD, &
+         G     =>  S % CurrentSet % Geometry )
+
+    if ( present ( T_Option ) ) then
+      T_K  =>   S % TimerKernel ( LevelOption = T_Option % Level + 1 )
+    else
+      T_K  =>  null ( )
+    end if
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    call S % Clear ( )
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+    do iC  =  1,  S % Atlas % nCharts
+       
+      associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
+
+      call CS % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+
+      if ( associated ( T_K ) ) call T_K % Start ( )
+
+      associate &
+        ( SV      =>   S    % Storage ( iC ) % Value, &
+          S_UD_V  =>   S_UD % Storage ( iC ) % Value, &
+          GV      =>   G    % Storage ( iC ) % Value )
+
+      select type ( C )
+      class is ( Chart_GS_Form )
+
+        call C % SetFieldPointer ( SV     ( :, iMomentum_1 ),    S_M_1 )
+        call C % SetFieldPointer ( SV     ( :, iMomentum_2 ),    S_M_2 )
+        call C % SetFieldPointer ( S_UD_V ( :, 1 ),              S_UD_22 )
+        call C % SetFieldPointer ( S_UD_V ( :, 2 ),              S_UD_33 )
+        call C % SetFieldPointer ( GV     ( :, G % AREA_I_D_1 ), A_I_1 )
+        call C % SetFieldPointer ( GV     ( :, G % AREA_I_D_2 ), A_I_2 )
+        call C % SetFieldPointer ( GV     ( :, G % VOLUME ),     V )
+
+        select case ( trim ( C % CoordinateSystem ) )
+        case ( 'CYLINDRICAL' )
+          call Compute_C_Kernel &
+                 ( S_M_1, S_UD_33, A_I_1, V, C % nGhostLayers ( 1 ), &
+                   UseDeviceOption = S % DeviceMemory )
+        case ( 'SPHERICAL' )
+          call Compute_S_Kernel &
+                 ( S_M_1, S_M_2, S_UD_22, S_UD_33, A_I_1, A_I_2, V, &
+                   C % nGhostLayers ( 1 ), UseDeviceOption = S % DeviceMemory )
+        end select !-- CoordinateSystem
+
+      class default
+        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+        call Show ( 'Slope_DFV_C_F__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- C
+
+      end associate !-- SV, etc.
+        
+      if ( associated ( T_K ) ) call T_K % Stop ( )
+
+      end associate !-- C
+
+    end do !-- iC
+
+    end associate !-- CS, etc.
+
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( S )
@@ -85,8 +284,8 @@ contains
 
     nullify ( S % CurrentSet )
     
-    if ( allocated ( S % Stress ) ) &
-      deallocate ( S % Stress )
+    if ( allocated ( S % Stress_UD ) ) &
+      deallocate ( S % Stress_UD )
 
   end subroutine Finalize
 

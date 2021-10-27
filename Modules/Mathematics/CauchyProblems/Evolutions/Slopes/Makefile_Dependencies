@@ -46,6 +46,11 @@ Slope_DFV_C_F__Form.o: \
   Slope_H__Form.o \
   Slope_DFV_C_F__Form.f90
 
+Slope_DFV_C_F__Kernel.o: \
+  Basics.o \
+  Slope_DFV_C_F__Form.o \
+  Slope_DFV_C_F__Kernel.f90
+
 Slope_DFV_F__Form.o: \
   Basics.o \
   RiemannSolver_HLL__Form.o \
