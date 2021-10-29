@@ -14,6 +14,7 @@ contains
     integer ( KDI ) :: &
       iV, &
       iF, &
+      iF_F, &
       iF_B, &
       nV, &
       nF
@@ -26,9 +27,14 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
       
-    nV  =  size ( F_I, dim = 1 )
-    nF  =  size ( F_I, dim = 2 )
+    nV  =  size ( RSV, dim = 1 )
+    nF  =  size ( iaFluxes )
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+    
+    associate &
+      ( F_I  => RSV, &
+        AP_I => RSV ( :, iAP ), &
+        AM_I => RSV ( :, iAM ) )
     
     if ( UseDevice ) then
     
@@ -39,6 +45,7 @@ contains
         AM_I ( iV )  =  max ( 0.0_KDR, - EM_IL ( iV ), - EM_IR ( iV ) )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
@@ -47,8 +54,9 @@ contains
         do iV  =  1,  nV
 
           iF_B  =  iaBalanced ( iF )
+          iF_F  =  iaFluxes ( iF )
 
-          F_I ( iV, iF ) &
+          F_I ( iV, iF_F ) &
             =  (    AP_I ( iV )  *  F_IL ( iV, iF ) &
                  +  AM_I ( iV )  *  F_IR ( iV, iF ) &
                  -  AP_I ( iV )  *  AM_I ( iV ) &
@@ -76,8 +84,9 @@ contains
         do iV  =  1,  nV
 
           iF_B  =  iaBalanced ( iF )
+          iF_F  =  iaFluxes ( iF )
 
-          F_I ( iV, iF ) &
+          F_I ( iV, iF_F ) &
             =  (    AP_I ( iV )  *  F_IL ( iV, iF ) &
                  +  AM_I ( iV )  *  F_IR ( iV, iF ) &
                  -  AP_I ( iV )  *  AM_I ( iV ) &
@@ -89,6 +98,8 @@ contains
       !$OMP end parallel do
     
     end if
+    
+    end associate   !-- F_I, AP_I, AM_I
 
   end procedure ComputeKernel
 
