@@ -4,12 +4,12 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Laplacian_M_ASCG__Form_Test Poisson_ASCG__Form_Test
 
-Laplacian_M_ASCG__Form_Test: Basics.a Manifolds.a Fields.a PoissonEquations.a \
-  Laplacian_M_ASCG__Form_Test.o
+Laplacian_M_ASCG__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a \
+  PoissonEquations.a Laplacian_M_ASCG__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Laplacian_M_ASCG__Form_Test_$(MACHINE) \
           Laplacian_M_ASCG__Form_Test.o PoissonEquations.a \
-          Fields.a Manifolds.a Basics.a $(LIBRARIES)
+          Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 Poisson_ASCG__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a \
   PoissonEquations.a Poisson_ASCG__Form_Test.o
