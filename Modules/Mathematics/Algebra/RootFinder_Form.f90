@@ -10,15 +10,15 @@ module RootFinder_Form
       IGNORABILITY
     integer ( KDI ) :: &
       MaxIterations = 20, &
-      nIterations      = 0
+      nIterations   = 0
     real ( KDR ) :: &
-      RequestedAccuracy = 1.0e-8_KDR, &
+      RequestedAccuracy, &
       SolutionAccuracy
     logical ( KDL ) :: &
       Success = .false.
     procedure ( EZ ), public, pointer, nopass :: &
-      EvaluateZero => null ( ), &
-      EvaluateDerivative => null ( )
+      ZeroFunction => null ( ), &
+      ZeroFunctionDerivative => null ( )
     class ( * ), private, pointer :: &
       Parameters => null ( )
   contains
@@ -73,7 +73,8 @@ contains
     
     if ( present ( MaxIterationsOption ) ) &
       RF % MaxIterations = MaxIterationsOption
-    
+
+    RF % RequestedAccuracy = epsilon ( 1.0_KDR ) * 10.0_KDR 
     if ( present ( AccuracyOption ) ) &
       RF % RequestedAccuracy = AccuracyOption
     
@@ -105,8 +106,8 @@ contains
     X_0 = Guess_1
     X_1 = Guess_2
     
-    call RF % EvaluateZero ( RF % Parameters, X_0, Y_0 )
-    call RF % EvaluateZero ( RF % Parameters, X_1, Y_1 )
+    call RF % ZeroFunction ( RF % Parameters, X_0, Y_0 )
+    call RF % ZeroFunction ( RF % Parameters, X_1, Y_1 )
     
     do iIteration = 1, RF % MaxIterations
       
@@ -131,7 +132,7 @@ contains
       Y_0 = Y_1
       
       X_1 = X
-      call RF % EvaluateZero ( RF % Parameters, X_1, Y_1 )
+      call RF % ZeroFunction ( RF % Parameters, X_1, Y_1 )
       
     end do
     
@@ -147,7 +148,7 @@ contains
     real ( KDR ), intent ( out ) :: &
       Root
     
-    if ( associated ( RF % EvaluateDerivative ) ) then
+    if ( associated ( RF % ZeroFunctionDerivative ) ) then
       call RF % SolveNewtonRaphson ( Interval, Root )
     else
       call RF % SolveBrent ( Interval, Root )
@@ -177,8 +178,8 @@ contains
     a = Interval ( 1 )
     b = Interval ( 2 )
     
-    call RF % EvaluateZero ( RF % Parameters, a, fa )
-    call RF % EvaluateZero ( RF % Parameters, b, fb )
+    call RF % ZeroFunction ( RF % Parameters, a, fa )
+    call RF % ZeroFunction ( RF % Parameters, b, fb )
     
     if ( ( fa > 0.0_KDR .and. fb > 0.0_KDR ) &
          .or. ( fa < 0.0_KDR .and. fb < 0.0_KDR ) ) &
@@ -247,7 +248,7 @@ contains
       a=b
       fa=fb
       b=b+merge(d,sign(Accuracy1,xm), abs(d) > Accuracy1 )
-      call RF % EvaluateZero ( RF % Parameters, b, fb )
+      call RF % ZeroFunction ( RF % Parameters, b, fb )
     end do
     
     RF % SolutionAccuracy = abs ( fb )
@@ -281,15 +282,10 @@ contains
     x1 = Interval(1)
     x2 = Interval(2)
 
-    !call Function(Parameters, x1, fl)
-    !call Derivative(Parameters, x1, df)
-    !call Function(Parameters, x2, fh)
-    !call Derivative(Parameters, x2, df)
-    
-    call RF % EvaluateZero ( RF % Parameters, x1, fl )
-    call RF % EvaluateDerivative ( RF % Parameters, x1, df ) 
-    call RF % EvaluateZero ( RF % Parameters, x2, fh )
-    call RF % EvaluateDerivative ( RF % Parameters, x2, df ) 
+    call RF % ZeroFunction ( RF % Parameters, x1, fl )
+    call RF % ZeroFunctionDerivative ( RF % Parameters, x1, df ) 
+    call RF % ZeroFunction ( RF % Parameters, x2, fh )
+    call RF % ZeroFunctionDerivative ( RF % Parameters, x2, df ) 
     
     if ( ( fl > 0.0_KDR .and. fh > 0.0_KDR ) &
          .or. ( fl < 0.0_KDR .and. fh < 0.0_KDR ) ) then
@@ -302,8 +298,6 @@ contains
       return
     end if
    
-    !if(present(SuccessOption)) SuccessOption = .true.
-    
     if ( fl == 0.0_KDR ) then
       Root=x1
       return
@@ -321,11 +315,8 @@ contains
     dxold = abs ( x2 - x1 )
     dx    = dxold
     
-    !call Function(Parameters, Root, f)
-    !call Derivative(Parameters, Root, df)
-
-    call RF % EvaluateZero ( RF % Parameters, Root, f )
-    call RF % EvaluateDerivative ( RF % Parameters, Root, df ) 
+    call RF % ZeroFunction ( RF % Parameters, Root, f )
+    call RF % ZeroFunctionDerivative ( RF % Parameters, Root, df ) 
     
     do iIteration = 1, RF % MaxIterations
       if ( ( ( Root-xh ) * df - f ) * ( ( Root - xl ) * df - f ) > 0.0_KDR &
@@ -342,8 +333,8 @@ contains
         if ( temp == Root )return
       endif
       if ( abs ( dx ) < xacc ) return
-      call RF % EvaluateZero ( RF % Parameters, Root, f )
-      call RF % EvaluateDerivative ( RF % Parameters, Root, df ) 
+      call RF % ZeroFunction ( RF % Parameters, Root, f )
+      call RF % ZeroFunctionDerivative ( RF % Parameters, Root, df ) 
       if ( f < 0.0_KDR ) then
         xl = Root
       else
@@ -351,8 +342,8 @@ contains
       endif
     end do
     
-    call Show ( 'FindRoot exceeded maximum iterations', RF % IGNORABILITY )
-    call Show ( 'FindRoot could not find root to the specified accuracy', &
+    call Show ( 'RootFinder exceeded maximum iterations', RF % IGNORABILITY )
+    call Show ( 'RootFinder could not find root to the specified accuracy', &
                 RF % IGNORABILITY )
 
      RF % Success = .false.
@@ -360,14 +351,14 @@ contains
   end subroutine SolveNewtonRaphson
 
   
-  Subroutine Finalize ( RF )
+  subroutine Finalize ( RF )
   
     type ( RootFinderForm ), intent ( inout ) :: &
       RF
     
     nullify ( RF % Parameters )
-    nullify ( RF % EvaluateDerivative )
-    nullify ( RF % EvaluateZero )
+    nullify ( RF % ZeroFunctionDerivative )
+    nullify ( RF % ZeroFunction )
   
   end subroutine Finalize
   

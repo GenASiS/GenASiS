@@ -38,7 +38,7 @@ include $(PATH_ALGEBRA)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
 include $(PATH_FIELD_SETS)/Makefile_Dependencies
 include $(PATH_GEOMETRIES)/Makefile_Dependencies
-include $(PATH_CALCULUS)/Makefile_Dependencies
+include $(PATH_CALCULUS_FIELDS)/Makefile_Dependencies
 include $(PATH_CURRENT_SETS)/Makefile_Dependencies
 
 CurrentSet_Form_Test.o: \

@@ -2,7 +2,7 @@ module Fields
 
   use FieldSets
   use Geometries
-  use Calculus
+  use CalculusFields
   use CurrentSets
 
 end module Fields

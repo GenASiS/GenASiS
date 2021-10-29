@@ -41,7 +41,7 @@ module OppenheimerSnyder_Form
       SetReference
 
       private :: &
-        EvaluateZeroEta, &
+        ZeroFunctionEta, &
         SetFluid, &
         SetBaryonDensityMin
 
@@ -272,7 +272,7 @@ contains
     allocate ( OS % RootFinder )
     associate ( RF => OS % RootFinder )
     call RF % Initialize ( OS )
-    RF % EvaluateZero  =>  EvaluateZeroEta
+    RF % ZeroFunction  =>  ZeroFunctionEta
     end associate !-- RF
 
     call SetFluid ( OS, F )
@@ -316,7 +316,7 @@ contains
   end subroutine SetReference
 
 
-  subroutine EvaluateZeroEta ( OS, Eta, Zero )
+  subroutine ZeroFunctionEta ( OS, Eta, Zero )
 
     class ( * ), intent ( in ) :: &
       OS
@@ -336,7 +336,7 @@ contains
     end associate !-- Tau, etc.
     end select !-- OS
     
-  end subroutine EvaluateZeroEta
+  end subroutine ZeroFunctionEta
 
 
   subroutine SetFluid ( OS, F )

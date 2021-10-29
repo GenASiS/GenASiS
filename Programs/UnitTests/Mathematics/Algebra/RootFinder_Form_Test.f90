@@ -1,17 +1,17 @@
-module MySinusoidalFunction_Module
+module SineFunction_Module
 
   use Basics
 
   implicit none
   private
 
-  public :: MySinusoidalFunction
-  public :: MySinusoidalDerivativeFunction
+  public :: SineFunction
+  public :: CosineFunction
 
 contains
 
 
-  subroutine MySinusoidalFunction ( Parameters, Input, Result )
+  subroutine SineFunction ( Parameters, Input, Result )
 
     class ( * ), intent ( in ) :: &
       Parameters
@@ -29,10 +29,10 @@ contains
     
     call Show ( [ Input, Result ], 'sin Input - Result', CONSOLE % INFO_7 )
   
-  end subroutine MySinusoidalFunction
+  end subroutine SineFunction
 
   
-  subroutine MySinusoidalDerivativeFunction ( Parameters, Input, Result )
+  subroutine CosineFunction ( Parameters, Input, Result )
 
     class ( * ), intent ( in ) :: &
       Parameters
@@ -50,38 +50,24 @@ contains
     
     call Show ( [ Input, Result ], 'sin Input - Result', CONSOLE % INFO_7 )
   
-  end subroutine MySinusoidalDerivativeFunction
+  end subroutine CosineFunction
 
-end module MySinusoidalFunction_Module
+  
+end module SineFunction_Module
 
 
 program RootFinder_Form_Test
 
   use Basics
   use Algebra
-  use MySinusoidalFunction_Module
+  use SineFunction_Module
   
   implicit none
-  
-  interface 
-    subroutine FunctionEvaluatorInterface ( Parameters, Input, Result )
-      use Basics
-      class ( * ), intent ( in ) :: &
-        Parameters
-      real ( KDR ), intent ( in ) :: &
-        Input
-      real ( KDR ), intent ( out ) :: &
-        Result
-    end subroutine FunctionEvaluatorInterface
-  end interface 
   
   integer ( KDI ) :: &
     iValue    
   real ( KDR ) :: &
     Root
-  procedure ( FunctionEvaluatorInterface ), pointer :: &
-    FunctionEvaluator => null ( ), &
-    FunctionDerivativeEvaluator => null ( )
   type ( Real_1D_Form ) :: &
     Parameters
   type ( RootFinderForm ) :: &
@@ -95,7 +81,7 @@ program RootFinder_Form_Test
   Parameters % Value = [ ( acos ( -1.0_KDR ) * iValue, iValue = 1, 10 ) ]
   
   call RF % Initialize ( Parameters )
-  RF % EvaluateZero => MySinusoidalFunction  
+  RF % ZeroFunction => SineFunction  
   
   !-- solve with brent method
   call RF % Solve &
@@ -124,7 +110,7 @@ program RootFinder_Form_Test
 
   Root = huge ( 0.0_KDR )
   !-- solve with newton-raphson method
-  RF % EvaluateDerivative => MySinusoidalDerivativeFunction
+  RF % ZeroFunctionDerivative => CosineFunction
   call RF % Solve &
               ( [ 1.5_KDR * acos ( - 1.0_KDR ), &
                   2.6_KDR * acos ( - 1.0_KDR ) ], Root )
