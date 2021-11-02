@@ -76,7 +76,7 @@ module RiemannSolver_HLL__Form
       
       module subroutine ComputeKernel &
                ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
-                 iaBalanced, F_I, AP_I, AM_I, UseDeviceOption )
+                 iaBalanced, iaFluxes, iAP, iAM, RSV, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
@@ -86,11 +86,13 @@ module RiemannSolver_HLL__Form
           EP_IL, EP_IR, &
           EM_IL, EM_IR
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          iaBalanced
+          iaBalanced, &
+          iaFluxes
+        integer ( KDI ), intent ( in ) :: &
+          iAP, &  !-- iAlphaPlus
+          iAM     !-- iAlphaMinus
         real ( KDR ), dimension ( :, : ), intent ( out ) :: &
-          F_I
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
-          AP_I, AM_I
+          RSV     !-- RiemannSolver Value
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeKernel
@@ -567,6 +569,10 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option  !-- iStage_Option
 
+    integer ( KDI ) :: &
+      iF
+    integer ( KDI ), dimension ( 1 : RS % CurrentSet % nBalanced ) :: &
+      iaFluxes 
     type ( TimerForm ), pointer :: &
       T_FS, &
       T_ES, &
@@ -574,7 +580,7 @@ contains
       T_RFS, &
       T_RES, &
       T_K
-
+    
     associate &
       (  CS  =>  RS % CurrentSet, &
          FS  =>  RS % FluxSet, &
@@ -621,30 +627,42 @@ contains
 
     if ( associated ( T_K ) ) call T_K % Start ( )
     associate &
-      ( RSV     =>  RS % Storage ( iC ) % Value, &
-        RBV_IL  =>  RBS % Output_IL % Storage ( iC ) % Value, &
-        RBV_IR  =>  RBS % Output_IR % Storage ( iC ) % Value, &
-        RFV_IL  =>  RFS % Output_IL % Storage ( iC ) % Value, &
-        RFV_IR  =>  RFS % Output_IR % Storage ( iC ) % Value, &
-        REV_IL  =>  RES % Output_IL % Storage ( iC ) % Value, &
-        REV_IR  =>  RES % Output_IR % Storage ( iC ) % Value )
+      ( RSS     =>  RS % Storage ( iC ), &
+        RBS_IL  =>  RBS % Output_IL % Storage ( iC ), &
+        RBS_IR  =>  RBS % Output_IR % Storage ( iC ), &
+        RFS_IL  =>  RFS % Output_IL % Storage ( iC ), &
+        RFS_IR  =>  RFS % Output_IR % Storage ( iC ), &
+        RES_IL  =>  RES % Output_IL % Storage ( iC ), &
+        RES_IR  =>  RES % Output_IR % Storage ( iC ) )
     associate &
-      (  F_I   =>  RSV ( :, 1 : CS % nBalanced ), &
-        AP_I   =>  RSV ( :, RS % ALPHA_PLUS_U ), &
-        AM_I   =>  RSV ( :, RS % ALPHA_MINUS_U ), &
-         F_IL  =>  RFV_IL ( :, : ), &
-         F_IR  =>  RFV_IR ( :, : ), &
-         U_IL  =>  RBV_IL ( :, : ), &
-         U_IR  =>  RBV_IR ( :, : ), &
-        EP_IL  =>  REV_IL ( :, ES % EIGENSPEED_FAST_PLUS_U ), &
-        EP_IR  =>  REV_IR ( :, ES % EIGENSPEED_FAST_PLUS_U ), &
-        EM_IL  =>  REV_IL ( :, ES % EIGENSPEED_FAST_MINUS_U ), &
-        EM_IR  =>  REV_IR ( :, ES % EIGENSPEED_FAST_MINUS_U ) )
-
+      (   RSV  =>  RSS % Value, &
+         F_IL  =>  RFS_IL % Value, &
+         F_IR  =>  RFS_IR % Value, &
+         U_IL  =>  RBS_IL % Value, &
+         U_IR  =>  RBS_IR % Value, &
+        EP_IL  =>  RES_IL % Value ( :, ES % EIGENSPEED_FAST_PLUS_U ), &
+        EP_IR  =>  RES_IR % Value ( :, ES % EIGENSPEED_FAST_PLUS_U ), &
+        EM_IL  =>  RES_IL % Value ( :, ES % EIGENSPEED_FAST_MINUS_U ), &
+        EM_IR  =>  RES_IR % Value ( :, ES % EIGENSPEED_FAST_MINUS_U ) )
+    
+    iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
+    
+    call RSS    % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RBS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RBS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+        
     call ComputeKernel &
            ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
-             RS % FluxSet % iaSelected, F_I, AP_I, AM_I, &
-             UseDeviceOption = RS % DeviceMemory )
+             RS % FluxSet % iaSelected, iaFluxes, RS % ALPHA_PLUS_U, &
+             RS % ALPHA_MINUS_U, RSV, UseDeviceOption = RS % DeviceMemory )
+    
+    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RBS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RBS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RSS    % ReassociateHost ( AssociateVariablesOption = .false. )
 
     end associate !-- F_I, etc.
     end associate !-- RSV, etc.
@@ -674,13 +692,17 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option  !-- iStage_Option
 
+    integer ( KDI ) :: &
+      iF 
+    integer ( KDI ), dimension ( RS % CurrentSet % nBalanced ) :: &
+      iaFluxes
     type ( TimerForm ), pointer :: &
       T_RPS, &
       T_CFP, &
       T_FS, &
       T_ES, &
       T_K
-
+    
     associate &
       (  CS     =>  RS % CurrentSet, &
          CS_IL  =>  RS % CurrentSet_IL, &
@@ -726,31 +748,43 @@ contains
 
     if ( associated ( T_K ) ) call T_K % Start ( )
     associate &
-      ( RSV     =>  RS % Storage ( iC ) % Value, &
-        CSV_IL  =>  RS % CurrentSet_IL % Storage ( iC ) % Value, &
-        CSV_IR  =>  RS % CurrentSet_IR % Storage ( iC ) % Value, &
-        RFV_IL  =>  RS % FluxSet_IL % Storage ( iC ) % Value, &
-        RFV_IR  =>  RS % FluxSet_IR % Storage ( iC ) % Value, &
-        REV_IL  =>  RS % EigenspeedSet_IL % Storage ( iC ) % Value, &
-        REV_IR  =>  RS % EigenspeedSet_IR % Storage ( iC ) % Value )
+      ( RSS     =>  RS % Storage ( iC ), &
+        CSS_IL  =>  RS % CurrentSet_IL % Storage ( iC ), &
+        CSS_IR  =>  RS % CurrentSet_IR % Storage ( iC ), &
+        RFS_IL  =>  RS % FluxSet_IL % Storage ( iC ), &
+        RFS_IR  =>  RS % FluxSet_IR % Storage ( iC ), &
+        RES_IL  =>  RS % EigenspeedSet_IL % Storage ( iC ), &
+        RES_IR  =>  RS % EigenspeedSet_IR % Storage ( iC ) )
     associate &
-      (  F_I   =>  RSV ( :, 1 : CS % nBalanced ), &
-        AP_I   =>  RSV ( :, RS % ALPHA_PLUS_U ), &
-        AM_I   =>  RSV ( :, RS % ALPHA_MINUS_U ), &
-         F_IL  =>  RFV_IL ( :, : ), &
-         F_IR  =>  RFV_IR ( :, : ), &
-         U_IL  =>  CSV_IL ( :, : ), &
-         U_IR  =>  CSV_IR ( :, : ), &
-        EP_IL  =>  REV_IL ( :, ES_IL % EIGENSPEED_FAST_PLUS_U ), &
-        EP_IR  =>  REV_IR ( :, ES_IR % EIGENSPEED_FAST_PLUS_U ), &
-        EM_IL  =>  REV_IL ( :, ES_IL % EIGENSPEED_FAST_MINUS_U ), &
-        EM_IR  =>  REV_IR ( :, ES_IR % EIGENSPEED_FAST_MINUS_U ) )
-
+      (   RSV  =>  RSS % Value, &
+         F_IL  =>  RFS_IL % Value, &
+         F_IR  =>  RFS_IR % Value, &
+         U_IL  =>  CSS_IL % Value, &
+         U_IR  =>  CSS_IR % Value, &
+        EP_IL  =>  RES_IL % Value ( :, ES_IL % EIGENSPEED_FAST_PLUS_U ), &
+        EP_IR  =>  RES_IR % Value ( :, ES_IR % EIGENSPEED_FAST_PLUS_U ), &
+        EM_IL  =>  RES_IL % Value ( :, ES_IL % EIGENSPEED_FAST_MINUS_U ), &
+        EM_IR  =>  RES_IR % Value ( :, ES_IR % EIGENSPEED_FAST_MINUS_U ) )
+    
+    iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
+    
+    call RSS    % ReassociateHost ( AssociateVariablesOption = .false. )
+    call CSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call CSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    
     call ComputeKernel &
            ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
-             CS % iaBalanced, F_I, AP_I, AM_I, &
-             UseDeviceOption = RS % DeviceMemory )
-
+             CS % iaBalanced, iaFluxes, RS % ALPHA_PLUS_U, &
+             RS % ALPHA_MINUS_U, RSV, UseDeviceOption = RS % DeviceMemory )
+    
+    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+    call CSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call CSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+    call RSS    % ReassociateHost ( AssociateVariablesOption = .true. )
+    
     end associate !-- F_I, etc.
     end associate !-- RSV, etc.
     if ( associated ( T_K ) ) call T_K % Stop ( )

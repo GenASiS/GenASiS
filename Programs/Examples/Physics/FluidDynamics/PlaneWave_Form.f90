@@ -156,7 +156,8 @@ contains
       X
     real ( KDR ) :: &
       W
-
+    
+    W = huge ( 1.0_KDR ) 
     call Show ( 'Waveform should be overridden', CONSOLE % WARNING )
     call Show ( 'PlaneWave_Form', 'module', CONSOLE % WARNING )
     call Show ( 'Waveform', 'function', CONSOLE % WARNING )
