@@ -176,7 +176,7 @@ contains
         GyV  =>  Gy % Storage ( iC ) % Value, &
          FV  =>  FS % Storage ( iC ) % Value )
 
-      call C % SetFieldPointer ( GyV ( :, Gy % CENTER_U ( iD ) ), X )
+      call C % SetFieldPointer ( GyV ( :, Gy % AVERAGE_1_U ( iD ) ), X )
       call C % SetFieldPointer (  FV,  F   )
       call C % SetFieldPointer (  GV, dFdX )
 
