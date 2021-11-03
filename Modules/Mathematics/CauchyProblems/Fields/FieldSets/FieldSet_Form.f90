@@ -111,8 +111,9 @@ contains
   subroutine InitializeAllocate_FS &
                ( FS, A, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-                 nFieldsOption, IgnorabilityOption )
+                 DevicesCommunicateOption, AssociateFieldsOption, &
+                 UnitOption, VectorIndicesOption, nFieldsOption, &
+                 IgnorabilityOption )
 
     class ( FieldSetForm ), intent ( inout ), target :: &
       FS
@@ -126,7 +127,8 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
-      DevicesCommunicateOption
+      DevicesCommunicateOption, &
+      AssociateFieldsOption
     type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -169,7 +171,7 @@ contains
 
     FS % DevicesCommunicate  =  .false.
     if ( present ( DevicesCommunicateOption ) )  &
-      FS % DevicesCommunicate  =  DevicesCommunicateOption  
+      FS % DevicesCommunicate  =  DevicesCommunicateOption
 
     FS % Atlas  =>  A
     associate ( nC  =>  FS % Atlas % nCharts )
@@ -251,7 +253,7 @@ contains
                  UnitOption = FS % Unit ( :, iC ), &
                  VectorIndicesOption = FS % VectorIndices )
         if ( FS % DeviceMemory ) &
-          call S % AllocateDevice ( )
+          call S % AllocateDevice ( AssociateFieldsOption )
       end if  !-- associated Primary 
       end associate !-- S
 

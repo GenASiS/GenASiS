@@ -59,8 +59,9 @@ contains
   subroutine InitializeAllocate_FS &
                ( FS, A, FieldOption, VectorOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-                 nFieldsOption, IgnorabilityOption )
+                 DevicesCommunicateOption, AssociateFieldsOption, &
+                 UnitOption, VectorIndicesOption, nFieldsOption, &
+                 IgnorabilityOption )
 
     class ( Gravitation_N_SG_Form ), intent ( inout ), target :: &
       FS
@@ -74,7 +75,8 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
-      DevicesCommunicateOption
+      DevicesCommunicateOption, &
+      AssociateFieldsOption
     type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -95,8 +97,8 @@ contains
     call FS % Gravitation_N_H_Form % Initialize &
            ( A, FieldOption, VectorOption, NameOption, &
              DeviceMemoryOption, PinnedMemoryOption, &
-             DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-             nFieldsOption, IgnorabilityOption )
+             DevicesCommunicateOption, AssociateFieldsOption, UnitOption, &
+             VectorIndicesOption, nFieldsOption, IgnorabilityOption )
 
     !-- Source
 
