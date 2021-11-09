@@ -1,0 +1,10 @@
+Integral_Form.o: \
+  Basics.o \
+  Integral_Form.f90
+
+Calculus.o: \
+  Integral_Form.o \
+  Calculus.f90
+
+Calculus.a: $(CALCULUS)
+	ar r Calculus.a $(CALCULUS)

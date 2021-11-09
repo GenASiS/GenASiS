@@ -1,0 +1,3 @@
+CALCULUS = \
+  Calculus.o \
+  Integral_Form.o

@@ -16,7 +16,7 @@ module RootFinder_Form
       SolutionAccuracy
     logical ( KDL ) :: &
       Success = .false.
-    procedure ( EZ ), public, pointer, nopass :: &
+    procedure ( ZF ), public, pointer, nopass :: &
       ZeroFunction => null ( ), &
       ZeroFunctionDerivative => null ( )
     class ( * ), private, pointer :: &
@@ -39,7 +39,7 @@ module RootFinder_Form
   end type RootFinderForm
   
   abstract interface
-    subroutine EZ ( Parameters, Input, Result )
+    subroutine ZF ( Parameters, Input, Result )
       use Basics
       implicit none
       class ( * ), intent ( in ) :: &
@@ -48,8 +48,9 @@ module RootFinder_Form
         Input
       real ( KDR ), intent ( out ) :: &
         Result
-    end subroutine EZ
+    end subroutine ZF
   end interface
+
   
 contains
 
@@ -68,17 +69,18 @@ contains
       MaxIterationsOption, &
       VerbosityOption
       
-    RF % IGNORABILITY = CONSOLE % INFO_3 
-    if ( present ( VerbosityOption ) ) RF % IGNORABILITY = VerbosityOption 
+    RF % IGNORABILITY  =  CONSOLE % INFO_3 
+    if ( present ( VerbosityOption ) ) &
+      RF % IGNORABILITY  =  VerbosityOption 
     
     if ( present ( MaxIterationsOption ) ) &
-      RF % MaxIterations = MaxIterationsOption
+      RF % MaxIterations  =  MaxIterationsOption
 
-    RF % RequestedAccuracy = epsilon ( 1.0_KDR ) * 10.0_KDR 
+    RF % RequestedAccuracy  =  epsilon ( 1.0_KDR ) * 10.0_KDR 
     if ( present ( AccuracyOption ) ) &
-      RF % RequestedAccuracy = AccuracyOption
+      RF % RequestedAccuracy  =  AccuracyOption
     
-    RF % Parameters => Parameters
+    RF % Parameters  =>  Parameters
   
   end subroutine Initialize
   

@@ -78,10 +78,10 @@ program RootFinder_Form_Test
          ( 'RootFinder_Form_Test', AppendDimensionalityOption = .false. )
   
   call Parameters % Initialize ( 10 )
-  Parameters % Value = [ ( acos ( -1.0_KDR ) * iValue, iValue = 1, 10 ) ]
+  Parameters % Value  =  [ ( acos ( -1.0_KDR ) * iValue, iValue = 1, 10 ) ]
   
   call RF % Initialize ( Parameters )
-  RF % ZeroFunction => SineFunction  
+  RF % ZeroFunction  =>  SineFunction  
   
   !-- solve with brent method
   call RF % Solve &

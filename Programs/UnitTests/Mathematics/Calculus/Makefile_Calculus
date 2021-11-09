@@ -1,0 +1,25 @@
+PATH_GENASIS = ../../../../../
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Integral_Form_Test 
+
+Integral_Form_Test: Basics.a Calculus.a Integral_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Integral_Form_Test_$(MACHINE) \
+          Integral_Form_Test.o \
+	  Calculus.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Integral_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_CALCULUS)/Makefile_Dependencies
+
+Integral_Form_Test.o: \
+  Basics.o \
+  Calculus.o \
+  Integral_Form_Test.f90
