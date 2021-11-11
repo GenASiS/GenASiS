@@ -18,8 +18,8 @@ module OppenheimerSnyder_Form
       RadiusFactor, &
       TimeScale, &
       AtmosphereParameter
-    type ( RootFinderForm ), allocatable :: &
-      RootFinder
+    type ( RootForm ), allocatable :: &
+      Root
     type ( Fluid_D_Form ), allocatable :: &
       Reference, &
       Difference
@@ -41,7 +41,7 @@ module OppenheimerSnyder_Form
       SetReference
 
       private :: &
-        ZeroFunctionEta, &
+        ZeroEta, &
         SetFluid, &
         SetBaryonDensityMin
 
@@ -154,8 +154,8 @@ contains
       deallocate ( OS % Difference )
     if ( allocated ( OS % Reference ) ) &
       deallocate ( OS % Reference )
-    if ( allocated ( OS % RootFinder ) ) &
-      deallocate ( OS % RootFinder )
+    if ( allocated ( OS % Root ) ) &
+      deallocate ( OS % Root )
 
   end subroutine Finalize
 
@@ -269,11 +269,11 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-    allocate ( OS % RootFinder )
-    associate ( RF => OS % RootFinder )
-    call RF % Initialize ( OS )
-    RF % ZeroFunction  =>  ZeroFunctionEta
-    end associate !-- RF
+    allocate ( OS % Root )
+    associate ( R => OS % Root )
+    call R % Initialize ( OS )
+    R % Zero  =>  ZeroEta
+    end associate !-- R
 
     call SetFluid ( OS, F )
     call SetBaryonDensityMin ( OS, F )
@@ -316,14 +316,14 @@ contains
   end subroutine SetReference
 
 
-  subroutine ZeroFunctionEta ( OS, Eta, Zero )
+  function ZeroEta ( OS, Eta ) result ( F )
 
     class ( * ), intent ( in ) :: &
       OS
     real ( KDR ), intent ( in ) :: &
       Eta
-    real ( KDR ), intent ( out ) :: &
-      Zero
+    real ( KDR ) :: &
+      F
 
     select type ( OS )
       class is ( OppenheimerSnyderForm )
@@ -331,12 +331,12 @@ contains
       ( Tau  =>  OS % TimeScale, &
         T    =>  OS % Integrator % T )
 
-    Zero  =  2.0 * T / Tau  -  ( Eta  +  sin ( Eta ) )
+    F  =  2.0 * T / Tau  -  ( Eta  +  sin ( Eta ) )
 
     end associate !-- Tau, etc.
     end select !-- OS
     
-  end subroutine ZeroFunctionEta
+  end function ZeroEta
 
 
   subroutine SetFluid ( OS, F )
@@ -356,7 +356,7 @@ contains
     Pi  =  CONSTANT % PI
 
     associate &
-      (  RF    =>  OS % RootFinder, &
+      (  RF    =>  OS % Root, &
           D_0  =>  OS % DensityInitial, &
           R_0  =>  OS % RadiusInitial, &
         Tau    =>  OS % TimeScale )
