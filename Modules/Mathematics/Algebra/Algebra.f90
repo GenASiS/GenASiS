@@ -2,6 +2,6 @@ module Algebra
 
   use Add_Command
   use MultiplyAdd_Command
-  use RootFinder_Form
+  use Root_Form
   
 end module Algebra
