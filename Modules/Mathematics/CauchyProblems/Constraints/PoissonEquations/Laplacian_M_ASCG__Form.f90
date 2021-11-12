@@ -35,10 +35,8 @@ module Laplacian_M_ASCG__Form
       ComputeAngularMomentsLocal
   end type Laplacian_M_ASCG_Form
 
-
     private :: &
       ComputeAngularMomentsLocal_CGS_S_Kernel
-
 
     interface
 
@@ -103,6 +101,10 @@ contains
 
     nullify ( L % Geometry )
 
+    if ( allocated ( L % Parameters_P ) ) &
+      deallocate ( L % Parameters_P )
+    if ( allocated ( L % Integral_P ) ) &
+      deallocate ( L % Integral_P )
     if ( allocated ( L % AngularFunctions ) ) &
       deallocate ( L % AngularFunctions )
     if ( allocated ( L % dSolidAngles ) ) &
@@ -371,7 +373,7 @@ contains
                  L, M, nTheta, nPhi, oTheta, oPhi, &
                  AF, dSA )
 
-    class ( Laplacian_M_ASCG_Form ), intent ( in ) :: &
+    class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Theta_E, &  !-- PolarAngle
@@ -403,6 +405,10 @@ contains
 
     Pi  =  CONSTANT % PI
 
+    associate &
+      ( IP  =>  LM % Integral_P, &
+        PP  =>  LM % Parameters_P )
+
     if ( nTheta > 1 ) then
       do iTheta  =  1, nTheta
         Th_I  =  Theta_E ( oTheta + iTheta )
@@ -423,10 +429,21 @@ contains
     iA  =  1
     do iM  =  0, M
       do iL  =  iM, L
+
+        PP % iDegree  =  iL
+        PP % iOrder   =  iM
+
         if ( nTheta > 1 ) then
           do iTheta  =  1, nTheta
-            P  =  LM % AssociatedLegendre &
-                         ( cos ( Theta_C ( oTheta + iTheta ) ), iL, iM )
+
+!            P  =  LM % AssociatedLegendre &
+!                         ( cos ( Theta_C ( oTheta + iTheta ) ), iL, iM )
+
+            Th_I  =  Theta_E ( oTheta + iTheta )
+            Th_O  =  Theta_E ( oTheta + iTheta + 1 )
+            call IP % Compute ( cos ( Th_I ), cos ( Th_O ), P )
+            P  =  P  /  ( cos ( Th_O )  -  cos ( Th_I ) )
+
             if ( nPhi > 1 ) then
               do iPhi  =  1, nPhi
                 AF ( iTheta, iPhi, iA     )  &
@@ -438,15 +455,20 @@ contains
               AF ( iTheta, 1, iA     )  =  P
               AF ( iTheta, 1, iA + 1 )  =  0.0_KDR
             end if  !-- nPhi > 1
+
           end do !-- iTheta
         else !-- spherical symmetry
           P  =  LM % AssociatedLegendre ( cos ( 0.5_KDR * Pi ), iL, iM )
           AF ( 1, 1, iA     )  =  P
           AF ( 1, 1, iA + 1 )  =  0.0_KDR
         end if
+
         iA  =  iA + 2 !-- Cos, Sin    
+
       end do !-- iL
     end do !-- iM
+
+    end associate !-- IP, etc.
 
   end subroutine ComputeAngularFunctions
 

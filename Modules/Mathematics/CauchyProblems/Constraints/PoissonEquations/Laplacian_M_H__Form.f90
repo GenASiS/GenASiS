@@ -3,6 +3,7 @@ module Laplacian_M_H__Form
   !-- Laplacian_Multipole_Header_Form
 
   use Basics
+  use Calculus
   use Manifolds
   use Fields
 
@@ -49,6 +50,10 @@ module Laplacian_M_H__Form
       DeltaFactor
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO_AngularMoments
+    type ( IntegralForm ), allocatable :: &
+      Integral_P
+    type ( Parameters_P_Form ), allocatable :: &
+      Parameters_P
   contains
     procedure, public, pass :: &
       Initialize_H
@@ -78,13 +83,23 @@ module Laplacian_M_H__Form
       AssociatedLegendre
   end type Laplacian_M_H_Form
 
+    type, private :: Parameters_P_Form
+      integer ( KDI ) :: &
+        iDegree, &  !-- iL
+        iOrder      !-- iM
+      class ( Laplacian_M_H_Form ), pointer :: &
+        Laplacian => null ( )
+    end type Parameters_P_Form
+
     private :: &
       AllocateReduction, &
       AssignMomentPointers
 
     private :: &
-      ComputeRadialMomentsKernel
+      Integrand_P   
 
+    private :: &
+      ComputeRadialMomentsKernel
 
     interface
 
@@ -117,7 +132,7 @@ contains
 
   subroutine Initialize_H ( L, G, MaxDegree, nEquations )
 
-    class ( Laplacian_M_H_Form ), intent ( inout ) :: &
+    class ( Laplacian_M_H_Form ), intent ( inout ), target :: &
       L
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
@@ -134,6 +149,19 @@ contains
 
     call Show ( 'Initializing ' // trim ( L % Type ), L % IGNORABILITY )
     call Show ( L % Name, 'Name', L % IGNORABILITY )
+
+    allocate ( L % Parameters_P )
+    allocate ( L % Integral_P )
+    associate &
+      ( IP  =>  L % Integral_P, &
+        PP  =>  L % Parameters_P )
+
+      call IP % Initialize ( PP )
+
+      PP % Laplacian  =>  L
+      IP % Integrand  =>  Integrand_P
+
+    end associate !-- IP, etc.
 
     call L % SetParameters ( G, MaxDegree, nEquations )
     call L % SetKernelFunctions ( )
@@ -740,6 +768,30 @@ contains
     end associate  !-- nE, nA, nR
 
   end subroutine AssignMomentPointers
+
+
+  function Integrand_P ( Parameters, X ) result ( IP )
+
+    class ( * ), intent ( in ) :: &
+      Parameters
+    real ( KDR ), intent ( in ) :: &
+      X
+    real ( KDR ) :: &
+      IP
+
+    select type ( P => Parameters )
+      type is ( Parameters_P_Form )
+    associate &
+      ( L   =>  P % Laplacian, &
+        iL  =>  P % iDegree, &
+        iM  =>  P % iOrder )
+
+    IP  =  L % AssociatedLegendre ( X, iL, iM )
+
+    end associate !-- L, etc.
+    end select !-- Parameters
+
+  end function Integrand_P
 
 
 end module Laplacian_M_H__Form

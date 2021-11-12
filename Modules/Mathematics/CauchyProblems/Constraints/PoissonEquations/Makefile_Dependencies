@@ -1,5 +1,6 @@
 Laplacian_M_H__Form.o: \
   Basics.o \
+  Calculus.o \
   Manifolds.o \
   Fields.o \
   Laplacian_M_H__Form.f90
