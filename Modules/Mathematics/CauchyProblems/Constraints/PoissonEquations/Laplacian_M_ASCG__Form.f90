@@ -518,47 +518,35 @@ contains
     iA  =  1
     do iM  =  0, M
       do iL  =  iM, L
+        do iR  =  1, nR
 
-        !-- First radial cell: only iL = 0, i.e. treat it as if spherically 
-        !   symmetric to avoid singularities in irregular radial functions 
-        !   for iL >= 2 
-        iR  =  1
-        R_I  =  R_E ( oR + iR )
-        R_O  =  R_E ( oR + iR + 1 )
-        if ( iL  ==  0 ) then
-          RF_R ( iR, iA )  =  ( R_O ** 3  -  R_I ** 3 )  &
-                              /  ( 3  *  dR33 ( iR, 1 ) )
-          RF_I ( iR, iA )  =  ( R_O ** 2  -  R_I ** 2 )  &
-                              /  ( 2  *  dR33 ( iR, 1 ) )
-        else
-          RF_R ( iR, iA )  =  0.0_KDR
-          RF_I ( iR, iA )  =  0.0_KDR
-        end if
-        RF_R ( iR, iA + 1 )  =  RF_R ( iR, iA )
-        RF_I ( iR, iA + 1 )  =  RF_I ( iR, iA )
+          if ( iR  <  iL + 1 ) then !-- zero out high multipoles near the origin
 
-        do iR  =  2, nR
+            RF_R ( iR, iA )  =  0.0_KDR
+            RF_I ( iR, iA )  =  0.0_KDR
 
-          R_I  =  R_E ( oR + iR )
-          R_O  =  R_E ( oR + iR + 1 )
+          else
 
-          RF_R ( iR, iA )  =  ( R_O ** ( iL + 3 )  -  R_I ** ( iL + 3 ) )  &
+            R_I  =  R_E ( oR + iR )
+            R_O  =  R_E ( oR + iR + 1 )
+
+            RF_R ( iR, iA )  =  ( R_O ** ( iL + 3 )  -  R_I ** ( iL + 3 ) )  &
                               /  ( ( iL + 3 )  *  dR33 ( iR, 1 ) )
 
-          if ( iL  ==  2 ) then
-            RF_I ( iR, iA )  =  log ( R_O / R_I )  /  dR33 ( iR, 1 )
-          else
-            RF_I ( iR, iA )  =  ( R_O ** ( 2 - iL )  -  R_I ** ( 2 - iL ) )  &
-                                /  ( ( 2 - iL )  *  dR33 ( iR, 1 ) )
-          end if
+            if ( iL  ==  2 ) then
+              RF_I ( iR, iA )  =  log ( R_O / R_I )  /  dR33 ( iR, 1 )
+            else
+              RF_I ( iR, iA )  =  ( R_O ** ( 2 - iL )  -  R_I ** ( 2 - iL ) )  &
+                                  /  ( ( 2 - iL )  *  dR33 ( iR, 1 ) )
+            end if !-- iL == 2
+
+          end if !
 
           RF_R ( iR, iA + 1 )  =  RF_R ( iR, iA )
           RF_I ( iR, iA + 1 )  =  RF_I ( iR, iA )
 
         end do !-- iR
-
         iA  =  iA + 2  !-- Cos, Sin
-
       end do !-- iL
     end do !-- iM
 
