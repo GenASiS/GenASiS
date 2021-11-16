@@ -215,9 +215,7 @@ contains
     call ComputeAngularFunctions &
            (      LM  =  L, &
              Theta_E  =  C % Edge ( 2 ) % Value, &
-             Theta_C  =  C % Center ( 2 ) % Value, &
-               Phi_W  =  C % Width ( 3 ) % Value, &
-               Phi_C  =  C % Center ( 3 ) % Value, &
+               Phi_E  =  C % Edge ( 3 ) % Value, &
                    L  =  L % MaxDegree, &
                    M  =  L % MaxOrder, &
               nTheta  =  nCB ( 2 ), &
@@ -229,7 +227,6 @@ contains
 
     call ComputeRadialFunctions &
            (  R_E  =  C % Edge ( 1 ) % Value, &
-              R_C  =  C % Center ( 1 ) % Value, &
                 L  =  L % MaxDegree, &
                 M  =  L % MaxOrder, &
                nR  =  L % nRadialCells, &
@@ -369,18 +366,14 @@ contains
 
 
   subroutine ComputeAngularFunctions &
-               ( LM, Theta_E, Theta_C, Phi_W, Phi_C, &
-                 L, M, nTheta, nPhi, oTheta, oPhi, &
-                 AF, dSA )
+               ( LM, Theta_E, Phi_E, L, M, nTheta, nPhi, oTheta, oPhi, AF, dSA )
 
     class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Theta_E, &  !-- PolarAngle
-      Theta_C
+      Theta_E  !-- PolarAngle
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Phi_W, &    !-- AzimuthalAngle
-      Phi_C
+      Phi_E    !-- AzimuthalAngle
     integer ( KDI ), intent ( in ) :: &
       L, &   !-- MaxDegree
       M, &   !-- MaxOrder
@@ -400,7 +393,7 @@ contains
     real ( KDR ) :: &
       Pi, &
       Th_I, Th_O, &
-      dPh, &
+      Ph_I, Ph_O, &
       P  !-- Normalized AssociatedLegendre polynomial
 
     Pi  =  CONSTANT % PI
@@ -415,8 +408,10 @@ contains
         Th_O  =  Theta_E ( oTheta + iTheta + 1 )
         if ( nPhi > 1 ) then
           do iPhi  =  1, nPhi
-            dPh  =  Phi_W ( oPhi + iPhi )
-            dSA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
+            Ph_I  =  Phi_E ( oPhi + iPhi )
+            Ph_O  =  Phi_E ( oPhi + iPhi + 1 )
+            dSA ( iTheta, iPhi )  &
+              =  ( cos ( Th_I ) - cos ( Th_O ) )  *  ( Ph_O - Ph_I )
           end do !-- iPhi
         else !-- axisymmetry
           dSA ( iTheta, 1 )  =  2.0_KDR * Pi *  ( cos ( Th_I ) - cos ( Th_O ) )
@@ -446,10 +441,19 @@ contains
 
             if ( nPhi > 1 ) then
               do iPhi  =  1, nPhi
-                AF ( iTheta, iPhi, iA     )  &
-                  =  P * cos ( iM * Phi_C ( oPhi + iPhi ) )
-                AF ( iTheta, iPhi, iA + 1 )  &
-                  =  P * sin ( iM * Phi_C ( oPhi + iPhi ) )
+                Ph_I  =  Phi_E ( oPhi + iPhi )
+                Ph_O  =  Phi_E ( oPhi + iPhi + 1 )
+                if ( iM  >  0 ) then
+                  AF ( iTheta, iPhi, iA     )  &
+                    =  P  *  ( sin ( iM * Ph_O )  -  sin ( iM * Ph_I ) ) &
+                             / ( iM * ( Ph_O - Ph_I ) )
+                  AF ( iTheta, iPhi, iA + 1 )  &
+                    =  P  *  ( cos ( iM * Ph_I )  -  cos ( iM * Ph_O ) ) &
+                             / ( iM * ( Ph_O - Ph_I ) )
+                else
+                  AF ( iTheta, iPhi, iA     )  =  P
+                  AF ( iTheta, iPhi, iA + 1 )  =  0.0_KDR
+                end if
               end do !-- iPhi
             else !-- axisymmetry
               AF ( iTheta, 1, iA     )  =  P
@@ -474,11 +478,10 @@ contains
 
 
   subroutine ComputeRadialFunctions &
-               ( R_E, R_C, L, M, nR, oR, dR33, RF_R, RF_I )
+               ( R_E, L, M, nR, oR, dR33, RF_R, RF_I )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R_E, &
-      R_C
+      R_E
     integer ( KDI ), intent ( in ) :: &
       L, &   !-- MaxDegree
       M, &   !-- MaxOrder
