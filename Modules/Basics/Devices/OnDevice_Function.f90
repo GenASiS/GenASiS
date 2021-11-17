@@ -9,7 +9,9 @@ module OnDevice_Function
 
   interface OnDevice
     module procedure OnDevice_1D
+    module procedure OnDevice_2D
     module procedure OnDevice_3D
+    module procedure OnDevice_4D
   end interface OnDevice
 
   public :: &
@@ -37,6 +39,27 @@ contains
     end if
 
   end function OnDevice_1D
+  
+  
+  function OnDevice_2D ( Value ) result ( IP )
+
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
+      Value
+
+    integer ( c_int ) :: &
+      Retval
+    logical :: &
+      IP
+
+    Retval = OnTarget ( c_loc ( Value ) )
+
+    if ( Retval /= 0 ) then
+      IP = .true.
+    else
+      IP = .false.
+    end if
+
+  end function OnDevice_2D
 
 
   function OnDevice_3D ( Value ) result ( IP )
@@ -58,6 +81,27 @@ contains
     end if
 
   end function OnDevice_3D
+
+
+  function OnDevice_4D ( Value ) result ( IP )
+
+    real ( KDR ), dimension ( :, :, :, : ), intent ( in ), target :: &
+      Value
+
+    integer ( c_int ) :: &
+      Retval
+    logical :: &
+      IP
+
+    Retval = OnTarget ( c_loc ( Value ) )
+
+    if ( Retval /= 0 ) then
+      IP = .true.
+    else
+      IP = .false.
+    end if
+
+  end function OnDevice_4D
 
 
 end module OnDevice_Function
