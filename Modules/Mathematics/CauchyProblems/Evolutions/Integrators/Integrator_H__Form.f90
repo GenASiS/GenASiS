@@ -71,7 +71,9 @@ module Integrator_H__Form
       SetInitial => null ( )
     procedure ( RI ), public, pointer :: &
       ResetInitial => null ( )
-    procedure ( SS ), public, pointer :: &
+    !-- FIXME: renamed SS to SS_I to work around CCE bug
+    !procedure ( SS ), public, pointer :: &
+    procedure ( SS_I ), public, pointer :: &
       ShowSystem => null ( )
     procedure ( A ), public, pointer :: &
       Analyze => null ( )
@@ -173,12 +175,12 @@ module Integrator_H__Form
         T_Restart
     end subroutine RI
 
-    subroutine SS ( I )
+    subroutine SS_I ( I )
       import Integrator_H_Form
       implicit none
       class ( Integrator_H_Form ), intent ( in ) :: &
         I
-    end subroutine SS
+    end subroutine SS_I
 
     subroutine A ( I, T_A )
       use Basics
