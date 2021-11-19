@@ -95,7 +95,7 @@ contains
     real ( KDR ), intent ( out ) :: &
       Integral
 
-    integer ( KDR ) :: &
+    integer ( KDI ) :: &
       iI, &      !-- iIteration
       iS, &      !-- iSum
       iR, &      !-- iRecursion
