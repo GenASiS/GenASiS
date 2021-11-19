@@ -1,3 +1,4 @@
 CALCULUS = \
   Calculus.o \
+  Interpolation_Form.o \
   Integral_Form.o

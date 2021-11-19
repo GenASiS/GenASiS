@@ -2,8 +2,13 @@ Integral_Form.o: \
   Basics.o \
   Integral_Form.f90
 
+Interpolation_Form.o: \
+  Basics.o \
+  Interpolation_Form.f90
+
 Calculus.o: \
   Integral_Form.o \
+  Interpolation_Form.o \
   Calculus.f90
 
 Calculus.a: $(CALCULUS)
