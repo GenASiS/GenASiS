@@ -161,7 +161,7 @@ contains
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
       Source
 
 !     type ( TimerForm ), pointer :: &
@@ -211,7 +211,7 @@ contains
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
       Source
 
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 3 )

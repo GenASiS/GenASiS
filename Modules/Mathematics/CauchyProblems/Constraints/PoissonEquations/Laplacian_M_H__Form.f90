@@ -220,7 +220,7 @@ contains
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
       Source
 
     ! type ( TimerForm ), pointer :: &
@@ -540,6 +540,12 @@ contains
       (  L_Max  =>  L % MaxDegree, &
          M_Max  =>  L % MaxOrder, &
             nE  =>  L % nEquations )
+    
+    if ( L % DeviceMemory ) then
+      call L %  AngularMoments % UpdateHost ( )
+      call L % RadialMoments_R % UpdateHost ( )
+      call L % RadialMoments_I % UpdateHost ( )
+    end if
 
     call Show ( 'Displaying Angular Moments' )
 
@@ -694,7 +700,7 @@ contains
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
       Source
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )

@@ -28,7 +28,8 @@ contains
       UseDevice = UseDeviceOption
 
     if ( UseDevice ) then
-
+      
+      !-- The iAM loop at least must be separated to avoid an OMP reduction
       do iE  =  1, nE
         do iAM  =  1, nAM
 
