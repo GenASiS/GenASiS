@@ -9,8 +9,16 @@ Geometry_F__Kernel.o: \
   Geometry_F__Form.o \
   Geometry_F__Kernel.f90
 
+Coarsening_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometry_F__Form.o \
+  Coarsening_C__Form.f90
+
 Geometries.o: \
   Geometry_F__Form.o \
+  Coarsening_C__Form.o \
   Geometries.f90
 
 Geometries.a: $(GEOMETRIES)
