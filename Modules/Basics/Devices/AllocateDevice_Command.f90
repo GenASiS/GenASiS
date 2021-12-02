@@ -17,6 +17,7 @@ module AllocateDevice_Command
     module procedure AllocateDevice_KDR_2D
     module procedure AllocateDevice_KDR_3D
     module procedure AllocateDevice_KDR_4D
+    module procedure AllocateDevice_KDL_1D
   end interface AllocateDevice
   
 contains
@@ -94,4 +95,16 @@ contains
   end subroutine AllocateDevice_KDR_4D
 
 
+  subroutine AllocateDevice_KDL_1D ( Value, Device )
+  
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      Value
+    type ( c_ptr ), intent ( out ) :: &
+      Device
+    
+    Device = AllocateTargetLogical ( size ( Value ) )
+  
+  end subroutine AllocateDevice_KDL_1D
+  
+  
 end module AllocateDevice_Command

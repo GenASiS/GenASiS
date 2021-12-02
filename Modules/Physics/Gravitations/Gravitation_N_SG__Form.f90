@@ -63,8 +63,8 @@ contains
   subroutine InitializeAllocate_N_SG &
                ( G, A, GravitationalConstant, FieldOption, VectorOption, &
                  NameOption, DeviceMemoryOption, PinnedMemoryOption, &
-                 DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-                 nFieldsOption, IgnorabilityOption )
+                 DevicesCommunicateOption, AssociateFieldsOption, UnitOption, &
+                 VectorIndicesOption, nFieldsOption, IgnorabilityOption )
 
     class ( Gravitation_N_SG_Form ), intent ( inout ), target :: &
       G
@@ -80,7 +80,8 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       DeviceMemoryOption, &
       PinnedMemoryOption, &
-      DevicesCommunicateOption
+      DevicesCommunicateOption, &
+      AssociateFieldsOption
     type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -101,8 +102,8 @@ contains
     call G % Gravitation_N_H_Form % Initialize &
            ( A, FieldOption, VectorOption, NameOption, &
              DeviceMemoryOption, PinnedMemoryOption, &
-             DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
-             nFieldsOption, IgnorabilityOption )
+             DevicesCommunicateOption, AssociateFieldsOption, UnitOption, &
+             VectorIndicesOption, nFieldsOption, IgnorabilityOption )
 
     G % GravitationalConstant  =  GravitationalConstant
 

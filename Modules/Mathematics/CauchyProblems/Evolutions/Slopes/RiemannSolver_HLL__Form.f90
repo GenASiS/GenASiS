@@ -277,6 +277,7 @@ contains
              NameOption = Name, &
              DeviceMemoryOption = CS % DeviceMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
+             AssociateFieldsOption = .false., &
              nFieldsOption = nFields, &
              IgnorabilityOption = CS % IGNORABILITY )
 
@@ -647,7 +648,6 @@ contains
     
     iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
     
-    call RSS    % ReassociateHost ( AssociateVariablesOption = .false. )
     call RBS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call RBS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
     call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
@@ -662,7 +662,6 @@ contains
     call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call RBS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
     call RBS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
-    call RSS    % ReassociateHost ( AssociateVariablesOption = .false. )
 
     end associate !-- F_I, etc.
     end associate !-- RSV, etc.
@@ -768,7 +767,6 @@ contains
     
     iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
     
-    call RSS    % ReassociateHost ( AssociateVariablesOption = .false. )
     call CSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
     call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
@@ -783,7 +781,6 @@ contains
     call RFS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
-    call RSS    % ReassociateHost ( AssociateVariablesOption = .true. )
     
     end associate !-- F_I, etc.
     end associate !-- RSV, etc.
@@ -796,7 +793,7 @@ contains
       call RS % Copy ( SDC )
       end associate !-- SDC
     end if
-
+    
   end subroutine ComputeWithReconstructedPrimitive
 
 

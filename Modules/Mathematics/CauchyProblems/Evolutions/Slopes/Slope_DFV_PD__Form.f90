@@ -218,8 +218,6 @@ contains
 
         call S % Storage ( iC ) % ReassociateHost &
                  ( AssociateVariablesOption = .false. )
-        call RS % Storage ( iC ) % ReassociateHost &
-                 ( AssociateVariablesOption = .false. )
         
         associate &
           (  SV  =>   S % Storage ( iC ) % Value, &
@@ -248,8 +246,6 @@ contains
         end associate !-- SV, etc.
         
         call S % Storage ( iC ) % ReassociateHost &
-                 ( AssociateVariablesOption = .true. )
-        call RS % Storage ( iC ) % ReassociateHost &
                  ( AssociateVariablesOption = .true. )
 
         if ( associated ( T_K ) ) call T_K % Stop ( )

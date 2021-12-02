@@ -9,6 +9,14 @@ module Laplacian_M_H__Form
 
   implicit none
   private
+  
+    type, private :: Parameters_P_Form
+      integer ( KDI ) :: &
+        iDegree, &  !-- iL
+        iOrder      !-- iM
+      class ( Laplacian_M_H_Form ), pointer :: &
+        Laplacian => null ( )
+    end type Parameters_P_Form
 
   type, public :: Laplacian_M_H_Form
     integer ( KDI ) :: &
@@ -82,14 +90,6 @@ module Laplacian_M_H__Form
     procedure, public, nopass :: &
       AssociatedLegendre
   end type Laplacian_M_H_Form
-
-    type, private :: Parameters_P_Form
-      integer ( KDI ) :: &
-        iDegree, &  !-- iL
-        iOrder      !-- iM
-      class ( Laplacian_M_H_Form ), pointer :: &
-        Laplacian => null ( )
-    end type Parameters_P_Form
 
     private :: &
       AllocateReduction, &
