@@ -182,14 +182,12 @@ contains
   end subroutine SetStream
 
 
-  subroutine Solve ( G, F, Constant_G, iBaryonMass, iBaryonDensity )
+  subroutine Solve ( G, F, iBaryonMass, iBaryonDensity )
 
     class ( Gravitation_N_H_Form ), intent ( inout ) :: &
       G
     class ( FieldSetForm ), intent ( in ) :: &
       F  !-- Fluid
-    real ( KDR ), intent ( in ) :: &
-      Constant_G  !-- Gravitational
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &
       iBaryonDensity

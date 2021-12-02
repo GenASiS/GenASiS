@@ -469,9 +469,8 @@ contains
 
     select type ( G  =>  CS % Geometry )
       class is ( Gravitation_N_H_Form )
-    !-- FIXME Constant_G
     call G % Solve &
-           ( CS, Constant_G = 1.0_KDR, &
+           ( CS, &
              iBaryonMass = CS % BARYON_MASS, &
              iBaryonDensity = CS % BARYON_DENSITY_B )
     end select !-- G
@@ -557,9 +556,8 @@ contains
 
     select type ( G  =>  CS % Geometry )
       class is ( Gravitation_N_H_Form )
-    !-- FIXME Constant_G
     call G % Solve &
-           ( CS, Constant_G = 1.0_KDR, &
+           ( CS, &
              iBaryonMass = CS % BARYON_MASS, &
              iBaryonDensity = CS % BARYON_DENSITY_B )
     end select !-- G

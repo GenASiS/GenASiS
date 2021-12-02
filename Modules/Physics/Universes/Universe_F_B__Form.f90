@@ -76,6 +76,8 @@ contains
 
     call U % Universe_H_Form % Initialize ( NameOption = Name )
 
+    allocate ( U % Units_F ( 1 ) )
+
     call U % AllocateIntegrator &
            ( )
     call U % InitializePositionSpace &
@@ -146,8 +148,6 @@ contains
     allocate ( Atlas_SCG_Form  ::  I % X )
     select type ( PS  =>  I % X )
       class is ( Atlas_SCG_Form )
-
-    allocate ( U % Units_F ( 1 ) )
 
     call PS % Initialize &
            ( CommunicatorOption = PROGRAM_HEADER % Communicator, &

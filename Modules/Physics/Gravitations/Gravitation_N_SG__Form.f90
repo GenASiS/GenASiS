@@ -10,6 +10,8 @@ module Gravitation_N_SG__Form
   private
 
   type, public, extends ( Gravitation_N_H_Form ) :: Gravitation_N_SG_Form
+    real ( KDR ) :: &
+      GravitationalConstant
     type ( FieldSetForm ), allocatable :: &
       Source, &
       Solution
@@ -21,7 +23,9 @@ module Gravitation_N_SG__Form
       Poisson
   contains
     procedure, private, pass :: &
-      InitializeAllocate_FS
+      InitializeAllocate_N_SG
+    generic, public :: &
+      Initialize => InitializeAllocate_N_SG
     procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
@@ -56,16 +60,18 @@ module Gravitation_N_SG__Form
 contains
 
 
-  subroutine InitializeAllocate_FS &
-               ( FS, A, FieldOption, VectorOption, NameOption, &
-                 DeviceMemoryOption, PinnedMemoryOption, &
+  subroutine InitializeAllocate_N_SG &
+               ( G, A, GravitationalConstant, FieldOption, VectorOption, &
+                 NameOption, DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
                  nFieldsOption, IgnorabilityOption )
 
     class ( Gravitation_N_SG_Form ), intent ( inout ), target :: &
-      FS
+      G
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
+    real ( KDR ), intent ( in ) :: &
+      GravitationalConstant
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -89,19 +95,21 @@ contains
     character ( 1 ) :: &
       DimensionNumber
 
-    if ( FS % Type  ==  '' ) &
-      FS % Type  =  'a Gravitation_N_SG'
+    if ( G % Type  ==  '' ) &
+      G % Type  =  'a Gravitation_N_SG'
 
-    call FS % Gravitation_N_H_Form % Initialize &
+    call G % Gravitation_N_H_Form % Initialize &
            ( A, FieldOption, VectorOption, NameOption, &
              DeviceMemoryOption, PinnedMemoryOption, &
              DevicesCommunicateOption, UnitOption, VectorIndicesOption, &
              nFieldsOption, IgnorabilityOption )
 
+    G % GravitationalConstant  =  GravitationalConstant
+
     !-- Source
 
-    allocate ( FS % Source )
-    associate ( S  =>  FS % Source )
+    allocate ( G % Source )
+    associate ( S  =>  G % Source )
     call S % Initialize &
            ( A, &
              FieldOption = [ 'Source' ], &
@@ -113,24 +121,24 @@ contains
 
     !-- Solution and SolutionGradient
 
-    allocate ( FS % Solution )
+    allocate ( G % Solution )
     associate &
-      ( S  =>  FS % Solution )
+      ( S  =>  G % Solution )
 
     call S % Initialize &
-           ( FS, &
-             iaSelected = [ FS % POTENTIAL ], &
+           ( G, &
+             iaSelected = [ G % POTENTIAL ], &
              NameOption = 'GravitationSolution', &
              IgnorabilityOption = A % IGNORABILITY + 1 )
 
-    allocate ( FS % SolutionGradient ( 3 ) )
+    allocate ( G % SolutionGradient ( 3 ) )
     do iD  =  1, 3
       write ( DimensionNumber, fmt = '(i1.1)' ) iD
       associate &
-        ( SG  =>  FS % SolutionGradient ( iD ) )
+        ( SG  =>  G % SolutionGradient ( iD ) )
       call SG % Initialize &
-             ( FS, &
-               iaSelected = [ FS % POTENTIAL_GRADIENT_D ( iD ) ], &
+             ( G, &
+               iaSelected = [ G % POTENTIAL_GRADIENT_D ( iD ) ], &
                NameOption = 'GravitationGradient_' // DimensionNumber, &
                IgnorabilityOption = A % IGNORABILITY + 1 )
       end associate !-- iD
@@ -147,7 +155,7 @@ contains
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'Gravitation_N_SG__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeAllocate_FS', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'InitializeAllocate_N_SG', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
@@ -155,9 +163,9 @@ contains
 
     !-- Gradient
 
-    allocate ( FS % Gradient )
-    associate ( Gt  =>  FS % Gradient )
-    call Gt % Initialize ( FS, FS % Solution )
+    allocate ( G % Gradient )
+    associate ( Gt  =>  G % Gradient )
+    call Gt % Initialize ( G, G % Solution )
     end associate !-- Gt
 
     !-- Poisson
@@ -165,12 +173,12 @@ contains
     MaxDegree  =  12
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
-    allocate ( FS % Poisson )
-    associate ( PA  =>  FS % Poisson )
-    call PA % Initialize ( FS, 'MULTIPOLE', MaxDegree )
+    allocate ( G % Poisson )
+    associate ( PA  =>  G % Poisson )
+    call PA % Initialize ( G, 'MULTIPOLE', MaxDegree )
     end associate !-- PA
 
-  end subroutine InitializeAllocate_FS
+  end subroutine InitializeAllocate_N_SG
 
 
   subroutine Show_FS ( FS )
@@ -183,6 +191,8 @@ contains
 
     call FS % Gravitation_N_H_Form % Show ( )
 
+    call Show ( FS % GravitationalConstant, 'GravitationalConstant' )
+
     call FS % Source % Show ( )
     call FS % Solution % Show ( )
     do iD = 1, 3
@@ -194,14 +204,12 @@ contains
   end subroutine Show_FS
 
 
-  subroutine Solve ( G, F, Constant_G, iBaryonMass, iBaryonDensity )
+  subroutine Solve ( G, F, iBaryonMass, iBaryonDensity )
 
     class ( Gravitation_N_SG_Form ), intent ( inout ) :: &
       G
     class ( FieldSetForm ), intent ( in ) :: &
       F  !-- Fluid
-    real ( KDR ), intent ( in ) :: &
-      Constant_G  !-- Gravitational
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &
       iBaryonDensity
@@ -221,7 +229,7 @@ contains
       call ComputeSourceKernel &
              ( M = FV ( :, iBaryonMass ), &
                N = FV ( :, iBaryonDensity ), &
-               G = Constant_G, &
+               G = G % GravitationalConstant, &
                S = SV ( :, S % iaSelected ( 1 ) ), &
                UseDeviceOption = S % DeviceMemory )
 

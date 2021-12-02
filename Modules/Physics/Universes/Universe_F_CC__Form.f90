@@ -62,8 +62,9 @@ contains
 
 
   subroutine Initialize_F_CC &
-               ( U, FluidType, GravitationType, NameOption, FinishTimeOption, &
-                 RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
+               ( U, FluidType, GravitationType, NameOption, &
+                 DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
+                 RadiusCoreOption, RadialRatioOption, GravityFactorOption, &
                  nCellsPolarOption, nWriteOption )
 
     class ( Universe_F_CC_Form ), intent ( inout ) :: &
@@ -73,11 +74,14 @@ contains
       GravitationType
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       RadiusMaxOption, &
       RadiusCoreOption, &
-      RadialRatioOption
+      RadialRatioOption, &
+      GravityFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption, &
       nWriteOption
@@ -88,10 +92,12 @@ contains
     call U % Initialize_F_C &
            ( FluidType, GravitationType, &
              NameOption = NameOption, &
+             DimensionlessOption = DimensionlessOption, &
              FinishTimeOption = FinishTimeOption, &
              RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadialRatioOption = RadialRatioOption, &
+             GravityFactorOption = GravityFactorOption, &
              nCellsPolarOption = nCellsPolarOption, &
              nWriteOption = nWriteOption ) 
 
@@ -159,37 +165,37 @@ contains
     select type ( PS  =>  I % X )
       class is ( Atlas_SCG_CC_Form )
 
-    allocate ( U % Units_F ( 1 ) )
+    if ( U % Dimensionless ) then
 
-    RadiusMax  =  10.0_KDR
-    if ( present ( RadiusMaxOption ) ) &
-      RadiusMax  =  RadiusMaxOption
+      RadiusMax  =  10.0_KDR
+      if ( present ( RadiusMaxOption ) ) &
+        RadiusMax  =  RadiusMaxOption
 
-    RadiusCore  =  10.0_KDR / 8.0_KDR
-    if ( present ( RadiusCoreOption ) ) &
-      RadiusCore  =  RadiusCoreOption
+      RadiusCore  =  10.0_KDR / 8.0_KDR
+      if ( present ( RadiusCoreOption ) ) &
+        RadiusCore  =  RadiusCoreOption
 
-    call PS % Initialize &
-           ( RadiusMax = RadiusMax, &
-             RadiusCore = RadiusCore, &
-             CommunicatorOption = PROGRAM_HEADER % Communicator, &
-             NameOption = 'PositionSpace' )
+      call PS % Initialize &
+             ( RadiusMax = RadiusMax, &
+               RadiusCore = RadiusCore, &
+               CommunicatorOption = PROGRAM_HEADER % Communicator, &
+               NameOption = 'PositionSpace', &
+               nCellsPolarOption = nCellsPolarOption )
 
-    allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_SA )
-    select type ( PS_SA  =>  U % PositionSpace_SA )
-      class is ( Atlas_SCG_CC_Form )
-    call PS_SA % Initialize ( PS )
-    end select !-- PS_SA
+    else
 
-    ! if ( FC % Dimensionless ) then
+      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
+      RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
+      RadialRatio  =  2.4_KDR
 
-    !   call PS % CreateChart_CC ( )
-
-    ! else
-
-    !   RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
-    !   RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-    !   RadialRatio  =  2.4_KDR
+      call PS % Initialize &
+             ( RadiusMax = RadiusMax, &
+               RadiusCore = RadiusCore, &
+               CommunicatorOption = PROGRAM_HEADER % Communicator, &
+               NameOption = 'PositionSpace', &
+               CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
+               RadialRatioOption = RadialRatio, &
+               nCellsPolarOption = nCellsPolarOption )
 
     !   call PS % CreateChart_CC &
     !          ( CoordinateUnitOption = FC % Units % Coordinate_PS, &
@@ -202,7 +208,13 @@ contains
     !   call PROGRAM_HEADER % GetParameter &
     !          ( FC % RadiusPolarMomentum, 'RadiusPolarMomentum' )
 
-    ! end if !-- Dimensionless
+    end if !-- Dimensionless
+
+    allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_SA )
+    select type ( PS_SA  =>  U % PositionSpace_SA )
+      class is ( Atlas_SCG_CC_Form )
+    call PS_SA % Initialize ( PS )
+    end select !-- PS_SA
 
     end select !-- PS
     end associate !-- I
@@ -352,7 +364,7 @@ contains
     iR  =  nC
     do iC  =  nC, 1, -1
       if ( N ( iC )  >  1.01_KDR  *  N_Min ) then
-        if ( V ( iC )  ==  V_Max ) then
+        if ( abs ( V ( iC ) )  ==  V_Max ) then
           iR  =  iC
           exit
         end if
@@ -373,8 +385,11 @@ contains
 
     T_V  =  R_V_Max  /  max ( V_Max, sqrt ( tiny ( 0.0_KDR ) ) )
 
-    !-- FIXME: nontrivial units
-    Constant_G  =  1.0_KDR
+    if ( U % Dimensionless ) then
+      Constant_G  =  1.0_KDR
+    else
+      Constant_G  =  CONSTANT % GRAVITATIONAL
+    end if
 
     T_N  =  ( Constant_G * M_B * min ( N_V_Max, N_Max ) ) ** ( -0.5_KDR )
 
@@ -387,7 +402,7 @@ contains
                 'VelocityMax', I % IGNORABILITY )
     call Show ( R_V_Max, G_SA % Unit ( G_SA % CENTER_U_1, 1 ), &
                 'RadiusVelocityMax', I % IGNORABILITY )
-    call Show ( B_V_Max, &
+    call Show ( B_V_Max, U % Units_F ( 1 ) % Number, &
                 'BaryonsVelocityMax', I % IGNORABILITY )
     call Show ( N_V_Max, F_SA % Unit ( F_SA % BARYON_DENSITY_C, 1 ), &
                 'DensityVelocityMax', I % IGNORABILITY )

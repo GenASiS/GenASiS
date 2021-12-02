@@ -282,7 +282,8 @@ contains
       FieldUnit ( F % TEMPERATURE, iC ) &
         =  Units_F ( iC ) % Temperature
       FieldUnit ( F % ENTROPY_PER_BARYON, iC ) &
-        =  Units_F ( iC ) % Energy  /  Units_F ( iC ) % Temperature
+        =  Units_F ( iC ) % EnergyDensity  /  Units_F ( iC ) % NumberDensity  &
+           /  Units_F ( iC ) % Temperature
       FieldUnit ( F % SOUND_SPEED, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 1 )
     end do !-- iC
@@ -436,9 +437,8 @@ contains
 
     select type ( G  =>  CS % Geometry )
       class is ( Gravitation_N_H_Form )
-    !-- FIXME Constant_G
     call G % Solve &
-           ( CS, Constant_G = 1.0_KDR, &
+           ( CS, &
              iBaryonMass = CS % BARYON_MASS, &
              iBaryonDensity = CS % BARYON_DENSITY_B )
     end select !-- G

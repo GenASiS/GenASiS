@@ -17,8 +17,6 @@ module Slope_DFV_C_N__Form
     integer ( KDI ), dimension ( 3 ) :: &
       iVelocity_F, &
       iMomentum_B
-    real ( KDR ) :: &
-      Constant_G  !_- Gravitational
     class ( CurrentSetForm ), pointer :: &
       Fluid => null ( )
   contains
@@ -78,15 +76,13 @@ contains
 
 
   subroutine InitializeAllocate_C_N &
-               ( S, Fluid, Constant_G, iVelocity_F, iMomentum_B, &
-                 iBaryonMass_F, iBaryonDensity_F, iEnergy_B, SuffixOption )
+               ( S, Fluid, iVelocity_F, iMomentum_B, iBaryonMass_F, &
+                 iBaryonDensity_F, iEnergy_B, SuffixOption )
 
     class ( Slope_DFV_C_N_Form ), intent ( inout ) :: &
       S
     class ( CurrentSetForm ), intent ( in ), target :: &
       Fluid
-    real ( KDR ), intent ( in ) :: &
-      Constant_G
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iVelocity_F, &
       iMomentum_B
@@ -104,15 +100,13 @@ contains
       S % Type  =  'a Slope_DFV_C_N' 
     
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'Slp_DFV_C_N_' // trim ( Fluid % Name )
+      S % TimerName  =  'S_DFV_C_N_' // trim ( Fluid % Name )
 
-    Name  =  'Slp_DFV_C_N_' // trim ( Fluid % Name )
+    Name  =  'S_DFV_C_N_' // trim ( Fluid % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % Fluid  =>  Fluid
-
-    S % Constant_G  =  Constant_G
 
     S % iBaryonMass_F     =  iBaryonMass_F
     S % iBaryonDensity_F  =  iBaryonDensity_F

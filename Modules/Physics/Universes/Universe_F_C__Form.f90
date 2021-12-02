@@ -14,6 +14,9 @@ module Universe_F_C__Form
   type, public, extends ( Universe_H_Form ) :: Universe_F_C_Form
     real ( KDR ) :: &
       GravityFactor = 0.0_KDR
+    logical ( KDL ) :: &
+      Dimensionless!, &
+!      UseCoarsening
     class ( Atlas_SCG_Form ), allocatable :: &
       PositionSpace_SA  !-- SphericalAverage
     type ( StreamForm ), allocatable :: &
@@ -62,9 +65,10 @@ contains
 
 
   subroutine Initialize_F_C &
-               ( U, FluidType, GravitationType, NameOption, FinishTimeOption, &
-                 RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
-                 RadialRatioOption, nCellsPolarOption, nWriteOption )
+               ( U, FluidType, GravitationType, NameOption, &
+                 DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
+                 RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
+                 GravityFactorOption, nCellsPolarOption, nWriteOption )
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
@@ -73,12 +77,15 @@ contains
       GravitationType
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       RadiusMaxOption, &
       RadiusCoreOption, &
       RadiusExcisionOption, &
-      RadialRatioOption
+      RadialRatioOption, &
+      GravityFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption, &
       nWriteOption
@@ -94,6 +101,12 @@ contains
       Name  =  NameOption
 
     call U % Universe_H_Form % Initialize ( NameOption = Name )
+
+    U % Dimensionless  =  .false.
+    if ( present ( DimensionlessOption ) ) &
+      U % Dimensionless  =  DimensionlessOption
+
+    allocate ( U % Units_F ( 1 ) )
 
     call U % AllocateIntegrator &
            ( )
@@ -120,9 +133,9 @@ contains
         allocate ( I % dT_Label ( 2 ) )
         I % dT_Label ( 1 )  =  'Fluid advection'
         I % dT_Label ( 2 )  =  'Gravitation acceleration'
-        U % GravityFactor = 0.01_KDR
-    !    if ( present ( GravityFactorOption ) ) &
-    !      U % GravityFactor = GravityFactorOption
+        U % GravityFactor  =  0.7_KDR
+        if ( present ( GravityFactorOption ) ) &
+          U % GravityFactor  =  GravityFactorOption
         call PROGRAM_HEADER % GetParameter &
                ( U % GravityFactor, 'GravityFactor' )
       else
@@ -234,14 +247,14 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
-    ! if ( .not. U % Dimensionless ) then
-    !   U % Units % Time &
-    !     =  UNIT % SECOND
-    !   U % Units % Length &
-    !     =  UNIT % KILOMETER
-    !   U % Units % Coordinate_PS  &
-    !     =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
-    ! end if
+    if ( .not. U % Dimensionless ) then
+      U % Units_F ( 1 ) % Time &
+        =  UNIT % SECOND
+      U % Units_F ( 1 ) % Length &
+        =  UNIT % KILOMETER
+      U % Units_F ( 1 ) % Coordinate_PS  &
+        =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+    end if
 
     call U % InitializeAtlas &
            ( RadiusMaxOption = RadiusMaxOption, &
@@ -289,6 +302,8 @@ contains
 
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaAverage
+    real ( KDR ) :: &
+      GravitationalConstant 
 
     associate ( I  =>  U % Integrator )
 
@@ -322,11 +337,17 @@ contains
 
     case ( 'NEWTON_SG' )
 
+      if ( U % Dimensionless ) then
+        GravitationalConstant  =  1.0_KDR
+      else
+        GravitationalConstant  =  CONSTANT % GRAVITATIONAL
+      end if
+
       allocate ( Gravitation_N_SG_Form  ::  I % Geometry_X )
       select type ( G  =>  I % Geometry_X )
         class is ( Gravitation_N_SG_Form )
       call G % Initialize &
-             ( I % X, &
+             ( I % X, GravitationalConstant, &
                DeviceMemoryOption = U % DeviceMemory, &
                PinnedMemoryOption = U % PinnedMemory, &
                DevicesCommunicateOption = U % DevicesCommunicate )
@@ -373,43 +394,34 @@ contains
     associate &
       ( G  =>  I % Geometry_X )
 
-    ! if ( .not. FC % Dimensionless ) then
+    if ( .not. U % Dimensionless ) then
 
-    !   FC % Units % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
-    !   FC % Units % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
-    !   FC % Units % MassDensity    =  UNIT % MASS_DENSITY_CGS
-    !   FC % Units % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
-    !   FC % Units % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
+      U % Units_F ( 1 ) % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
+      U % Units_F ( 1 ) % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
+      U % Units_F ( 1 ) % MassDensity    =  UNIT % MASS_DENSITY_CGS
+      U % Units_F ( 1 ) % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
+      U % Units_F ( 1 ) % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
 
-    !   FC % Units % Velocity_U  &
-    !     =  FC % Units % Coordinate_PS  /  FC % Units % Time
+      U % Units_F ( 1 ) % Velocity_U  &
+        =  U % Units_F ( 1 ) % Coordinate_PS  /  U % Units_F ( 1 ) % Time
 
-    !   FC % Units % MomentumDensity_D  &
-    !     =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
-    !        *  FC % Units % Velocity_U
-    !   FC % Units % MomentumDensity_D ( 2 )  &
-    !     =  FC % Units % MomentumDensity_D ( 2 )  &
-    !        *  FC % Units % Coordinate_PS ( 1 ) ** 2
-    !   FC % Units % MomentumDensity_D ( 3 )  &
-    !     =  FC % Units % MomentumDensity_D ( 3 )  &
-    !        *  FC % Units % Coordinate_PS ( 1 ) ** 2
+      U % Units_F ( 1 ) % MomentumDensity_D  &
+        =  U % Units_F ( 1 ) % BaryonMass  &
+           *  U % Units_F ( 1 ) % NumberDensity  &
+           *  U % Units_F ( 1 ) % Velocity_U
+      U % Units_F ( 1 ) % MomentumDensity_D ( 2 )  &
+        =  U % Units_F ( 1 ) % MomentumDensity_D ( 2 )  &
+           *  U % Units_F ( 1 ) % Coordinate_PS ( 1 ) ** 2
+      U % Units_F ( 1 ) % MomentumDensity_D ( 3 )  &
+        =  U % Units_F ( 1 ) % MomentumDensity_D ( 3 )  &
+           *  U % Units_F ( 1 ) % Coordinate_PS ( 1 ) ** 2
 
-    !   FC % Units % MomentumDensity_U  &
-    !     =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
-    !        *  FC % Units % Velocity_U
-    !   FC % Units % MomentumDensity_U ( 2 )  &
-    !     =  FC % Units % MomentumDensity_U ( 2 )  &
-    !        /  FC % Units % Coordinate_PS ( 1 ) ** 2
-    !   FC % Units % MomentumDensity_U ( 3 )  &
-    !     =  FC % Units % MomentumDensity_U ( 3 )  &
-    !        /  FC % Units % Coordinate_PS ( 1 ) ** 2
+      U % Units_F ( 1 ) % Number           =  UNIT % SOLAR_BARYON_NUMBER
+      U % Units_F ( 1 ) % Energy           =  UNIT % ENERGY_SOLAR_MASS
+      U % Units_F ( 1 ) % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
+      U % Units_F ( 1 ) % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
 
-    !   FC % Units % Number           =  UNIT % SOLAR_BARYON_NUMBER
-    !   FC % Units % Energy           =  UNIT % ENERGY_SOLAR_MASS
-    !   FC % Units % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
-    !   FC % Units % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
-
-    ! end if
+    end if
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )
@@ -426,6 +438,31 @@ contains
       allocate ( Fluid_D_Form :: SA % FieldSet_SA )
       select type ( F_SA  =>  SA % FieldSet_SA )
         type is ( Fluid_D_Form )
+      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+        class is ( Geometry_F_Form )
+      call F_SA % Initialize &
+             ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+      call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+      end select !-- G_SA
+      end select !-- F_SA
+      end associate !-- SA, etc.
+
+      end select !-- F
+      
+    case ( 'IDEAL' )
+
+      allocate ( Fluid_P_I_Form  ::  I % CurrentSet_X )
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_I_Form )
+      call F % Initialize ( G, U % Units_F )
+
+      allocate ( U % SA_Fluid )
+      associate &
+        ( SA     =>  U % SA_Fluid, &
+           A_SA  =>  U % PositionSpace_SA )
+      allocate ( Fluid_P_I_Form :: SA % FieldSet_SA )
+      select type ( F_SA  =>  SA % FieldSet_SA )
+        type is ( Fluid_P_I_Form )
       select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
         class is ( Geometry_F_Form )
       call F_SA % Initialize &
@@ -522,6 +559,8 @@ contains
     if ( U % GravityFactor  >  0.0_KDR ) &
       call Show ( U % GravityFactor, 'GravityFactor' )
 
+    call Show ( U % Dimensionless, 'Dimensionless' )
+
   end subroutine ShowParameters
 
 
@@ -606,8 +645,6 @@ contains
       iEnergy_B
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_B
-    real ( KDR ) :: &
-      Constant_G
     character ( 1 ) :: &
       StageNumber
 
@@ -619,24 +656,24 @@ contains
     select type ( F  =>  S % CurrentSet )
       class is ( Fluid_D_Form ) 
 
-    call Search &
-           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B ( 1 ) )
-    call Search &
-           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B ( 2 ) )
-    call Search &
-           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B ( 3 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B ( 1 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B ( 2 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B ( 3 ) )
 
-    !-- FIXME: more general fluid
+    !-- Dust
     iEnergy_B  =  0
-    
-    !-- FIXME: nontrivial units
-    Constant_G  =  1.0_KDR
+
+    !-- Perfect fluid
+    select type ( F )
+    class is ( Fluid_P_Form )
+      call Search &
+             ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_B )
+    end select !-- F
 
     if ( present ( iS_Option ) ) then
       write ( StageNumber, fmt = '(i1.1)' ) iS_Option
       call K % Initialize &
              ( S % RiemannSolver, &
-               Constant_G  =  Constant_G, &
                iVelocity_F = F % VELOCITY_U, &
                iMomentum_B = iMomentum_B, &
                iBaryonMass_F = F % BARYON_MASS, &
@@ -646,7 +683,6 @@ contains
     else
       call K % Initialize &
              ( S % RiemannSolver, &
-               Constant_G  =  Constant_G, &
                iVelocity_F = F % VELOCITY_U, &
                iMomentum_B = iMomentum_B, &
                iBaryonMass_F = F % BARYON_MASS, &

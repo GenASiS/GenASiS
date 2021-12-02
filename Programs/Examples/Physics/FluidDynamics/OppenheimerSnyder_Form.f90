@@ -74,29 +74,6 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine ShowParameters ( U )
-
-    class ( OppenheimerSnyderForm ), intent ( in ) :: &
-      U
-
-    real ( KDR ) :: &
-      Pi
-
-    call U % Universe_F_CC_Form % ShowParameters ( )
-
-    Pi  =  CONSTANT % PI
-
-    call Show ( U % Mass, 'Mass' )
-    call Show ( U % DensityInitial, 'DensityInitial' )
-    call Show ( U % RadiusInitial, 'RadiusInitial' )
-    call Show ( U % DensityFactor, 'DensityFactor' )
-    call Show ( U % RadiusFactor, 'RadiusFactor' )
-    call Show ( Pi / 2  *  U % TimeScale, 'CollapseTime' )
-    call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
-
-  end subroutine ShowParameters
-
-
   subroutine ComputeError ( OS )
 
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
@@ -160,6 +137,29 @@ contains
   end subroutine Finalize
 
 
+  subroutine ShowParameters ( U )
+
+    class ( OppenheimerSnyderForm ), intent ( in ) :: &
+      U
+
+    real ( KDR ) :: &
+      Pi
+
+    call U % Universe_F_CC_Form % ShowParameters ( )
+
+    Pi  =  CONSTANT % PI
+
+    call Show ( U % Mass, 'Mass' )
+    call Show ( U % DensityInitial, 'DensityInitial' )
+    call Show ( U % RadiusInitial, 'RadiusInitial' )
+    call Show ( U % DensityFactor, 'DensityFactor' )
+    call Show ( U % RadiusFactor, 'RadiusFactor' )
+    call Show ( Pi / 2  *  U % TimeScale, 'CollapseTime' )
+    call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
+
+  end subroutine ShowParameters
+
+
   subroutine InitializeUniverse ( OS, Name )
 
     class ( OppenheimerSnyderForm ), intent ( inout ), target :: &
@@ -171,6 +171,8 @@ contains
            ( FluidType = 'DUST', &
              GravitationType = 'NEWTON_SG', &
              NameOption = Name, &
+             DimensionlessOption = .true., &
+             GravityFactorOption = 0.01_KDR, &
              nCellsPolarOption = 128 )
 
     !-- Modify from default OUTFLOW to INFLOW outer radial boundary condition

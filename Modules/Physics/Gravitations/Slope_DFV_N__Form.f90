@@ -24,15 +24,13 @@ contains
 
 
   subroutine InitializeAllocate_N &
-               ( S, RS, Constant_G, iVelocity_F, iMomentum_B, &
-                 iBaryonMass_F, iBaryonDensity_F, iEnergy_B, SuffixOption )
+               ( S, RS, iVelocity_F, iMomentum_B, iBaryonMass_F, &
+                 iBaryonDensity_F, iEnergy_B, SuffixOption )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
-    real ( KDR ), intent ( in ) :: &
-      Constant_G
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iVelocity_F, &
       iMomentum_B
@@ -50,9 +48,9 @@ contains
       S % Type  =  'a Slope_DFV_N'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'Slp_DFV_N_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  'S_DFV_N_' // trim ( RS % CurrentSet % Name )
 
-    Name  =  'Slp_DFV_N_' // trim ( RS % CurrentSet % Name )
+    Name  =  'S_DFV_N_' // trim ( RS % CurrentSet % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -89,8 +87,8 @@ contains
       class is ( Slope_DFV_C_N_Form )
 
     call SCN % Initialize &
-           ( F, Constant_G, iVelocity_F, iMomentum_B, &
-             iBaryonMass_F, iBaryonDensity_F, iEnergy_B, SuffixOption )
+           ( F, iVelocity_F, iMomentum_B, iBaryonMass_F, iBaryonDensity_F, &
+             iEnergy_B, SuffixOption )
 
     end select !-- SCN
 
