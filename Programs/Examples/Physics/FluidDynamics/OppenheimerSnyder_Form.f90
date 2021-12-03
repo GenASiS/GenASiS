@@ -308,7 +308,7 @@ contains
 
     call SetFluid ( OS, F_R )
 
-    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR )
+    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR, UseDeviceOption = .false. )
 
     end associate !-- F_R, etc.
     end select !-- F
