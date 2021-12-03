@@ -180,10 +180,20 @@ contains
       call C % SetFieldPointer (  FV,  F   )
       call C % SetFieldPointer (  GV, dFdX )
 
+      call G % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .false. )
+      call FS % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .false. )
+      
       call Compute_CGS_Kernel &
              ( F, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), dFdX, &
                UseDeviceOption = FS % DeviceMemory )
-
+      
+      call FS % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .true. )
+      call G % Storage ( iC ) % ReassociateHost &
+            ( AssociateVariablesOption = .true. )
+      
     end associate !-- GV, etc.
     end associate !-- Gy, etc.
 
