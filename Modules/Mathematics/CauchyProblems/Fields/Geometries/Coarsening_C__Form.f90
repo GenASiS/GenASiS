@@ -21,11 +21,15 @@ module Coarsening_C__Form
     integer ( KDI ), dimension ( :, : ), allocatable :: &
       iTheta, &
       iPhi
+    class ( Geometry_F_Form ), pointer :: &
+      Geometry => null ( )
   contains
     procedure, private, pass :: &
       Initialize_C
     generic, public :: &
       Initialize => Initialize_C
+    procedure, public, pass ( C ) :: &
+      Compute
     final :: &
       Finalize
   end type Coarsening_C_Form
@@ -33,6 +37,30 @@ module Coarsening_C__Form
     private :: &
       SetCoarseningPolar, &
       SetBlocks
+
+    interface
+      
+      module subroutine ComputeKernel &
+               ( FS_4D, dV_3D, iTh, iPh, iR, iaS, oC, nBC )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          FS_4D
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          dV_3D
+        integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
+          iTh, &
+          iPh
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iR, &
+          iaS, &
+          oC
+        integer ( KDI ), intent ( in ) :: &
+          nBC
+      end subroutine ComputeKernel
+
+    end interface
+
 
 contains
 
@@ -58,6 +86,8 @@ contains
              PinnedMemoryOption = G % PinnedMemory, &
              DevicesCommunicateOption = G % DevicesCommunicate, &
              nFieldsOption = 2 )
+
+    C % Geometry  =>  G
 
     select type ( A  =>  G % Atlas )
     class is ( Atlas_SCG_CC_Form )
@@ -184,10 +214,55 @@ contains
   end subroutine SetBlocks
 
 
+  subroutine Compute ( FS, C )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS
+    class ( Coarsening_C_Form ), intent ( in ) :: &
+      C
+
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      dV_3D
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+      FS_4D
+
+    select type ( A  =>  FS % Atlas )
+      class is ( Atlas_SCG_CC_Form )
+    associate &
+      ( G  =>  C % Geometry )
+
+    call A % Chart_GS_CC % SetFieldPointer &
+           ( FS % Storage_GS % Value, FS_4D )
+    call A % Chart_GS_CC % SetFieldPointer &
+           ( G % Storage_GS % Value ( :, G % VOLUME ), dV_3D )
+       
+    call ComputeKernel &
+           ( FS_4D, dV_3D, &
+             iTh = C % iTheta, &
+             iPh = C % iPhi, &
+             iR  = C % iRadius, &
+             iaS = FS % iaSelected, &
+             oC  = A % Chart_GS_CC % nGhostLayers, &
+             nBC = C % nBlocksCoarsen )
+
+    end associate !-- G
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Coarsening_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+  end subroutine Compute
+
+
   impure elemental subroutine Finalize ( C )
 
     type ( Coarsening_C_Form ), intent ( inout ) :: &
       C
+
+    nullify ( C % Geometry )
 
     if ( allocated ( C % iPhi ) ) &
       deallocate ( C % iPhi )

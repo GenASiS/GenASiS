@@ -16,6 +16,11 @@ Coarsening_C__Form.o: \
   Geometry_F__Form.o \
   Coarsening_C__Form.f90
 
+Coarsening_C__Kernel.o: \
+  Basics.o \
+  Coarsening_C__Form.o \
+  Coarsening_C__Kernel.f90
+
 Geometries.o: \
   Geometry_F__Form.o \
   Coarsening_C__Form.o \
