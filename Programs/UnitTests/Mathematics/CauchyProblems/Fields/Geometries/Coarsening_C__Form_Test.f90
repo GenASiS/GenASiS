@@ -50,7 +50,13 @@ program Coarsening_C__Form_Test
 
   call A % Show ( )
   call G % Show ( )
+
   call C % Show ( )
+  call Show ( C % nBlocksCoarsen, 'nBlocksCoarsen' )
+  call Show ( C % iRadius, 'iRadius' )
+  call Show ( C % iTheta, 'iTheta' )
+  call Show ( C % iPhi, 'iPhi' )
+
   call S % Show ( )
 
   call GIS % Open ( GIS % ACCESS_CREATE )

@@ -12,8 +12,15 @@ module Coarsening_C__Form
 
   type, public, extends ( FieldSetForm ) :: Coarsening_C_Form
     integer ( KDI ) :: &
-      COARSENING_2 = 0, &
-      COARSENING_3 = 0
+      COARSENING_POLAR = 0, &
+      COARSENING_AZIMUTHAL = 0
+    integer ( KDI ) :: &
+      nBlocksCoarsen
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iRadius
+    integer ( KDI ), dimension ( :, : ), allocatable :: &
+      iTheta, &
+      iPhi
   contains
     procedure, private, pass :: &
       Initialize_C
@@ -24,7 +31,8 @@ module Coarsening_C__Form
   end type Coarsening_C_Form
 
     private :: &
-      SetCoarseningPolar
+      SetCoarseningPolar, &
+      SetBlocks
 
 contains
 
@@ -39,12 +47,12 @@ contains
     if ( C % Type == '' ) &
       C % Type  =  'a Coarsening_C' 
     
-    C % COARSENING_2  =  1
-    C % COARSENING_3  =  2
+    C % COARSENING_POLAR      =  1
+    C % COARSENING_AZIMUTHAL  =  2
 
     call C % FieldSetForm % Initialize &
            ( G % Atlas, &
-             FieldOption = [ 'Coarsening_2', 'Coarsening_3' ], &
+             FieldOption = [ 'CoarseningPolar    ', 'CoarseningAzimuthal' ], &
              NameOption = 'Coarsening', &
              DeviceMemoryOption = G % DeviceMemory, &
              PinnedMemoryOption = G % PinnedMemory, &
@@ -53,10 +61,20 @@ contains
 
     select type ( A  =>  G % Atlas )
     class is ( Atlas_SCG_CC_Form )
+
       call SetCoarseningPolar &
-             ( C   = A % Chart_GS_CC, &
-               R   = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
-               C_2 = C % Storage_GS % Value ( :, C % COARSENING_2 ) )
+             ( C  = A % Chart_GS_CC, &
+               R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
+               CP = C % Storage_GS % Value ( :, C % COARSENING_POLAR ) )
+
+      call SetBlocks &
+             (  C   = A % Chart_GS_CC, &
+                CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
+               iTh  = C % iTheta, &
+               iPh  = C % iPhi, &
+               iRad = C % iRadius, &
+               nBC  = C % nBlocksCoarsen )
+
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'Coarsening_C_Form', 'module', CONSOLE % ERROR )
@@ -67,14 +85,14 @@ contains
   end subroutine Initialize_C
 
 
-  subroutine SetCoarseningPolar ( C, R, C_2 )
+  subroutine SetCoarseningPolar ( C, R, CP )
     
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      C_2
+      CP
 
     integer ( KDI ) :: &
       iV
@@ -83,24 +101,100 @@ contains
 
     dTheta  =  CONSTANT % PI  /  C % nCellsPolar
 
-    do iV = 1, size ( C_2 )
+    do iV = 1, size ( CP )
       if ( .not. C % ProperCell ( iV ) ) &
         cycle
-      C_2 ( iV )  =  1.0_KDR
+      CP ( iV )  =  1.0_KDR
       Coarsen_2: do
-        if ( C_2 ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
+        if ( CP ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
           exit Coarsen_2
-        C_2 ( iV )  =  2.0_KDR  *  C_2 ( iV )
+        CP ( iV )  =  2.0_KDR  *  CP ( iV )
       end do Coarsen_2
     end do !-- iV
 
   end subroutine SetCoarseningPolar
 
 
+  subroutine SetBlocks ( C, CP, iTh, iPh, iRad, nBC )
+
+    class ( Chart_GS_C_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      CP  !-- CoarsenPolar
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      iTh, &
+      iPh
+    integer ( KDI ), dimension ( : ), intent ( out ), allocatable :: &
+      iRad
+    integer ( KDI ), intent ( out ) :: &
+      nBC  !-- nBlocksCoarsen
+
+    integer ( KDI ) :: &
+      iR, &   !-- iRadius
+      iBC, &  !-- iBlockCoarsen
+      iBP, &  !-- iBlockPolar
+      oTh
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      nCP, &  !-- nCoarsenPolar
+      nBP     !-- nBlocksPolar
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      CP_3D
+
+    call C % SetFieldPointer ( CP, CP_3D )
+
+    associate ( nR  =>  C % nCellsBrick ( 1 ) )
+    allocate ( nCP ( nR ), nBP ( nR ) )
+
+    select case ( C % nDimensions )
+    case ( 2 )
+
+      do iR  =  1, nR
+        nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
+        nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
+      end do !-- iR
+
+      where ( nCP == 1 )
+        nBP  =  0
+      end where
+
+      nBC  =  sum ( nBP )
+
+      allocate ( iRad ( nBC ) )
+      allocate ( iTh ( 2, nBC ) )
+      allocate ( iPh ( 2, nBC ) )
+
+      iBC  =  0
+      do iR  =  1, nR
+        do iBP  =  1, nBP ( iR )
+
+          iBC  =  iBC + 1
+
+          iRad ( iBC )  =  iR
+
+          oTh  =  ( iBP - 1 )  *  nCP ( iR )
+          iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
+          iPh ( 1 : 2, iBC )  =  [ 1, 1 ]
+
+        end do !-- iBP
+      end do !-- iR
+
+    end select !-- nDimensions
+    end associate !-- nR
+
+  end subroutine SetBlocks
+
+
   impure elemental subroutine Finalize ( C )
 
     type ( Coarsening_C_Form ), intent ( inout ) :: &
       C
+
+    if ( allocated ( C % iPhi ) ) &
+      deallocate ( C % iPhi )
+    if ( allocated ( C % iTheta ) ) &
+      deallocate ( C % iTheta )
+    if ( allocated ( C % iRadius ) ) &
+      deallocate ( C % iRadius )
 
   end subroutine Finalize
 
