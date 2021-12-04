@@ -15,8 +15,10 @@ module Universe_F_C__Form
     real ( KDR ) :: &
       GravityFactor = 0.0_KDR
     logical ( KDL ) :: &
-      Dimensionless!, &
-!      UseCoarsening
+      Dimensionless, &
+      Coarsen
+    type ( Coarsening_C_Form ), allocatable :: &
+      Coarsening
     class ( Atlas_SCG_Form ), allocatable :: &
       PositionSpace_SA  !-- SphericalAverage
     type ( StreamForm ), allocatable :: &
@@ -213,6 +215,8 @@ contains
       deallocate ( U % Stream_SA )
     if ( allocated ( U % PositionSpace_SA ) ) &
       deallocate ( U % PositionSpace_SA )
+    if ( allocated ( U % Coarsening ) ) &
+      deallocate ( U % Coarsening )
     
   end subroutine Finalize
 
@@ -522,6 +526,16 @@ contains
 
     call S % Initialize ( F )
 
+    U % Coarsen  =  .true.
+    call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
+    if ( U % Coarsen ) then
+      allocate ( U % Coarsening )
+      associate ( C  =>  U % Coarsening )
+      call C % Initialize ( U % Integrator % Geometry_X )
+      call S % SetCoarsening ( C )
+      end associate !-- C
+    end if
+
     end select !-- S
 
     end associate !-- F
@@ -560,6 +574,7 @@ contains
       call Show ( U % GravityFactor, 'GravityFactor' )
 
     call Show ( U % Dimensionless, 'Dimensionless' )
+    call Show ( U % Coarsen, 'Coarsen' )
 
   end subroutine ShowParameters
 

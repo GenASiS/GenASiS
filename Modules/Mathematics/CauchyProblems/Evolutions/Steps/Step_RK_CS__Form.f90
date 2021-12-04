@@ -20,6 +20,8 @@ module Step_RK_CS__Form
       SolutionStage
     class ( CurrentSetForm ), pointer :: &
       CurrentSet
+    class ( Coarsening_C_Form ), pointer :: &
+      Coarsening => null ( )
     class ( RiemannSolver_HLL_Form ), allocatable :: &
       RiemannSolver
   contains
@@ -29,6 +31,8 @@ module Step_RK_CS__Form
       Initialize => Initialize_CS
     procedure, public, pass :: &
       SetStream
+    procedure, public, pass :: &
+      SetCoarsening
     procedure, public, pass :: &
       Show => Show_S
     final :: &
@@ -176,6 +180,18 @@ contains
     end if !-- Stages
 
   end subroutine SetStream
+
+
+  subroutine SetCoarsening ( S, C )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    class ( Coarsening_C_Form ), intent ( in ), target :: &
+      C
+
+    S % Coarsening  =>  C
+
+  end subroutine SetCoarsening
 
 
   subroutine Show_S ( S )
@@ -336,6 +352,10 @@ contains
     end if
     call K % Compute ( T_Option = T_C, iS_Option = iS )
     if ( associated ( T_C ) ) call T_C % Stop ( )
+
+    if ( associated ( S % Coarsening ) ) then
+      call S % Coarsening % Compute ( K )
+    end if
 
     !-- Slope ghost exchange
 
