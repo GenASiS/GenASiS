@@ -279,7 +279,7 @@ contains
 
     class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
       Source
 
     select type ( A  =>  L % Geometry % Atlas )
@@ -310,7 +310,9 @@ contains
     call AssignSourcePointer &
            ( Source_S % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
              C % nCellsBrick, C % nGhostLayers, L % nEquations, L % Source_4D )
-
+    
+    call Source_S % ReassociateHost ( AssociateVariablesOption = .false. )
+    
     end associate !-- nV, etc.
 
     select case ( trim ( C % CoordinateSystem ) )
@@ -328,7 +330,9 @@ contains
       call Show ( 'ComputeAngularMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CoordinateSystem
-
+    
+    call Source_S % ReassociateHost ( AssociateVariablesOption = .true. )
+    
     end associate !-- Source_S
     end associate !-- C
 

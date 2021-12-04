@@ -157,9 +157,11 @@ contains
            ( SS % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
              C % nCellsBrick, C % nGhostLayers, L % nEquations, &
              P % Solution_4D )
+    
+    call SS % ReassociateHost ( AssociateVariablesOption = .false. )
 
     end associate !-- nV, etc.
-    end associate !-- SS
+    
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
@@ -179,7 +181,10 @@ contains
       call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
-
+    
+    call SS % ReassociateHost ( AssociateVariablesOption = .true. )
+    
+    end associate !-- SS
     end associate !-- C
 
     class default 

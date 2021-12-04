@@ -45,6 +45,33 @@ contains
     
     if ( UseDevice ) then
     
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP private ( iF, iaVP, iaVM, fM, fP, xAM, xAP )
+      do iS  =  1,  size ( iaSlctd )
+        do kV  =  lV ( 3 ),  uV ( 3 ) 
+          do jV  =  lV ( 2 ),  uV ( 2 )
+            do iV  =  lV ( 1 ),  uV ( 1 )
+
+              iF  =  iaSlctd ( iS )
+
+              iaVM  =  [ iV, jV, kV ]  -  iaS
+              iaVP  =  [ iV, jV, kV ]  +  iaS
+
+              fM  =  F ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ), iF )
+              fP  =  F ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF )
+
+              xAM  =  XA ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              xAP  =  XA ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+              dFdX ( iV, jV, kV, iS )  =  ( fP - fM ) / ( xAP - xAM )
+
+            end do !-- iV
+          end do !-- jV
+        end do !-- kV
+      end do !-- iS
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
     else !-- use host
               
       !$OMP parallel do collapse ( 4 ) &

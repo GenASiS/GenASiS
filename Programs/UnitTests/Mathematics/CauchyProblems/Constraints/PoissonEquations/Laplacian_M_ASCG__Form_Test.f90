@@ -12,6 +12,10 @@ program Laplacian_M_ASCG__Form_Test
   integer ( KDI ) :: &
     nEquations, &
     MaxDegree
+  logical ( KDL ) :: &
+    DeviceMemory, &
+    PinnedMemory, &
+    DevicesCommunicate
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
@@ -40,9 +44,23 @@ program Laplacian_M_ASCG__Form_Test
 
   allocate ( S )
   call S % Initialize ( A, GIS )
+  
+  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+  PinnedMemory        =  DeviceMemory
+  DevicesCommunicate  =  DeviceMemory
+  call PROGRAM_HEADER % GetParameter &
+         ( PinnedMemory, 'PinnedMemory' )
+  call PROGRAM_HEADER % GetParameter &
+         ( DevicesCommunicate, 'DevicesCommunicate' )
 
   allocate ( G )
-  call G % Initialize ( A )
+  call G % Initialize &
+         ( A, &
+           DeviceMemoryOption = DeviceMemory, &
+           PinnedMemoryOption = PinnedMemory, &
+           DevicesCommunicateOption = DevicesCommunicate )
   call G % SetStream ( S )
 
   nEquations = 1
@@ -53,7 +71,7 @@ program Laplacian_M_ASCG__Form_Test
   allocate ( L )
   call L % Initialize ( G, MaxDegree, nEquations )
 
-  call  A % Show ( )
+  call A % Show ( )
   call G % Show ( )
   call L % Show ( )
 
