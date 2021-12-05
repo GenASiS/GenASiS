@@ -229,11 +229,15 @@ contains
     select type ( A  =>  FS % Atlas )
       class is ( Atlas_SCG_CC_Form )
     associate &
-      ( G  =>  C % Geometry )
+      ( G        =>  C % Geometry, &
+        C_GS_CC  =>  A % Chart_GS_CC )
 
-    call A % Chart_GS_CC % SetFieldPointer &
+    if ( C_GS_CC % nDimensions  ==  1 ) &
+      return
+
+    call C_GS_CC % SetFieldPointer &
            ( FS % Storage_GS % Value, FS_4D )
-    call A % Chart_GS_CC % SetFieldPointer &
+    call C_GS_CC % SetFieldPointer &
            ( G % Storage_GS % Value ( :, G % VOLUME ), dV_3D )
        
     call ComputeKernel &
@@ -245,7 +249,7 @@ contains
              oC  = A % Chart_GS_CC % nGhostLayers, &
              nBC = C % nBlocksCoarsen )
 
-    end associate !-- G
+    end associate !-- G, etc.
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )

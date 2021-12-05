@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Integrator_CS__Form ) Integrator_CS__Kernel
+submodule ( Universe_F_C__Form ) Universe_F_C__Kernel
 
   use Basics
   
@@ -9,7 +9,7 @@ submodule ( Integrator_CS__Form ) Integrator_CS__Kernel
 contains
 
 
-  module procedure Compute_dT_CS_CGS_Kernel
+  module procedure Compute_dT_CS_C_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -76,7 +76,7 @@ contains
                           max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                           /  dX_1 ( iV ) &
                        +  max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                          /  dX_2 ( iV ) )
+                          /  ( Crsn_2 ( iV )  *  dX_2 ( iV ) ) )
         end do
         !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
@@ -90,7 +90,7 @@ contains
                           max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                           /  dX_1 ( iV ) &
                        +  max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                          /  dX_2 ( iV ) )
+                          /  ( Crsn_2 ( iV )  *  dX_2 ( iV ) ) )
         end do
         !$OMP  end parallel do
       end if
@@ -114,9 +114,9 @@ contains
                           max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                            /  dX_1 ( iV ) &
                        +  max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                          /  dX_2 ( iV ) &
+                          /  ( Crsn_2 ( iV )  *  dX_2 ( iV ) ) &
                        +  max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
-                          /  dX_3 ( iV ) )
+                          /  ( Crsn_3 ( iV )  *  dX_3 ( iV ) ) )
         end do
         !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
@@ -130,9 +130,9 @@ contains
                           max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                           /  dX_1 ( iV ) &
                        +  max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                          /  dX_2 ( iV ) &
+                          /  ( Crsn_2 ( iV )  *  dX_2 ( iV ) ) &
                        +  max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
-                          /  dX_3 ( iV ) )
+                          /  ( Crsn_3 ( iV )  *  dX_3 ( iV ) ) )
         end do
         !$OMP  end parallel do
       end if
@@ -142,7 +142,7 @@ contains
     dT_Inverse  =  max ( tiny ( 0.0_KDR ), dT_Inverse )
     dT          =  min ( dT, 1.0_KDR  /  dT_Inverse )
 
-  end procedure Compute_dT_CS_CGS_Kernel
+  end procedure Compute_dT_CS_C_Kernel
 
   
-end submodule Integrator_CS__Kernel
+end submodule Universe_F_C__Kernel

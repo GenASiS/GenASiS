@@ -53,6 +53,8 @@ module Universe_F_C__Form
       InitializeAtlas
     procedure, public, pass :: &
       ShowParameters
+    procedure, public, pass :: &
+      Compute_dT_CS_C
     procedure, public, nopass :: &
       Analyze_C
     procedure, public, nopass :: &
@@ -61,6 +63,31 @@ module Universe_F_C__Form
 
     private :: &
       SetSlope_N_SG
+
+    interface
+    
+      module subroutine Compute_dT_CS_C_Kernel &
+               ( dT, ProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
+                 dX_1, dX_2, dX_3, Crsn_2, Crsn_3, &
+                 nDimensions, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          FEP_1, FEP_2, FEP_3, &
+          FEM_1, FEM_2, FEM_3, &
+          dX_1, dX_2, dX_3, &
+          Crsn_2, Crsn_3
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_CS_C_Kernel
+
+    end interface
 
 
 contains
@@ -577,6 +604,78 @@ contains
     call Show ( U % Coarsen, 'Coarsen' )
 
   end subroutine ShowParameters
+
+
+  subroutine Compute_dT_CS_C ( U, dT, iC, T_Option )
+
+    !-- Compute_dT_CurrentSet_Central (or _Coarsened)
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+    real ( KDR ), intent ( inout ) :: &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( ES_1  =>  I % EigenspeedSet_X ( 1 ), &
+        ES_2  =>  I % EigenspeedSet_X ( 2 ), &
+        ES_3  =>  I % EigenspeedSet_X ( 3 ), &
+         G    =>  I % Geometry_X, &
+        Crsn  =>  U % Coarsening )
+
+    select type ( A  =>  G % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
+
+    call ES_1 % Compute ( iC = 1, iD = 1 )
+    call ES_2 % Compute ( iC = 1, iD = 2 )
+    call ES_3 % Compute ( iC = 1, iD = 3 )
+
+    associate &
+      ( EV_1  =>  ES_1 % Storage ( 1 ) % Value, &
+        EV_2  =>  ES_2 % Storage ( 1 ) % Value, &
+        EV_3  =>  ES_3 % Storage ( 1 ) % Value, &
+        GV    =>   G   % Storage ( 1 ) % Value, &
+        CV    =>  Crsn % Storage ( 1 ) % Value )
+
+    call Compute_dT_CS_C_Kernel &
+           ( dT, C % ProperCell, &
+             EV_1 ( :, ES_1 % EIGENSPEED_FAST_PLUS_U ), &
+             EV_2 ( :, ES_2 % EIGENSPEED_FAST_PLUS_U ), &
+             EV_3 ( :, ES_3 % EIGENSPEED_FAST_PLUS_U ), &
+             EV_1 ( :, ES_1 % EIGENSPEED_FAST_MINUS_U ), &
+             EV_2 ( :, ES_2 % EIGENSPEED_FAST_MINUS_U ), &
+             EV_3 ( :, ES_3 % EIGENSPEED_FAST_MINUS_U ), &
+             GV ( :, G % WIDTH_U_1 ), &
+             GV ( :, G % WIDTH_U_2 ), &
+             GV ( :, G % WIDTH_U_3 ), &
+             CV ( :, Crsn % COARSENING_POLAR ), &
+             CV ( :, Crsn % COARSENING_AZIMUTHAL ), &
+             C % nDimensions, &
+             UseDeviceOption = G % DeviceMemory )
+
+    end associate !-- EV, etc.
+    end associate !-- C
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_CS_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_CS_CGS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+    dT  =  I % CourantFactor  *  dT
+    
+    end associate !-- ES_1, etc.
+    end select !-- I
+
+  end subroutine Compute_dT_CS_C
 
 
   subroutine Analyze_C ( I, T_A )

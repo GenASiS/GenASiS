@@ -447,14 +447,14 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
-    select type ( I )
-      class is ( Integrator_CS_Form )
-    call I % Compute_dT_CGS ( dT_Candidate ( 1 ), iC, T_Option )
-    end select !-- I
+    select type ( U  =>  I % System )
+    class is ( Universe_F_C_Form )
+      call U % Compute_dT_CS_C ( dT_Candidate ( 1 ), iC, T_Option )
+    end select !-- U
 
     select type ( U  =>  I % System )
-      class is ( Universe_F_CC_Form )
-    call U % Compute_dT_G_CGS ( dT_Candidate ( 2 ), iC, T_Option )
+    class is ( Universe_F_CC_Form )
+      call U % Compute_dT_G_CGS ( dT_Candidate ( 2 ), iC, T_Option )
     end select !-- U
 
   end subroutine Compute_dT_Local

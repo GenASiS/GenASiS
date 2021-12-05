@@ -19,6 +19,11 @@ Universe_F_C__Form.o: \
   Universe_H__Form.o \
   Universe_F_C__Form.f90
 
+Universe_F_C__Kernel.o: \
+  Basics.o \
+  Universe_F_C__Form.o \
+  Universe_F_C__Kernel.f90
+
 Universe_F_CC__Form.o: \
   Basics.o \
   Mathematics.o \

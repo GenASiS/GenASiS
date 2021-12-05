@@ -32,18 +32,18 @@ module Integrator_CS__Form
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CS
     procedure, public, pass :: &
-      Compute_dT_CGS
+      Compute_dT_CS_CGS
   end type Integrator_CS_Form
 
     private :: &
       Compute_dT_Local
 
       private :: &
-        Compute_dT_CGS_Kernel
+        Compute_dT_CS_CGS_Kernel
 
     interface
     
-      module subroutine Compute_dT_CGS_Kernel &
+      module subroutine Compute_dT_CS_CGS_Kernel &
                ( dT, ProperCell, &
                  FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, dX_1, dX_2, dX_3, &
                  nDimensions, UseDeviceOption )
@@ -61,9 +61,10 @@ module Integrator_CS__Form
           nDimensions
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_dT_CGS_Kernel
+      end subroutine Compute_dT_CS_CGS_Kernel
 
     end interface
+
 
 contains
 
@@ -256,7 +257,7 @@ contains
   end subroutine UpdateHost_CS
 
 
-  subroutine Compute_dT_CGS ( I, dT, iC, T_Option )
+  subroutine Compute_dT_CS_CGS ( I, dT, iC, T_Option )
 
     class ( Integrator_CS_Form ), intent ( inout ) :: &
       I
@@ -288,7 +289,7 @@ contains
         EV_3  =>  ES_3 % Storage ( 1 ) % Value, &
         GV    =>   G   % Storage ( 1 ) % Value )
 
-    call Compute_dT_CGS_Kernel &
+    call Compute_dT_CS_CGS_Kernel &
            ( dT, C % ProperCell, &
              EV_1 ( :, ES_1 % EIGENSPEED_FAST_PLUS_U ), &
              EV_2 ( :, ES_2 % EIGENSPEED_FAST_PLUS_U ), &
@@ -308,7 +309,7 @@ contains
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'Integrator_CS_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_dT_CGS', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_CS_CGS', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
@@ -316,7 +317,7 @@ contains
 
     dT  =  I % CourantFactor  *  dT
     
-  end subroutine Compute_dT_CGS
+  end subroutine Compute_dT_CS_CGS
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
@@ -333,7 +334,7 @@ contains
     select type ( I )
       class is ( Integrator_CS_Form )
 
-    call I % Compute_dT_CGS ( dT_Candidate ( 1 ), iC, T_Option )
+    call I % Compute_dT_CS_CGS ( dT_Candidate ( 1 ), iC, T_Option )
 
     end select !-- I
 
