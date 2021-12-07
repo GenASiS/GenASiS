@@ -308,7 +308,30 @@ contains
       T_C  =  sqrt ( D_0 / ( GC * Rho_I ) ) 
       T_F  =  T_C  -  sqrt ( D_0 / ( GC * Rho_F ) ) 
 
+    call F % SetAdiabaticIndex &
+           ( Gamma )
+    call F % SetFiducialParameters &
+           ( FiducialBaryonDensity = Rho_I, &
+             FiducialPressure = P_I )
+
     call SetFluid ( YL, F )
+
+    associate ( F_R  =>  YL % Reference )
+      call F_R % SetAdiabaticIndex &
+             ( Gamma )
+      call F_R % SetFiducialParameters &
+             ( FiducialBaryonDensity = Rho_I, &
+               FiducialPressure = P_I )
+    end associate !-- F_R
+
+    select type ( F_SA  =>  YL % SA_Fluid % FieldSet_SA )
+    class is ( Fluid_P_I_Form )
+      call F_SA % SetAdiabaticIndex &
+             ( Gamma )
+      call F_SA % SetFiducialParameters &
+             ( FiducialBaryonDensity = Rho_I, &
+               FiducialPressure = P_I )
+    end select !-- F_SA
 
     end associate !-- Gamma, etc.
 
@@ -416,11 +439,6 @@ contains
       YL
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
-
-    call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
-    call F % SetFiducialParameters &
-           ( FiducialBaryonDensity = YL % DensityInitial, &
-             FiducialPressure = YL % PressureInitial )
 
     select type ( A  =>  F % Atlas )
       class is ( Atlas_SCG_Form )
