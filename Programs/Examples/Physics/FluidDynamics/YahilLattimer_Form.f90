@@ -43,6 +43,8 @@ module YahilLattimer_Form
       Finalize
     procedure, public, pass :: &
       ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
   end type YahilLattimerForm
 
     private :: &
@@ -186,12 +188,35 @@ contains
     call U % Universe_F_CC_Form % ShowParameters ( )
 
     call Show ( U % AdiabaticIndex, 'AdiabaticIndex' )
-    call Show ( U % DensityInitial, UNIT % MASS_DENSITY_CGS, 'DensityInitial' )
+    call Show ( U % DensityInitial, UNIT % MASS_DENSITY_CGS, &
+                'MassDensityInitial' )
+    call Show ( U % DensityInitial, UNIT % ENERGY_DENSITY_NUCLEAR, &
+                'MassDensityInitial' )
+    call Show ( U % DensityInitial  /  CONSTANT % ATOMIC_MASS_UNIT, &
+                UNIT % NUMBER_DENSITY_NUCLEAR, 'BaryonDensityInitial' )
     call Show ( U % PressureInitial, UNIT % BARYE, 'PressureInitial' )
-    call Show ( U % DensityFinal, UNIT % MASS_DENSITY_CGS, 'DensityFinal' )
+    call Show ( U % PressureInitial, UNIT % ENERGY_DENSITY_NUCLEAR, &
+                'PressureInitial' )
+    call Show ( U % DensityFinal, UNIT % MASS_DENSITY_CGS, &
+                'MassDensityFinal' )
+    call Show ( U % DensityFinal, UNIT % ENERGY_DENSITY_NUCLEAR, &
+                'MassDensityFinal' )
+    call Show ( U % DensityFinal  /  CONSTANT % ATOMIC_MASS_UNIT, &
+                UNIT % NUMBER_DENSITY_NUCLEAR, 'BaryonDensityFinal' )
     call Show ( U % CollapseTime, UNIT % SECOND, 'CollapseTime' )
 
   end subroutine ShowParameters
+
+
+  subroutine ShowDiagnostics ( U )
+
+    class ( YahilLattimerForm ), intent ( in ) :: &
+      U
+
+    call U % Reference % Show ( )
+    call U % Universe_F_CC_Form % ShowDiagnostics ( )
+
+  end subroutine ShowDiagnostics
 
 
   subroutine InitializeUniverse ( YL, Name )
@@ -285,14 +310,6 @@ contains
 
     call SetFluid ( YL, F )
 
-associate &
-  ( G  =>  F % Geometry )
-associate &
-  ( FV  =>  F % Storage_GS % Value, &
-    GV  =>  G % Storage_GS % Value )
-end associate !-- FV, etc.
-end associate !-- G
-    
     end associate !-- Gamma, etc.
 
     end associate !-- C
@@ -320,6 +337,7 @@ end associate !-- G
         F_D  =>  YL % Difference )
 
     call SetFluid ( YL, F_R )
+    call F_R % ComputeFromPrimitive ( F_R )
 
     call F_D % MultiplyAdd ( F, F_R, -1.0_KDR )
 

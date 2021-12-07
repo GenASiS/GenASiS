@@ -936,7 +936,6 @@ contains
     end if !-- restart
 
     call I % ShowSystem ( )
-    call I % Show ( )
 
   end subroutine PrepareInitial
 
@@ -1177,6 +1176,8 @@ contains
 
     class ( Integrator_H_Form ), intent ( in ) :: &
       I
+
+    call I % Show ( )
 
   end subroutine ShowSystem_H
 

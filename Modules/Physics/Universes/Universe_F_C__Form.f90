@@ -31,8 +31,6 @@ module Universe_F_C__Form
   contains
     procedure, public, pass :: &
       Initialize_F_C
-    procedure, public, pass :: &
-      Show => Show_U
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -53,6 +51,8 @@ module Universe_F_C__Form
       InitializeAtlas
     procedure, public, pass :: &
       ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
     procedure, public, pass :: &
       Compute_dT_CS_C
     procedure, public, nopass :: &
@@ -208,23 +208,6 @@ contains
     end select !-- I
 
   end subroutine Initialize_F_C
-
-
-  subroutine Show_U ( U )
-
-    class ( Universe_F_C_Form ), intent ( in ) :: &
-      U
-
-    call U % Universe_H_Form % Show ( )
-
-    call U % ShowParameters ( )
-
-    call U % PositionSpace_SA % Show ( )
-    call U % SA_Gravitation % FieldSet_SA % Show ( )
-    call U % SA_Fluid % FieldSet_SA % Show ( )
-    call U % Stream_SA % Show ( )
-
-  end subroutine Show_U
 
 
   impure elemental subroutine Finalize ( U )
@@ -597,13 +580,33 @@ contains
       class ( Universe_F_C_Form ), intent ( in ) :: &
         U
 
-    if ( U % GravityFactor  >  0.0_KDR ) &
-      call Show ( U % GravityFactor, 'GravityFactor' )
+    call U % Universe_H_Form % ShowParameters ( )
 
     call Show ( U % Dimensionless, 'Dimensionless' )
     call Show ( U % Coarsen, 'Coarsen' )
 
+    if ( U % GravityFactor  >  0.0_KDR ) &
+      call Show ( U % GravityFactor, 'GravityFactor' )
+
+    ! call U % PositionSpace_SA % Show ( )
+    ! call U % SA_Gravitation % FieldSet_SA % Show ( )
+    ! call U % SA_Fluid % FieldSet_SA % Show ( )
+    ! call U % Stream_SA % Show ( )
+
   end subroutine ShowParameters
+
+
+  subroutine ShowDiagnostics ( U )
+
+      class ( Universe_F_C_Form ), intent ( in ) :: &
+        U
+
+    call U % PositionSpace_SA % Show ( )
+    call U % SA_Gravitation % FieldSet_SA % Show ( )
+    call U % SA_Fluid % FieldSet_SA % Show ( )
+    call U % Stream_SA % Show ( )
+
+  end subroutine ShowDiagnostics
 
 
   subroutine Compute_dT_CS_C ( U, dT, iC, T_Option )
@@ -688,7 +691,6 @@ contains
     call I % Analyze_H ( T_A )
 
     !-- Spherical average
-
 
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )

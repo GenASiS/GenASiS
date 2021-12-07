@@ -33,9 +33,15 @@ module Universe_H__Form
       Evolve
     final :: &
       Finalize
-    procedure, public, nopass :: &
-      ShowSystem
+    procedure, public, pass :: &
+      ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
   end type Universe_H_Form
+
+    private :: &
+      ShowSystem
+
 
 contains
 
@@ -84,12 +90,9 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', U % IGNORABILITY )
     call Show ( U % Name, 'Name', U % IGNORABILITY )
 
-    call Show ( U % DeviceMemory, &
-                'DeviceMemory', U % IGNORABILITY ) 
-    call Show ( U % PinnedMemory, &
-                'PinnedMemory', U % IGNORABILITY ) 
-    call Show ( U % DevicesCommunicate, &
-                'DevicesCommunicate', U % IGNORABILITY ) 
+    call U % ShowParameters ( )
+    call U % Integrator % Show ( )
+    call U % ShowDiagnostics ( )
 
   end subroutine Show_U
 
@@ -126,6 +129,29 @@ contains
     call Show ( U % Name, 'Name', U % IGNORABILITY )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( Universe_H_Form ), intent ( in ) :: &
+      U
+
+    call Show ( U % DeviceMemory, &
+                'DeviceMemory', U % IGNORABILITY ) 
+    call Show ( U % PinnedMemory, &
+                'PinnedMemory', U % IGNORABILITY ) 
+    call Show ( U % DevicesCommunicate, &
+                'DevicesCommunicate', U % IGNORABILITY ) 
+
+  end subroutine ShowParameters
+
+
+  subroutine ShowDiagnostics ( U )
+
+    class ( Universe_H_Form ), intent ( in ) :: &
+      U
+
+  end subroutine ShowDiagnostics
 
 
   subroutine ShowSystem ( I )

@@ -32,6 +32,8 @@ module OppenheimerSnyder_Form
       Finalize
     procedure, public, pass :: &
       ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
   end type OppenheimerSnyderForm
 
     private :: &
@@ -158,6 +160,17 @@ contains
     call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
 
   end subroutine ShowParameters
+
+
+  subroutine ShowDiagnostics ( U )
+
+    class ( OppenheimerSnyderForm ), intent ( in ) :: &
+      U
+
+    call U % Reference % Show ( )
+    call U % Universe_F_CC_Form % ShowDiagnostics ( )
+
+  end subroutine ShowDiagnostics
 
 
   subroutine InitializeUniverse ( OS, Name )
