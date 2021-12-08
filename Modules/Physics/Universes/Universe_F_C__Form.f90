@@ -54,7 +54,7 @@ module Universe_F_C__Form
     procedure, public, pass :: &
       ShowDiagnostics
     procedure, public, pass :: &
-      Compute_dT_CS_C
+      Compute_dT_CS_CGS_C
     procedure, public, nopass :: &
       Analyze_C
     procedure, public, nopass :: &
@@ -64,9 +64,12 @@ module Universe_F_C__Form
     private :: &
       SetSlope_N_SG
 
+    private :: &
+      Compute_dT_CS_CGS_C_Kernel
+
     interface
     
-      module subroutine Compute_dT_CS_C_Kernel &
+      module subroutine Compute_dT_CS_CGS_C_Kernel &
                ( dT, ProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
                  dX_1, dX_2, dX_3, Crsn_2, Crsn_3, &
                  nDimensions, UseDeviceOption )
@@ -85,7 +88,7 @@ module Universe_F_C__Form
           nDimensions
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_dT_CS_C_Kernel
+      end subroutine Compute_dT_CS_CGS_C_Kernel
 
     end interface
 
@@ -276,33 +279,6 @@ contains
              RadiusExcisionOption = RadiusExcisionOption, &
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
-
-    ! select type ( PS => U % Integrator % PositionSpace )
-    ! class is ( Atlas_SC_Form )
-
-    ! allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-    ! select type ( GA => PS % Geometry_ASC )
-    ! class is ( Geometry_ASC_Form )
-
-    ! call U % InitializeGeometry &
-    !        ( GA, PS, GeometryType, &
-    !          UsePinnedMemoryOption = GeometryUseDeviceOption, &
-    !          CentralMassOption = CentralMassOption )
-
-    ! call PS % SetGeometry ( GA )
-    
-    ! if ( present ( GeometryUseDeviceOption ) ) then
-    !   if ( GeometryUseDeviceOption ) &
-    !     call GA % AllocateDevice ( )
-    ! end if
-
-    ! U % UseCoarsening = .true.
-    ! call PROGRAM_HEADER % GetParameter ( U % UseCoarsening, 'UseCoarsening' )
-    ! if ( U % UseCoarsening ) &
-    !   call PS % SetCoarsening ( )
-
-    ! end select !-- GA
-    ! end select !-- PS
 
   end subroutine InitializePositionSpace
 
@@ -609,9 +585,9 @@ contains
   end subroutine ShowDiagnostics
 
 
-  subroutine Compute_dT_CS_C ( U, dT, iC, T_Option )
+  subroutine Compute_dT_CS_CGS_C ( U, dT, iC, T_Option )
 
-    !-- Compute_dT_CurrentSet_Central (or _Coarsened)
+    !-- Compute_dT_CurrentSet_ChartGridStructured_Central (or _Coarsened)
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
@@ -647,7 +623,7 @@ contains
         GV    =>   G   % Storage ( 1 ) % Value, &
         CV    =>  Crsn % Storage ( 1 ) % Value )
 
-    call Compute_dT_CS_C_Kernel &
+    call Compute_dT_CS_CGS_C_Kernel &
            ( dT, C % ProperCell, &
              EV_1 ( :, ES_1 % EIGENSPEED_FAST_PLUS_U ), &
              EV_2 ( :, ES_2 % EIGENSPEED_FAST_PLUS_U ), &
@@ -678,7 +654,7 @@ contains
     end associate !-- ES_1, etc.
     end select !-- I
 
-  end subroutine Compute_dT_CS_C
+  end subroutine Compute_dT_CS_CGS_C
 
 
   subroutine Analyze_C ( I, T_A )

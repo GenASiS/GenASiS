@@ -449,7 +449,14 @@ contains
 
     select type ( U  =>  I % System )
     class is ( Universe_F_C_Form )
-      call U % Compute_dT_CS_C ( dT_Candidate ( 1 ), iC, T_Option )
+      if ( U % Coarsen ) then
+        call U % Compute_dT_CS_CGS_C ( dT_Candidate ( 1 ), iC, T_Option )
+      else !-- .not. Coarsen
+        select type ( I )
+        class is ( Integrator_CS_Form )
+          call I % Compute_dT_CS_CGS ( dT_Candidate ( 1 ), iC, T_Option )
+        end select !-- I
+      end if !-- Coarsen
     end select !-- U
 
     select type ( U  =>  I % System )

@@ -9,7 +9,7 @@ submodule ( Universe_F_C__Form ) Universe_F_C__Kernel
 contains
 
 
-  module procedure Compute_dT_CS_C_Kernel
+  module procedure Compute_dT_CS_CGS_C_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -142,7 +142,7 @@ contains
     dT_Inverse  =  max ( tiny ( 0.0_KDR ), dT_Inverse )
     dT          =  min ( dT, 1.0_KDR  /  dT_Inverse )
 
-  end procedure Compute_dT_CS_C_Kernel
+  end procedure Compute_dT_CS_CGS_C_Kernel
 
   
 end submodule Universe_F_C__Kernel
