@@ -17,7 +17,7 @@ module Universe_F_C__Form
     logical ( KDL ) :: &
       Dimensionless, &
       Coarsen
-    type ( Coarsening_C_Form ), allocatable :: &
+    type ( Coarsening_C_F_Form ), allocatable :: &
       Coarsening
     class ( Atlas_SCG_Form ), allocatable :: &
       PositionSpace_SA  !-- SphericalAverage
@@ -498,14 +498,16 @@ contains
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
     associate &
-      ( F  =>  I % CurrentSet_X )
+      ( G  =>  I % Geometry_X )
 
     allocate ( Step_RK_CS_Form :: I % Step_X )
     select type ( S  =>  I % Step_X )
       class is ( Step_RK_CS_Form )
 
-    select type ( G  =>  I % Geometry_X )
+    select type ( G )
     class is ( Gravitation_N_SG_Form )
       S % SetSlope  =>  SetSlope_N_SG
     end select !-- G
@@ -517,15 +519,16 @@ contains
     if ( U % Coarsen ) then
       allocate ( U % Coarsening )
       associate ( C  =>  U % Coarsening )
-      call C % Initialize ( U % Integrator % Geometry_X )
+      call C % Initialize ( F, G, nCellsZero = 1 )
       call S % SetCoarsening ( C )
       end associate !-- C
     end if
 
     end select !-- S
 
-    end associate !-- F
-    end select !-- I
+    end associate !-- G
+    end select    !-- F
+    end select    !-- I
 
   end subroutine InitializeStep
 

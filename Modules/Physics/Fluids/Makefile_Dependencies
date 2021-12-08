@@ -40,11 +40,18 @@ Fluid_P_I__Kernel.o: \
   Fluid_P_I__Form.o \
   Fluid_P_I__Kernel.f90
 
+Coarsening_C_F__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Coarsening_C_F__Form.f90
+
 Fluids.o: \
   Units_F__Form.o \
   Fluid_D__Form.o \
   Fluid_P__Form.o \
   Fluid_P_I__Form.o \
+  Coarsening_C_F__Form.o \
   Fluids.f90
 
 Fluids.a: $(FLUIDS)

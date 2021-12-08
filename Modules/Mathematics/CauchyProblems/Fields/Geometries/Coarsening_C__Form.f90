@@ -67,7 +67,7 @@ contains
 
   subroutine Initialize_C ( C, G )
 
-    class ( Coarsening_C_Form ), intent ( inout ), target :: &
+    class ( Coarsening_C_Form ), intent ( inout ) :: &
       C
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
