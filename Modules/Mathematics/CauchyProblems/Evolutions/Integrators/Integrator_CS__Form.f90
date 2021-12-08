@@ -332,10 +332,8 @@ contains
       T_Option
 
     select type ( I )
-      class is ( Integrator_CS_Form )
-
-    call I % Compute_dT_CS_CGS ( dT_Candidate ( 1 ), iC, T_Option )
-
+    class is ( Integrator_CS_Form )
+      call I % Compute_dT_CS_CGS ( dT_Candidate ( 1 ), iC, T_Option )
     end select !-- I
 
   end subroutine Compute_dT_Local
