@@ -519,7 +519,7 @@ contains
     if ( U % Coarsen ) then
       allocate ( U % Coarsening )
       associate ( C  =>  U % Coarsening )
-      call C % Initialize ( F, G, nCellsZero = 1 )
+      call C % Initialize ( F, G )
       call S % SetCoarsening ( C )
       end associate !-- C
     end if

@@ -48,7 +48,7 @@ module Coarsening_C_F__Form
 contains
 
 
-  subroutine Initialize_C_F ( C, F, G, nRadiusZero )
+  subroutine Initialize_C_F ( C, F, G )
 
     class ( Coarsening_C_F_Form ), intent ( inout ) :: &
       C
@@ -56,8 +56,6 @@ contains
       F
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
-    integer ( KDI ), intent ( in ) :: &
-      nRadiusZero
 
     if ( C % Type == '' ) &
       C % Type  =  'a Coarsening_C_F' 
@@ -65,7 +63,9 @@ contains
     call C % Coarsening_C_Form % Initialize ( G )
 
     C % Fluid        =>  F
-    C % nRadiusZero  =   nRadiusZero
+
+    C % nRadiusZero  =   1
+    call PROGRAM_HEADER % GetParameter ( C % nRadiusZero, 'nRadiusZero' )    
 
   end subroutine Initialize_C_F
 
