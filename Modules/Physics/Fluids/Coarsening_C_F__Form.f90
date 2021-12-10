@@ -30,7 +30,8 @@ module Coarsening_C_F__Form
 
     interface
       
-      module subroutine ComputeKernel ( FS_4D, oC, nRZ, iS_2, iS_3 )
+      module subroutine ComputeKernel &
+               ( FS_4D, oC, nRZ, iS_2, iS_3, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
@@ -40,6 +41,8 @@ module Coarsening_C_F__Form
         integer ( KDI ), intent ( in ) :: &
           nRZ, &
           iS_2, iS_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeKernel
 
     end interface
@@ -106,7 +109,8 @@ contains
                oC   = C_GS_CC % nGhostLayers, &
                nRZ  = C % nRadiusZero, &
                iS_2 = iMomentum_2, &
-               iS_3 = iMomentum_3 )
+               iS_3 = iMomentum_3, &
+               UseDeviceOption = C % DeviceMemory )
 
     end if
 

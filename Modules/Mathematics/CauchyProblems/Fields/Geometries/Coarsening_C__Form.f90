@@ -42,7 +42,7 @@ module Coarsening_C__Form
     interface
       
       module subroutine ComputeKernel &
-               ( FS_4D, dV_3D, iTh, iPh, iR, iaS, oC, nBC )
+               ( FS_4D, dV_3D, iTh, iPh, iR, iaS, oC, nBC, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
@@ -58,6 +58,8 @@ module Coarsening_C__Form
           oC
         integer ( KDI ), intent ( in ) :: &
           nBC
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeKernel
 
     end interface
@@ -248,7 +250,8 @@ contains
              iR  = C % iRadius, &
              iaS = FS % iaSelected, &
              oC  = C_GS_CC % nGhostLayers, &
-             nBC = C % nBlocksCoarsen )
+             nBC = C % nBlocksCoarsen, &
+             UseDeviceOption = C % DeviceMemory )
 
     end associate !-- G, etc.
 
