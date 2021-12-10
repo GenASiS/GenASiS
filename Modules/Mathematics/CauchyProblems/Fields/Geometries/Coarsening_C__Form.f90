@@ -36,8 +36,9 @@ module Coarsening_C__Form
 
     private :: &
       SetCoarseningPolar, &
-      SetBlocks
-
+      SetBlocks, &
+      ComputeKernel
+         
     interface
       
       module subroutine ComputeKernel &
@@ -246,7 +247,7 @@ contains
              iPh = C % iPhi, &
              iR  = C % iRadius, &
              iaS = FS % iaSelected, &
-             oC  = A % Chart_GS_CC % nGhostLayers, &
+             oC  = C_GS_CC % nGhostLayers, &
              nBC = C % nBlocksCoarsen )
 
     end associate !-- G, etc.

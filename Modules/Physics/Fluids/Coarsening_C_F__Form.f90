@@ -11,7 +11,7 @@ module Coarsening_C_F__Form
 
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
-      nCellsZero
+      nRadiusZero
     class ( Fluid_D_Form ), pointer :: &
       Fluid => null ( )
   contains
@@ -25,11 +25,30 @@ module Coarsening_C_F__Form
       Finalize
   end type Coarsening_C_F_Form
 
+    private :: &
+      ComputeKernel
+
+    interface
+      
+      module subroutine ComputeKernel ( FS_4D, oC, nRZ, iS_2, iS_3 )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          FS_4D
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          oC
+        integer ( KDI ), intent ( in ) :: &
+          nRZ, &
+          iS_2, iS_3
+      end subroutine ComputeKernel
+
+    end interface
+
 
 contains
 
 
-  subroutine Initialize_C_F ( C, F, G, nCellsZero )
+  subroutine Initialize_C_F ( C, F, G, nRadiusZero )
 
     class ( Coarsening_C_F_Form ), intent ( inout ) :: &
       C
@@ -38,15 +57,15 @@ contains
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
     integer ( KDI ), intent ( in ) :: &
-      nCellsZero
+      nRadiusZero
 
     if ( C % Type == '' ) &
       C % Type  =  'a Coarsening_C_F' 
     
     call C % Coarsening_C_Form % Initialize ( G )
 
-    C % Fluid       =>  F
-    C % nCellsZero  =   nCellsZero
+    C % Fluid        =>  F
+    C % nRadiusZero  =   nRadiusZero
 
   end subroutine Initialize_C_F
 
@@ -77,12 +96,18 @@ contains
 
     call C % Coarsening_C_Form % Compute ( FS )
 
-    call C_GS_CC % SetFieldPointer &
-           ( FS % Storage_GS % Value, FS_4D )
-
     if ( C_GS_CC % iaBrick ( 1 )  ==  1 ) then
-      FS_4D ( 1, :, :, iMomentum_2 )  =  0.0_KDR
-      FS_4D ( 1, :, :, iMomentum_3 )  =  0.0_KDR
+
+      call C_GS_CC % SetFieldPointer &
+             ( FS % Storage_GS % Value, FS_4D )
+
+      call ComputeKernel &
+             ( FS_4D, &
+               oC   = C_GS_CC % nGhostLayers, &
+               nRZ  = C % nRadiusZero, &
+               iS_2 = iMomentum_2, &
+               iS_3 = iMomentum_3 )
+
     end if
 
     end associate !-- F, etc.

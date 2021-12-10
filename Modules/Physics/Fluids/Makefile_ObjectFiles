@@ -1,5 +1,6 @@
 FLUIDS = \
   Fluids.o \
+  Coarsening_C_F__Kernel.o \
   Coarsening_C_F__Form.o \
   Fluid_P_I__Kernel.o \
   Fluid_P_I__Form.o \

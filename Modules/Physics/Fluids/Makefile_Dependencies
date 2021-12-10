@@ -46,6 +46,11 @@ Coarsening_C_F__Form.o: \
   Fluid_D__Form.o \
   Coarsening_C_F__Form.f90
 
+Coarsening_C_F__Kernel.o: \
+  Basics.o \
+  Coarsening_C_F__Form.o \
+  Coarsening_C_F__Kernel.f90
+
 Fluids.o: \
   Units_F__Form.o \
   Fluid_D__Form.o \
