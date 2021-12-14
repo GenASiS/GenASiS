@@ -12,8 +12,9 @@ module Coarsening_C__Form
 
   type, public, extends ( FieldSetForm ) :: Coarsening_C_Form
     integer ( KDI ) :: &
-      COARSENING_POLAR = 0, &
-      COARSENING_AZIMUTHAL = 0
+      COARSENING_POLAR     = 0, &
+      COARSENING_AZIMUTHAL = 0, &
+      BLOCK_LABEL          = 0  !-- Random label for visualization
     integer ( KDI ) :: &
       nBlocksCoarsen
     integer ( KDI ), dimension ( : ), allocatable :: &
@@ -36,7 +37,10 @@ module Coarsening_C__Form
 
     private :: &
       SetCoarseningPolar, &
-      SetBlocks, &
+      SetCoarseningAzimuthal, &
+      SetBlocks
+
+    private :: &
       ComputeKernel
          
     interface
@@ -80,15 +84,19 @@ contains
     
     C % COARSENING_POLAR      =  1
     C % COARSENING_AZIMUTHAL  =  2
+    C % BLOCK_LABEL          =  3
 
     call C % FieldSetForm % Initialize &
            ( G % Atlas, &
-             FieldOption = [ 'CoarseningPolar    ', 'CoarseningAzimuthal' ], &
+             FieldOption &
+               = [ 'CoarseningPolar    ', &
+                   'CoarseningAzimuthal', &
+                   'BlockLabel         ' ], &
              NameOption = 'Coarsening', &
              DeviceMemoryOption = G % DeviceMemory, &
              PinnedMemoryOption = G % PinnedMemory, &
              DevicesCommunicateOption = G % DevicesCommunicate, &
-             nFieldsOption = 2 )
+             nFieldsOption = 3 )
 
     C % Geometry  =>  G
 
@@ -99,14 +107,24 @@ contains
              ( C  = A % Chart_GS_CC, &
                R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
                CP = C % Storage_GS % Value ( :, C % COARSENING_POLAR ) )
+      call SetCoarseningAzimuthal &
+             ( C  = A % Chart_GS_CC, &
+               R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
+               Th = G % Storage_GS % Value ( :, G % CENTER_U_2 ), &
+               CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ) )
 
       call SetBlocks &
-             (  C   = A % Chart_GS_CC, &
+             (  BL  = C % Storage_GS % Value ( :, C % BLOCK_LABEL ), &
+                C   = A % Chart_GS_CC, &
                 CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
+                CA  = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
                iTh  = C % iTheta, &
                iPh  = C % iPhi, &
                iRad = C % iRadius, &
                nBC  = C % nBlocksCoarsen )
+
+      if ( C % DeviceMemory ) &
+        call C % UpdateDevice ( )
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
@@ -138,22 +156,57 @@ contains
       if ( .not. C % ProperCell ( iV ) ) &
         cycle
       CP ( iV )  =  1.0_KDR
-      Coarsen_2: do
+      CoarsenPolar: do
         if ( CP ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
-          exit Coarsen_2
+          exit CoarsenPolar
         CP ( iV )  =  2.0_KDR  *  CP ( iV )
-      end do Coarsen_2
+      end do CoarsenPolar
     end do !-- iV
 
   end subroutine SetCoarseningPolar
 
 
-  subroutine SetBlocks ( C, CP, iTh, iPh, iRad, nBC )
-
+  subroutine SetCoarseningAzimuthal ( C, R, Th, CA )
+    
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      CP  !-- CoarsenPolar
+      R, &
+      Th
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      CA
+
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
+      dPhi
+
+    dPhi  =  2.0_KDR * CONSTANT % PI  /  ( 2  *  C % nCellsPolar )
+
+    do iV = 1, size ( CA )
+      if ( .not. C % ProperCell ( iV ) ) &
+        cycle
+      CA ( iV )  =  1.0_KDR
+      CoarsenAzimuthal: do
+        if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
+             >  C % MinWidth ) &
+          exit CoarsenAzimuthal
+        CA ( iV )  =  2.0_KDR  *  CA ( iV )
+      end do CoarsenAzimuthal
+    end do !-- iV
+
+  end subroutine SetCoarseningAzimuthal
+
+
+  subroutine SetBlocks ( BL, C, CP, CA, iTh, iPh, iRad, nBC )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      BL  !-- BlockNumber
+    class ( Chart_GS_C_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      CP, &  !-- CoarsenPolar
+      CA     !-- CoarsenAzimuthal
     integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
       iTh, &
       iPh
@@ -163,32 +216,46 @@ contains
       nBC  !-- nBlocksCoarsen
 
     integer ( KDI ) :: &
-      iR, &   !-- iRadius
-      iBC, &  !-- iBlockCoarsen
-      iBP, &  !-- iBlockPolar
+      iR, &            !-- iRadius
+      iTheta, &
+      iTh_1, iTh_2, &  !-- iTheta_1, iTheta_2
+      iPh_1, iPh_2, &  !-- iPhi_1, iPhi_2
+      iBC, &           !-- iBlockCoarsen
+      iBP, &           !-- iBlockPolar
       oTh
+    real ( KDR ) :: &
+      RandomLabel
     integer ( KDI ), dimension ( : ), allocatable :: &
       nCP, &  !-- nCoarsenPolar
       nBP     !-- nBlocksPolar
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      CP_3D
+      CP_3D, &
+      CA_3D, &
+      BL_3D
 
     call C % SetFieldPointer ( CP, CP_3D )
+    call C % SetFieldPointer ( CA, CA_3D )
+    call C % SetFieldPointer ( BL, BL_3D )
 
-    associate ( nR  =>  C % nCellsBrick ( 1 ) )
-    allocate ( nCP ( nR ), nBP ( nR ) )
+    associate &
+      ( nR   =>  C % nCellsBrick ( 1 ), &
+        nTh  =>  C % nCellsBrick ( 2 ) )
+    allocate &
+      ( nCP ( nR ), nBP ( nR ) )
+
+    nBC  =  0
 
     select case ( C % nDimensions )
     case ( 2 )
 
       do iR  =  1, nR
         nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
-        nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
+        if ( nCP ( iR )  >  1 ) then
+          nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
+        else
+          nBP ( iR )  =  0
+        end if
       end do !-- iR
-
-      where ( nCP == 1 )
-        nBP  =  0
-      end where
 
       nBC  =  sum ( nBP )
 
@@ -211,7 +278,44 @@ contains
         end do !-- iBP
       end do !-- iR
 
+    case ( 3 )
+
+      do iR  =  1, nR
+        nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
+        nBP ( iR )  =  0
+call Show ( iR, '>>> iR' )
+call Show ( nCP ( iR ), '>>> nCP ( iR )' )
+        do iTheta  =  1,  nTh,  nCP ( iR )
+call Show ( iTheta, '>>> iTheta' )
+          if ( nCP ( iR )  >  1 ) then
+            nBP ( iR )  =  nBP ( iR )  +  1
+          else !-- nCP ( iR ) == 1 
+            if ( any ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 )  &
+                       >  1 ) ) &
+              nBP ( iR )  =  nBP ( iR )  +  1
+          end if
+        end do !-- iTh
+call Show ( nBP ( iR ), '>>> nBP ( iR )' )
+      end do !-- iR
+
+!      nBC  =  sum ( nBP )
+
     end select !-- nDimensions
+
+
+    do iBC  =  1, nBC
+
+      iR     =  iRad ( iBC )
+      iTh_1  =  iTh ( 1, iBC )
+      iTh_2  =  iTh ( 2, iBC )
+      iPh_1  =  iPh ( 1, iBC )
+      iPh_2  =  iPh ( 2, iBC )
+
+      call random_number ( RandomLabel )
+      BL_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  =  RandomLabel
+
+    end do !-- iBC
+
     end associate !-- nR
 
   end subroutine SetBlocks
