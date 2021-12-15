@@ -67,9 +67,9 @@ program Coarsening_C__Form_Test
 
   call C % Show ( )
   call Show ( C % nBlocksCoarsen, 'nBlocksCoarsen' )
-!  call Show ( C % iRadius, 'iRadius' )
-!  call Show ( C % iTheta, 'iTheta' )
-!  call Show ( C % iPhi, 'iPhi' )
+  call Show ( C % iRadius, 'iRadius' )
+  call Show ( C % iTheta, 'iTheta' )
+  call Show ( C % iPhi, 'iPhi' )
 
   call S % Show ( )
 
@@ -81,9 +81,9 @@ program Coarsening_C__Form_Test
          ( G % Storage_GS % Value ( :, G % CENTER_U_3 ), Ph_3D )
   select case ( A % Chart_GS % nDimensions )
   case ( 2 )
-    FV_3D  =  sin ( 8 * Th_3D )
+    FV_3D  =  sin ( Th_3D )
   case ( 3 )
-    FV_3D  =  sin ( 8 * Th_3D )  *  sin ( 16 * Ph_3D )
+    FV_3D  =  sin ( Th_3D )  *  sin ( Ph_3D )
   end select !-- nDimensions
 
   call GIS % Open ( GIS % ACCESS_CREATE )

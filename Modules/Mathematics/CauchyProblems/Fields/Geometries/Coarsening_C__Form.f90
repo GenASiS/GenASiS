@@ -222,7 +222,9 @@ contains
       iPh_1, iPh_2, &  !-- iPhi_1, iPhi_2
       iBC, &           !-- iBlockCoarsen
       iBP, &           !-- iBlockPolar
+      iBA, &           !-- iBlock Azimuthal
       oTh, &           !-- oTheta
+      oPh, &           !-- oPhi
       CA_Max
     integer ( KDI ), dimension ( : ), allocatable :: &
       nCP, &  !-- nCoarsenPolar
@@ -255,7 +257,7 @@ contains
     case ( 2 )
 
       !-- Set nCoarsenPolar and nBlocksPolar
-      do iR  =  1, nR
+      do iR  =  1,  nR
         nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
         if ( nCP ( iR )  >  1 ) then
           nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
@@ -274,8 +276,8 @@ contains
       allocate ( iPh ( 2, nBC ) )
 
       iBC  =  0
-      do iR  =  1, nR
-        do iBP  =  1, nBP ( iR )
+      do iR  =  1,  nR
+        do iBP  =  1,  nBP ( iR )
 
           iBC  =  iBC + 1
 
@@ -291,57 +293,74 @@ contains
     case ( 3 )
 
       !-- Set nCoarsenPolar and nBlocksPolar
-call Show ( '>>> Set nCoarsenPolar and nBlocksPolar' )
       do iR  =  1, nR
         nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
         nBP ( iR )  =  0
-call Show ( iR, '>>> iR' )
-call Show ( nCP ( iR ), '>>> nCP ( iR )' )
         do iTheta  =  1,  nTh,  nCP ( iR )
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
                +  0.49_KDR
-call Show ( CA_Max, '>>> CA_Max' )
           if ( CA_Max  >  1 ) &
             nBP ( iR )  =  nBP ( iR )  +  1
         end do !-- iTh
-call Show ( nBP ( iR ), '>>> nBP ( iR )' )
       end do !-- iR
 
       !-- Set nCoarsenAzimuthal and nBlocksAzimuthal
-call Show ( '>>> Set nCoarsenAzimuthal and nBlocksAzimuthal' )
       do iR  =  1, nR
         call nCA ( iR ) % Initialize ( nBP ( iR ) )
         call nBA ( iR ) % Initialize ( nBP ( iR ) )
-call Show ( iR, '>>> iR' )
-call Show ( nBP ( iR ), '>>> nBP ( iR )' )
         iBP  =  0
         do iTheta  =  1,  nTh,  nCP ( iR )
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
                +  0.49_KDR
-call Show ( CA_Max, '>>> CA_Max' )
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
             nCA ( iR ) % Value ( iBP )  =  min ( CA_Max, nPh )
             nBA ( iR ) % Value ( iBP )  =  nPh  /  nCA ( iR ) % Value ( iBP )
-call Show ( iBP, '>>> iBP' )
-call Show ( nCA ( iR ) % Value ( iBP ), '>>> nCA ( iR ) ( iBP )' )
-call Show ( nBA ( iR ) % Value ( iBP ), '>>> nBA ( iR ) ( iBP )' )
           end if
         end do !-- iTheta
       end do !-- iR
 
       !-- Set nBlocksCoarsen
-call Show ( '>>> Set nBlocksCoarsen' )
       nBC  =  0
-      do iR  =  1, nR
-call Show ( iR, '>>> iR' )
-call Show ( nBA ( iR ) % Value, '>>> nBA ( iR ) % Value' )
-call Show ( sum ( nBA ( iR ) % Value ), '>>> sum ( nBA ( iR ) % Value )' )
+      do iR  =  1,  nR
         nBC  =  nBC  +  sum ( nBA ( iR ) % Value )
       end do !-- iR
-call Show ( nBC, '>>> nBlocksCoarsen' )
+
+      !-- Set block extents
+
+      allocate ( iRad ( nBC ) )
+      allocate ( iTh ( 2, nBC ) )
+      allocate ( iPh ( 2, nBC ) )
+
+      iBC  =  0
+      do iR  =  1, nR
+        iBP  =  0
+        do iTheta  =  1,  nTh,  nCP ( iR )
+          CA_Max  &
+            =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+               +  0.49_KDR
+          if ( CA_Max  >  1 ) then
+            iBP  =  iBP + 1
+            do iBA  =  1,  nBA ( iR ) % Value ( iBP )
+
+              iBC  =  iBC + 1
+
+              iRad ( iBC )  =  iR
+
+              oTh  =  iTheta - 1
+              iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
+
+              oPh  =  ( iBA - 1 )  *  nCA ( iR ) % Value ( iBP )
+              iPh ( 1 : 2, iBC )  =  [ oPh  +  1, &
+                                       oPh  +  nCA ( iR ) % Value ( iBP ) ]
+
+            end do !-- iBA
+          end if
+        end do !-- iTheta
+
+      end do !-- iR
 
     end select !-- nDimensions
 
