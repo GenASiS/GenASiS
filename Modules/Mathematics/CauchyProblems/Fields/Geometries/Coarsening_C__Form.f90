@@ -333,7 +333,15 @@ call Show ( nBA ( iR ) % Value ( iBP ), '>>> nBA ( iR ) ( iBP )' )
       end do !-- iR
 
       !-- Set nBlocksCoarsen
-!      nBC  =  sum ( nBP )
+call Show ( '>>> Set nBlocksCoarsen' )
+      nBC  =  0
+      do iR  =  1, nR
+call Show ( iR, '>>> iR' )
+call Show ( nBA ( iR ) % Value, '>>> nBA ( iR ) % Value' )
+call Show ( sum ( nBA ( iR ) % Value ), '>>> sum ( nBA ( iR ) % Value )' )
+        nBC  =  nBC  +  sum ( nBA ( iR ) % Value )
+      end do !-- iR
+call Show ( nBC, '>>> nBlocksCoarsen' )
 
     end select !-- nDimensions
 
