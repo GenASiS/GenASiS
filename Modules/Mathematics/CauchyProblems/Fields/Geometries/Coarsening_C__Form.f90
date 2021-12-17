@@ -187,12 +187,14 @@ contains
       if ( .not. C % ProperCell ( iV ) ) &
         cycle
       CA ( iV )  =  1.0_KDR
-      CoarsenAzimuthal: do
-        if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
-             >  C % MinWidth ) &
-          exit CoarsenAzimuthal
-        CA ( iV )  =  2.0_KDR  *  CA ( iV )
-      end do CoarsenAzimuthal
+      if ( C % nDimensions  ==  3 ) then
+        CoarsenAzimuthal: do
+          if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
+               >  C % MinWidth ) &
+            exit CoarsenAzimuthal
+          CA ( iV )  =  2.0_KDR  *  CA ( iV )
+        end do CoarsenAzimuthal
+      end if !-- nDimensions == 3
     end do !-- iV
 
   end subroutine SetCoarseningAzimuthal
@@ -258,7 +260,7 @@ contains
 
       !-- Set nCoarsenPolar and nBlocksPolar
       do iR  =  1,  nR
-        nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
+        nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
         if ( nCP ( iR )  >  1 ) then
           nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
         else
@@ -294,12 +296,12 @@ contains
 
       !-- Set nCoarsenPolar and nBlocksPolar
       do iR  =  1, nR
-        nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.49_KDR
+        nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
         nBP ( iR )  =  0
         do iTheta  =  1,  nTh,  nCP ( iR )
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
-               +  0.49_KDR
+               +  0.5_KDR
           if ( CA_Max  >  1 ) &
             nBP ( iR )  =  nBP ( iR )  +  1
         end do !-- iTh
@@ -313,7 +315,7 @@ contains
         do iTheta  =  1,  nTh,  nCP ( iR )
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
-               +  0.49_KDR
+               +  0.5_KDR
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
             nCA ( iR ) % Value ( iBP )  =  min ( CA_Max, nPh )
@@ -340,7 +342,7 @@ contains
         do iTheta  =  1,  nTh,  nCP ( iR )
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
-               +  0.49_KDR
+               +  0.5_KDR
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
             do iBA  =  1,  nBA ( iR ) % Value ( iBP )
