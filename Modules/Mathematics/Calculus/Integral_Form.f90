@@ -96,14 +96,14 @@ contains
       Integral
 
     integer ( KDI ) :: &
-      iI, &      !-- iIteration
-      iS, &      !-- iSum
-      iR, &      !-- iRecursion
-      iP, iC, &  !-- iPrevious, iCurrent
-      P4         !-- Power of 4
+      iI, &   !-- iIteration
+      iS, &   !-- iSum
+      iR, &   !-- iRecursion
+      iP, iC  !-- iPrevious, iCurrent
     real ( KDR ) :: &
       H, &  !-- Step size
-      S     !-- Sum
+      S, &  !-- Sum
+      P4    !-- Power of 4
     procedure ( IF ), pointer :: &
       F
 
@@ -146,10 +146,10 @@ contains
 
       do iR  =  1,  iI
 
-        P4  =  4 ** iR
+        P4  =  4.0_KDR ** iR
 
         R ( iR, iC )  =  ( P4 * R ( iR - 1, iC )  -  R ( iR - 1, iP ) )  &
-                         /  ( P4 - 1 )
+                         /  ( P4 - 1.0_KDR )
 
       end do !-- iR
 
