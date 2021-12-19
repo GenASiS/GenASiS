@@ -12,7 +12,7 @@ contains
   module procedure ComputeKernel
 
     integer ( KDI ) :: &
-      iRZ
+      iRZ, iPZ
     logical ( KDL ) :: &
       UseDevice
       
@@ -22,26 +22,54 @@ contains
       
     if ( UseDevice ) then
 
+      !-- First radial shell only
+      if ( iaB ( 1 )  ==  1 ) then
+        !$OMP OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_TARGET )
+        do iRZ  =  1, nRZ
+          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
+          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
+        end do !-- iRZ
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      end if
+
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iRZ  =  1, nRZ
+      do iPZ  =  1, nPZ
 
-        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
-        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
+        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_2 )  =  0.0_KDR
+        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_3 )  =  0.0_KDR
 
-      end do !-- iRZ
+        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_2 )  =  0.0_KDR
+        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_3 )  =  0.0_KDR
+
+      end do !-- iPZ
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
 
     else
 
+      !-- First radial shell only
+      if ( iaB ( 1 )  ==  1 ) then
+        !$OMP OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_TARGET )
+        do iRZ  =  1, nRZ
+          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
+          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
+        end do !-- iRZ
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      end if
+
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iRZ  =  1, nRZ
+      do iPZ  =  1, nPZ
 
-        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
-        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
+        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_2 )  =  0.0_KDR
+        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_3 )  =  0.0_KDR
 
-      end do !-- iRZ
+        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_2 )  =  0.0_KDR
+        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_3 )  =  0.0_KDR
+
+      end do !-- iPZ
       !$OMP end parallel do
 
     end if

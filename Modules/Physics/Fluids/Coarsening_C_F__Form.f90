@@ -11,7 +11,8 @@ module Coarsening_C_F__Form
 
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
-      nRadiusZero
+      nRadiusZero, &
+      nPolarZero
     class ( Fluid_D_Form ), pointer :: &
       Fluid => null ( )
   contains
@@ -31,15 +32,17 @@ module Coarsening_C_F__Form
     interface
       
       module subroutine ComputeKernel &
-               ( FS_4D, oC, nRZ, iS_2, iS_3, UseDeviceOption )
+               ( FS_4D, nC, oC, iaB, nRZ, nPZ, iS_2, iS_3, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
           FS_4D
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          oC
+          nC, &
+          oC, &
+          iaB
         integer ( KDI ), intent ( in ) :: &
-          nRZ, &
+          nRZ, nPZ, &
           iS_2, iS_3
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -67,8 +70,10 @@ contains
 
     C % Fluid        =>  F
 
-    C % nRadiusZero  =   1
+    C % nRadiusZero  =  1
+    C % nPolarZero   =  1
     call PROGRAM_HEADER % GetParameter ( C % nRadiusZero, 'nRadiusZero' )    
+    call PROGRAM_HEADER % GetParameter ( C % nPolarZero,  'nPolarZero' )    
 
   end subroutine Initialize_C_F
 
@@ -99,20 +104,19 @@ contains
 
     call C % Coarsening_C_Form % Compute ( FS )
 
-    if ( C_GS_CC % iaBrick ( 1 )  ==  1 ) then
+    call C_GS_CC % SetFieldPointer &
+           ( FS % Storage_GS % Value, FS_4D )
 
-      call C_GS_CC % SetFieldPointer &
-             ( FS % Storage_GS % Value, FS_4D )
-
-      call ComputeKernel &
-             ( FS_4D, &
-               oC   = C_GS_CC % nGhostLayers, &
-               nRZ  = C % nRadiusZero, &
-               iS_2 = iMomentum_2, &
-               iS_3 = iMomentum_3, &
-               UseDeviceOption = C % DeviceMemory )
-
-    end if
+    call ComputeKernel &
+           ( FS_4D, &
+             nC   = C_GS_CC % nCells, &
+             oC   = C_GS_CC % nGhostLayers, &
+             iaB  = C_GS_CC % iaBrick, &
+             nRZ  = C % nRadiusZero, &
+             nPZ  = C % nPolarZero, &
+             iS_2 = iMomentum_2, &
+             iS_3 = iMomentum_3, &
+             UseDeviceOption = C % DeviceMemory )
 
     end associate !-- F, etc.
 
