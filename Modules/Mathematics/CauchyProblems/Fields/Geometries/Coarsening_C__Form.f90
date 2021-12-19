@@ -194,6 +194,7 @@ contains
             exit CoarsenAzimuthal
           CA ( iV )  =  2.0_KDR  *  CA ( iV )
         end do CoarsenAzimuthal
+        CA ( iV )  =  min ( CA ( iV ), real ( C % nCells ( 3 ), KDR ) )
       end if !-- nDimensions == 3
     end do !-- iV
 
@@ -247,8 +248,8 @@ contains
 
     associate &
       ( nR   =>  C % nCellsBrick ( 1 ), &
-        nTh  =>  C % nCellsBrick ( 2 ), &
-        nPh  =>  C % nCellsBrick ( 3 ) )
+        nTh  =>  C % nCellsBrick ( 2 ), &  !-- nCellsBrick ( 2 ) == nCells ( 2 )
+        nPh  =>  C % nCellsBrick ( 3 ) )   !-- nCellsBrick ( 3 ) == nCells ( 3 )
     allocate &
       ( nCP ( nR ), nBP ( nR ), &
         nCA ( nR ), nBA ( nR ) )
@@ -318,7 +319,7 @@ contains
                +  0.5_KDR
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
-            nCA ( iR ) % Value ( iBP )  =  min ( CA_Max, nPh )
+            nCA ( iR ) % Value ( iBP )  =  CA_Max
             nBA ( iR ) % Value ( iBP )  =  nPh  /  nCA ( iR ) % Value ( iBP )
           end if
         end do !-- iTheta
