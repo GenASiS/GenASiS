@@ -129,13 +129,15 @@ contains
     if ( present ( BoundaryConditionOption ) ) &
       DM % BoundaryCondition = BoundaryConditionOption
 
-    call ShowParameters ( DM )
-    
     call PROGRAM_HEADER % AddTimer &
            ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
+    DM % DevicesCommunicate &
+      = ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 )
     call PROGRAM_HEADER % GetParameter &
            ( DM % DevicesCommunicate, 'DevicesCommunicate' )
+           
+    call ShowParameters ( DM )
     
   end subroutine Initialize
 
@@ -955,6 +957,8 @@ contains
     call Show ( DM % CellArea, 'CellArea', CONSOLE % INFO_7 )
     call Show ( DM % CellVolume, 'CellVolume', CONSOLE % INFO_7 )
     call Show ( DM % BoundaryCondition, 'BoundaryCondition', DM % IGNORABILITY )
+    call Show ( DM % DevicesCommunicate, 'DevicesCommunicate', &
+                DM % IGNORABILITY )
 
   end subroutine ShowParameters
 
