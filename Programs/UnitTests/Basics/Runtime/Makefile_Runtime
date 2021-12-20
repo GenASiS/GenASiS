@@ -58,7 +58,6 @@ PROGRAM_HEADER_Singleton_Test: Specifiers.a Devices.a DataManagement.a \
 	$(LINK) $(FLAGS) \
           -o PROGRAM_HEADER_Singleton_Test_$(MACHINE) \
           PROGRAM_HEADER_Singleton_Test.o PROGRAM_HEADER_Singleton.o \
-          InitializeRandomSeed_Command.o \
           GetMemoryUsage_Command.o Timer_Form.o WallTime_Function.o \
           CommandLineOptions_Form.o InitializeRandomSeed_Command.o \
           FileSystem.a MessagePassing.a Display.a DataManagement.a \

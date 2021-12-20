@@ -272,10 +272,17 @@ contains
     call CLS % Update % AllocateDevice ( )
 
     end associate !-- nCells
-    end associate !-- DM
     
     call PROGRAM_HEADER % AddTimer &
            ( 'Communication', CLS % iTimerCommunication, Level = 2 )
+    
+    if ( CONSOLE % Verbosity >= CONSOLE % INFO_3 ) then
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Pack/Unpack', DM % iTimerPacking, Level = 3 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Send/Recv', DM % iTimerComm, Level = 3 )
+    end if
+    
     call PROGRAM_HEADER % AddTimer &
            ( 'RK Step', CLS % iTimerRKStep, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
@@ -305,6 +312,8 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'DataTransfer to Host', CLS % iTimerDataTransferHost, &
              Level = 2 )
+    
+    end associate !-- DM
     
   end subroutine Initialize
 
@@ -374,19 +383,22 @@ contains
     call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
-    call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_H % Start ( )
+      call Primitive % UpdateHost ( ) 
+      call T_DT_H % Stop ( )
+    end if
 
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-    call T_DT_D % Start ( )
-    call Primitive % UpdateDevice ( )
-    call T_DT_D % Stop ( )
-    
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_D % Start ( )
+      call Primitive % UpdateDevice ( )
+      call T_DT_D % Stop ( )
+    end if
     
     !-- Substep 2
     
@@ -420,18 +432,22 @@ contains
     call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
-    call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_H % Start ( )
+      call Primitive % UpdateHost ( ) 
+      call T_DT_H % Stop ( )
+    end if
     
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-    call T_DT_D % Start ( )
-    call Primitive % UpdateDevice ( ) 
-    call T_DT_D % Stop ( )
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_D % Start ( )
+      call Primitive % UpdateDevice ( ) 
+      call T_DT_D % Stop ( )
+    end if
     
     end associate !-- DM, etc.
     end associate !-- CF

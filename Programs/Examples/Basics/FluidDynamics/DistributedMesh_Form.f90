@@ -16,6 +16,9 @@ module DistributedMesh_Form
       nGhostCells  = 0
     integer ( KDI ), private :: &
       iTimer_IO
+    integer ( KDI ) :: &
+      iTimerPacking = -1, &
+      iTimerComm    = -1
     integer ( KDI ), dimension ( MAX_N_DIMENSIONS ) :: &
       iaBrick, &
       iaFirst, &
@@ -31,6 +34,8 @@ module DistributedMesh_Form
       MaxCoordinate, &
       CellWidth, &
       CellArea
+    logical ( KDL ) :: &
+      DevicesCommunicate = .true.
     type ( Real_1D_Form ), dimension ( MAX_N_DIMENSIONS ) :: &
       Edge
     type ( MeasuredValueForm ), dimension ( MAX_N_DIMENSIONS ) :: &
@@ -129,6 +134,9 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
+    call PROGRAM_HEADER % GetParameter &
+           ( DM % DevicesCommunicate, 'DevicesCommunicate' )
+    
   end subroutine Initialize
 
 
@@ -191,8 +199,11 @@ contains
     call DM % IncomingNext % Initialize &
            ( DM % Communicator, spread ( TAG_IN_NEXT, 1, PHN % nSources ), &
              PHN % Source, PHN % nChunksFrom * S_1D % nVariablesTotal )
-    !call DM % IncomingPrevious % AllocateDevice ( )
-    !call DM % IncomingNext % AllocateDevice ( )
+    
+    if ( DM % DevicesCommunicate ) then
+      call DM % IncomingPrevious % AllocateDevice ( )
+      call DM % IncomingNext % AllocateDevice ( )
+    end if
     
     call DM % OutgoingPrevious % Initialize &
            ( DM % Communicator, spread ( TAG_OUT_PREV, 1, PHP % nTargets ), &
@@ -200,8 +211,11 @@ contains
     call DM % OutgoingNext % Initialize &
            ( DM % Communicator, spread ( TAG_OUT_NEXT, 1, PHN % nTargets ), &
              PHN % Target, PHN % nChunksTo * S_1D % nVariablesTotal )
-    !call DM % OutgoingPrevious % AllocateDevice ( )
-    !call DM % OutgoingNext % AllocateDevice ( )
+    
+    if ( DM % DevicesCommunicate ) then
+      call DM % OutgoingPrevious % AllocateDevice ( )
+      call DM % OutgoingNext % AllocateDevice ( )
+    end if
     
     end associate
   
@@ -224,6 +238,9 @@ contains
       nSend
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
+    type ( TimerForm ), pointer :: &
+      T_C, &
+      T_P
 
     call Show ( 'Start Ghost Exchange', CONSOLE % INFO_6 )
 
@@ -232,11 +249,17 @@ contains
         PHP   => DM % PortalHeaderPrevious, &
         PHN   => DM % PortalHeaderNext )
 
+    T_C => PROGRAM_HEADER % TimerPointer ( DM % iTimerComm ) 
+    T_P => PROGRAM_HEADER % TimerPointer ( DM % iTimerPacking )
+
     !-- Post Receives
     
     call Show ( 'Post Receives', CONSOLE % INFO_7 )
+    
+    if ( associated ( T_C ) ) call T_C % Start ( )
     call DM % IncomingPrevious % Receive ( )
     call DM % IncomingNext % Receive ( )
+    if ( associated ( T_C ) ) call T_C % Stop ( )
 
     !-- Send to Previous
     
@@ -251,23 +274,24 @@ contains
       nSend ( iD ) = DM % nGhostLayers ( iD )
       nSend ( jD ) = DM % nCellsPerBrick ( jD )
       nSend ( kD ) = DM % nCellsPerBrick ( kD )
-
+      
+      if ( associated ( T_P ) ) call T_P % Start ( )
       do iStrg = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iStrg )          
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
           call Copy ( V, nSend, oSend, oBuffer, &
-                      DM % OutgoingPrevious % Message ( iD ) % Value )
-          !call Copy ( V, nSend, oSend, oBuffer, &
-          !            S_1D % Storage ( iStrg ) % D_Selected ( iS ), &
-          !            DM % OutgoingPrevious % Message ( iD ) % D_Value, &
-          !            DM % OutgoingPrevious % Message ( iD ) % Value )
+                      DM % OutgoingPrevious % Message ( iD ) % Value, &
+                      UseDeviceOption = DM % DevicesCommunicate )
           oBuffer = oBuffer + product ( nSend )
         end do !-- iS
       end do !-- iStrg
+      if ( associated ( T_P ) ) call T_P % Stop ( )
 
+      if ( associated ( T_C ) ) call T_C % Start ( )
       call DM % OutgoingPrevious % Send ( iD )
+      if ( associated ( T_C ) ) call T_C % Stop ( )
 
     end do !-- iD
 
@@ -286,27 +310,29 @@ contains
       nSend ( iD ) = DM % nGhostLayers ( iD )
       nSend ( jD ) = DM % nCellsPerBrick ( jD )
       nSend ( kD ) = DM % nCellsPerBrick ( kD )
-
+      
+      if ( associated ( T_P ) ) call T_P % Start ( )
       do iStrg = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iStrg )          
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
           call Copy ( V, nSend, oSend, oBuffer, &
-                      DM % OutgoingNext % Message ( iD ) % Value )
-          !call Copy ( V, nSend, oSend, oBuffer, &
-          !            S_1D % Storage ( iStrg ) % D_Selected ( iS ), &
-          !            DM % OutgoingNext % Message ( iD ) % D_Value, &
-          !            DM % OutgoingNext % Message ( iD ) % Value )
+                      DM % OutgoingNext % Message ( iD ) % Value, &
+                      UseDeviceOption = DM % DevicesCommunicate )
           oBuffer = oBuffer + product ( nSend )
         end do !-- iS
       end do !-- iStrg
+      if ( associated ( T_P ) ) call T_P % Stop ( )
 
+      if ( associated ( T_C ) ) call T_C % Start ( )
       call DM % OutgoingNext % Send ( iD )
+      if ( associated ( T_C ) ) call T_C % Stop ( )
 
     end do !-- iD
-
+    
     nullify ( V )
+    
     end associate !-- S_1D, etc.
 
   end subroutine StartGhostExchange
@@ -328,10 +354,16 @@ contains
       nReceive
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
+    type ( TimerForm ), pointer :: &
+      T_C, &
+      T_P
 
     call Show ( 'Finish Ghost Exchange', CONSOLE % INFO_6 )
 
     associate ( S_1D  => DM % Storage )
+    
+    T_C => PROGRAM_HEADER % TimerPointer ( DM % iTimerComm ) 
+    T_P => PROGRAM_HEADER % TimerPointer ( DM % iTimerPacking )
 
     !-- Receive from Next
 
@@ -346,22 +378,23 @@ contains
       nReceive ( jD ) = DM % nCellsPerBrick ( jD )
       nReceive ( kD ) = DM % nCellsPerBrick ( kD )
 
+      if ( associated ( T_C ) ) call T_C % Start ( )
       call DM % IncomingNext % Wait ( iD )
+      if ( associated ( T_C ) ) call T_C % Stop ( )
 
+      if ( associated ( T_P ) ) call T_P % Start ( )
       do iStrg = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iStrg )          
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
           call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
-                      nReceive, oReceive, oBuffer, V )
-          !call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
-          !            nReceive, oReceive, oBuffer, &
-          !            DM % IncomingNext % Message ( iD ) % D_Value, &
-          !            S_1D % Storage ( iStrg ) % D_Selected ( iS ), V )
+                      nReceive, oReceive, oBuffer, V, &
+                      UseDeviceOption = DM % DevicesCommunicate )
           oBuffer = oBuffer + product ( nReceive )
         end do !-- iS
       end do !-- iStrg
+      if ( associated ( T_P ) ) call T_P % Stop ( )
       
     end do !-- iD
 
@@ -378,31 +411,35 @@ contains
       nReceive ( jD ) = DM % nCellsPerBrick ( jD )
       nReceive ( kD ) = DM % nCellsPerBrick ( kD )
 
+      if ( associated ( T_C ) ) call T_C % Start ( )
       call DM % IncomingPrevious % Wait ( iD )
+      if ( associated ( T_C ) ) call T_C % Stop ( )
 
+      if ( associated ( T_P ) ) call T_P % Start ( )
       do iStrg = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iStrg )          
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
           call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
-                      nReceive, oReceive, oBuffer, V )
-          !call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
-          !            nReceive, oReceive, oBuffer, &
-          !            DM % IncomingPrevious % Message ( iD ) % D_Value, &
-          !            S_1D % Storage ( iStrg ) % D_Selected ( iS ), V )
+                      nReceive, oReceive, oBuffer, V, &
+                      UseDeviceOption = DM % DevicesCommunicate )
           oBuffer = oBuffer + product ( nReceive )
         end do !-- iS
       end do !-- iStrg
+      if ( associated ( T_P ) ) call T_P % Stop ( )
       
     end do !-- iD
 
     !-- Cleanup
-
+    
+    if ( associated ( T_C ) ) call T_C % Start ( )
     call DM % OutgoingPrevious % Wait ( )
     call DM % OutgoingNext % Wait ( )
+    if ( associated ( T_C ) ) call T_C % Stop ( )
 
     nullify ( V )
+    
     end associate !-- S_1D
 
   end subroutine FinishGhostExchange
