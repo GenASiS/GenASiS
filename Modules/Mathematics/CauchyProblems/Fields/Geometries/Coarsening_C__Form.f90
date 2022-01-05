@@ -128,7 +128,7 @@ contains
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Coarsening_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Coarsening_C__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Initialize_C', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
@@ -380,7 +380,7 @@ contains
 
     end do !-- iBC
 
-    end associate !-- nR
+    end associate !-- nR, etc.
 
   end subroutine SetBlocks
 

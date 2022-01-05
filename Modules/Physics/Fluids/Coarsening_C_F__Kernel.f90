@@ -12,7 +12,8 @@ contains
   module procedure ComputeKernel
 
     integer ( KDI ) :: &
-      iRZ, iPZ
+      iRZ, iPZ, &
+      iR
     logical ( KDL ) :: &
       UseDevice
       
@@ -22,55 +23,57 @@ contains
       
     if ( UseDevice ) then
 
-      !-- First radial shell only
-      if ( iaB ( 1 )  ==  1 ) then
-        !$OMP OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP schedule ( OMP_SCHEDULE_TARGET )
-        do iRZ  =  1, nRZ
-          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
-          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
-        end do !-- iRZ
-        !$OMP end OMP_TARGET_DIRECTIVE parallel do
-      end if
-
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iPZ  =  1, nPZ
-
-        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_2 )  =  0.0_KDR
-        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_3 )  =  0.0_KDR
-
-        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_2 )  =  0.0_KDR
-        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_3 )  =  0.0_KDR
-
-      end do !-- iPZ
+      do iRZ  =  1, nRZ
+        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
+        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
+      end do !-- iRZ
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+      do iR  =  1, size ( nPZ )
+
+        !$OMP OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_TARGET )
+        do iPZ  =  1, nPZ ( iR )
+
+          FS_4D ( iR, oC ( 2 ) + iPZ, :, iS_2 )  =  0.0_KDR
+          FS_4D ( iR, oC ( 2 ) + iPZ, :, iS_3 )  =  0.0_KDR
+
+          FS_4D ( iR, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_2 )  =  0.0_KDR
+          FS_4D ( iR, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_3 )  =  0.0_KDR
+
+        end do !-- iPZ
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+      end do !-- iR
 
     else
 
-      !-- First radial shell only
-      if ( iaB ( 1 )  ==  1 ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iRZ  =  1, nRZ
+        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
+        FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
+      end do !-- iRZ
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+      do iR  =  1, size ( nPZ )
+
         !$OMP OMP_TARGET_DIRECTIVE parallel do &
         !$OMP schedule ( OMP_SCHEDULE_TARGET )
-        do iRZ  =  1, nRZ
-          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_2 )  =  0.0_KDR
-          FS_4D ( oC ( 1 ) + iRZ, :, :, iS_3 )  =  0.0_KDR
-        end do !-- iRZ
+        do iPZ  =  1, nPZ ( iR )
+
+          FS_4D ( iR, oC ( 2 ) + iPZ, :, iS_2 )  =  0.0_KDR
+          FS_4D ( iR, oC ( 2 ) + iPZ, :, iS_3 )  =  0.0_KDR
+
+          FS_4D ( iR, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_2 )  =  0.0_KDR
+          FS_4D ( iR, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_3 )  =  0.0_KDR
+
+        end do !-- iPZ
         !$OMP end OMP_TARGET_DIRECTIVE parallel do
-      end if
 
-      !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iPZ  =  1, nPZ
-
-        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_2 )  =  0.0_KDR
-        FS_4D ( :, oC ( 2 ) + iPZ, :, iS_3 )  =  0.0_KDR
-
-        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_2 )  =  0.0_KDR
-        FS_4D ( :, oC ( 2 ) + nC ( 2 ) - ( iPZ - 1 ), :, iS_3 )  =  0.0_KDR
-
-      end do !-- iPZ
-      !$OMP end parallel do
+      end do !-- iR
 
     end if
 
