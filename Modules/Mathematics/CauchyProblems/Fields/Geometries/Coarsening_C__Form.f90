@@ -84,7 +84,7 @@ contains
     
     C % COARSENING_POLAR      =  1
     C % COARSENING_AZIMUTHAL  =  2
-    C % BLOCK_LABEL          =  3
+    C % BLOCK_LABEL           =  3
 
     call C % FieldSetForm % Initialize &
            ( G % Atlas, &

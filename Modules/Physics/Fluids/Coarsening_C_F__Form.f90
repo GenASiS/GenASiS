@@ -11,6 +11,7 @@ module Coarsening_C_F__Form
 
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
+      nEffectiveCellsZero, &
       nRadiusZero
     integer ( KDI ), dimension ( : ), allocatable :: &
       nPolarZero
@@ -21,6 +22,8 @@ module Coarsening_C_F__Form
       Initialize_C_F
     generic, public :: &
       Initialize => Initialize_C_F
+    procedure, public, pass :: &
+      Show => Show_FS
     procedure, public, pass ( C ) :: &
       Compute
     final :: &
@@ -76,21 +79,23 @@ contains
 
     C % Fluid  =>  F
 
+    C % nEffectiveCellsZero  =  1
+    call PROGRAM_HEADER % GetParameter &
+           ( C % nEffectiveCellsZero, 'nEffectiveCellsZero' )
+
     select type ( A  =>  G % Atlas )
     class is ( Atlas_SCG_CC_Form )
 
       call SetRadiusZero &
-             (  C  = A % Chart_GS_CC, &
-                CP = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
-               nRZ = C % nRadiusZero )
+             (  C   = A % Chart_GS_CC, &
+                CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
+               nECZ = C % nEffectiveCellsZero, &
+               nRZ  = C % nRadiusZero )
       call SetPolarZero &
              (  C  = A % Chart_GS_CC, &
                 CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
+               nECZ = C % nEffectiveCellsZero, &
                nPZ = C % nPolarZero )
-!call Show ( C % nRadiusZero, '>>> nRadiusZero' )
-!call Show ( C % nPolarZero, '>>> nPolarZero' )
-!call A % Chart_GS_CC % Communicator % Synchronize ( )
-!call PROGRAM_HEADER % Abort ( )
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
@@ -100,6 +105,20 @@ contains
     end select !-- A
 
   end subroutine Initialize_C_F
+
+
+  subroutine Show_FS ( FS )
+
+    class ( Coarsening_C_F_Form ), intent ( in ) :: &
+      FS
+
+    call FS % Coarsening_C_Form % Show ( )
+
+    call Show ( FS % nEffectiveCellsZero, 'nEffectiveCellsZero' )
+    call Show ( FS % nRadiusZero, 'nRadiusZero' )
+    call Show ( FS % nPolarZero, 'nPolarZero' )
+
+  end subroutine Show_FS
 
 
   subroutine Compute ( FS, C )
@@ -167,12 +186,14 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetRadiusZero ( C, CP, nRZ )
+  subroutine SetRadiusZero ( C, CP, nECZ, nRZ )
 
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       CP  !-- CoarsenPolar
+    integer ( KDI ), intent ( in ) :: &
+      nECZ  !-- nEffectiveCellsZero
     integer ( KDI ), intent ( out ) :: &
       nRZ  !-- nRadiusZero
 
@@ -195,7 +216,7 @@ contains
 
     do iR  =  1,  nR
       nCP  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
-      if ( nCP  ==  nTh ) &
+      if ( nCP  >=  nTh / nECZ ) &
         nRZ  =  nRZ + 1
     end do !-- iR
 
@@ -204,12 +225,14 @@ contains
   end subroutine SetRadiusZero
 
 
-  subroutine SetPolarZero ( C, CA, nPZ )
+  subroutine SetPolarZero ( C, CA, nECZ, nPZ )
 
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       CA  !-- CoarsenAzimuthal
+    integer ( KDI ), intent ( in ) :: &
+      nECZ  !-- nEffectiveCellsZero
     integer ( KDI ), dimension ( : ), intent ( out ), allocatable :: &
       nPZ  !-- nPolarZero
 
@@ -239,7 +262,7 @@ contains
     do iR  =  1,  nR
       do iTh  =  1,  nTh / 2
         nCA  =  CA_3D ( iR, iTh, 1 )  +  0.5_KDR
-        if ( nCA  ==  nPh ) &
+        if ( nCA  >=  nPh / nECZ ) &
           nPZ_Temp ( iR )  =  nPZ_Temp ( iR )  +  1
       end do !-- nTh / 2
     end do !-- iR

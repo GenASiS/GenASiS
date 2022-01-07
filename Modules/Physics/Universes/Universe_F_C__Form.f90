@@ -567,11 +567,6 @@ contains
     if ( U % GravityFactor  >  0.0_KDR ) &
       call Show ( U % GravityFactor, 'GravityFactor' )
 
-    ! call U % PositionSpace_SA % Show ( )
-    ! call U % SA_Gravitation % FieldSet_SA % Show ( )
-    ! call U % SA_Fluid % FieldSet_SA % Show ( )
-    ! call U % Stream_SA % Show ( )
-
   end subroutine ShowParameters
 
 
@@ -580,6 +575,7 @@ contains
       class ( Universe_F_C_Form ), intent ( in ) :: &
         U
 
+    call U % Coarsening % Show ( )
     call U % PositionSpace_SA % Show ( )
     call U % SA_Gravitation % FieldSet_SA % Show ( )
     call U % SA_Fluid % FieldSet_SA % Show ( )
