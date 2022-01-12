@@ -33,12 +33,30 @@ Fluid_P_I__Form.o: \
   Gravitations.o \
   Units_F__Form.o \
   Fluid_P__Form.o \
-  Fluid_P__Form.f90
+  Fluid_P_I__Form.f90
 
 Fluid_P_I__Kernel.o: \
   Basics.o \
   Fluid_P_I__Form.o \
   Fluid_P_I__Kernel.f90
+
+EOS_P_HN_OConnorOtt__Form.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.f90
+
+EOS_P_HN_OConnorOtt__Kernel.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  EOS_P_HN_OConnorOtt__Kernel.f90
+
+Fluid_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P__Form.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  Fluid_P_HN__Form.f90
 
 Coarsening_C_F__Form.o: \
   Basics.o \
@@ -56,6 +74,8 @@ Fluids.o: \
   Fluid_D__Form.o \
   Fluid_P__Form.o \
   Fluid_P_I__Form.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  Fluid_P_HN__Form.o \
   Coarsening_C_F__Form.o \
   Fluids.f90
 

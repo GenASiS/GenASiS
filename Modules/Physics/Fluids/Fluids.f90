@@ -4,6 +4,8 @@ module Fluids
   use Fluid_D__Form
   use Fluid_P__Form
   use Fluid_P_I__Form
+  use EOS_P_HN_OConnorOtt__Form
+  use Fluid_P_HN__Form
   use Coarsening_C_F__Form
 
 end module Fluids

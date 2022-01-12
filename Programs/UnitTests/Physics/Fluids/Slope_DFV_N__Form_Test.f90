@@ -65,7 +65,6 @@ program Slope_DFV_N__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call S % Initialize &
          ( RS, &
-           Constant_G  =  1.0_KDR, &
            iVelocity_F = F % VELOCITY_U, &
            iMomentum_B = [ 2, 3, 4 ], &
            iBaryonMass_F = F % BARYON_MASS, &
