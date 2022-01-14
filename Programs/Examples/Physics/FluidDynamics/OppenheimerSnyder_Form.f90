@@ -478,8 +478,6 @@ contains
 
     nV  =  size ( N )
 
-    !$OMP parallel do &
-    !$OMP schedule ( OMP_SCHEDULE_HOST )
     do iV  =  1,  nV
 
 !-- Establish atmosphere at outer radial boundary   
@@ -504,7 +502,6 @@ contains
       V_3 ( iV )  =  0.0_KDR
 
     end do !-- iV
-    !$OMP end parallel do
 
   end subroutine SetFluidKernel
 

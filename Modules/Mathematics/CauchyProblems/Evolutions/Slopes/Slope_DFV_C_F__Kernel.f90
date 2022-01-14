@@ -83,8 +83,6 @@ contains
       iV, jV, kV, &
       dJ
     integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVP, &
       lV, uV
     logical ( KDL ) :: &
       UseDevice

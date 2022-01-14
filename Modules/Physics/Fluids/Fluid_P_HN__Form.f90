@@ -49,8 +49,8 @@ module Fluid_P_HN__Form
       SetStream
     final :: &
       Finalize
-!     procedure, public, pass ( C ) :: &
-!       ComputeFromTemperature
+    procedure, public, pass :: &
+      ComputeFromTemperature
 !     procedure, public, pass ( C ) :: &
 !       ComputeFromPrimitiveCommon
 !     procedure, public, pass ( C ) :: &
@@ -263,6 +263,8 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
+    call F % SetUseInitialTemperature ( .true. )
+
     !-- Equation of state
 
     if ( EOS_Initialized ) then
@@ -374,4 +376,22 @@ contains
   end subroutine Finalize 
   
     
+  subroutine ComputeFromTemperature ( F )
+
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromTemperature', CONSOLE % INFO_6 )
+    call Show ( F % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    do iC  =  1, F % Atlas % nCharts
+
+    end do !-- iC
+
+  end subroutine ComputeFromTemperature
+
+
 end module Fluid_P_HN__Form

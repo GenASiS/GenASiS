@@ -20,8 +20,8 @@ contains
       iaVP, iaVM, &
       lV, uV
     real ( KDR ) :: &
-       fM,  fC,  fP, &  !-- f_Minus, f_Plus
-      xAM, xAC, xAP
+       fM,  fP, &  !-- f_Minus, f_Plus
+      xAM, xAP
     logical ( KDL ) :: &
       UseDevice
       

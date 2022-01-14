@@ -507,7 +507,7 @@ contains
     nV = size ( N )
       
     !$OMP parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE_HOST )
+    !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( X, D, V )
     do iV  =  1,  nV
 
       if ( .not. ProperCell ( iV ) ) &
@@ -533,7 +533,7 @@ contains
       V_3 ( iV )  =  0.0_KDR
 
     end do
-    !$OMP end parallel do
+!    !$OMP end parallel do
 
   end subroutine SetFluidKernel
 
