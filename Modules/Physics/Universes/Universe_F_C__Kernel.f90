@@ -34,9 +34,9 @@ contains
       !  = maxval ( max ( FEP_1, -FEM_1 ) / ( dX_1 ), &
       !             mask = ProperCell )
       if ( UseDevice ) then
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse ) MAP_DT_INVERSE 
+        !$OMP OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+        !$OMP reduction ( max : dT_Inverse ) MAP_DT_INVERSE 
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -44,11 +44,11 @@ contains
                        max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                        /  dX_1 ( iV ) )
         end do
-        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
       else
-        !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse )
+        !$OMP parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+        !$OMP reduction ( max : dT_Inverse )
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -56,7 +56,7 @@ contains
                        max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                        /  dX_1 ( iV ) )
         end do
-        !$OMP  end parallel do
+        !$OMP end parallel do
       end if
       
     case ( 2 )
@@ -66,9 +66,9 @@ contains
       !             + max ( FEP_2, -FEM_2 ) / ( Crsn_2 * dX_2 ) ), &
       !             mask = ProperCell )
       if ( UseDevice ) then
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse ) MAP_DT_INVERSE
+        !$OMP OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+        !$OMP reduction ( max : dT_Inverse ) MAP_DT_INVERSE
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -78,11 +78,11 @@ contains
                        +  max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
                           /  ( Crsn_2 ( iV )  *  dX_2 ( iV ) ) )
         end do
-        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
       else
-        !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse )
+        !$OMP parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+        !$OMP reduction ( max : dT_Inverse )
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -92,7 +92,7 @@ contains
                        +  max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
                           /  ( Crsn_2 ( iV )  *  dX_2 ( iV ) ) )
         end do
-        !$OMP  end parallel do
+        !$OMP end parallel do
       end if
       
     case ( 3 )
@@ -104,9 +104,9 @@ contains
       !              mask = ProperCell )
       
       if ( UseDevice ) then
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse ) MAP_DT_INVERSE
+        !$OMP OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+        !$OMP reduction ( max : dT_Inverse ) MAP_DT_INVERSE
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -118,11 +118,11 @@ contains
                        +  max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
                           /  ( Crsn_3 ( iV )  *  dX_3 ( iV ) ) )
         end do
-        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
       else
-        !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-        !$OMP& reduction ( max : dT_Inverse )
+        !$OMP parallel do &
+        !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+        !$OMP reduction ( max : dT_Inverse )
         do iV = 1, nV
           if ( ProperCell ( iV ) ) &
             dT_Inverse &
@@ -134,7 +134,7 @@ contains
                        +  max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
                           /  ( Crsn_3 ( iV )  *  dX_3 ( iV ) ) )
         end do
-        !$OMP  end parallel do
+        !$OMP end parallel do
       end if
       
     end select !-- nDimensions
