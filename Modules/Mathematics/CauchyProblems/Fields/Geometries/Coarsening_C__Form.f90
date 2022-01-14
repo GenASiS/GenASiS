@@ -405,6 +405,9 @@ contains
 
     if ( C_GS_CC % nDimensions  ==  1 ) &
       return
+      
+    call FS % Storage_GS % ReassociateHost &
+           ( AssociateVariablesOption = .false. )
 
     call C_GS_CC % SetFieldPointer &
            ( FS % Storage_GS % Value, FS_4D )
@@ -420,6 +423,9 @@ contains
              oC  = C_GS_CC % nGhostLayers, &
              nBC = C % nBlocksCoarsen, &
              UseDeviceOption = C % DeviceMemory )
+
+    call FS % Storage_GS % ReassociateHost &
+           ( AssociateVariablesOption = .true. )
 
     end associate !-- G, etc.
 
