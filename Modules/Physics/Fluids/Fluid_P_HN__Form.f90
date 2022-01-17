@@ -498,23 +498,25 @@ contains
           T_Min  =>  F % TemperatureMin, &
           Y_Min  =>  F % ElectronFractionMin )
       associate &
-        ( M    =>  FV ( :, F % BARYON_MASS ), &
-          N    =>  FV ( :, F % BARYON_DENSITY_C ), &
-          V_1  =>  FV ( :, F % VELOCITY_U_1 ), &
-          V_2  =>  FV ( :, F % VELOCITY_U_2 ), &
-          V_3  =>  FV ( :, F % VELOCITY_U_3 ), &
-          D    =>  FV ( :, F % BARYON_DENSITY_B ), &
-          S_1  =>  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
-          S_2  =>  FV ( :, F % MOMENTUM_DENSITY_D_2 ), &
-          S_3  =>  FV ( :, F % MOMENTUM_DENSITY_D_3 ), &
-          E    =>  FV ( :, F % ENERGY_DENSITY_C ), &
-          G    =>  FV ( :, F % ENERGY_DENSITY_B ), &
-          P    =>  FV ( :, F % PRESSURE ), &
-          T    =>  FV ( :, F % TEMPERATURE ), &
-          SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
-          SS   =>  FV ( :, F % SOUND_SPEED ), &
-          Y    =>  FV ( :, F % ELECTRON_FRACTION ), &
-          DE   =>  FV ( :, F % ELECTRON_DENSITY_B ) )
+        ( M     =>  FV ( :, F % BARYON_MASS ), &
+          N     =>  FV ( :, F % BARYON_DENSITY_C ), &
+          V_1   =>  FV ( :, F % VELOCITY_U_1 ), &
+          V_2   =>  FV ( :, F % VELOCITY_U_2 ), &
+          V_3   =>  FV ( :, F % VELOCITY_U_3 ), &
+          D     =>  FV ( :, F % BARYON_DENSITY_B ), &
+          S_1   =>  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
+          S_2   =>  FV ( :, F % MOMENTUM_DENSITY_D_2 ), &
+          S_3   =>  FV ( :, F % MOMENTUM_DENSITY_D_3 ), &
+          E     =>  FV ( :, F % ENERGY_DENSITY_C ), &
+          G     =>  FV ( :, F % ENERGY_DENSITY_B ), &
+          P     =>  FV ( :, F % PRESSURE ), &
+          T     =>  FV ( :, F % TEMPERATURE ), &
+          SB    =>  FV ( :, F % ENTROPY_PER_BARYON ), &
+          SS    =>  FV ( :, F % SOUND_SPEED ), &
+          Y     =>  FV ( :, F % ELECTRON_FRACTION ), &
+          DE    =>  FV ( :, F % ELECTRON_DENSITY_B ), &
+          Mu_NP =>  FV ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+          Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
 
       call Apply_EOS_PrologueKernel &
              ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
@@ -528,6 +530,10 @@ contains
                                 F % TEMPERATURE, F % ELECTRON_FRACTION ] )
       call FS % ReassociateHost ( AssociateVariablesOption = .true. )
       end associate !-- FS
+
+      call Apply_EOS_EpilogueKernel &
+             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+               UseDeviceOption = F % DeviceMemory )
 
       select type ( Gn  =>  F % Geometry )
       class is ( Gravitation_G_Form )
@@ -576,6 +582,87 @@ contains
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        (    FV  =>  FS_CS % Storage ( iC ) % Value, &
+          M_Ref  =>  CS % BaryonMass, &
+          N_Min  =>  CS % BaryonDensityMin, &
+          E_Min  =>  CS % EnergyDensityMin, &
+          T_Min  =>  CS % TemperatureMin, &
+          Y_Min  =>  CS % ElectronFractionMin )
+      associate &
+        ( M     =>  FV ( :, CS % BARYON_MASS ), &
+          N     =>  FV ( :, CS % BARYON_DENSITY_C ), &
+          V_1   =>  FV ( :, CS % VELOCITY_U_1 ), &
+          V_2   =>  FV ( :, CS % VELOCITY_U_2 ), &
+          V_3   =>  FV ( :, CS % VELOCITY_U_3 ), &
+          D     =>  FV ( :, CS % BARYON_DENSITY_B ), &
+          S_1   =>  FV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
+          S_2   =>  FV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+          S_3   =>  FV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+          E     =>  FV ( :, CS % ENERGY_DENSITY_C ), &
+          G     =>  FV ( :, CS % ENERGY_DENSITY_B ), &
+          P     =>  FV ( :, CS % PRESSURE ), &
+          T     =>  FV ( :, CS % TEMPERATURE ), &
+          SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
+          SS    =>  FV ( :, CS % SOUND_SPEED ), &
+          Y     =>  FV ( :, CS % ELECTRON_FRACTION ), &
+          DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
+          Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
+          Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
+
+      associate ( CSV  =>  CS % Storage ( iC ) % Value )
+      call Copy ( CSV ( :, CS % PRESSURE ), P, &
+                  UseDeviceOption = CS % DeviceMemory )
+      call Copy ( CSV ( :, CS % TEMPERATURE ), T, &
+                  UseDeviceOption = CS % DeviceMemory )
+      end associate !-- CSV
+
+      call Apply_EOS_PrologueKernel &
+             ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+               UseDeviceOption = CS % DeviceMemory )
+
+      associate ( FS  =>  FS_CS % Storage ( iC ) )
+      call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+      call CS % EOS % ComputeFromEnergy &
+             ( FS, &
+               iaFluidInput = [ CS % BARYON_DENSITY_C, &
+                                CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
+               iSolve = CS % ENERGY_DENSITY_C )
+      call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+      end associate !-- FS
+
+      call Apply_EOS_EpilogueKernel &
+             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+               UseDeviceOption = CS % DeviceMemory )
+
+      select type ( Gn  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Gn % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, Gn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
+
+        call Compute_D_S_G_DE_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, M, SS, Y, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, DE, &
+                 UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Gn
+
+      end associate !-- M, etc.
+      end associate !-- FV, etc.
 
     end do !-- iC
 

@@ -65,6 +65,7 @@ contains
           V_1 ( iV )  =  0.0_KDR
           V_2 ( iV )  =  0.0_KDR
           V_3 ( iV )  =  0.0_KDR
+          E   ( iV )  =  E_Min
         end if
 
         D ( iV )  =  N ( iV ) 	 	 
