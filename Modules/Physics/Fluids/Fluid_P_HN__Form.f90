@@ -55,10 +55,10 @@ module Fluid_P_HN__Form
       Show => Show_FS
     procedure, public, pass :: &
       ComputeFromTemperature
+    procedure, public, pass ( CS ) :: &
+      ComputeFromPrimitive
     final :: &
       Finalize
-!     procedure, public, pass ( C ) :: &
-!       ComputeFromPrimitiveCommon
 !     procedure, public, pass ( C ) :: &
 !       ComputeFromConservedCommon
 !     procedure, public, pass ( C ) :: &
@@ -83,7 +83,8 @@ module Fluid_P_HN__Form
 
     private :: &
       Apply_EOS_PrologueKernel, &
-      Compute_D_S_G_DE_G_Kernel
+      Compute_D_S_G_DE_G_Kernel, &
+      Apply_EOS_EpilogueKernel
 
     interface 
   
@@ -109,7 +110,7 @@ module Fluid_P_HN__Form
       end subroutine Apply_EOS_PrologueKernel
     
       module subroutine Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+               ( N, V_1, V_2, V_3, E, M, SS, Y, M_DD_11, M_DD_22, M_DD_33, &
                  N_Min, E_Min, D, S_1, S_2, S_3, G, DE, UseDeviceOption )
         !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
         use Basics
@@ -119,8 +120,9 @@ module Fluid_P_HN__Form
           V_1, V_2, V_3, &
           E
         real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-          M, &
+          M,  &
           SS, &
+          Y,  &
           M_DD_11, M_DD_22, M_DD_33
         real ( KDR ), intent ( in ) :: &
           N_Min, &
@@ -133,6 +135,23 @@ module Fluid_P_HN__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_D_S_G_DE_G_Kernel 	 	 
+
+      module subroutine Apply_EOS_EpilogueKernel &
+               ( N, P, T, SS, E, Mu_NP, Mu_E, M, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          N, &
+          P, &
+          T, &
+          SS, &
+          E, &
+          Mu_NP, &
+          Mu_E
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Apply_EOS_EpilogueKernel
 
     end interface
 
@@ -521,7 +540,7 @@ contains
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+               ( N, V_1, V_2, V_3, E, M, SS, Y, M_DD_11, M_DD_22, M_DD_33, &
                  N_Min, E_Min, D, S_1, S_2, S_3, G, DE, &
                  UseDeviceOption = F % DeviceMemory )
 
@@ -541,6 +560,26 @@ contains
     end do !-- iC
 
   end subroutine ComputeFromTemperature
+
+
+  subroutine ComputeFromPrimitive ( FS_CS, CS )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_CS
+    class ( Fluid_P_HN_Form ), intent ( in ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    do iC  =  1, CS % Atlas % nCharts
+
+    end do !-- iC
+
+  end subroutine ComputeFromPrimitive
 
 
   impure elemental subroutine Finalize ( F )
