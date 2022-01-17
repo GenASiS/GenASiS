@@ -38,6 +38,8 @@ module Fluid_P_HN__Form
       CHEMICAL_POTENTIAL_E   = 0, &
       UNUSED_VARIABLE        = 0
         !-- Includes m_e.
+    real ( KDR ) :: &
+      ElectronFractionMin
     logical ( KDL ), private :: &
       Allocated_EOS = .false.
     type ( EOS_P_HN_OConnorOtt_Form ), public, pointer :: &
@@ -45,12 +47,16 @@ module Fluid_P_HN__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
+    procedure, public, pass :: &
+      SetElectronFractionMin
     procedure, public, pass ( CS ) :: &
       SetStream
-    final :: &
-      Finalize
+    procedure, public, pass :: &
+      Show => Show_FS
     procedure, public, pass :: &
       ComputeFromTemperature
+    final :: &
+      Finalize
 !     procedure, public, pass ( C ) :: &
 !       ComputeFromPrimitiveCommon
 !     procedure, public, pass ( C ) :: &
@@ -69,32 +75,65 @@ module Fluid_P_HN__Form
 !       Apply_EOS_HN_SB_E_Kernel
 !     procedure, public, nopass :: &
 !       Apply_EOS_HN_E_Kernel
-    procedure, private, nopass :: &
-      Apply_EOS_PrologueKernel
 !     procedure, private, nopass :: &
 !       Apply_EOS_EpilogueKernel
 ! !    procedure, public, nopass :: &
 ! !      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
 
+    private :: &
+      Apply_EOS_PrologueKernel, &
+      Compute_D_S_G_DE_G_Kernel
+
     interface 
   
       module subroutine Apply_EOS_PrologueKernel &
-               ( M, N, P, T, E, M_Ref, N_Min, UseDeviceOption )
+               ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+                 UseDeviceOption )
         use Basics
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           M, &
           N, &
           P, &
           T, &
-          E
+          E, &
+          Y
         real ( KDR ), intent ( in ) :: &
           M_Ref, &
-          N_Min
+          N_Min, &
+          E_Min, &
+          T_Min, &
+          Y_Min
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Apply_EOS_PrologueKernel
     
+      module subroutine Compute_D_S_G_DE_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, DE, UseDeviceOption )
+        !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+          N, & 	 	 
+          V_1, V_2, V_3, &
+          E
+        real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+          M, &
+          SS, &
+          M_DD_11, M_DD_22, M_DD_33
+        real ( KDR ), intent ( in ) :: &
+          N_Min, &
+          E_Min
+        real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
+          D, & 	 	 
+          S_1, S_2, S_3, &
+          G, &
+          DE
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_D_S_G_DE_G_Kernel 	 	 
+
     end interface
 
     real ( KDR ), private, protected :: &
@@ -349,14 +388,39 @@ contains
 
     EOS_Initialized  =  .true.
 
-    F % BaryonDensityMin  &
-      =  ( 10.0_KDR ** F % EOS % MinLogDensity )  *  MassDensity_CGS  &
-         /  F % BaryonMass
+    call F % SetBaryonDensityMin  &
+           ( ( 10.0_KDR ** F % EOS % MinLogDensity )  *  MassDensity_CGS  &
+             /  F % BaryonMass )
+    call F % SetEnergyDensityMin  &
+           ( ( 10.0_KDR ** F % EOS % MinLogDensity )  *  MassDensity_CGS  &
+             *  1.0e-10_KDR )
+    call F % SetTemperatureMin  &
+           ( ( 10.0_KDR ** F % EOS % MinLogTemperature )  *  MeV )
+    call F % SetElectronFractionMin  &
+           ( F % EOS % MinElectronFraction )
 
     if ( F % DeviceMemory ) &
       call F % EOS % AllocateDevice ( )
     
   end subroutine InitializeAllocate_F
+
+
+  subroutine SetElectronFractionMin ( F, ElectronFractionMin )
+
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      ElectronFractionMin
+
+    F % ElectronFractionMin  =  ElectronFractionMin
+
+    call Show ( 'Setting ElectronFractionMin of a Fluid', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % ElectronFractionMin, &
+                F % Unit ( F % ELECTRON_FRACTION, 1 ), 'ElectronFractionMin', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetElectronFractionMin
 
 
   subroutine SetStream ( S, CS )
@@ -381,6 +445,104 @@ contains
   end subroutine SetStream
 
 
+  subroutine Show_FS ( FS )
+
+    class ( Fluid_P_HN_Form ), intent ( in ) :: &
+      FS
+
+    call FS % Fluid_P_Form % Show ( )
+
+    call Show ( FS % ElectronFractionMin, 'ElectronFractionMin', &
+                FS % IGNORABILITY )
+
+  end subroutine Show_FS
+
+
+  subroutine ComputeFromTemperature ( F )
+
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromTemperature', CONSOLE % INFO_6 )
+    call Show ( F % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    do iC  =  1, F % Atlas % nCharts
+
+      associate &
+        (    FV  =>  F % Storage ( iC ) % Value, &
+          M_Ref  =>  F % BaryonMass, &
+          N_Min  =>  F % BaryonDensityMin, &
+          E_Min  =>  F % EnergyDensityMin, &
+          T_Min  =>  F % TemperatureMin, &
+          Y_Min  =>  F % ElectronFractionMin )
+      associate &
+        ( M    =>  FV ( :, F % BARYON_MASS ), &
+          N    =>  FV ( :, F % BARYON_DENSITY_C ), &
+          V_1  =>  FV ( :, F % VELOCITY_U_1 ), &
+          V_2  =>  FV ( :, F % VELOCITY_U_2 ), &
+          V_3  =>  FV ( :, F % VELOCITY_U_3 ), &
+          D    =>  FV ( :, F % BARYON_DENSITY_B ), &
+          S_1  =>  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
+          S_2  =>  FV ( :, F % MOMENTUM_DENSITY_D_2 ), &
+          S_3  =>  FV ( :, F % MOMENTUM_DENSITY_D_3 ), &
+          E    =>  FV ( :, F % ENERGY_DENSITY_C ), &
+          G    =>  FV ( :, F % ENERGY_DENSITY_B ), &
+          P    =>  FV ( :, F % PRESSURE ), &
+          T    =>  FV ( :, F % TEMPERATURE ), &
+          SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
+          SS   =>  FV ( :, F % SOUND_SPEED ), &
+          Y    =>  FV ( :, F % ELECTRON_FRACTION ), &
+          DE   =>  FV ( :, F % ELECTRON_DENSITY_B ) )
+
+      call Apply_EOS_PrologueKernel &
+             ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+               UseDeviceOption = F % DeviceMemory )
+
+      associate ( FS  =>  F % Storage ( iC ) )
+      call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+      call F % EOS % ComputeFromTemperature &
+             ( FS, &
+               iaFluidInput = [ F % BARYON_DENSITY_C, &
+                                F % TEMPERATURE, F % ELECTRON_FRACTION ] )
+      call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+      end associate !-- FS
+
+      select type ( Gn  =>  F % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Gn % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, Gn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
+
+        call Compute_D_S_G_DE_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, DE, &
+                 UseDeviceOption = F % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromTemperature', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Gn
+
+      end associate !-- M, etc.
+      end associate !-- FV, etc.
+
+    end do !-- iC
+
+  end subroutine ComputeFromTemperature
+
+
   impure elemental subroutine Finalize ( F )
     
     type ( Fluid_P_HN_Form ), intent ( inout ) :: &
@@ -400,22 +562,4 @@ contains
   end subroutine Finalize 
   
     
-  subroutine ComputeFromTemperature ( F )
-
-    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
-      F
-
-    integer ( KDI ) :: &
-      iC
-
-    call Show ( 'ComputeFromTemperature', CONSOLE % INFO_6 )
-    call Show ( F % Name, 'Fluid', CONSOLE % INFO_6 )
-
-    do iC  =  1, F % Atlas % nCharts
-
-    end do !-- iC
-
-  end subroutine ComputeFromTemperature
-
-
 end module Fluid_P_HN__Form

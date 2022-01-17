@@ -29,11 +29,11 @@ module Fluid_P__Form
       TEMPERATURE        = 0, &
       ENTROPY_PER_BARYON = 0, &
       SOUND_SPEED        = 0
-   real ( KDR ) :: &
-     EnergyDensityMin, &
-     TemperatureMin
-   logical ( KDL ) :: &
-     UseInitialTemperature
+    real ( KDR ) :: &
+      EnergyDensityMin, &
+      TemperatureMin
+    logical ( KDL ) :: &
+      UseInitialTemperature
   contains
     procedure, private, pass :: &
       InitializeAllocate_F

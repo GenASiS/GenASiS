@@ -40,7 +40,7 @@ contains
           E   ( iV )  =  E_Min
         end if
 
-        D ( iV ) = N ( iV ) 	 	 
+        D ( iV )  =  N ( iV ) 	 	 
        
         S_1 ( iV )  =  M ( iV )  *  N ( iV )  *  M_DD_11 ( iV )  *  V_1 ( iV )
         S_2 ( iV )  =  M ( iV )  *  N ( iV )  *  M_DD_22 ( iV )  *  V_2 ( iV )
@@ -67,7 +67,7 @@ contains
           V_3 ( iV )  =  0.0_KDR
         end if
 
-        D ( iV ) = N ( iV ) 	 	 
+        D ( iV )  =  N ( iV ) 	 	 
        
         S_1 ( iV )  =  M ( iV )  *  N ( iV )  *  M_DD_11 ( iV )  *  V_1 ( iV )
         S_2 ( iV )  =  M ( iV )  *  N ( iV )  *  M_DD_22 ( iV )  *  V_2 ( iV )
