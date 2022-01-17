@@ -69,13 +69,33 @@ module Fluid_P_HN__Form
 !       Apply_EOS_HN_SB_E_Kernel
 !     procedure, public, nopass :: &
 !       Apply_EOS_HN_E_Kernel
-!     procedure, private, nopass :: &
-!       Apply_EOS_PrologueKernel
+    procedure, private, nopass :: &
+      Apply_EOS_PrologueKernel
 !     procedure, private, nopass :: &
 !       Apply_EOS_EpilogueKernel
 ! !    procedure, public, nopass :: &
 ! !      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
+
+    interface 
+  
+      module subroutine Apply_EOS_PrologueKernel &
+               ( M, N, P, T, E, M_Ref, N_Min, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M, &
+          N, &
+          P, &
+          T, &
+          E
+        real ( KDR ), intent ( in ) :: &
+          M_Ref, &
+          N_Min
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Apply_EOS_PrologueKernel
+    
+    end interface
 
     real ( KDR ), private, protected :: &
       OR_Shift, &
@@ -328,6 +348,10 @@ contains
     EOS_RF_Accuracy     =  1.0e-9_KDR
 
     EOS_Initialized  =  .true.
+
+    F % BaryonDensityMin  &
+      =  ( 10.0_KDR ** F % EOS % MinLogDensity )  *  MassDensity_CGS  &
+         /  F % BaryonMass
 
     if ( F % DeviceMemory ) &
       call F % EOS % AllocateDevice ( )

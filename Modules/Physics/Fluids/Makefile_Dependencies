@@ -58,6 +58,11 @@ Fluid_P_HN__Form.o: \
   EOS_P_HN_OConnorOtt__Form.o \
   Fluid_P_HN__Form.f90
 
+Fluid_P_HN__Kernel.o: \
+  Basics.o \
+  Fluid_P_HN__Form.o \
+  Fluid_P_HN__Kernel.f90
+
 Coarsening_C_F__Form.o: \
   Basics.o \
   Mathematics.o \
