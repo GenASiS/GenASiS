@@ -65,14 +65,12 @@ module Fluid_P__Form
       Compute_D_S_G_G_Kernel
     procedure, public, nopass :: &
       Compute_N_V_E_G_Kernel
-    procedure, public, nopass :: &
-      Compute_FS_G_Kernel
-    procedure, public, nopass :: &
-      Compute_ES_G_Kernel
-    procedure, public, nopass :: &
-      Compute_S_UD_Kernel
   end type Fluid_P_Form
 
+    private :: &
+      Compute_FS_G_Kernel, &
+      Compute_ES_G_Kernel, &
+      Compute_S_UD_Kernel
 
   interface
 
