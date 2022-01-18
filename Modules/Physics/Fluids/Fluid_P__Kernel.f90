@@ -28,8 +28,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP firstprivate ( N_Min, E_Min )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
 
         if ( N ( iV )  <=  N_Min  .or.  E ( iV )  <=  E_Min ) then
@@ -56,8 +55,7 @@ contains
     else 
 
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP firstprivate ( N_Min, E_Min )
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
 
         if ( N ( iV )  <=  N_Min  .or.  E ( iV )  <=  E_Min ) then
@@ -105,8 +103,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP firstprivate ( N_Min, E_Min )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
 
         if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
@@ -114,7 +111,7 @@ contains
           S_1 ( iV )  =  0.0_KDR
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
-          G   ( iV )  =  0.0_KDR
+          G   ( iV )  =  E_Min
         end if
 
         N ( iV )    =  D ( iV )
@@ -136,8 +133,7 @@ contains
     else
 
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP firstprivate ( N_Min, E_Min )
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
 
         if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
@@ -145,6 +141,7 @@ contains
           S_1 ( iV )  =  0.0_KDR
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
+          G   ( iV )  =  E_Min
         end if
 
         N ( iV )    =  D ( iV )

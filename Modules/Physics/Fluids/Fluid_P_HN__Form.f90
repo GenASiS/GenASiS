@@ -57,6 +57,8 @@ module Fluid_P_HN__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
+    procedure, public, pass :: &
+      ComputeFromBalanced
     final :: &
       Finalize
 !     procedure, public, pass ( C ) :: &
@@ -65,31 +67,18 @@ module Fluid_P_HN__Form
 !       ComputeRawFluxes
 !     procedure, public, pass ( C ) :: &
 !       ComputeCenterStates
-!     procedure, public, nopass :: &
-!       Compute_DE_G_Kernel
-!     procedure, public, nopass :: &
-!       Compute_YE_G_Kernel
-!     procedure, public, nopass :: &
-!       Apply_EOS_HN_T_Kernel
-!     procedure, public, nopass :: &
-!       Apply_EOS_HN_SB_E_Kernel
-!     procedure, public, nopass :: &
-!       Apply_EOS_HN_E_Kernel
-!     procedure, private, nopass :: &
-!       Apply_EOS_EpilogueKernel
-! !    procedure, public, nopass :: &
-! !      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
 
     private :: &
       Apply_EOS_PrologueKernel, &
       Compute_D_S_G_DE_G_Kernel, &
+      Compute_N_V_E_YE_G_Kernel, &
       Apply_EOS_EpilogueKernel
 
     interface 
   
       module subroutine Apply_EOS_PrologueKernel &
-               ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+               ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
                  UseDeviceOption )
         use Basics
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -98,7 +87,7 @@ module Fluid_P_HN__Form
           P, &
           T, &
           E, &
-          Y
+          YE
         real ( KDR ), intent ( in ) :: &
           M_Ref, &
           N_Min, &
@@ -110,23 +99,24 @@ module Fluid_P_HN__Form
       end subroutine Apply_EOS_PrologueKernel
     
       module subroutine Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, Y, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, D, S_1, S_2, S_3, G, DE, UseDeviceOption )
+               ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, Y_Min, D, S_1, S_2, S_3, G, DE, UseDeviceOption )
         !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
           N, & 	 	 
           V_1, V_2, V_3, &
-          E
+          E, &
+          YE
         real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
           M,  &
           SS, &
-          Y,  &
           M_DD_11, M_DD_22, M_DD_33
         real ( KDR ), intent ( in ) :: &
           N_Min, &
-          E_Min
+          E_Min, &
+          Y_Min
         real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
           D, & 	 	 
           S_1, S_2, S_3, &
@@ -135,6 +125,33 @@ module Fluid_P_HN__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_D_S_G_DE_G_Kernel 	 	 
+
+      module subroutine Compute_N_V_E_YE_G_Kernel &
+               ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, Y_Min, N, V_1, V_2, V_3, E, YE, UseDeviceOption )
+        !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          D, &
+          S_1, S_2, S_3, &
+          G, &
+          DE
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M, &
+          M_UU_11, M_UU_22, M_UU_33
+        real ( KDR ), intent ( in ) :: &
+          N_Min, &
+          E_Min, &
+          Y_Min
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          N, &
+          V_1, V_2, V_3, &
+          E, &
+          YE
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_N_V_E_YE_G_Kernel
 
       module subroutine Apply_EOS_EpilogueKernel &
                ( N, P, T, SS, E, Mu_NP, Mu_E, M, UseDeviceOption )
@@ -513,13 +530,13 @@ contains
           T     =>  FV ( :, F % TEMPERATURE ), &
           SB    =>  FV ( :, F % ENTROPY_PER_BARYON ), &
           SS    =>  FV ( :, F % SOUND_SPEED ), &
-          Y     =>  FV ( :, F % ELECTRON_FRACTION ), &
+          YE    =>  FV ( :, F % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, F % ELECTRON_DENSITY_B ), &
           Mu_NP =>  FV ( :, F % CHEMICAL_POTENTIAL_N_P ), &
           Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
 
       call Apply_EOS_PrologueKernel &
-             ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
                UseDeviceOption = F % DeviceMemory )
 
       associate ( FS  =>  F % Storage ( iC ) )
@@ -546,8 +563,8 @@ contains
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, Y, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, D, S_1, S_2, S_3, G, DE, &
+               ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, Y_Min, D, S_1, S_2, S_3, G, DE, &
                  UseDeviceOption = F % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
@@ -606,7 +623,7 @@ contains
           T     =>  FV ( :, CS % TEMPERATURE ), &
           SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
           SS    =>  FV ( :, CS % SOUND_SPEED ), &
-          Y     =>  FV ( :, CS % ELECTRON_FRACTION ), &
+          YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
           Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
           Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
@@ -619,7 +636,7 @@ contains
       end associate !-- CSV
 
       call Apply_EOS_PrologueKernel &
-             ( M, N, P, T, E, Y, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
                UseDeviceOption = CS % DeviceMemory )
 
       associate ( FS  =>  FS_CS % Storage ( iC ) )
@@ -647,8 +664,8 @@ contains
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, Y, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, D, S_1, S_2, S_3, G, DE, &
+               ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, Y_Min, D, S_1, S_2, S_3, G, DE, &
                  UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
@@ -661,12 +678,112 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
 
+      call Apply_EOS_PrologueKernel &
+             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+               UseDeviceOption = CS % DeviceMemory )
+
+      associate ( FS  =>  FS_CS % Storage ( iC ) )
+      call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+      call CS % EOS % ComputeFromEnergy &
+             ( FS, &
+               iaFluidInput = [ CS % BARYON_DENSITY_C, &
+                                CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
+               iSolve = CS % ENERGY_DENSITY_C )
+      call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+      end associate !-- FS
+
+      call Apply_EOS_EpilogueKernel &
+             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+               UseDeviceOption = CS % DeviceMemory )
+
       end associate !-- M, etc.
       end associate !-- FV, etc.
 
     end do !-- iC
 
   end subroutine ComputeFromPrimitive
+
+
+  subroutine ComputeFromBalanced ( CS )
+
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_N_H_Form )
+    call G % Solve &
+           ( CS, &
+             iBaryonMass = CS % BARYON_MASS, &
+             iBaryonDensity = CS % BARYON_DENSITY_B )
+    end select !-- G
+
+    do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        (    FV  =>  CS % Storage ( iC ) % Value, &
+          M_Ref  =>  CS % BaryonMass, &
+          N_Min  =>  CS % BaryonDensityMin, &
+          E_Min  =>  CS % EnergyDensityMin, &
+          T_Min  =>  CS % TemperatureMin, &
+          Y_Min  =>  CS % ElectronFractionMin )
+      associate &
+        ( M     =>  FV ( :, CS % BARYON_MASS ), &
+          N     =>  FV ( :, CS % BARYON_DENSITY_C ), &
+          V_1   =>  FV ( :, CS % VELOCITY_U_1 ), &
+          V_2   =>  FV ( :, CS % VELOCITY_U_2 ), &
+          V_3   =>  FV ( :, CS % VELOCITY_U_3 ), &
+          D     =>  FV ( :, CS % BARYON_DENSITY_B ), &
+          S_1   =>  FV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
+          S_2   =>  FV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+          S_3   =>  FV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+          E     =>  FV ( :, CS % ENERGY_DENSITY_C ), &
+          G     =>  FV ( :, CS % ENERGY_DENSITY_B ), &
+          P     =>  FV ( :, CS % PRESSURE ), &
+          T     =>  FV ( :, CS % TEMPERATURE ), &
+          SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
+          SS    =>  FV ( :, CS % SOUND_SPEED ), &
+          YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
+          DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
+          Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
+          Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
+
+      select type ( Gn  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Gn % Storage ( iC ) % Value )
+        associate &
+          ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
+            M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
+            M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+
+        call Compute_N_V_E_YE_G_Kernel &
+               ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, Y_Min, N, V_1, V_2, V_3, E, YE, &
+                 UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_UU_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Gn
+
+      end associate !-- M, etc.
+      end associate !-- FV, etc.
+
+    end do !-- iC
+
+  end subroutine ComputeFromBalanced
 
 
   impure elemental subroutine Finalize ( F )

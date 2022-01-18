@@ -33,7 +33,7 @@ contains
         N ( iV )  =  max ( N ( iV ), N_Min )
         E ( iV )  =  max ( E ( iV ), E_Min )
         T ( iV )  =  max ( T ( iV ), T_Min )
-        Y ( iV )  =  max ( Y ( iV ), Y_Min )
+        YE ( iV )  =  max ( YE ( iV ), Y_Min )
 
         E ( iV )  =  ( E ( iV )  /  ( M ( iV )  *  N ( iV ) )  -  OR_Shift ) &
                      /  SpecificEnergy_CGS
@@ -54,7 +54,7 @@ contains
         N ( iV )  =  max ( N ( iV ), N_Min )
         E ( iV )  =  max ( E ( iV ), E_Min )
         T ( iV )  =  max ( T ( iV ), T_Min )
-        Y ( iV )  =  max ( Y ( iV ), Y_Min )
+        YE ( iV )  =  max ( YE ( iV ), Y_Min )
 
         E ( iV )  =  ( E ( iV )  /  ( M ( iV )  *  N ( iV ) )  -  OR_Shift ) &
                      /  SpecificEnergy_CGS
@@ -98,6 +98,7 @@ contains
           V_2 ( iV )  =  0.0_KDR
           V_3 ( iV )  =  0.0_KDR
           E   ( iV )  =  E_Min
+          YE  ( iV )  =  Y_Min
         end if
 
         D ( iV )  =  N ( iV ) 	 	 
@@ -110,7 +111,7 @@ contains
                                               +  S_2 ( iV ) * V_2 ( iV )  &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
 
-        DE ( iV )  =  N ( iV )  *  Y ( iV ) 	 	 
+        DE ( iV )  =  YE ( iV )  *  N ( iV ) 	 	 
        
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -127,6 +128,7 @@ contains
           V_2 ( iV )  =  0.0_KDR
           V_3 ( iV )  =  0.0_KDR
           E   ( iV )  =  E_Min
+          YE  ( iV )  =  Y_Min
         end if
 
         D ( iV )  =  N ( iV ) 	 	 
@@ -139,7 +141,7 @@ contains
                                               +  S_2 ( iV ) * V_2 ( iV )  &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
 
-        DE ( iV )  =  N ( iV )  *  Y ( iV ) 	 	 
+        DE ( iV )  =  YE ( iV )  *  N ( iV ) 	 	 
        
       end do !-- iV
       !$OMP end parallel do
@@ -147,6 +149,93 @@ contains
     end if
 
   end procedure Compute_D_S_G_DE_G_Kernel 	 	 
+
+
+  module procedure Compute_N_V_E_YE_G_Kernel
+
+    !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV = size ( N )
+    
+    if ( UseDevice ) then
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+
+        if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
+          D   ( iV )  =  N_Min
+          S_1 ( iV )  =  0.0_KDR
+          S_2 ( iV )  =  0.0_KDR
+          S_3 ( iV )  =  0.0_KDR
+          G   ( iV )  =  E_Min
+          DE  ( iV )  =  Y_Min * N_Min
+        end if
+
+        N ( iV )    =  D ( iV )
+
+        V_1 ( iV )  =  M_UU_11 ( iV )  &
+                       *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+        V_2 ( iV )  =  M_UU_22 ( iV )  &
+                       *  S_2 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+        V_3 ( iV )  =  M_UU_33 ( iV )  &
+                       *  S_3 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+
+        E ( iV )    =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                                +  S_2 ( iV ) * V_2 ( iV ) &
+                                                +  S_3 ( iV ) * V_3 ( iV ) )
+
+        YE ( iV )   =  DE ( iV )  /  N ( iV )
+
+      end do !-- iV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    else
+
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+
+        if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
+          D   ( iV )  =  N_Min
+          S_1 ( iV )  =  0.0_KDR
+          S_2 ( iV )  =  0.0_KDR
+          S_3 ( iV )  =  0.0_KDR
+          G   ( iV )  =  E_Min
+          DE  ( iV )  =  Y_Min * N_Min
+        end if
+
+        N ( iV )    =  D ( iV )
+
+        V_1 ( iV )  =  M_UU_11 ( iV )  &
+                       *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+        V_2 ( iV )  =  M_UU_22 ( iV )  &
+                       *  S_2 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+        V_3 ( iV )  =  M_UU_33 ( iV )  &
+                       *  S_3 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+
+        E ( iV )    =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                                +  S_2 ( iV ) * V_2 ( iV ) &
+                                                +  S_3 ( iV ) * V_3 ( iV ) )
+
+        YE ( iV )   =  DE ( iV )  /  N ( iV )
+
+      end do !-- iV
+      !$OMP end parallel do
+    
+    end if
+
+  end procedure Compute_N_V_E_YE_G_Kernel
 
 
   module procedure Apply_EOS_EpilogueKernel
