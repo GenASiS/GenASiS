@@ -49,7 +49,7 @@ contains
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP private ( iF_B ) firstprivate ( SqrtTiny )
+      !$OMP private ( iF_B, iF_F ) firstprivate ( SqrtTiny )
       do iF  =  1,  nF
         do iV  =  1,  nV
 
@@ -79,7 +79,7 @@ contains
     
       !$OMP parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( iF_B ) firstprivate ( SqrtTiny )
+      !$OMP private ( iF_B, iF_F ) firstprivate ( SqrtTiny )
       do iF  =  1,  nF
         do iV  =  1,  nV
 
