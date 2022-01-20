@@ -362,7 +362,7 @@ contains
     call SetFluid ( YL, F_R )
     call F_R % ComputeFromPrimitive ( F_R )
 
-    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR )
+    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR, UseDeviceOption = .false. )
 
     end associate !-- F_R, etc.
     end select !-- F
@@ -515,7 +515,7 @@ contains
 
       X  =  Kappa ** ( -0.5_KDR )  *  G ** ( ( Gamma - 1.0_KDR ) / 2.0_KDR )  &
             *  R ( iV )  *  Minus_t_YL ** ( Gamma - 2.0_KDR )
- 
+      
       call I_D % Evaluate ( X, D )
       call I_V % Evaluate ( X, V )
 
@@ -533,7 +533,7 @@ contains
       V_3 ( iV )  =  0.0_KDR
 
     end do
-!    !$OMP end parallel do
+    !$OMP end parallel do
 
   end subroutine SetFluidKernel
 

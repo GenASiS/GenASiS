@@ -32,11 +32,11 @@ module Integrator_H__Form
       ! iTimerTally = 0, &
       ! iTimerWriteSeries = 0, &
     real ( KDR ) :: &
-      T_Start, &
-      T_Finish, &
-      T_CheckpointInterval, &
-      T_Checkpoint, &
-      T
+      T_Start               = 0.0_KDR, &
+      T_Finish              = 1.0_KDR, &
+      T_CheckpointInterval  = 0.0_KDR, &
+      T_Checkpoint          = 0.0_KDR, & 
+      T                     = 0.0_KDR
     type ( MeasuredValueForm ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), allocatable :: &
