@@ -83,6 +83,37 @@ contains
         U % Energy           =  UNIT % JOULE
         U % Momentum         =  UNIT % KILOGRAM  *  UNIT % SPEED_MKS
         U % AngularMomentum  =  U % Momentum  *  UNIT % METER
+      case ( 'ASTROPHYSICS' )
+        !-- Phase space 
+        U % Time                 =  UNIT % SECOND
+        U % Length               =  UNIT % KILOMETER
+        U % SqrtDet_M            =  UNIT % IDENTITY
+        U % Coordinate_PS ( 1 )  =  UNIT % KILOMETER
+        U % Coordinate_PS ( 2 )  =  UNIT % RADIAN
+        U % Coordinate_PS ( 3 )  =  UNIT % RADIAN
+        U % Coordinate_MS ( 1 )  =  UNIT % MEGA_ELECTRON_VOLT
+        U % Coordinate_MS ( 2 )  =  UNIT % RADIAN
+        U % Coordinate_MS ( 3 )  =  UNIT % RADIAN
+        !-- Local
+        U % BaryonMass               =  UNIT % ATOMIC_MASS_UNIT
+        U % NumberDensity            =  UNIT % NUMBER_DENSITY_NUCLEAR
+        U % MassDensity              =  UNIT % MASS_DENSITY_CGS
+        U % EnergyDensity            =  UNIT % ENERGY_DENSITY_NUCLEAR
+        U % Temperature              =  UNIT % MEGA_ELECTRON_VOLT
+        U % Velocity_U ( 1 )         =  UNIT % KILOMETER  /  UNIT % SECOND
+        U % Velocity_U ( 2 )         =  UNIT % RADIAN     /  UNIT % SECOND
+        U % Velocity_U ( 3 )         =  UNIT % RADIAN     /  UNIT % SECOND
+        U % MomentumDensity_D ( 1 )  =  UNIT % ENERGY_DENSITY_NUCLEAR &
+                                        /  UNIT % SPEED_OF_LIGHT
+        U % MomentumDensity_D ( 2 )  =  UNIT % ENERGY_DENSITY_NUCLEAR  &
+                                        /  UNIT % SPEED_OF_LIGHT
+        U % MomentumDensity_D ( 2 )  =  UNIT % ENERGY_DENSITY_NUCLEAR &
+                                        /  UNIT % SPEED_OF_LIGHT
+        !-- Global
+        U % Number           =  UNIT % SOLAR_BARYON_NUMBER
+        U % Energy           =  UNIT % ENERGY_SOLAR_MASS
+        U % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
+        U % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
       case default
         call Show ( 'Type not recognized', CONSOLE % ERROR )
         call Show ( 'Units_F__Form', 'module', CONSOLE % ERROR )

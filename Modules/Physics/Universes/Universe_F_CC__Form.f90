@@ -197,17 +197,6 @@ contains
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
-    !   call PS % CreateChart_CC &
-    !          ( CoordinateUnitOption = FC % Units % Coordinate_PS, &
-    !            RadiusCoreOption = RadiusCore, &
-    !            RadiusMaxOption = RadiusMax, &
-    !            RadialRatioOption = RadialRatio, &
-    !            nCellsPolarOption = nCellsPolarOption )
-
-    !   FC % RadiusPolarMomentum  =  8.0_KDR  *  UNIT % KILOMETER
-    !   call PROGRAM_HEADER % GetParameter &
-    !          ( FC % RadiusPolarMomentum, 'RadiusPolarMomentum' )
-
     end if !-- Dimensionless
 
     allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_SA )

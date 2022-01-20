@@ -14,7 +14,7 @@ module Fluid_P_HN__Form
 
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_HN = 1, &
-      N_BALANCED_HN = 1, &
+      N_BALANCED_HN  = 1, &
       N_FIELDS_HN    = 11, &
       N_VECTORS_HN   = 0
     
@@ -39,7 +39,8 @@ module Fluid_P_HN__Form
       UNUSED_VARIABLE        = 0
         !-- Includes m_e.
     real ( KDR ) :: &
-      ElectronFractionMin
+      ElectronFractionMin, &
+      ElectronFractionSafe
     logical ( KDL ), private :: &
       Allocated_EOS = .false.
     type ( EOS_P_HN_OConnorOtt_Form ), public, pointer :: &
@@ -49,6 +50,8 @@ module Fluid_P_HN__Form
       InitializeAllocate_F
     procedure, public, pass :: &
       SetElectronFractionMin
+    procedure, public, pass :: &
+      SetElectronFractionSafe
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass :: &
@@ -75,14 +78,16 @@ module Fluid_P_HN__Form
       Apply_EOS_PrologueKernel, &
       Compute_D_S_G_DE_G_Kernel, &
       Compute_N_V_E_YE_G_Kernel, &
-      Apply_EOS_EpilogueKernel
+      Apply_EOS_EpilogueKernel, &
+      Compute_FS_G_Kernel
 
     interface 
   
       module subroutine Apply_EOS_PrologueKernel &
-               ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+               ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                  UseDeviceOption )
         use Basics
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           M, &
           N, &
@@ -95,14 +100,16 @@ module Fluid_P_HN__Form
           N_Min, &
           E_Min, &
           T_Min, &
-          Y_Min
+          Y_Min, &
+          Y_Safe
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Apply_EOS_PrologueKernel
     
       module subroutine Compute_D_S_G_DE_G_Kernel & 	 	 
                ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, Y_Min, D, S_1, S_2, S_3, G, DE, UseDeviceOption )
+                 N_Min, E_Min, Y_Min, Y_Safe, D, S_1, S_2, S_3, G, DE, &
+                 UseDeviceOption )
         !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
         use Basics
         implicit none
@@ -118,7 +125,8 @@ module Fluid_P_HN__Form
         real ( KDR ), intent ( in ) :: &
           N_Min, &
           E_Min, &
-          Y_Min
+          Y_Min, &
+          Y_Safe
         real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
           D, & 	 	 
           S_1, S_2, S_3, &
@@ -130,7 +138,8 @@ module Fluid_P_HN__Form
 
       module subroutine Compute_N_V_E_YE_G_Kernel &
                ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-                 N_Min, E_Min, Y_Min, N, V_1, V_2, V_3, E, YE, UseDeviceOption )
+                 N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, YE, &
+                 UseDeviceOption )
         !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo_Kernel
         use Basics
         implicit none
@@ -145,7 +154,8 @@ module Fluid_P_HN__Form
         real ( KDR ), intent ( in ) :: &
           N_Min, &
           E_Min, &
-          Y_Min
+          Y_Min, &
+          Y_Safe
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           N, &
           V_1, V_2, V_3, &
@@ -154,6 +164,24 @@ module Fluid_P_HN__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_N_V_E_YE_G_Kernel
+
+      module subroutine Apply_EOS_EpilogueKernel &
+               ( N, P, T, SS, E, Mu_NP, Mu_E, M, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          N, &
+          P, &
+          T, &
+          SS, &
+          E, &
+          Mu_NP, &
+          Mu_E
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Apply_EOS_EpilogueKernel
 
       module subroutine Compute_FS_G_Kernel &
                ( D, S_1, S_2, S_3, G, DE, P, V_Dim, iDim, &
@@ -178,23 +206,6 @@ module Fluid_P_HN__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_FS_G_Kernel
-
-      module subroutine Apply_EOS_EpilogueKernel &
-               ( N, P, T, SS, E, Mu_NP, Mu_E, M, UseDeviceOption )
-        use Basics
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          N, &
-          P, &
-          T, &
-          SS, &
-          E, &
-          Mu_NP, &
-          Mu_E
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          M
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine Apply_EOS_EpilogueKernel
 
     end interface
 
@@ -290,7 +301,7 @@ contains
     F % CHEMICAL_POTENTIAL_E    =  oF + 10
     F % UNUSED_VARIABLE         =  of + 11
 
-    nFields  =  oF  +  F % N_FIELDS_P  +  F % N_FIELDS_HN
+    nFields  =  oF  +  F % N_FIELDS_HN
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
@@ -460,6 +471,8 @@ contains
            ( ( 10.0_KDR ** F % EOS % MinLogTemperature )  *  MeV )
     call F % SetElectronFractionMin  &
            ( F % EOS % MinElectronFraction )
+    call F % SetElectronFractionSafe  &
+           ( 0.45_KDR )
 
     if ( F % DeviceMemory ) &
       call F % EOS % AllocateDevice ( )
@@ -483,6 +496,25 @@ contains
                 F % IGNORABILITY + 1 )
 
   end subroutine SetElectronFractionMin
+
+
+  subroutine SetElectronFractionSafe ( F, ElectronFractionSafe )
+
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      ElectronFractionSafe
+
+    F % ElectronFractionSafe  =  ElectronFractionSafe
+
+    call Show ( 'Setting ElectronFractionSafe of a Fluid', &
+                F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % ElectronFractionSafe, &
+                F % Unit ( F % ELECTRON_FRACTION, 1 ), 'ElectronFractionSafe', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetElectronFractionSafe
 
 
   subroutine SetStream ( S, CS )
@@ -516,6 +548,8 @@ contains
 
     call Show ( FS % ElectronFractionMin, 'ElectronFractionMin', &
                 FS % IGNORABILITY )
+    call Show ( FS % ElectronFractionSafe, 'ElectronFractionSafe', &
+                FS % IGNORABILITY )
 
   end subroutine Show_FS
 
@@ -534,12 +568,13 @@ contains
     do iC  =  1, F % Atlas % nCharts
 
       associate &
-        (    FV  =>  F % Storage ( iC ) % Value, &
-          M_Ref  =>  F % BaryonMass, &
-          N_Min  =>  F % BaryonDensityMin, &
-          E_Min  =>  F % EnergyDensityMin, &
-          T_Min  =>  F % TemperatureMin, &
-          Y_Min  =>  F % ElectronFractionMin )
+        (    FV   =>  F % Storage ( iC ) % Value, &
+          M_Ref   =>  F % BaryonMass, &
+          N_Min   =>  F % BaryonDensityMin, &
+          E_Min   =>  F % EnergyDensityMin, &
+          T_Min   =>  F % TemperatureMin, &
+          Y_Min   =>  F % ElectronFractionMin, &
+          Y_Safe  =>  F % ElectronFractionSafe )
       associate &
         ( M     =>  FV ( :, F % BARYON_MASS ), &
           N     =>  FV ( :, F % BARYON_DENSITY_C ), &
@@ -562,7 +597,7 @@ contains
           Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
 
       call Apply_EOS_PrologueKernel &
-             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                UseDeviceOption = F % DeviceMemory )
 
       associate ( FS  =>  F % Storage ( iC ) )
@@ -590,7 +625,7 @@ contains
 
         call Compute_D_S_G_DE_G_Kernel & 	 	 
                ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, Y_Min, D, S_1, S_2, S_3, G, DE, &
+                 N_Min, E_Min, Y_Min, Y_Safe, D, S_1, S_2, S_3, G, DE, &
                  UseDeviceOption = F % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
@@ -627,12 +662,13 @@ contains
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
-        (    FV  =>  FS_CS % Storage ( iC ) % Value, &
-          M_Ref  =>  CS % BaryonMass, &
-          N_Min  =>  CS % BaryonDensityMin, &
-          E_Min  =>  CS % EnergyDensityMin, &
-          T_Min  =>  CS % TemperatureMin, &
-          Y_Min  =>  CS % ElectronFractionMin )
+        (    FV   =>  FS_CS % Storage ( iC ) % Value, &
+          M_Ref   =>  CS % BaryonMass, &
+          N_Min   =>  CS % BaryonDensityMin, &
+          E_Min   =>  CS % EnergyDensityMin, &
+          T_Min   =>  CS % TemperatureMin, &
+          Y_Min   =>  CS % ElectronFractionMin, &
+          Y_Safe  =>  CS % ElectronFractionSafe )
       associate &
         ( M     =>  FV ( :, CS % BARYON_MASS ), &
           N     =>  FV ( :, CS % BARYON_DENSITY_C ), &
@@ -662,7 +698,7 @@ contains
       end associate !-- CSV
 
       call Apply_EOS_PrologueKernel &
-             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                UseDeviceOption = CS % DeviceMemory )
 
       associate ( FS  =>  FS_CS % Storage ( iC ) )
@@ -691,7 +727,7 @@ contains
 
         call Compute_D_S_G_DE_G_Kernel & 	 	 
                ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, Y_Min, D, S_1, S_2, S_3, G, DE, &
+                 N_Min, E_Min, Y_Min, Y_Safe, D, S_1, S_2, S_3, G, DE, &
                  UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
@@ -703,24 +739,6 @@ contains
         call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
-
-      call Apply_EOS_PrologueKernel &
-             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
-               UseDeviceOption = CS % DeviceMemory )
-
-      associate ( FS  =>  FS_CS % Storage ( iC ) )
-      call FS % ReassociateHost ( AssociateVariablesOption = .false. )
-      call CS % EOS % ComputeFromEnergy &
-             ( FS, &
-               iaFluidInput = [ CS % BARYON_DENSITY_C, &
-                                CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
-               iSolve = CS % ENERGY_DENSITY_C )
-      call FS % ReassociateHost ( AssociateVariablesOption = .true. )
-      end associate !-- FS
-
-      call Apply_EOS_EpilogueKernel &
-             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
-               UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
       end associate !-- FV, etc.
@@ -752,12 +770,13 @@ contains
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
-        (    FV  =>  CS % Storage ( iC ) % Value, &
-          M_Ref  =>  CS % BaryonMass, &
-          N_Min  =>  CS % BaryonDensityMin, &
-          E_Min  =>  CS % EnergyDensityMin, &
-          T_Min  =>  CS % TemperatureMin, &
-          Y_Min  =>  CS % ElectronFractionMin )
+        (    FV   =>  CS % Storage ( iC ) % Value, &
+          M_Ref   =>  CS % BaryonMass, &
+          N_Min   =>  CS % BaryonDensityMin, &
+          E_Min   =>  CS % EnergyDensityMin, &
+          T_Min   =>  CS % TemperatureMin, &
+          Y_Min   =>  CS % ElectronFractionMin, &
+          Y_Safe  =>  CS % ElectronFractionSafe )
       associate &
         ( M     =>  FV ( :, CS % BARYON_MASS ), &
           N     =>  FV ( :, CS % BARYON_DENSITY_C ), &
@@ -791,7 +810,7 @@ contains
 
         call Compute_N_V_E_YE_G_Kernel &
                ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-                 N_Min, E_Min, Y_Min, N, V_1, V_2, V_3, E, YE, &
+                 N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, YE, &
                  UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_UU_11, etc.
@@ -803,6 +822,24 @@ contains
         call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
+
+      call Apply_EOS_PrologueKernel &
+             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
+               UseDeviceOption = CS % DeviceMemory )
+
+      associate ( FS  =>  CS % Storage ( iC ) )
+      call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+      call CS % EOS % ComputeFromEnergy &
+             ( FS, &
+               iaFluidInput = [ CS % BARYON_DENSITY_C, &
+                                CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
+               iSolve = CS % ENERGY_DENSITY_C )
+      call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+      end associate !-- FS
+
+      call Apply_EOS_EpilogueKernel &
+             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+               UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
       end associate !-- FV, etc.

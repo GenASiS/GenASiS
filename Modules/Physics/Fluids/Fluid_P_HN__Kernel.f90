@@ -30,10 +30,17 @@ contains
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
-        N ( iV )  =  max ( N ( iV ), N_Min )
-        E ( iV )  =  max ( E ( iV ), E_Min )
-        T ( iV )  =  max ( T ( iV ), T_Min )
-        YE ( iV )  =  max ( YE ( iV ), Y_Min )
+        
+        if ( N ( iV )  <=  N_Min ) then
+          N ( iV )   =  N_Min
+          YE ( iV )  =  Y_Safe
+        end if
+        if ( E ( iV )  <=  E_Min ) & 
+          E ( iV )  =  E_Min
+        if ( T ( iV )  <=  T_Min ) & 
+          T ( iV )  =  T_Min
+        if ( YE ( iV )  <=  Y_Min ) &
+          YE ( iV )  =  Y_Min
 
         E ( iV )  =  ( E ( iV )  /  ( M ( iV )  *  N ( iV ) )  -  OR_Shift ) &
                      /  SpecificEnergy_CGS
@@ -50,11 +57,18 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nValues
 
-        M ( iV )  =  M_Ref
-        N ( iV )  =  max ( N ( iV ), N_Min )
-        E ( iV )  =  max ( E ( iV ), E_Min )
-        T ( iV )  =  max ( T ( iV ), T_Min )
-        YE ( iV )  =  max ( YE ( iV ), Y_Min )
+        M ( iV )   =  M_Ref
+
+        if ( N ( iV )  <=  N_Min ) then
+          N ( iV )   =  N_Min
+          YE ( iV )  =  Y_Safe
+        end if
+        if ( E ( iV )  <=  E_Min ) & 
+          E ( iV )  =  E_Min
+        if ( T ( iV )  <=  T_Min ) & 
+          T ( iV )  =  T_Min
+        if ( YE ( iV )  <=  Y_Min ) &
+          YE ( iV )  =  Y_Min
 
         E ( iV )  =  ( E ( iV )  /  ( M ( iV )  *  N ( iV ) )  -  OR_Shift ) &
                      /  SpecificEnergy_CGS
@@ -98,7 +112,7 @@ contains
           V_2 ( iV )  =  0.0_KDR
           V_3 ( iV )  =  0.0_KDR
           E   ( iV )  =  E_Min
-          YE  ( iV )  =  Y_Min
+          YE  ( iV )  =  Y_Safe
         end if
 
         D ( iV )  =  N ( iV ) 	 	 
@@ -128,7 +142,7 @@ contains
           V_2 ( iV )  =  0.0_KDR
           V_3 ( iV )  =  0.0_KDR
           E   ( iV )  =  E_Min
-          YE  ( iV )  =  Y_Min
+          YE  ( iV )  =  Y_Safe
         end if
 
         D ( iV )  =  N ( iV ) 	 	 
@@ -179,7 +193,7 @@ contains
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
           G   ( iV )  =  E_Min
-          DE  ( iV )  =  Y_Min * N_Min
+          DE  ( iV )  =  Y_Safe * N_Min
         end if
 
         N ( iV )    =  D ( iV )
@@ -212,7 +226,7 @@ contains
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
           G   ( iV )  =  E_Min
-          DE  ( iV )  =  Y_Min * N_Min
+          DE  ( iV )  =  Y_Safe * N_Min
         end if
 
         N ( iV )    =  D ( iV )
@@ -236,6 +250,69 @@ contains
     end if
 
   end procedure Compute_N_V_E_YE_G_Kernel
+
+
+  module procedure Apply_EOS_EpilogueKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    logical ( KDL ) :: &
+      UseDevice
+           
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nValues = size ( P )
+
+    if ( UseDevice ) then
+      
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nValues
+
+!        if ( N ( iV ) == 0.0_KDR ) cycle 
+
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        T ( iV )      =  T ( iV ) * MeV
+        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
+        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
+                           * M ( iV ) * N ( iV )
+        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
+        
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nValues
+
+!        if ( N ( iV ) == 0.0_KDR ) cycle 
+
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        T ( iV )      =  T ( iV ) * MeV
+        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
+        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
+                           * M ( iV ) * N ( iV )
+        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+
+        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
+        
+      end do
+      !$OMP end parallel do
+        
+    end if
+    
+  end procedure Apply_EOS_EpilogueKernel
 
 
   module procedure Compute_FS_G_Kernel
@@ -308,69 +385,6 @@ contains
     end if
 
   end procedure Compute_FS_G_Kernel
-
-
-  module procedure Apply_EOS_EpilogueKernel
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    logical ( KDL ) :: &
-      UseDevice
-           
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    nValues = size ( P )
-
-    if ( UseDevice ) then
-      
-      !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV = 1, nValues
-
-!        if ( N ( iV ) == 0.0_KDR ) cycle 
-
-        P ( iV )      =  P ( iV ) * Pressure_CGS
-        T ( iV )      =  T ( iV ) * MeV
-        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
-        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
-                           * M ( iV ) * N ( iV )
-        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
-        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-        
-        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
-        
-      end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    else
-
-      !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iV = 1, nValues
-
-!        if ( N ( iV ) == 0.0_KDR ) cycle 
-
-        P ( iV )      =  P ( iV ) * Pressure_CGS
-        T ( iV )      =  T ( iV ) * MeV
-        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
-        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
-                           * M ( iV ) * N ( iV )
-        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
-        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-
-        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
-        
-      end do
-      !$OMP end parallel do
-        
-    end if
-    
-  end procedure Apply_EOS_EpilogueKernel
 
 
 end submodule Fluid_P_HN__Kernel

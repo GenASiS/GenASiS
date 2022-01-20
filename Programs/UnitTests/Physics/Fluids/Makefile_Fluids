@@ -2,9 +2,10 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Fluids.a Fluid_D__Form_Test Slope_DFV_N__Form_Test Fluid_P_I__Form_Test 
+all: Fluids.a Fluid_D__Form_Test Slope_DFV_N__Form_Test Fluid_P_I__Form_Test \
+  Fluid_P_HN__Form_Test 
 #FluidFeatures_P__Form_Test \
-     Fluid_P_HN__Form_Test Tally_F_D__Form_Test Tally_F_P__Form_Test \
+     Tally_F_D__Form_Test Tally_F_P__Form_Test \
      Tally_F_P_HN__Form_Test Sources_F__Form_Test Fluid_CSL__Form_Test \
      Sources_F_CSL__Form_Test FluidFeatures_CSL__Form_Test \
      Fluid_ASC__Form_Test
@@ -37,6 +38,13 @@ Fluid_P_I__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
 	$(LINK) $(FLAGS) \
           -o Fluid_P_I__Form_Test_$(MACHINE) \
           Fluid_P_I__Form_Test.o Fluids.a \
+          Gravitations.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+
+Fluid_P_HN__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
+  Fluids.a Fluid_P_HN__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Fluid_P_HN__Form_Test_$(MACHINE) \
+          Fluid_P_HN__Form_Test.o Fluids.a \
           Gravitations.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 # Fluid_P_HN__Form_Test: ThirdParty.a Basics.a Mathematics.a \
