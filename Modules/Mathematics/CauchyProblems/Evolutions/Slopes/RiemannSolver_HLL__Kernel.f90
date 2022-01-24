@@ -19,7 +19,10 @@ contains
       nV, &
       nF
     real ( KDR ) :: &
-      SqrtTiny
+      SqrtTiny!, &
+      ! dF_L, dF_R, &
+      !  F_L,  F_R, &
+      ! Sign, Scale
     logical ( KDL ) :: &
       UseDevice      
           
@@ -97,6 +100,24 @@ contains
       end do
       !$OMP end parallel do
     
+! do iF  =  1,  nF
+!   do iV  =  1,  nV
+!     dF_L   =  F_I  ( iV, iF )  -  F_IL ( iV, iF )
+!     dF_R   =  F_IR ( iV, iF )  -  F_I  ( iV, iF )
+!      F_L   =  F_IL ( iV, iF )
+!      F_R   =  F_IR ( iV, iF )
+!     Sign   =  dF_L * dF_R
+!     Scale  =  abs ( Sign ) / max ( abs ( F_L * F_R ), SqrtTiny )
+!     if ( Sign  <  0.0_KDR .and. Scale > 1.0e-6) then
+!       call Show ( [ iF, iV ], '>>> iF, iV' )
+!       call Show ( [ F_IL ( iV, iF ), F_I ( iV, iF ), F_IR ( iV, iF ) ], &
+!                   '>>> F_IL, F_I, F_IR' )
+!       call Show ( Sign, '>>> Sign' )
+!       call Show ( Scale, '>>> Scale' )
+!     end if
+!   end do !-- iV
+! end do !-- iF
+
     end if
     
     end associate   !-- F_I, AP_I, AM_I
