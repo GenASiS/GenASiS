@@ -194,7 +194,6 @@ contains
             exit CoarsenAzimuthal
           CA ( iV )  =  2.0_KDR  *  CA ( iV )
         end do CoarsenAzimuthal
-        CA ( iV )  =  min ( CA ( iV ), real ( C % nCells ( 3 ), KDR ) )
       end if !-- nDimensions == 3
     end do !-- iV
 
@@ -303,6 +302,7 @@ contains
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
                +  0.5_KDR
+          CA_Max  =  min ( CA_Max, C % nCells ( 3 ) )
           if ( CA_Max  >  1 ) &
             nBP ( iR )  =  nBP ( iR )  +  1
         end do !-- iTh
@@ -317,6 +317,7 @@ contains
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
                +  0.5_KDR
+          CA_Max  =  min ( CA_Max, C % nCells ( 3 ) )
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
             nCA ( iR ) % Value ( iBP )  =  CA_Max
@@ -344,6 +345,7 @@ contains
           CA_Max  &
             =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
                +  0.5_KDR
+          CA_Max  =  min ( CA_Max, C % nCells ( 3 ) )
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
             do iBA  =  1,  nBA ( iR ) % Value ( iBP )
