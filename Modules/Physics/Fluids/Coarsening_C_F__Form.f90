@@ -11,9 +11,7 @@ module Coarsening_C_F__Form
 
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
-      nEffectiveCellsZero, &
-      nRadiusZero
-    integer ( KDI ), dimension ( : ), allocatable :: &
+      nRadiusZero, &
       nPolarZero
     class ( Fluid_D_Form ), pointer :: &
       Fluid => null ( )
@@ -31,27 +29,22 @@ module Coarsening_C_F__Form
   end type Coarsening_C_F_Form
 
     private :: &
-      SetRadiusZero, &
-      SetPolarZero
-
-    private :: &
       ComputeKernel
 
     interface
       
       module subroutine ComputeKernel &
-               ( FS_4D, nPZ, nC, oC, iaB, nRZ, iS_2, iS_3, UseDeviceOption )
+               ( FS_4D, nC, oC, iaB, nRZ, nPZ, iS_2, iS_3, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
           FS_4D
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          nPZ, &
           nC, &
           oC, &
           iaB
         integer ( KDI ), intent ( in ) :: &
-          nRZ, &
+          nRZ, nPZ, &
           iS_2, iS_3
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -77,32 +70,12 @@ contains
     
     call C % Coarsening_C_Form % Initialize ( G )
 
-    C % Fluid  =>  F
+    C % Fluid        =>  F
 
-    C % nEffectiveCellsZero  =  1
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nEffectiveCellsZero, 'nEffectiveCellsZero' )
-
-    select type ( A  =>  G % Atlas )
-    class is ( Atlas_SCG_CC_Form )
-
-      call SetRadiusZero &
-             (  C   = A % Chart_GS_CC, &
-                CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
-               nECZ = C % nEffectiveCellsZero, &
-               nRZ  = C % nRadiusZero )
-      call SetPolarZero &
-             (  C  = A % Chart_GS_CC, &
-                CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
-               nECZ = C % nEffectiveCellsZero, &
-               nPZ = C % nPolarZero )
-
-    class default
-      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Coarsening_C_F__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Initialize_C_F', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- A
+    C % nRadiusZero  =  1
+    C % nPolarZero   =  1
+    call PROGRAM_HEADER % GetParameter ( C % nRadiusZero, 'nRadiusZero' )    
+    call PROGRAM_HEADER % GetParameter ( C % nPolarZero,  'nPolarZero' )    
 
   end subroutine Initialize_C_F
 
@@ -114,7 +87,6 @@ contains
 
     call FS % Coarsening_C_Form % Show ( )
 
-    call Show ( FS % nEffectiveCellsZero, 'nEffectiveCellsZero' )
     call Show ( FS % nRadiusZero, 'nRadiusZero' )
     call Show ( FS % nPolarZero, 'nPolarZero' )
 
@@ -146,26 +118,20 @@ contains
            ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_3 )
 
     call C % Coarsening_C_Form % Compute ( FS )
-    
-    call FS % Storage_GS % ReassociateHost &
-           ( AssociateVariablesOption = .false. )
 
     call C_GS_CC % SetFieldPointer &
            ( FS % Storage_GS % Value, FS_4D )
 
     call ComputeKernel &
            ( FS_4D, &
-             nPZ  = C % nPolarZero, &
              nC   = C_GS_CC % nCells, &
              oC   = C_GS_CC % nGhostLayers, &
              iaB  = C_GS_CC % iaBrick, &
              nRZ  = C % nRadiusZero, &
+             nPZ  = C % nPolarZero, &
              iS_2 = iMomentum_2, &
              iS_3 = iMomentum_3, &
              UseDeviceOption = C % DeviceMemory )
-    
-    call FS % Storage_GS % ReassociateHost &
-           ( AssociateVariablesOption = .true. )
 
     end associate !-- F, etc.
 
@@ -186,98 +152,7 @@ contains
 
     nullify ( C % Fluid )
 
-    if ( allocated ( C % nPolarZero ) ) &
-      deallocate ( C % nPolarZero )
-
   end subroutine Finalize
 
-
-  subroutine SetRadiusZero ( C, CP, nECZ, nRZ )
-
-    class ( Chart_GS_C_Form ), intent ( in ) :: &
-      C
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      CP  !-- CoarsenPolar
-    integer ( KDI ), intent ( in ) :: &
-      nECZ  !-- nEffectiveCellsZero
-    integer ( KDI ), intent ( out ) :: &
-      nRZ  !-- nRadiusZero
-
-    integer ( KDI ) :: &
-      iR, &  !-- iRadius
-      nCP    !-- nCoarsenPolar
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      CP_3D
-
-    nRZ  =  0
-
-    if ( C % nDimensions  <  2 )  &
-      return
-
-    call C % SetFieldPointer ( CP, CP_3D )
-
-    associate &
-      ( nR   =>  C % nCellsBrick ( 1 ), &
-        nTh  =>  C % nCellsBrick ( 2 ) )  !-- nCellsBrick ( 2 ) == nCells ( 2 )
-
-    do iR  =  1,  nR
-      nCP  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
-      if ( nCP  >=  nTh / nECZ ) &
-        nRZ  =  nRZ + 1
-    end do !-- iR
-
-    end associate !-- nR, etc.
-
-  end subroutine SetRadiusZero
-
-
-  subroutine SetPolarZero ( C, CA, nECZ, nPZ )
-
-    class ( Chart_GS_C_Form ), intent ( in ) :: &
-      C
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      CA  !-- CoarsenAzimuthal
-    integer ( KDI ), intent ( in ) :: &
-      nECZ  !-- nEffectiveCellsZero
-    integer ( KDI ), dimension ( : ), intent ( out ), allocatable :: &
-      nPZ  !-- nPolarZero
-
-    integer ( KDI ) :: &
-      iR, iTh, &  !-- iRadius, iTheta
-      nCA    !-- nCoarsenAzimuthal
-    integer ( KDI ), dimension ( : ), allocatable :: &
-      nPZ_Temp
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      CA_3D
-
-    if ( C % nDimensions  <  3 ) then
-      allocate ( nPZ ( 0 ) )
-      return
-    end if
-
-    call C % SetFieldPointer ( CA, CA_3D )
-
-    associate &
-      ( nR   =>  C % nCellsBrick ( 1 ), &
-        nTh  =>  C % nCellsBrick ( 2 ), &  !-- nCellsBrick ( 2 ) == nCells ( 2 )
-        nPh  =>  C % nCellsBrick ( 3 ) )   !-- nCellsBrick ( 3 ) == nCells ( 3 )
-
-    allocate ( nPZ_Temp ( nR ) )
-    nPZ_Temp  =  0
-
-    do iR  =  1,  nR
-      do iTh  =  1,  nTh / 2
-        nCA  =  CA_3D ( iR, iTh, 1 )  +  0.5_KDR
-        if ( nCA  >=  nPh / nECZ ) &
-          nPZ_Temp ( iR )  =  nPZ_Temp ( iR )  +  1
-      end do !-- nTh / 2
-    end do !-- iR
-
-    allocate ( nPZ, source = pack ( nPZ_Temp, nPZ_Temp > 0 ) )
-
-    end associate !-- nR, etc.
-
-  end subroutine SetPolarZero
-
-
+  
 end module Coarsening_C_F__Form
