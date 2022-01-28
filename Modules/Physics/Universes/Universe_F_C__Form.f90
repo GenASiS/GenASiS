@@ -463,7 +463,32 @@ contains
       end associate !-- SA, etc.
 
       end select !-- F
+
+    case ( 'HEAVY_NUCLEUS' )
       
+      allocate ( Fluid_P_HN_Form  ::  I % CurrentSet_X )
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_HN_Form )
+      call F % Initialize ( G, U % Units_F )
+
+      allocate ( U % SA_Fluid )
+      associate &
+        ( SA     =>  U % SA_Fluid, &
+           A_SA  =>  U % PositionSpace_SA )
+      allocate ( Fluid_P_HN_Form :: SA % FieldSet_SA )
+      select type ( F_SA  =>  SA % FieldSet_SA )
+        type is ( Fluid_P_HN_Form )
+      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+        class is ( Geometry_F_Form )
+      call F_SA % Initialize &
+             ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+      call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+      end select !-- G_SA
+      end select !-- F_SA
+      end associate !-- SA, etc.
+
+      end select !-- F
+
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )
       call Show ( FluidType, 'FluidType', CONSOLE % ERROR )

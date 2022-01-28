@@ -399,67 +399,73 @@ contains
 
     !-- Equation of state
 
-    if ( EOS_Initialized ) then
+    if ( .not. EOS_Initialized ) then
+
+      allocate ( F % EOS )
+      
+      call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
+      
+      EOS_Filename = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
+      call PROGRAM_HEADER % GetParameter ( EOS_Filename, 'EOS_Filename' )
+      call F % EOS % Initialize ( EOS_Filename )
+      
+      allocate ( iaFluidOutput ( 12 ) )
+      allocate ( iaSelected_EOS ( 12 ) )
+      
+      iaFluidOutput &
+        = [ F % ENERGY_DENSITY_C, &
+            F % PRESSURE, &
+            F % ENTROPY_PER_BARYON, &
+            F % SOUND_SPEED, &
+            F % MASS_FRACTION_ALPHA, &
+            F % MASS_FRACTION_HEAVY, &
+            F % MASS_FRACTION_NEUTRON, &
+            F % MASS_FRACTION_PROTON, &
+            F % MASS_NUMBER_HEAVY, &
+            F % ATOMIC_NUMBER_HEAVY, &
+            F % CHEMICAL_POTENTIAL_E, &
+            F % CHEMICAL_POTENTIAL_N_P ]
+
+      iaSelected_EOS &
+        = [ F % EOS % LOG_ENERGY, &
+            F % EOS % LOG_PRESSURE, &
+            F % EOS % ENTROPY, &
+            F % EOS % SOUND_SPEED_SQUARE, &
+            F % EOS % MASS_FRACTION_A, &
+            F % EOS % MASS_FRACTION_H, &
+            F % EOS % MASS_FRACTION_N, &
+            F % EOS % MASS_FRACTION_P, &
+            F % EOS % MASS_NUMBER_BAR, &
+            F % EOS % ATOMIC_NUMBER_BAR, &
+            F % EOS % CHEMICAL_POTENTIAL_E, &
+            F % EOS % CHEMICAL_POTENTIAL_HAT ]
+      
+      call F % EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
+
+      F % Allocated_EOS = .true.
+      EOS_Pointer => F % EOS
+
+      !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
+      OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
+                 / CONSTANT % ATOMIC_MASS_UNIT
+      
+      MassDensity_CGS     =  UNIT % MASS_DENSITY_CGS
+      SpecificEnergy_CGS  =  UNIT % ERG  /  UNIT % GRAM
+      Pressure_CGS        =  UNIT % BARYE
+      Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
+      MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+      EOS_RF_Accuracy     =  1.0e-9_KDR
+
+      EOS_Initialized  =  .true.
+
+      if ( F % DeviceMemory ) &
+        call F % EOS % AllocateDevice ( )
+      
+    else
       F % EOS  =>  EOS_Pointer
-      return
-    end if
+    end if  !-- EOS_Initialized
 
-    allocate ( F % EOS )
-    
-    call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
-    
-    EOS_Filename = '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5'
-    call PROGRAM_HEADER % GetParameter ( EOS_Filename, 'EOS_Filename' )
-    call F % EOS % Initialize ( EOS_Filename )
-    
-    allocate ( iaFluidOutput ( 12 ) )
-    allocate ( iaSelected_EOS ( 12 ) )
-    
-    iaFluidOutput &
-      = [ F % ENERGY_DENSITY_C, &
-          F % PRESSURE, &
-          F % ENTROPY_PER_BARYON, &
-          F % SOUND_SPEED, &
-          F % MASS_FRACTION_ALPHA, &
-          F % MASS_FRACTION_HEAVY, &
-          F % MASS_FRACTION_NEUTRON, &
-          F % MASS_FRACTION_PROTON, &
-          F % MASS_NUMBER_HEAVY, &
-          F % ATOMIC_NUMBER_HEAVY, &
-          F % CHEMICAL_POTENTIAL_E, &
-          F % CHEMICAL_POTENTIAL_N_P ]
-
-    iaSelected_EOS &
-      = [ F % EOS % LOG_ENERGY, &
-          F % EOS % LOG_PRESSURE, &
-          F % EOS % ENTROPY, &
-          F % EOS % SOUND_SPEED_SQUARE, &
-          F % EOS % MASS_FRACTION_A, &
-          F % EOS % MASS_FRACTION_H, &
-          F % EOS % MASS_FRACTION_N, &
-          F % EOS % MASS_FRACTION_P, &
-          F % EOS % MASS_NUMBER_BAR, &
-          F % EOS % ATOMIC_NUMBER_BAR, &
-          F % EOS % CHEMICAL_POTENTIAL_E, &
-          F % EOS % CHEMICAL_POTENTIAL_HAT ]
-    
-    call F % EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
-
-    F % Allocated_EOS = .true.
-    EOS_Pointer => F % EOS
-
-    !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
-    OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
-               / CONSTANT % ATOMIC_MASS_UNIT
-    
-    MassDensity_CGS     =  UNIT % MASS_DENSITY_CGS
-    SpecificEnergy_CGS  =  UNIT % ERG  /  UNIT % GRAM
-    Pressure_CGS        =  UNIT % BARYE
-    Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
-    MeV                 =  UNIT % MEGA_ELECTRON_VOLT
-    EOS_RF_Accuracy     =  1.0e-9_KDR
-
-    EOS_Initialized  =  .true.
+    !-- Parameters
 
     call F % SetBaryonDensityMin  &
            ( ( 10.0_KDR ** F % EOS % MinLogDensity )  *  MassDensity_CGS  &
@@ -474,9 +480,6 @@ contains
     call F % SetElectronFractionSafe  &
            ( 0.45_KDR )
 
-    if ( F % DeviceMemory ) &
-      call F % EOS % AllocateDevice ( )
-    
   end subroutine InitializeAllocate_F
 
 
