@@ -127,4 +127,63 @@ contains
   end procedure ComputeKernel
 
 
+  module procedure ComputeAbundancesKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      iF, &
+      iF_A, &
+      iF_AF, &
+      nV, &
+      nF
+    real ( KDR ) :: &
+      Y
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( RSV, dim = 1 )
+    nF  =  size ( iaA )
+
+    associate &
+      ( F_I  => RSV, &
+        AP_I => RSV ( :, iAP ), &
+        AM_I => RSV ( :, iAM ) )
+
+    if ( UseDevice ) then
+
+    else
+
+      !$OMP parallel do collapse ( 2 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP private ( iF_A, iF_AF, Y )
+      do iF  =  1,  nF
+        do iV  =  1,  nV
+
+          iF_A   =  iaA  ( iF )
+          iF_AF  =  iaAF ( iF )
+
+          Y  =  (    AP_I ( iV )  *  CS_IL ( iV, iF_A ) &
+                  +  AM_I ( iV )  *  CS_IR ( iV, iF_A ) ) &
+                /  ( AP_I ( iV )  +  AM_I ( iV ) )
+               
+!call Show ( iV, '>>> iV' )
+!call Show ( F_I ( iV, iF_AF ), '>>> NE Flux before' )
+          F_I ( iV, iF_AF )  =  Y  *  F_I ( iV, iFDF )
+!call Show ( F_I ( iV, iF_AF ), '>>> NE Flux after' )
+
+        end do
+      end do
+      !$OMP end parallel do
+
+    end if
+
+    end associate   !-- F_I, AP_I, AM_I
+
+  end procedure ComputeAbundancesKernel
+
+
 end submodule RiemannSolver_HLL__Kernel

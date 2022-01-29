@@ -20,9 +20,14 @@ module RiemannSolver_HLL__Form
       ALPHA_MINUS_U   = 0, &
       N_SOLVER_SPEEDS = 0
     integer ( KDI ) :: &
+      iFiducialDensityFlux = 0
+    integer ( KDI ) :: &
       iTimer     = 0, &
       iTimer_CFP = 0, &
       iTimer_K   = 0
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaAbundances, &
+      iaAbundanceFluxes
     character ( LDL ) :: &
       ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
@@ -70,7 +75,8 @@ module RiemannSolver_HLL__Form
       ComputeWithReconstructedPrimitive
 
       private :: &
-        ComputeKernel
+        ComputeKernel, &
+        ComputeAbundancesKernel
 
     interface
       
@@ -96,6 +102,25 @@ module RiemannSolver_HLL__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeKernel
+
+      module subroutine ComputeAbundancesKernel &
+               ( RSV, CS_IL, CS_IR, iaAF, iaA, iAP, iAM, iFDF, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          RSV     !-- RiemannSolver Value
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          CS_IL, CS_IR
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaAF, &  !-- iaAbundanceFluxes
+          iaA      !-- iaAbundances
+        integer ( KDI ), intent ( in ) :: &
+          iAP, &  !-- iAlphaPlus
+          iAM, &  !-- iAlphaMinus
+          iFDF    !-- iFiducialDensityFlux
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeAbundancesKernel
 
     end interface
 
@@ -552,6 +577,10 @@ contains
       deallocate ( RS % BalancedSet )
     if ( allocated ( RS % PrimitiveSet ) ) &
       deallocate ( RS % PrimitiveSet )
+    if ( allocated ( RS % iaAbundanceFluxes ) ) &
+      deallocate ( RS % iaAbundanceFluxes )
+    if ( allocated ( RS % iaAbundances ) ) &
+      deallocate ( RS % iaAbundances )
 
     nullify ( RS % CurrentSet )
 
@@ -760,6 +789,8 @@ contains
          F_IR  =>  RFS_IR % Value, &
          U_IL  =>  CSS_IL % Value, &
          U_IR  =>  CSS_IR % Value, &
+        CS_IL  =>  CSS_IL % Value, &
+        CS_IR  =>  CSS_IR % Value, &
         EP_IL  =>  RES_IL % Value ( :, ES_IL % EIGENSPEED_FAST_PLUS_U ), &
         EP_IR  =>  RES_IR % Value ( :, ES_IR % EIGENSPEED_FAST_PLUS_U ), &
         EM_IL  =>  RES_IL % Value ( :, ES_IL % EIGENSPEED_FAST_MINUS_U ), &
@@ -776,7 +807,15 @@ contains
            ( F_IL, F_IR, U_IL, U_IR, EP_IL, EP_IR, EM_IL, EM_IR, &
              CS % iaBalanced, iaFluxes, RS % ALPHA_PLUS_U, &
              RS % ALPHA_MINUS_U, RSV, UseDeviceOption = RS % DeviceMemory )
-    
+
+    ! if ( allocated ( RS % iaAbundances ) ) &
+    !   call ComputeAbundancesKernel &
+    !            ( RSV, CS_IL, CS_IR, &
+    !              RS % iaAbundanceFluxes, RS % iaAbundances, &
+    !              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
+    !              RS % iFiducialDensityFlux, &
+    !              UseDeviceOption = RS % DeviceMemory )
+
     call RFS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
     call RFS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )

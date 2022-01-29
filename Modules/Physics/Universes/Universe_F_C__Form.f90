@@ -539,6 +539,18 @@ contains
 
     call S % Initialize ( F )
 
+    !-- Set up electron density as abundance flux
+    select type ( F )
+      class is ( Fluid_P_HN_Form )
+    associate &
+      ( RS  =>  S % RiemannSolver )
+    RS % iFiducialDensityFlux  =  1
+    allocate ( RS % iaAbundances, source = [ 16 ] )
+    allocate ( RS % iaAbundanceFluxes, source = [ 6 ] )
+    end associate !-- RS
+    end select !-- F
+
+    !-- Coarsening
     U % Coarsen  =  .true.
     call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
     if ( U % Coarsen ) then
