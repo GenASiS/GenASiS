@@ -3,6 +3,7 @@ module CurrentSet_Form
   use Basics
   use FieldSets
   use Geometries
+  use FluxSet_Form
 
   implicit none
   private
@@ -39,8 +40,14 @@ module CurrentSet_Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Primitive, &
       Balanced
+    !-- Geometry
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
+    !-- FluxSets
+    integer ( KDI ) :: &
+      nFluxSets = 0
+    class ( FluxSetElement ), dimension ( : ), allocatable :: &
+      FluxSet
   contains
     procedure, private, pass :: &
       InitializeAllocate_CS
@@ -57,8 +64,6 @@ module CurrentSet_Form
     procedure, public, pass :: &
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
-      ComputeFluxes
-    procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
     procedure, public, pass ( CS ) :: &
       ComputeStresses
@@ -67,22 +72,9 @@ module CurrentSet_Form
   end type CurrentSetForm
 
     private :: &
-      ComputeFluxesKernel, &
       ComputeEigenspeedsKernel
 
     interface
-
-      module subroutine ComputeFluxesKernel ( D, V_Dim, F_D, UseDeviceOption )
-        use Basics
-        implicit none
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          D, &
-          V_Dim
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
-          F_D
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine ComputeFluxesKernel
 
       module subroutine ComputeEigenspeedsKernel &
                ( V_Dim, EF_P, EF_M, UseDeviceOption )
@@ -301,6 +293,9 @@ contains
     class ( CurrentSetForm ), intent ( in ) :: &
       FS
 
+    integer ( KDI ) :: &
+      iFS
+
     call FS % FieldSetForm % Show ( )
 
     call Show ( FS %  nPrimitive,  'nPrimitive', FS % IGNORABILITY )
@@ -310,6 +305,10 @@ contains
     call Show ( FS %  nBalanced,  'nBalanced', FS % IGNORABILITY )
     call Show ( FS % iaBalanced, 'iaBalanced', FS % IGNORABILITY )
     call Show ( FS %   Balanced,   'Balanced', FS % IGNORABILITY )
+
+    do iFS  =  1,  FS % nFluxSets
+      call FS % FluxSet ( iFS ) % Element % Show ( )
+    end do !-- iFS
 
   end subroutine Show_CS
 
@@ -338,44 +337,6 @@ contains
       CS
 
   end subroutine ComputeFromBalanced
-
-
-  subroutine ComputeFluxes ( FS, CS, FS_CS, iC, iD )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    class ( CurrentSetForm ), intent ( in ) :: &
-      CS
-    class ( FieldSetForm ), intent ( in ) :: &
-      FS_CS
-    integer ( KDI ), intent ( in ) :: &
-      iC, &  !-- iChart
-      iD     !-- iDimension
-    
-    integer ( KDI ) :: &
-      iDensity
-
-    if ( CS % DENSITY_CS > 0 ) then
-
-      call Search ( CS % iaBalanced, CS % DENSITY_CS, iDensity )
-
-      associate &
-        ( FSS  =>  FS    % Storage ( iC ), &
-          CSS  =>  FS_CS % Storage ( iC ) )
-      associate &
-        ( F_D      =>  FSS % Value ( :, iDensity ), &
-            D      =>  CSS % Value ( :, CS % DENSITY_CS ), & 
-            V_Dim  =>  CSS % Value ( :, CS % VELOCITY_CS_U ( iD ) ) ) 
- 
-      call ComputeFluxesKernel &
-             ( D, V_Dim, F_D, UseDeviceOption = CS % DeviceMemory )
-  
-      end associate !-- F_D, etc.
-      end associate !-- FSS, etc.
-  
-    end if !-- Density default
-
-  end subroutine ComputeFluxes
 
 
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
@@ -439,6 +400,8 @@ contains
 
     nullify ( CS % Geometry )
 
+    if ( allocated ( CS % FluxSet ) ) &
+      deallocate ( CS % FluxSet )
     if ( allocated ( CS % Balanced ) ) &
       deallocate ( CS % Balanced )
     if ( allocated ( CS % Primitive ) ) &

@@ -1,4 +1,4 @@
-program FluxSet_Form_Test
+program FluxSet_CS__Form_Test
 
   use Basics
   use Manifolds
@@ -16,16 +16,17 @@ program FluxSet_Form_Test
     A
   type ( StreamForm ), allocatable :: &
     S
+  type ( FieldSetForm ), allocatable :: &
+    FS_FS, &  !-- FieldSet_FluxSet
+    FS_SS     !-- FieldSet_SressSet
   type ( Geometry_F_Form ), allocatable :: &
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( FluxSetForm ), allocatable :: &
-    FS
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FluxSet_Form_Test', DimensionalityOption = '2D' )
+         ( 'FluxSet_CS__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -47,32 +48,48 @@ program FluxSet_Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( S )
 
-  allocate ( FS )
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call FS % Initialize ( CS, CS )
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
-  call  S % AddFieldSet ( FS )
+  CS % nFluxSets  =  1
+  allocate ( CS % FluxSet ( 1 ) )
+  allocate ( FluxSet_CS_Form :: CS % FluxSet ( 1 ) % Element )
+  select type ( FS  =>  CS % FluxSet ( 1 ) % Element )
+    class is ( FluxSet_CS_Form )
+  call FS % Initialize ( CS )
+  end select !-- FS
 
-  call  A % Show ( )
-  call  G % Show ( )
-  call CS % Show ( )
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call FS % Show ( )
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
-  call  S % Show ( )
+  allocate ( FS_FS )
+  call FS_FS % Initialize &
+         ( A, &
+           FieldOption = CS % Balanced, &
+           NameOption = 'Fluxes', &
+           nFieldsOption = CS % nBalanced )
+  call S % AddFieldSet ( FS_FS )
+
+  allocate ( FS_SS )
+  call FS_SS % Initialize &
+         ( A, &
+           FieldOption = CS % Balanced, &
+           NameOption = 'Stresses', &
+           nFieldsOption = CS % nBalanced )
+  call S % AddFieldSet ( FS_SS )
+
+  call     A % Show ( )
+  call     G % Show ( )
+  call    CS % Show ( )
+  call FS_FS % Show ( )
+  call FS_SS % Show ( )
+  call     S % Show ( )
 
   call SetWave ( CS, G )
 
   nCompute  =  1000
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
-  call TestFluxes ( FS, S, iD = 1 )
-  call TestFluxes ( FS, S, iD = 2 )
-  call TestFluxes ( FS, S, iD = 3 )
+  call TestFluxes ( CS, FS_FS, FS_SS, S, iD = 1 )
+  call TestFluxes ( CS, FS_FS, FS_SS, S, iD = 2 )
+  call TestFluxes ( CS, FS_FS, FS_SS, S, iD = 3 )
 
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
-  deallocate ( FS )
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
+  deallocate ( FS_SS )
+  deallocate ( FS_FS )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( S )
@@ -157,10 +174,13 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestFluxes ( FS, S, iD )
+  subroutine TestFluxes ( CS, FS_FS, FS_SS, S, iD )
 
-    class ( FluxSetForm ), intent ( inout ) :: &
-      FS
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_FS, &
+      FS_SS
     class ( StreamForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
@@ -171,15 +191,17 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    call Show ( 'FluxSet computation' )
-    call Show ( FS % Name, 'FluxSet' )
+    associate ( FS  =>  CS % FluxSet ( 1 ) % Element )
+
+    call Show ( 'FluxSet_CS computation' )
+    call Show ( FS % Name, 'FluxSet_CS' )
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
     T  =>  FS % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call FS % Compute ( iC = 1, iD = iD )
+      call FS % Compute ( FS_FS, FS_SS, CS, iC = 1, iD = iD )
     end do
     call T % Stop ( )
 
@@ -190,7 +212,9 @@ contains
     call GIS % Close ( )
     call T % Stop ( )
 
+    end associate !-- FS
+
   end subroutine TestFluxes
 
 
-end program FluxSet_Form_Test
+end program FluxSet_CS__Form_Test

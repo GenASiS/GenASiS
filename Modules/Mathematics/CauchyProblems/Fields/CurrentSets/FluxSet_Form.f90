@@ -2,69 +2,82 @@ module FluxSet_Form
 
   use Basics
   use FieldSets
-  use CurrentSet_Form
 
   implicit none
   private
 
-  type, public, extends ( FieldSetForm ) :: FluxSetForm
+  type, public :: FluxSetForm
     integer ( KDI ) :: &
+      IGNORABILITY = 0, &
       iTimer = 0
-    class ( FieldSetForm ), pointer :: &
-      FieldSet_CS => null ( )
-    class ( CurrentSetForm ), pointer :: &
-      CurrentSet => null ( )
+    character ( LDL ) :: &
+      Type = '', &
+      Name
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_FxS
-    generic, public :: &
-      Initialize => InitializeAllocate_FxS
+    procedure, public, pass :: &
+      Initialize_H
+    procedure, public, pass :: &
+      Show => Show_FS
     procedure, public, pass :: &
       Timer
-    procedure, public, pass :: &
+    procedure, public, pass ( FS ) :: &
       Compute
     final :: &
       Finalize
   end type FluxSetForm
 
+  type, public :: FluxSetElement
+    class ( FluxSetForm ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type FluxSetElement
+
 
 contains
 
 
-  subroutine InitializeAllocate_FxS ( FS, CS, FS_CS, PrefixOption )
+  subroutine Initialize_H ( FS, NameOption, IgnorabilityOption )
 
     class ( FluxSetForm ), intent ( inout ) :: &
       FS
-    class ( CurrentSetForm ), intent ( in ), target :: &
-      CS
-    class ( FieldSetForm ), intent ( in ), target :: &
-      FS_CS
     character ( * ), intent ( in ), optional :: &
-      PrefixOption
- 
-    character ( LDL ) :: &
-      Name
+      NameOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    FS % IGNORABILITY  =  CONSOLE % INFO_1
+    if ( present ( IgnorabilityOption ) ) &
+      FS % IGNORABILITY  =  IgnorabilityOption
 
     if ( FS % Type  ==  '' ) &
       FS % Type  =  'a FluxSet' 
     
-    Name  =  'F_' // trim ( FS_CS % Name )
-    if ( present ( PrefixOption ) ) &
-      Name  =  trim ( PrefixOption ) // '_' // trim ( FS_CS % Name )
+    FS % Name  =  'Fluxes'
+    if ( present ( NameOption ) ) &
+      FS % Name  =  NameOption
 
-    FS % FieldSet_CS  =>  FS_CS
-    FS % CurrentSet   =>  CS
+    call Show ( 'Initializing ' // trim ( FS % Type ), FS % IGNORABILITY )
+    call Show ( FS % Name, 'Name', FS % IGNORABILITY )
 
-    call FS % FieldSetForm % Initialize &
-           ( CS % Atlas, &
-             FieldOption = CS % Balanced, &
-             NameOption = Name, &
-             DeviceMemoryOption = CS % DeviceMemory, &
-             DevicesCommunicateOption = CS % DevicesCommunicate, &
-             nFieldsOption = CS % nBalanced, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
+  end subroutine Initialize_H
 
-  end subroutine InitializeAllocate_FxS
+
+  subroutine Show_FS ( FS )
+
+    class ( FluxSetForm ), intent ( in ) :: &
+      FS
+
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( FS % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', FS % IGNORABILITY )
+
+    call Show ( FS % Name, 'Name',  FS % IGNORABILITY )
+
+  end subroutine Show_FS
 
 
   function Timer ( FS, LevelOption ) result ( T )
@@ -97,22 +110,18 @@ contains
   end function Timer
 
 
-  subroutine Compute ( FS, iC, iD )
+  subroutine Compute ( FS_FS, FS_SS, FS, FS_CS, iC, iD )
 
-    class ( FluxSetForm ), intent ( inout ) :: &
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS_FS, &  !-- FluxSet
+      FS_SS     !-- StressSet
+    class ( FluxSetForm ), intent ( in ) :: &
       FS
+    class ( FieldSetForm ), intent ( in ) :: &
+      FS_CS
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
-      iD     !-- iDimensions
-
-    call Show ( 'Computing ' // trim ( FS % Type ), FS % IGNORABILITY + 3 )
-    call Show ( FS % Name, 'Name', FS % IGNORABILITY + 3 )
-
-    associate &
-      ( CS     =>  FS % CurrentSet, &
-        FS_CS  =>  FS % FieldSet_CS )
-    call CS % ComputeFluxes ( FS, FS_CS, iC, iD )
-    end associate !-- CS, etc.
+      iD     !-- iDimension
 
   end subroutine Compute
 
@@ -122,10 +131,21 @@ contains
     type ( FluxSetForm ), intent ( inout ) :: &
       FS
 
-    nullify ( FS % CurrentSet )
-    nullify ( FS % FieldSet_CS )
-
+    call Show ( 'Finalizing ' // trim ( FS % Type ), FS % IGNORABILITY )
+    call Show ( FS % Name, 'Name', FS % IGNORABILITY )
+   
   end subroutine Finalize
+
+
+  impure elemental subroutine Finalize_E ( FSE )
+    
+    type ( FluxSetElement ), intent ( inout ) :: &
+      FSE
+
+    if ( allocated ( FSE % Element ) ) &
+      deallocate ( FSE % Element )
+
+  end subroutine Finalize_E
 
 
 end module FluxSet_Form
