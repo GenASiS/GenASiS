@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( FluxSet_CS__Form ) FluxSet_CS__Kernel
+submodule ( DivergenceContribution_CS__Form ) DivergenceContribution_CS__Kernel
   
   use Basics
   
@@ -9,7 +9,7 @@ submodule ( FluxSet_CS__Form ) FluxSet_CS__Kernel
 contains
 
 
-  module procedure ComputeKernel
+  module procedure ComputeFluxesKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -39,7 +39,7 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure ComputeKernel
+  end procedure ComputeFluxesKernel
 
 
-end submodule FluxSet_CS__Kernel
+end submodule DivergenceContribution_CS__Kernel

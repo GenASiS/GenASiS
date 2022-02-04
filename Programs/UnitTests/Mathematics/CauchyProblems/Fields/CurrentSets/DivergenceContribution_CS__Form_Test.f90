@@ -1,4 +1,4 @@
-program FluxSet_CS__Form_Test
+program DivergenceContribution_CS__Form_Test
 
   use Basics
   use Manifolds
@@ -17,8 +17,7 @@ program FluxSet_CS__Form_Test
   type ( StreamForm ), allocatable :: &
     S
   type ( FieldSetForm ), allocatable :: &
-    FS_FS, &  !-- FieldSet_FluxSet
-    FS_SS     !-- FieldSet_SressSet
+    FS_F  !-- FieldSet_Fluxes
   type ( Geometry_F_Form ), allocatable :: &
     G
   type ( CurrentSetForm ), allocatable :: &
@@ -26,7 +25,7 @@ program FluxSet_CS__Form_Test
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FluxSet_CS__Form_Test', DimensionalityOption = '2D' )
+         ( 'DivergenceContribution_CS__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -48,48 +47,39 @@ program FluxSet_CS__Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( S )
 
-  CS % nFluxSets  =  1
-  allocate ( CS % FluxSet ( 1 ) )
-  allocate ( FluxSet_CS_Form :: CS % FluxSet ( 1 ) % Element )
-  select type ( FS  =>  CS % FluxSet ( 1 ) % Element )
-    class is ( FluxSet_CS_Form )
+  CS % nDivergenceContributions  =  1
+  allocate ( CS % DivergenceContribution ( 1 ) )
+  allocate ( DivergenceContribution_CS_Form &
+             :: CS % DivergenceContribution ( 1 ) % Element )
+  select type ( FS  =>  CS % DivergenceContribution ( 1 ) % Element )
+    class is ( DivergenceContribution_CS_Form )
   call FS % Initialize ( CS )
   end select !-- FS
 
-  allocate ( FS_FS )
-  call FS_FS % Initialize &
+  allocate ( FS_F )
+  call FS_F % Initialize &
          ( A, &
            FieldOption = CS % Balanced, &
            NameOption = 'Fluxes', &
            nFieldsOption = CS % nBalanced )
-  call S % AddFieldSet ( FS_FS )
+  call S % AddFieldSet ( FS_F )
 
-  allocate ( FS_SS )
-  call FS_SS % Initialize &
-         ( A, &
-           FieldOption = CS % Balanced, &
-           NameOption = 'Stresses', &
-           nFieldsOption = CS % nBalanced )
-  call S % AddFieldSet ( FS_SS )
-
-  call     A % Show ( )
-  call     G % Show ( )
-  call    CS % Show ( )
-  call FS_FS % Show ( )
-  call FS_SS % Show ( )
-  call     S % Show ( )
+  call    A % Show ( )
+  call    G % Show ( )
+  call   CS % Show ( )
+  call FS_F % Show ( )
+  call    S % Show ( )
 
   call SetWave ( CS, G )
 
   nCompute  =  1000
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
-  call TestFluxes ( CS, FS_FS, FS_SS, S, iD = 1 )
-  call TestFluxes ( CS, FS_FS, FS_SS, S, iD = 2 )
-  call TestFluxes ( CS, FS_FS, FS_SS, S, iD = 3 )
+  call TestFluxes ( CS, FS_F, S, iD = 1 )
+  call TestFluxes ( CS, FS_F, S, iD = 2 )
+  call TestFluxes ( CS, FS_F, S, iD = 3 )
 
-  deallocate ( FS_SS )
-  deallocate ( FS_FS )
+  deallocate ( FS_F )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( S )
@@ -174,13 +164,12 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestFluxes ( CS, FS_FS, FS_SS, S, iD )
+  subroutine TestFluxes ( CS, FS_F, S, iD )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
     class ( FieldSetForm ), intent ( inout ) :: &
-      FS_FS, &
-      FS_SS
+      FS_F
     class ( StreamForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
@@ -191,17 +180,17 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    associate ( FS  =>  CS % FluxSet ( 1 ) % Element )
+    associate ( DC  =>  CS % DivergenceContribution ( 1 ) % Element )
 
-    call Show ( 'FluxSet_CS computation' )
-    call Show ( FS % Name, 'FluxSet_CS' )
+    call Show ( 'DivergenceContribution_CS computation' )
+    call Show ( DC % Name, 'DivergenceContribution_CS' )
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  FS % Timer ( LevelOption = 1 )
+    T  =>  DC % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call FS % Compute ( FS_FS, FS_SS, CS, iC = 1, iD = iD )
+      call DC % ComputeFluxes ( FS_F, CS, iC = 1, iD = iD )
     end do
     call T % Stop ( )
 
@@ -212,9 +201,9 @@ contains
     call GIS % Close ( )
     call T % Stop ( )
 
-    end associate !-- FS
+    end associate !-- DC
 
   end subroutine TestFluxes
 
 
-end program FluxSet_CS__Form_Test
+end program DivergenceContribution_CS__Form_Test

@@ -3,7 +3,7 @@ module CurrentSet_Form
   use Basics
   use FieldSets
   use Geometries
-  use FluxSet_Form
+  use DivergenceContribution_Form
 
   implicit none
   private
@@ -43,11 +43,11 @@ module CurrentSet_Form
     !-- Geometry
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
-    !-- FluxSets
+    !-- Divergence contributions
     integer ( KDI ) :: &
-      nFluxSets = 0
-    class ( FluxSetElement ), dimension ( : ), allocatable :: &
-      FluxSet
+      nDivergenceContributions = 0
+    class ( DivergenceContributionElement ), dimension ( : ), allocatable :: &
+      DivergenceContribution
   contains
     procedure, private, pass :: &
       InitializeAllocate_CS
@@ -306,8 +306,8 @@ contains
     call Show ( FS % iaBalanced, 'iaBalanced', FS % IGNORABILITY )
     call Show ( FS %   Balanced,   'Balanced', FS % IGNORABILITY )
 
-    do iFS  =  1,  FS % nFluxSets
-      call FS % FluxSet ( iFS ) % Element % Show ( )
+    do iFS  =  1,  FS % nDivergenceContributions
+      call FS % DivergenceContribution ( iFS ) % Element % Show ( )
     end do !-- iFS
 
   end subroutine Show_CS
@@ -400,8 +400,8 @@ contains
 
     nullify ( CS % Geometry )
 
-    if ( allocated ( CS % FluxSet ) ) &
-      deallocate ( CS % FluxSet )
+    if ( allocated ( CS % DivergenceContribution ) ) &
+      deallocate ( CS % DivergenceContribution )
     if ( allocated ( CS % Balanced ) ) &
       deallocate ( CS % Balanced )
     if ( allocated ( CS % Primitive ) ) &
