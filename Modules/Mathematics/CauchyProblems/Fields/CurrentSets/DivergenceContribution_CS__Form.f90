@@ -2,24 +2,40 @@ module DivergenceContribution_CS__Form
 
   use Basics
   use FieldSets
-  use DivergenceContribution_Form
   use CurrentSet_Form
 
   implicit none
   private
 
-  type, public, extends ( DivergenceContributionForm ) :: &
-    DivergenceContribution_CS_Form
-      class ( CurrentSetForm ), pointer :: &
-        CurrentSet => null ( )
+  type, public :: DivergenceContribution_CS_Form
+    integer ( KDI ) :: &
+      IGNORABILITY = 0, &
+      iTimer = 0
+    character ( LDL ) :: &
+      Type = '', &
+      Name
+    class ( CurrentSetForm ), pointer :: &
+      CurrentSet => null ( )
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      Show => Show_DC
+    procedure, public, pass :: &
+      Timer
     procedure, public, pass ( DC ) :: &
       ComputeFluxes
     final :: &
       Finalize
   end type DivergenceContribution_CS_Form
+
+  type, public :: DivergenceContributionElement
+    class ( DivergenceContribution_CS_Form ), allocatable :: &
+      Element
+  contains
+    final :: &
+      Finalize_E
+  end type DivergenceContributionElement
 
     interface
 
@@ -52,14 +68,70 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    DC % IGNORABILITY  =  CS % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      DC % IGNORABILITY  =  IgnorabilityOption
+
     if ( DC % Type  ==  '' ) &
       DC % Type  =  'a DivergenceContribution_CS' 
 
-    call DC % Initialize_H ( NameOption, IgnorabilityOption )
- 
+    DC % Name  =  'DivergenceContribution'
+    if ( present ( NameOption ) ) &
+      DC % Name  =  NameOption
+
+    call Show ( 'Initializing ' // trim ( DC % Type ), DC % IGNORABILITY )
+    call Show ( DC % Name, 'Name', DC % IGNORABILITY )
+
     DC % CurrentSet  =>  CS
 
   end subroutine Initialize
+
+
+  subroutine Show_DC ( DC )
+
+    class ( DivergenceContribution_CS_Form ), intent ( in ) :: &
+      DC
+
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( DC % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', DC % IGNORABILITY )
+
+    call Show ( DC % Name, 'Name', DC % IGNORABILITY )
+    call Show ( DC % CurrentSet % Name, 'CurrentSet', DC % IGNORABILITY )
+
+  end subroutine Show_DC
+
+
+  function Timer ( DC, LevelOption ) result ( T )
+
+    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
+      DC
+    integer ( KDI ), intent ( in ), optional :: &
+      LevelOption
+    type ( TimerForm ), pointer :: &
+      T
+
+    character ( LDL ) :: &
+      TimerName
+
+    associate ( iT  =>  DC % iTimer )
+
+    if ( iT == 0 ) then
+      TimerName  =  DC % Name
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+
+    end associate !-- iT
+
+  end function Timer
 
 
   subroutine ComputeFluxes ( FS_F, DC, FS_CS, iC, iD )
@@ -109,7 +181,21 @@ contains
     type ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
       DC
 
+    call Show ( 'Finalizing ' // trim ( DC % Type ), DC % IGNORABILITY )
+    call Show ( DC % Name, 'Name', DC % IGNORABILITY )
+   
   end subroutine Finalize
+
+
+  impure elemental subroutine Finalize_E ( DCE )
+    
+    type ( DivergenceContributionElement ), intent ( inout ) :: &
+      DCE
+
+    if ( allocated ( DCE % Element ) ) &
+      deallocate ( DCE % Element )
+
+  end subroutine Finalize_E
 
 
 end module DivergenceContribution_CS__Form

@@ -1,13 +1,7 @@
-DivergenceContribution_Form.o: \
-  Basics.o \
-  FieldSets.o \
-  DivergenceContribution_Form.f90
-
 CurrentSet_Form.o: \
   Basics.o \
   FieldSets.o \
   Geometries.o \
-  DivergenceContribution_Form.o \
   CurrentSet_Form.f90
 
 CurrentSet_Kernel.o: \
@@ -18,7 +12,6 @@ CurrentSet_Kernel.o: \
 DivergenceContribution_CS__Form.o: \
   Basics.o \
   FieldSets.o \
-  DivergenceContribution_Form.o \
   CurrentSet_Form.o \
   DivergenceContribution_CS__Form.f90
 
@@ -29,7 +22,6 @@ EigenspeedSet_F__Form.o: \
   EigenspeedSet_F__Form.f90
 
 CurrentSets.o: \
-  DivergenceContribution_Form.o \
   CurrentSet_Form.o \
   DivergenceContribution_CS__Form.o \
   EigenspeedSet_F__Form.o \
