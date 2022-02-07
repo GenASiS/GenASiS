@@ -9,7 +9,52 @@ submodule ( RiemannSolver_HLL__Form ) RiemannSolver_HLL__Kernel
 contains
 
 
-  module procedure ComputeKernel
+  module procedure ComputeAlphaKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( RSV, dim = 1 )
+    
+    associate &
+      ( AP_I => RSV ( :, iAP ), &
+        AM_I => RSV ( :, iAM ) )
+    
+    if ( UseDevice ) then
+    
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV  =  1,  nV
+        AP_I ( iV )  =  max ( 0.0_KDR, + EP_IL ( iV ), + EP_IR ( iV ) )
+        AM_I ( iV )  =  max ( 0.0_KDR, - EM_IL ( iV ), - EM_IR ( iV ) )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    else
+
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV  =  1,  nV
+        AP_I ( iV )  =  max ( 0.0_KDR, + EP_IL ( iV ), + EP_IR ( iV ) )
+        AM_I ( iV )  =  max ( 0.0_KDR, - EM_IL ( iV ), - EM_IR ( iV ) )
+      end do
+      !$OMP end parallel do
+    
+    end if
+    
+    end associate   !-- AP_I, AM_I
+
+  end procedure ComputeAlphaKernel
+
+
+  module procedure ComputeFluxesKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -41,15 +86,6 @@ contains
     
     if ( UseDevice ) then
     
-      !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV  =  1,  nV
-        AP_I ( iV )  =  max ( 0.0_KDR, + EP_IL ( iV ), + EP_IR ( iV ) )
-        AM_I ( iV )  =  max ( 0.0_KDR, - EM_IL ( iV ), - EM_IR ( iV ) )
-      end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-      
-    
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP private ( iF_B, iF_F ) firstprivate ( SqrtTiny )
@@ -72,14 +108,6 @@ contains
     
     else
 
-      !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iV  =  1,  nV
-        AP_I ( iV )  =  max ( 0.0_KDR, + EP_IL ( iV ), + EP_IR ( iV ) )
-        AM_I ( iV )  =  max ( 0.0_KDR, - EM_IL ( iV ), - EM_IR ( iV ) )
-      end do
-      !$OMP end parallel do
-    
       !$OMP parallel do collapse ( 2 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP private ( iF_B, iF_F ) firstprivate ( SqrtTiny )
@@ -124,66 +152,66 @@ contains
     
     end associate   !-- F_I, AP_I, AM_I
 
-  end procedure ComputeKernel
+  end procedure ComputeFluxesKernel
 
 
-  module procedure ComputeAbundancesKernel
+!   module procedure ComputeAbundancesKernel
 
-    integer ( KDI ) :: &
-      iV, &
-      iF, &
-      iF_A, &
-      iF_AF, &
-      nV, &
-      nF
-    real ( KDR ) :: &
-      Y
-    logical ( KDL ) :: &
-      UseDevice      
+!     integer ( KDI ) :: &
+!       iV, &
+!       iF, &
+!       iF_A, &
+!       iF_AF, &
+!       nV, &
+!       nF
+!     real ( KDR ) :: &
+!       Y
+!     logical ( KDL ) :: &
+!       UseDevice      
           
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
+!     UseDevice = .false.
+!     if ( present ( UseDeviceOption ) ) &
+!       UseDevice = UseDeviceOption
       
-    nV  =  size ( RSV, dim = 1 )
-    nF  =  size ( iaA )
+!     nV  =  size ( RSV, dim = 1 )
+!     nF  =  size ( iaA )
 
-    associate &
-      ( F_I  => RSV, &
-        AP_I => RSV ( :, iAP ), &
-        AM_I => RSV ( :, iAM ) )
+!     associate &
+!       ( F_I  => RSV, &
+!         AP_I => RSV ( :, iAP ), &
+!         AM_I => RSV ( :, iAM ) )
 
-    if ( UseDevice ) then
+!     if ( UseDevice ) then
 
-    else
+!     else
 
-      !$OMP parallel do collapse ( 2 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( iF_A, iF_AF, Y )
-      do iF  =  1,  nF
-        do iV  =  1,  nV
+!       !$OMP parallel do collapse ( 2 ) &
+!       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+!       !$OMP private ( iF_A, iF_AF, Y )
+!       do iF  =  1,  nF
+!         do iV  =  1,  nV
 
-          iF_A   =  iaA  ( iF )
-          iF_AF  =  iaAF ( iF )
+!           iF_A   =  iaA  ( iF )
+!           iF_AF  =  iaAF ( iF )
 
-          Y  =  (    AP_I ( iV )  *  CS_IL ( iV, iF_A ) &
-                  +  AM_I ( iV )  *  CS_IR ( iV, iF_A ) ) &
-                /  ( AP_I ( iV )  +  AM_I ( iV ) )
+!           Y  =  (    AP_I ( iV )  *  CS_IL ( iV, iF_A ) &
+!                   +  AM_I ( iV )  *  CS_IR ( iV, iF_A ) ) &
+!                 /  ( AP_I ( iV )  +  AM_I ( iV ) )
                
-!call Show ( iV, '>>> iV' )
-!call Show ( F_I ( iV, iF_AF ), '>>> NE Flux before' )
-          F_I ( iV, iF_AF )  =  Y  *  F_I ( iV, iFDF )
-!call Show ( F_I ( iV, iF_AF ), '>>> NE Flux after' )
+! !call Show ( iV, '>>> iV' )
+! !call Show ( F_I ( iV, iF_AF ), '>>> NE Flux before' )
+!           F_I ( iV, iF_AF )  =  Y  *  F_I ( iV, iFDF )
+! !call Show ( F_I ( iV, iF_AF ), '>>> NE Flux after' )
 
-        end do
-      end do
-      !$OMP end parallel do
+!         end do
+!       end do
+!       !$OMP end parallel do
 
-    end if
+!     end if
 
-    end associate   !-- F_I, AP_I, AM_I
+!     end associate   !-- F_I, AP_I, AM_I
 
-  end procedure ComputeAbundancesKernel
+!   end procedure ComputeAbundancesKernel
 
 
 end submodule RiemannSolver_HLL__Kernel

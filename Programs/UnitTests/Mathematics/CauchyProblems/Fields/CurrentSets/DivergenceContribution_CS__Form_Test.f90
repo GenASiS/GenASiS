@@ -51,9 +51,9 @@ program DivergenceContribution_CS__Form_Test
   allocate ( CS % DivergenceContribution ( 1 ) )
   allocate ( DivergenceContribution_CS_Form &
              :: CS % DivergenceContribution ( 1 ) % Element )
-  select type ( FS  =>  CS % DivergenceContribution ( 1 ) % Element )
+  select type ( DC  =>  CS % DivergenceContribution ( 1 ) % Element )
     class is ( DivergenceContribution_CS_Form )
-  call FS % Initialize ( CS )
+  call DC % Initialize ( CS )
   end select !-- FS
 
   allocate ( FS_F )

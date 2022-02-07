@@ -56,6 +56,15 @@ program RiemannSolver_HLL__Form_Test
   call CS % Initialize( G )
   call CS % SetStream ( S )
 
+  CS % nDivergenceContributions  =  1
+  allocate ( CS % DivergenceContribution ( 1 ) )
+  allocate ( DivergenceContribution_CS_Form &
+             :: CS % DivergenceContribution ( 1 ) % Element )
+  select type ( DC  =>  CS % DivergenceContribution ( 1 ) % Element )
+    class is ( DivergenceContribution_CS_Form )
+  call DC % Initialize ( CS )
+  end select !-- FS
+
   allocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call RS % Initialize ( CS )
@@ -194,7 +203,8 @@ contains
     T  =>  RS % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call RS % Compute ( iC = 1, iD = iD, T_Option = T )
+      call RS % Prepare ( iC = 1, iD = iD, T_Option = T )
+      call RS % Compute ( iDC = 1, iC = 1, iD = iD, T_Option = T )
     end do
     call T % Stop ( )
 
@@ -220,11 +230,16 @@ contains
     call RS % SetStream ( S_SD, nS = 1 )  !-- nStages = 1
     call CONSOLE % SetVerbosity ( 'INFO_1' )
 
-    call RS % Compute ( iC = 1, iD = 1, iS_Option = 1 )
-    if ( nD  >  1 )  &
-      call RS % Compute ( iC = 1, iD = 2, iS_Option = 1 )
-    if ( nD  >  2 )  &
-      call RS % Compute ( iC = 1, iD = 3, iS_Option = 1 )
+    call RS % Prepare ( iC = 1, iD = 1, iS_Option = 1 )
+    call RS % Compute ( iDC = 1, iC = 1, iD = 1, iS_Option = 1 )
+    if ( nD  >  1 ) then
+      call RS % Prepare ( iC = 1, iD = 2, iS_Option = 1 )
+      call RS % Compute ( iDC = 1, iC = 1, iD = 2, iS_Option = 1 )
+    end if
+    if ( nD  >  2 ) then
+      call RS % Prepare ( iC = 1, iD = 3, iS_Option = 1 )
+      call RS % Compute ( iDC = 1, iC = 1, iD = 3, iS_Option = 1 )
+    end if
 
     call GIS_SD % Open ( GIS_SD % ACCESS_CREATE )
     call S_SD % Write ( )

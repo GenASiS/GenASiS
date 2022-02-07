@@ -52,6 +52,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    if ( DC % Type  ==  '' ) &
+      DC % Type  =  'a DivergenceContribution_CS' 
+
     call DC % Initialize_H ( NameOption, IgnorabilityOption )
  
     DC % CurrentSet  =>  CS
