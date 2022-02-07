@@ -15,8 +15,6 @@ module Slope_DFV_C_F__Form
       iTimerKernel = 0
     type ( FieldSetForm ), allocatable :: &
       Stress_UD
-    class ( CurrentSetForm ), pointer :: &
-      CurrentSet => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_C_F
@@ -26,8 +24,10 @@ module Slope_DFV_C_F__Form
       TimerKernel
     procedure, public, pass :: &
       CloneTimers
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      Compute_C_F
+    generic, public :: &
+      Compute => Compute_C_F
     final :: &
       Finalize
   end type Slope_DFV_C_F_Form
@@ -102,8 +102,6 @@ contains
     Name  =  'S_DFV_C_F_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
-
-    S % CurrentSet  =>  CS
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -181,10 +179,12 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine Compute_C_F ( S, DC, T_Option, iS_Option )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
+    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
+      DC
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
@@ -208,9 +208,9 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
-      ( CS     =>  S % CurrentSet, &
-         S_UD  =>  S % Stress_UD, &
-         G     =>  S % CurrentSet % Geometry )
+      ( CS     =>  DC % CurrentSet, &
+         S_UD  =>   S % Stress_UD, &
+         G     =>  DC % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
       T_K  =>   S % TimerKernel ( LevelOption = T_Option % Level + 1 )
@@ -226,7 +226,7 @@ contains
        
       associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
 
-      call CS % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+      call DC % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
 
       if ( associated ( T_K ) ) call T_K % Start ( )
 
@@ -274,7 +274,7 @@ contains
 
     end associate !-- CS, etc.
 
-  end subroutine Compute
+  end subroutine Compute_C_F
 
 
   impure elemental subroutine Finalize ( S )
@@ -282,8 +282,6 @@ contains
     type ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
 
-    nullify ( S % CurrentSet )
-    
     if ( allocated ( S % Stress_UD ) ) &
       deallocate ( S % Stress_UD )
 

@@ -1,5 +1,7 @@
 SLOPES = \
   Slopes.o \
+  Slope_DFV_C_F__Kernel.o \
+  Slope_DFV_C_F__Form.o \
   Slope_DFV_PD__Kernel.o \
   Slope_DFV_PD__Form.o \
   Slope_H__Form.o \
@@ -8,5 +10,3 @@ SLOPES = \
   Reconstruction_Kernel.o \
   Reconstruction_Form.o
   # Slope_DFV_F__Form.o \
-  # Slope_DFV_C_F__Kernel.o \
-  # Slope_DFV_C_F__Form.o \

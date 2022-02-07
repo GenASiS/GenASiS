@@ -25,6 +25,8 @@ module DivergenceContribution_CS__Form
       Timer
     procedure, public, pass ( DC ) :: &
       ComputeFluxes
+    procedure, public, pass ( DC ) :: &
+      ComputeStresses
     final :: &
       Finalize
   end type DivergenceContribution_CS_Form
@@ -174,6 +176,25 @@ contains
     end associate !-- CS
 
   end subroutine ComputeFluxes
+
+
+  subroutine ComputeStresses ( S_UD, DC, iC, iMomentum_1, iMomentum_2 )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      S_UD
+    class ( DivergenceContribution_CS_Form ), intent ( in ) :: &
+      DC
+    integer ( KDI ), intent ( in ) :: &
+      iC  !-- iChart
+    integer ( KDI ), intent ( out ) :: &
+      iMomentum_1, iMomentum_2
+
+    call Show ( 'ComputeStresses should be overridden', CONSOLE % WARNING )
+    call Show ( 'DivergenceContribution_CS__Form', 'module', CONSOLE % WARNING )
+
+    call S_UD % Clear ( )
+
+  end subroutine ComputeStresses
 
 
   impure elemental subroutine Finalize ( DC )

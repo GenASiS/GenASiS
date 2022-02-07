@@ -14,8 +14,6 @@ module Slope_DFV_PD__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
       iTimerKernel = 0
-    class ( CurrentSetForm ), pointer :: &
-      CurrentSet => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
       RiemannSolver => null ( )
   contains
@@ -79,8 +77,8 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_DFV_PD' 
-    
+      S % Type  =  'a Slope_DFV_PD'
+
     if ( S % TimerName  ==  '' ) &
       S % TimerName  =  'S_DFV_PD_' // trim ( RS % CurrentSet % Name )
 
@@ -88,7 +86,6 @@ contains
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
-    S % CurrentSet     =>  RS % CurrentSet
     S % RiemannSolver  =>  RS
 
     associate ( CS  =>  RS % CurrentSet )
@@ -189,7 +186,7 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
-         G  =>  S % CurrentSet % Geometry )
+         G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
       T_RS  =>  RS % Timer       ( LevelOption = T_Option % Level + 1 )
@@ -269,7 +266,6 @@ contains
       S
 
     nullify ( S % RiemannSolver )
-    nullify ( S % CurrentSet )
     
   end subroutine Finalize
 
