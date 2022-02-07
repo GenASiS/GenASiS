@@ -27,8 +27,10 @@ module Slope_DFV_PD__Form
       TimerKernel
     procedure, public, pass :: &
       CloneTimers
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      Compute_PD
+    generic, public :: &
+      Compute => Compute_PD
     final :: &
       Finalize
   end type Slope_DFV_PD_Form
@@ -158,10 +160,12 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine Compute_PD ( S, DC, T_Option, iS_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
+    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
+      DC
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
@@ -207,11 +211,11 @@ contains
         if ( associated ( T_RS ) ) then
           call T_RS % Start ( )
           call RS % Compute &
-                 ( iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+                 ( DC, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
           call T_RS % Stop ( )
         else
           call RS % Compute &
-                 ( iC, iD, iS_Option = iS_Option )
+                 ( DC, iC, iD, iS_Option = iS_Option )
         end if
 
         if ( associated ( T_K ) ) call T_K % Start ( )
@@ -256,7 +260,7 @@ contains
     end do !-- iC
     end associate !-- RS, etc.
 
-  end subroutine Compute
+  end subroutine Compute_PD
 
 
   impure elemental subroutine Finalize ( S )

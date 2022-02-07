@@ -63,8 +63,8 @@ Slopes.o: \
   Reconstruction_Form.o \
   RiemannSolver_HLL__Form.o \
   Slope_H__Form.o \
+  Slope_DFV_PD__Form.o \
   Slopes.f90
-  # Slope_DFV_PD__Form.o \
   # Slope_DFV_C_F__Form.o \
   # Slope_DFV_F__Form.o \
 

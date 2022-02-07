@@ -18,6 +18,8 @@ module Slope_H__Form
     integer ( KDI ) :: &
       iTimer            = 0, &
       iTimerMultiplyAdd = 0
+    logical ( KDL ) :: &
+      StreamComponents = .true.
     character ( LDL ) :: &
       TimerName = ''
     type ( Slope_H_Element ), dimension ( : ), pointer :: &
@@ -35,8 +37,10 @@ module Slope_H__Form
       TimerMultiplyAdd
     procedure, public, pass :: &
       CloneTimers
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      Compute_H
+    generic, public :: &
+      Compute => Compute_H
     procedure, public, pass :: &
       ClearRecursive
     procedure, public, pass :: &
@@ -122,6 +126,9 @@ contains
       iC
 
     call Sm % AddFieldSet ( S )
+
+    if ( .not. S % StreamComponents ) &
+      return
 
     do iC  =  1, S % nComponents
       associate ( SC  =>  S % Component ( iC ) % Element )
@@ -244,7 +251,7 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine Compute_H ( S, T_Option, iS_Option )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
@@ -303,7 +310,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-  end subroutine Compute
+  end subroutine Compute_H
 
 
   subroutine ClearRecursive ( S )
