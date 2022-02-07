@@ -689,12 +689,13 @@ contains
   end subroutine Prepare
 
 
-  subroutine Compute ( RS, iDC, iC, iD, T_Option, iS_Option )
+  subroutine Compute ( RS, DC, iC, iD, T_Option, iS_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
+         RS
+    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
+      DC
     integer ( KDI ), intent ( in ) :: &
-      iDC, &  !-- iDivergenceContribution
       iC, &   !-- iChart
       iD      !-- iDimensions
     type ( TimerForm ), intent ( in ), optional :: &
@@ -719,8 +720,6 @@ contains
          ES_IL  =>  RS % EigenspeedSet_IL, &
          ES_IR  =>  RS % EigenspeedSet_IR, &
         RPS     =>  RS % Reconstruction_PS )
-    associate &
-      ( DC  =>  CS % DivergenceContribution ( iDC ) % Element )
 
     if ( present ( T_Option ) ) then
       T_F   =>   DC % Timer   ( LevelOption = T_Option % Level + 1 )
@@ -770,7 +769,6 @@ contains
     end associate !-- RSV, etc.
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-    end associate !-- DC
     end associate !-- CS, etc.
 
     if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
