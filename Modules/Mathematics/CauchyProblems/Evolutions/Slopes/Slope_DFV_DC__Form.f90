@@ -1,6 +1,6 @@
-module Slope_DFV_F__Form
+module Slope_DFV_DC__Form
 
-  !-- Slope_DivergenceFiniteVolume_Flat__Form
+  !-- Slope_DivergenceFiniteVolume_DivergenceContribution__Form
 
   use Basics
   use RiemannSolver_HLL__Form
@@ -11,7 +11,7 @@ module Slope_DFV_F__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_Form ) :: Slope_DFV_F_Form
+  type, public, extends ( Slope_H_Form ) :: Slope_DFV_DC_Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
@@ -19,7 +19,7 @@ module Slope_DFV_F__Form
       Initialize => InitializeAllocate_F
     final :: &
       Finalize
-  end type Slope_DFV_F_Form
+  end type Slope_DFV_DC_Form
 
 
 contains
@@ -27,7 +27,7 @@ contains
 
   subroutine InitializeAllocate_F ( S, RS, SuffixOption, IgnorabilityOption )
 
-    class ( Slope_DFV_F_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       RS
@@ -40,12 +40,12 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_DFV_F'
+      S % Type  =  'a Slope_DFV_DC'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_F_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  'S_DFV_DC_' // trim ( RS % CurrentSet % Name )
 
-    Name  =  'S_DFV_F_' // trim ( RS % CurrentSet % Name )
+    Name  =  'S_DFV_DC_' // trim ( RS % CurrentSet % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -88,10 +88,10 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Slope_DFV_F_Form ), intent ( inout ) :: &
+    type ( Slope_DFV_DC_Form ), intent ( inout ) :: &
       S
 
   end subroutine Finalize
 
 
-end module Slope_DFV_F__Form
+end module Slope_DFV_DC__Form

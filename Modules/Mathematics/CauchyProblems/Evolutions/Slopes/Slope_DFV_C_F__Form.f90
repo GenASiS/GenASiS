@@ -15,6 +15,8 @@ module Slope_DFV_C_F__Form
       iTimerKernel = 0
     type ( FieldSetForm ), allocatable :: &
       Stress_UD
+    class ( DivergenceContribution_CS_Form ), pointer :: &
+      DivergenceContribution => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_C_F
@@ -24,10 +26,8 @@ module Slope_DFV_C_F__Form
       TimerKernel
     procedure, public, pass :: &
       CloneTimers
-    procedure, private, pass :: &
-      Compute_C_F
-    generic, public :: &
-      Compute => Compute_C_F
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Slope_DFV_C_F_Form
@@ -79,12 +79,12 @@ module Slope_DFV_C_F__Form
 contains
 
 
-  subroutine InitializeAllocate_C_F ( S, CS, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_C_F ( S, DC, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
-    class ( CurrentSetForm ), intent ( in ), target :: &
-      CS
+    class ( DivergenceContribution_CS_Form ), intent ( in ), target :: &
+      DC
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -97,11 +97,15 @@ contains
       S % Type  =  'a Slope_DFV_C_F' 
     
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_C_F_' // trim ( CS % Name )
+      S % TimerName  =  'S_DFV_C_F_' // trim ( DC % Name )
 
-    Name  =  'S_DFV_C_F_' // trim ( CS % Name )
+    Name  =  'S_DFV_C_F_' // trim ( DC % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
+
+    S % DivergenceContribution  =>  DC
+
+    associate ( CS  =>  DC % CurrentSet )
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -123,6 +127,8 @@ contains
              nFieldsOption = 2, &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     end associate !-- S_UD
+
+    end associate !-- CS
 
   end subroutine InitializeAllocate_C_F
 
@@ -179,12 +185,10 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute_C_F ( S, DC, T_Option, iS_Option )
+  subroutine Compute ( S, T_Option, iS_Option )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
-    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
-      DC
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
@@ -208,9 +212,10 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
-      ( CS     =>  DC % CurrentSet, &
-         S_UD  =>   S % Stress_UD, &
-         G     =>  DC % CurrentSet % Geometry )
+      ( DC  =>  S % DivergenceContribution ) 
+    associate &
+      ( S_UD  =>   S % Stress_UD, &
+        G     =>  DC % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
       T_K  =>   S % TimerKernel ( LevelOption = T_Option % Level + 1 )
@@ -272,15 +277,18 @@ contains
 
     end do !-- iC
 
-    end associate !-- CS, etc.
+    end associate !-- S_UD, etc.
+    end associate !-- DC
 
-  end subroutine Compute_C_F
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( S )
 
     type ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
+
+    nullify ( S % DivergenceContribution )
 
     if ( allocated ( S % Stress_UD ) ) &
       deallocate ( S % Stress_UD )

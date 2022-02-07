@@ -14,6 +14,8 @@ module Slope_DFV_PD__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
       iTimerKernel = 0
+    class ( DivergenceContribution_CS_Form ), pointer :: &
+      DivergenceContribution => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
       RiemannSolver => null ( )
   contains
@@ -25,10 +27,8 @@ module Slope_DFV_PD__Form
       TimerKernel
     procedure, public, pass :: &
       CloneTimers
-    procedure, private, pass :: &
-      Compute_PD
-    generic, public :: &
-      Compute => Compute_PD
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Slope_DFV_PD_Form
@@ -62,12 +62,15 @@ module Slope_DFV_PD__Form
 contains
 
 
-  subroutine InitializeAllocate_PD ( S, RS, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_PD &
+               ( S, RS, DC, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
+    class ( DivergenceContribution_CS_Form ), intent ( in ), target :: &
+      DC
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -80,13 +83,14 @@ contains
       S % Type  =  'a Slope_DFV_PD'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_PD_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  'S_DFV_PD_' // trim ( DC % Name )
 
-    Name  =  'S_DFV_PD_' // trim ( RS % CurrentSet % Name )
+    Name  =  'S_DFV_PD_' // trim ( DC % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
-    S % RiemannSolver  =>  RS
+    S % DivergenceContribution  =>  DC
+    S % RiemannSolver           =>  RS
 
     associate ( CS  =>  RS % CurrentSet )
 
@@ -157,12 +161,10 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute_PD ( S, DC, T_Option, iS_Option )
+  subroutine Compute ( S, T_Option, iS_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
-    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
-      DC
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
@@ -186,6 +188,7 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
+        DC  =>  S % DivergenceContribution, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
@@ -257,7 +260,7 @@ contains
     end do !-- iC
     end associate !-- RS, etc.
 
-  end subroutine Compute_PD
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( S )
@@ -265,6 +268,7 @@ contains
     type ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
 
+    nullify ( S % DivergenceContribution )
     nullify ( S % RiemannSolver )
     
   end subroutine Finalize

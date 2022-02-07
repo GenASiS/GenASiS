@@ -37,10 +37,8 @@ module Slope_H__Form
       TimerMultiplyAdd
     procedure, public, pass :: &
       CloneTimers
-    procedure, private, pass :: &
-      Compute_H
-    generic, public :: &
-      Compute => Compute_H
+    procedure, public, pass :: &
+      Compute
     procedure, public, pass :: &
       ClearRecursive
     procedure, public, pass :: &
@@ -251,7 +249,7 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute_H ( S, T_Option, iS_Option )
+  subroutine Compute ( S, T_Option, iS_Option )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
@@ -310,7 +308,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-  end subroutine Compute_H
+  end subroutine Compute
 
 
   subroutine ClearRecursive ( S )
