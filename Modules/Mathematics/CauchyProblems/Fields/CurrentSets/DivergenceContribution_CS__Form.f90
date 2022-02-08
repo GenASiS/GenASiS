@@ -22,7 +22,7 @@ module DivergenceContribution_CS__Form
     procedure, public, pass :: &
       Show => Show_DC
     procedure, public, pass :: &
-      Timer
+      Timer_F
     procedure, public, pass ( DC ) :: &
       ComputeFluxes
     procedure, public, pass ( DC ) :: &
@@ -77,7 +77,7 @@ contains
     if ( DC % Type  ==  '' ) &
       DC % Type  =  'a DivergenceContribution_CS' 
 
-    DC % Name  =  'DivergenceContribution'
+    DC % Name  =  'CS_V'
     if ( present ( NameOption ) ) &
       DC % Name  =  NameOption
 
@@ -106,7 +106,7 @@ contains
   end subroutine Show_DC
 
 
-  function Timer ( DC, LevelOption ) result ( T )
+  function Timer_F ( DC, LevelOption ) result ( T )
 
     class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
       DC
@@ -121,7 +121,8 @@ contains
     associate ( iT  =>  DC % iTimer )
 
     if ( iT == 0 ) then
-      TimerName  =  DC % Name
+      TimerName  &
+        =  'F_' // trim ( DC % Name ) // '_' // trim ( DC % CurrentSet % Name )
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -133,7 +134,7 @@ contains
 
     end associate !-- iT
 
-  end function Timer
+  end function Timer_F
 
 
   subroutine ComputeFluxes ( FS_F, DC, FS_CS, iC, iD )
@@ -188,9 +189,6 @@ contains
       iC  !-- iChart
     integer ( KDI ), intent ( out ) :: &
       iMomentum_1, iMomentum_2
-
-    call Show ( 'ComputeStresses should be overridden', CONSOLE % WARNING )
-    call Show ( 'DivergenceContribution_CS__Form', 'module', CONSOLE % WARNING )
 
     call S_UD % Clear ( )
 

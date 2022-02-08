@@ -17,7 +17,7 @@ module Slope_H__Form
       nComponents = 0
     integer ( KDI ) :: &
       iTimer            = 0, &
-      iTimerMultiplyAdd = 0
+      iTimer_MA = 0
     logical ( KDL ) :: &
       StreamComponents = .true.
     character ( LDL ) :: &
@@ -34,11 +34,13 @@ module Slope_H__Form
     procedure, public, pass :: &
       Timer
     procedure, private, pass :: &
-      TimerMultiplyAdd
+      Timer_MA
     procedure, public, pass :: &
       CloneTimers
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      AddComponents
     procedure, public, pass :: &
       ClearRecursive
     procedure, public, pass :: &
@@ -193,7 +195,7 @@ contains
   end function Timer
 
 
-  function TimerMultiplyAdd ( S, LevelOption ) result ( T )
+  function Timer_MA ( S, LevelOption ) result ( T )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
@@ -205,10 +207,10 @@ contains
     character ( LDL ) :: &
       TimerName
 
-    associate ( iT  =>  S % iTimerMultiplyAdd )
+    associate ( iT  =>  S % iTimer_MA )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % TimerName ) // '_MltplyAdd' 
+      TimerName  =  trim ( S % TimerName ) // '_MA' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -220,7 +222,7 @@ contains
 
     end associate !-- iT
 
-  end function TimerMultiplyAdd
+  end function Timer_MA
 
 
   subroutine CloneTimers ( S, S_S )
@@ -233,8 +235,8 @@ contains
     integer ( KDI ) :: &
       iC  !-- iComponent
 
-    S % iTimer             =  S_S % iTimer
-    S % iTimerMultiplyAdd  =  S_S % iTimerMultiplyAdd
+    S % iTimer     =  S_S % iTimer
+    S % iTimer_MA  =  S_S % iTimer_MA
 
     call S % CloneGhostTimers ( S_S )
 
@@ -261,23 +263,12 @@ contains
     integer ( KDI ) :: &
       iC  !-- iComponent
     type ( TimerForm ), pointer :: &
-      T_MA, &
       T_C
 
     call Show ( 'Computing a Slope_H', S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     if ( S % nComponents  >  0 ) then
-
-      if ( present ( T_Option ) ) then
-        T_MA  =>  S % TimerMultiplyAdd ( LevelOption = T_Option % Level + 1 )
-      else
-        T_MA  =>  null ( )
-      end if
-    
-      if ( associated ( T_MA ) ) call T_MA % Start ( )
-      call S % Clear ( )
-      if ( associated ( T_MA ) ) call T_MA % Stop ( )
 
       do iC  =  1, S % nComponents
         associate &
@@ -292,12 +283,10 @@ contains
           call SC % Compute ( iS_Option = iS_Option )
         end if
 
-        if ( associated ( T_MA ) ) call T_MA % Start ( )
-        call S % MultiplyAdd ( SC, 1.0_KDR )
-        if ( associated ( T_MA ) ) call T_MA % Stop ( )
-
         end associate !-- SC
       end do !-- iC
+
+      call S % AddComponents ( T_Option )
 
     else
       call Show ( 'Slope has no components', CONSOLE % ERROR )
@@ -309,6 +298,49 @@ contains
     end if
 
   end subroutine Compute
+
+
+  subroutine AddComponents ( S, T_Option )
+
+    class ( Slope_H_Form ), intent ( inout ) :: &
+      S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iC  !-- iComponent
+    type ( TimerForm ), pointer :: &
+      T_MA
+
+    call Show ( 'Adding components of a Slope_H', S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+
+    if ( S % nComponents  >  0 ) then
+
+      if ( present ( T_Option ) ) then
+        T_MA  =>  S % Timer_MA ( LevelOption = T_Option % Level + 1 )
+      else
+        T_MA  =>  null ( )
+      end if
+    
+      if ( associated ( T_MA ) ) call T_MA % Start ( )
+      call S % Clear ( )
+      if ( associated ( T_MA ) ) call T_MA % Stop ( )
+
+      do iC  =  1, S % nComponents
+        associate &
+          ( SC  =>  S % Component ( iC ) % Element )
+
+        if ( associated ( T_MA ) ) call T_MA % Start ( )
+        call S % MultiplyAdd ( SC, 1.0_KDR )
+        if ( associated ( T_MA ) ) call T_MA % Stop ( )
+
+        end associate !-- SC
+      end do !-- iC
+
+    end if
+
+  end subroutine AddComponents
 
 
   subroutine ClearRecursive ( S )

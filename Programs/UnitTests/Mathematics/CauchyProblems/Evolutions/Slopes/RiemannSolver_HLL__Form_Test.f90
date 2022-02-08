@@ -198,13 +198,19 @@ contains
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  RS % Timer ( LevelOption = 1 )
-    call T % Start ( )
     do iC  =  1,  nCompute
+
+      T  =>  RS % Timer_P ( LevelOption = 1 )
+      call T % Start ( )
       call RS % Prepare ( iC = 1, iD = iD, T_Option = T )
+      call T % Stop ( )
+
+      T  =>  RS % Timer_C ( LevelOption = 1 )
+      call T % Start ( )
       call RS % Compute ( DC, iC = 1, iD = iD, T_Option = T )
+      call T % Stop ( )
+
     end do
-    call T % Stop ( )
 
     T  =>  S % TimerWrite ( LevelOption = 1 )
     call T % Start ( )

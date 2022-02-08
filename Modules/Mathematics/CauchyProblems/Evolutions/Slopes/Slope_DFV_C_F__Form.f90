@@ -12,7 +12,7 @@ module Slope_DFV_C_F__Form
 
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_C_F_Form
     integer ( KDI ) :: &
-      iTimerKernel = 0
+      iTimer_K = 0
     type ( FieldSetForm ), allocatable :: &
       Stress_UD
     class ( DivergenceContribution_CS_Form ), pointer :: &
@@ -23,11 +23,11 @@ module Slope_DFV_C_F__Form
     generic, public :: &
       Initialize => InitializeAllocate_C_F
     procedure, private, pass :: &
-      TimerKernel
+      Timer_K
     procedure, public, pass :: &
       CloneTimers
     procedure, public, pass :: &
-      Compute
+      ComputeChart
     final :: &
       Finalize
   end type Slope_DFV_C_F_Form
@@ -133,7 +133,7 @@ contains
   end subroutine InitializeAllocate_C_F
 
 
-  function TimerKernel ( S, LevelOption ) result ( T )
+  function Timer_K ( S, LevelOption ) result ( T )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
@@ -145,10 +145,10 @@ contains
     character ( LDL ) :: &
       TimerName
 
-    associate ( iT  =>  S % iTimerKernel )
+    associate ( iT  =>  S % iTimer_K )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % TimerName ) // '_Krnl' 
+      TimerName  =  trim ( S % TimerName ) // '_K' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -160,7 +160,7 @@ contains
 
     end associate !-- iT
 
-  end function TimerKernel
+  end function Timer_K
 
 
   subroutine CloneTimers ( S, S_S )
@@ -178,24 +178,25 @@ contains
     select type ( S_S )
     class is ( Slope_DFV_C_F_Form )
 
-    S % iTimerKernel  =  S_S % iTimerKernel
+    S % iTimer_K  =  S_S % iTimer_K
 
     end select !-- S_S
 
   end subroutine CloneTimers
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine ComputeChart ( S, iC, T_Option, iS_Option )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
+    integer ( KDI ) :: &
+      iC  !-- iChart
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option
 
     integer ( KDI ) :: &
-      iC, &  !-- iChart
       iMomentum_1, &
       iMomentum_2
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -218,7 +219,7 @@ contains
         G     =>  DC % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
-      T_K  =>   S % TimerKernel ( LevelOption = T_Option % Level + 1 )
+      T_K  =>   S % Timer_K ( LevelOption = T_Option % Level + 1 )
     else
       T_K  =>  null ( )
     end if
@@ -227,60 +228,56 @@ contains
     call S % Clear ( )
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-    do iC  =  1,  S % Atlas % nCharts
-       
-      associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
+    associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
 
-      call DC % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+    call DC % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
 
-      if ( associated ( T_K ) ) call T_K % Start ( )
+    if ( associated ( T_K ) ) call T_K % Start ( )
 
-      associate &
-        ( SV      =>   S    % Storage ( iC ) % Value, &
-          S_UD_V  =>   S_UD % Storage ( iC ) % Value, &
-          GV      =>   G    % Storage ( iC ) % Value )
+    associate &
+      ( SV      =>   S    % Storage ( iC ) % Value, &
+        S_UD_V  =>   S_UD % Storage ( iC ) % Value, &
+        GV      =>   G    % Storage ( iC ) % Value )
 
-      select type ( C )
-      class is ( Chart_GS_Form )
+    select type ( C )
+    class is ( Chart_GS_Form )
 
-        call C % SetFieldPointer ( SV     ( :, iMomentum_1 ),    S_M_1 )
-        call C % SetFieldPointer ( SV     ( :, iMomentum_2 ),    S_M_2 )
-        call C % SetFieldPointer ( S_UD_V ( :, 1 ),              S_UD_22 )
-        call C % SetFieldPointer ( S_UD_V ( :, 2 ),              S_UD_33 )
-        call C % SetFieldPointer ( GV     ( :, G % AREA_I_D_1 ), A_I_1 )
-        call C % SetFieldPointer ( GV     ( :, G % AREA_I_D_2 ), A_I_2 )
-        call C % SetFieldPointer ( GV     ( :, G % VOLUME ),     V )
+      call C % SetFieldPointer ( SV     ( :, iMomentum_1 ),    S_M_1 )
+      call C % SetFieldPointer ( SV     ( :, iMomentum_2 ),    S_M_2 )
+      call C % SetFieldPointer ( S_UD_V ( :, 1 ),              S_UD_22 )
+      call C % SetFieldPointer ( S_UD_V ( :, 2 ),              S_UD_33 )
+      call C % SetFieldPointer ( GV     ( :, G % AREA_I_D_1 ), A_I_1 )
+      call C % SetFieldPointer ( GV     ( :, G % AREA_I_D_2 ), A_I_2 )
+      call C % SetFieldPointer ( GV     ( :, G % VOLUME ),     V )
 
-        select case ( trim ( C % CoordinateSystem ) )
-        case ( 'CYLINDRICAL' )
-          call Compute_C_Kernel &
-                 ( S_M_1, S_UD_33, A_I_1, V, C % nGhostLayers ( 1 ), &
-                   UseDeviceOption = S % DeviceMemory )
-        case ( 'SPHERICAL' )
-          call Compute_S_Kernel &
-                 ( S_M_1, S_M_2, S_UD_22, S_UD_33, A_I_1, A_I_2, V, &
-                   C % nGhostLayers ( 1 ), UseDeviceOption = S % DeviceMemory )
-        end select !-- CoordinateSystem
+      select case ( trim ( C % CoordinateSystem ) )
+      case ( 'CYLINDRICAL' )
+        call Compute_C_Kernel &
+               ( S_M_1, S_UD_33, A_I_1, V, C % nGhostLayers ( 1 ), &
+                 UseDeviceOption = S % DeviceMemory )
+      case ( 'SPHERICAL' )
+        call Compute_S_Kernel &
+               ( S_M_1, S_M_2, S_UD_22, S_UD_33, A_I_1, A_I_2, V, &
+                 C % nGhostLayers ( 1 ), UseDeviceOption = S % DeviceMemory )
+      end select !-- CoordinateSystem
 
-      class default
-        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Slope_DFV_C_F__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- C
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Slope_DFV_C_F__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
 
-      end associate !-- SV, etc.
-        
-      if ( associated ( T_K ) ) call T_K % Stop ( )
+    end associate !-- SV, etc.
+      
+    if ( associated ( T_K ) ) call T_K % Stop ( )
 
-      end associate !-- C
-
-    end do !-- iC
+    end associate !-- C
 
     end associate !-- S_UD, etc.
     end associate !-- DC
 
-  end subroutine Compute
+  end subroutine ComputeChart
 
 
   impure elemental subroutine Finalize ( S )

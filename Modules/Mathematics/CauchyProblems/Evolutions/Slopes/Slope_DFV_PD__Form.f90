@@ -13,7 +13,7 @@ module Slope_DFV_PD__Form
 
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
-      iTimerKernel = 0
+      iTimer_K = 0
     class ( DivergenceContribution_CS_Form ), pointer :: &
       DivergenceContribution => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
@@ -24,11 +24,11 @@ module Slope_DFV_PD__Form
     generic, public :: &
       Initialize => InitializeAllocate_PD
     procedure, private, pass :: &
-      TimerKernel
+      Timer_K
     procedure, public, pass :: &
       CloneTimers
     procedure, public, pass :: &
-      Compute
+      ComputeDimension
     final :: &
       Finalize
   end type Slope_DFV_PD_Form
@@ -109,7 +109,7 @@ contains
   end subroutine InitializeAllocate_PD
 
 
-  function TimerKernel ( S, LevelOption ) result ( T )
+  function Timer_K ( S, LevelOption ) result ( T )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
@@ -121,10 +121,10 @@ contains
     character ( LDL ) :: &
       TimerName
 
-    associate ( iT  =>  S % iTimerKernel )
+    associate ( iT  =>  S % iTimer_K )
 
     if ( iT == 0 ) then
-      TimerName  =  trim ( S % TimerName ) // '_Krnl' 
+      TimerName  =  trim ( S % TimerName ) // '_K' 
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -136,7 +136,7 @@ contains
 
     end associate !-- iT
 
-  end function TimerKernel
+  end function Timer_K
 
 
   subroutine CloneTimers ( S, S_S )
@@ -154,25 +154,25 @@ contains
     select type ( S_S )
     class is ( Slope_DFV_PD_Form )
 
-    S % iTimerKernel  =  S_S % iTimerKernel
+    S % iTimer_K  =  S_S % iTimer_K
 
     end select !-- S_S
 
   end subroutine CloneTimers
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine ComputeDimension ( S, iC, iD, T_Option, iS_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iC, &  !-- iChart
+      iD     !-- iDimension
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option
 
-    integer ( KDI ) :: &
-      iC, &  !-- iChart
-      iD     !-- iDimension
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       A_I, &
       V
@@ -192,75 +192,70 @@ contains
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
-      T_RS  =>  RS % Timer       ( LevelOption = T_Option % Level + 1 )
-      T_K   =>   S % TimerKernel ( LevelOption = T_Option % Level + 1 )
+      T_RS  =>  RS % Timer_C     ( LevelOption = T_Option % Level + 1 )
+      T_K   =>   S % Timer_K ( LevelOption = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )
       T_K   =>  null ( )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
-    call S % Clear ( )
+    if ( iD  ==  1 ) &
+      call S % Clear ( )
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-    do iC  =  1,  S % Atlas % nCharts
-       
-      associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
-      do iD  =  1, C % nDimensions
+    associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
 
-        if ( associated ( T_RS ) ) then
-          call T_RS % Start ( )
-          call RS % Compute &
-                 ( DC, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
-          call T_RS % Stop ( )
-        else
-          call RS % Compute &
-                 ( DC, iC, iD, iS_Option = iS_Option )
-        end if
+    if ( associated ( T_RS ) ) then
+      call T_RS % Start ( )
+      call RS % Compute &
+             ( DC, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+      call T_RS % Stop ( )
+    else
+      call RS % Compute &
+             ( DC, iC, iD, iS_Option = iS_Option )
+    end if
 
-        if ( associated ( T_K ) ) call T_K % Start ( )
+    if ( associated ( T_K ) ) call T_K % Start ( )
 
-        call S % Storage ( iC ) % ReassociateHost &
-                 ( AssociateVariablesOption = .false. )
-        
-        associate &
-          (  SV  =>   S % Storage ( iC ) % Value, &
-            RSV  =>  RS % Storage ( iC ) % Value, &
-             GV  =>   G % Storage ( iC ) % Value )
+    call S % Storage ( iC ) % ReassociateHost &
+           ( AssociateVariablesOption = .false. )
+      
+    associate &
+      (  SV  =>   S % Storage ( iC ) % Value, &
+        RSV  =>  RS % Storage ( iC ) % Value, &
+         GV  =>   G % Storage ( iC ) % Value )
 
-        select type ( C )
-        class is ( Chart_GS_Form )
+    select type ( C )
+    class is ( Chart_GS_Form )
 
-          call C % SetFieldPointer (  SV ( :, : ), S_4D )
-          call C % SetFieldPointer ( RSV ( :, : ), F_I )
-          call C % SetFieldPointer (  GV ( :, G % AREA_I_D ( iD ) ), A_I )
-          call C % SetFieldPointer (  GV ( :, G % VOLUME ), V )
-          
-          call ComputeKernel &
-                 ( S_4D, F_I, A_I, V, iD, C % nGhostLayers ( iD ), &
-                   UseDeviceOption = S % DeviceMemory )
+      call C % SetFieldPointer (  SV ( :, : ), S_4D )
+      call C % SetFieldPointer ( RSV ( :, : ), F_I )
+      call C % SetFieldPointer (  GV ( :, G % AREA_I_D ( iD ) ), A_I )
+      call C % SetFieldPointer (  GV ( :, G % VOLUME ), V )
 
-        class default
-          call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-          call Show ( 'Slope_DFV_PD__Form', 'module', CONSOLE % ERROR )
-          call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end select !-- C
+      call ComputeKernel &
+             ( S_4D, F_I, A_I, V, iD, C % nGhostLayers ( iD ), &
+               UseDeviceOption = S % DeviceMemory )
 
-        end associate !-- SV, etc.
-        
-        call S % Storage ( iC ) % ReassociateHost &
-                 ( AssociateVariablesOption = .true. )
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Slope_DFV_PD__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
 
-        if ( associated ( T_K ) ) call T_K % Stop ( )
+    end associate !-- SV, etc.
+      
+    call S % Storage ( iC ) % ReassociateHost &
+           ( AssociateVariablesOption = .true. )
 
-      end do !-- iD
-      end associate !-- C
+    if ( associated ( T_K ) ) call T_K % Stop ( )
 
-    end do !-- iC
+    end associate !-- C
     end associate !-- RS, etc.
 
-  end subroutine Compute
+  end subroutine ComputeDimension
 
 
   impure elemental subroutine Finalize ( S )

@@ -22,7 +22,8 @@ module RiemannSolver_HLL__Form
     integer ( KDI ) :: &
       iFiducialDensityFlux = 0
     integer ( KDI ) :: &
-      iTimer     = 0, &
+      iTimer_P   = 0, &
+      iTimer_C   = 0, &
       iTimer_CFP = 0, &
       iTimer_A   = 0, &
       iTimer_K   = 0
@@ -59,13 +60,15 @@ module RiemannSolver_HLL__Form
     procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
-      Timer
+      Timer_P  !-- Prepare
+    procedure, public, pass :: &
+      Timer_C  !-- Compute
     procedure, private, pass :: &
-      Timer_CFP
+      Timer_CFP  !-- ComputeFromPrimitive
     procedure, private, pass :: &
-      Timer_A
+      Timer_A  !-- Alpha
     procedure, private, pass :: &
-      Timer_K
+      Timer_K  !-- Kernel  
     procedure, public, pass :: &
       Prepare
     procedure, public, pass :: &
@@ -454,7 +457,7 @@ contains
   end subroutine Show_FS
 
 
-  function Timer ( RS, LevelOption ) result ( T )
+  function Timer_P ( RS, LevelOption ) result ( T )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -466,10 +469,10 @@ contains
     character ( LDL ) :: &
       TimerName
 
-    associate ( iT  =>  RS % iTimer )
+    associate ( iT  =>  RS % iTimer_P )
 
     if ( iT == 0 ) then
-      TimerName  =  RS % Name
+      TimerName  =  trim ( RS % Name ) // '_P'
       if ( present ( LevelOption ) ) then
         call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
       else
@@ -481,7 +484,37 @@ contains
 
     end associate !-- iT
 
-  end function Timer
+  end function Timer_P
+
+
+  function Timer_C ( RS, LevelOption ) result ( T )
+
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+    integer ( KDI ), intent ( in ), optional :: &
+      LevelOption
+    type ( TimerForm ), pointer :: &
+      T
+
+    character ( LDL ) :: &
+      TimerName
+
+    associate ( iT  =>  RS % iTimer_C )
+
+    if ( iT == 0 ) then
+      TimerName  =  trim ( RS % Name ) // '_C'
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+
+    end associate !-- iT
+
+  end function Timer_C
 
 
   function Timer_CFP ( RS, LevelOption ) result ( T )
@@ -526,7 +559,7 @@ contains
     character ( LDL ) :: &
       TimerName
 
-    associate ( iT  =>  RS % iTimer_K )
+    associate ( iT  =>  RS % iTimer_A )
 
     if ( iT == 0 ) then
       TimerName  =  trim ( RS % Name ) // '_A' 
@@ -711,6 +744,9 @@ contains
       T_F, &
       T_K
     
+    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
+    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
+
     associate &
       (  CS     =>  RS % CurrentSet, &
          CS_IL  =>  RS % CurrentSet_IL, &
@@ -722,11 +758,11 @@ contains
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
-      T_F   =>   DC % Timer   ( LevelOption = T_Option % Level + 1 )
+      T_F   =>   DC % Timer_F ( LevelOption = T_Option % Level + 1 )
       T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
-      T_K    =>  null ( )
+      T_K   =>  null ( )
     end if !-- T_Option
 
     if ( associated ( T_F ) ) call T_F % Start ( )
