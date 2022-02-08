@@ -1,14 +1,14 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with GNU compiler (PrgEnv-gnu)
 # If PrgEnv-gnu is not the default, use "module swap" to PrgEnv-gnu
 
-FORTRAN_COMPILE      = mpif90 -c -cpp
+FORTRAN_COMPILE      = ftn -c -cpp
 FORTRAN_FIXEDFORM    = -ffixed-form
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -Og -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE           = mpicc -c
+CC_COMPILE           = cc -c
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
@@ -16,7 +16,7 @@ CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 DEVICE_HIP           = 1
 DEVICE_COMPILE       = hipcc -c -D__HIP_PLATFORM_HCC__
 
-LINK = mpif90 -fopenmp
+LINK = ftn -fopenmp
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
