@@ -185,7 +185,8 @@ contains
       iC, &  !-- iCompute
       iD     !-- iDimension
     type ( TimerForm ), pointer :: &
-      T
+      T, &
+      T_RPP
 
     call Show ( 'Slope computation' )
     call Show ( RS % Name, 'Slope' )
@@ -193,10 +194,14 @@ contains
 
     associate ( C  =>  S % Atlas % Chart ( 1 ) % Element )
 
-    T  =>  S % Timer ( LevelOption = 1 )
+    T      =>  S % Timer ( LevelOption = 1 )
+    T_RPP  =>  RS % Timer_P ( LevelOption = T % Level + 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       do iD  =  1,  C % nDimensions
+        call T_RPP % Start ( )
+        call RS % Prepare ( iC = 1, iD = iD, T_Option = T_RPP )
+        call T_RPP % Stop ( )
         call S % ComputePartialDerivative ( iC = 1, iD = iD, T_Option = T )
       end do !-- iD
       call S % ComputeConnectionFlat ( iC = 1, T_Option = T )

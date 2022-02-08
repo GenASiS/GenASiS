@@ -15,9 +15,9 @@ module Slope_DFV_DC__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_DC_Form
   contains
     procedure, private, pass :: &
-      InitializeAllocate_F
+      InitializeAllocate_DC
     generic, public :: &
-      Initialize => InitializeAllocate_F
+      Initialize => InitializeAllocate_DC
     procedure, public, pass :: &
       ComputePartialDerivative
     procedure, public, pass :: &
@@ -30,14 +30,14 @@ module Slope_DFV_DC__Form
 contains
 
 
-  subroutine InitializeAllocate_F &
+  subroutine InitializeAllocate_DC &
                ( S, RS, DC, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       RS
-    class ( DivergenceContribution_CS_Form ), intent ( in ), target :: &
+    class ( DivergenceContribution_CS_Form ), intent ( in ) :: &
       DC
     character ( * ), intent ( in ), optional :: &
       SuffixOption
@@ -58,7 +58,6 @@ contains
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     associate ( CS  =>  RS % CurrentSet )
-
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Balanced, &
@@ -68,6 +67,7 @@ contains
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
              IgnorabilityOption = IgnorabilityOption )
+    end associate !-- CS
 
     !-- Slope components: Partial derivative and flat connection
 
@@ -89,9 +89,7 @@ contains
 
     end associate !-- nSC
 
-    end associate !-- CS
-
-  end subroutine InitializeAllocate_F
+  end subroutine InitializeAllocate_DC
 
 
   subroutine ComputePartialDerivative ( S, iC, iD, T_Option, iS_Option )
@@ -106,27 +104,11 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       iS_Option
 
-    type ( TimerForm ), pointer :: &
-      T_RPP
-
     select type ( S_PD  =>  S % Component ( 1 ) % Element )
       class is ( Slope_DFV_PD_Form )
-    associate &
-      ( RS  =>  S_PD % RiemannSolver )
-
-    if ( present ( T_Option ) ) then
-      T_RPP  =>  RS % Timer_P ( LevelOption = T_Option % Level + 1 )
-    else
-      T_RPP  =>  null ( )
-    end if
-
-    if ( associated ( T_RPP ) ) call T_RPP % Start ( )
-    call RS % Prepare ( iC, iD, T_Option = T_RPP )
-    if ( associated ( T_RPP ) ) call T_RPP % Stop ( )
 
     call S_PD % ComputeDimension ( iC, iD, T_Option, iS_Option )
 
-    end associate !-- RS
     end select !-- S_PD
 
   end subroutine ComputePartialDerivative
