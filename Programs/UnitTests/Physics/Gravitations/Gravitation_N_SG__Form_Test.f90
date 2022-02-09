@@ -36,7 +36,7 @@ program Gravitation_N_SG__Form_Test
   call S % Initialize ( A, GIS )
 
   allocate ( G )
-  call G % Initialize ( A )
+  call G % Initialize ( A, GravitationalConstant = 1.0_KDR )
   call G % SetStream ( S )
   call S % AddFieldSet ( G % Source )
 
@@ -110,9 +110,7 @@ contains
     
       call Fluid % UpdateDevice ( )
 
-      call G % Solve &
-             ( Fluid, Constant_G = 1.0_KDR, iBaryonMass = 1, &
-               iBaryonDensity = 2 )
+      call G % Solve ( Fluid, iBaryonMass = 1, iBaryonDensity = 2 )
 
       call Show ( Radius ( iHS ), 'Radius', nLeadingLinesOption = 2 )
       call Show ( Density ( iHS ), 'Density' )
