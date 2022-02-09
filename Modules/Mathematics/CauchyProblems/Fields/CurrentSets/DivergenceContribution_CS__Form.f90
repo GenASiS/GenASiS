@@ -39,6 +39,9 @@ module DivergenceContribution_CS__Form
       Finalize_E
   end type DivergenceContributionElement
 
+    private :: &
+      ComputeFluxesKernel
+
     interface
 
       module subroutine ComputeFluxesKernel ( D, V_Dim, F_D, UseDeviceOption )
