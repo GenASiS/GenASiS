@@ -23,6 +23,8 @@ program Slope_DFV_N__Form_Test
     U
   type ( Fluid_D_Form ), allocatable :: &
     F
+  type ( DivergenceContributionElement ), dimension ( : ), allocatable :: &
+    DC_1D
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
   type ( Slope_DFV_N_Form ), allocatable :: &
@@ -47,7 +49,7 @@ program Slope_DFV_N__Form_Test
   call Sm % Initialize ( A, GIS )
 
   allocate ( G )
-  call G % Initialize ( A )
+  call G % Initialize ( A, GravitationalConstant = 1.0_KDR )
   call G % SetStream ( Sm )
   call Sm % AddFieldSet ( G % Source )
 
@@ -58,13 +60,20 @@ program Slope_DFV_N__Form_Test
   call F % Initialize ( G, U )
   call F % SetStream ( Sm )
 
+  allocate ( DC_1D ( 1 ) )
+  allocate ( DivergenceContribution_F_V_Form :: DC_1D ( 1 ) % Element )
+  associate ( DC  =>  DC_1D ( 1 ) % Element )
+  call DC % Initialize ( F )
+
   allocate ( RS )
   call RS % Initialize ( F )
+
+  end associate !-- DC
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call S % Initialize &
-         ( RS, &
+         ( RS, DC_1D, &
            iVelocity_F = F % VELOCITY_U, &
            iMomentum_B = [ 2, 3, 4 ], &
            iBaryonMass_F = F % BARYON_MASS, &
@@ -84,7 +93,7 @@ program Slope_DFV_N__Form_Test
   nCompute  =  1
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
- call TestSlope ( )
+  call TestSlope ( )
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   deallocate ( S )

@@ -14,8 +14,8 @@ module Slope_DFV_PD__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
       iTimer_K = 0
-    class ( DivergenceContribution_CS_Form ), pointer :: &
-      DivergenceContribution => null ( )
+    class ( DivergencePart_CS_Form ), pointer :: &
+      DivergencePart => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
       RiemannSolver => null ( )
   contains
@@ -63,14 +63,14 @@ contains
 
 
   subroutine InitializeAllocate_PD &
-               ( S, RS, DC, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
-    class ( DivergenceContribution_CS_Form ), intent ( in ), target :: &
-      DC
+    class ( DivergencePart_CS_Form ), intent ( in ), target :: &
+      DP
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -86,14 +86,14 @@ contains
 
     if ( S % TimerName  ==  '' ) &
       S % TimerName  &
-        =  'S_DFV_PD_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+        =  'S_DFV_PD_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
 
-    Name  =  'S_DFV_PD_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+    Name  =  'S_DFV_PD_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
-    S % DivergenceContribution  =>  DC
-    S % RiemannSolver           =>  RS
+    S % DivergencePart  =>  DP
+    S % RiemannSolver   =>  RS
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -189,7 +189,7 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
-        DC  =>  S % DivergenceContribution, &
+        DP  =>  S % DivergencePart, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
@@ -210,11 +210,11 @@ contains
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
       call RS % Compute &
-             ( DC, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+             ( DP, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
       call T_RS % Stop ( )
     else
       call RS % Compute &
-             ( DC, iC, iD, iS_Option = iS_Option )
+             ( DP, iC, iD, iS_Option = iS_Option )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
@@ -264,7 +264,7 @@ contains
     type ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
 
-    nullify ( S % DivergenceContribution )
+    nullify ( S % DivergencePart )
     nullify ( S % RiemannSolver )
     
   end subroutine Finalize

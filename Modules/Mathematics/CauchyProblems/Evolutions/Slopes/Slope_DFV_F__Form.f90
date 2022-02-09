@@ -6,7 +6,7 @@ module Slope_DFV_F__Form
   use Fields
   use RiemannSolver_HLL__Form
   use Slope_H__Form
-  use Slope_DFV_DC__Form
+  use Slope_DFV_DP__Form
 
   implicit none
   private
@@ -30,21 +30,21 @@ contains
 
 
   subroutine InitializeAllocate_F &
-               ( S, RS, DC_1D, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP_1D, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_F_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
-    type ( DivergenceContributionElement ), dimension ( : ), intent ( in ) :: &
-      DC_1D
+    type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
+      DP_1D
     character ( * ), intent ( in ), optional :: &
       SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     integer ( KDI ) :: &
-      iDC
+      iDP
     character ( LDL ) :: &
       Name
 
@@ -75,14 +75,14 @@ contains
     !-- Slope components: divergence contributions
 
     associate ( nSC  =>  S % nComponents )
-    do iDC  =  1, size ( DC_1D )
+    do iDP  =  1, size ( DP_1D )
       nSC  =  nSC + 1
-      allocate ( Slope_DFV_DC_Form :: S % Component ( nSC ) % Element )
-      select type ( SDC  =>  S % Component ( nSC ) % Element )
-      class is ( Slope_DFV_DC_Form )
-        call SDC % Initialize ( RS, DC_1D ( iDC ) % Element, SuffixOption )
-      end select !-- SDC
-    end do !-- iDC
+      allocate ( Slope_DFV_DP_Form :: S % Component ( nSC ) % Element )
+      select type ( SDP  =>  S % Component ( nSC ) % Element )
+      class is ( Slope_DFV_DP_Form )
+        call SDP % Initialize ( RS, DP_1D ( iDP ) % Element, SuffixOption )
+      end select !-- SDP
+    end do !-- iDP
     end associate !-- nSC
 
   end subroutine InitializeAllocate_F
@@ -100,7 +100,7 @@ contains
     integer ( KDI ) :: &
       iC, &  !-- iChart
       iD, &  !-- iDimension
-      iDC    !-- iDivergenceContribution
+      iDP    !-- iDivergencePart
     type ( TimerForm ), pointer :: &
       T_RPP
 
@@ -121,26 +121,26 @@ contains
         if ( associated ( T_RPP ) ) call T_RPP % Start ( )
         call RS % Prepare ( iC = iC, iD = iD, T_Option = T_RPP )
         if ( associated ( T_RPP ) ) call T_RPP % Stop ( )
-        do iDC  =  1,  S % nComponents
-          select type ( SDC  =>  S % Component ( iDC ) % Element )
-          class is ( Slope_DFV_DC_Form )
-            call SDC % ComputePartialDerivative &
+        do iDP  =  1,  S % nComponents
+          select type ( SDP  =>  S % Component ( iDP ) % Element )
+          class is ( Slope_DFV_DP_Form )
+            call SDP % ComputePartialDerivative &
                    ( iC = iC, iD = iD, T_Option = T_Option )
-          end select !-- SDC
-        end do !-- iDC
+          end select !-- SDP
+        end do !-- iDP
       end do !-- iD
       
       end associate !-- RS
 
       !-- Connection and sum
-      do iDC  =  1,  S % nComponents
-        select type ( SDC  =>  S % Component ( iDC ) % Element )
-        class is ( Slope_DFV_DC_Form )
-          call SDC % ComputeConnectionFlat &
+      do iDP  =  1,  S % nComponents
+        select type ( SDP  =>  S % Component ( iDP ) % Element )
+        class is ( Slope_DFV_DP_Form )
+          call SDP % ComputeConnectionFlat &
                  ( iC = iC, T_Option = T_Option )
-          call SDC % AddComponents ( T_Option = T_Option )
-        end select !-- SDC
-      end do !-- iDC
+          call SDP % AddComponents ( T_Option = T_Option )
+        end select !-- SDP
+      end do !-- iDP
 
       end associate !-- C
     end do !-- iC

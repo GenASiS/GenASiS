@@ -21,8 +21,8 @@ program Slope_DFV_F__Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( DivergenceContributionElement ), dimension ( : ), allocatable :: &
-    DC_1D
+  type ( DivergencePartElement ), dimension ( : ), allocatable :: &
+    DP_1D
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
   type ( Slope_DFV_F_Form ), allocatable :: &
@@ -52,24 +52,24 @@ program Slope_DFV_F__Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( Sm )
 
-  allocate ( DC_1D ( 1 ) )
-  allocate ( DivergenceContribution_CS_Form :: DC_1D ( 1 ) % Element )
-  associate ( DC  =>  DC_1D ( 1 ) % Element )
-  call DC % Initialize ( CS )
+  allocate ( DP_1D ( 1 ) )
+  allocate ( DivergencePart_CS_Form :: DP_1D ( 1 ) % Element )
+  associate ( DP  =>  DP_1D ( 1 ) % Element )
+  call DP % Initialize ( CS )
 
   allocate ( RS )
   call RS % Initialize ( CS )
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Initialize ( RS, DC_1D, IgnorabilityOption = A % IGNORABILITY )
+  call S % Initialize ( RS, DP_1D, IgnorabilityOption = A % IGNORABILITY )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call S % SetStream ( Sm )
 
   call  A % Show ( )
   call  G % Show ( )
   call CS % Show ( )
-  call DC % Show ( )
+  call DP % Show ( )
   call RS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call  S % Show ( )
@@ -89,7 +89,7 @@ program Slope_DFV_F__Form_Test
   deallocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( RS )
-  deallocate ( DC_1D )
+  deallocate ( DP_1D )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( Sm )
@@ -97,7 +97,7 @@ program Slope_DFV_F__Form_Test
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
-  end associate !-- DC
+  end associate !-- DP
 
 contains
 

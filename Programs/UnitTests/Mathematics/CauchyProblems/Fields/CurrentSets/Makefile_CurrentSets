@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: CurrentSet_Form_Test DivergenceContribution_CS__Form_Test \
+all: CurrentSet_Form_Test DivergencePart_CS__Form_Test \
   EigenspeedSet_F__Form_Test
 
 CurrentSet_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a Geometries.a \
@@ -12,11 +12,11 @@ CurrentSet_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a Geometries.a \
           CurrentSet_Form_Test.o CurrentSets.a \
           Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
-DivergenceContribution_CS__Form_Test: Basics.a Algebra.a Manifolds.a \
-  FieldSets.a Geometries.a CurrentSets.a DivergenceContribution_CS__Form_Test.o
+DivergencePart_CS__Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a CurrentSets.a DivergencePart_CS__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o DivergenceContribution_CS__Form_Test_$(MACHINE) \
-          DivergenceContribution_CS__Form_Test.o CurrentSets.a \
+          -o DivergencePart_CS__Form_Test_$(MACHINE) \
+          DivergencePart_CS__Form_Test.o CurrentSets.a \
           Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 EigenspeedSet_F__Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
@@ -31,7 +31,7 @@ clean:
 
 clobber: clean
 	rm -f CurrentSet_Form_Test_*
-	rm -f DivergenceContribution_CS__Form_Test_*
+	rm -f DivergencePart_CS__Form_Test_*
 	rm -f EigenspeedSet_F__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -50,13 +50,13 @@ CurrentSet_Form_Test.o: \
   CurrentSets.o \
   CurrentSet_Form_Test.f90
 
-DivergenceContribution_CS__Form_Test.o: \
+DivergencePart_CS__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   FieldSets.o \
   Geometries.o \
   CurrentSets.o \
-  DivergenceContribution_CS__Form_Test.f90
+  DivergencePart_CS__Form_Test.f90
 
 EigenspeedSet_F__Form_Test.o: \
   Basics.o \

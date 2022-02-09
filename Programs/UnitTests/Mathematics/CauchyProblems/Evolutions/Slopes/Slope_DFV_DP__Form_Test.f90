@@ -1,6 +1,6 @@
-program Slope_DFV_DC__Form_Test
+program Slope_DFV_DP__Form_Test
 
-  !-- Slope_DivergenceFiniteVolume_DivergenceContribution__Form_Test
+  !-- Slope_DivergenceFiniteVolume_DivergencePart__Form_Test
 
   use Basics
   use Manifolds
@@ -21,16 +21,16 @@ program Slope_DFV_DC__Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( DivergenceContribution_CS_Form ), allocatable :: &
-    DC
+  type ( DivergencePart_CS_Form ), allocatable :: &
+    DP
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
-  type ( Slope_DFV_DC_Form ), allocatable :: &
+  type ( Slope_DFV_DP_Form ), allocatable :: &
     S
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Slope_DFV_DC__Form_Test', DimensionalityOption = '2D' )
+         ( 'Slope_DFV_DP__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -52,8 +52,8 @@ program Slope_DFV_DC__Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( Sm )
 
-  allocate ( DC )
-  call DC % Initialize ( CS )
+  allocate ( DP )
+  call DP % Initialize ( CS )
 
   allocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
@@ -62,14 +62,14 @@ program Slope_DFV_DC__Form_Test
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Initialize ( RS, DC, IgnorabilityOption = A % IGNORABILITY )
+  call S % Initialize ( RS, DP, IgnorabilityOption = A % IGNORABILITY )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call S % SetStream ( Sm )
 
   call  A % Show ( )
   call  G % Show ( )
   call CS % Show ( )
-  call DC % Show ( )
+  call DP % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call RS % Show ( )
   call  S % Show ( )
@@ -89,7 +89,7 @@ program Slope_DFV_DC__Form_Test
   deallocate ( S )
   deallocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
-  deallocate ( DC )
+  deallocate ( DP )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( Sm )
@@ -176,7 +176,7 @@ contains
 
   subroutine TestSlope ( S, Sm )
 
-    class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
@@ -221,4 +221,4 @@ contains
   end subroutine TestSlope
 
 
-end program Slope_DFV_DC__Form_Test
+end program Slope_DFV_DP__Form_Test

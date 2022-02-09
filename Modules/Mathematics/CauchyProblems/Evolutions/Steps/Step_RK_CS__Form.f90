@@ -22,8 +22,8 @@ module Step_RK_CS__Form
       CurrentSet
     class ( Coarsening_C_Form ), pointer :: &
       Coarsening => null ( )
-    type ( DivergenceContributionElement ), dimension ( : ), allocatable :: &
-      DivergenceContribution
+    type ( DivergencePartElement ), dimension ( : ), allocatable :: &
+      DivergencePart
     class ( RiemannSolver_HLL_Form ), allocatable :: &
       RiemannSolver
   contains
@@ -128,17 +128,17 @@ contains
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     end associate !-- Y
 
-    !-- DivergenceContribution
+    !-- DivergencePart
 
-    if ( .not. allocated ( S % DivergenceContribution ) ) then
-      allocate ( S % DivergenceContribution ( 1 ) )
-      associate ( DC_1D  =>  S % DivergenceContribution )
-      allocate ( DC_1D ( 1 ) % Element )
-      associate ( DC  =>  DC_1D ( 1 ) % Element )
-      call DC % Initialize ( CS )
-      end associate !-- DC
-      end associate !-- DC_1D
-    end if !-- allocated DivergenceContribution
+    if ( .not. allocated ( S % DivergencePart ) ) then
+      allocate ( S % DivergencePart ( 1 ) )
+      associate ( DP_1D  =>  S % DivergencePart )
+      allocate ( DP_1D ( 1 ) % Element )
+      associate ( DP  =>  DP_1D ( 1 ) % Element )
+      call DP % Initialize ( CS )
+      end associate !-- DP
+      end associate !-- DP_1D
+    end if !-- allocated DivergencePart
 
     !-- RiemannSolver
 
@@ -233,8 +233,8 @@ contains
 
     if ( allocated ( S % RiemannSolver ) ) &
       deallocate ( S % RiemannSolver )
-    if ( allocated ( S % DivergenceContribution ) ) &
-      deallocate ( S % DivergenceContribution )
+    if ( allocated ( S % DivergencePart ) ) &
+      deallocate ( S % DivergencePart )
     if ( allocated ( S % SolutionStage ) ) &
       deallocate ( S % SolutionStage )
     if ( allocated ( S % Solution ) ) &
@@ -455,11 +455,11 @@ contains
     if ( present ( iS_Option ) ) then
       write ( StageNumber, fmt = '(i1.1)' ) iS_Option
       call K % Initialize &
-             ( S % RiemannSolver, S % DivergenceContribution, &
+             ( S % RiemannSolver, S % DivergencePart, &
                SuffixOption = StageNumber )
     else
       call K % Initialize &
-             ( S % RiemannSolver, S % DivergenceContribution, &
+             ( S % RiemannSolver, S % DivergencePart, &
                IgnorabilityOption = S % IGNORABILITY )
     end if
 

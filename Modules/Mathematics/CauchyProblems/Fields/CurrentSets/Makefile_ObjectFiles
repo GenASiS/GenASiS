@@ -1,7 +1,7 @@
 CURRENT_SETS = \
   CurrentSets.o \
   EigenspeedSet_F__Form.o \
-  DivergenceContribution_CS__Kernel.o \
-  DivergenceContribution_CS__Form.o \
+  DivergencePart_CS__Kernel.o \
+  DivergencePart_CS__Form.o \
   CurrentSet_Kernel.o \
   CurrentSet_Form.o

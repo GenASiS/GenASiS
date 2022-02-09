@@ -1,6 +1,6 @@
-module Slope_DFV_DC__Form
+module Slope_DFV_DP__Form
 
-  !-- Slope_DivergenceFiniteVolume_DivergenceContribution__Form
+  !-- Slope_DivergenceFiniteVolume_DivergencePart__Form
 
   use Basics
   use Fields
@@ -12,33 +12,33 @@ module Slope_DFV_DC__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_Form ) :: Slope_DFV_DC_Form
+  type, public, extends ( Slope_H_Form ) :: Slope_DFV_DP_Form
   contains
     procedure, private, pass :: &
-      InitializeAllocate_DC
+      InitializeAllocate_DP
     generic, public :: &
-      Initialize => InitializeAllocate_DC
+      Initialize => InitializeAllocate_DP
     procedure, public, pass :: &
       ComputePartialDerivative
     procedure, public, pass :: &
       ComputeConnectionFlat
     final :: &
       Finalize
-  end type Slope_DFV_DC_Form
+  end type Slope_DFV_DP_Form
 
 
 contains
 
 
-  subroutine InitializeAllocate_DC &
-               ( S, RS, DC, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_DP &
+               ( S, RS, DP, SuffixOption, IgnorabilityOption )
 
-    class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       RS
-    class ( DivergenceContribution_CS_Form ), intent ( in ) :: &
-      DC
+    class ( DivergencePart_CS_Form ), intent ( in ) :: &
+      DP
     character ( * ), intent ( in ), optional :: &
       SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -48,15 +48,15 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_DFV_DC'
+      S % Type  =  'a Slope_DFV_DP'
 
     associate ( CS  =>  RS % CurrentSet )
 
     if ( S % TimerName  ==  '' ) &
       S % TimerName  &
-        =  'S_DFV_DC_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+        =  'S_DFV_DP_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
 
-    Name  =  'S_DFV_DC_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+    Name  =  'S_DFV_DP_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -79,24 +79,24 @@ contains
     allocate ( Slope_DFV_PD_Form :: S % Component ( nSC ) % Element )
     select type ( SPD  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_PD_Form )
-    call SPD % Initialize ( RS, DC, SuffixOption )
+    call SPD % Initialize ( RS, DP, SuffixOption )
     end select !-- SPD
 
     nSC  =  nSC + 1
     allocate ( Slope_DFV_C_F_Form :: S % Component ( nSC ) % Element )
     select type ( SCF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_C_F_Form )
-    call SCF % Initialize ( DC, SuffixOption )
+    call SCF % Initialize ( DP, SuffixOption )
     end select !-- SCF
 
     end associate !-- nSC
 
-  end subroutine InitializeAllocate_DC
+  end subroutine InitializeAllocate_DP
 
 
   subroutine ComputePartialDerivative ( S, iC, iD, T_Option, iS_Option )
 
-    class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
@@ -118,7 +118,7 @@ contains
 
   subroutine ComputeConnectionFlat ( S, iC, T_Option, iS_Option )
 
-    class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iC  !-- iChart
@@ -139,10 +139,10 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Slope_DFV_DC_Form ), intent ( inout ) :: &
+    type ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
 
   end subroutine Finalize
 
 
-end module Slope_DFV_DC__Form
+end module Slope_DFV_DP__Form

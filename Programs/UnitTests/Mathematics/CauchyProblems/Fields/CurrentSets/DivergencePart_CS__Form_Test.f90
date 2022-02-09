@@ -1,4 +1,4 @@
-program DivergenceContribution_CS__Form_Test
+program DivergencePart_CS__Form_Test
 
   use Basics
   use Manifolds
@@ -22,12 +22,12 @@ program DivergenceContribution_CS__Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( DivergenceContribution_CS_Form ), allocatable :: &
-    DC
+  type ( DivergencePart_CS_Form ), allocatable :: &
+    DP
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'DivergenceContribution_CS__Form_Test', DimensionalityOption = '2D' )
+         ( 'DivergencePart_CS__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -49,8 +49,8 @@ program DivergenceContribution_CS__Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( S )
 
-  allocate ( DC )
-  call DC % Initialize ( CS )
+  allocate ( DP )
+  call DP % Initialize ( CS )
 
   allocate ( FS_F )
   call FS_F % Initialize &
@@ -63,7 +63,7 @@ program DivergenceContribution_CS__Form_Test
   call    A % Show ( )
   call    G % Show ( )
   call   CS % Show ( )
-  call   DC % Show ( )
+  call   DP % Show ( )
   call FS_F % Show ( )
   call    S % Show ( )
 
@@ -72,12 +72,12 @@ program DivergenceContribution_CS__Form_Test
   nCompute  =  1000
   call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
-  call TestFluxes ( DC, FS_F, S, iD = 1 )
-  call TestFluxes ( DC, FS_F, S, iD = 2 )
-  call TestFluxes ( DC, FS_F, S, iD = 3 )
+  call TestFluxes ( DP, FS_F, S, iD = 1 )
+  call TestFluxes ( DP, FS_F, S, iD = 2 )
+  call TestFluxes ( DP, FS_F, S, iD = 3 )
 
   deallocate ( FS_F )
-  deallocate ( DC )
+  deallocate ( DP )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( S )
@@ -162,10 +162,10 @@ contains
   end subroutine SetWave
 
 
-  subroutine TestFluxes ( DC, FS_F, S, iD )
+  subroutine TestFluxes ( DP, FS_F, S, iD )
 
-    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
-      DC
+    class ( DivergencePart_CS_Form ), intent ( inout ) :: &
+      DP
     class ( FieldSetForm ), intent ( inout ) :: &
       FS_F
     class ( StreamForm ), intent ( inout ) :: &
@@ -178,15 +178,15 @@ contains
     type ( TimerForm ), pointer :: &
       T
 
-    call Show ( 'DivergenceContribution_CS computation' )
-    call Show ( DC % Name, 'Name' )
+    call Show ( 'DivergencePart_CS computation' )
+    call Show ( DP % Name, 'Name' )
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  DC % Timer ( LevelOption = 1 )
+    T  =>  DP % Timer_F ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      call DC % ComputeFluxes ( FS_F, CS, iC = 1, iD = iD )
+      call DP % ComputeFluxes ( FS_F, CS, iC = 1, iD = iD )
     end do
     call T % Stop ( )
 
@@ -200,4 +200,4 @@ contains
   end subroutine TestFluxes
 
 
-end program DivergenceContribution_CS__Form_Test
+end program DivergencePart_CS__Form_Test

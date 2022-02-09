@@ -24,15 +24,15 @@ contains
 
 
   subroutine InitializeAllocate_N &
-               ( S, RS, DC_1D, iVelocity_F, iMomentum_B, iBaryonMass_F, &
+               ( S, RS, DP_1D, iVelocity_F, iMomentum_B, iBaryonMass_F, &
                  iBaryonDensity_F, iEnergy_B, SuffixOption )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
-    type ( DivergenceContributionElement ), dimension ( : ), intent ( in ) :: &
-      DC_1D
+    type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
+      DP_1D
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iVelocity_F, &
       iMomentum_B
@@ -77,7 +77,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_Form )
 
-    call SF % Initialize ( RS, DC_1D, SuffixOption )
+    call SF % Initialize ( RS, DP_1D, SuffixOption )
 
     end select !-- SF
 

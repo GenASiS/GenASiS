@@ -23,8 +23,8 @@ program RiemannSolver_HLL__Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( DivergenceContribution_CS_Form ), allocatable :: &
-    DC
+  type ( DivergencePart_CS_Form ), allocatable :: &
+    DP
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
 
@@ -58,8 +58,8 @@ program RiemannSolver_HLL__Form_Test
   call CS % Initialize( G )
   call CS % SetStream ( S )
 
-  allocate ( DC )
-  call DC % Initialize ( CS )
+  allocate ( DP )
+  call DP % Initialize ( CS )
 
   allocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
@@ -70,7 +70,7 @@ program RiemannSolver_HLL__Form_Test
   call  A % Show ( )
   call  G % Show ( )
   call CS % Show ( )
-  call DC % Show ( )
+  call DP % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call RS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
@@ -96,7 +96,7 @@ program RiemannSolver_HLL__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   deallocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
-  deallocate ( DC )
+  deallocate ( DP )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( S_SD )
@@ -207,7 +207,7 @@ contains
 
       T  =>  RS % Timer_C ( LevelOption = 1 )
       call T % Start ( )
-      call RS % Compute ( DC, iC = 1, iD = iD, T_Option = T )
+      call RS % Compute ( DP, iC = 1, iD = iD, T_Option = T )
       call T % Stop ( )
 
     end do
@@ -235,14 +235,14 @@ contains
     call CONSOLE % SetVerbosity ( 'INFO_1' )
 
     call RS % Prepare ( iC = 1, iD = 1, iS_Option = 1 )
-    call RS % Compute ( DC, iC = 1, iD = 1, iS_Option = 1 )
+    call RS % Compute ( DP, iC = 1, iD = 1, iS_Option = 1 )
     if ( nD  >  1 ) then
       call RS % Prepare ( iC = 1, iD = 2, iS_Option = 1 )
-      call RS % Compute ( DC, iC = 1, iD = 2, iS_Option = 1 )
+      call RS % Compute ( DP, iC = 1, iD = 2, iS_Option = 1 )
     end if
     if ( nD  >  2 ) then
       call RS % Prepare ( iC = 1, iD = 3, iS_Option = 1 )
-      call RS % Compute ( DC, iC = 1, iD = 3, iS_Option = 1 )
+      call RS % Compute ( DP, iC = 1, iD = 3, iS_Option = 1 )
     end if
 
     call GIS_SD % Open ( GIS_SD % ACCESS_CREATE )

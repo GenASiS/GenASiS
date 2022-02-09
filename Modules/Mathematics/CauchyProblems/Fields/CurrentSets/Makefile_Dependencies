@@ -9,11 +9,11 @@ CurrentSet_Kernel.o: \
   CurrentSet_Form.o \
   CurrentSet_Kernel.f90
 
-DivergenceContribution_CS__Form.o: \
+DivergencePart_CS__Form.o: \
   Basics.o \
   FieldSets.o \
   CurrentSet_Form.o \
-  DivergenceContribution_CS__Form.f90
+  DivergencePart_CS__Form.f90
 
 EigenspeedSet_F__Form.o: \
   Basics.o \
@@ -23,7 +23,7 @@ EigenspeedSet_F__Form.o: \
 
 CurrentSets.o: \
   CurrentSet_Form.o \
-  DivergenceContribution_CS__Form.o \
+  DivergencePart_CS__Form.o \
   EigenspeedSet_F__Form.o \
   CurrentSets.f90
 

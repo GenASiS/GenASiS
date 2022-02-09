@@ -15,8 +15,8 @@ module Slope_DFV_C_F__Form
       iTimer_K = 0
     type ( FieldSetForm ), allocatable :: &
       Stress_UD
-    class ( DivergenceContribution_CS_Form ), pointer :: &
-      DivergenceContribution => null ( )
+    class ( DivergencePart_CS_Form ), pointer :: &
+      DivergencePart => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_C_F
@@ -79,12 +79,12 @@ module Slope_DFV_C_F__Form
 contains
 
 
-  subroutine InitializeAllocate_C_F ( S, DC, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_C_F ( S, DP, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
-    class ( DivergenceContribution_CS_Form ), intent ( in ), target :: &
-      DC
+    class ( DivergencePart_CS_Form ), intent ( in ), target :: &
+      DP
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -96,17 +96,17 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_C_F' 
     
-    associate ( CS  =>  DC % CurrentSet )
+    associate ( CS  =>  DP % CurrentSet )
 
     if ( S % TimerName  ==  '' ) &
       S % TimerName  &
-        =  'S_DFV_C_F_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+        =  'S_DFV_C_F_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
 
-    Name  =  'S_DFV_C_F_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+    Name  =  'S_DFV_C_F_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
-    S % DivergenceContribution  =>  DC
+    S % DivergencePart  =>  DP
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -214,10 +214,10 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
-      ( DC  =>  S % DivergenceContribution ) 
+      ( DP  =>  S % DivergencePart ) 
     associate &
       ( S_UD  =>   S % Stress_UD, &
-        G     =>  DC % CurrentSet % Geometry )
+        G     =>  DP % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
       T_K  =>   S % Timer_K ( LevelOption = T_Option % Level + 1 )
@@ -231,7 +231,7 @@ contains
 
     associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
 
-    call DC % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+    call DP % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
 
     if ( associated ( T_K ) ) call T_K % Start ( )
 
@@ -276,7 +276,7 @@ contains
     end associate !-- C
 
     end associate !-- S_UD, etc.
-    end associate !-- DC
+    end associate !-- DP
 
   end subroutine ComputeChart
 
@@ -286,7 +286,7 @@ contains
     type ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
 
-    nullify ( S % DivergenceContribution )
+    nullify ( S % DivergencePart )
 
     if ( allocated ( S % Stress_UD ) ) &
       deallocate ( S % Stress_UD )

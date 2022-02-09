@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( DivergenceContribution_CS__Form ) DivergenceContribution_CS__Kernel
+submodule ( DivergencePart_CS__Form ) DivergencePart_CS__Kernel
   
   use Basics
   
@@ -42,4 +42,4 @@ contains
   end procedure ComputeFluxesKernel
 
 
-end submodule DivergenceContribution_CS__Kernel
+end submodule DivergencePart_CS__Kernel

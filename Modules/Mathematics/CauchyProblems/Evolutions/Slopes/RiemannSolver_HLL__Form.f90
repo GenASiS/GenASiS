@@ -722,12 +722,12 @@ contains
   end subroutine Prepare
 
 
-  subroutine Compute ( RS, DC, iC, iD, T_Option, iS_Option )
+  subroutine Compute ( RS, DP, iC, iD, T_Option, iS_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
-    class ( DivergenceContribution_CS_Form ), intent ( inout ) :: &
-      DC
+    class ( DivergencePart_CS_Form ), intent ( inout ) :: &
+      DP
     integer ( KDI ), intent ( in ) :: &
       iC, &   !-- iChart
       iD      !-- iDimensions
@@ -758,7 +758,7 @@ contains
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
-      T_F   =>   DC % Timer_F ( LevelOption = T_Option % Level + 1 )
+      T_F   =>   DP % Timer_F ( LevelOption = T_Option % Level + 1 )
       T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
@@ -766,8 +766,8 @@ contains
     end if !-- T_Option
 
     if ( associated ( T_F ) ) call T_F % Start ( )
-    call DC % ComputeFluxes ( FS_IL, CS_IL, iC, iD )
-    call DC % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
+    call DP % ComputeFluxes ( FS_IL, CS_IL, iC, iD )
+    call DP % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
     if ( associated ( T_F ) ) call T_F % Stop ( )
 
     if ( associated ( T_K ) ) call T_K % Start ( )
