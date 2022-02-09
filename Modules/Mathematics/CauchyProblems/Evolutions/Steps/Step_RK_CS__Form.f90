@@ -22,6 +22,8 @@ module Step_RK_CS__Form
       CurrentSet
     class ( Coarsening_C_Form ), pointer :: &
       Coarsening => null ( )
+    type ( DivergenceContributionElement ), dimension ( : ), allocatable :: &
+      DivergenceContribution
     class ( RiemannSolver_HLL_Form ), allocatable :: &
       RiemannSolver
   contains
@@ -126,6 +128,18 @@ contains
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     end associate !-- Y
 
+    !-- DivergenceContribution
+
+    if ( .not. allocated ( S % DivergenceContribution ) ) then
+      allocate ( S % DivergenceContribution ( 1 ) )
+      associate ( DC_1D  =>  S % DivergenceContribution )
+      allocate ( DC_1D ( 1 ) % Element )
+      associate ( DC  =>  DC_1D ( 1 ) % Element )
+      call DC % Initialize ( CS )
+      end associate !-- DC
+      end associate !-- DC_1D
+    end if !-- allocated DivergenceContribution
+
     !-- RiemannSolver
 
     if ( .not. allocated ( S % RiemannSolver ) ) then
@@ -219,6 +233,8 @@ contains
 
     if ( allocated ( S % RiemannSolver ) ) &
       deallocate ( S % RiemannSolver )
+    if ( allocated ( S % DivergenceContribution ) ) &
+      deallocate ( S % DivergenceContribution )
     if ( allocated ( S % SolutionStage ) ) &
       deallocate ( S % SolutionStage )
     if ( allocated ( S % Solution ) ) &
@@ -438,10 +454,13 @@ contains
 
     if ( present ( iS_Option ) ) then
       write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-      call K % Initialize ( S % RiemannSolver, SuffixOption = StageNumber )
+      call K % Initialize &
+             ( S % RiemannSolver, S % DivergenceContribution, &
+               SuffixOption = StageNumber )
     else
-      call K % Initialize ( S % RiemannSolver, &
-                            IgnorabilityOption = S % IGNORABILITY )
+      call K % Initialize &
+             ( S % RiemannSolver, S % DivergenceContribution, &
+               IgnorabilityOption = S % IGNORABILITY )
     end if
 
     end select !-- S

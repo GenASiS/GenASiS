@@ -32,7 +32,7 @@ program Step_RK_CS__Form_Test
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Slope_DFV_F__Form_Test', DimensionalityOption = '2D' )
+         ( 'Step_RK_CS__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
