@@ -1,6 +1,6 @@
-program Slope_DFV_DC__Form_Test
+program Slope_DFV_F__Form_Test
 
-  !-- Slope_DivergenceFiniteVolume_DivergenceContribution__Form_Test
+  !-- Slope_DivergenceFiniteVolume_Flat__Form_Test
 
   use Basics
   use Manifolds
@@ -21,16 +21,16 @@ program Slope_DFV_DC__Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( DivergenceContribution_CS_Form ), allocatable :: &
-    DC
+  type ( DivergenceContributionElement ), dimension ( : ), allocatable :: &
+    DC_1D
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
-  type ( Slope_DFV_DC_Form ), allocatable :: &
+  type ( Slope_DFV_F_Form ), allocatable :: &
     S
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Slope_DFV_DC__Form_Test', DimensionalityOption = '2D' )
+         ( 'Slope_DFV_F__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -52,17 +52,17 @@ program Slope_DFV_DC__Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( Sm )
 
-  allocate ( DC )
+  allocate ( DC_1D ( 1 ) )
+  allocate ( DivergenceContribution_CS_Form :: DC_1D ( 1 ) % Element )
+  associate ( DC  =>  DC_1D ( 1 ) % Element )
   call DC % Initialize ( CS )
 
   allocate ( RS )
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call RS % Initialize ( CS )
-  call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Initialize ( RS, DC, IgnorabilityOption = A % IGNORABILITY )
+  call S % Initialize ( RS, DC_1D, IgnorabilityOption = A % IGNORABILITY )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call S % SetStream ( Sm )
 
@@ -70,8 +70,8 @@ program Slope_DFV_DC__Form_Test
   call  G % Show ( )
   call CS % Show ( )
   call DC % Show ( )
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call RS % Show ( )
+  call CONSOLE % SetVerbosity ( 'INFO_2' )
   call  S % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call Sm % Show ( )
@@ -87,9 +87,9 @@ program Slope_DFV_DC__Form_Test
 
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   deallocate ( S )
-  deallocate ( RS )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
-  deallocate ( DC )
+  deallocate ( RS )
+  deallocate ( DC_1D )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( Sm )
@@ -97,6 +97,7 @@ program Slope_DFV_DC__Form_Test
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
 
+  end associate !-- DC
 
 contains
 
@@ -176,40 +177,26 @@ contains
 
   subroutine TestSlope ( S, Sm )
 
-    class ( Slope_DFV_DC_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_F_Form ), intent ( inout ) :: &
       S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
 
     integer ( KDI ) :: &
-      iC, &  !-- iCompute
-      iD     !-- iDimension
+      iC  !-- iCompute
     type ( TimerForm ), pointer :: &
-      T, &
-      T_RPP
+      T
 
     call Show ( 'Slope computation' )
     call Show ( S % Name, 'Slope' )
     call Show ( nCompute, 'nCompute' )
 
-    associate ( C  =>  S % Atlas % Chart ( 1 ) % Element )
-
-    T      =>  S % Timer ( LevelOption = 1 )
-    T_RPP  =>  RS % Timer_P ( LevelOption = T % Level + 1 )
+    T  =>  S % Timer ( LevelOption = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
-      do iD  =  1,  C % nDimensions
-        call T_RPP % Start ( )
-        call RS % Prepare ( iC = 1, iD = iD, T_Option = T_RPP )
-        call T_RPP % Stop ( )
-        call S % ComputePartialDerivative ( iC = 1, iD = iD, T_Option = T )
-      end do !-- iD
-      call S % ComputeConnectionFlat ( iC = 1, T_Option = T )
-      call S % AddComponents ( T_Option = T )
+      call S % Compute ( T_Option = T )
     end do !-- iC
     call T % Stop ( )
-
-    end associate !-- C
 
     T  =>  Sm % TimerWrite ( LevelOption = 1 )
     call T % Start ( )
@@ -221,4 +208,4 @@ contains
   end subroutine TestSlope
 
 
-end program Slope_DFV_DC__Form_Test
+end program Slope_DFV_F__Form_Test

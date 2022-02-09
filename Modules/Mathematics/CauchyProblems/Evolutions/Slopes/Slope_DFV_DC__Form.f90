@@ -50,14 +50,16 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_DC'
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_DC_' // trim ( DC % Name )
+    associate ( CS  =>  RS % CurrentSet )
 
-    Name  =  'S_DFV_DC_' // trim ( DC % Name )
+    if ( S % TimerName  ==  '' ) &
+      S % TimerName  &
+        =  'S_DFV_DC_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+
+    Name  =  'S_DFV_DC_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
-    associate ( CS  =>  RS % CurrentSet )
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Balanced, &

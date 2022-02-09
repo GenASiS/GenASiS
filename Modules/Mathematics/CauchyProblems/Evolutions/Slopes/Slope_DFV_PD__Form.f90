@@ -82,17 +82,18 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_PD'
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_PD_' // trim ( DC % Name )
+    associate ( CS  =>  RS % CurrentSet )
 
-    Name  =  'S_DFV_PD_' // trim ( DC % Name )
+    if ( S % TimerName  ==  '' ) &
+      S % TimerName  &
+        =  'S_DFV_PD_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+
+    Name  =  'S_DFV_PD_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % DivergenceContribution  =>  DC
     S % RiemannSolver           =>  RS
-
-    associate ( CS  =>  RS % CurrentSet )
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &

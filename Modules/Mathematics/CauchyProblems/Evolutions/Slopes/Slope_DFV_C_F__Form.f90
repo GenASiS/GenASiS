@@ -96,16 +96,17 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_C_F' 
     
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_C_F_' // trim ( DC % Name )
+    associate ( CS  =>  DC % CurrentSet )
 
-    Name  =  'S_DFV_C_F_' // trim ( DC % Name )
+    if ( S % TimerName  ==  '' ) &
+      S % TimerName  &
+        =  'S_DFV_C_F_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
+
+    Name  =  'S_DFV_C_F_' // trim ( DC % Name ) // '_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % DivergenceContribution  =>  DC
-
-    associate ( CS  =>  DC % CurrentSet )
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &

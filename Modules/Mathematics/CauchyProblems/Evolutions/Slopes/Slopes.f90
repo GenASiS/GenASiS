@@ -6,5 +6,6 @@ module Slopes
   use Slope_DFV_PD__Form
   use Slope_DFV_C_F__Form
   use Slope_DFV_DC__Form
+  use Slope_DFV_F__Form
 
 end module Slopes
