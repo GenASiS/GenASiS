@@ -50,11 +50,7 @@ module Fluid_P__Form
     procedure, public, pass :: &
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
-      ComputeFluxes
-    procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
-    procedure, public, pass ( CS ) :: &
-      ComputeStresses
   !   procedure, public, pass ( C ) :: &
   !     ComputeCenterStates
   !   procedure, public, pass ( C ) :: &
@@ -68,9 +64,7 @@ module Fluid_P__Form
   end type Fluid_P_Form
 
     private :: &
-      Compute_FS_G_Kernel, &
-      Compute_ES_G_Kernel, &
-      Compute_S_UD_Kernel
+      Compute_ES_G_Kernel
 
   interface
 
@@ -123,28 +117,6 @@ module Fluid_P__Form
         UseDeviceOption
     end subroutine Compute_N_V_E_G_Kernel
 
-    module subroutine Compute_FS_G_Kernel &
-             ( D, S_1, S_2, S_3, G, P, V_Dim, iDim, &
-               F_D, F_S_1, F_S_2, F_S_3, F_G, UseDeviceOption )
-      !-- Compute_FluxSet_Galileo_Kernel
-      use Basics
-      implicit none
-      real ( KDR ), dimension ( : ), intent ( in ) :: &
-        D, &
-        S_1, S_2, S_3, &
-        G, &
-        P, &
-        V_Dim
-      integer ( KDI ), intent ( in ) :: &
-        iDim
-      real ( KDR ), dimension ( : ), intent ( out ) :: &
-        F_D, &
-        F_S_1, F_S_2, F_S_3, &
-        F_G
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine Compute_FS_G_Kernel
-
     module subroutine Compute_ES_G_Kernel &
              ( V_Dim, SS, M_UU_Dim, EF_P, EF_M, UseDeviceOption )
       !-- Compute_EigenspeedSet_Galileo_Kernel
@@ -160,21 +132,6 @@ module Fluid_P__Form
         UseDeviceOption
     end subroutine Compute_ES_G_Kernel
     
-    module subroutine Compute_S_UD_Kernel &
-             ( V_2, V_3, S_2, S_3, P, S_UD_22, S_UD_33, UseDeviceOption )
-      !-- Compute_Stress_UD_Kernel
-      use Basics
-      implicit none
-      real ( KDR ), dimension ( : ), intent ( in ) :: &
-        V_2, V_3, &
-        S_2, S_3, &
-        P
-      real ( KDR ), dimension ( : ), intent ( out ) :: &
-        S_UD_22, S_UD_33
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine Compute_S_UD_Kernel
-
   end interface
 
 
@@ -456,62 +413,6 @@ contains
   end subroutine ComputeFromTemperature
 
 
-  subroutine ComputeFluxes ( FS, CS, FS_CS, iC, iD )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    class ( Fluid_P_Form ), intent ( in ) :: &
-      CS
-    class ( FieldSetForm ), intent ( in ) :: &
-      FS_CS
-    integer ( KDI ), intent ( in ) :: &
-      iC, &  !-- iChart
-      iD     !-- iDimension
-    
-    integer ( KDI ) :: &
-      iDensity, &
-      iEnergy
-    integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum
-
-    call Search &
-           ( CS % iaBalanced, CS % BARYON_DENSITY_B, iDensity )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_1, iMomentum ( 1 ) )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_2, iMomentum ( 2 ) )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_3, iMomentum ( 3 ) )
-    call Search &
-           ( CS % iaBalanced, CS % ENERGY_DENSITY_B, iEnergy )
-
-    associate &
-      ( FSV  =>  FS    % Storage ( iC ) % Value, &
-        CSV  =>  FS_CS % Storage ( iC ) % Value )
-    associate &
-      ( F_D      =>  FSV ( :, iDensity ), &
-        F_S_1    =>  FSV ( :, iMomentum ( 1 ) ), &
-        F_S_2    =>  FSV ( :, iMomentum ( 2 ) ), &
-        F_S_3    =>  FSV ( :, iMomentum ( 3 ) ), &
-        F_G      =>  FSV ( :, iEnergy ), &
-          D      =>  CSV ( :, CS % BARYON_DENSITY_B ), &
-          S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
-          S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
-          S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
-          G      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-          P      =>  CSV ( :, CS % PRESSURE ), &
-          V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
- 
-    call Compute_FS_G_Kernel &
-           ( D, S_1, S_2, S_3, G, P, V_Dim, iD, F_D, F_S_1, F_S_2, F_S_3, F_G, &
-             UseDeviceOption = CS % DeviceMemory )
-  
-    end associate !-- F_D, etc.
-    end associate !-- FSV, etc.
-
-  end subroutine ComputeFluxes
-
-
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
 
     class ( FieldSetForm ), intent ( inout ) :: &
@@ -547,44 +448,6 @@ contains
     end associate !-- G
 
   end subroutine ComputeEigenspeeds
-
-
-  subroutine ComputeStresses ( S_UD, CS, iC, iMomentum_1, iMomentum_2 )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      S_UD
-    class ( Fluid_P_Form ), intent ( in ) :: &
-      CS
-    integer ( KDI ), intent ( in ) :: &
-      iC  !-- iChart
-    integer ( KDI ), intent ( out ) :: &
-      iMomentum_1, iMomentum_2
-
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_1, iMomentum_1 )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_2, iMomentum_2 )
-
-    associate &
-      (  S_UD_V  =>   S_UD % Storage ( iC ) % Value, &
-        CSV      =>  CS    % Storage ( iC ) % Value )
-    associate &
-      ( S_UD_22  =>  S_UD_V ( :, 1 ), &
-        S_UD_33  =>  S_UD_V ( :, 2 ), &
-           V_2   =>  CSV ( :, CS % VELOCITY_U_2 ), &
-           V_3   =>  CSV ( :, CS % VELOCITY_U_3 ), &
-           S_2   =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
-           S_3   =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
-           P     =>  CSV ( :, CS % PRESSURE ) )
- 
-    call Compute_S_UD_Kernel &
-           ( V_2, V_3, S_2, S_3, P, S_UD_22, S_UD_33, &
-             UseDeviceOption = CS % DeviceMemory )
-
-    end associate !-- S_UD_22, etc.
-    end associate !-- S_UD_V, etc.
-
-  end subroutine ComputeStresses
 
 
   impure elemental subroutine Finalize ( F )
