@@ -537,18 +537,59 @@ contains
       S % SetSlope  =>  SetSlope_N_SG
     end select !-- G
 
+    !-- DivergencePart
+    select type ( F )
+    class is ( Fluid_D_Form )
+      allocate ( S % DivergencePart ( 1 ) )
+      associate ( DP_1D  =>  S % DivergencePart )
+        allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
+        associate ( DP  =>  DP_1D ( 1 ) % Element )
+          call DP % Initialize ( F )
+        end associate !-- DP
+      end associate !-- DP_1D
+    class is ( Fluid_P_I_Form )
+      allocate ( S % DivergencePart ( 2 ) )
+      associate ( DP_1D  =>  S % DivergencePart )
+        allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
+        associate ( DP  =>  DP_1D ( 1 ) % Element )
+          call DP % Initialize ( F )
+        end associate !-- DP
+        allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
+        associate ( DP  =>  DP_1D ( 2 ) % Element )
+          call DP % Initialize ( F )
+        end associate !-- DP
+      end associate !-- DP_1D
+    class is ( Fluid_P_HN_Form )
+      allocate ( S % DivergencePart ( 2 ) )
+      associate ( DP_1D  =>  S % DivergencePart )
+        allocate ( DivergencePart_F_P_HN_V_Form :: DP_1D ( 1 ) % Element )
+        associate ( DP  =>  DP_1D ( 1 ) % Element )
+          call DP % Initialize ( F )
+        end associate !-- DP
+        allocate ( DivergencePart_F_P_HN_P_Form :: DP_1D ( 2 ) % Element )
+        associate ( DP  =>  DP_1D ( 2 ) % Element )
+          call DP % Initialize ( F )
+        end associate !-- DP
+      end associate !-- DP_1D
+    class default
+      call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- F
+
     call S % Initialize ( F )
 
-    !-- Set up electron density as abundance flux
-    select type ( F )
-      class is ( Fluid_P_HN_Form )
-    associate &
-      ( RS  =>  S % RiemannSolver )
-    RS % iFiducialDensityFlux  =  1
-    allocate ( RS % iaAbundances, source = [ 16 ] )
-    allocate ( RS % iaAbundanceFluxes, source = [ 6 ] )
-    end associate !-- RS
-    end select !-- F
+    ! !-- Set up electron density as abundance flux
+    ! select type ( F )
+    !   class is ( Fluid_P_HN_Form )
+    ! associate &
+    !   ( RS  =>  S % RiemannSolver )
+    ! RS % iFiducialDensityFlux  =  1
+    ! allocate ( RS % iaAbundances, source = [ 16 ] )
+    ! allocate ( RS % iaAbundanceFluxes, source = [ 6 ] )
+    ! end associate !-- RS
+    ! end select !-- F
 
     !-- Coarsening
     U % Coarsen  =  .true.
@@ -804,6 +845,7 @@ contains
       write ( StageNumber, fmt = '(i1.1)' ) iS_Option
       call K % Initialize &
              ( S % RiemannSolver, &
+               S % DivergencePart, &
                iVelocity_F = F % VELOCITY_U, &
                iMomentum_B = iMomentum_B, &
                iBaryonMass_F = F % BARYON_MASS, &
@@ -813,6 +855,7 @@ contains
     else
       call K % Initialize &
              ( S % RiemannSolver, &
+               S % DivergencePart, &
                iVelocity_F = F % VELOCITY_U, &
                iMomentum_B = iMomentum_B, &
                iBaryonMass_F = F % BARYON_MASS, &
