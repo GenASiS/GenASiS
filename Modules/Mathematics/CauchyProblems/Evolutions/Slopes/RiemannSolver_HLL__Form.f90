@@ -72,6 +72,10 @@ module RiemannSolver_HLL__Form
     procedure, public, pass :: &
       Prepare
     procedure, public, pass :: &
+      ComputeFlux
+    procedure, public, pass :: &
+      ComputeDiffusion
+    procedure, public, pass :: &
       Compute
     final :: &
       Finalize
@@ -82,13 +86,14 @@ module RiemannSolver_HLL__Form
     !   ComputeWithReconstructedPrimitive
 
       private :: &
-        ComputeAlphaKernel, &
-        ComputeFluxesKernel!, &
+        PrepareKernel, &
+        ComputeKernel, &
+        ComputeFluxKernel
 !        ComputeAbundancesKernel
 
     interface
       
-      module subroutine ComputeAlphaKernel &
+      module subroutine PrepareKernel &
                ( EP_IL, EP_IR, EM_IL, EM_IR, iAP, iAM, RSV, UseDeviceOption )
         use Basics
         implicit none
@@ -102,9 +107,45 @@ module RiemannSolver_HLL__Form
           RSV     !-- RiemannSolver Value
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeAlphaKernel
+      end subroutine PrepareKernel
 
-      module subroutine ComputeFluxesKernel &
+      module subroutine ComputeFluxKernel &
+               ( RSV, F_IL, F_IR, iaFluxes, iAP, iAM, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          RSV     !-- RiemannSolver Value
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          F_IL, F_IR
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaFluxes
+        integer ( KDI ), intent ( in ) :: &
+          iAP, &  !-- iAlphaPlus
+          iAM     !-- iAlphaMinus
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeFluxKernel
+
+      module subroutine ComputeDiffusionKernel &
+               ( RSV, U_IL, U_IR, iaBalanced, iaFluxes, iAP, iAM, &
+                 UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          RSV     !-- RiemannSolver Value
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          U_IL, U_IR
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaBalanced, &
+          iaFluxes
+        integer ( KDI ), intent ( in ) :: &
+          iAP, &  !-- iAlphaPlus
+          iAM     !-- iAlphaMinus
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeDiffusionKernel
+
+      module subroutine ComputeKernel &
                ( RSV, F_IL, F_IR, U_IL, U_IR, iaBalanced, iaFluxes, iAP, iAM, &
                  UseDeviceOption )
         use Basics
@@ -122,7 +163,7 @@ module RiemannSolver_HLL__Form
           iAM     !-- iAlphaMinus
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeFluxesKernel
+      end subroutine ComputeKernel
 
       ! module subroutine ComputeAbundancesKernel &
       !          ( RSV, CS_IL, CS_IR, iaAF, iaA, iAP, iAM, iFDF, UseDeviceOption )
@@ -708,7 +749,7 @@ contains
          EM_IL  =>  RES_IL % Value ( :, ES_IL % EIGENSPEED_FAST_MINUS_U ), &
          EM_IR  =>  RES_IR % Value ( :, ES_IR % EIGENSPEED_FAST_MINUS_U ) )
     
-    call ComputeAlphaKernel &
+    call PrepareKernel &
            ( EP_IL, EP_IR, EM_IL, EM_IR, &
              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, RSV, &
              UseDeviceOption = RS % DeviceMemory )
@@ -720,6 +761,162 @@ contains
     end associate !-- CS, etc.
 
   end subroutine Prepare
+
+
+  subroutine ComputeFlux ( RS, DP, iC, iD, T_Option, iS_Option )
+
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+    class ( DivergencePart_CS_Form ), intent ( inout ) :: &
+      DP
+    integer ( KDI ), intent ( in ) :: &
+      iC, &   !-- iChart
+      iD      !-- iDimensions
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option  !-- iStage_Option
+
+    integer ( KDI ) :: &
+      iF 
+    integer ( KDI ), dimension ( RS % CurrentSet % nBalanced ) :: &
+      iaFluxes
+    type ( TimerForm ), pointer :: &
+      T_F, &
+      T_K
+    
+    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
+    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
+
+    associate &
+      (  CS     =>  RS % CurrentSet, &
+         CS_IL  =>  RS % CurrentSet_IL, &
+         CS_IR  =>  RS % CurrentSet_IR, &
+         FS_IL  =>  RS % FluxSet_IL, &
+         FS_IR  =>  RS % FluxSet_IR, &
+        RPS     =>  RS % Reconstruction_PS )
+
+    if ( present ( T_Option ) ) then
+      T_F   =>   DP % Timer_F ( LevelOption = T_Option % Level + 1 )
+      T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
+    else
+      T_F   =>  null ( )
+      T_K   =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_F ) ) call T_F % Start ( )
+    call DP % ComputeFluxes ( FS_IL, CS_IL, iC, iD )
+    call DP % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
+    if ( associated ( T_F ) ) call T_F % Stop ( )
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    associate &
+      ( RSS     =>  RS % Storage ( iC ), &
+        RFS_IL  =>  RS % FluxSet_IL % Storage ( iC ), &
+        RFS_IR  =>  RS % FluxSet_IR % Storage ( iC ) )
+    associate &
+      (   RSV  =>  RSS % Value, &
+         F_IL  =>  RFS_IL % Value, &
+         F_IR  =>  RFS_IR % Value )
+    
+    iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
+    
+    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    
+    call ComputeFluxKernel &
+           ( RSV, F_IL, F_IR, iaFluxes, RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
+             UseDeviceOption = RS % DeviceMemory )
+
+    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+
+    end associate !-- F_I, etc.
+    end associate !-- RSV, etc.
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+    end associate !-- CS, etc.
+
+    ! if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
+    !   associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
+    !   call RS % Copy ( SDC )
+    !   end associate !-- SDC
+    ! end if
+    
+  end subroutine ComputeFlux
+
+
+  subroutine ComputeDiffusion ( RS, iC, iD, T_Option, iS_Option )
+
+    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+      RS
+    integer ( KDI ), intent ( in ) :: &
+      iC, &   !-- iChart
+      iD      !-- iDimensions
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option  !-- iStage_Option
+
+    integer ( KDI ) :: &
+      iF 
+    integer ( KDI ), dimension ( RS % CurrentSet % nBalanced ) :: &
+      iaFluxes
+    type ( TimerForm ), pointer :: &
+      T_F, &
+      T_K
+    
+    call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
+    call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
+
+    associate &
+      (  CS     =>  RS % CurrentSet, &
+         CS_IL  =>  RS % CurrentSet_IL, &
+         CS_IR  =>  RS % CurrentSet_IR, &
+        RPS     =>  RS % Reconstruction_PS )
+
+    if ( present ( T_Option ) ) then
+      T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
+    else
+      T_K   =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    associate &
+      ( RSS     =>  RS % Storage ( iC ), &
+        CSS_IL  =>  RS % CurrentSet_IL % Storage ( iC ), &
+        CSS_IR  =>  RS % CurrentSet_IR % Storage ( iC ) )
+    associate &
+      (   RSV  =>  RSS % Value, &
+         U_IL  =>  CSS_IL % Value, &
+         U_IR  =>  CSS_IR % Value )
+    
+    iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
+    
+    call CSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call CSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    
+    call ComputeDiffusionKernel &
+           ( RSV, U_IL, U_IR, CS % iaBalanced, iaFluxes, &
+             RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
+             UseDeviceOption = RS % DeviceMemory )
+
+    call CSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call CSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+
+    end associate !-- F_I, etc.
+    end associate !-- RSV, etc.
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+    end associate !-- CS, etc.
+
+    ! if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
+    !   associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
+    !   call RS % Copy ( SDC )
+    !   end associate !-- SDC
+    ! end if
+    
+  end subroutine ComputeDiffusion
 
 
   subroutine Compute ( RS, DP, iC, iD, T_Option, iS_Option )
@@ -753,8 +950,6 @@ contains
          CS_IR  =>  RS % CurrentSet_IR, &
          FS_IL  =>  RS % FluxSet_IL, &
          FS_IR  =>  RS % FluxSet_IR, &
-         ES_IL  =>  RS % EigenspeedSet_IL, &
-         ES_IR  =>  RS % EigenspeedSet_IR, &
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
@@ -791,7 +986,7 @@ contains
     call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
     
-    call ComputeFluxesKernel &
+    call ComputeKernel &
            ( RSV, F_IL, F_IR, U_IL, U_IR, CS % iaBalanced, iaFluxes, &
              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
              UseDeviceOption = RS % DeviceMemory )
@@ -807,11 +1002,11 @@ contains
 
     end associate !-- CS, etc.
 
-    if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
-      associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
-      call RS % Copy ( SDC )
-      end associate !-- SDC
-    end if
+    ! if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
+    !   associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
+    !   call RS % Copy ( SDC )
+    !   end associate !-- SDC
+    ! end if
     
   end subroutine Compute
 
