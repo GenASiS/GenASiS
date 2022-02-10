@@ -62,8 +62,6 @@ module Fluid_P_HN__Form
       ComputeFromPrimitive
     procedure, public, pass :: &
       ComputeFromBalanced
-    procedure, public, pass ( CS ) :: &
-      ComputeFluxes
     final :: &
       Finalize
 !     procedure, public, pass ( C ) :: &
@@ -78,8 +76,7 @@ module Fluid_P_HN__Form
       Apply_EOS_PrologueKernel, &
       Compute_D_S_G_DE_G_Kernel, &
       Compute_N_V_E_YE_G_Kernel, &
-      Apply_EOS_EpilogueKernel, &
-      Compute_FS_G_Kernel
+      Apply_EOS_EpilogueKernel
 
     interface 
   
@@ -182,30 +179,6 @@ module Fluid_P_HN__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Apply_EOS_EpilogueKernel
-
-      module subroutine Compute_FS_G_Kernel &
-               ( D, S_1, S_2, S_3, G, DE, P, V_Dim, iDim, &
-                 F_D, F_S_1, F_S_2, F_S_3, F_G, F_DE, UseDeviceOption )
-        !-- Compute_FluxSet_Galileo_Kernel
-        use Basics
-        implicit none
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          D, &
-          S_1, S_2, S_3, &
-          G, &
-          DE, &
-          P, &
-          V_Dim
-        integer ( KDI ), intent ( in ) :: &
-          iDim
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
-          F_D, &
-          F_S_1, F_S_2, F_S_3, &
-          F_G, &
-          F_DE
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine Compute_FS_G_Kernel
 
     end interface
 
@@ -850,68 +823,6 @@ contains
     end do !-- iC
 
   end subroutine ComputeFromBalanced
-
-
-  subroutine ComputeFluxes ( FS, CS, FS_CS, iC, iD )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    class ( Fluid_P_HN_Form ), intent ( in ) :: &
-      CS
-    class ( FieldSetForm ), intent ( in ) :: &
-      FS_CS
-    integer ( KDI ), intent ( in ) :: &
-      iC, &  !-- iChart
-      iD     !-- iDimension
-    
-    integer ( KDI ) :: &
-      iDensity, &
-      iEnergy, &
-      iElectron
-    integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum
-
-    call Search &
-           ( CS % iaBalanced, CS % BARYON_DENSITY_B, iDensity )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_1, iMomentum ( 1 ) )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_2, iMomentum ( 2 ) )
-    call Search &
-           ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_3, iMomentum ( 3 ) )
-    call Search &
-           ( CS % iaBalanced, CS % ENERGY_DENSITY_B, iEnergy )
-    call Search &
-           ( CS % iaBalanced, CS % ELECTRON_DENSITY_B, iElectron )
-
-    associate &
-      ( FSV  =>  FS    % Storage ( iC ) % Value, &
-        CSV  =>  FS_CS % Storage ( iC ) % Value )
-    associate &
-      ( F_D      =>  FSV ( :, iDensity ), &
-        F_S_1    =>  FSV ( :, iMomentum ( 1 ) ), &
-        F_S_2    =>  FSV ( :, iMomentum ( 2 ) ), &
-        F_S_3    =>  FSV ( :, iMomentum ( 3 ) ), &
-        F_G      =>  FSV ( :, iEnergy ), &
-        F_DE     =>  FSV ( :, iElectron ), &
-          D      =>  CSV ( :, CS % BARYON_DENSITY_B ), &
-          S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
-          S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
-          S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
-          G      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-          DE     =>  CSV ( :, CS % ELECTRON_DENSITY_B ), &
-          P      =>  CSV ( :, CS % PRESSURE ), &
-          V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
- 
-    call Compute_FS_G_Kernel &
-           ( D, S_1, S_2, S_3, G, DE, P, V_Dim, iD, &
-             F_D, F_S_1, F_S_2, F_S_3, F_G, F_DE, &
-             UseDeviceOption = CS % DeviceMemory )
-  
-    end associate !-- F_D, etc.
-    end associate !-- FSV, etc.
-
-  end subroutine ComputeFluxes
 
 
   impure elemental subroutine Finalize ( F )
