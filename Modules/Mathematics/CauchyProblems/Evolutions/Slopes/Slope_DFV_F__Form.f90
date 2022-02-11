@@ -7,6 +7,7 @@ module Slope_DFV_F__Form
   use RiemannSolver_HLL__Form
   use Slope_H__Form
   use Slope_DFV_DP__Form
+  use Slope_DFV_DD__Form
 
   implicit none
   private
@@ -85,6 +86,17 @@ contains
     end do !-- iDP
     end associate !-- nSC
 
+    !-- Slope component: divergence diffusion
+
+    associate ( nSC  =>  S % nComponents )
+    nSC  =  nSC + 1
+    allocate ( Slope_DFV_DD_Form :: S % Component ( nSC ) % Element )
+    select type ( SDD  =>  S % Component ( nSC ) % Element )
+    class is ( Slope_DFV_DD_Form )
+      call SDD % Initialize ( RS, SuffixOption )
+    end select !-- SDD
+    end associate !-- nSC
+
   end subroutine InitializeAllocate_F
 
 
@@ -108,7 +120,7 @@ contains
     do iC  =  1,  nC
       associate ( C  =>  S % Atlas % Chart ( 1 ) % Element )
 
-      !-- Partial derivative
+      !-- Partial derivative contributions
       associate ( RS  =>  S % RiemannSolver )
       
       if ( present ( T_Option ) ) then
@@ -118,22 +130,34 @@ contains
       end if
 
       do iD  =  1,  C % nDimensions
+
+        !-- Reconstruction and eigenspeeds
         if ( associated ( T_RPP ) ) call T_RPP % Start ( )
         call RS % Prepare ( iC = iC, iD = iD, T_Option = T_RPP )
         if ( associated ( T_RPP ) ) call T_RPP % Stop ( )
-        do iDP  =  1,  S % nComponents
+
+        !-- Flux contributions
+        do iDP  =  1,  S % nComponents - 1
           select type ( SDP  =>  S % Component ( iDP ) % Element )
           class is ( Slope_DFV_DP_Form )
             call SDP % ComputePartialDerivative &
                    ( iC = iC, iD = iD, T_Option = T_Option )
           end select !-- SDP
         end do !-- iDP
+
+        !-- Diffusive term
+        select type ( SDD  =>  S % Component ( S % nComponents ) % Element )
+        class is ( Slope_DFV_DD_Form )
+          call SDD % ComputeDimension &
+                 ( iC = iC, iD = iD, T_Option = T_Option )
+        end select !-- SDD
+
       end do !-- iD
       
       end associate !-- RS
 
-      !-- Connection and sum
-      do iDP  =  1,  S % nComponents
+      !-- Connection contributions and sums
+      do iDP  =  1,  S % nComponents - 1
         select type ( SDP  =>  S % Component ( iDP ) % Element )
         class is ( Slope_DFV_DP_Form )
           call SDP % ComputeConnectionFlat &
@@ -141,6 +165,8 @@ contains
           call SDP % AddComponents ( T_Option = T_Option )
         end select !-- SDP
       end do !-- iDP
+
+      !-- Diffusive term
 
       end associate !-- C
     end do !-- iC

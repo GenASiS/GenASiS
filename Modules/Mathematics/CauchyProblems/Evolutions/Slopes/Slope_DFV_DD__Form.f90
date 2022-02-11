@@ -1,6 +1,6 @@
-module Slope_DFV_PD__Form
+module Slope_DFV_DD__Form
 
-  !-- Slope_DivergenceFiniteVolume_PartialDerivative__Form
+  !-- Slope_DivergenceFiniteVolume_DivergenceDiffusion__Form
 
   use Basics
   use Manifolds
@@ -11,18 +11,16 @@ module Slope_DFV_PD__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
+  type, public, extends ( Slope_H_Form ) :: Slope_DFV_DD_Form
     integer ( KDI ) :: &
       iTimer_K = 0
-    class ( DivergencePart_CS_Form ), pointer :: &
-      DivergencePart => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
       RiemannSolver => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_PD
+      InitializeAllocate_DD
     generic, public :: &
-      Initialize => InitializeAllocate_PD
+      Initialize => InitializeAllocate_DD
     procedure, private, pass :: &
       Timer_K
     procedure, public, pass :: &
@@ -31,7 +29,7 @@ module Slope_DFV_PD__Form
       ComputeDimension
     final :: &
       Finalize
-  end type Slope_DFV_PD_Form
+  end type Slope_DFV_DD_Form
 
     private :: &
       ComputeKernel
@@ -62,15 +60,13 @@ module Slope_DFV_PD__Form
 contains
 
 
-  subroutine InitializeAllocate_PD &
-               ( S, RS, DP, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_DD &
+               ( S, RS, SuffixOption, IgnorabilityOption )
 
-    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
-    class ( DivergencePart_CS_Form ), intent ( in ), target :: &
-      DP
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -80,19 +76,18 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_DFV_PD'
+      S % Type  =  'a Slope_DFV_DD'
 
     associate ( CS  =>  RS % CurrentSet )
 
     if ( S % TimerName  ==  '' ) &
       S % TimerName  &
-        =  'S_DFV_PD_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
+        =  'S_DFV_DD_' // trim ( CS % Name )
 
-    Name  =  'S_DFV_PD_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
+    Name  =  'S_DFV_DD_' // trim ( CS % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
-    S % DivergencePart  =>  DP
     S % RiemannSolver   =>  RS
 
     call S % Slope_H_Form % Initialize &
@@ -107,12 +102,12 @@ contains
 
     end associate !-- CS
 
-  end subroutine InitializeAllocate_PD
+  end subroutine InitializeAllocate_DD
 
 
   function Timer_K ( S, LevelOption ) result ( T )
 
-    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ), optional :: &
       LevelOption
@@ -142,7 +137,7 @@ contains
 
   subroutine CloneTimers ( S, S_S )
 
-    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
     class ( Slope_H_Form ), intent ( in ) :: &
       S_S  !-- S_Source
@@ -153,7 +148,7 @@ contains
     call S % Slope_H_Form % CloneTimers ( S_S )
 
     select type ( S_S )
-    class is ( Slope_DFV_PD_Form )
+    class is ( Slope_DFV_DD_Form )
 
     S % iTimer_K  =  S_S % iTimer_K
 
@@ -164,7 +159,7 @@ contains
 
   subroutine ComputeDimension ( S, iC, iD, T_Option, iS_Option )
 
-    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
@@ -189,7 +184,6 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
-        DP  =>  S % DivergencePart, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
@@ -209,12 +203,12 @@ contains
 
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
-      call RS % ComputeFlux &
-             ( DP, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+      call RS % ComputeDiffusion &
+             ( iC, iD, T_Option = T_RS, iS_Option = iS_Option )
       call T_RS % Stop ( )
     else
-      call RS % ComputeFlux &
-             ( DP, iC, iD, iS_Option = iS_Option )
+      call RS % ComputeDiffusion &
+             ( iC, iD, iS_Option = iS_Option )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
@@ -241,7 +235,7 @@ contains
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Slope_DFV_PD__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Slope_DFV_DD__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -261,13 +255,12 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+    type ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
 
-    nullify ( S % DivergencePart )
     nullify ( S % RiemannSolver )
     
   end subroutine Finalize
 
 
-end module Slope_DFV_PD__Form
+end module Slope_DFV_DD__Form
