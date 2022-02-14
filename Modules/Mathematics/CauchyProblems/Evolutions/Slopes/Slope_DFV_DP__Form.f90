@@ -91,6 +91,8 @@ contains
 
     end associate !-- nSC
 
+    S % StreamComponents  =  .false.
+
   end subroutine InitializeAllocate_DP
 
 
