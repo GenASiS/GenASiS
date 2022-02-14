@@ -27,7 +27,7 @@ module Slope_H__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
-    procedure, public, pass ( S ) :: &
+    procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
       Show => Show_FS
@@ -115,12 +115,12 @@ contains
   end subroutine InitializeAllocate_FS
 
 
-  subroutine SetStream ( Sm, S )
+  subroutine SetStream ( S, Sm )
 
+    class ( Slope_H_Form ), intent ( inout ) :: &
+      S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
-    class ( Slope_H_Form ), intent ( in ) :: &
-      S
 
     integer ( KDI ) :: &
       iC

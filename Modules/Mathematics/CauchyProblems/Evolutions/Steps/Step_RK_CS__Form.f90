@@ -187,11 +187,11 @@ contains
 
     call S % SetStream_H ( Sm, StagesOption = Stages )
 
-    if ( Stages ) then
-      associate ( RSA  =>  S % RiemannSolver )
-      call RSA % SetStream ( Sm, S % nStages )
-      end associate !-- RSA
-    end if !-- Stages
+    ! if ( Stages ) then
+    !   associate ( RSA  =>  S % RiemannSolver )
+    !   call RSA % SetStream ( Sm, S % nStages )
+    !   end associate !-- RSA
+    ! end if !-- Stages
 
   end subroutine SetStream
 

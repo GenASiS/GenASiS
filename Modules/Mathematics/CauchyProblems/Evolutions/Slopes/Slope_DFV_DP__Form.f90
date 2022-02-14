@@ -13,15 +13,27 @@ module Slope_DFV_DP__Form
   private
 
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_DP_Form
+    logical ( KDL ) :: &
+      StreamFluxes
+    character ( LDL ) :: &
+      Suffix = ''
+    type ( FieldSetElement ), dimension ( : ), allocatable :: &
+      FluxSetDimension
   contains
     procedure, private, pass :: &
       InitializeAllocate_DP
     generic, public :: &
       Initialize => InitializeAllocate_DP
     procedure, public, pass :: &
+      SetStream
+    procedure, public, pass :: &
       ComputePartialDerivative
     procedure, public, pass :: &
       ComputeConnectionFlat
+    procedure, public, pass :: &
+      ClearRecursive
+    procedure, public, pass :: &
+      MultiplyAddRecursive
     final :: &
       Finalize
   end type Slope_DFV_DP_Form
@@ -44,6 +56,12 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    integer ( KDI ) :: &
+      iC, &  !-- iChart
+      iD, &  !-- iDimension
+      nD     !-- nDimensions
+    character ( 1 ) :: &
+      DimensionNumber
     character ( LDL ) :: &
       Name
 
@@ -91,9 +109,65 @@ contains
 
     end associate !-- nSC
 
+    !-- Stream parameters
+
     S % StreamComponents  =  .false.
 
+    S % StreamFluxes  =  .false.
+    call PROGRAM_HEADER % GetParameter ( S % StreamFluxes, 'StreamFluxes' )
+
+    if ( S % StreamFluxes ) then
+
+      associate ( A  =>  S % Atlas )
+      nD  =  A % Chart ( 1 ) % Element % nDimensions
+      do iC  =  2, A % nCharts
+        nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
+      end do
+      end associate !-- A
+
+      allocate ( S % FluxSetDimension ( nD ) )
+      do iD  =  1, nD
+        write ( DimensionNumber, fmt = '(i1.1)' ) iD
+        allocate ( S % FluxSetDimension ( iD ) % Element )
+        associate ( FSD  =>  S % FluxSetDimension ( iD ) % Element )
+        call FSD % Initialize &
+               ( S % Atlas, &
+                 FieldOption = S % Field, &
+                 NameOption = 'FS_' // trim ( S % Name ) // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = S % DeviceMemory, &
+                 DevicesCommunicateOption = S % DevicesCommunicate, &
+                 nFieldsOption = S % nFields, &
+                 IgnorabilityOption = S % IGNORABILITY + 1 )
+        end associate !-- FSD
+      end do !-- iD
+
+    end if
+
   end subroutine InitializeAllocate_DP
+
+
+  subroutine SetStream ( S, Sm )
+
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
+      S
+    class ( StreamForm ), intent ( inout ) :: &
+      Sm
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    call S % Slope_H_Form % SetStream ( Sm )
+
+    if ( S % StreamFluxes ) then
+      do iD  =  1, size ( S % FluxSetDimension )
+        associate ( FSD  =>  S % FluxSetDimension ( iD ) % Element )
+        call Sm % AddFieldSet ( FSD )
+        end associate !-- FSD
+      end do !-- iD
+    end if
+
+  end subroutine SetStream
 
 
   subroutine ComputePartialDerivative ( S, iC, iD, T_Option, iS_Option )
@@ -112,6 +186,14 @@ contains
       class is ( Slope_DFV_PD_Form )
 
     call S_PD % ComputeDimension ( iC, iD, T_Option, iS_Option )
+
+    if ( allocated ( S % FluxSetDimension ) ) then
+      associate &
+        ( FS_RS  =>  S_PD % RiemannSolver % FluxSet, &
+          FS_D   =>  S % FluxSetDimension ( iD ) % Element )
+      call FS_RS % Copy ( FS_D )
+      end associate !-- FS_RS, etc.
+    end if !-- StreamFluxes
 
     end select !-- S_PD
 
@@ -139,10 +221,68 @@ contains
   end subroutine ComputeConnectionFlat
 
 
+  subroutine ClearRecursive ( S )
+
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    call S % Slope_H_Form % ClearRecursive ( )
+
+    if ( S % StreamFluxes ) then
+      do iD  =  1, size ( S % FluxSetDimension )
+        associate ( FSD  =>  S % FluxSetDimension ( iD ) % Element )
+        call FSD % Clear ( )
+        end associate !-- FSD
+      end do !-- iD
+    end if
+
+  end subroutine ClearRecursive
+
+
+  subroutine MultiplyAddRecursive ( S, SS, B )
+
+    class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
+      S  !-- Slope
+    class ( Slope_H_Form ), intent ( in ) :: &
+      SS  !-- SlopeStage
+    real ( KDR ) :: &
+      B  !-- RungeKutta weight
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    call S % Slope_H_Form % MultiplyAddRecursive ( SS, B )
+
+    if ( S % StreamFluxes ) then
+      do iD  =  1, size ( S % FluxSetDimension )
+        associate &
+          ( FSD     =>  S  % FluxSetDimension ( iD ) % Element )
+        select type ( SS )
+          class is ( Slope_DFV_DP_Form )
+        associate &
+          ( FSD_SS  =>  SS % FluxSetDimension ( iD ) % Element )
+        call FSD % MultiplyAdd ( FSD_SS, B )
+        end associate !-- FSD_SS
+        end select !-- SS
+        end associate !-- FSD
+      end do !-- iD
+    end if
+
+    !-- This slope
+
+  end subroutine MultiplyAddRecursive
+
+
   impure elemental subroutine Finalize ( S )
 
     type ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
+
+    if ( allocated ( S % FluxSetDimension ) ) &
+      deallocate ( S % FluxSetDimension )
 
   end subroutine Finalize
 

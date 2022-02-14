@@ -85,7 +85,7 @@ contains
     if ( DP % Type  ==  '' ) &
       DP % Type  =  'a DivergencePart_F_P_V' 
 
-    Name  =  'F_P_V'
+    Name  =  'V'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

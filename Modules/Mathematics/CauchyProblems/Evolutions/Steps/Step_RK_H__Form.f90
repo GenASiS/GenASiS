@@ -222,11 +222,11 @@ contains
       end associate !-- K_Sum
     end if !-- allocated SlopeSum
     
-    ! Stages  =  .false.
-    ! if ( present ( StagesOption ) ) &
-    !   Stages  =  StagesOption
+    Stages  =  .false.
+    if ( present ( StagesOption ) ) &
+      Stages  =  StagesOption
 
-    ! if ( Stages ) then
+    if ( Stages ) then
 
 !       associate &
 !         ( CS    =>  S % CurrentSet, &
@@ -237,8 +237,8 @@ contains
 !         (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
 !                 PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
 !           DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
-      ! associate &
-      !   ( nS  =>  S % nStages )
+      associate &
+        ( nS  =>  S % nStages )
 
 !       allocate ( S % SolutionStage ( nS ) )
 !       do iS  =  1, nS
@@ -262,18 +262,18 @@ contains
       ! call RSA % SetStream ( Sm, nS )
       ! end associate !-- RSA
 
-!       do iS  =  1,  nS
-!         associate ( SA  =>  S % SlopeStage ( iS ) % Element )
-!         call SA % SetStream ( Sm )
-!         end associate !-- SA
-!       end do !-- iS
+      do iS  =  1,  nS
+        associate ( SS  =>  S % SlopeStage ( iS ) % Element )
+        call SS % SetStream ( Sm )
+        end associate !-- SS
+      end do !-- iS
 
-!       end associate !-- nS
+      end associate !-- nS
 !       end associate !-- DeviceMemory, etc.
 !       end associate !-- SC
 !       end associate !-- CS, etc.
 
-!     end if !-- Stages
+    end if !-- Stages
 
   end subroutine SetStream_H
 

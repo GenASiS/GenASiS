@@ -48,8 +48,8 @@ module RiemannSolver_HLL__Form
       Reconstruction_BS, &
       Reconstruction_FS, &
       Reconstruction_ES
-    type ( FieldSetElement ), dimension ( :, : ), allocatable :: &
-      StageDimension
+!    type ( FieldSetElement ), dimension ( :, : ), allocatable :: &
+!      StageDimension
   contains
     procedure, private, pass :: &
       InitializeAllocate_RS
@@ -229,44 +229,44 @@ contains
       ( RS % ReconstructedSet, 'ReconstructedSet' )
 
     select case ( trim ( RS % ReconstructedSet ) )
-    case ( 'FLUXES' )
+    ! case ( 'FLUXES' )
 
-      allocate &
-        ( RS % BalancedSet, &
-          RS % FluxSet, &
-          RS % EigenspeedSet )
-      associate &
-        ( BS  =>  RS % BalancedSet, &
-          FS  =>  RS % FluxSet, &
-          ES  =>  RS % EigenspeedSet )
-      call BS % Initialize &
-             ( CS, CS % iaBalanced, &
-               NameOption = 'B_' // trim ( CS % Name ), &
-               IgnorabilityOption = CS % IGNORABILITY + 1 )
-      call FS % Initialize &
-             ( CS % Atlas, &
-               FieldOption = CS % Balanced, &
-               NameOption = 'F_' // trim ( CS % Name ), &
-               DeviceMemoryOption = CS % DeviceMemory, &
-               DevicesCommunicateOption = CS % DevicesCommunicate, &
-               nFieldsOption = CS % nBalanced, &
-               IgnorabilityOption = CS % IGNORABILITY + 1 )               
-      call ES % Initialize ( CS, CS )
+    !   allocate &
+    !     ( RS % BalancedSet, &
+    !       RS % FluxSet, &
+    !       RS % EigenspeedSet )
+    !   associate &
+    !     ( BS  =>  RS % BalancedSet, &
+    !       FS  =>  RS % FluxSet, &
+    !       ES  =>  RS % EigenspeedSet )
+    !   call BS % Initialize &
+    !          ( CS, CS % iaBalanced, &
+    !            NameOption = 'B_' // trim ( CS % Name ), &
+    !            IgnorabilityOption = CS % IGNORABILITY + 1 )
+    !   call FS % Initialize &
+    !          ( CS % Atlas, &
+    !            FieldOption = CS % Balanced, &
+    !            NameOption = 'F_' // trim ( CS % Name ), &
+    !            DeviceMemoryOption = CS % DeviceMemory, &
+    !            DevicesCommunicateOption = CS % DevicesCommunicate, &
+    !            nFieldsOption = CS % nBalanced, &
+    !            IgnorabilityOption = CS % IGNORABILITY + 1 )               
+    !   call ES % Initialize ( CS, CS )
 
-      allocate &
-        ( RS % Reconstruction_BS, &
-          RS % Reconstruction_FS, &
-          RS % Reconstruction_ES )
-      associate &
-        ( RBS  =>  RS % Reconstruction_BS, &
-          RFS  =>  RS % Reconstruction_FS, &
-          RES  =>  RS % Reconstruction_ES )
-      call RBS % Initialize ( CS % Geometry, BS )
-      call RFS % Initialize ( CS % Geometry, FS )
-      call RES % Initialize ( CS % Geometry, ES )
+    !   allocate &
+    !     ( RS % Reconstruction_BS, &
+    !       RS % Reconstruction_FS, &
+    !       RS % Reconstruction_ES )
+    !   associate &
+    !     ( RBS  =>  RS % Reconstruction_BS, &
+    !       RFS  =>  RS % Reconstruction_FS, &
+    !       RES  =>  RS % Reconstruction_ES )
+    !   call RBS % Initialize ( CS % Geometry, BS )
+    !   call RFS % Initialize ( CS % Geometry, FS )
+    !   call RES % Initialize ( CS % Geometry, ES )
 
-      end associate !-- RBS, etc.
-      end associate !-- BS, etc.
+    !   end associate !-- RBS, etc.
+    !   end associate !-- BS, etc.
 
     case ( 'PRIMITIVE' )
 
@@ -308,15 +308,25 @@ contains
              ( CS % Geometry, PS, CS_IL, CS_IR, CS % iaPrimitive )
 
       allocate &
-        ( RS % FluxSet_IL, &
+        ( RS % FluxSet, &
+          RS % FluxSet_IL, &
           RS % FluxSet_IR, &
           RS % EigenspeedSet_IL, &
           RS % EigenspeedSet_IR )
       associate &
-        ( FS_IL  =>  RS % FluxSet_IL, &
+        ( FS     =>  RS % FluxSet, &
+          FS_IL  =>  RS % FluxSet_IL, &
           FS_IR  =>  RS % FluxSet_IR, &
           ES_IL  =>  RS % EigenspeedSet_IL, &
           ES_IR  =>  RS % EigenspeedSet_IR )
+      call FS % Initialize &
+             ( CS % Atlas, &
+               FieldOption = CS % Balanced, &
+               NameOption = 'F_' // trim ( CS % Name ), &
+               DeviceMemoryOption = CS % DeviceMemory, &
+               DevicesCommunicateOption = CS % DevicesCommunicate, &
+               nFieldsOption = CS % nBalanced, &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )               
       call FS_IL % Initialize &
              ( CS % Atlas, &
                FieldOption = CS % Balanced, &
@@ -336,7 +346,7 @@ contains
       call ES_IL % Initialize ( CS, CS_IL )
       call ES_IR % Initialize ( CS, CS_IR )
 
-      end associate !-- FS_IL, etc.
+      end associate !-- FS, etc.
       end associate !-- RPS
       end associate !-- CS_IL, etc.
       end associate !-- PS
@@ -405,11 +415,11 @@ contains
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
-      iS, &  !-- iStage
+!      iS, &  !-- iStage
       iD, &  !-- iDimension
       nD     !-- nDimensions
     character ( 1 ) :: &
-      StageNumber, &
+!      StageNumber, &
       DimensionNumber
 
     associate ( A  =>  RS % Atlas )
@@ -417,51 +427,50 @@ contains
     do iC  =  2, A % nCharts
       nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
     end do
-
-    allocate ( RS % StageDimension ( nS, nD ) )
-    do iS  =  1, nS
-      do iD  =  1, nD
-        write ( StageNumber, fmt = '(i1.1)' ) iS
-        write ( DimensionNumber, fmt = '(i1.1)' ) iD
-        allocate ( RS % StageDimension ( iS, iD ) % Element )
-        associate ( SDC  =>  RS % StageDimension ( iS, iD ) % Element )
-        call SDC % Initialize &
-               ( RS % Atlas, &
-                 FieldOption = RS % Field, &
-                 NameOption = trim ( RS % Name ) // '_' // StageNumber // '_' &
-                              // DimensionNumber, &
-                 DeviceMemoryOption = RS % DeviceMemory, &
-                 DevicesCommunicateOption = RS % DevicesCommunicate, &
-                 nFieldsOption = RS % nFields, &
-                 IgnorabilityOption = RS % IGNORABILITY + 1 )
-        call S % AddFieldSet ( SDC )
-        end associate !-- SDC
-      end do !-- iD
-    end do !-- iS
-
     end associate !-- A
 
-    select case ( trim ( RS % ReconstructedSet ) )
-    case ( 'FLUXES' )
-      associate &
-        ( RBS  =>  RS % Reconstruction_BS, &
-          RFS  =>  RS % Reconstruction_FS, &
-          RES  =>  RS % Reconstruction_ES )
-      call RBS % SetStream ( S, nS )
-      call RFS % SetStream ( S, nS )
-      call RES % SetStream ( S, nS )
-      end associate !-- RBS, etc.
-    case ( 'PRIMITIVE' )
-      associate ( RPS  =>  RS % Reconstruction_PS )
-      call RPS % SetStream ( S, nS )
-      end associate !-- RPS
-    case default
-      call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
-      call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
-      call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SetStream', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- ReconstructedSet
+    ! allocate ( RS % StageDimension ( nS, nD ) )
+    ! do iS  =  1, nS
+    !   do iD  =  1, nD
+    !     write ( StageNumber, fmt = '(i1.1)' ) iS
+    !     write ( DimensionNumber, fmt = '(i1.1)' ) iD
+    !     allocate ( RS % StageDimension ( iS, iD ) % Element )
+    !     associate ( SDC  =>  RS % StageDimension ( iS, iD ) % Element )
+    !     call SDC % Initialize &
+    !            ( RS % Atlas, &
+    !              FieldOption = RS % Field, &
+    !              NameOption = trim ( RS % Name ) // '_' // StageNumber // '_' &
+    !                           // DimensionNumber, &
+    !              DeviceMemoryOption = RS % DeviceMemory, &
+    !              DevicesCommunicateOption = RS % DevicesCommunicate, &
+    !              nFieldsOption = RS % nFields, &
+    !              IgnorabilityOption = RS % IGNORABILITY + 1 )
+    !     call S % AddFieldSet ( SDC )
+    !     end associate !-- SDC
+    !   end do !-- iD
+    ! end do !-- iS
+
+    ! select case ( trim ( RS % ReconstructedSet ) )
+    ! case ( 'FLUXES' )
+    !   associate &
+    !     ( RBS  =>  RS % Reconstruction_BS, &
+    !       RFS  =>  RS % Reconstruction_FS, &
+    !       RES  =>  RS % Reconstruction_ES )
+    !   call RBS % SetStream ( S, nS )
+    !   call RFS % SetStream ( S, nS )
+    !   call RES % SetStream ( S, nS )
+    !   end associate !-- RBS, etc.
+    ! case ( 'PRIMITIVE' )
+    !   associate ( RPS  =>  RS % Reconstruction_PS )
+    !   call RPS % SetStream ( S, nS )
+    !   end associate !-- RPS
+    ! case default
+    !   call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
+    !   call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
+    !   call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
+    !   call Show ( 'SetStream', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select !-- ReconstructedSet
 
   end subroutine SetStream
 
@@ -792,6 +801,7 @@ contains
       (  CS     =>  RS % CurrentSet, &
          CS_IL  =>  RS % CurrentSet_IL, &
          CS_IR  =>  RS % CurrentSet_IR, &
+         FS     =>  RS % FluxSet, &
          FS_IL  =>  RS % FluxSet_IL, &
          FS_IR  =>  RS % FluxSet_IR, &
         RPS     =>  RS % Reconstruction_PS )
@@ -805,6 +815,7 @@ contains
     end if !-- T_Option
 
     if ( associated ( T_F ) ) call T_F % Start ( )
+    call DP % ComputeFluxes ( FS,    CS,    iC, iD )
     call DP % ComputeFluxes ( FS_IL, CS_IL, iC, iD )
     call DP % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
     if ( associated ( T_F ) ) call T_F % Stop ( )
@@ -1016,8 +1027,8 @@ contains
     type ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
 
-    if ( allocated ( RS % StageDimension ) ) &
-      deallocate ( RS % StageDimension )
+    ! if ( allocated ( RS % StageDimension ) ) &
+    !   deallocate ( RS % StageDimension )
     if ( allocated ( RS % Reconstruction_ES ) ) &
       deallocate ( RS % Reconstruction_ES )
     if ( allocated ( RS % Reconstruction_FS ) ) &

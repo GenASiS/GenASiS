@@ -80,7 +80,7 @@ contains
     if ( DP % Type  ==  '' ) &
       DP % Type  =  'a DivergencePart_CS' 
 
-    DP % Name  =  'CS_V'
+    DP % Name  =  'V'
     if ( present ( NameOption ) ) &
       DP % Name  =  NameOption
 
