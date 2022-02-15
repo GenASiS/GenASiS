@@ -36,7 +36,7 @@ module Fluid_P_HN__Form
         !-- a.k.a. mu_hat. Includes m_n - m_p. (mu_n and mu_p both
         !   measured with respect to m_n.)
       CHEMICAL_POTENTIAL_E   = 0, &
-      UNUSED_VARIABLE        = 0
+      ADIABATIC_INDEX        = 0
         !-- Includes m_e.
     real ( KDR ) :: &
       ElectronFractionMin, &
@@ -272,7 +272,7 @@ contains
     F % MASS_NUMBER_HEAVY       =  oF +  8
     F % CHEMICAL_POTENTIAL_N_P  =  oF +  9
     F % CHEMICAL_POTENTIAL_E    =  oF + 10
-    F % UNUSED_VARIABLE         =  of + 11
+    F % ADIABATIC_INDEX         =  of + 11
 
     nFields  =  oF  +  F % N_FIELDS_HN
     if ( present ( nFieldsOption ) ) &
@@ -297,7 +297,7 @@ contains
           'MassNumberHeavy      ', &
           'ChemicalPotential_N_P', &
           'ChemicalPotential_E  ', &
-          'UnusedVariable       ' ]
+          'AdiabaticIndex       ' ]
 
     !-- Units
 
@@ -382,8 +382,8 @@ contains
       call PROGRAM_HEADER % GetParameter ( EOS_Filename, 'EOS_Filename' )
       call F % EOS % Initialize ( EOS_Filename )
       
-      allocate ( iaFluidOutput ( 12 ) )
-      allocate ( iaSelected_EOS ( 12 ) )
+      allocate ( iaFluidOutput ( 13 ) )
+      allocate ( iaSelected_EOS ( 13 ) )
       
       iaFluidOutput &
         = [ F % ENERGY_DENSITY_C, &
@@ -397,7 +397,8 @@ contains
             F % MASS_NUMBER_HEAVY, &
             F % ATOMIC_NUMBER_HEAVY, &
             F % CHEMICAL_POTENTIAL_E, &
-            F % CHEMICAL_POTENTIAL_N_P ]
+            F % CHEMICAL_POTENTIAL_N_P, &
+            F % ADIABATIC_INDEX ]
 
       iaSelected_EOS &
         = [ F % EOS % LOG_ENERGY, &
@@ -411,7 +412,8 @@ contains
             F % EOS % MASS_NUMBER_BAR, &
             F % EOS % ATOMIC_NUMBER_BAR, &
             F % EOS % CHEMICAL_POTENTIAL_E, &
-            F % EOS % CHEMICAL_POTENTIAL_HAT ]
+            F % EOS % CHEMICAL_POTENTIAL_HAT, &
+            F % EOS % GAMMA ]
       
       call F % EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
 
@@ -509,8 +511,8 @@ contains
                     CS % MASS_FRACTION_PROTON, CS % MASS_FRACTION_NEUTRON, &
                     CS % MASS_FRACTION_ALPHA, CS % MASS_FRACTION_HEAVY, &
                     CS % ATOMIC_NUMBER_HEAVY, CS % MASS_NUMBER_HEAVY, &
-                    CS % CHEMICAL_POTENTIAL_N_P, &
-                    CS % CHEMICAL_POTENTIAL_E ] )
+                    CS % CHEMICAL_POTENTIAL_N_P, CS % CHEMICAL_POTENTIAL_E, &
+                    CS % ADIABATIC_INDEX ] )
 
   end subroutine SetStream
 
