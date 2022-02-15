@@ -18,7 +18,10 @@ module Slope_DFV_DP__Form
     character ( LDL ) :: &
       Suffix = ''
     type ( FieldSetElement ), dimension ( : ), allocatable :: &
-      FluxSetDimension
+      FluxSetDimension, &
+      FluxSet_IL_Dimension, &
+      FluxSet_IR_Dimension, &
+      FluxSet_RS_Dimension
   contains
     procedure, private, pass :: &
       InitializeAllocate_DP
@@ -111,7 +114,7 @@ contains
 
     !-- Stream parameters
 
-    S % StreamComponents  =  .false.
+!    S % StreamComponents  =  .false.
 
     S % StreamFluxes  =  .false.
     call PROGRAM_HEADER % GetParameter ( S % StreamFluxes, 'StreamFluxes' )
@@ -125,9 +128,14 @@ contains
       end do
       end associate !-- A
 
-      allocate ( S % FluxSetDimension ( nD ) )
+      allocate &
+        ( S % FluxSetDimension ( nD ), &
+          S % FluxSet_IL_Dimension ( nD ), &
+          S % FluxSet_IR_Dimension ( nD ), &
+          S % FluxSet_RS_Dimension ( nD ) )
       do iD  =  1, nD
         write ( DimensionNumber, fmt = '(i1.1)' ) iD
+
         allocate ( S % FluxSetDimension ( iD ) % Element )
         associate ( FSD  =>  S % FluxSetDimension ( iD ) % Element )
         call FSD % Initialize &
@@ -140,6 +148,46 @@ contains
                  nFieldsOption = S % nFields, &
                  IgnorabilityOption = S % IGNORABILITY + 1 )
         end associate !-- FSD
+
+        allocate ( S % FluxSet_IL_Dimension ( iD ) % Element )
+        associate ( FSD  =>  S % FluxSet_IL_Dimension ( iD ) % Element )
+        call FSD % Initialize &
+               ( S % Atlas, &
+                 FieldOption = S % Field, &
+                 NameOption = 'FS_IL_' // trim ( S % Name ) // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = S % DeviceMemory, &
+                 DevicesCommunicateOption = S % DevicesCommunicate, &
+                 nFieldsOption = S % nFields, &
+                 IgnorabilityOption = S % IGNORABILITY + 1 )
+        end associate !-- FSD
+
+        allocate ( S % FluxSet_IR_Dimension ( iD ) % Element )
+        associate ( FSD  =>  S % FluxSet_IR_Dimension ( iD ) % Element )
+        call FSD % Initialize &
+               ( S % Atlas, &
+                 FieldOption = S % Field, &
+                 NameOption = 'FS_IR_' // trim ( S % Name ) // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = S % DeviceMemory, &
+                 DevicesCommunicateOption = S % DevicesCommunicate, &
+                 nFieldsOption = S % nFields, &
+                 IgnorabilityOption = S % IGNORABILITY + 1 )
+        end associate !-- FSD
+
+        allocate ( S % FluxSet_RS_Dimension ( iD ) % Element )
+        associate ( FSD  =>  S % FluxSet_RS_Dimension ( iD ) % Element )
+        call FSD % Initialize &
+               ( S % Atlas, &
+                 FieldOption = RS % Field, &
+                 NameOption = 'FS_RS_' // trim ( S % Name ) // '_' &
+                              // DimensionNumber, &
+                 DeviceMemoryOption = RS % DeviceMemory, &
+                 DevicesCommunicateOption = RS % DevicesCommunicate, &
+                 nFieldsOption = RS % nFields, &
+                 IgnorabilityOption = S % IGNORABILITY + 1 )
+        end associate !-- FSD
+
       end do !-- iD
 
     end if
@@ -161,9 +209,16 @@ contains
 
     if ( S % StreamFluxes ) then
       do iD  =  1, size ( S % FluxSetDimension )
-        associate ( FSD  =>  S % FluxSetDimension ( iD ) % Element )
+        associate &
+          ( FSD     =>  S  % FluxSetDimension ( iD ) % Element, &
+            FSD_IL  =>  S  % FluxSet_IL_Dimension ( iD ) % Element, &
+            FSD_IR  =>  S  % FluxSet_IR_Dimension ( iD ) % Element, &
+            FSD_RS  =>  S  % FluxSet_RS_Dimension ( iD ) % Element )
         call Sm % AddFieldSet ( FSD )
-        end associate !-- FSD
+        call Sm % AddFieldSet ( FSD_IL )
+        call Sm % AddFieldSet ( FSD_IR )
+        call Sm % AddFieldSet ( FSD_RS )
+        end associate !-- FSD, etc.
       end do !-- iD
     end if
 
@@ -189,9 +244,18 @@ contains
 
     if ( allocated ( S % FluxSetDimension ) ) then
       associate &
-        ( FS_RS  =>  S_PD % RiemannSolver % FluxSet, &
-          FS_D   =>  S % FluxSetDimension ( iD ) % Element )
-      call FS_RS % Copy ( FS_D )
+        ( FS_RS     =>  S_PD % RiemannSolver % FluxSet, &
+          FS_IL_RS  =>  S_PD % RiemannSolver % FluxSet_IL, &
+          FS_IR_RS  =>  S_PD % RiemannSolver % FluxSet_IR, &
+          FS_RS_RS  =>  S_PD % RiemannSolver, &
+          FS_D      =>  S % FluxSetDimension     ( iD ) % Element, &
+          FS_IL_D   =>  S % FluxSet_IL_Dimension ( iD ) % Element, &
+          FS_IR_D   =>  S % FluxSet_IR_Dimension ( iD ) % Element, &
+          FS_RS_D   =>  S % FluxSet_RS_Dimension ( iD ) % Element )
+      call FS_RS    % Copy ( FS_D )
+      call FS_IL_RS % Copy ( FS_IL_D )
+      call FS_IR_RS % Copy ( FS_IR_D )
+      call FS_RS_RS % Copy ( FS_RS_D )
       end associate !-- FS_RS, etc.
     end if !-- StreamFluxes
 
@@ -233,9 +297,16 @@ contains
 
     if ( S % StreamFluxes ) then
       do iD  =  1, size ( S % FluxSetDimension )
-        associate ( FSD  =>  S % FluxSetDimension ( iD ) % Element )
-        call FSD % Clear ( )
-        end associate !-- FSD
+        associate &
+          ( FSD     =>  S  % FluxSetDimension ( iD ) % Element, &
+            FSD_IL  =>  S  % FluxSet_IL_Dimension ( iD ) % Element, &
+            FSD_IR  =>  S  % FluxSet_IR_Dimension ( iD ) % Element, &
+            FSD_RS  =>  S  % FluxSet_RS_Dimension ( iD ) % Element )
+        call FSD    % Clear ( )
+        call FSD_IL % Clear ( )
+        call FSD_IR % Clear ( )
+        call FSD_RS % Clear ( )
+        end associate !-- FSD, etc.
       end do !-- iD
     end if
 
@@ -258,16 +329,23 @@ contains
 
     if ( S % StreamFluxes ) then
       do iD  =  1, size ( S % FluxSetDimension )
-        associate &
-          ( FSD     =>  S  % FluxSetDimension ( iD ) % Element )
         select type ( SS )
           class is ( Slope_DFV_DP_Form )
         associate &
-          ( FSD_SS  =>  SS % FluxSetDimension ( iD ) % Element )
-        call FSD % MultiplyAdd ( FSD_SS, B )
-        end associate !-- FSD_SS
+          ( FSD        =>  S  % FluxSetDimension ( iD ) % Element, &
+            FSD_SS     =>  SS % FluxSetDimension ( iD ) % Element, &
+            FSD_IL     =>  S  % FluxSet_IL_Dimension ( iD ) % Element, &
+            FSD_IL_SS  =>  SS % FluxSet_IL_Dimension ( iD ) % Element, &
+            FSD_IR     =>  S  % FluxSet_IR_Dimension ( iD ) % Element, &
+            FSD_IR_SS  =>  SS % FluxSet_IR_Dimension ( iD ) % Element, &
+            FSD_RS     =>  S  % FluxSet_RS_Dimension ( iD ) % Element, &
+            FSD_RS_SS  =>  SS % FluxSet_RS_Dimension ( iD ) % Element )
+        call FSD    % MultiplyAdd ( FSD_SS,    B )
+        call FSD_IL % MultiplyAdd ( FSD_IL_SS, B )
+        call FSD_IR % MultiplyAdd ( FSD_IR_SS, B )
+        call FSD_RS % MultiplyAdd ( FSD_RS_SS, B )
+        end associate !-- FSD, etc.
         end select !-- SS
-        end associate !-- FSD
       end do !-- iD
     end if
 
@@ -281,6 +359,12 @@ contains
     type ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
 
+    if ( allocated ( S % FluxSet_RS_Dimension ) ) &
+      deallocate ( S % FluxSet_RS_Dimension )
+    if ( allocated ( S % FluxSet_IR_Dimension ) ) &
+      deallocate ( S % FluxSet_IR_Dimension )
+    if ( allocated ( S % FluxSet_IL_Dimension ) ) &
+      deallocate ( S % FluxSet_IL_Dimension )
     if ( allocated ( S % FluxSetDimension ) ) &
       deallocate ( S % FluxSetDimension )
 
