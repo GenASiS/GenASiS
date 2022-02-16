@@ -9,24 +9,22 @@ module WoosleyHeger_07_A__Form
   private
 
   type, public, extends ( WoosleyHeger_07_Form ) :: WoosleyHeger_07_A_Form
-  contains
+    type ( FieldSetForm ), allocatable :: &
+      Pressure
+    type ( GradientForm ), allocatable :: &
+      GradientPressure
+ contains
     procedure, private, pass :: &
       Initialize_H
-!     procedure, private, pass :: &
-!       Initialize_WH
-!     generic, public :: &
-!       Initialize => Initialize_WH
     final :: &
       Finalize
   end type WoosleyHeger_07_A_Form
 
     private :: &
       InitializeUniverse, &
-      SetInitial
-
-!     private :: &
-!       InitializeRadiationCentralCore, &
-!       SetProblem
+      InitializeDiagnostics, &
+      SetInitial, &
+      SetReference
 
 contains
 
@@ -49,30 +47,20 @@ contains
       Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
+    call InitializeDiagnostics ( U )
 
   end subroutine Initialize_H
-
-
-!   subroutine Initialize_WH ( WH, Name )
-
-!     class ( WoosleyHeger_07_A_Form ), intent ( inout ), target :: &
-!       WH
-!     character ( * ), intent ( in )  :: &
-!       Name
-
-!     if ( WH % Type == '' ) &
-!       WH % Type = 'a WoosleyHeger_07_A'
-
-!     call InitializeRadiationCentralCore ( WH, Name )
-!     call SetProblem ( WH )
-
-!   end subroutine Initialize_WH
 
 
   subroutine Finalize ( WH )
 
     type ( WoosleyHeger_07_A_Form ), intent ( inout ) :: &
       WH
+
+    if ( allocated ( WH % GradientPressure ) ) &
+      deallocate ( WH % GradientPressure )
+    if ( allocated ( WH % Pressure ) ) &
+      deallocate ( WH % Pressure )
 
   end subroutine Finalize
 
@@ -97,10 +85,39 @@ contains
              nCellsPolarOption = 128, &
              nWriteOption = 30 )
 
-    WH % Integrator % SetInitial  =>  SetInitial
-    WH % Integrator % System      =>  WH
+    WH % Integrator % SetInitial    =>  SetInitial
+    WH % Integrator % SetReference  =>  SetReference
+    WH % Integrator % System        =>  WH
 
   end subroutine InitializeUniverse
+
+
+  subroutine InitializeDiagnostics ( WH )
+
+    class ( WoosleyHeger_07_A_Form ), intent ( inout ) :: &
+      WH
+
+      allocate &
+        ( WH % Pressure, &
+        WH % GradientPressure )
+      select type ( I  =>  WH % Integrator )
+        class is ( Integrator_CS_Form )
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_HN_Form )
+      associate &
+        (  P  =>  WH % Pressure, &
+          GP  =>  WH % GradientPressure, &
+           G  =>  I % Geometry_X, &
+           S  =>  I % Checkpoint_X )
+      call  P % Initialize ( F, NameOption = 'Pressure', &
+                             iaSelected = [ F % PRESSURE ] )
+      call GP % Initialize ( G, P )
+      call  S % AddFieldSet ( GP )
+      end associate !-- P, etc.
+      end select !-- F
+      end select !-- I
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetInitial ( I )
@@ -118,44 +135,24 @@ contains
   end subroutine SetInitial
 
 
-!   subroutine InitializeRadiationCentralCore ( WH, Name )
+  subroutine SetReference ( I )
 
-!     class ( WoosleyHeger_07_A_Form ), intent ( inout ), target :: &
-!       WH
-!     character ( * ), intent ( in )  :: &
-!       Name
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
 
-!     logical ( KDL ) :: &
-!       UseDevice
-!     character ( LDL ) :: &
-!       GeometryType
+    select type ( WH  =>  I % System )
+      class is ( WoosleyHeger_07_A_Form )
+    if ( allocated ( WH % GradientPressure ) ) then
+      associate ( GP   =>  WH % GradientPressure )
+      associate ( GPV  =>  GP % Storage_GS % Value )
+      call GP % Compute ( iD = 1 )
+      GPV  =  -1.0_KDR  *  GPV
+      end associate !-- GPV
+      end associate !-- GP
+    end if
+    end select !-- WH
 
-!     GeometryType = 'NEWTONIAN'
-!     call PROGRAM_HEADER % GetParameter ( GeometryType, 'GeometryType' )
-    
-!     UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
-!     call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
-
-!     call WH % Initialize &
-!            ( RadiationName = [ 'None' ], RadiationType = [ 'NONE' ], &
-!              MomentsType = 'NONE', FluidType = 'HEAVY_NUCLEUS', &
-!              GeometryType = GeometryType, Name = Name, &
-!              ShockThresholdOption = 1.0_KDR, nWriteOption = 30,  &
-!              RadiationUseDeviceOption = UseDevice, &
-!              FluidUseDeviceOption = UseDevice, &
-!              GeometryUseDeviceOption = UseDevice )
-
-!   end subroutine InitializeRadiationCentralCore
-
-
-!   subroutine SetProblem ( WH )
-
-!     class ( WoosleyHeger_07_A_Form ), intent ( inout ) :: &
-!       WH
-
-!     call WH % SetFluid ( )
-
-!   end subroutine SetProblem
+  end subroutine SetReference
 
 
 end module WoosleyHeger_07_A__Form
