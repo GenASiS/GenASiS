@@ -186,7 +186,7 @@ contains
 
       RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  2.4_KDR
+      RadialRatio  =  5.9_KDR
 
       call PS % Initialize &
              ( RadiusMax = RadiusMax, &
