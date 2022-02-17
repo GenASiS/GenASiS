@@ -109,17 +109,31 @@ contains
 
     call C % SetPolar ( nCellsPolarOption )
 
-    if ( .not. any ( C % nCellsPolar &
-                       == [ 32, 64, 128, 256, 512, 1024, 2048, 4096 ] ) ) &
-    then 
-      call Show ( 'nCellsPolar must be a power of 2 between 32 and 4096', &
+    ! if ( .not. any ( C % nCellsPolar &
+    !                    == [ 32, 64, 128, 256, 512, 1024, 2048, 4096 ] ) ) &
+    ! then 
+    !   call Show ( 'nCellsPolar must be a power of 2 between 32 and 4096', &
+    !               CONSOLE % ERROR )
+    !   call Show ( 'SetCore', 'subroutine', CONSOLE % ERROR )
+    !   call Show ( 'Chart_GS_CC__Form', 'module', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end if
+
+    if ( .not. ( mod ( C % nCellsPolar, 32 )  ==  0 ) ) then 
+      call Show ( '32 must evenly divide nCellsPolar', &
                   CONSOLE % ERROR )
+      call Show ( C % nCellsPolar, 'nCellsPolar', CONSOLE % ERROR )
       call Show ( 'SetCore', 'subroutine', CONSOLE % ERROR )
       call Show ( 'Chart_GS_CC__Form', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
-    C % nCellsCore  =  10 * ( C % nCellsPolar / 32 )  
+!-- 40 nCellsCore for 128 nCellsPolar, aspect ratio close to 1
+!    C % nCellsCore  =  10 * ( C % nCellsPolar / 32 )
+
+!-- 100 nCellsCore for 128 nCellsPolar, aspect ratio close to 2.5  
+    C % nCellsCore  =  25 * ( C % nCellsPolar / 32 )  
+
     C % RadiusCore  =  RadiusCore
 
   end subroutine SetCore
