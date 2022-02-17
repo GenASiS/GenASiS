@@ -98,7 +98,8 @@ contains
     if ( C % nCellsPolar  ==  0 ) &
       call C % SetPolar ( )
 
-    C % RadialRatio  =  1.0_KDR
+!    C % RadialRatio  =  1.0_KDR
+2    C % RadialRatio  =  2.45_KDR
     if ( present ( RadialRatioOption ) ) &
       C % RadialRatio  =  RadialRatioOption
     call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
@@ -109,10 +110,18 @@ contains
  
     nCells  =  [ nCellsRadial, nCellsPolar, nCellsAzimuthal ]
 
-    C % MinWidth  =  C % RadiusScale  *  Pi / nCellsPolar
+    if ( present ( nEqualOption ) ) then
+      C % MinWidth  =  C % RadiusScale  /  nEqualOption
+    else
+      C % MinWidth  =  C % RadiusScale  *  Pi / nCellsPolar
+    end if
 
     Ratio        =  0.0_KDR
-    Ratio ( 1 )  =  Pi / nCellsPolar  !-- dTheta
+    if ( present ( nEqualOption ) ) then
+      Ratio ( 1 )  =  1.0_KDR / nEqualOption
+    else
+      Ratio ( 1 )  =  Pi / nCellsPolar  !-- dTheta
+    end if
 
     Scale        =  0.0_KDR
     Scale ( 1 )  =  C % RadiusScale
