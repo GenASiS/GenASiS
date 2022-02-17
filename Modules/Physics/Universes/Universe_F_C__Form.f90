@@ -819,7 +819,16 @@ contains
     character ( 1 ) :: &
       StageNumber
 
-    allocate ( Slope_DFV_N_Form :: K )
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+    select type ( F  =>  S % CurrentSet )
+    class is ( Fluid_P_HN_Form )
+      allocate ( Slope_DFV_N_F_P_HN_Form :: K )
+    class default
+      allocate ( Slope_DFV_N_Form :: K )
+    end select !-- F
+    end select !-- S
+
     select type ( K )
       class is ( Slope_DFV_N_Form )
     select type ( S )

@@ -11,6 +11,8 @@ module Fluids
   use DivergencePart_F_P_P__Form
   use DivergencePart_F_P_HN_V__Form
   use DivergencePart_F_P_HN_P__Form
+  use Slope_DFV_F_F_P_HN__Form
+  use Slope_DFV_N_F_P_HN__Form
   use Coarsening_C_F__Form
 
 end module Fluids

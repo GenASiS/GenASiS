@@ -114,7 +114,7 @@ DivergencePart_F_P_HN_V__Kernel.o: \
 DivergencePart_F_P_HN_P__Form.o: \
   Basics.o \
   Mathematics.o \
-  Fluid_P__Form.o \
+  Fluid_P_HN__Form.o \
   DivergencePart_F_P_HN_P__Form.f90
 
 DivergencePart_F_P_HN_P__Kernel.o: \
@@ -122,6 +122,19 @@ DivergencePart_F_P_HN_P__Kernel.o: \
   Mathematics.o \
   DivergencePart_F_P_HN_P__Form.o \
   DivergencePart_F_P_HN_P__Kernel.f90
+
+Slope_DFV_F_F_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_HN__Form.o \
+  Slope_DFV_F_F_P_HN__Form.f90
+
+Slope_DFV_N_F_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Slope_DFV_F_F_P_HN__Form.o \
+  Slope_DFV_N_F_P_HN__Form.f90
 
 Coarsening_C_F__Form.o: \
   Basics.o \
@@ -146,6 +159,8 @@ Fluids.o: \
   DivergencePart_F_P_P__Form.o \
   DivergencePart_F_P_HN_V__Form.o \
   DivergencePart_F_P_HN_P__Form.o \
+  Slope_DFV_F_F_P_HN__Form.o \
+  Slope_DFV_N_F_P_HN__Form.o \
   Coarsening_C_F__Form.o \
   Fluids.f90
 
