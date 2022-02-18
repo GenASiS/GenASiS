@@ -75,7 +75,7 @@ contains
     real ( KDR ) :: &
       FinishTime
 
-    FinishTime  =  1.0_KDR  *  UNIT % SECOND
+    FinishTime  =  0.7_KDR  *  UNIT % SECOND
 
     call WH % Initialize &
            ( FluidType = 'HEAVY_NUCLEUS', &

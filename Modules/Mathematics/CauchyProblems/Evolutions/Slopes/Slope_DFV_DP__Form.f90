@@ -114,7 +114,7 @@ contains
 
     !-- Stream parameters
 
-!    S % StreamComponents  =  .false.
+    S % StreamComponents  =  .false.
 
     S % StreamFluxes  =  .false.
     call PROGRAM_HEADER % GetParameter ( S % StreamFluxes, 'StreamFluxes' )

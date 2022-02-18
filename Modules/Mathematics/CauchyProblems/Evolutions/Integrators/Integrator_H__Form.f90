@@ -452,7 +452,7 @@ contains
       dT_Ratio  &
         =  minval ( I % dT_Candidate ) &
              /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
-      if ( dT_Ratio  <  1.0e-6  *  I % nWrite ) then
+      if ( dT_Ratio  <  1.0e-8  *  I % nWrite ) then
         call T_AC % Start ( )
         call I % AdministerCheckpoint ( T_AC )
         call T_AC % Stop ( )

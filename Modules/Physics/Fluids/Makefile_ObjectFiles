@@ -2,8 +2,6 @@ FLUIDS = \
   Fluids.o \
   Coarsening_C_F__Kernel.o \
   Coarsening_C_F__Form.o \
-  Slope_DFV_N_F_P_HN__Form.o \
-  Slope_DFV_F_F_P_HN__Form.o \
   DivergencePart_F_P_HN_P__Kernel.o \
   DivergencePart_F_P_HN_P__Form.o \
   DivergencePart_F_P_HN_V__Kernel.o \
@@ -25,3 +23,5 @@ FLUIDS = \
   Fluid_D__Kernel.o \
   Fluid_D__Form.o \
   Units_F__Form.o
+#  Slope_DFV_N_F_P_HN__Form.o \
+#  Slope_DFV_F_F_P_HN__Form.o \
