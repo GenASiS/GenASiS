@@ -15,7 +15,7 @@ module Show_Command
     ShowCharacter_KBCH
 
   interface Show
-    module procedure ShowInteger
+    module procedure ShowInteger_0D
     module procedure ShowInteger_1D
     module procedure ShowInteger_2D
     module procedure ShowBigInteger
@@ -36,7 +36,7 @@ module Show_Command
     module procedure ShowComplex_3D
     module procedure ShowLogical
     module procedure ShowLogical_1D
-    module procedure ShowCharacter
+    module procedure ShowCharacter_0D
 !    module procedure ShowCharacter_KBCH
     module procedure ShowCharacterNoDescription
     module procedure ShowCharacter_1D
@@ -55,7 +55,7 @@ module Show_Command
 contains
 
 
-  subroutine ShowInteger &
+  subroutine ShowInteger_0D &
                ( Integer, Description, IgnorabilityOption, &
                  DisplayRankOption, nLeadingLinesOption, &
                  nTrailingLinesOption )
@@ -86,7 +86,7 @@ contains
 
     call EndShow ( nTrailingLinesOption )
 
-  end subroutine ShowInteger
+  end subroutine ShowInteger_0D
 
 
   subroutine ShowInteger_1D &
@@ -954,7 +954,7 @@ contains
   end subroutine ShowLogical_1D
 
 
-  subroutine ShowCharacter &
+  subroutine ShowCharacter_0D &
                ( Character, Description, IgnorabilityOption, &
                  DisplayRankOption, nLeadingLinesOption, &
                  nTrailingLinesOption )
@@ -981,7 +981,7 @@ contains
 
     call EndShow ( nTrailingLinesOption )
 
-  end subroutine ShowCharacter
+  end subroutine ShowCharacter_0D
   
   
   subroutine ShowCharacter_KBCH &
