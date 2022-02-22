@@ -29,6 +29,8 @@ module Slope_DFV_PD__Form
       CloneTimers
     procedure, public, pass :: &
       ComputeDimension
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Slope_DFV_PD_Form
@@ -257,6 +259,110 @@ contains
     end associate !-- RS, etc.
 
   end subroutine ComputeDimension
+
+
+  subroutine Compute ( S, T_Option, iS_Option )
+
+    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
+      S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      iS_Option
+
+    integer ( KDI ) :: &
+      iC, &  !-- iChart
+      iD     !-- iDimension
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      A_I, &
+      V
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+      S_4D, &
+      F_I
+    type ( TimerForm ), pointer :: &
+      T_RS, &
+      T_K
+
+    call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+
+    associate &
+      ( RS  =>  S % RiemannSolver, &
+        DP  =>  S % DivergencePart, &
+         G  =>  S % RiemannSolver % CurrentSet % Geometry )
+
+    if ( present ( T_Option ) ) then
+      T_RS  =>  RS % Timer_C ( LevelOption = T_Option % Level + 1 )
+      T_K   =>   S % Timer_K ( LevelOption = T_Option % Level + 1 )
+    else
+      T_RS  =>  null ( )
+      T_K   =>  null ( )
+    end if
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    call S % Clear ( )
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+    do iC  =  1,  S % Atlas % nCharts
+       
+      associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
+      do iD  =  1, C % nDimensions
+
+        if ( associated ( T_RS ) ) then
+          call T_RS % Start ( )
+          call RS % Prepare &
+                 ( iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+          call RS % Compute &
+                 ( DP, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+          call T_RS % Stop ( )
+        else
+          call RS % Compute &
+                 ( DP, iC, iD, iS_Option = iS_Option )
+        end if
+
+        if ( associated ( T_K ) ) call T_K % Start ( )
+
+        call S % Storage ( iC ) % ReassociateHost &
+               ( AssociateVariablesOption = .false. )
+        
+        associate &
+          (  SV  =>   S % Storage ( iC ) % Value, &
+            RSV  =>  RS % Storage ( iC ) % Value, &
+             GV  =>   G % Storage ( iC ) % Value )
+
+        select type ( C )
+        class is ( Chart_GS_Form )
+
+          call C % SetFieldPointer (  SV ( :, : ), S_4D )
+          call C % SetFieldPointer ( RSV ( :, : ), F_I )
+          call C % SetFieldPointer (  GV ( :, G % AREA_I_D ( iD ) ), A_I )
+          call C % SetFieldPointer (  GV ( :, G % VOLUME ), V )
+          
+          call ComputeKernel &
+                 ( S_4D, F_I, A_I, V, iD, C % nGhostLayers ( iD ), &
+                   UseDeviceOption = S % DeviceMemory )
+
+        class default
+          call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+          call Show ( 'Slope_DFV_PD__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- C
+
+        end associate !-- SV, etc.
+        
+        call S % Storage ( iC ) % ReassociateHost &
+               ( AssociateVariablesOption = .true. )
+
+        if ( associated ( T_K ) ) call T_K % Stop ( )
+
+      end do !-- iD
+      end associate !-- C
+
+    end do !-- iC
+    end associate !-- RS, etc.
+
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( S )

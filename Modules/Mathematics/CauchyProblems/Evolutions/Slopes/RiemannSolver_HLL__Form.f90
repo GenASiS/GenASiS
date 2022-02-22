@@ -850,8 +850,7 @@ contains
          CS_IL  =>  RS % CurrentSet_IL, &
          CS_IR  =>  RS % CurrentSet_IR, &
          FS_IL  =>  RS % FluxSet_IL, &
-         FS_IR  =>  RS % FluxSet_IR, &
-        RPS     =>  RS % Reconstruction_PS )
+         FS_IR  =>  RS % FluxSet_IR )
 
     if ( present ( T_Option ) ) then
       T_F   =>   DP % Timer_F ( LevelOption = T_Option % Level + 1 )
