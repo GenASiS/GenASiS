@@ -1,4 +1,4 @@
-program Slope_DFV_F__Form_Test
+program Slope_DFV_F_DP__Form_Test
 
   !-- Slope_DivergenceFiniteVolume_Flat__Form_Test
 
@@ -25,12 +25,12 @@ program Slope_DFV_F__Form_Test
     DP_1D
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
-  type ( Slope_DFV_F_Form ), allocatable :: &
+  type ( Slope_DFV_F_DP_Form ), allocatable :: &
     S
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Slope_DFV_F__Form_Test', DimensionalityOption = '2D' )
+         ( 'Slope_DFV_F_DP__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -177,7 +177,7 @@ contains
 
   subroutine TestSlope ( S, Sm )
 
-    class ( Slope_DFV_F_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
@@ -208,4 +208,4 @@ contains
   end subroutine TestSlope
 
 
-end program Slope_DFV_F__Form_Test
+end program Slope_DFV_F_DP__Form_Test

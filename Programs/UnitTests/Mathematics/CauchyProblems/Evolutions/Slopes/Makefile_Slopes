@@ -3,7 +3,7 @@ PATH_GENASIS = ../../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Reconstruction_Form_Test RiemannSolver_HLL__Form_Test \
-  Slope_DFV_DP__Form_Test Slope_DFV_F__Form_Test
+  Slope_DFV_DP__Form_Test Slope_DFV_F_DP__Form_Test
 
 Reconstruction_Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
   Reconstruction_Form_Test.o
@@ -26,11 +26,11 @@ Slope_DFV_DP__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
           Slope_DFV_DP__Form_Test.o Slopes.a \
           Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
-Slope_DFV_F__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
-  Slope_DFV_F__Form_Test.o
+Slope_DFV_F_DP__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
+  Slope_DFV_F_DP__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o Slope_DFV_F__Form_Test_$(MACHINE) \
-          Slope_DFV_F__Form_Test.o Slopes.a \
+          -o Slope_DFV_F_DP__Form_Test_$(MACHINE) \
+          Slope_DFV_F_DP__Form_Test.o Slopes.a \
           Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 clean:
@@ -40,7 +40,7 @@ clobber: clean
 	rm -f Reconstruction_Form_Test_*
 	rm -f RiemannSolver_HLL__Form_Test_*
 	rm -f Slope_DFV_DP__Form_Test_*
-	rm -f Slope_DFV_F__Form_Test_*
+	rm -f Slope_DFV_F_DP__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_ALGEBRA)/Makefile_Dependencies
@@ -69,9 +69,9 @@ Slope_DFV_DP__Form_Test.o: \
   Slopes.o \
   Slope_DFV_DP__Form_Test.f90
 
-Slope_DFV_F__Form_Test.o: \
+Slope_DFV_F_DP__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Fields.o \
   Slopes.o \
-  Slope_DFV_F__Form_Test.f90
+  Slope_DFV_F_DP__Form_Test.f90

@@ -1,6 +1,6 @@
-module Slope_DFV_F__Form
+module Slope_DFV_F_DP__Form
 
-  !-- Slope_DivergenceFiniteVolume_Flat__Form
+  !-- Slope_DivergenceFiniteVolume_Flat_DivergenceParts__Form
 
   use Basics
   use Fields
@@ -12,7 +12,7 @@ module Slope_DFV_F__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_Form ) :: Slope_DFV_F_Form
+  type, public, extends ( Slope_H_Form ) :: Slope_DFV_F_DP_Form
     class ( RiemannSolver_HLL_Form ), pointer :: &
       RiemannSolver => null ( )
   contains
@@ -24,7 +24,7 @@ module Slope_DFV_F__Form
       Compute
     final :: &
       Finalize
-  end type Slope_DFV_F_Form
+  end type Slope_DFV_F_DP_Form
 
 
 contains
@@ -33,7 +33,7 @@ contains
   subroutine InitializeAllocate_F &
                ( S, RS, DP_1D, SuffixOption, IgnorabilityOption )
 
-    class ( Slope_DFV_F_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
@@ -50,12 +50,12 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_DFV_F'
+      S % Type  =  'a Slope_DFV_F_DP'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_F_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  'S_DFV_F_DP_' // trim ( RS % CurrentSet % Name )
 
-    Name  =  'S_DFV_F_' // trim ( RS % CurrentSet % Name )
+    Name  =  'S_DFV_F_DP_' // trim ( RS % CurrentSet % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -102,7 +102,7 @@ contains
 
   subroutine Compute ( S, T_Option, iS_Option )
 
-    class ( Slope_DFV_F_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -180,10 +180,10 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Slope_DFV_F_Form ), intent ( inout ) :: &
+    type ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
 
   end subroutine Finalize
 
 
-end module Slope_DFV_F__Form
+end module Slope_DFV_F_DP__Form
