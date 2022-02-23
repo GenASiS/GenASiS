@@ -1,6 +1,6 @@
-program Slope_DFV_F_DP__Form_Test
+program Slope_DFV_F_DT__Form_Test
 
-  !-- Slope_DivergenceFiniteVolume_Flat_DivergenceParts__Form_Test
+  !-- Slope_DivergenceFiniteVolume_Flat_DivergenceTotal__Form_Test
 
   use Basics
   use Manifolds
@@ -21,16 +21,16 @@ program Slope_DFV_F_DP__Form_Test
     G
   type ( CurrentSetForm ), allocatable :: &
     CS
-  type ( DivergencePartElement ), dimension ( : ), allocatable :: &
-    DP_1D
+  type ( DivergencePart_CS_Form ), allocatable :: &
+    DT
   type ( RiemannSolver_HLL_Form ), allocatable :: &
     RS
-  type ( Slope_DFV_F_DP_Form ), allocatable :: &
+  type ( Slope_DFV_F_DT_Form ), allocatable :: &
     S
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Slope_DFV_F_DP__Form_Test', DimensionalityOption = '2D' )
+         ( 'Slope_DFV_F_DT__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -52,24 +52,22 @@ program Slope_DFV_F_DP__Form_Test
   call CS % Initialize ( G )
   call CS % SetStream ( Sm )
 
-  allocate ( DP_1D ( 1 ) )
-  allocate ( DivergencePart_CS_Form :: DP_1D ( 1 ) % Element )
-  associate ( DP  =>  DP_1D ( 1 ) % Element )
-  call DP % Initialize ( CS )
+  allocate ( DivergencePart_CS_Form :: DT )
+  call DT % Initialize ( CS )
 
   allocate ( RS )
   call RS % Initialize ( CS )
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Initialize ( RS, DP_1D, IgnorabilityOption = A % IGNORABILITY )
+  call S % Initialize ( RS, DT, IgnorabilityOption = A % IGNORABILITY )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call S % SetStream ( Sm )
 
   call  A % Show ( )
   call  G % Show ( )
   call CS % Show ( )
-  call DP % Show ( )
+  call DT % Show ( )
   call RS % Show ( )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call  S % Show ( )
@@ -89,15 +87,13 @@ program Slope_DFV_F_DP__Form_Test
   deallocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( RS )
-  deallocate ( DP_1D )
+  deallocate ( DT )
   deallocate ( CS )
   deallocate ( G )
   deallocate ( Sm )
   deallocate ( A )
   deallocate ( GIS )
   deallocate ( PROGRAM_HEADER )
-
-  end associate !-- DP
 
 contains
 
@@ -177,7 +173,7 @@ contains
 
   subroutine TestSlope ( S, Sm )
 
-    class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
+    class ( Slope_DFV_F_DT_Form ), intent ( inout ) :: &
       S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
@@ -208,4 +204,4 @@ contains
   end subroutine TestSlope
 
 
-end program Slope_DFV_F_DP__Form_Test
+end program Slope_DFV_F_DT__Form_Test
