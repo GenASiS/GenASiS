@@ -63,6 +63,18 @@ Fluid_P_HN__Kernel.o: \
   Fluid_P_HN__Form.o \
   Fluid_P_HN__Kernel.f90
 
+DivergencePart_F_D_T__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  DivergencePart_F_D_T__Form.f90
+
+DivergencePart_F_D_T__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_D_V__Form.o \
+  DivergencePart_F_D_V__Kernel.f90
+
 DivergencePart_F_D_V__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -154,6 +166,7 @@ Fluids.o: \
   Fluid_P_I__Form.o \
   EOS_P_HN_OConnorOtt__Form.o \
   Fluid_P_HN__Form.o \
+  DivergencePart_F_D_T__Form.o \
   DivergencePart_F_D_V__Form.o \
   DivergencePart_F_P_V__Form.o \
   DivergencePart_F_P_P__Form.o \

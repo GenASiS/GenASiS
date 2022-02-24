@@ -11,6 +11,8 @@ program Slope_DFV_N__Form_Test
 
   integer ( KDI ) :: &
     nCompute
+  logical ( KDL ) :: &
+    DivergenceParts
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
@@ -23,6 +25,8 @@ program Slope_DFV_N__Form_Test
     U
   type ( Fluid_D_Form ), allocatable :: &
     F
+  class ( DivergencePart_CS_Form ), allocatable :: &
+    DT
   type ( DivergencePartElement ), dimension ( : ), allocatable :: &
     DP_1D
   type ( RiemannSolver_HLL_Form ), allocatable :: &
@@ -60,24 +64,42 @@ program Slope_DFV_N__Form_Test
   call F % Initialize ( G, U )
   call F % SetStream ( Sm )
 
-  allocate ( DP_1D ( 1 ) )
-  allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
-  associate ( DP  =>  DP_1D ( 1 ) % Element )
-  call DP % Initialize ( F )
-  end associate !-- DP
+  DivergenceParts  =  .false.
+  call PROGRAM_HEADER % GetParameter ( DivergenceParts, 'DivergenceParts' )
+
+  if ( DivergenceParts ) then
+    allocate ( DP_1D ( 1 ) )
+    allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
+    associate ( DP  =>  DP_1D ( 1 ) % Element )
+    call DP % Initialize ( F )
+    end associate !-- DP
+  else
+    allocate ( DivergencePart_F_D_T_Form :: DT )
+    call DT % Initialize ( F )
+  end if
 
   allocate ( RS )
   call RS % Initialize ( F )
 
   allocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call S % Initialize &
-         ( RS, DP_1D, &
-           iVelocity_F = F % VELOCITY_U, &
-           iMomentum_B = [ 2, 3, 4 ], &
-           iBaryonMass_F = F % BARYON_MASS, &
-           iBaryonDensity_F = F % BARYON_DENSITY_C, &
-           iEnergy_B = 0 )
+  if ( DivergenceParts ) then
+    call S % Initialize &
+           ( RS, DP_1D, &
+             iVelocity_F = F % VELOCITY_U, &
+             iMomentum_B = [ 2, 3, 4 ], &
+             iBaryonMass_F = F % BARYON_MASS, &
+             iBaryonDensity_F = F % BARYON_DENSITY_C, &
+             iEnergy_B = 0 )
+  else
+    call S % Initialize &
+           ( RS, DT, &
+             iVelocity_F = F % VELOCITY_U, &
+             iMomentum_B = [ 2, 3, 4 ], &
+             iBaryonMass_F = F % BARYON_MASS, &
+             iBaryonDensity_F = F % BARYON_DENSITY_C, &
+             iEnergy_B = 0 )
+  end if
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   call S % SetStream ( Sm )
 
@@ -98,6 +120,10 @@ program Slope_DFV_N__Form_Test
   deallocate ( S )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   deallocate ( RS )
+  if ( allocated ( DP_1D ) ) &
+    deallocate ( DP_1D )
+  if ( allocated ( DT ) ) &
+    deallocate ( DT )
   deallocate ( F )
   deallocate ( G )
   deallocate ( Sm )
@@ -132,9 +158,13 @@ contains
       call SetHomogeneousSphere &
              ( F, G, Density ( iHS ), Radius ( iHS )  )
     
-      call F % UpdateDevice ( )
-
       call CONSOLE % SetVerbosity ( 'INFO_7' )
+      call F % UpdateDevice ( )
+      call F % ComputeFromPrimitive ( F )
+      call G % Solve &
+             ( F, &
+               iBaryonMass = F % BARYON_MASS, &
+               iBaryonDensity = F % BARYON_DENSITY_B )
       call S % Compute ( )
       call CONSOLE % SetVerbosity ( 'INFO_1' )
 
