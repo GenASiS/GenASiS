@@ -242,6 +242,9 @@ contains
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
 
+    logical ( KDL ) :: &
+      DivergenceParts
+
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     associate &
@@ -251,34 +254,63 @@ contains
     select type ( S  =>  I % Step_X )
       class is ( Step_RK_CS_Form )
 
-    !-- DivergencePart
-    select type ( F )
-    class is ( Fluid_D_Form )
-      allocate ( S % DivergencePart ( 1 ) )
-      associate ( DP_1D  =>  S % DivergencePart )
-        allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
-        associate ( DP  =>  DP_1D ( 1 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-      end associate !-- DP_1D
-    class is ( Fluid_P_I_Form )
-      allocate ( S % DivergencePart ( 2 ) )
-      associate ( DP_1D  =>  S % DivergencePart )
-        allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
-        associate ( DP  =>  DP_1D ( 1 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-        allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
-        associate ( DP  =>  DP_1D ( 2 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-      end associate !-- DP_1D
-    class default
-      call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- F
+    DivergenceParts  =  .false.
+    call PROGRAM_HEADER % GetParameter ( DivergenceParts, 'DivergenceParts' )
+
+    if ( DivergenceParts ) then
+      select type ( F )
+      class is ( Fluid_D_Form )
+        allocate ( S % DivergencePart ( 1 ) )
+        associate ( DP_1D  =>  S % DivergencePart )
+          allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
+          associate ( DP  =>  DP_1D ( 1 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+        end associate !-- DP_1D
+      class is ( Fluid_P_I_Form )
+        allocate ( S % DivergencePart ( 2 ) )
+        associate ( DP_1D  =>  S % DivergencePart )
+          allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
+          associate ( DP  =>  DP_1D ( 1 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+          allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
+          associate ( DP  =>  DP_1D ( 2 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+        end associate !-- DP_1D
+      class default
+        call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+        call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- F
+    else  !-- DivergenceTotal
+      select type ( F )
+      class is ( Fluid_D_Form )
+        allocate ( DivergencePart_F_D_T_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+          call DT % Initialize ( F )
+        end associate !-- DT
+      ! class is ( Fluid_P_I_Form )
+      !   allocate ( S % DivergencePart ( 2 ) )
+      !   associate ( DP_1D  =>  S % DivergencePart )
+      !     allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
+      !     associate ( DP  =>  DP_1D ( 1 ) % Element )
+      !       call DP % Initialize ( F )
+      !     end associate !-- DP
+      !     allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
+      !     associate ( DP  =>  DP_1D ( 2 ) % Element )
+      !       call DP % Initialize ( F )
+      !     end associate !-- DP
+      !   end associate !-- DP_1D
+      class default
+        call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+        call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- F
+    end if
 
     call S % Initialize ( F )
 !     if ( present ( GravitySolverTypeOption ) ) &   
