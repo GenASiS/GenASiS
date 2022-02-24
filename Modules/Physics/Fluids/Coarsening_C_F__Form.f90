@@ -118,6 +118,9 @@ contains
            ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_3 )
 
     call C % Coarsening_C_Form % Compute ( FS )
+    
+    call FS % Storage_GS % ReassociateHost &
+           ( AssociateVariablesOption = .false. )
 
     call C_GS_CC % SetFieldPointer &
            ( FS % Storage_GS % Value, FS_4D )
@@ -132,6 +135,10 @@ contains
              iS_2 = iMomentum_2, &
              iS_3 = iMomentum_3, &
              UseDeviceOption = C % DeviceMemory )
+    
+    call FS % Storage_GS % ReassociateHost &
+           ( AssociateVariablesOption = .true. )
+
 
     end associate !-- F, etc.
 
