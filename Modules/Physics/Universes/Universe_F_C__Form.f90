@@ -595,6 +595,11 @@ contains
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
+      class is ( Fluid_P_HN_Form )
+        allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+          call DT % Initialize ( F )
+        end associate !-- DT
       class default
         call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
         call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )

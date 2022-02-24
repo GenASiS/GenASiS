@@ -1,15 +1,16 @@
-module DivergencePart_F_P_T__Form
+module DivergencePart_F_P_HN_T__Form
 
-  !-- DivergencePart_Fluid_Perfect_Total__Form
+  !-- DivergencePart_Fluid_Perfect_HeavyNucleus_Total__Form
 
   use Basics
   use Mathematics
-  use Fluid_P__Form
+  use Fluid_P_HN__Form
 
   implicit none
   private
 
-  type, public, extends ( DivergencePart_CS_Form ) :: DivergencePart_F_P_T_Form
+  type, public, extends ( DivergencePart_CS_Form ) :: &
+    DivergencePart_F_P_HN_T_Form
   contains
     procedure, public, pass :: &
       Initialize
@@ -19,7 +20,7 @@ module DivergencePart_F_P_T__Form
       ComputeStresses
     final :: &
       Finalize
-  end type DivergencePart_F_P_T_Form
+  end type DivergencePart_F_P_HN_T_Form
 
     private :: &
       Compute_FS_G_Kernel, &
@@ -28,8 +29,8 @@ module DivergencePart_F_P_T__Form
     interface
 
       module subroutine Compute_FS_G_Kernel &
-               ( D, S_1, S_2, S_3, G, P, V_Dim, iDim, &
-                 F_D, F_S_1, F_S_2, F_S_3, F_G, UseDeviceOption )
+               ( D, S_1, S_2, S_3, G, P, DE, V_Dim, iDim, &
+                 F_D, F_S_1, F_S_2, F_S_3, F_G, F_DE, UseDeviceOption )
         !-- Compute_FluxSet_Galileo_Kernel
         use Basics
         implicit none
@@ -38,13 +39,15 @@ module DivergencePart_F_P_T__Form
           S_1, S_2, S_3, &
           G, &
           P, &
+          DE, &
           V_Dim
         integer ( KDI ), intent ( in ) :: &
           iDim
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           F_D, &
           F_S_1, F_S_2, F_S_3, &
-          F_G
+          F_G, &
+          F_DE
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_FS_G_Kernel
@@ -72,7 +75,7 @@ contains
 
   subroutine Initialize ( DP, CS, NameOption, IgnorabilityOption )
 
-    class ( DivergencePart_F_P_T_Form ), intent ( inout ) :: &
+    class ( DivergencePart_F_P_HN_T_Form ), intent ( inout ) :: &
       DP
     class ( CurrentSetForm ), intent ( in ), target :: &
       CS
@@ -85,7 +88,7 @@ contains
       Name
 
     if ( DP % Type  ==  '' ) &
-      DP % Type  =  'a DivergencePart_F_P_T' 
+      DP % Type  =  'a DivergencePart_F_P_HN_T' 
 
     Name  =  'V'
     if ( present ( NameOption ) ) &
@@ -102,7 +105,7 @@ contains
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS_F  !-- Fluxes
-    class ( DivergencePart_F_P_T_Form ), intent ( in ) :: &
+    class ( DivergencePart_F_P_HN_T_Form ), intent ( in ) :: &
       DP
     class ( FieldSetForm ), intent ( in ) :: &
       FS_CS
@@ -112,12 +115,13 @@ contains
 
     integer ( KDI ) :: &
       iDensity, &
-      iEnergy
+      iEnergy, &
+      iElectron
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum
 
     select type ( CS  =>  DP % CurrentSet )
-      class is ( Fluid_P_Form )
+      class is ( Fluid_P_HN_Form )
 
     call Search &
            ( CS % iaBalanced, CS % BARYON_DENSITY_B, iDensity )
@@ -129,6 +133,8 @@ contains
            ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_3, iMomentum ( 3 ) )
     call Search &
            ( CS % iaBalanced, CS % ENERGY_DENSITY_B, iEnergy )
+    call Search &
+           ( CS % iaBalanced, CS % ELECTRON_DENSITY_B, iElectron )
 
     associate &
       ( FSV  =>  FS_F  % Storage ( iC ) % Value, &
@@ -139,16 +145,19 @@ contains
         F_S_2    =>  FSV ( :, iMomentum ( 2 ) ), &
         F_S_3    =>  FSV ( :, iMomentum ( 3 ) ), &
         F_G      =>  FSV ( :, iEnergy ), &
+        F_DE     =>  FSV ( :, iElectron ), &
           D      =>  CSV ( :, CS % BARYON_DENSITY_B ), &
           S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
           S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
           S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
           G      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
           P      =>  CSV ( :, CS % PRESSURE ), &
+          DE     =>  CSV ( :, CS % ELECTRON_DENSITY_B ), &
           V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
  
     call Compute_FS_G_Kernel &
-           ( D, S_1, S_2, S_3, G, P, V_Dim, iD, F_D, F_S_1, F_S_2, F_S_3, F_G, &
+           ( D, S_1, S_2, S_3, G, P, DE, V_Dim, iD, &
+             F_D, F_S_1, F_S_2, F_S_3, F_G, F_DE, &
              UseDeviceOption = CS % DeviceMemory )
   
     end associate !-- F_D, etc.
@@ -162,7 +171,7 @@ contains
 
     class ( FieldSetForm ), intent ( inout ) :: &
       S_UD
-    class ( DivergencePart_F_P_T_Form ), intent ( in ) :: &
+    class ( DivergencePart_F_P_HN_T_Form ), intent ( in ) :: &
       DP
     integer ( KDI ), intent ( in ) :: &
       iC  !-- iChart
@@ -170,7 +179,7 @@ contains
       iMomentum_1, iMomentum_2
 
     select type ( CS  =>  DP % CurrentSet )
-      class is ( Fluid_P_Form )
+      class is ( Fluid_P_HN_Form )
 
     call Search &
            ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D_1, iMomentum_1 )
@@ -202,10 +211,10 @@ contains
 
   impure elemental subroutine Finalize ( DP )
 
-    type ( DivergencePart_F_P_T_Form ), intent ( inout ) :: &
+    type ( DivergencePart_F_P_HN_T_Form ), intent ( inout ) :: &
       DP
 
   end subroutine Finalize
 
 
-end module DivergencePart_F_P_T__Form
+end module DivergencePart_F_P_HN_T__Form
