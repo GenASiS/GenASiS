@@ -22,6 +22,8 @@ module Step_RK_CS__Form
       CurrentSet
     class ( Coarsening_C_Form ), pointer :: &
       Coarsening => null ( )
+    class ( DivergencePart_CS_Form ), allocatable :: &
+      DivergenceTotal
     type ( DivergencePartElement ), dimension ( : ), allocatable :: &
       DivergencePart
     class ( RiemannSolver_HLL_Form ), allocatable :: &
@@ -76,6 +78,8 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iStage
+    logical ( KDL ) :: &
+      DivergenceParts
     character ( 1 ) :: &
       StageNumber
     character ( LDL ) :: &
@@ -128,17 +132,30 @@ contains
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     end associate !-- Y
 
-    !-- DivergencePart
+    !-- DivergenceTotal or DivergencePart
 
-    if ( .not. allocated ( S % DivergencePart ) ) then
-      allocate ( S % DivergencePart ( 1 ) )
-      associate ( DP_1D  =>  S % DivergencePart )
-      allocate ( DP_1D ( 1 ) % Element )
-      associate ( DP  =>  DP_1D ( 1 ) % Element )
-      call DP % Initialize ( CS )
-      end associate !-- DP
-      end associate !-- DP_1D
-    end if !-- allocated DivergencePart
+    if (       .not. allocated ( S % DivergenceTotal ) &
+         .and. .not. allocated ( S % DivergencePart ) ) then
+
+      DivergenceParts  =  .false.
+      call PROGRAM_HEADER % GetParameter ( DivergenceParts, 'DivergenceParts' )
+
+      if ( DivergenceParts ) then
+        allocate ( S % DivergencePart ( 1 ) )
+        associate ( DP_1D  =>  S % DivergencePart )
+        allocate ( DP_1D ( 1 ) % Element )
+        associate ( DP  =>  DP_1D ( 1 ) % Element )
+        call DP % Initialize ( CS )
+        end associate !-- DP
+        end associate !-- DP_1D
+      else  !-- DivergenceTotal
+        allocate ( S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+        call DT % Initialize ( CS )
+        end associate !-- DT
+      end if  !-- DivergenceParts
+
+    end if !-- allocated DivergenceTotal or DivergencePart
 
     !-- RiemannSolver
 
@@ -235,6 +252,8 @@ contains
       deallocate ( S % RiemannSolver )
     if ( allocated ( S % DivergencePart ) ) &
       deallocate ( S % DivergencePart )
+    if ( allocated ( S % DivergenceTotal ) ) &
+      deallocate ( S % DivergenceTotal )
     if ( allocated ( S % SolutionStage ) ) &
       deallocate ( S % SolutionStage )
     if ( allocated ( S % Solution ) ) &
@@ -446,25 +465,40 @@ contains
     character ( 1 ) :: &
       StageNumber
 
-    allocate ( Slope_DFV_F_Form :: K )
-    select type ( K )
-      class is ( Slope_DFV_F_Form )
     select type ( S )
       class is ( Step_RK_CS_Form )
-
-    if ( present ( iS_Option ) ) then
-      write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-      call K % Initialize &
-             ( S % RiemannSolver, S % DivergencePart, &
-               SuffixOption = StageNumber )
-    else
-      call K % Initialize &
-             ( S % RiemannSolver, S % DivergencePart, &
-               IgnorabilityOption = S % IGNORABILITY )
+    if ( allocated ( S % DivergenceTotal ) ) then
+      allocate ( Slope_DFV_F_DT_Form :: K )
+      select type ( K )
+        class is ( Slope_DFV_F_DT_Form )
+      if ( present ( iS_Option ) ) then
+        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
+        call K % Initialize &
+               ( S % RiemannSolver, S % DivergenceTotal, &
+                 SuffixOption = StageNumber )
+      else
+        call K % Initialize &
+               ( S % RiemannSolver, S % DivergenceTotal, &
+                 IgnorabilityOption = S % IGNORABILITY )
+      end if
+      end select !-- K
+    else if ( allocated ( S % DivergencePart ) ) then
+      allocate ( Slope_DFV_F_DP_Form :: K )
+      select type ( K )
+        class is ( Slope_DFV_F_DP_Form )
+      if ( present ( iS_Option ) ) then
+        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
+        call K % Initialize &
+               ( S % RiemannSolver, S % DivergencePart, &
+                 SuffixOption = StageNumber )
+      else
+        call K % Initialize &
+               ( S % RiemannSolver, S % DivergencePart, &
+                 IgnorabilityOption = S % IGNORABILITY )
+      end if
+      end select !-- K
     end if
-
     end select !-- S
-    end select !-- K
 
   end subroutine SetSlope_CS
 
