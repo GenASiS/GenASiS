@@ -292,25 +292,18 @@ contains
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
-      ! class is ( Fluid_P_I_Form )
-      !   allocate ( S % DivergencePart ( 2 ) )
-      !   associate ( DP_1D  =>  S % DivergencePart )
-      !     allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
-      !     associate ( DP  =>  DP_1D ( 1 ) % Element )
-      !       call DP % Initialize ( F )
-      !     end associate !-- DP
-      !     allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
-      !     associate ( DP  =>  DP_1D ( 2 ) % Element )
-      !       call DP % Initialize ( F )
-      !     end associate !-- DP
-      !   end associate !-- DP_1D
+      class is ( Fluid_P_I_Form )
+        allocate ( DivergencePart_F_P_T_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+          call DT % Initialize ( F )
+        end associate !-- DT
       class default
         call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
         call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
         call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- F
-    end if
+    end if  !-- DivergenceParts
 
     call S % Initialize ( F )
 !     if ( present ( GravitySolverTypeOption ) ) &   

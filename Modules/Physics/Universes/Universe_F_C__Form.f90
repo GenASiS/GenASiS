@@ -521,6 +521,9 @@ contains
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
 
+    logical ( KDL ) :: &
+      DivergenceParts
+
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     select type ( F  =>  I % CurrentSet_X )
@@ -537,46 +540,68 @@ contains
       S % SetSlope  =>  SetSlope_N_SG
     end select !-- G
 
-    !-- DivergencePart
-    select type ( F )
-    class is ( Fluid_D_Form )
-      allocate ( S % DivergencePart ( 1 ) )
-      associate ( DP_1D  =>  S % DivergencePart )
-        allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
-        associate ( DP  =>  DP_1D ( 1 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-      end associate !-- DP_1D
-    class is ( Fluid_P_I_Form )
-      allocate ( S % DivergencePart ( 2 ) )
-      associate ( DP_1D  =>  S % DivergencePart )
-        allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
-        associate ( DP  =>  DP_1D ( 1 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-        allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
-        associate ( DP  =>  DP_1D ( 2 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-      end associate !-- DP_1D
-    class is ( Fluid_P_HN_Form )
-      allocate ( S % DivergencePart ( 2 ) )
-      associate ( DP_1D  =>  S % DivergencePart )
-        allocate ( DivergencePart_F_P_HN_V_Form :: DP_1D ( 1 ) % Element )
-        associate ( DP  =>  DP_1D ( 1 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-        allocate ( DivergencePart_F_P_HN_P_Form :: DP_1D ( 2 ) % Element )
-        associate ( DP  =>  DP_1D ( 2 ) % Element )
-          call DP % Initialize ( F )
-        end associate !-- DP
-      end associate !-- DP_1D
-    class default
-      call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- F
+    DivergenceParts  =  .false.
+    call PROGRAM_HEADER % GetParameter ( DivergenceParts, 'DivergenceParts' )
+
+    if ( DivergenceParts ) then
+      select type ( F )
+      class is ( Fluid_D_Form )
+        allocate ( S % DivergencePart ( 1 ) )
+        associate ( DP_1D  =>  S % DivergencePart )
+          allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
+          associate ( DP  =>  DP_1D ( 1 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+        end associate !-- DP_1D
+      class is ( Fluid_P_I_Form )
+        allocate ( S % DivergencePart ( 2 ) )
+        associate ( DP_1D  =>  S % DivergencePart )
+          allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
+          associate ( DP  =>  DP_1D ( 1 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+          allocate ( DivergencePart_F_P_P_Form :: DP_1D ( 2 ) % Element )
+          associate ( DP  =>  DP_1D ( 2 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+        end associate !-- DP_1D
+      class is ( Fluid_P_HN_Form )
+        allocate ( S % DivergencePart ( 2 ) )
+        associate ( DP_1D  =>  S % DivergencePart )
+          allocate ( DivergencePart_F_P_HN_V_Form :: DP_1D ( 1 ) % Element )
+          associate ( DP  =>  DP_1D ( 1 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+          allocate ( DivergencePart_F_P_HN_P_Form :: DP_1D ( 2 ) % Element )
+          associate ( DP  =>  DP_1D ( 2 ) % Element )
+            call DP % Initialize ( F )
+          end associate !-- DP
+        end associate !-- DP_1D
+      class default
+        call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+        call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- F
+    else  !-- DivergenceTotal
+      select type ( F )
+      class is ( Fluid_D_Form )
+        allocate ( DivergencePart_F_D_T_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+          call DT % Initialize ( F )
+        end associate !-- DT
+      class is ( Fluid_P_I_Form )
+        allocate ( DivergencePart_F_P_T_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+          call DT % Initialize ( F )
+        end associate !-- DT
+      class default
+        call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+        call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- F
+    end if  !-- DivergenceParts
 
     call S % Initialize ( F )
 
@@ -839,27 +864,51 @@ contains
              ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_B )
     end select !-- F
 
-    if ( present ( iS_Option ) ) then
-      write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-      call K % Initialize &
-             ( S % RiemannSolver, &
-               S % DivergencePart, &
-               iVelocity_F = F % VELOCITY_U, &
-               iMomentum_B = iMomentum_B, &
-               iBaryonMass_F = F % BARYON_MASS, &
-               iBaryonDensity_F = F % BARYON_DENSITY_B, &
-               iEnergy_B = iEnergy_B, &
-               SuffixOption = StageNumber )
-    else
-      call K % Initialize &
-             ( S % RiemannSolver, &
-               S % DivergencePart, &
-               iVelocity_F = F % VELOCITY_U, &
-               iMomentum_B = iMomentum_B, &
-               iBaryonMass_F = F % BARYON_MASS, &
-               iBaryonDensity_F = F % BARYON_DENSITY_B, &
-               iEnergy_B = iEnergy_B )
-    end if
+    if ( allocated ( S % DivergenceTotal ) ) then
+      if ( present ( iS_Option ) ) then
+        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
+        call K % Initialize &
+               ( S % RiemannSolver, &
+                 S % DivergenceTotal, &
+                 iVelocity_F = F % VELOCITY_U, &
+                 iMomentum_B = iMomentum_B, &
+                 iBaryonMass_F = F % BARYON_MASS, &
+                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
+                 iEnergy_B = iEnergy_B, &
+                 SuffixOption = StageNumber )
+      else
+        call K % Initialize &
+               ( S % RiemannSolver, &
+                 S % DivergenceTotal, &
+                 iVelocity_F = F % VELOCITY_U, &
+                 iMomentum_B = iMomentum_B, &
+                 iBaryonMass_F = F % BARYON_MASS, &
+                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
+                 iEnergy_B = iEnergy_B )
+      end if
+    else if ( allocated ( S % DivergencePart ) ) then
+      if ( present ( iS_Option ) ) then
+        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
+        call K % Initialize &
+               ( S % RiemannSolver, &
+                 S % DivergencePart, &
+                 iVelocity_F = F % VELOCITY_U, &
+                 iMomentum_B = iMomentum_B, &
+                 iBaryonMass_F = F % BARYON_MASS, &
+                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
+                 iEnergy_B = iEnergy_B, &
+                 SuffixOption = StageNumber )
+      else
+        call K % Initialize &
+               ( S % RiemannSolver, &
+                 S % DivergencePart, &
+                 iVelocity_F = F % VELOCITY_U, &
+                 iMomentum_B = iMomentum_B, &
+                 iBaryonMass_F = F % BARYON_MASS, &
+                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
+                 iEnergy_B = iEnergy_B )
+      end if
+    end if  !-- DivergenceTotal
 
     end select !-- F
     end select !-- S
