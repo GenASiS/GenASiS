@@ -69,7 +69,8 @@ contains
          GV  =>  G % Storage ( 1 ) % Value, &
         nI   =>  I % nFields )
 
-    allocate ( VI % Output ( nI ) )
+    if ( .not. allocated ( VI % Output ) ) &
+      allocate ( VI % Output ( nI ) )
     allocate ( MyIntegral ( nI ) )
 
     if ( C % Distributed .and. Reduce ) then
@@ -95,7 +96,6 @@ contains
     end if
 
     call Show ( VI % Output, 'Integral', Ignorability )
-    deallocate ( VI % Output )
 
     end associate !-- C, etc.
 

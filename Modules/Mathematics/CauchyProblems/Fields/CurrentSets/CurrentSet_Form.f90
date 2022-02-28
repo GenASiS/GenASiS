@@ -1,6 +1,7 @@
 module CurrentSet_Form
 
   use Basics
+  use Manifolds
   use FieldSets
   use Geometries
   use Tally_CS__Form
@@ -68,6 +69,8 @@ module CurrentSet_Form
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
+    procedure, public, pass :: &
+      ComputeTally
     final :: &
       Finalize
   end type CurrentSetForm
@@ -418,6 +421,120 @@ contains
   end subroutine ComputeEigenspeeds
 
 
+  subroutine ComputeTally ( CS, ChangeOption, IgnorabilityOption )
+    
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+    logical ( KDL ), intent ( in ), optional :: &
+      ChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+    
+    integer ( KDI ) :: &
+      iB  !-- iBoundary
+    real ( KDR ), dimension ( : ), allocatable :: &
+      OldTotal
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      OldBoundary
+    logical ( KDL ) :: &
+      Change
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    call Show ( 'Computing Tally', IgnorabilityOption )
+
+    Change = .true.
+    if ( present ( ChangeOption ) ) &
+      Change  =  ChangeOption
+
+    select type ( A  =>  CS % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( nI  =>  CS % TallyInterior % nIntegrals )
+
+    allocate ( OldTotal ( nI ) )
+    OldTotal  =  CS % TallyTotal % Value
+
+    allocate ( OldBoundary ( CS % nBoundaries ) )
+    do iB  =  1,  CS % nBoundaries
+      call OldBoundary ( iB ) % Initialize ( nI )
+      OldBoundary ( iB ) % Value  &
+        =  CS % TallyBoundaryGlobal ( iB ) % Element % Value
+    end do !-- iB
+
+    !-- Interior
+
+    call CS % TallyInterior % ComputeInterior ( CS )
+
+    !-- Boundaries: sum local accumulations
+
+    call CO % Initialize &
+           ( A % Chart_GS % Communicator, &
+             nOutgoing = [ CS % nBoundaries * nI ], &
+             nIncoming = [ CS % nBoundaries * nI ] )
+    do iB  =  1,  CS % nBoundaries
+      CO % Outgoing % Value ( ( iB - 1 ) * nI + 1  :  iB * nI ) &
+        =  CS % TallyBoundaryLocal ( iB ) % Element % Value
+      CS % TallyBoundaryLocal ( iB ) % Element % Value  =  0.0_KDR
+    end do !-- iB
+    call CO % Reduce ( REDUCTION % SUM )
+
+    !-- Total
+
+    CS % TallyTotal % Value  =  CS % TallyInterior % Value
+
+    do iB  =  1,  CS % nBoundaries
+
+      CS % TallyBoundaryGlobal ( iB ) % Element % Value &
+        =  OldBoundary ( iB ) % Value  &
+           +  CO % Incoming % Value ( ( iB - 1 ) * nI + 1  :  iB * nI )
+
+      CS % TallyTotal % Value &
+        =  CS % TallyTotal % Value  &
+           +  CS % TallyBoundaryGlobal ( iB ) % Element % Value
+
+    end do !-- iB
+
+    !-- Change
+
+    if ( Change ) then
+      CS % TallyChange % Value &
+        =  CS % TallyChange % Value &
+           +  ( CS % TallyTotal % Value - OldTotal )
+    end if
+  
+    !-- Display
+
+    call CS % TallyInterior % Show &
+           ( 'Interior Tally ' // trim ( CS % Name ), IgnorabilityOption )
+
+    do iB  =  1,  CS % nBoundaries
+      call CS % TallyBoundaryGlobal ( iB ) % Element % Show &
+             ( 'Boundary ' // trim ( CS % Boundaries ( 1 ) % Boundary ( iB ) ) &
+               // ' Tally ' // trim ( CS % Name ), IgnorabilityOption )
+    end do
+
+    call CS % TallyTotal % Show &
+           ( 'Total Tally ' // trim ( CS % Name ), IgnorabilityOption )
+
+    if ( Change ) then
+      call CS % TallyChange % Show &
+             ( 'Change in Total Tally ' // trim ( CS % Name ), &
+               IgnorabilityOption )
+    end if
+
+    end associate !-- nI
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'CurrentSet_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeTally', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+  end subroutine ComputeTally
+  
+  
   impure elemental subroutine Finalize ( CS )
 
     type ( CurrentSetForm ), intent ( inout ) :: &

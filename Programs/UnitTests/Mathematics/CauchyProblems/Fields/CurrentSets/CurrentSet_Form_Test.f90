@@ -49,6 +49,9 @@ program CurrentSet_Form_Test
   call  S % Show ( )
 
   call SetWave ( CS, G )
+  call CS % ComputeTally &
+         ( ChangeOption = .false., &
+           IgnorabilityOption = CONSOLE % INFO_1 )
 
   call GIS % Open ( GIS % ACCESS_CREATE )
   call S % Write ( )

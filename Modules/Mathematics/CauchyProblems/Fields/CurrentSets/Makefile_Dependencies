@@ -8,6 +8,7 @@ Tally_CS__Form.o: \
 
 CurrentSet_Form.o: \
   Basics.o \
+  Manifolds.o \
   FieldSets.o \
   Geometries.o \
   Tally_CS__Form.o \

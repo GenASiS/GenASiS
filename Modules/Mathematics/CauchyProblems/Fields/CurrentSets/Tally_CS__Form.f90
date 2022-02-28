@@ -13,10 +13,9 @@ module Tally_CS__Form
 
   type, public :: Tally_CS_Form
     integer ( KDI ) :: &
-      N_INTEGRALS = 0
-    integer ( KDI ) :: &
-      nBalanced = 0, &
-      nSelected = 0
+      nIntegrals = 0, &
+      nBalanced  = 0, &
+      nSelected  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBalanced, &
       iaSelected
@@ -45,10 +44,10 @@ module Tally_CS__Form
 !       ComputeBoundary_CSL
 !     generic :: &
 !       ComputeBoundary => ComputeBoundary_CSL
-!     procedure, private, pass :: &
-!       Show_T
-!     generic :: &
-!       Show => Show_T
+    procedure, private, pass :: &
+      Show_T
+    generic :: &
+      Show => Show_T
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -99,16 +98,16 @@ contains
     T % nBalanced  =  size ( iaBalanced )
     allocate ( T % iaBalanced, source = iaBalanced )
 
-    if ( T % N_INTEGRALS  ==  0 ) &
-      T % N_INTEGRALS  =  T % nBalanced
+    if ( T % nIntegrals  ==  0 ) &
+      T % nIntegrals  =  T % nBalanced
 
     if ( .not. allocated ( T % Value ) ) then
-      allocate ( T % Value ( T % N_INTEGRALS ) )
+      allocate ( T % Value ( T % nIntegrals ) )
       call Clear ( T % Value )
     end if
 
     if ( .not. allocated ( T % Variable ) ) &
-      allocate ( T % Variable ( T % N_INTEGRALS ) )
+      allocate ( T % Variable ( T % nIntegrals ) )
 
     if ( present ( VariableOption ) ) then
       T % Variable ( 1 : T % nBalanced ) &
@@ -123,7 +122,7 @@ contains
     end if
 
     if ( .not. allocated ( T % Unit ) ) &
-      allocate ( T % Unit ( T % N_INTEGRALS ) )    
+      allocate ( T % Unit ( T % nIntegrals ) )    
 
     if ( present ( UnitOption ) ) then
 
@@ -196,13 +195,17 @@ contains
       end associate !-- I
     end if
 
+    if ( .not. allocated ( T % VolumeIntegral ) ) then
+      allocate ( T % VolumeIntegral )
+    end if
+
     call T % ComputeInteriorIntegrand ( T % Integrand, CS, G, C % nDimensions ) 
 
     associate &
       ( VI  =>  T % VolumeIntegral, &
          I  =>  T % Integrand )
     call VI % Compute ( I, G, ReduceOption )
-    do iS = 1, T % nSelected
+    do iS  =  1,  T % nSelected
       T % Value ( T % iaSelected ( iS ) )  =  VI % Output ( iS )
     end do !-- iS
     end associate !-- VI, etc.
@@ -281,54 +284,55 @@ contains
 !   end subroutine ComputeBoundary_CSL
 
 
-!   subroutine Show_T &
-!                ( T, Description, IgnorabilityOption, nLeadingLinesOption, &
-!                  nTrailingLinesOption )
+  subroutine Show_T ( T, Description, IgnorabilityOption, &
+                      nLeadingLinesOption, nTrailingLinesOption )
     
-!     class ( Tally_C_Form ), intent ( in ) :: &
-!       T
-!     character ( * ), intent ( in ) :: &
-!       Description
-!     integer ( KDI ), intent ( in ), optional :: &
-!       IgnorabilityOption, &
-!       nLeadingLinesOption, &
-!       nTrailingLinesOption
+    class ( Tally_CS_Form ), intent ( in ) :: &
+      T
+    character ( * ), intent ( in ) :: &
+      Description
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      nLeadingLinesOption, &
+      nTrailingLinesOption
       
-!     integer ( KDI ) :: &
-!       iV, &
-!       iS, &
-!       iLine, &
-!       Ignorability
+    integer ( KDI ) :: &
+      iV, &
+      iS, &
+      iLine, &
+      Ignorability
     
-!     Ignorability = CONSOLE % INFO_3
-!     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
+    Ignorability  =  CONSOLE % INFO_3
+    if ( present ( IgnorabilityOption ) ) &
+      Ignorability = IgnorabilityOption
     
-!     if ( Ignorability > CONSOLE % WARNING ) then
-!       if ( CONSOLE % ProcessRank /= CONSOLE % DisplayRank &
-!          .or. Ignorability > CONSOLE % Verbosity )  return
-!     end if
+    if ( Ignorability  >  CONSOLE % WARNING ) then
+      if ( CONSOLE % ProcessRank  /=  CONSOLE % DisplayRank &
+           .or. Ignorability  >  CONSOLE % Verbosity ) &
+        return
+    end if
 
-!     if ( present ( nLeadingLinesOption )  ) then
-!       do iLine = 1, nLeadingLinesOption
-!         print *
-!       end do
-!     end if
+    if ( present ( nLeadingLinesOption )  ) then
+      do iLine = 1, nLeadingLinesOption
+        print *
+      end do
+    end if
     
-!     call Show ( trim ( Description ), Ignorability )
+    call Show ( trim ( Description ), Ignorability )
     
-!     do iV = 1, size ( T % iaSelected )
-!       iS = T % iaSelected ( iV )
-!       call Show ( T % Value ( iS ), T % Unit ( iS ), T % Variable ( iS ), &
-!                   Ignorability )
-!     end do
+    do iV = 1, size ( T % iaSelected )
+      iS = T % iaSelected ( iV )
+      call Show ( T % Value ( iS ), T % Unit ( iS ), T % Variable ( iS ), &
+                  Ignorability )
+    end do
     
-!     if ( present ( nTrailingLinesOption )  ) then
-!       do iLine = 1, nTrailingLinesOption
-!         print *
-!       end do
-!     end if
+    if ( present ( nTrailingLinesOption )  ) then
+      do iLine = 1, nTrailingLinesOption
+        print *
+      end do
+    end if
   
-!   end subroutine Show_T
+  end subroutine Show_T
   
   
   impure elemental subroutine Finalize ( T )
