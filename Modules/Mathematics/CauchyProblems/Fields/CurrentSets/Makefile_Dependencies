@@ -1,7 +1,16 @@
+Tally_CS__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CalculusFields.o \
+  Tally_CS__Form.f90
+
 CurrentSet_Form.o: \
   Basics.o \
   FieldSets.o \
   Geometries.o \
+  Tally_CS__Form.o \
   CurrentSet_Form.f90
 
 CurrentSet_Kernel.o: \
@@ -22,6 +31,7 @@ EigenspeedSet_F__Form.o: \
   EigenspeedSet_F__Form.f90
 
 CurrentSets.o: \
+  Tally_CS__Form.o \
   CurrentSet_Form.o \
   DivergencePart_CS__Form.o \
   EigenspeedSet_F__Form.o \

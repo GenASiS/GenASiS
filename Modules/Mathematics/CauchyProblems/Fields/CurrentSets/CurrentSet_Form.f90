@@ -3,6 +3,7 @@ module CurrentSet_Form
   use Basics
   use FieldSets
   use Geometries
+  use Tally_CS__Form
 
   implicit none
   private
@@ -42,6 +43,14 @@ module CurrentSet_Form
     !-- Geometry
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
+    !-- Tally
+    class ( Tally_CS_Form ), allocatable :: &
+      TallyInterior, &
+      TallyTotal, &
+      TallyChange
+    class ( Tally_CS_Element ), dimension ( : ), allocatable :: &
+      TallyBoundaryLocal, &
+      TallyBoundaryGlobal
   contains
     procedure, private, pass :: &
       InitializeAllocate_CS
@@ -86,7 +95,8 @@ contains
 
 
   subroutine InitializeAllocate_CS &
-               ( CS, G, FieldOption, VectorOption, NameOption, UnitOption, &
+               ( CS, G, FieldOption, VectorOption, TallyVariableOption, &
+                 NameOption, AllocateTallyOption, UnitOption, TallyUnitOption, &
                  VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
                  nFieldsOption, IgnorabilityOption )
 
@@ -97,10 +107,16 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      TallyVariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      AllocateTallyOption
     type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      TallyUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -112,7 +128,7 @@ contains
 
     integer ( KDI ) :: &
       iP, &  !-- iPrimitive
-      iB, &  !-- iBalanced
+      iB, &  !-- iBalanced, iBoundary
       iF, &  !-- iField
       iV, &  !-- iVector
       nFields, &
@@ -121,6 +137,8 @@ contains
       VectorIndices
     type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
       Unit
+    logical ( KDL ) :: &
+      AllocateTally
     character ( LDL ) :: &
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -252,6 +270,44 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
+    !-- Tally
+
+    AllocateTally = .true.
+    if ( present ( AllocateTallyOption ) ) &
+      AllocateTally = AllocateTallyOption
+
+    if ( .not. allocated ( CS % TallyInterior ) .and. AllocateTally ) then
+
+      allocate ( CS % TallyInterior )
+      allocate ( CS % TallyTotal )
+      allocate ( CS % TallyChange )
+      allocate ( CS % TallyBoundaryLocal  ( CS % nBoundaries ) )
+      allocate ( CS % TallyBoundaryGlobal ( CS % nBoundaries ) )
+      do iB  =  1,  CS % nBoundaries 
+        allocate ( CS % TallyBoundaryLocal  ( iB ) % Element )
+        allocate ( CS % TallyBoundaryGlobal ( iB ) % Element )
+      end do !-- iB
+
+      call CS % TallyInterior % Initialize &
+             ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
+               UnitOption = TallyUnitOption )
+      call CS % TallyTotal % Initialize &
+             ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
+               UnitOption = TallyUnitOption )
+      call CS % TallyChange % Initialize &
+             ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
+               UnitOption = TallyUnitOption )
+      do iB  =  1,  CS % nBoundaries
+        call CS % TallyBoundaryLocal ( iB ) % Element % Initialize &
+               ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
+                 UnitOption = TallyUnitOption )
+        call CS % TallyBoundaryGlobal ( iB ) % Element % Initialize &
+               ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
+                 UnitOption = TallyUnitOption )
+      end do !-- iB
+
+    end if
+
   end subroutine InitializeAllocate_CS
 
 
@@ -369,6 +425,16 @@ contains
 
     nullify ( CS % Geometry )
 
+    if ( allocated ( CS % TallyBoundaryGlobal ) ) &
+      deallocate ( CS % TallyBoundaryGlobal )
+    if ( allocated ( CS % TallyBoundaryLocal ) ) &
+      deallocate ( CS % TallyBoundaryLocal )
+    if ( allocated ( CS % TallyChange ) ) &
+      deallocate ( CS % TallyChange )
+    if ( allocated ( CS % TallyTotal ) ) &
+      deallocate ( CS % TallyTotal )
+    if ( allocated ( CS % TallyInterior ) ) &
+      deallocate ( CS % TallyInterior )
     if ( allocated ( CS % Balanced ) ) &
       deallocate ( CS % Balanced )
     if ( allocated ( CS % Primitive ) ) &

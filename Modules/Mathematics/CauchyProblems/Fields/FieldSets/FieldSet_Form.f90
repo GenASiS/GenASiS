@@ -13,7 +13,8 @@ module FieldSet_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nFields      = 0, &
-      nVectors     = 0
+      nVectors     = 0, &
+      nBoundaries  = 0
     integer ( KDI ) :: &
       iTimerGhost    = 0, &
       iTimerGhost_UH = 0, &  !-- UpdateHost
@@ -278,6 +279,16 @@ contains
     end do !-- iC
 
     end associate !-- nC
+
+    select type ( A  =>  FS % Atlas )
+    class is ( Atlas_SCG_Form )
+      FS % nBoundaries  =  FS % Boundaries ( 1 ) % nBoundaries
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'FieldSet_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeAllocate_FS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
 
     !-- For convenience with a single Chart_GS
     select type ( A  =>  FS % Atlas )

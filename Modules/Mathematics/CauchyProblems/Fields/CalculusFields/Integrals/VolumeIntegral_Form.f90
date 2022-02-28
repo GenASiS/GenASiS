@@ -95,6 +95,7 @@ contains
     end if
 
     call Show ( VI % Output, 'Integral', Ignorability )
+    deallocate ( VI % Output )
 
     end associate !-- C, etc.
 
