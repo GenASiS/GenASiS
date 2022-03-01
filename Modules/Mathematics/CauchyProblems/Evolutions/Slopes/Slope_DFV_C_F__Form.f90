@@ -188,16 +188,15 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine ComputeChart ( S, iC, T_Option, iS_Option )
+  subroutine ComputeChart ( S, iC, iS, T_Option )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
     integer ( KDI ) :: &
-      iC  !-- iChart
+      iC, &  !-- iChart
+      iS     !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     integer ( KDI ) :: &
       iMomentum_1, &
@@ -285,14 +284,14 @@ contains
   end subroutine ComputeChart
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine Compute ( S, iS, T_Option )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     integer ( KDI ) :: &
       iC, &  !-- iChart

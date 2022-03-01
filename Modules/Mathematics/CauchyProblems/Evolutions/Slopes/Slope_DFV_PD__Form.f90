@@ -183,17 +183,16 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine ComputeDimension ( S, iC, iD, T_Option, iS_Option )
+  subroutine ComputeDimension ( S, iC, iD, iS, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
-      iD     !-- iDimension
+      iD, &  !-- iDimension
+      iS     !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       A_I, &
@@ -231,11 +230,11 @@ contains
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
       call RS % ComputeFlux &
-             ( DP, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+             ( DP, iC, iD, T_Option = T_RS, iS_Option = iS )
       call T_RS % Stop ( )
     else
       call RS % ComputeFlux &
-             ( DP, iC, iD, iS_Option = iS_Option )
+             ( DP, iC, iD, iS_Option = iS )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
@@ -280,14 +279,14 @@ contains
   end subroutine ComputeDimension
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine Compute ( S, iS, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
@@ -330,13 +329,13 @@ contains
         if ( associated ( T_RS ) ) then
           call T_RS % Start ( )
           call RS % Prepare &
-                 ( iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+                 ( iC, iD, T_Option = T_RS, iS_Option = iS )
           call RS % Compute &
-                 ( DP, iC, iD, T_Option = T_RS, iS_Option = iS_Option )
+                 ( DP, iC, iD, T_Option = T_RS, iS_Option = iS )
           call T_RS % Stop ( )
         else
           call RS % Compute &
-                 ( DP, iC, iD, iS_Option = iS_Option )
+                 ( DP, iC, iD, iS_Option = iS )
         end if
 
         if ( associated ( T_K ) ) call T_K % Start ( )

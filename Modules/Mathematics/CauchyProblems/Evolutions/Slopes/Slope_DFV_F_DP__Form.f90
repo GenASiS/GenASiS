@@ -100,14 +100,14 @@ contains
   end subroutine InitializeAllocate_F
 
 
-  subroutine Compute ( S, T_Option, iS_Option )
+  subroutine Compute ( S, iS, T_Option )
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iOption
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
@@ -141,7 +141,7 @@ contains
           select type ( SDP  =>  S % Component ( iDP ) % Element )
           class is ( Slope_DFV_DP_Form )
             call SDP % ComputePartialDerivative &
-                   ( iC = iC, iD = iD, T_Option = T_Option )
+                   ( iC = iC, iD = iD, iS = iS, T_Option = T_Option )
           end select !-- SDP
         end do !-- iDP
 
@@ -149,7 +149,7 @@ contains
         select type ( SDD  =>  S % Component ( S % nComponents ) % Element )
         class is ( Slope_DFV_DD_Form )
           call SDD % ComputeDimension &
-                 ( iC = iC, iD = iD, T_Option = T_Option )
+                 ( iC = iC, iD = iD, iS = iS, T_Option = T_Option )
         end select !-- SDD
 
       end do !-- iD
@@ -161,7 +161,7 @@ contains
         select type ( SDP  =>  S % Component ( iDP ) % Element )
         class is ( Slope_DFV_DP_Form )
           call SDP % ComputeConnectionFlat &
-                 ( iC = iC, T_Option = T_Option )
+                 ( iC = iC, iS = iS, T_Option = T_Option )
           call SDP % AddComponents ( T_Option = T_Option )
         end select !-- SDP
       end do !-- iDP
