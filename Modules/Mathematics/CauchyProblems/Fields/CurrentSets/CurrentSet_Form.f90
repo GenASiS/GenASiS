@@ -45,6 +45,8 @@ module CurrentSet_Form
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
     !-- Tally
+    type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
+      BoundaryFluence_SCG
     class ( Tally_CS_Form ), allocatable :: &
       TallyInterior, &
       TallyTotal, &
@@ -74,6 +76,9 @@ module CurrentSet_Form
     final :: &
       Finalize
   end type CurrentSetForm
+
+    private :: &
+      AllocateBoundaryFluence_SCG
 
     private :: &
       ComputeEigenspeedsKernel
@@ -281,6 +286,8 @@ contains
 
     if ( .not. allocated ( CS % TallyInterior ) .and. AllocateTally ) then
 
+      call AllocateBoundaryFluence_SCG ( CS )
+
       allocate ( CS % TallyInterior )
       allocate ( CS % TallyTotal )
       allocate ( CS % TallyChange )
@@ -291,25 +298,32 @@ contains
         allocate ( CS % TallyBoundaryGlobal ( iB ) % Element )
       end do !-- iB
 
-      call CS % TallyInterior % Initialize &
+      associate &
+        ( TI   =>  CS % TallyInterior, &
+          TT   =>  CS % TallyTotal, &
+          TC   =>  CS % TallyChange, &
+          TBL  =>  CS % TallyBoundaryLocal ( : ), &
+          TBG  =>  CS % TallyBoundaryGlobal ( : ) )
+      call TI % Initialize &
              ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                UnitOption = TallyUnitOption )
-      call CS % TallyTotal % Initialize &
+      call TC % Initialize &
              ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                UnitOption = TallyUnitOption )
-      call CS % TallyChange % Initialize &
+      call TT % Initialize &
              ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                UnitOption = TallyUnitOption )
       do iB  =  1,  CS % nBoundaries
-        call CS % TallyBoundaryLocal ( iB ) % Element % Initialize &
+        call TBL ( iB ) % Element % Initialize &
                ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                  UnitOption = TallyUnitOption )
-        call CS % TallyBoundaryGlobal ( iB ) % Element % Initialize &
+        call TBG ( iB ) % Element % Initialize &
                ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                  UnitOption = TallyUnitOption )
       end do !-- iB
+      end associate !-- TI, etc.
 
-    end if
+    end if !-- AllocateTally
 
   end subroutine InitializeAllocate_CS
 
@@ -552,6 +566,8 @@ contains
       deallocate ( CS % TallyTotal )
     if ( allocated ( CS % TallyInterior ) ) &
       deallocate ( CS % TallyInterior )
+    if ( allocated ( CS % BoundaryFluence_SCG ) ) &
+      deallocate ( CS % BoundaryFluence_SCG )
     if ( allocated ( CS % Balanced ) ) &
       deallocate ( CS % Balanced )
     if ( allocated ( CS % Primitive ) ) &
@@ -564,4 +580,55 @@ contains
   end subroutine Finalize
 
   
+  subroutine AllocateBoundaryFluence_SCG ( CS )
+
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iD, jD, kD, &  !-- iDimension
+      iE             !-- iEquation
+    integer ( KDI ), dimension ( 3 ) :: &
+      nSurface
+
+    select type ( A  =>  CS % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS )
+    associate &
+      ( nE   =>  CS % nBalanced, &
+        nD   =>  C % nDimensions, &
+        nF   =>  C % Connectivity % nFaces, &
+        iaI  =>  C % Connectivity % iaInner ( : ), &
+        iaO  =>  C % Connectivity % iaOuter ( : ) )
+
+    allocate ( CS % BoundaryFluence_SCG ( nE, nF ) )
+    associate ( BF  =>  CS % BoundaryFluence_SCG )
+        
+    do iD  =  1, nD
+      jD  =  mod ( iD, 3 ) + 1
+      kD  =  mod ( jD, 3 ) + 1
+      nSurface ( iD )  =  1
+      nSurface ( jD )  =  C % nCellsBrick ( jD ) 
+      nSurface ( kD )  =  C % nCellsBrick ( kD )
+      do iE  =  1, nE
+        call BF ( iE, iaI ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BF ( iE, iaO ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        if ( CS % DeviceMemory ) then
+          call BF ( iE, iaI ( iD ) ) % AllocateDevice ( )
+          call BF ( iE, iaO ( iD ) ) % AllocateDevice ( )
+        end if
+      end do !-- iE
+    end do !-- iD
+
+    end associate !-- BF
+    end associate !-- nE, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine AllocateBoundaryFluence_SCG
+
+
 end module CurrentSet_Form
