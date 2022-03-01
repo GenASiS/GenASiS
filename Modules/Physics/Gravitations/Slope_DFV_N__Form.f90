@@ -26,8 +26,8 @@ contains
 
 
   subroutine InitializeAllocate_N_DT &
-               ( S, RS, DT, iVelocity_F, iMomentum_B, iBaryonMass_F, &
-                 iBaryonDensity_F, iEnergy_B, SuffixOption )
+               ( S, RS, DT, Weight_RK, iVelocity_F, iMomentum_B, &
+                 iBaryonMass_F, iBaryonDensity_F, iEnergy_B, SuffixOption )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
@@ -35,6 +35,8 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DT
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Weight_RK
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iVelocity_F, &
       iMomentum_B
@@ -79,7 +81,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_DT_Form )
 
-    call SF % Initialize ( RS, DT, SuffixOption )
+    call SF % Initialize ( RS, DT, Weight_RK, SuffixOption )
 
     end select !-- SF
 
@@ -105,8 +107,8 @@ contains
 
 
   subroutine InitializeAllocate_N_DP &
-               ( S, RS, DP_1D, iVelocity_F, iMomentum_B, iBaryonMass_F, &
-                 iBaryonDensity_F, iEnergy_B, SuffixOption )
+               ( S, RS, DP_1D, Weight_RK, iVelocity_F, iMomentum_B, &
+                 iBaryonMass_F, iBaryonDensity_F, iEnergy_B, SuffixOption )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
@@ -114,6 +116,8 @@ contains
       RS
     type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
       DP_1D
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Weight_RK
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iVelocity_F, &
       iMomentum_B
@@ -158,7 +162,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_DP_Form )
 
-    call SF % Initialize ( RS, DP_1D, SuffixOption )
+    call SF % Initialize ( RS, DP_1D, Weight_RK, SuffixOption )
 
     end select !-- SF
 

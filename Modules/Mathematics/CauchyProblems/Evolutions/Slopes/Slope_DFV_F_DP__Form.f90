@@ -31,7 +31,7 @@ contains
 
 
   subroutine InitializeAllocate_F &
-               ( S, RS, DP_1D, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP_1D, Weight_RK, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
@@ -39,6 +39,8 @@ contains
       RS
     type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
       DP_1D
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Weight_RK
     character ( * ), intent ( in ), optional :: &
       SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -81,7 +83,8 @@ contains
       allocate ( Slope_DFV_DP_Form :: S % Component ( nSC ) % Element )
       select type ( SDP  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_DP_Form )
-        call SDP % Initialize ( RS, DP_1D ( iDP ) % Element, SuffixOption )
+        call SDP % Initialize &
+               ( RS, DP_1D ( iDP ) % Element, Weight_RK, SuffixOption )
       end select !-- SDP
     end do !-- iDP
     end associate !-- nSC

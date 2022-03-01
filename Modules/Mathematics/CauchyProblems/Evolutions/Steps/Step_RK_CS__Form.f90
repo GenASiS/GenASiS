@@ -474,11 +474,11 @@ contains
       if ( present ( iS_Option ) ) then
         write ( StageNumber, fmt = '(i1.1)' ) iS_Option
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergenceTotal, &
+               ( S % RiemannSolver, S % DivergenceTotal, S % B, &
                  SuffixOption = StageNumber )
       else
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergenceTotal, &
+               ( S % RiemannSolver, S % DivergenceTotal, S % B, &
                  IgnorabilityOption = S % IGNORABILITY )
       end if
       end select !-- K
@@ -489,11 +489,11 @@ contains
       if ( present ( iS_Option ) ) then
         write ( StageNumber, fmt = '(i1.1)' ) iS_Option
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergencePart, &
+               ( S % RiemannSolver, S % DivergencePart, S % B, &
                  SuffixOption = StageNumber )
       else
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergencePart, &
+               ( S % RiemannSolver, S % DivergencePart, S % B, &
                  IgnorabilityOption = S % IGNORABILITY )
       end if
       end select !-- K

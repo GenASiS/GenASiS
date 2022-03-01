@@ -14,6 +14,8 @@ module Slope_DFV_PD__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
       iTimer_K = 0
+    real ( KDR ), dimension ( : ), pointer :: &
+      Weight_RK => null ( )
     class ( DivergencePart_CS_Form ), pointer :: &
       DivergencePart => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
@@ -84,7 +86,7 @@ contains
 
 
   subroutine InitializeAllocate_PD &
-               ( S, RS, DP, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP, Weight_RK, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
@@ -92,6 +94,8 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ), target :: &
       DP
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      Weight_RK
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -115,6 +119,7 @@ contains
 
     S % DivergencePart  =>  DP
     S % RiemannSolver   =>  RS
+    S % Weight_RK       =>  Weight_RK
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -388,8 +393,9 @@ contains
     type ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
 
-    nullify ( S % DivergencePart )
     nullify ( S % RiemannSolver )
+    nullify ( S % DivergencePart )
+    nullify ( S % Weight_RK )
     
   end subroutine Finalize
 
