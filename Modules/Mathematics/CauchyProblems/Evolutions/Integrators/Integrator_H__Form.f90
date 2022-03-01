@@ -28,8 +28,8 @@ module Integrator_H__Form
       iTimer_W   = 0, &   !-- Write
       iTimer_CC  = 0, &   !-- ComputeCycle
       iTimer_PC  = 0, &   !-- PrepareCycle
-      iTimer_CTN = 0!, &  !-- Compute_T_New
-      ! iTimerTally = 0, &
+      iTimer_CTN = 0, &   !-- Compute_T_New
+      iTimer_CT   = 0     !-- ComputeTally
       ! iTimerWriteSeries = 0, &
     real ( KDR ) :: &
       T_Start               = 0.0_KDR, &
@@ -124,6 +124,8 @@ module Integrator_H__Form
       Timer_PC
     procedure, private, pass :: &
       Timer_CTN
+    procedure, private, pass :: &
+      Timer_CT
     procedure, private, pass :: &   !-- 2
       PrepareInitial
     procedure, private, pass :: &   !-- 2
@@ -140,6 +142,8 @@ module Integrator_H__Form
       ShowSystem_H
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
+    procedure, private, pass :: &   !-- 3
+      ComputeTally
     procedure, public, pass :: &   !-- 3
       Analyze_H
     procedure, private, pass :: &   !-- 3
@@ -434,7 +438,7 @@ contains
 
     T_AC  =>  I % Timer_AC ( LevelOption = T_E % Level + 1 )
     call T_AC % Start ( )
-    call I % AdministerCheckpoint ( T_AC, ComputeChangeOption = .false. )
+    call I % AdministerCheckpoint ( T_AC, ChangeOption = .false. )
     call T_AC % Stop ( )
 
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
@@ -854,6 +858,36 @@ contains
   end function Timer_CTN
 
 
+  function Timer_CT ( I, LevelOption ) result ( T )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ), optional :: &
+      LevelOption
+    type ( TimerForm ), pointer :: &
+      T
+
+    character ( LDL ) :: &
+      TimerName
+
+    associate ( iT  =>  I % iTimer_CT )
+
+    if ( iT == 0 ) then
+      TimerName  =  trim ( I % Name ) // '_CmptTlly'
+      if ( present ( LevelOption ) ) then
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+      else
+        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+      end if
+    end if
+
+    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+
+    end associate !-- iT
+
+  end function Timer_CT
+
+
   subroutine PrepareInitial ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -948,18 +982,18 @@ contains
   end subroutine PrepareEvolution
 
 
-  subroutine AdministerCheckpoint ( I, T_AC, ComputeChangeOption )
+  subroutine AdministerCheckpoint ( I, T_AC, ChangeOption )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
     type ( TimerForm ), intent ( in ), optional :: &
       T_AC
     logical ( KDL ), intent ( in ), optional :: &
-      ComputeChangeOption
+      ChangeOption
 
     integer ( KDI ) :: &
       iTSC, &  !-- iTimeStepCandidates
-!       TallyIgnorability, &
+      TallyIgnorability, &
       StatisticsIgnorability
     real ( KDR ), dimension ( : ), allocatable :: &
       MaxTime, &
@@ -969,15 +1003,15 @@ contains
 !       WriteSeries
     type ( TimerForm ), pointer :: &
       T_UH, &
+      T_CT, &
       T_A, &
       T_W
-!       Timer_T, &
 !       Timer_WS
     
-!     Timer_T  => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
 !     Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
 
       T_UH  =>  I % Timer_UH ( LevelOption = T_AC % Level + 1 )
+      T_CT  =>  I % Timer_CT ( LevelOption = T_AC % Level + 1 )
       T_A   =>  I % Timer_A  ( LevelOption = T_AC % Level + 1 )
       T_W   =>  I % Timer_W  ( LevelOption = T_AC % Level + 1 )
 
@@ -1003,20 +1037,20 @@ contains
          .and. I % T  <  I % T_Finish &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
-!       TallyIgnorability       =  I % IGNORABILITY + 2
+      TallyIgnorability       =  I % IGNORABILITY + 2
       StatisticsIgnorability  =  I % IGNORABILITY + 2
 !      WriteSeries = .false.
     else
-!       TallyIgnorability       =  CONSOLE % INFO_1
+      TallyIgnorability       =  CONSOLE % INFO_1
       StatisticsIgnorability  =  CONSOLE % INFO_1
 !      WriteSeries = .true.
     end if
 
-!     if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
-!     call I % ComputeTally &
-!            ( ComputeChangeOption = ComputeChangeOption, &
-!              IgnorabilityOption  = TallyIgnorability )
-!     if ( associated ( Timer_T ) ) call Timer_T % Stop ( )   
+    call T_CT % Start ( )   
+    call I % ComputeTally &
+           ( ChangeOption = ChangeOption, &
+             IgnorabilityOption  = TallyIgnorability )
+    call T_CT % Stop ( )   
 
     call T_A % Start ( )   
     call I % Analyze ( T_A )
@@ -1192,6 +1226,18 @@ contains
     end associate !-- GA
 
   end subroutine UpdateHost_H
+
+
+  subroutine ComputeTally ( I, ChangeOption, IgnorabilityOption )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      ChangeOption      
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+  end subroutine ComputeTally
 
 
   subroutine Analyze_H ( I, T_A )

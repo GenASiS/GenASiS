@@ -31,6 +31,8 @@ module Integrator_CS__Form
       PrepareEvolution
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CS
+    procedure, private, pass :: &  !-- 3
+      ComputeTally
     procedure, public, pass :: &
       Compute_dT_CS_CGS
   end type Integrator_CS_Form
@@ -255,6 +257,27 @@ contains
     end associate !-- CS
 
   end subroutine UpdateHost_CS
+
+
+  subroutine ComputeTally ( I, ChangeOption, IgnorabilityOption )
+
+    class ( Integrator_CS_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      ChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    if ( .not. allocated ( I % CurrentSet_X ) ) &
+      return
+
+    associate ( CS => I % CurrentSet_X )
+    call CS % ComputeTally &
+           ( ChangeOption = ChangeOption, &
+             IgnorabilityOption = IgnorabilityOption )
+    end associate !-- CS
+
+  end subroutine ComputeTally
 
 
   subroutine Compute_dT_CS_CGS ( I, dT, iC, T_Option )
