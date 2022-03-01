@@ -36,6 +36,9 @@ module Slope_DFV_PD__Form
   end type Slope_DFV_PD_Form
 
     private :: &
+      RecordBoundaryFluence_SCG
+
+    private :: &
       ComputeKernel
 
     interface
@@ -58,6 +61,22 @@ module Slope_DFV_PD__Form
           UseDeviceOption
       end subroutine ComputeKernel
 
+      module subroutine RecordBoundaryFluence_SCG_Kernel &
+               ( BF, F, Factor, nB, oB, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          BF
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          F
+        real ( KDR ), intent ( in ) :: &
+          Factor
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB, &
+          oB
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine RecordBoundaryFluence_SCG_Kernel
+      
     end interface
 
 
@@ -374,6 +393,69 @@ contains
     nullify ( S % RiemannSolver )
     
   end subroutine Finalize
+
+
+  subroutine RecordBoundaryFluence_SCG &
+               ( BF, C, F_I, Weight_RK, dT, iD, iC )
+
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      BF
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      F_I
+    real ( KDR ), intent ( in ) :: &
+      Weight_RK, &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iD, &  !-- iDimension
+      iC     !-- iConserved
+
+    integer ( KDI ) :: &
+      jD, kD, &   !-- jDimension, kDimension
+      nCells
+    integer ( KDI ), dimension ( 3 ) :: &
+      oB, & !-- oBoundary
+      nB    !-- nBoundary
+    logical ( KDL ) :: &
+      RecordInner, &
+      RecordOuter
+
+    RecordInner  =  ( C % iaBrick ( iD )  ==  1 )
+    RecordOuter  =  ( C % iaBrick ( iD )  ==  C % nBricks ( iD ) )
+    nCells  =  C % nCellsBrick ( iD )
+
+    jD  =  mod ( iD, 3 ) + 1
+    kD  =  mod ( jD, 3 ) + 1
+    
+    nB ( iD )  =  1
+    nB ( jD )  =  C % nCellsBrick ( jD )
+    nB ( kD )  =  C % nCellsBrick ( kD )
+
+    if ( RecordInner ) then
+      associate ( iCI  =>  C % Connectivity % iaInner ( iD ) )
+      associate ( BF_Inner  =>  BF ( iC, iCI ) % Value )
+      oB  =  C % nGhostLayers
+      call RecordBoundaryFluence_SCG_Kernel &
+             ( BF_Inner, F_I, Weight_RK * dT, nB, oB, &
+               UseDeviceOption = BF ( iC, iCI ) % AllocatedDevice )
+      end associate !-- BF_Inner
+      end associate !-- iCI
+    end if !-- iaBrick ( iD ) == 1
+
+    if ( RecordOuter ) then
+      associate ( iCO  =>  C % Connectivity % iaOuter ( iD ) )
+      associate ( BF_Outer  =>  BF ( iC, iCO ) % Value )
+      oB         =  C % nGhostLayers
+      oB ( iD )  =  oB ( iD )  +  nCells
+      call RecordBoundaryFluence_SCG_Kernel &
+             ( BF_Outer, F_I, Weight_RK * dT, nB, oB, &
+               UseDeviceOption = BF ( iC, iCO ) % AllocatedDevice )
+      end associate !-- BF_Outer
+      end associate !-- iCO
+    end if !-- iaBrick ( iD ) == nBricks ( iD )
+
+  end subroutine RecordBoundaryFluence_SCG
 
 
 end module Slope_DFV_PD__Form

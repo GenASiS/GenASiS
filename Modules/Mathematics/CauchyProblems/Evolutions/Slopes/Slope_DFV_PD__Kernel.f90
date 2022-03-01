@@ -96,4 +96,52 @@ contains
   end procedure ComputeKernel
 
 
+  module procedure RecordBoundaryFluence_SCG_Kernel
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+    
+    if ( UseDevice ) then 
+      
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+            BF ( iV, jV, kV ) &
+              =  BF ( iV, jV, kV ) &
+                 +  Factor &
+                    *  F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+    else 
+    
+      !$OMP parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+            BF ( iV, jV, kV ) &
+              =  BF ( iV, jV, kV ) &
+                 +  Factor &
+                    *  F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end parallel do
+    
+    end if
+
+  end procedure RecordBoundaryFluence_SCG_Kernel
+
+
 end submodule Slope_DFV_PD__Kernel
