@@ -227,10 +227,12 @@ contains
   end subroutine SetStream
 
 
-  subroutine ComputePartialDerivative ( S, iC, iD, iS, T_Option )
+  subroutine ComputePartialDerivative ( S, dT, iC, iD, iS, T_Option )
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD, &  !-- iDimension
@@ -241,7 +243,7 @@ contains
     select type ( S_PD  =>  S % Component ( 1 ) % Element )
       class is ( Slope_DFV_PD_Form )
 
-    call S_PD % ComputeDimension ( iC, iD, iS, T_Option )
+    call S_PD % ComputeDimension ( dT, iC, iD, iS, T_Option )
 
     if ( allocated ( S % FluxSetDimension ) ) then
       associate &
@@ -265,10 +267,12 @@ contains
   end subroutine ComputePartialDerivative
 
 
-  subroutine ComputeConnectionFlat ( S, iC, iS, T_Option )
+  subroutine ComputeConnectionFlat ( S, dT, iC, iS, T_Option )
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iS     !-- iStage
@@ -278,7 +282,7 @@ contains
     select type ( S_C_F  =>  S % Component ( 2 ) % Element )
       class is ( Slope_DFV_C_F_Form )
 
-    call S_C_F % ComputeChart ( iC, iS, T_Option )
+    call S_C_F % ComputeChart ( dT, iC, iS, T_Option )
 
     end select !-- S_C_F
 

@@ -157,10 +157,12 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine ComputeDimension ( S, iC, iD, iS, T_Option )
+  subroutine ComputeDimension ( S, dT, iC, iD, iS, T_Option )
 
     class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD, &  !-- iDimension

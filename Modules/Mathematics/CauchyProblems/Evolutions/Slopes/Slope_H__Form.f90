@@ -251,10 +251,12 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine Compute ( S, iS, T_Option )
+  subroutine Compute ( S, dT, iS, T_Option )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
@@ -277,10 +279,10 @@ contains
         if ( present ( T_Option ) ) then
           T_C  =>  SC % Timer ( LevelOption = T_Option % Level + 1 )
           call T_C % Start ( )
-          call SC % Compute ( iS, T_Option = T_C )
+          call SC % Compute ( dT, iS, T_Option = T_C )
           call T_C % Stop ( )
         else
-          call SC % Compute ( iS )
+          call SC % Compute ( dT, iS )
         end if
 
         end associate !-- SC

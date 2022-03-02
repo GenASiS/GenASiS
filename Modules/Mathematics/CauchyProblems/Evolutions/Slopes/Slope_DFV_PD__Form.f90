@@ -188,10 +188,12 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine ComputeDimension ( S, iC, iD, iS, T_Option )
+  subroutine ComputeDimension ( S, dT, iC, iD, iS, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD, &  !-- iDimension
@@ -199,12 +201,16 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
+    integer ( KDI ) :: &
+      iF  !-- iFlux
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       A_I, &
       V
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      F_I_3D
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       S_4D, &
-      F_I
+      F_I_4D
     type ( TimerForm ), pointer :: &
       T_RS, &
       T_K
@@ -215,6 +221,7 @@ contains
     associate &
       ( RS  =>  S % RiemannSolver, &
         DP  =>  S % DivergencePart, &
+        CS  =>  S % RiemannSolver % CurrentSet, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
@@ -256,13 +263,20 @@ contains
     class is ( Chart_GS_Form )
 
       call C % SetFieldPointer (  SV ( :, : ), S_4D )
-      call C % SetFieldPointer ( RSV ( :, : ), F_I )
+      call C % SetFieldPointer ( RSV ( :, : ), F_I_4D )
       call C % SetFieldPointer (  GV ( :, G % AREA_I_D ( iD ) ), A_I )
       call C % SetFieldPointer (  GV ( :, G % VOLUME ), V )
 
       call ComputeKernel &
-             ( S_4D, F_I, A_I, V, iD, C % nGhostLayers ( iD ), &
+             ( S_4D, F_I_4D, A_I, V, iD, C % nGhostLayers ( iD ), &
                UseDeviceOption = S % DeviceMemory )
+
+      do iF  =  1,  size ( S_4D, dim = 4 ) 
+        call C % SetFieldPointer ( RSV ( :, iF ), F_I_3D )
+        call RecordBoundaryFluence_SCG &
+               ( CS % BoundaryFluence_SCG, C, F_I_3D, S % Weight_RK ( iS ), &
+                 dT, iD, iF )
+      end do !-- iF
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
@@ -284,10 +298,12 @@ contains
   end subroutine ComputeDimension
 
 
-  subroutine Compute ( S, iS, T_Option )
+  subroutine Compute ( S, dT, iS, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
@@ -295,13 +311,16 @@ contains
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
-      iD     !-- iDimension
+      iD, &  !-- iDimension
+      iF     !-- iFlux
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       A_I, &
       V
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      F_I_3D
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       S_4D, &
-      F_I
+      F_I_4D
     type ( TimerForm ), pointer :: &
       T_RS, &
       T_K
@@ -312,6 +331,7 @@ contains
     associate &
       ( RS  =>  S % RiemannSolver, &
         DP  =>  S % DivergencePart, &
+        CS  =>  S % RiemannSolver % CurrentSet, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
@@ -357,13 +377,20 @@ contains
         class is ( Chart_GS_Form )
 
           call C % SetFieldPointer (  SV ( :, : ), S_4D )
-          call C % SetFieldPointer ( RSV ( :, : ), F_I )
+          call C % SetFieldPointer ( RSV ( :, : ), F_I_4D )
           call C % SetFieldPointer (  GV ( :, G % AREA_I_D ( iD ) ), A_I )
           call C % SetFieldPointer (  GV ( :, G % VOLUME ), V )
           
           call ComputeKernel &
-                 ( S_4D, F_I, A_I, V, iD, C % nGhostLayers ( iD ), &
+                 ( S_4D, F_I_4D, A_I, V, iD, C % nGhostLayers ( iD ), &
                    UseDeviceOption = S % DeviceMemory )
+
+          do iF  =  1,  size ( S_4D, dim = 4 ) 
+            call C % SetFieldPointer ( RSV ( :, iF ), F_I_3D )
+            call RecordBoundaryFluence_SCG &
+                   ( CS % BoundaryFluence_SCG, C, F_I_3D, &
+                     S % Weight_RK ( iS ), dT, iD, iF )
+          end do !-- iF
 
         class default
           call Show ( 'Chart type not recognized', CONSOLE % ERROR )
@@ -401,7 +428,7 @@ contains
 
 
   subroutine RecordBoundaryFluence_SCG &
-               ( BF, C, F_I, Weight_RK, dT, iD, iC )
+               ( BF, C, F_I, Weight_RK, dT, iD, iF )
 
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
       BF
@@ -414,7 +441,7 @@ contains
       dT
     integer ( KDI ), intent ( in ) :: &
       iD, &  !-- iDimension
-      iC     !-- iConserved
+      iF     !-- iFlux
 
     integer ( KDI ) :: &
       jD, kD, &   !-- jDimension, kDimension
@@ -439,23 +466,23 @@ contains
 
     if ( RecordInner ) then
       associate ( iCI  =>  C % Connectivity % iaInner ( iD ) )
-      associate ( BF_Inner  =>  BF ( iC, iCI ) % Value )
+      associate ( BF_Inner  =>  BF ( iF, iCI ) % Value )
       oB  =  C % nGhostLayers
       call RecordBoundaryFluence_SCG_Kernel &
              ( BF_Inner, F_I, Weight_RK * dT, nB, oB, &
-               UseDeviceOption = BF ( iC, iCI ) % AllocatedDevice )
+               UseDeviceOption = BF ( iF, iCI ) % AllocatedDevice )
       end associate !-- BF_Inner
       end associate !-- iCI
     end if !-- iaBrick ( iD ) == 1
 
     if ( RecordOuter ) then
       associate ( iCO  =>  C % Connectivity % iaOuter ( iD ) )
-      associate ( BF_Outer  =>  BF ( iC, iCO ) % Value )
+      associate ( BF_Outer  =>  BF ( iF, iCO ) % Value )
       oB         =  C % nGhostLayers
       oB ( iD )  =  oB ( iD )  +  nCells
       call RecordBoundaryFluence_SCG_Kernel &
              ( BF_Outer, F_I, Weight_RK * dT, nB, oB, &
-               UseDeviceOption = BF ( iC, iCO ) % AllocatedDevice )
+               UseDeviceOption = BF ( iF, iCO ) % AllocatedDevice )
       end associate !-- BF_Outer
       end associate !-- iCO
     end if !-- iaBrick ( iD ) == nBricks ( iD )

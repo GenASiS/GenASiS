@@ -332,12 +332,13 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, iS, T_Option )
+  subroutine ComputeStage ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-      T
+       T, &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
@@ -385,7 +386,7 @@ contains
     else
       T_C   =>  null ( )
     end if
-    call K % Compute ( iS = iS, T_Option = T_C )
+    call K % Compute ( dT = dT, iS = iS, T_Option = T_C )
     if ( associated ( T_C ) ) call T_C % Stop ( )
 
     if ( associated ( S % Coarsening ) ) then
