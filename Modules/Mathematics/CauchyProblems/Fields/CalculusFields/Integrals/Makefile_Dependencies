@@ -5,10 +5,10 @@ VolumeIntegral_Form.o: \
   Geometries.o \
   VolumeIntegral_Form.f90
 
-# SurfaceIntegral_Form.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   SurfaceIntegral_Form.f90
+SurfaceIntegral_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  SurfaceIntegral_Form.f90
 
 SphericalAverage_Form.o: \
   Basics.o \
@@ -19,9 +19,9 @@ SphericalAverage_Form.o: \
 
 Integrals.o: \
   VolumeIntegral_Form.o \
+  SurfaceIntegral_Form.o \
   SphericalAverage_Form.o \
   Integrals.f90
-#  SurfaceIntegral_Form.o \
 
 Integrals.a: $(INTEGRALS)
 	ar r Integrals.a $(INTEGRALS)

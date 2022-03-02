@@ -9,9 +9,20 @@ module VolumeIntegral_Form
   private
 
   type, public :: VolumeIntegralForm
+    integer ( KDI ) :: &
+      IGNORABILITY, &
+      nIntegrals
+    character ( LDL ) :: &
+      Name
+    type ( FieldSetForm ), allocatable :: &
+      Integrand
+    class ( Geometry_F_Form ), pointer :: &
+      Geometry => null ( )
     real ( KDR ), dimension ( : ), allocatable :: &
       Output
   contains
+    procedure, public, pass :: &
+      Initialize
     procedure, public, pass :: &
       Compute
     final :: &
@@ -25,25 +36,53 @@ module VolumeIntegral_Form
 contains
 
 
-  subroutine Compute ( VI, I, G, ReduceOption, IgnorabilityOption )
+  subroutine Initialize ( VI, G, nIntegrals, NameOption, IgnorabilityOption )
 
     class ( VolumeIntegralForm ), intent ( inout ) :: &
       VI
-    class ( FieldSetForm ), intent ( in ) :: &
-      I  !-- Integrand
-    class ( Geometry_F_Form ), intent ( in ) :: &
+    class ( Geometry_F_Form ), intent ( in ), target :: &
       G
-    logical ( KDL ), intent ( in ), optional :: &
-      ReduceOption
+    integer ( KDI ), intent ( in ) :: &
+      nIntegrals
+    character ( * ), intent ( in ), optional :: &
+      NameOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    VI % IGNORABILITY  =  CONSOLE % INFO_2
+    if ( present ( IgnorabilityOption ) ) &
+      VI % IGNORABILITY  =  IgnorabilityOption
+
+    VI % Name  =  'VolumeIntegral'
+    if ( present ( NameOption ) ) &
+      VI % Name  =  NameOption
+
+    call Show ( 'Initializing a VolumeIntegral', VI % IGNORABILITY )
+    call Show ( VI % Name, 'Name', VI % IGNORABILITY )
+
+    VI % nIntegrals  =   nIntegrals
+    VI % Geometry    =>  G
+
+    allocate ( VI % Output ( nIntegrals ) )
+
+    allocate ( VI % Integrand )
+    associate ( I  =>  VI % Integrand )
+    call I % Initialize &
+           ( G % Atlas, NameOption = 'Integrand', nFieldsOption = nIntegrals )
+    end associate !-- I
+
+  end subroutine Initialize
+
+
+  subroutine Compute ( VI, ReduceOption )
+
+    class ( VolumeIntegralForm ), intent ( inout ) :: &
+      VI
+    logical ( KDL ), intent ( in ), optional :: &
+      ReduceOption
+
     integer ( KDI ) :: &
-      iI, &  !-- iIntegral
-      iF, &  !-- iF
-      Ignorability
-    real ( KDR ), dimension ( : ), allocatable :: &
-      MyIntegral
+      iI  !-- iIntegral
     logical ( KDR ) :: &
       Reduce
     type ( CollectiveOperation_R_Form ) :: &
@@ -53,25 +92,20 @@ contains
     if ( present ( ReduceOption ) ) &
       Reduce = ReduceOption
 
-    Ignorability  =  CONSOLE % INFO_5
-    if ( present ( IgnorabilityOption ) ) &
-      Ignorability  =  IgnorabilityOption
+    associate &
+      ( G  =>  VI % Geometry, &
+        I  =>  VI % Integrand )
 
-    call Show ( 'Computing a VolumeIntegral', Ignorability )
-    call Show ( I % Name, 'Integrand', Ignorability )
-    call Show ( I % Atlas % Name, 'Atlas', Ignorability )
+    call Show ( 'Computing a VolumeIntegral', VI % IGNORABILITY )
+    call Show ( VI % Name, 'Name', VI % IGNORABILITY )
 
     select type ( A  =>  I % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
-      (  C   =>  A % Chart_GS, &
-         IV  =>  I % Storage ( 1 ) % Value, &
-         GV  =>  G % Storage ( 1 ) % Value, &
-        nI   =>  I % nFields )
-
-    if ( .not. allocated ( VI % Output ) ) &
-      allocate ( VI % Output ( nI ) )
-    allocate ( MyIntegral ( nI ) )
+      (  C   =>   A % Chart_GS, &
+         IV  =>   I % Storage ( 1 ) % Value, &
+         GV  =>   G % Storage ( 1 ) % Value, &
+        nI   =>  VI % nIntegrals )
 
     if ( C % Distributed .and. Reduce ) then
       call CO % Initialize &
@@ -80,22 +114,19 @@ contains
     end if
 
     do iI = 1, nI
-      iF  =  I % iaSelected ( iI )
       call ComputeIntegral_CGS &
-             ( C % ProperCell, IV ( :, iF ), GV ( :, G % VOLUME ), &
-               MyIntegral ( iI ) )
+             ( C % ProperCell, IV ( :, iI ), GV ( :, G % VOLUME ), &
+               VI % Output ( iI ) )
     end do !-- iI
-    call Show ( MyIntegral, 'MyIntegral', Ignorability )
+    call Show ( VI % Output, 'MyIntegral', VI % IGNORABILITY )
 
     if ( C % Distributed .and. Reduce ) then
-      CO % Outgoing % Value  =  MyIntegral
+      CO % Outgoing % Value  =  VI % Output
       call CO % Reduce ( REDUCTION % SUM )
       VI % Output  =  CO % Incoming % Value
-    else
-      VI % Output  =  MyIntegral
     end if
 
-    call Show ( VI % Output, 'Integral', Ignorability )
+    call Show ( VI % Output, 'Integral', VI % IGNORABILITY )
 
     end associate !-- C, etc.
 
@@ -106,6 +137,8 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
+    end associate !-- G, etc.
+
   end subroutine Compute
 
 
@@ -114,8 +147,15 @@ contains
     type ( VolumeIntegralForm ), intent ( inout ) :: &
       VI
 
+    nullify ( VI % Geometry )
+
+    if ( allocated ( VI % Integrand ) ) &
+      deallocate ( VI % Integrand )
     if ( allocated ( VI % Output ) ) &
       deallocate ( VI % Output )
+
+    call Show ( 'Finalizing a VolumeIntegral', VI % IGNORABILITY )
+    call Show ( VI % Name, 'Name', VI % IGNORABILITY )
 
   end subroutine Finalize
 

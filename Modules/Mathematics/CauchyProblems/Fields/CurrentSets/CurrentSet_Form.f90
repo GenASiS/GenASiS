@@ -71,6 +71,11 @@ module CurrentSet_Form
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
+    procedure, private, pass :: &
+      AccumulateBoundaryTally_SCG
+    generic, public :: &
+      AccumulateBoundaryTally &
+        => AccumulateBoundaryTally_SCG
     procedure, public, pass :: &
       ComputeTally
     final :: &
@@ -433,6 +438,21 @@ contains
     end if !-- Density default
 
   end subroutine ComputeEigenspeeds
+
+
+  subroutine AccumulateBoundaryTally_SCG ( CS, BoundaryFluence_SCG )
+
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BoundaryFluence_SCG  !-- boundary slab
+
+    associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
+    call CS % TallyBoundaryLocal ( iExtent ) % Element &
+         % ComputeBoundary ( CS, BoundaryFluence_SCG )
+    end associate !-- iExtent
+      
+  end subroutine AccumulateBoundaryTally_SCG
 
 
   subroutine ComputeTally ( CS, ChangeOption, IgnorabilityOption )

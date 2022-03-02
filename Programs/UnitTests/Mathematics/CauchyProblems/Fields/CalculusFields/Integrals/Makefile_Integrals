@@ -2,7 +2,8 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: VolumeIntegral_Form_Test SphericalAverage_Form_Test #SurfaceIntegral_Form_Test \
+all: VolumeIntegral_Form_Test SurfaceIntegral_Form_Test \
+  SphericalAverage_Form_Test 
 
 VolumeIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
   Geometries.a Integrals.a VolumeIntegral_Form_Test.o
@@ -10,10 +11,11 @@ VolumeIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
           VolumeIntegral_Form_Test.o Integrals.a \
           Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
-# SurfaceIntegral_Form_Test: Basics.a Manifolds.a SurfaceIntegral_Form_Test.o
-# 	$(LINK) $(FLAGS) -o SurfaceIntegral_Form_Test_$(MACHINE) \
-#           SurfaceIntegral_Form_Test.o SurfaceIntegral_Form.o \
-#           Manifolds.a Basics.a $(LIBRARIES)
+SurfaceIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Integrals.a SurfaceIntegral_Form_Test.o
+	$(LINK) $(FLAGS) -o SurfaceIntegral_Form_Test_$(MACHINE) \
+          SurfaceIntegral_Form_Test.o Integrals.a \
+          Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
 
 SphericalAverage_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
   Geometries.a Integrals.a SphericalAverage_Form_Test.o
@@ -26,8 +28,8 @@ clean:
 
 clobber: clean
 	rm -f VolumeIntegral_Form_Test_*
+	rm -f SurfaceIntegral_Form_Test_*
 	rm -f SphericalAverage_Form_Test_*
-#	rm -f SurfaceIntegral_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies 
 include $(PATH_ALGEBRA)/Makefile_Dependencies
@@ -44,11 +46,13 @@ VolumeIntegral_Form_Test.o: \
   Integrals.o \
   VolumeIntegral_Form_Test.f90
 
-# SurfaceIntegral_Form_Test.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   SurfaceIntegral_Form.o \
-#   SurfaceIntegral_Form_Test.f90
+SurfaceIntegral_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  SurfaceIntegral_Form.o \
+  SurfaceIntegral_Form_Test.f90
 
 SphericalAverage_Form_Test.o: \
   Basics.o \

@@ -12,9 +12,7 @@ program VolumeIntegral_Form_Test
     A
   type ( Geometry_F_Form ), allocatable :: &
     G
-  type ( FieldSetForm ), allocatable :: &
-    I  !-- Integrand
-  type ( VolumeIntegralForm ) :: &
+  type ( VolumeIntegralForm ), allocatable :: &
     VI
 
   allocate ( PROGRAM_HEADER )
@@ -28,20 +26,22 @@ program VolumeIntegral_Form_Test
   allocate ( G )
   call G % Initialize ( A )
 
-  allocate ( I )
-  call I % Initialize ( A, NameOption = 'Integrand' )
+  allocate ( VI )
+  call VI % Initialize &
+         ( G, nIntegrals = 1, IgnorabilityOption = CONSOLE % INFO_1 )
 
   call A % Show ( )
   call G % Show ( )
-  call I % Show ( )
 
+  associate ( I   =>  VI % Integrand )
   associate ( IV  =>  I % Storage ( 1 ) % Value ( :, 1 ) )
   IV  =  1.0_KDR
   end associate !-- IV
+  end associate !-- I
 
-  call VI % Compute ( I, G, IgnorabilityOption = CONSOLE % INFO_1 )
+  call VI % Compute ( )
 
-  deallocate ( I )
+  deallocate ( VI )
   deallocate ( G )
   deallocate ( A )
   deallocate ( PROGRAM_HEADER )

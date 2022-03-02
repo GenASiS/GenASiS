@@ -26,7 +26,7 @@ module Tally_CS__Form
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
     type ( FieldSetForm ), allocatable :: &
-      Integrand
+      IntegrandInterior
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
     type ( VolumeIntegralForm ), allocatable :: &
@@ -40,10 +40,10 @@ module Tally_CS__Form
       SelectVariables
     procedure, public, pass :: &
       ComputeInterior
-!     procedure, private, pass :: &
-!       ComputeBoundary_CSL
-!     generic :: &
-!       ComputeBoundary => ComputeBoundary_CSL
+    procedure, private, pass :: &
+      ComputeBoundary_SCG
+    generic :: &
+      ComputeBoundary => ComputeBoundary_SCG
     procedure, private, pass :: &
       Show_T
     generic :: &
@@ -186,12 +186,12 @@ contains
       ( G  =>  T % Geometry, &
         C  =>  A % Chart_GS )
 
-    if ( .not. allocated ( T % Integrand ) ) then
+    if ( .not. allocated ( T % IntegrandInterior ) ) then
       allocate ( T % VolumeIntegral )
-      allocate ( T % Integrand )
-      associate ( I  =>  T % Integrand )
+      allocate ( T % IntegrandInterior )
+      associate ( I  =>  T % IntegrandInterior )
       call I % Initialize &
-             ( A, NameOption = 'Integrand', nFieldsOption = T % nSelected )
+             ( A, NameOption = 'IntegrandInterior', nFieldsOption = T % nSelected )
       end associate !-- I
     end if
 
@@ -199,11 +199,12 @@ contains
       allocate ( T % VolumeIntegral )
     end if
 
-    call T % ComputeInteriorIntegrand ( T % Integrand, CS, G, C % nDimensions ) 
+    call T % ComputeInteriorIntegrand &
+           ( T % IntegrandInterior, CS, G, C % nDimensions ) 
 
     associate &
       ( VI  =>  T % VolumeIntegral, &
-         I  =>  T % Integrand )
+         I  =>  T % IntegrandInterior )
     call VI % Compute ( I, G, ReduceOption )
     do iS  =  1,  T % nSelected
       T % Value ( T % iaSelected ( iS ) )  =  VI % Output ( iS )
@@ -221,14 +222,14 @@ contains
   end subroutine ComputeInterior
 
 
-!   subroutine ComputeBoundary_CSL ( T, FC, BoundaryFluence )
+  subroutine ComputeBoundary_SCG ( T, CS, BoundaryFluence )
 
-!     class ( Tally_C_Form ), intent ( inout ) :: &
-!       T
-!     class ( Field_CSL_Template ), intent ( in ) :: &
-!       FC
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-!       BoundaryFluence  !-- boundary slab
+    class ( Tally_CS_Form ), intent ( inout ) :: &
+      T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BoundaryFluence  !-- boundary slab
 
 !     integer ( KDI ) :: &
 !       iD, &   !-- iDimension
@@ -239,16 +240,14 @@ contains
 !       Integral
 !     type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
 !       Integrand
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
 !     type ( SurfaceIntegralForm ) :: &
 !       SI
 
-!     select type ( C => FC % Field )
-!     class is ( CurrentTemplate )
-
-!     select type ( CSL => FC % Chart )
-!     class is ( Chart_SL_Template )
+    select type ( A  =>  T % Geometry % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( G  =>  T % Geometry, &
+        C  =>  A % Chart_GS )
 
 !     associate ( Cnnct => CSL % Atlas % Connectivity )
 
@@ -279,9 +278,16 @@ contains
 
 !     end select !-- CSL
 !     end select !-- C
-!     nullify ( G )
 
-!   end subroutine ComputeBoundary_CSL
+    end associate !-- G, etc.
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_CS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeBoundary_SCG', 'subroutine', CONSOLE % ERROR )
+    end select !-- A
+
+  end subroutine ComputeBoundary_SCG
 
 
   subroutine Show_T ( T, Description, IgnorabilityOption, &
@@ -344,8 +350,8 @@ contains
 
     if ( allocated ( T % VolumeIntegral ) ) &
       deallocate ( T % VolumeIntegral )
-    if ( allocated ( T % Integrand ) ) &
-      deallocate ( T % Integrand )
+    if ( allocated ( T % IntegrandInterior ) ) &
+      deallocate ( T % IntegrandInterior )
     if ( allocated ( T % Unit ) ) &
       deallocate ( T % Unit ) 
     if ( allocated ( T % Variable ) ) &
