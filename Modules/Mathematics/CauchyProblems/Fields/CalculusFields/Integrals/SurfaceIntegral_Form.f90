@@ -29,7 +29,7 @@ module SurfaceIntegral_Form
   end type SurfaceIntegralForm
 
     private :: &
-      ComputeIntegral_CGS
+      ComputeIntegral_SCG
 
 contains
 
@@ -174,7 +174,7 @@ contains
           associate ( dIdA  =>  I ( iI, Cy % iaInner ( iD ) ) % Value )
           !-- Outward normal points left
 !          MyIntegral ( iI ) = MyIntegral ( iI ) - sum ( dIdA * dA )
-          call ComputeIntegral_CGS &
+          call ComputeIntegral_SCG &
                  ( SI % Output ( iI ), dIdA, dA_I, Direction = -1.0_KDR )
           end associate !-- dIdA
         end do !-- iI
@@ -197,7 +197,7 @@ contains
           associate ( dIdA  =>  I ( iI, Cy % iaOuter ( iD ) ) % Value )
           !-- Outward normal points right
 !          MyIntegral ( iI ) = MyIntegral ( iI ) + sum ( dIdA * dA )
-          call ComputeIntegral_CGS &
+          call ComputeIntegral_SCG &
                  ( SI % Output ( iI ), dIdA, dA_O, Direction = +1.0_KDR )
           end associate !-- dIdA
         end do !-- iI
@@ -251,7 +251,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeIntegral_CGS ( I, dIdA, dA, Direction )
+  subroutine ComputeIntegral_SCG ( I, dIdA, dA, Direction )
 
     real ( KDR ), intent ( inout ) :: &
       I
@@ -278,7 +278,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeIntegral_CGS
+  end subroutine ComputeIntegral_SCG
 
 
 end module SurfaceIntegral_Form

@@ -440,16 +440,16 @@ contains
   end subroutine ComputeEigenspeeds
 
 
-  subroutine AccumulateBoundaryTally_SCG ( CS, BoundaryFluence_SCG )
+  subroutine AccumulateBoundaryTally_SCG ( CS, BoundaryFluence )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-      BoundaryFluence_SCG  !-- boundary slab
+      BoundaryFluence  !-- boundary slab
 
     associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
     call CS % TallyBoundaryLocal ( iExtent ) % Element &
-         % ComputeBoundary ( CS, BoundaryFluence_SCG )
+         % ComputeBoundary ( BoundaryFluence )
     end associate !-- iExtent
       
   end subroutine AccumulateBoundaryTally_SCG

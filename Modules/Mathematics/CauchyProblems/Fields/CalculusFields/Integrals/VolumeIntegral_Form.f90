@@ -30,7 +30,7 @@ module VolumeIntegral_Form
   end type VolumeIntegralForm
 
     private :: &
-      ComputeIntegral_CGS
+      ComputeIntegral_SCG
 
 
 contains
@@ -106,7 +106,7 @@ contains
          GV  =>   G % Storage ( 1 ) % Value, &
         nI   =>  VI % nIntegrals )
 
-    call ComputeIntegral_CGS &
+    call ComputeIntegral_SCG &
            ( C % ProperCell, IV, GV ( :, G % VOLUME ), VI % Output )
     call Show ( VI % Output, 'MyIntegral', VI % IGNORABILITY )
 
@@ -152,7 +152,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeIntegral_CGS ( ProperCell, dIdV, dV, I )
+  subroutine ComputeIntegral_SCG ( ProperCell, dIdV, dV, I )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
@@ -178,7 +178,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeIntegral_CGS
+  end subroutine ComputeIntegral_SCG
 
 
 end module VolumeIntegral_Form

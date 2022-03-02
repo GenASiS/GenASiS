@@ -29,6 +29,8 @@ module Tally_CS__Form
       Geometry => null ( )
     type ( VolumeIntegralForm ), allocatable :: &
       InteriorIntegral
+    type ( SurfaceIntegralForm ), allocatable :: &
+      BoundaryIntegral
   contains
     procedure, private, pass :: &
       InitializeBalanced
@@ -38,10 +40,8 @@ module Tally_CS__Form
       SelectVariables
     procedure, public, pass :: &
       ComputeInterior
-    procedure, private, pass :: &
-      ComputeBoundary_SCG
-    generic :: &
-      ComputeBoundary => ComputeBoundary_SCG
+    procedure, public, pass :: &
+      ComputeBoundary
     procedure, private, pass :: &
       Show_T
     generic :: &
@@ -50,8 +50,8 @@ module Tally_CS__Form
       Finalize
     procedure, public, pass :: &
       ComputeInteriorIntegrand
-!     procedure, public, pass :: &
-!       ComputeBoundaryIntegrand_CSL
+    procedure, public, pass :: &
+      ComputeBoundaryIntegrand
 !     procedure, public, nopass :: &
 !       ComputeFacePositions
   end type Tally_CS_Form
@@ -192,8 +192,7 @@ contains
       end associate !-- II
     end if
 
-    call T % ComputeInteriorIntegrand &
-           ( T % InteriorIntegral % Integrand, CS, G, C % nDimensions ) 
+    call T % ComputeInteriorIntegrand ( CS ) 
 
     associate ( II  =>  T % InteriorIntegral )
     call II % Compute ( ReduceOption )
@@ -213,26 +212,15 @@ contains
   end subroutine ComputeInterior
 
 
-  subroutine ComputeBoundary_SCG ( T, CS, BoundaryFluence )
+  subroutine ComputeBoundary ( T, BoundaryFluence )
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
-      CS
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BoundaryFluence  !-- boundary slab
 
-!     integer ( KDI ) :: &
-!       iD, &   !-- iDimension
-!       iS      !-- iSelected
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       nB  !-- nBoundary
-!     real ( KDR ), dimension ( T % nSelected ) :: &
-!       Integral
-!     type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
-!       Integrand
-!     type ( SurfaceIntegralForm ) :: &
-!       SI
+    integer ( KDI ) :: &
+      iS  !-- iSelected
 
     select type ( A  =>  T % Geometry % Atlas )
       class is ( Atlas_SCG_Form )
@@ -240,35 +228,23 @@ contains
       ( G  =>  T % Geometry, &
         C  =>  A % Chart_GS )
 
-!     associate ( Cnnct => CSL % Atlas % Connectivity )
+    if ( .not. allocated ( T % BoundaryIntegral ) ) then
+      allocate ( T % BoundaryIntegral )
+      associate ( BI  =>  T % BoundaryIntegral )
+      call BI % Initialize &
+             ( G, nIntegrals = T % nSelected, NameOption = 'TallyBoundary' )
+      end associate !-- BI
+    end if
 
-!     allocate ( Integrand ( T % nSelected, Cnnct % nFaces ) )
+    call T % ComputeBoundaryIntegrand ( C, BoundaryFluence ) 
 
-!     do iD = 1, CSL % nDimensions
-!       nB = shape ( BoundaryFluence ( 1, Cnnct % iaInner ( iD ) ) % Value ) 
-!       do iS = 1, T % nSelected
-!         call Integrand ( iS, Cnnct % iaInner ( iD ) ) % Initialize &
-!                ( nB, ClearOption = .true. )
-!         call Integrand ( iS, Cnnct % iaOuter ( iD ) ) % Initialize &
-!                ( nB, ClearOption = .true. )
-!       end do !-- iS
-!     end do !-- iD
-
-!     G => CSL % Geometry ( )
-!     call T % ComputeBoundaryIntegrand_CSL &
-!            ( Integrand, C, CSL, G, BoundaryFluence ) 
-
-!     call SI % Compute ( CSL, Integrand, Integral, ReduceOption = .false. )
-
-!     do iS = 1, T % nSelected
-!       T % Value ( T % iaSelected ( iS ) ) &
-!         = T % Value ( T % iaSelected ( iS ) ) + Integral ( iS )
-!     end do !-- iS
-
-!     end associate !-- Cnnct
-
-!     end select !-- CSL
-!     end select !-- C
+    associate ( BI  =>  T % BoundaryIntegral )
+    call BI % Compute ( ReduceOption = .false. )
+    do iS  =  1,  T % nSelected
+      T % Value ( T % iaSelected ( iS ) ) &
+        =  T % Value ( T % iaSelected ( iS ) )  +  BI % Output ( iS )
+    end do !-- iS
+    end associate !-- BI
 
     end associate !-- G, etc.
 
@@ -278,7 +254,7 @@ contains
       call Show ( 'ComputeBoundary_SCG', 'subroutine', CONSOLE % ERROR )
     end select !-- A
 
-  end subroutine ComputeBoundary_SCG
+  end subroutine ComputeBoundary
 
 
   subroutine Show_T ( T, Description, IgnorabilityOption, &
@@ -339,6 +315,8 @@ contains
 
     nullify ( T % Geometry )
 
+    if ( allocated ( T % BoundaryIntegral ) ) &
+      deallocate ( T % BoundaryIntegral )
     if ( allocated ( T % InteriorIntegral ) ) &
       deallocate ( T % InteriorIntegral )
     if ( allocated ( T % Unit ) ) &
@@ -366,23 +344,20 @@ contains
   end subroutine Finalize_E
 
 
-  subroutine ComputeInteriorIntegrand ( T, I, CS, G, nD )
+  subroutine ComputeInteriorIntegrand ( T, CS )
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    type ( FieldSetForm ), intent ( inout ) :: &
-      I
     class ( FieldSetForm ), intent ( in ) :: &
       CS
-    class ( Geometry_F_Form ), intent ( in ) :: &
-      G
-    integer ( KDI ), intent ( in ) :: &
-      nD
 
     integer ( KDI ) :: &
       iI  !-- iIntegral
     
-    associate ( iaB  =>  T % iaBalanced )
+    associate &
+      (   G  =>  T % Geometry, &
+          I  =>  T % InteriorIntegral % Integrand, &
+        iaB  =>  T % iaBalanced )
     do iI  =  1,  T % nBalanced
       associate &
         ( CSV  =>  CS % Storage_GS % Value ( :, iaB ( iI ) ), &
@@ -390,58 +365,53 @@ contains
       call Copy ( CSV, IV )
       end associate !-- CV, etc.
     end do !-- iI
-    end associate !-- iaB
+    end associate !-- I, etc.
 
   end subroutine ComputeInteriorIntegrand
 
   
-!   subroutine ComputeBoundaryIntegrand_CSL &
-!                ( T, Integrand, C, CSL, G, BoundaryFluence )
+  subroutine ComputeBoundaryIntegrand ( T, C, BF )
 
-!     class ( Tally_C_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( Chart_SL_Template ), intent ( in ) :: &
-!       CSL
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-!       BoundaryFluence
+    class ( Tally_CS_Form ), intent ( inout ) :: &
+      T
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BF
 
-!     integer ( KDI ) :: &
-!       iD, &   !-- iDimension
-!       iF, &   !-- iFace
-!       iC, &   !-- iConnectivity
-!       iI      !-- iIntegral
+    integer ( KDI ) :: &
+      iD, &   !-- iDimension
+      iF, &   !-- iFace
+      iC, &   !-- iConnectivity
+      iI      !-- iIntegral
 
-!     associate ( Cnnct => CSL % Atlas % Connectivity )
-!     do iD = 1, CSL % nDimensions
-!       do iF = 1, 2
+    associate &
+      ( I   =>  T % BoundaryIntegral % Integrand, &
+        Cy  =>  C % Connectivity )
 
-!         if ( iF == 1 ) then
-!           iC = Cnnct % iaInner ( iD )
-!         else if ( iF == 2 ) then
-!           iC = Cnnct % iaOuter ( iD )
-!         end if
+    do iD  =  1,  C % nDimensions
+      do iF = 1, 2
 
-!         associate ( iaC => C % iaConserved )
-!         do iI = 1, C % N_CONSERVED
-!           associate &
-!             ( BFV => BoundaryFluence ( iI, iC ) % Value, &
-!               IV => Integrand ( iI, iC ) % Value )
-!           call Copy ( BFV, IV )
-!           end associate !-- BFV, etc.          
-!         end do !-- iI
-!       end associate !-- iaC
+        if ( iF == 1 ) then
+          iC = Cy % iaInner ( iD )
+        else if ( iF == 2 ) then
+          iC = Cy % iaOuter ( iD )
+        end if
+
+        do iI  =  1,  T % nSelected
+          associate &
+            ( BFV  =>  BF ( iI, iC ) % Value, &
+               IV  =>   I ( iI, iC ) % Value )
+          call Copy ( BFV, IV )
+          end associate !-- BFV, etc.          
+        end do !-- iI
       
-!       end do !-- iF
-!     end do !-- iD
-!     end associate !-- Cnnct
+      end do !-- iF
+    end do !-- iD
 
-!   end subroutine ComputeBoundaryIntegrand_CSL
+    end associate !-- Cy, etc.
+
+  end subroutine ComputeBoundaryIntegrand
 
 
 !   subroutine ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
