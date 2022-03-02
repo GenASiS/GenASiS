@@ -68,7 +68,8 @@ contains
     allocate ( VI % Integrand )
     associate ( I  =>  VI % Integrand )
     call I % Initialize &
-           ( G % Atlas, NameOption = 'Integrand', nFieldsOption = nIntegrals )
+           ( G % Atlas, NameOption = 'Integrand_' // trim ( VI % Name ), &
+             nFieldsOption = nIntegrals )
     end associate !-- I
 
   end subroutine Initialize
@@ -86,6 +87,9 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
+    call Show ( 'Computing a VolumeIntegral', VI % IGNORABILITY )
+    call Show ( VI % Name, 'Name', VI % IGNORABILITY )
+
     Reduce = .true.
     if ( present ( ReduceOption ) ) &
       Reduce = ReduceOption
@@ -94,10 +98,7 @@ contains
       ( G  =>  VI % Geometry, &
         I  =>  VI % Integrand )
 
-    call Show ( 'Computing a VolumeIntegral', VI % IGNORABILITY )
-    call Show ( VI % Name, 'Name', VI % IGNORABILITY )
-
-    select type ( A  =>  I % Atlas )
+    select type ( A  =>  G % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
       (  C   =>   A % Chart_GS, &
@@ -105,17 +106,13 @@ contains
          GV  =>   G % Storage ( 1 ) % Value, &
         nI   =>  VI % nIntegrals )
 
-    if ( C % Distributed .and. Reduce ) then
-      call CO % Initialize &
-             ( C % Communicator, &
-               nOutgoing = [ nI ], nIncoming = [ nI ] )
-    end if
-
     call ComputeIntegral_CGS &
            ( C % ProperCell, IV, GV ( :, G % VOLUME ), VI % Output )
     call Show ( VI % Output, 'MyIntegral', VI % IGNORABILITY )
 
     if ( C % Distributed .and. Reduce ) then
+      call CO % Initialize &
+             ( C % Communicator, nOutgoing = [ nI ], nIncoming = [ nI ] )
       CO % Outgoing % Value  =  VI % Output
       call CO % Reduce ( REDUCTION % SUM )
       VI % Output  =  CO % Incoming % Value
@@ -137,7 +134,7 @@ contains
   end subroutine Compute
 
 
-  subroutine Finalize ( VI )
+  impure elemental subroutine Finalize ( VI )
 
     type ( VolumeIntegralForm ), intent ( inout ) :: &
       VI
@@ -170,7 +167,7 @@ contains
       iV, &
       nV
 
-    nV  =  size ( dIdV )
+    nV  =  size ( ProperCell )
     
     I  =  0.0_KDR
 

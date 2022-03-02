@@ -13,7 +13,6 @@ SurfaceIntegral_Form.o: \
 SphericalAverage_Form.o: \
   Basics.o \
   Manifolds.o \
-  FieldSets.o \
   Geometries.o \
   SphericalAverage_Form.f90
 

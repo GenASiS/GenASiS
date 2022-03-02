@@ -49,7 +49,6 @@ VolumeIntegral_Form_Test.o: \
 SurfaceIntegral_Form_Test.o: \
   Basics.o \
   Manifolds.o \
-  FieldSets.o \
   Geometries.o \
   SurfaceIntegral_Form.o \
   SurfaceIntegral_Form_Test.f90

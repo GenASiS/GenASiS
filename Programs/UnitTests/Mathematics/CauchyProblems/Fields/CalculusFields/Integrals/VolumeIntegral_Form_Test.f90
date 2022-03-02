@@ -8,7 +8,7 @@ program VolumeIntegral_Form_Test
 
   implicit none
 
-  type ( Atlas_SCG_Form ), allocatable :: &
+  type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
   type ( Geometry_F_Form ), allocatable :: &
     G
@@ -21,7 +21,9 @@ program VolumeIntegral_Form_Test
 
   allocate ( A )
   call A % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator )
+         ( RadiusMax = 10.0_KDR, &
+           RadiusCore = 10.0_KDR / 8.0_KDR, &
+           CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( G )
   call G % Initialize ( A )
@@ -40,6 +42,12 @@ program VolumeIntegral_Form_Test
   end associate !-- I
 
   call VI % Compute ( )
+
+  associate ( C  =>  A % Chart_GS )
+  call Show ( 4.0_KDR / 3.0_KDR  *  CONSTANT % PI  &
+                *  C % MaxCoordinate ( 1 ) ** 3, &
+              'Expected' )   
+  end associate !-- C
 
   deallocate ( VI )
   deallocate ( G )

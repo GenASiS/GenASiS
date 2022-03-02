@@ -25,12 +25,10 @@ module Tally_CS__Form
       Variable
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
-    type ( FieldSetForm ), allocatable :: &
-      IntegrandInterior
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
     type ( VolumeIntegralForm ), allocatable :: &
-      VolumeIntegral
+      InteriorIntegral
   contains
     procedure, private, pass :: &
       InitializeBalanced
@@ -186,30 +184,23 @@ contains
       ( G  =>  T % Geometry, &
         C  =>  A % Chart_GS )
 
-    if ( .not. allocated ( T % IntegrandInterior ) ) then
-      allocate ( T % VolumeIntegral )
-      allocate ( T % IntegrandInterior )
-      associate ( I  =>  T % IntegrandInterior )
-      call I % Initialize &
-             ( A, NameOption = 'IntegrandInterior', nFieldsOption = T % nSelected )
-      end associate !-- I
-    end if
-
-    if ( .not. allocated ( T % VolumeIntegral ) ) then
-      allocate ( T % VolumeIntegral )
+    if ( .not. allocated ( T % InteriorIntegral ) ) then
+      allocate ( T % InteriorIntegral )
+      associate ( II  =>  T % InteriorIntegral )
+      call II % Initialize &
+             ( G, nIntegrals = T % nSelected, NameOption = 'TallyInterior' )
+      end associate !-- II
     end if
 
     call T % ComputeInteriorIntegrand &
-           ( T % IntegrandInterior, CS, G, C % nDimensions ) 
+           ( T % InteriorIntegral % Integrand, CS, G, C % nDimensions ) 
 
-    associate &
-      ( VI  =>  T % VolumeIntegral, &
-         I  =>  T % IntegrandInterior )
-    call VI % Compute ( I, G, ReduceOption )
+    associate ( II  =>  T % InteriorIntegral )
+    call II % Compute ( ReduceOption )
     do iS  =  1,  T % nSelected
-      T % Value ( T % iaSelected ( iS ) )  =  VI % Output ( iS )
+      T % Value ( T % iaSelected ( iS ) )  =  II % Output ( iS )
     end do !-- iS
-    end associate !-- VI, etc.
+    end associate !-- II, etc.
 
     end associate !-- G, etc.
 
@@ -348,10 +339,8 @@ contains
 
     nullify ( T % Geometry )
 
-    if ( allocated ( T % VolumeIntegral ) ) &
-      deallocate ( T % VolumeIntegral )
-    if ( allocated ( T % IntegrandInterior ) ) &
-      deallocate ( T % IntegrandInterior )
+    if ( allocated ( T % InteriorIntegral ) ) &
+      deallocate ( T % InteriorIntegral )
     if ( allocated ( T % Unit ) ) &
       deallocate ( T % Unit ) 
     if ( allocated ( T % Variable ) ) &
