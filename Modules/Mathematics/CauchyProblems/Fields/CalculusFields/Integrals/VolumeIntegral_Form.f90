@@ -81,8 +81,6 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ReduceOption
 
-    integer ( KDI ) :: &
-      iI  !-- iIntegral
     logical ( KDR ) :: &
       Reduce
     type ( CollectiveOperation_R_Form ) :: &
@@ -113,11 +111,8 @@ contains
                nOutgoing = [ nI ], nIncoming = [ nI ] )
     end if
 
-    do iI = 1, nI
-      call ComputeIntegral_CGS &
-             ( C % ProperCell, IV ( :, iI ), GV ( :, G % VOLUME ), &
-               VI % Output ( iI ) )
-    end do !-- iI
+    call ComputeIntegral_CGS &
+           ( C % ProperCell, IV, GV ( :, G % VOLUME ), VI % Output )
     call Show ( VI % Output, 'MyIntegral', VI % IGNORABILITY )
 
     if ( C % Distributed .and. Reduce ) then
@@ -164,10 +159,11 @@ contains
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      dIdV
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      dIdV, &
       dV
-    real ( KDR ), intent ( out ) :: &
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
       I
 
     integer ( KDI ) :: &
@@ -181,7 +177,7 @@ contains
     !$OMP parallel do reduction ( + : I )
     do iV  =  1, nV
       if ( ProperCell ( iV ) ) &
-        I  =  I  +  dIdV ( iV ) * dV ( iV )
+        I  =  I  +  dIdV ( iV, : ) * dV ( iV )
     end do
     !$OMP end parallel do
 
