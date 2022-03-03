@@ -46,6 +46,7 @@ module CurrentSet_Form
       Geometry => null ( )
     !-- Tally
     type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
+      BoundaryFlux_SCG, &
       BoundaryFluence_SCG
     class ( Tally_CS_Form ), allocatable :: &
       TallyInterior, &
@@ -83,7 +84,7 @@ module CurrentSet_Form
   end type CurrentSetForm
 
     private :: &
-      AllocateBoundaryFluence_SCG
+      AllocateBoundary_SCG
 
     private :: &
       ComputeEigenspeedsKernel
@@ -291,7 +292,7 @@ contains
 
     if ( .not. allocated ( CS % TallyInterior ) .and. AllocateTally ) then
 
-      call AllocateBoundaryFluence_SCG ( CS )
+      call AllocateBoundary_SCG ( CS )
 
       allocate ( CS % TallyInterior )
       allocate ( CS % TallyTotal )
@@ -588,6 +589,8 @@ contains
       deallocate ( CS % TallyInterior )
     if ( allocated ( CS % BoundaryFluence_SCG ) ) &
       deallocate ( CS % BoundaryFluence_SCG )
+    if ( allocated ( CS % BoundaryFlux_SCG ) ) &
+      deallocate ( CS % BoundaryFlux_SCG )
     if ( allocated ( CS % Balanced ) ) &
       deallocate ( CS % Balanced )
     if ( allocated ( CS % Primitive ) ) &
@@ -600,7 +603,7 @@ contains
   end subroutine Finalize
 
   
-  subroutine AllocateBoundaryFluence_SCG ( CS )
+  subroutine AllocateBoundary_SCG ( CS )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
@@ -622,8 +625,12 @@ contains
         iaI  =>  C % Connectivity % iaInner ( : ), &
         iaO  =>  C % Connectivity % iaOuter ( : ) )
 
-    allocate ( CS % BoundaryFluence_SCG ( nE, nF ) )
-    associate ( BF  =>  CS % BoundaryFluence_SCG )
+    allocate &
+      ( CS % BoundaryFluence_SCG ( nE, nF ), &
+        CS % BoundaryFlux_SCG ( nE, nF ) )
+    associate &
+      ( BFc  =>  CS % BoundaryFluence_SCG, &
+        BFx  =>  CS % BoundaryFlux_SCG )
         
     do iD  =  1, nD
       jD  =  mod ( iD, 3 ) + 1
@@ -632,23 +639,29 @@ contains
       nSurface ( jD )  =  C % nCellsBrick ( jD ) 
       nSurface ( kD )  =  C % nCellsBrick ( kD )
       do iE  =  1, nE
-        call BF ( iE, iaI ( iD ) ) &
+        call BFc ( iE, iaI ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
-        call BF ( iE, iaO ( iD ) ) &
+        call BFc ( iE, iaO ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BFx ( iE, iaI ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BFx ( iE, iaO ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
         if ( CS % DeviceMemory ) then
-          call BF ( iE, iaI ( iD ) ) % AllocateDevice ( )
-          call BF ( iE, iaO ( iD ) ) % AllocateDevice ( )
+          call BFc ( iE, iaI ( iD ) ) % AllocateDevice ( )
+          call BFc ( iE, iaO ( iD ) ) % AllocateDevice ( )
+          call BFx ( iE, iaI ( iD ) ) % AllocateDevice ( )
+          call BFx ( iE, iaO ( iD ) ) % AllocateDevice ( )
         end if
       end do !-- iE
     end do !-- iD
 
-    end associate !-- BF
+    end associate !-- BFc, etc.
     end associate !-- nE, etc.
     end associate !-- C, etc.
     end select !-- A
 
-  end subroutine AllocateBoundaryFluence_SCG
+  end subroutine AllocateBoundary_SCG
 
 
 end module CurrentSet_Form

@@ -157,16 +157,13 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine ComputeDimension ( S, dT, iC, iD, iS, T_Option )
+  subroutine ComputeDimension ( S, iC, iD, T_Option )
 
     class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), intent ( in ) :: &
-      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
-      iD, &  !-- iDimension
-      iS     !-- iStage
+      iD     !-- iDimension
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
@@ -204,12 +201,10 @@ contains
 
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
-      call RS % ComputeDiffusion &
-             ( iC, iD, T_Option = T_RS, iS_Option = iS )
+      call RS % ComputeDiffusion ( iC, iD, T_Option = T_RS )
       call T_RS % Stop ( )
     else
-      call RS % ComputeDiffusion &
-             ( iC, iD, iS_Option = iS )
+      call RS % ComputeDiffusion ( iC, iD )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )

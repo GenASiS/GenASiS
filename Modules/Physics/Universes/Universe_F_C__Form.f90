@@ -875,7 +875,6 @@ contains
         call K % Initialize &
                ( S % RiemannSolver, &
                  S % DivergenceTotal, &
-                 S % B, &
                  iVelocity_F = F % VELOCITY_U, &
                  iMomentum_B = iMomentum_B, &
                  iBaryonMass_F = F % BARYON_MASS, &
@@ -886,7 +885,6 @@ contains
         call K % Initialize &
                ( S % RiemannSolver, &
                  S % DivergenceTotal, &
-                 S % B, &
                  iVelocity_F = F % VELOCITY_U, &
                  iMomentum_B = iMomentum_B, &
                  iBaryonMass_F = F % BARYON_MASS, &
@@ -899,7 +897,6 @@ contains
         call K % Initialize &
                ( S % RiemannSolver, &
                  S % DivergencePart, &
-                 S % B, &
                  iVelocity_F = F % VELOCITY_U, &
                  iMomentum_B = iMomentum_B, &
                  iBaryonMass_F = F % BARYON_MASS, &
@@ -910,7 +907,6 @@ contains
         call K % Initialize &
                ( S % RiemannSolver, &
                  S % DivergencePart, &
-                 S % B, &
                  iVelocity_F = F % VELOCITY_U, &
                  iMomentum_B = iMomentum_B, &
                  iBaryonMass_F = F % BARYON_MASS, &

@@ -96,7 +96,7 @@ contains
   end procedure ComputeKernel
 
 
-  module procedure RecordBoundaryFluence_SCG_Kernel
+  module procedure RecordBoundaryFlux_SCG_Kernel
 
     integer ( KDI ) :: &
       iV, jV, kV
@@ -115,9 +115,7 @@ contains
         do jV = 1, nB ( 2 )
           do iV = 1, nB ( 1 )
             BF ( iV, jV, kV ) &
-              =  BF ( iV, jV, kV ) &
-                 +  Factor &
-                    *  F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
+              =  F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
           end do !-- iV
         end do !-- jV
       end do !-- kV
@@ -131,9 +129,7 @@ contains
         do jV = 1, nB ( 2 )
           do iV = 1, nB ( 1 )
             BF ( iV, jV, kV ) &
-              =  BF ( iV, jV, kV ) &
-                 +  Factor &
-                    *  F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
+              =  F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
           end do !-- iV
         end do !-- jV
       end do !-- kV
@@ -141,7 +137,7 @@ contains
     
     end if
 
-  end procedure RecordBoundaryFluence_SCG_Kernel
+  end procedure RecordBoundaryFlux_SCG_Kernel
 
 
 end submodule Slope_DFV_PD__Kernel

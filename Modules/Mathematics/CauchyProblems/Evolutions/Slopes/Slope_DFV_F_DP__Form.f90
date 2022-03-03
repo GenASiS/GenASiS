@@ -31,7 +31,7 @@ contains
 
 
   subroutine InitializeAllocate_F &
-               ( S, RS, DP_1D, Weight_RK, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP_1D, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
@@ -39,8 +39,6 @@ contains
       RS
     type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
       DP_1D
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Weight_RK
     character ( * ), intent ( in ), optional :: &
       SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -84,7 +82,7 @@ contains
       select type ( SDP  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_DP_Form )
         call SDP % Initialize &
-               ( RS, DP_1D ( iDP ) % Element, Weight_RK, SuffixOption )
+               ( RS, DP_1D ( iDP ) % Element, SuffixOption )
       end select !-- SDP
     end do !-- iDP
     end associate !-- nSC
@@ -103,14 +101,10 @@ contains
   end subroutine InitializeAllocate_F
 
 
-  subroutine Compute ( S, dT, iS, T_Option )
+  subroutine Compute ( S, T_Option )
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), intent ( in ) :: &
-      dT
-    integer ( KDI ), intent ( in ) :: &
-      iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
@@ -145,16 +139,14 @@ contains
         do iDP  =  1,  S % nComponents - 1
           select type ( SDP  =>  S % Component ( iDP ) % Element )
           class is ( Slope_DFV_DP_Form )
-            call SDP % ComputePartialDerivative &
-                   ( dT = dT, iC = iC, iD = iD, iS = iS, T_Option = T_Option )
+            call SDP % ComputePartialDerivative ( iC, iD, T_Option = T_Option )
           end select !-- SDP
         end do !-- iDP
 
         !-- Diffusive term
         select type ( SDD  =>  S % Component ( S % nComponents ) % Element )
         class is ( Slope_DFV_DD_Form )
-          call SDD % ComputeDimension &
-                 ( dT = dT, iC = iC, iD = iD, iS = iS, T_Option = T_Option )
+          call SDD % ComputeDimension ( iC, iD, T_Option = T_Option )
         end select !-- SDD
 
       end do !-- iD
@@ -165,8 +157,7 @@ contains
       do iDP  =  1,  S % nComponents - 1
         select type ( SDP  =>  S % Component ( iDP ) % Element )
         class is ( Slope_DFV_DP_Form )
-          call SDP % ComputeConnectionFlat &
-                 ( dT = dT, iC = iC, iS = iS, T_Option = T_Option )
+          call SDP % ComputeConnectionFlat ( iC, T_Option = T_Option )
           call SDP % AddComponents ( T_Option = T_Option )
         end select !-- SDP
       end do !-- iDP

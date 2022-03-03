@@ -46,7 +46,7 @@ contains
 
 
   subroutine InitializeAllocate_DP &
-               ( S, RS, DP, Weight_RK, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
@@ -54,8 +54,6 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DP
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Weight_RK
     character ( * ), intent ( in ), optional :: &
       SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -102,7 +100,7 @@ contains
     allocate ( Slope_DFV_PD_Form :: S % Component ( nSC ) % Element )
     select type ( SPD  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_PD_Form )
-    call SPD % Initialize ( RS, DP, Weight_RK, SuffixOption )
+    call SPD % Initialize ( RS, DP, SuffixOption )
     end select !-- SPD
 
     nSC  =  nSC + 1
@@ -227,23 +225,20 @@ contains
   end subroutine SetStream
 
 
-  subroutine ComputePartialDerivative ( S, dT, iC, iD, iS, T_Option )
+  subroutine ComputePartialDerivative ( S, iC, iD, T_Option )
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), intent ( in ) :: &
-      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
-      iD, &  !-- iDimension
-      iS     !-- iStage
+      iD     !-- iDimension
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     select type ( S_PD  =>  S % Component ( 1 ) % Element )
       class is ( Slope_DFV_PD_Form )
 
-    call S_PD % ComputeDimension ( dT, iC, iD, iS, T_Option )
+    call S_PD % ComputeDimension ( iC, iD, T_Option )
 
     if ( allocated ( S % FluxSetDimension ) ) then
       associate &
@@ -267,22 +262,19 @@ contains
   end subroutine ComputePartialDerivative
 
 
-  subroutine ComputeConnectionFlat ( S, dT, iC, iS, T_Option )
+  subroutine ComputeConnectionFlat ( S, iC, T_Option )
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), intent ( in ) :: &
-      dT
     integer ( KDI ), intent ( in ) :: &
-      iC, &  !-- iChart
-      iS     !-- iStage
+      iC  !-- iChart
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     select type ( S_C_F  =>  S % Component ( 2 ) % Element )
       class is ( Slope_DFV_C_F_Form )
 
-    call S_C_F % ComputeChart ( dT, iC, iS, T_Option )
+    call S_C_F % ComputeChart ( iC, T_Option )
 
     end select !-- S_C_F
 

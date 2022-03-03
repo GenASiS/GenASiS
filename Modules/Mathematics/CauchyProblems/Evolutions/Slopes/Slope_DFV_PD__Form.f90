@@ -14,8 +14,6 @@ module Slope_DFV_PD__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
       iTimer_K = 0
-    real ( KDR ), dimension ( : ), pointer :: &
-      Weight_RK => null ( )
     class ( DivergencePart_CS_Form ), pointer :: &
       DivergencePart => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
@@ -38,7 +36,7 @@ module Slope_DFV_PD__Form
   end type Slope_DFV_PD_Form
 
     private :: &
-      RecordBoundaryFluence_SCG
+      RecordBoundaryFlux_SCG
 
     private :: &
       ComputeKernel
@@ -63,21 +61,19 @@ module Slope_DFV_PD__Form
           UseDeviceOption
       end subroutine ComputeKernel
 
-      module subroutine RecordBoundaryFluence_SCG_Kernel &
-               ( BF, F, Factor, nB, oB, UseDeviceOption )
+      module subroutine RecordBoundaryFlux_SCG_Kernel &
+               ( F, nB, oB, BF, UseDeviceOption )
         use Basics
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-          BF
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
           F
-        real ( KDR ), intent ( in ) :: &
-          Factor
         integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
           nB, &
           oB
+        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+          BF
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine RecordBoundaryFluence_SCG_Kernel
+      end subroutine RecordBoundaryFlux_SCG_Kernel
       
     end interface
 
@@ -86,7 +82,7 @@ contains
 
 
   subroutine InitializeAllocate_PD &
-               ( S, RS, DP, Weight_RK, SuffixOption, IgnorabilityOption )
+               ( S, RS, DP, SuffixOption, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
@@ -94,8 +90,6 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ), target :: &
       DP
-    real ( KDR ), dimension ( : ), intent ( in ), target :: &
-      Weight_RK
     character ( * ), intent ( in ), optional :: &
       SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
@@ -119,7 +113,6 @@ contains
 
     S % DivergencePart  =>  DP
     S % RiemannSolver   =>  RS
-    S % Weight_RK       =>  Weight_RK
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -188,16 +181,13 @@ contains
   end subroutine CloneTimers
 
 
-  subroutine ComputeDimension ( S, dT, iC, iD, iS, T_Option )
+  subroutine ComputeDimension ( S, iC, iD, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), intent ( in ) :: &
-      dT
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
-      iD, &  !-- iDimension
-      iS     !-- iStage
+      iD     !-- iDimension
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
@@ -241,12 +231,10 @@ contains
 
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
-      call RS % ComputeFlux &
-             ( DP, iC, iD, T_Option = T_RS, iS_Option = iS )
+      call RS % ComputeFlux ( DP, iC, iD, T_Option = T_RS )
       call T_RS % Stop ( )
     else
-      call RS % ComputeFlux &
-             ( DP, iC, iD, iS_Option = iS )
+      call RS % ComputeFlux ( DP, iC, iD )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
@@ -273,9 +261,8 @@ contains
 
       do iF  =  1,  size ( S_4D, dim = 4 ) 
         call C % SetFieldPointer ( RSV ( :, iF ), F_I_3D )
-        call RecordBoundaryFluence_SCG &
-               ( CS % BoundaryFluence_SCG, C, F_I_3D, S % Weight_RK ( iS ), &
-                 dT, iD, iF )
+        call RecordBoundaryFlux_SCG &
+               ( CS % BoundaryFlux_SCG, C, F_I_3D, iD, iF )
       end do !-- iF
 
     class default
@@ -298,14 +285,10 @@ contains
   end subroutine ComputeDimension
 
 
-  subroutine Compute ( S, dT, iS, T_Option )
+  subroutine Compute ( S, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), intent ( in ) :: &
-      dT
-    integer ( KDI ), intent ( in ) :: &
-      iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
@@ -353,14 +336,12 @@ contains
 
         if ( associated ( T_RS ) ) then
           call T_RS % Start ( )
-          call RS % Prepare &
-                 ( iC, iD, T_Option = T_RS, iS_Option = iS )
-          call RS % Compute &
-                 ( DP, iC, iD, T_Option = T_RS, iS_Option = iS )
+          call RS % Prepare ( iC, iD, T_Option = T_RS )
+          call RS % Compute ( DP, iC, iD, T_Option = T_RS )
           call T_RS % Stop ( )
         else
-          call RS % Compute &
-                 ( DP, iC, iD, iS_Option = iS )
+          call RS % Prepare ( iC, iD )
+          call RS % Compute ( DP, iC, iD )
         end if
 
         if ( associated ( T_K ) ) call T_K % Start ( )
@@ -387,9 +368,8 @@ contains
 
           do iF  =  1,  size ( S_4D, dim = 4 ) 
             call C % SetFieldPointer ( RSV ( :, iF ), F_I_3D )
-            call RecordBoundaryFluence_SCG &
-                   ( CS % BoundaryFluence_SCG, C, F_I_3D, &
-                     S % Weight_RK ( iS ), dT, iD, iF )
+            call RecordBoundaryFlux_SCG &
+                   ( CS % BoundaryFlux_SCG, C, F_I_3D, iD, iF )
           end do !-- iF
 
         class default
@@ -422,13 +402,10 @@ contains
 
     nullify ( S % RiemannSolver )
     nullify ( S % DivergencePart )
-    nullify ( S % Weight_RK )
-    
   end subroutine Finalize
 
 
-  subroutine RecordBoundaryFluence_SCG &
-               ( BF, C, F_I, Weight_RK, dT, iD, iF )
+  subroutine RecordBoundaryFlux_SCG ( BF, C, F_I, iD, iF )
 
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
       BF
@@ -436,9 +413,6 @@ contains
       C
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       F_I
-    real ( KDR ), intent ( in ) :: &
-      Weight_RK, &
-      dT
     integer ( KDI ), intent ( in ) :: &
       iD, &  !-- iDimension
       iF     !-- iFlux
@@ -468,8 +442,8 @@ contains
       associate ( iCI  =>  C % Connectivity % iaInner ( iD ) )
       associate ( BF_Inner  =>  BF ( iF, iCI ) % Value )
       oB  =  C % nGhostLayers
-      call RecordBoundaryFluence_SCG_Kernel &
-             ( BF_Inner, F_I, Weight_RK * dT, nB, oB, &
+      call RecordBoundaryFlux_SCG_Kernel &
+             ( F_I, nB, oB, BF_Inner, &
                UseDeviceOption = BF ( iF, iCI ) % AllocatedDevice )
       end associate !-- BF_Inner
       end associate !-- iCI
@@ -480,14 +454,14 @@ contains
       associate ( BF_Outer  =>  BF ( iF, iCO ) % Value )
       oB         =  C % nGhostLayers
       oB ( iD )  =  oB ( iD )  +  nCells
-      call RecordBoundaryFluence_SCG_Kernel &
-             ( BF_Outer, F_I, Weight_RK * dT, nB, oB, &
+      call RecordBoundaryFlux_SCG_Kernel &
+             ( F_I, nB, oB, BF_Outer, &
                UseDeviceOption = BF ( iF, iCO ) % AllocatedDevice )
       end associate !-- BF_Outer
       end associate !-- iCO
     end if !-- iaBrick ( iD ) == nBricks ( iD )
 
-  end subroutine RecordBoundaryFluence_SCG
+  end subroutine RecordBoundaryFlux_SCG
 
 
 end module Slope_DFV_PD__Form

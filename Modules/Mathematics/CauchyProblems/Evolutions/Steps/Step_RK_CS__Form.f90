@@ -277,6 +277,8 @@ contains
       ( CS_B  =>  S % Balanced, &
         Y     =>  S % Solution )
 
+!    call S % CurrentSet % BoundaryFluence_SCG % UpdateDevice ( )
+
     call CS_B % Copy ( Y )
 
     !-- For diagnostic I/O
@@ -332,13 +334,12 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, dT, iS, T_Option )
+  subroutine ComputeStage ( S, T, iS, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       T, &
-      dT
+      T
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
@@ -386,7 +387,7 @@ contains
     else
       T_C   =>  null ( )
     end if
-    call K % Compute ( dT = dT, iS = iS, T_Option = T_C )
+    call K % Compute ( T_Option = T_C )
     if ( associated ( T_C ) ) call T_C % Stop ( )
 
     if ( associated ( S % Coarsening ) ) then
@@ -449,6 +450,8 @@ contains
     call CS % ComputeFromBalanced ( )
     call CS % ApplyBoundaryConditions ( )
   
+!    call CS % BoundaryFluence_SCG % UpdateHost ( )
+
     end associate !-- Y, etc.
  
   end subroutine StoreSolution
@@ -475,11 +478,11 @@ contains
       if ( present ( iS_Option ) ) then
         write ( StageNumber, fmt = '(i1.1)' ) iS_Option
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergenceTotal, S % B, &
+               ( S % RiemannSolver, S % DivergenceTotal, &
                  SuffixOption = StageNumber )
       else
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergenceTotal, S % B, &
+               ( S % RiemannSolver, S % DivergenceTotal, &
                  IgnorabilityOption = S % IGNORABILITY )
       end if
       end select !-- K
@@ -490,11 +493,11 @@ contains
       if ( present ( iS_Option ) ) then
         write ( StageNumber, fmt = '(i1.1)' ) iS_Option
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergencePart, S % B, &
+               ( S % RiemannSolver, S % DivergencePart, &
                  SuffixOption = StageNumber )
       else
         call K % Initialize &
-               ( S % RiemannSolver, S % DivergencePart, S % B, &
+               ( S % RiemannSolver, S % DivergencePart, &
                  IgnorabilityOption = S % IGNORABILITY )
       end if
       end select !-- K
