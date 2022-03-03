@@ -38,6 +38,11 @@ module Real_3D__Form
       UpdateHost => UpdateHost_R_3D
     procedure, public, pass :: &
       Clear => Clear_R_3D
+    procedure, private, pass :: &
+      MultiplyAdd_R_3D, &
+      MultiplyAddInPlace_R_3D
+    generic, public :: &
+      MultiplyAdd => MultiplyAdd_R_3D, MultiplyAddInPlace_R_3D
     final :: &
       Finalize_R_3D
   end type Real_3D_Form
@@ -174,6 +179,68 @@ contains
     call Clear ( A % Value, UseDeviceOption = A % AllocatedDevice )
   
   end subroutine Clear_R_3D
+
+
+  impure elemental subroutine MultiplyAdd_R_3D &
+                     ( R_3D_D, R_3D_A, R_3D_B, C, UseDeviceOption )
+
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      R_3D_D
+    class ( Real_3D_Form ), intent ( in ) :: &
+      R_3D_A, &
+      R_3D_B
+    real ( KDR ), intent ( in ) :: &
+      C
+    logical ( KDL ), intent ( in ), optional :: &
+       UseDeviceOption
+    
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice  =  R_3D_D % AllocatedDevice
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice  =  UseDeviceOption
+
+    associate &
+      ( A  =>  R_3D_A % Value, &
+        B  =>  R_3D_B % Value, &
+        D  =>  R_3D_D % Value )
+
+    call MultiplyAdd ( A, B, C, D, UseDeviceOption = UseDevice )
+
+    end associate !-- A, etc.
+
+  end subroutine MultiplyAdd_R_3D
+
+
+  impure elemental subroutine MultiplyAddInPlace_R_3D &
+                     ( R_3D_A, R_3D_B, C, UseDeviceOption )
+
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      R_3D_A
+    class ( Real_3D_Form ), intent ( in ) :: &
+      R_3D_B
+    real ( KDR ), intent ( in ) :: &
+      C
+    logical ( KDL ), intent ( in ), optional :: &
+       UseDeviceOption
+    
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice  =  R_3D_A % AllocatedDevice
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice  =  UseDeviceOption
+
+    associate &
+      ( A  =>  R_3D_A % Value, &
+        B  =>  R_3D_B % Value )
+
+    call MultiplyAdd ( A, B, C, UseDeviceOption = UseDevice )
+
+    end associate !-- A, etc.
+        
+  end subroutine MultiplyAddInPlace_R_3D
 
 
   impure elemental subroutine Finalize_R_3D ( A )

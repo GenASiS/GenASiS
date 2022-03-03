@@ -621,10 +621,10 @@ contains
       if ( present ( T_Option ) ) then
         T_CS  =>  S % Timer_CS ( LevelOption = T_Option % Level + 1 )
         call T_CS % Start ( )
-        call S % ComputeStage ( T, iS, T_Option = T_CS )
+        call S % ComputeStage ( T, dT, iS, T_Option = T_CS )
         call T_CS % Stop ( )
       else
-        call S % ComputeStage ( T, iS )
+        call S % ComputeStage ( T, dT, iS )
       end if
 
     end do !-- iS
@@ -751,12 +751,13 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, iS, T_Option )
+  subroutine ComputeStage ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-      T
+       T, &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &

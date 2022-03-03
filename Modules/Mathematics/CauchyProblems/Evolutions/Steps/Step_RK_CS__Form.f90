@@ -334,12 +334,13 @@ contains
   end subroutine IncrementIntermediate
 
 
-  subroutine ComputeStage ( S, T, iS, T_Option )
+  subroutine ComputeStage ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-      T
+       T, &
+      dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
     type ( TimerForm ), intent ( in ), optional :: &
@@ -408,6 +409,12 @@ contains
     if ( associated ( T_EG ) ) call T_EG % Stop ( )
 
     end associate !-- K
+
+    !-- Boundary
+
+    associate ( CS  =>  S % CurrentSet )
+    call CS % AccumulateBoundaryFluence ( dT  *  S % B ( iS ) )
+    end associate !-- CS
 
   end subroutine ComputeStage
 
