@@ -277,8 +277,6 @@ contains
       ( CS_B  =>  S % Balanced, &
         Y     =>  S % Solution )
 
-!    call S % CurrentSet % BoundaryFluence_SCG % UpdateDevice ( )
-
     call CS_B % Copy ( Y )
 
     !-- For diagnostic I/O
@@ -457,8 +455,6 @@ contains
     call CS % ComputeFromBalanced ( )
     call CS % ApplyBoundaryConditions ( )
   
-!    call CS % BoundaryFluence_SCG % UpdateHost ( )
-
     end associate !-- Y, etc.
  
   end subroutine StoreSolution

@@ -239,7 +239,7 @@ contains
     call T % ComputeBoundaryIntegrand ( C, BoundaryFluence ) 
 
     associate ( BI  =>  T % BoundaryIntegral )
-    call BI % Compute ( ReduceOption = .false. )
+    call BI % Compute ( )
     do iS  =  1,  T % nSelected
       T % Value ( T % iaSelected ( iS ) ) &
         =  T % Value ( T % iaSelected ( iS ) )  +  BI % Output ( iS )

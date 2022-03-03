@@ -77,11 +77,6 @@ module CurrentSet_Form
     generic, public :: &
       AccumulateBoundaryFluence &
         => AccumulateBoundaryFluence_SCG
-    procedure, private, pass :: &
-      AccumulateBoundaryTally_SCG
-    generic, public :: &
-      AccumulateBoundaryTally &
-        => AccumulateBoundaryTally_SCG
     procedure, public, pass :: &
       ComputeTally
     final :: &
@@ -464,21 +459,6 @@ contains
   end subroutine AccumulateBoundaryFluence_SCG
 
 
-  subroutine AccumulateBoundaryTally_SCG ( CS, BoundaryFluence )
-
-    class ( CurrentSetForm ), intent ( inout ) :: &
-      CS
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-      BoundaryFluence  !-- boundary slab
-
-    associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
-    call CS % TallyBoundaryLocal ( iExtent ) % Element &
-         % ComputeBoundary ( BoundaryFluence )
-    end associate !-- iExtent
-      
-  end subroutine AccumulateBoundaryTally_SCG
-
-
   subroutine ComputeTally ( CS, ChangeOption, IgnorabilityOption )
     
     class ( CurrentSetForm ), intent ( inout ) :: &
@@ -496,8 +476,6 @@ contains
       OldBoundary
     logical ( KDL ) :: &
       Change
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
 
     call Show ( 'Computing Tally', IgnorabilityOption )
 
@@ -524,28 +502,22 @@ contains
 
     call CS % TallyInterior % ComputeInterior ( CS )
 
-    !-- Boundaries: sum local accumulations
+    !-- Boundary
 
-    call CO % Initialize &
-           ( A % Chart_GS % Communicator, &
-             nOutgoing = [ CS % nBoundaries * nI ], &
-             nIncoming = [ CS % nBoundaries * nI ] )
-    do iB  =  1,  CS % nBoundaries
-      CO % Outgoing % Value ( ( iB - 1 ) * nI + 1  :  iB * nI ) &
-        =  CS % TallyBoundaryLocal ( iB ) % Element % Value
-      CS % TallyBoundaryLocal ( iB ) % Element % Value  =  0.0_KDR
-    end do !-- iB
-    call CO % Reduce ( REDUCTION % SUM )
+    call CS % BoundaryFluence_SCG % UpdateHost ( )
+
+    associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
+    call CS % TallyBoundaryGlobal ( iExtent ) % Element &
+           % ComputeBoundary ( CS % BoundaryFluence_SCG )
+    end associate !-- iExtent
+
+    call CS % BoundaryFluence_SCG % Clear ( )
 
     !-- Total
 
     CS % TallyTotal % Value  =  CS % TallyInterior % Value
 
     do iB  =  1,  CS % nBoundaries
-
-      CS % TallyBoundaryGlobal ( iB ) % Element % Value &
-        =  OldBoundary ( iB ) % Value  &
-           +  CO % Incoming % Value ( ( iB - 1 ) * nI + 1  :  iB * nI )
 
       CS % TallyTotal % Value &
         =  CS % TallyTotal % Value  &
