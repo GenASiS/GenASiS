@@ -73,6 +73,11 @@ module CurrentSet_Form
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
     procedure, private, pass :: &
+      AccumulateBoundaryFluence_SCG
+    generic, public :: &
+      AccumulateBoundaryFluence &
+        => AccumulateBoundaryFluence_SCG
+    procedure, private, pass :: &
       AccumulateBoundaryTally_SCG
     generic, public :: &
       AccumulateBoundaryTally &
@@ -609,7 +614,7 @@ contains
       CS
 
     integer ( KDI ) :: &
-      iD, jD, kD, &  !-- iDimension
+      iD, jD, kD, &  !-- iDimension, etc.
       iE             !-- iEquation
     integer ( KDI ), dimension ( 3 ) :: &
       nSurface
@@ -662,6 +667,57 @@ contains
     end select !-- A
 
   end subroutine AllocateBoundary_SCG
+
+
+  subroutine AccumulateBoundaryFluence_SCG ( CS )
+
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iD, &  !-- iDimension
+      iE             !-- iEquation
+
+    select type ( A  =>  CS % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS )
+    associate &
+      ( nE   =>  CS % nBalanced, &
+        nD   =>  C % nDimensions, &
+        nF   =>  C % Connectivity % nFaces, &
+        iaI  =>  C % Connectivity % iaInner ( : ), &
+        iaO  =>  C % Connectivity % iaOuter ( : ) )
+
+    associate &
+      ( BFc  =>  CS % BoundaryFluence_SCG, &
+        BFx  =>  CS % BoundaryFlux_SCG )
+        
+    do iD  =  1, nD
+      do iE  =  1, nE
+        call BFc ( iE, iaI ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BFc ( iE, iaO ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BFx ( iE, iaI ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BFx ( iE, iaO ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        if ( CS % DeviceMemory ) then
+          call BFc ( iE, iaI ( iD ) ) % AllocateDevice ( )
+          call BFc ( iE, iaO ( iD ) ) % AllocateDevice ( )
+          call BFx ( iE, iaI ( iD ) ) % AllocateDevice ( )
+          call BFx ( iE, iaO ( iD ) ) % AllocateDevice ( )
+        end if
+      end do !-- iE
+    end do !-- iD
+
+    end associate !-- BFc, etc.
+    end associate !-- nE, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine AccumulateBoundaryFluence_SCG
 
 
 end module CurrentSet_Form
