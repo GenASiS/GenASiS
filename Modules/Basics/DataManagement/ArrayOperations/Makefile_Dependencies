@@ -17,11 +17,21 @@ Search_Command.o: \
   Specifiers.o \
   Search_Command.f90
 
+Add_Command.o: \
+  Specifiers.o \
+  Add_Command.f90
+
+MultiplyAdd_Command.o: \
+  Specifiers.o \
+  MultiplyAdd_Command.f90
+
 ArrayOperations.o: \
   Clear_Command.o \
   Copy_Command.o \
   Sort_Command.o \
   Search_Command.o \
+  Add_Command.o \
+  MultiplyAdd_Command.o \
   ArrayOperations.f90
 
 ArrayOperations.a: $(ARRAY_OPERATIONS)

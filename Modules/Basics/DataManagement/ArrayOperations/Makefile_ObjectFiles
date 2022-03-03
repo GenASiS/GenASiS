@@ -1,5 +1,7 @@
 ARRAY_OPERATIONS = \
   ArrayOperations.o \
+  MultiplyAdd_Command.o \
+  Add_Command.o \
   Search_Command.o \
   Sort_Command.o \
   Copy_Command.o \

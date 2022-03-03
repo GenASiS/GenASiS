@@ -1,18 +1,8 @@
-Add_Command.o: \
-  Basics.o \
-  Add_Command.f90
-
-MultiplyAdd_Command.o: \
-  Basics.o \
-  MultiplyAdd_Command.f90
-
 Root_Form.o: \
   Basics.o \
   Root_Form.f90
 
 Algebra.o: \
-  Add_Command.o \
-  MultiplyAdd_Command.o \
   Root_Form.o \
   Algebra.f90
 

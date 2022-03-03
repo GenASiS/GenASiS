@@ -1,43 +1,37 @@
-!-- MultiplyAdd provides an overloaded interface to multiply and add matrices,
-!   in order to expose elemental variables to the compiler and include 
-!   threading.
+!-- Add provides an overloaded interface to add matrices, in order to 
+!   expose elemental variables to the compiler and include threading.
 
 #include "Preprocessor"
 
-module MultiplyAdd_Command
+module Add_Command
 
-  use iso_c_binding
-  use Basics
+  use Specifiers
   
   public :: &
-    MultiplyAdd, &
-    MultiplyAddCollapse
+    Add
     
-  interface MultiplyAdd
-    module procedure MultiplyAddReal_1D
-    module procedure MultiplyAddReal_1D_InPlace
-    module procedure MultiplyAddReal_2D
-    module procedure MultiplyAddReal_2D_InPlace
-    module procedure MultiplyAddReal_3D
-    module procedure MultiplyAddReal_3D_InPlace
+  interface Add
+    module procedure AddReal_1D
+    module procedure AddReal_1D_InPlace
+    module procedure AddReal_2D
+    module procedure AddReal_2D_InPlace
+    module procedure AddReal_3D
+    module procedure AddReal_3D_InPlace
+    ! module procedure AddSectionReal_1D
+    ! module procedure AddSectionReal_1D_InPlace
+    ! module procedure AddReal_2D_InPlace
   end interface
 
-  interface MultiplyAddCollapse
-    module procedure MultiplyAddCollapse_3D_Offset
-  end interface MultiplyAddCollapse
-
-contains
+contains  
 
 
-  subroutine MultiplyAddReal_1D ( A, B, C, D, UseDeviceOption )
+  subroutine AddReal_1D ( A, B, C, UseDeviceOption )
   
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       A, &
       B
-    real ( KDR ), intent ( in ) :: &
-      C
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      D
+      C
     logical ( KDL ), intent ( in ), optional :: &
       UseDeviceOption
                       
@@ -57,29 +51,27 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV  =  1,  nV
-        D ( iV )  =  A ( iV )  +  C * B ( iV )
+        C ( iV )  =  A ( iV )  +  B ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV  =  1,  nV
-        D ( iV )  =  A ( iV )  +  C * B ( iV )
+        C ( iV )  =  A ( iV )  +  B ( iV )
       end do
       !$OMP end parallel do
     end if
     
-  end subroutine MultiplyAddReal_1D
+  end subroutine AddReal_1D
 
 
-  subroutine MultiplyAddReal_1D_InPlace ( A, B, C, UseDeviceOption )
+  subroutine AddReal_1D_InPlace ( A, B, UseDeviceOption )
   
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       A
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       B
-    real ( KDR ), intent ( in ) :: &
-      C
     logical ( KDL ), intent ( in ), optional :: &
       UseDeviceOption
                       
@@ -99,77 +91,28 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV  =  1,  nV
-        A ( iV )  =  A ( iV )  +  C * B ( iV )
+        A ( iV )  =  A ( iV )  +  B ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV  =  1,  nV
-        A ( iV )  =  A ( iV )  +  C * B ( iV )
+        A ( iV )  =  A ( iV )  +  B ( iV )
       end do
       !$OMP end parallel do
     end if
     
-  end subroutine MultiplyAddReal_1D_InPlace
+  end subroutine AddReal_1D_InPlace
 
 
-  subroutine MultiplyAddReal_2D ( A, B, C, D, UseDeviceOption )
+  subroutine AddReal_2D ( A, B, C, UseDeviceOption )
   
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       A
     real ( KDR ), dimension ( :, : ), intent ( in ) :: &
       B
-    real ( KDR ), intent ( in ) :: &
-      C
     real ( KDR ), dimension ( :, : ), intent ( out ) :: &
-      D
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-                      
-    integer ( KDI ) :: &
-      iV, jV
-    integer ( KDI ), dimension ( 2 ) :: &
-      nV
-    logical ( KDL ) :: &
-      UseDevice
-      
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    nV  =  shape ( A )
-
-    if ( UseDevice ) then
-      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do jV  =  1,  nV ( 2 )
-        do iV  =  1,  nV ( 1 )
-          D ( iV, jV )  =  A ( iV, jV )  +  C * B ( iV, jV )
-        end do
-      end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    else 
-      !$OMP parallel do collapse ( 2 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do jV  =  1,  nV ( 2 )
-        do iV  =  1,  nV ( 1 )
-          D ( iV, jV )  =  A ( iV, jV )  +  C * B ( iV, jV )
-        end do
-      end do
-      !$OMP end parallel do
-    end if
-    
-  end subroutine MultiplyAddReal_2D
-
-
-  subroutine MultiplyAddReal_2D_InPlace ( A, B, C, UseDeviceOption )
-  
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      A
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      B
-    real ( KDR ), intent ( in ) :: &
       C
     logical ( KDL ), intent ( in ), optional :: &
       UseDeviceOption
@@ -192,7 +135,7 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do jV  =  1,  nV ( 2 )
         do iV  =  1,  nV ( 1 )
-          A ( iV, jV )  =  A ( iV, jV )  +  C * B ( iV, jV )
+          C ( iV, jV )  =  A ( iV, jV )  +  B ( iV, jV )
         end do
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -201,24 +144,67 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do jV  =  1,  nV ( 2 )
         do iV  =  1,  nV ( 1 )
-          A ( iV, jV )  =  A ( iV, jV )  +  C * B ( iV, jV )
+          C ( iV, jV )  =  A ( iV, jV )  +  B ( iV, jV )
         end do
       end do
       !$OMP end parallel do
     end if
     
-  end subroutine MultiplyAddReal_2D_InPlace
+  end subroutine AddReal_2D
 
 
-  subroutine MultiplyAddReal_3D ( A, B, C, D, UseDeviceOption )
+  subroutine AddReal_2D_InPlace ( A, B, UseDeviceOption )
+  
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      A
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      B
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+                      
+    integer ( KDI ) :: &
+      iV, jV
+    integer ( KDI ), dimension ( 2 ) :: &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV  =  shape ( A )
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do jV  =  1,  nV ( 2 )
+        do iV  =  1,  nV ( 1 )
+          A ( iV, jV )  =  A ( iV, jV )  +  B ( iV, jV )
+        end do
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else 
+      !$OMP parallel do collapse ( 2 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do jV  =  1,  nV ( 2 )
+        do iV  =  1,  nV ( 1 )
+          A ( iV, jV )  =  A ( iV, jV )  +  B ( iV, jV )
+        end do
+      end do
+      !$OMP end parallel do
+    end if
+    
+  end subroutine AddReal_2D_InPlace
+
+
+  subroutine AddReal_3D ( A, B, C, UseDeviceOption )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       A, &
       B
-    real ( KDR ), intent ( in ) :: &
-      C
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      D
+      C
     logical ( KDL ), intent ( in ), optional :: &
       UseDeviceOption
     
@@ -241,7 +227,7 @@ contains
       do kV  =  1,  nV ( 3 )
         do jV  =  1,  nV ( 2 )
           do iV  =  1,  nV ( 1 )
-            D ( iV, jV, kV )  =  A ( iV, jV, kV )  +  C * B ( iV, jV, kV )
+            C ( iV, jV, kV )  =  A ( iV, jV, kV )  +  B ( iV, jV, kV )
           end do !-- iV
         end do !-- jV
       end do !-- kV
@@ -252,24 +238,22 @@ contains
       do kV  =  1,  nV ( 3 )
         do jV  =  1,  nV ( 2 )
           do iV  =  1,  nV ( 1 )
-            D ( iV, jV, kV )  =  A ( iV, jV, kV )  +  C * B ( iV, jV, kV )
+            C ( iV, jV, kV )  =  A ( iV, jV, kV )  +  B ( iV, jV, kV )
           end do !-- iV
         end do !-- jV
       end do !-- kV
       !$OMP end parallel do
     end if
     
-  end subroutine MultiplyAddReal_3D
+  end subroutine AddReal_3D
 
 
-  subroutine MultiplyAddReal_3D_InPlace ( A, B, C, UseDeviceOption )
+  subroutine AddReal_3D_InPlace ( A, B, UseDeviceOption )
   
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       A
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       B
-    real ( KDR ), intent ( in ) :: &
-      C
     logical ( KDL ), intent ( in ), optional :: &
       UseDeviceOption
                       
@@ -292,7 +276,7 @@ contains
       do kV  =  1,  nV ( 3 )
         do jV  =  1,  nV ( 2 )
           do iV  =  1,  nV ( 1 )
-            A ( iV, jV, kV )  =  A ( iV, jV, kV )  +  C * B ( iV, jV, kV )
+            A ( iV, jV, kV )  =  A ( iV, jV, kV )  +  B ( iV, jV, kV )
           end do !-- iV
         end do !-- jV
       end do !-- kV
@@ -303,47 +287,68 @@ contains
       do kV  =  1,  nV ( 3 )
         do jV  =  1,  nV ( 2 )
           do iV  =  1,  nV ( 1 )
-            A ( iV, jV, kV )  =  A ( iV, jV, kV )  +  C * B ( iV, jV, kV )
+            A ( iV, jV, kV )  =  A ( iV, jV, kV )  +  B ( iV, jV, kV )
           end do !-- iV
         end do !-- jV
       end do !-- kV
       !$OMP end parallel do
     end if
 
-  end subroutine MultiplyAddReal_3D_InPlace
+  end subroutine AddReal_3D_InPlace
 
 
-  subroutine MultiplyAddCollapse_3D_Offset ( A, B, C, oV )
+  ! subroutine AddSectionReal_1D &
+  !              ( A, B, oSource_A, oSource_B, oTarget, nValues, C )
+  
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     A, &
+  !     B
+  !   integer ( KDI ), intent ( in ) :: &
+  !     oSource_A, &
+  !     oSource_B, &
+  !     oTarget, &
+  !     nValues
+  !   real ( KDR ), dimension ( : ), intent ( out ) :: &
+  !     C
 
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      A
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      B
-    real ( KDR ), intent ( in ) :: &
-      C
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      oV
-    
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      nV
+  !   call Add &
+  !          ( A ( oSource_A + 1 : oSource_A + nValues ), &
+  !            B ( oSource_B + 1 : oSource_B + nValues ), &
+  !            C ( oTarget + 1 : oTarget + nValues ) )                      
+  
+  ! end subroutine AddSectionReal_1D
+                            
 
-    nV = shape ( A )
+  ! subroutine AddSectionReal_1D_InPlace ( A, B, oSource, oTarget, nValues )
+  
+  !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
+  !     A
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     B
+  !   integer ( KDI ), intent ( in ) :: &
+  !     oSource, &
+  !     oTarget, &
+  !     nValues
 
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-    do kV = 1, nV ( 3 )
-      do jV = 1, nV ( 2 )
-        do iV = 1, nV ( 1 )
-          A ( iV, jV, kV ) &
-            = A ( iV, jV, kV )  &
-              +  C * B ( oV ( 1 ) + iV, oV ( 2 ) + jV, oV ( 3 ) + kV )
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
+  !   call Add &
+  !          ( A ( oSource + 1 : oSource + nValues ), &
+  !            B ( oTarget + 1 : oTarget + nValues ) )                      
+  
+  ! end subroutine AddSectionReal_1D_InPlace
+                            
 
-  end subroutine MultiplyAddCollapse_3D_Offset
+  ! subroutine AddReal_2D_InPlace ( A, B )
+  
+  !   real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+  !     A
+  !   real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+  !     B
+                      
+  !   !$OMP parallel workshare
+  !   A = A + B
+  !   !$OMP end parallel workshare
+  
+  ! end subroutine AddReal_2D_InPlace
+                            
 
-
-end module MultiplyAdd_Command
+end module Add_Command

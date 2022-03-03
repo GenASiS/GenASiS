@@ -36,6 +36,8 @@ module Real_3D__Form
       UpdateDevice => UpdateDevice_R_3D
     procedure, public, pass :: &
       UpdateHost => UpdateHost_R_3D
+    procedure, public, pass :: &
+      Clear => Clear_R_3D
     final :: &
       Finalize_R_3D
   end type Real_3D_Form
@@ -162,6 +164,16 @@ contains
            ( A % D_Value, A % Value, ErrorOption = A % ErrorDevice )
   
   end subroutine UpdateHost_R_3D
+
+
+  impure elemental subroutine Clear_R_3D ( A )
+  
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      A
+    
+    call Clear ( A % Value, UseDeviceOption = A % AllocatedDevice )
+  
+  end subroutine Clear_R_3D
 
 
   impure elemental subroutine Finalize_R_3D ( A )

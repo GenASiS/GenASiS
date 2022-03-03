@@ -1,5 +1,3 @@
 ALGEBRA = \
   Algebra.o \
-  Root_Form.o \
-  MultiplyAdd_Command.o \
-  Add_Command.o
+  Root_Form.o
