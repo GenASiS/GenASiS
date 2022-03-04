@@ -53,8 +53,7 @@ module CurrentSet_Form
       TallyTotal, &
       TallyChange
     class ( Tally_CS_Element ), dimension ( : ), allocatable :: &
-      TallyBoundaryLocal, &
-      TallyBoundaryGlobal
+      TallyBoundary
   contains
     procedure, private, pass :: &
       InitializeAllocate_CS
@@ -297,19 +296,16 @@ contains
       allocate ( CS % TallyInterior )
       allocate ( CS % TallyTotal )
       allocate ( CS % TallyChange )
-      allocate ( CS % TallyBoundaryLocal  ( CS % nBoundaries ) )
-      allocate ( CS % TallyBoundaryGlobal ( CS % nBoundaries ) )
+      allocate ( CS % TallyBoundary ( CS % nBoundaries ) )
       do iB  =  1,  CS % nBoundaries 
-        allocate ( CS % TallyBoundaryLocal  ( iB ) % Element )
-        allocate ( CS % TallyBoundaryGlobal ( iB ) % Element )
+        allocate ( CS % TallyBoundary ( iB ) % Element )
       end do !-- iB
 
       associate &
         ( TI   =>  CS % TallyInterior, &
           TT   =>  CS % TallyTotal, &
           TC   =>  CS % TallyChange, &
-          TBL  =>  CS % TallyBoundaryLocal ( : ), &
-          TBG  =>  CS % TallyBoundaryGlobal ( : ) )
+          TB  =>  CS % TallyBoundary ( : ) )
       call TI % Initialize &
              ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                UnitOption = TallyUnitOption )
@@ -320,10 +316,7 @@ contains
              ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                UnitOption = TallyUnitOption )
       do iB  =  1,  CS % nBoundaries
-        call TBL ( iB ) % Element % Initialize &
-               ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
-                 UnitOption = TallyUnitOption )
-        call TBG ( iB ) % Element % Initialize &
+        call TB ( iB ) % Element % Initialize &
                ( CS, G, CS % iaBalanced, VariableOption = TallyVariableOption, &
                  UnitOption = TallyUnitOption )
       end do !-- iB
@@ -495,7 +488,7 @@ contains
     do iB  =  1,  CS % nBoundaries
       call OldBoundary ( iB ) % Initialize ( nI )
       OldBoundary ( iB ) % Value  &
-        =  CS % TallyBoundaryGlobal ( iB ) % Element % Value
+        =  CS % TallyBoundary ( iB ) % Element % Value
     end do !-- iB
 
     !-- Interior
@@ -507,7 +500,7 @@ contains
     call CS % BoundaryFluence_SCG % UpdateHost ( )
 
     associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
-    call CS % TallyBoundaryGlobal ( iExtent ) % Element &
+    call CS % TallyBoundary ( iExtent ) % Element &
            % ComputeBoundary ( CS % BoundaryFluence_SCG )
     end associate !-- iExtent
 
@@ -521,7 +514,7 @@ contains
 
       CS % TallyTotal % Value &
         =  CS % TallyTotal % Value  &
-           +  CS % TallyBoundaryGlobal ( iB ) % Element % Value
+           +  CS % TallyBoundary ( iB ) % Element % Value
 
     end do !-- iB
 
@@ -539,7 +532,7 @@ contains
            ( 'Interior Tally ' // trim ( CS % Name ), IgnorabilityOption )
 
     do iB  =  1,  CS % nBoundaries
-      call CS % TallyBoundaryGlobal ( iB ) % Element % Show &
+      call CS % TallyBoundary ( iB ) % Element % Show &
              ( 'Boundary ' // trim ( CS % Boundaries ( 1 ) % Boundary ( iB ) ) &
                // ' Tally ' // trim ( CS % Name ), IgnorabilityOption )
     end do
@@ -572,10 +565,8 @@ contains
 
     nullify ( CS % Geometry )
 
-    if ( allocated ( CS % TallyBoundaryGlobal ) ) &
-      deallocate ( CS % TallyBoundaryGlobal )
-    if ( allocated ( CS % TallyBoundaryLocal ) ) &
-      deallocate ( CS % TallyBoundaryLocal )
+    if ( allocated ( CS % TallyBoundary ) ) &
+      deallocate ( CS % TallyBoundary )
     if ( allocated ( CS % TallyChange ) ) &
       deallocate ( CS % TallyChange )
     if ( allocated ( CS % TallyTotal ) ) &
