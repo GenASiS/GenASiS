@@ -18,16 +18,17 @@ FLUIDS = \
   DivergencePart_F_D_V__Form.o \
   DivergencePart_F_D_T__Kernel.o \
   DivergencePart_F_D_T__Form.o \
+  Tally_F_D__Form.o \
   Fluid_P_HN__Kernel.o \
   Fluid_P_HN__Form.o \
-  EOS_P_HN_OConnorOtt__Kernel.o \
-  EOS_P_HN_OConnorOtt__Form.o \
   Fluid_P_I__Kernel.o \
   Fluid_P_I__Form.o \
   Fluid_P__Kernel.o \
   Fluid_P__Form.o \
   Fluid_D__Kernel.o \
   Fluid_D__Form.o \
+  EOS_P_HN_OConnorOtt__Kernel.o \
+  EOS_P_HN_OConnorOtt__Form.o \
   Units_F__Form.o
 #  Slope_DFV_N_F_P_HN__Form.o \
 #  Slope_DFV_F_F_P_HN__Form.o \

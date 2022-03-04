@@ -14,6 +14,8 @@ module Atlas_SCG_CC__Form
       Chart_GS_CC => null ( )
   contains
     procedure, private, pass :: &
+      Initialize_SCG
+    procedure, private, pass :: &
       Initialize_SCG_CC
     procedure, private, pass :: &
       Initialize_SCG_CC_SA  !-- SphericalAverage
@@ -25,6 +27,53 @@ module Atlas_SCG_CC__Form
 
 
 contains
+
+
+  subroutine Initialize_SCG &
+               ( A, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, NameOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, nBricksOption, &
+                 nBricksCompatibleOption, IgnorabilityOption, &
+                 nDimensionsOption, nEqualOption, iDimensionalityOption )
+
+    class ( Atlas_SCG_CC_Form ), intent ( inout ), target :: &
+      A
+    type ( CommunicatorForm ), intent ( in ), optional :: &
+      CommunicatorOption
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      SpacingOption, &
+      CoordinateLabelOption
+    character ( * ), intent ( in ), optional :: &
+      CoordinateSystemOption, &
+      NameOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnitOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption, &
+      RatioOption, &
+      ScaleOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nCellsOption, &
+      nGhostLayersOption, &
+      nBricksOption, &
+      nBricksCompatibleOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      nDimensionsOption, &
+      nEqualOption, &
+      iDimensionalityOption
+
+      call Show ( 'The method Initialize_SCG is not appropriate for ' &
+                  // 'this class.', CONSOLE % ERROR )
+      call Show ( 'Please use a different Initialize interface.', &
+                  CONSOLE % ERROR )
+      call Show ( 'Atlas_SCG_CC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize_SCG', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+
+  end subroutine Initialize_SCG
 
 
   subroutine Initialize_SCG_CC &

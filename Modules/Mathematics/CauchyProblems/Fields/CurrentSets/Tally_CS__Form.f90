@@ -142,19 +142,17 @@ contains
 
     end if 
 
-    call T % SelectVariables ( G % Atlas )
-
     T % Geometry  =>  G
+
+    call T % SelectVariables ( )
 
   end subroutine InitializeBalanced
 
 
-  subroutine SelectVariables ( T, A ) 
+  subroutine SelectVariables ( T ) 
     
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( Atlas_H_Form ), intent ( in ) :: &
-      A
 
     integer ( KDI ) :: &
       iF  !-- iField

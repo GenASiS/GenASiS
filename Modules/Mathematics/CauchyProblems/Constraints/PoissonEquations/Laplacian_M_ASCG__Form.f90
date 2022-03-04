@@ -149,6 +149,7 @@ contains
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( 'Laplacian_M_ASCG__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetParameters_A', 'subroutine', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CoordinateSystem
 

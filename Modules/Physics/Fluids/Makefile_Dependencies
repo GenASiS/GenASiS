@@ -2,6 +2,15 @@ Units_F__Form.o: \
   Basics.o \
   Units_F__Form.f90
 
+EOS_P_HN_OConnorOtt__Form.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.f90
+
+EOS_P_HN_OConnorOtt__Kernel.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  EOS_P_HN_OConnorOtt__Kernel.f90
+
 Fluid_D__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -40,15 +49,6 @@ Fluid_P_I__Kernel.o: \
   Fluid_P_I__Form.o \
   Fluid_P_I__Kernel.f90
 
-EOS_P_HN_OConnorOtt__Form.o: \
-  Basics.o \
-  EOS_P_HN_OConnorOtt__Form.f90
-
-EOS_P_HN_OConnorOtt__Kernel.o: \
-  Basics.o \
-  EOS_P_HN_OConnorOtt__Form.o \
-  EOS_P_HN_OConnorOtt__Kernel.f90
-
 Fluid_P_HN__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -62,6 +62,14 @@ Fluid_P_HN__Kernel.o: \
   Basics.o \
   Fluid_P_HN__Form.o \
   Fluid_P_HN__Kernel.f90
+
+Tally_F_D__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_D__Form.o \
+  Tally_F_D__Form.f90
 
 DivergencePart_F_D_T__Form.o: \
   Basics.o \
@@ -185,11 +193,12 @@ Coarsening_C_F__Kernel.o: \
 
 Fluids.o: \
   Units_F__Form.o \
+  EOS_P_HN_OConnorOtt__Form.o \
   Fluid_D__Form.o \
   Fluid_P__Form.o \
   Fluid_P_I__Form.o \
-  EOS_P_HN_OConnorOtt__Form.o \
   Fluid_P_HN__Form.o \
+  Tally_F_D__Form.o \
   DivergencePart_F_D_T__Form.o \
   DivergencePart_F_D_V__Form.o \
   DivergencePart_F_P_T__Form.o \
