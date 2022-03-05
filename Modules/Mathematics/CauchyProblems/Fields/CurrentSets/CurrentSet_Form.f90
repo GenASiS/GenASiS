@@ -80,10 +80,9 @@ module CurrentSet_Form
       ComputeTally
     final :: &
       Finalize
-  end type CurrentSetForm
-
-    private :: &
+    procedure, public, pass :: &
       AllocateBoundary_SCG
+  end type CurrentSetForm
 
     private :: &
       ComputeEigenspeedsKernel
@@ -291,8 +290,6 @@ contains
 
     if ( .not. allocated ( CS % TallyInterior ) .and. AllocateTally ) then
 
-      call AllocateBoundary_SCG ( CS )
-
       allocate ( CS % TallyInterior )
       allocate ( CS % TallyTotal )
       allocate ( CS % TallyChange )
@@ -321,6 +318,8 @@ contains
                  UnitOption = TallyUnitOption )
       end do !-- iB
       end associate !-- TI, etc.
+
+      call CS % AllocateBoundary_SCG ( nT = CS % nBalanced )
 
     end if !-- AllocateTally
 
@@ -589,14 +588,16 @@ contains
   end subroutine Finalize
 
   
-  subroutine AllocateBoundary_SCG ( CS )
+  subroutine AllocateBoundary_SCG ( CS, nT )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
+    integer ( KDI ), intent ( in ) :: &
+      nT  !-- nTally
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension, etc.
-      iE             !-- iEquation
+      iT             !-- iTally
     integer ( KDI ), dimension ( 3 ) :: &
       nSurface
 
@@ -605,15 +606,14 @@ contains
     associate &
       ( C   =>  A % Chart_GS )
     associate &
-      ( nE   =>  CS % nBalanced, &
-        nD   =>  C % nDimensions, &
+      ( nD   =>  C % nDimensions, &
         nF   =>  C % Connectivity % nFaces, &
         iaI  =>  C % Connectivity % iaInner ( : ), &
         iaO  =>  C % Connectivity % iaOuter ( : ) )
 
     allocate &
-      ( CS % BoundaryFluence_SCG ( nE, nF ), &
-        CS % BoundaryFlux_SCG ( nE, nF ) )
+      ( CS % BoundaryFluence_SCG ( nT, nF ), &
+        CS % BoundaryFlux_SCG ( nT, nF ) )
     associate &
       ( BFc  =>  CS % BoundaryFluence_SCG, &
         BFx  =>  CS % BoundaryFlux_SCG )
@@ -624,26 +624,26 @@ contains
       nSurface ( iD )  =  1
       nSurface ( jD )  =  C % nCellsBrick ( jD ) 
       nSurface ( kD )  =  C % nCellsBrick ( kD )
-      do iE  =  1, nE
-        call BFc ( iE, iaI ( iD ) ) &
+      do iT  =  1, nT
+        call BFc ( iT, iaI ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
-        call BFc ( iE, iaO ( iD ) ) &
+        call BFc ( iT, iaO ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
-        call BFx ( iE, iaI ( iD ) ) &
+        call BFx ( iT, iaI ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
-        call BFx ( iE, iaO ( iD ) ) &
+        call BFx ( iT, iaO ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
         if ( CS % DeviceMemory ) then
-          call BFc ( iE, iaI ( iD ) ) % AllocateDevice ( )
-          call BFc ( iE, iaO ( iD ) ) % AllocateDevice ( )
-          call BFx ( iE, iaI ( iD ) ) % AllocateDevice ( )
-          call BFx ( iE, iaO ( iD ) ) % AllocateDevice ( )
+          call BFc ( iT, iaI ( iD ) ) % AllocateDevice ( )
+          call BFc ( iT, iaO ( iD ) ) % AllocateDevice ( )
+          call BFx ( iT, iaI ( iD ) ) % AllocateDevice ( )
+          call BFx ( iT, iaO ( iD ) ) % AllocateDevice ( )
         end if
-      end do !-- iE
+      end do !-- iT
     end do !-- iD
 
     end associate !-- BFc, etc.
-    end associate !-- nE, etc.
+    end associate !-- nD, etc.
     end associate !-- C, etc.
     end select !-- A
 

@@ -205,6 +205,9 @@ contains
     character ( * ), intent ( in )  :: &
       FluidType
 
+    integer ( KDI ) :: &
+      iB  !-- iBoundary
+
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     associate &
@@ -212,17 +215,54 @@ contains
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )
+
       allocate ( Fluid_D_Form  ::  I % CurrentSet_X )
       select type ( F  =>  I % CurrentSet_X )
-        class is ( Fluid_D_Form )
-      call F % Initialize ( G, U % Units_F )
-      end select !-- G
+      class is ( Fluid_D_Form )
+
+        !-- TallyInterior must be allocated before F % Initialize...
+        allocate ( Tally_F_D_Form :: F % TallyInterior )
+        allocate ( Tally_F_D_Form :: F % TallyTotal )
+        allocate ( Tally_F_D_Form :: F % TallyChange )
+        select type ( TI  =>  F % TallyInterior )
+          type is ( Tally_F_D_Form )
+        call TI % Initialize ( G, U % Units_F ( 1 ) )
+        end select !-- TI
+        select type ( TT  =>  F % TallyTotal )
+          type is ( Tally_F_D_Form )
+        call TT % Initialize ( G, U % Units_F ( 1 ) )
+        end select !-- TT
+        select type ( TC  =>  F % TallyChange )
+          type is ( Tally_F_D_Form )
+        call TC % Initialize ( G, U % Units_F ( 1 ) )
+        end select !-- TC
+
+        !-- ( Initialize the Fluid)
+        call F % Initialize ( G, U % Units_F )
+
+        !-- ... but TallyBoundary needs F % Initialize already called.
+        allocate ( F % TallyBoundary ( F % nBoundaries ) )
+        do iB  =  1,  F % nBoundaries
+          allocate ( Tally_F_D_Form :: F % TallyBoundary ( iB ) % Element )
+          select type ( TB  =>  F % TallyBoundary ( iB ) % Element )
+            type is ( Tally_F_D_Form )
+          call TB % Initialize ( G, U % Units_F ( 1 ) )
+          end select !-- TB
+        end do !-- iB
+
+        !-- Boundary accumulation storage
+        call F % AllocateBoundary_SCG ( nT = F % TallyInterior % nSelected )
+
+      end select !-- F
+
     case ( 'IDEAL' )
+
       allocate ( Fluid_P_I_Form  ::  I % CurrentSet_X )
       select type ( F  =>  I % CurrentSet_X )
         class is ( Fluid_P_I_Form )
       call F % Initialize ( G, U % Units_F )
-      end select !-- G
+      end select !-- F
+
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )
       call Show ( FluidType, 'FluidType', CONSOLE % ERROR )

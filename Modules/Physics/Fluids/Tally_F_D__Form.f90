@@ -33,23 +33,23 @@ module Tally_F_D__Form
       SelectVariables
     final :: &
       Finalize
-!     procedure, public, pass :: &
-!       ComputeInteriorIntegrand
+    procedure, public, pass :: &
+      ComputeInteriorIntegrand
 !     procedure, public, pass :: &
 !       ComputeBoundaryIntegrand_CSL
-!     procedure, public, pass :: &
-!       ComputeInteriorIntegrand_G
+    procedure, public, pass :: &
+      ComputeInteriorIntegrand_G
+    procedure, public, pass :: &
+      ComputeInteriorIntegrand_N
 !     procedure, public, pass :: &
 !       ComputeBoundaryIntegrand_CSL_G
-!     procedure, public, pass :: &
-!       ComputeInteriorIntegrand_N
 !     procedure, public, pass :: &
 !       ComputeBoundaryIntegrand_CSL_N
   end type Tally_F_D_Form
 
-!     private :: &
-!       ComputeDensity_KE, &
-!       ComputeDensity_AM_Rectangular, &
+    private :: &
+      ComputeDensity_KE, &
+      ComputeDensity_AM_Rectangular!, &
 !       ComputeDensity_LM_CylindricalHorizontal, &
 !       ComputeDensity_AM_CylindricalHorizontal, &
 !       ComputeDensity_LM_SphericalHorizontal, &
@@ -165,34 +165,26 @@ contains
   end subroutine Finalize
 
 
-!   subroutine ComputeInteriorIntegrand ( T, Integrand, C, G, nDimensions )
+  subroutine ComputeInteriorIntegrand ( T, CS )
 
-!     class ( Tally_F_D_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_1D_Form ), dimension ( : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     integer ( KDI ), intent ( in ) :: &
-!       nDimensions
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
 
-!     select type ( G )
-!     type is ( Geometry_G_Form )
-!       call T % ComputeInteriorIntegrand_G &
-!              ( Integrand, C, G, nDimensions )
-!     class is ( Geometry_N_Form )
-!       call T % ComputeInteriorIntegrand_N &
-!              ( Integrand, C, G, nDimensions )
-!     class default 
-!       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
-!       call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'ComputeInteriorIntegrand', 'subroutine', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- G
+    select type ( G  =>  T % Geometry )
+    type is ( Gravitation_G_Form )
+      call T % ComputeInteriorIntegrand_G ( CS )
+    class is ( Gravitation_N_H_Form )
+      call T % ComputeInteriorIntegrand_N ( CS )
+    class default 
+      call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeInteriorIntegrand', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- G
 
-!   end subroutine ComputeInteriorIntegrand
+  end subroutine ComputeInteriorIntegrand
 
 
 !   subroutine ComputeBoundaryIntegrand_CSL &
@@ -228,78 +220,77 @@ contains
 !   end subroutine ComputeBoundaryIntegrand_CSL
 
 
-!   subroutine ComputeInteriorIntegrand_G &
-!                ( T, Integrand, C, G, nDimensions )
+  subroutine ComputeInteriorIntegrand_G ( T, CS )
 
-!     class ( Tally_F_D_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_1D_Form ), dimension ( : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     integer ( KDI ), intent ( in ) :: &
-!       nDimensions
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
 
-!     integer ( KDI ) :: &
-!       iS, &  !-- iSelected
-!       iI     !-- iIntegral
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iI     !-- iIntegral
 
-!     select type ( C )
-!     class is ( Fluid_D_Form )
-       
-!     associate &
-!       ( D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-!         V_1 => C % Value ( :, C % VELOCITY_U ( 1 ) ), &
-!         V_2 => C % Value ( :, C % VELOCITY_U ( 2 ) ), &
-!         V_3 => C % Value ( :, C % VELOCITY_U ( 3 ) ), &
-!         S_1 => C % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), & 
-!         S_2 => C % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), & 
-!         S_3 => C % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-!         X_1 => G % Value ( :, G % CENTER_U ( 1 ) ), &
-!         X_2 => G % Value ( :, G % CENTER_U ( 2 ) ), &
-!         X_3 => G % Value ( :, G % CENTER_U ( 3 ) ) )
+    select type ( CS )
+      class is ( Fluid_D_Form )
+    select type ( A  =>  CS % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( G    =>  T % Geometry, &
+        C    =>  A % Chart_GS, &
+        CSV  =>  CS % Storage_GS % Value, &
+        GV   =>  T % Geometry % Storage_GS % Value, &
+        IV   =>  T % InteriorIntegral % Integrand % Storage_GS % Value )
+    associate &
+      ( D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
+        V_1  =>  CSV ( :, CS % VELOCITY_U_1 ), &
+        V_2  =>  CSV ( :, CS % VELOCITY_U_2 ), &
+        V_3  =>  CSV ( :, CS % VELOCITY_U_3 ), &
+        S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), & 
+        S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), & 
+        S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+        X_1  =>  GV ( :, G % CENTER_U_1 ), &
+        X_2  =>  GV ( :, G % CENTER_U_2 ), &
+        X_3  =>  GV ( :, G % CENTER_U_3 ) )
 
-!     do iS = 1, T % nSelected
-!       iI = T % iaSelected ( iS )
-!       if ( iI == T % BARYON_NUMBER ) then
-!         call Copy ( D, Integrand ( iS ) % Value )
-!       else if ( iI == T % KINETIC_ENERGY ) then
-!         call ComputeDensity_KE &
-!                ( S_1, S_2, S_3, V_1, V_2, V_3, Integrand ( iS ) % Value )
-!       end if !-- iI
-!     end do !-- iS
+    do iS  =  1,  T % nSelected
+      iI  =  T % iaSelected ( iS )
+      if ( iI  ==  T % BARYON_NUMBER ) then
+        call Copy ( D, IV ( :, iS ) )
+      else if ( iI  ==  T % KINETIC_ENERGY ) then
+        call ComputeDensity_KE &
+               ( S_1, S_2, S_3, V_1, V_2, V_3, IV ( :, iS ) )
+      end if !-- iI
+    end do !-- iS
 
-!     do iS = 1, T % nSelected
-!       iI = T % iaSelected ( iS )
-!       if ( iI == T % TOTAL_ENERGY ) then
-!         call Copy ( Integrand ( T % KINETIC_ENERGY ) % Value, &
-!                     Integrand ( iS ) % Value )
-!       end if !-- iI
-!     end do !-- iS
+    do iS  =  1, T % nSelected
+      iI  =  T % iaSelected ( iS )
+      if ( iI  ==  T % TOTAL_ENERGY ) then
+        call Copy ( IV ( :, T % KINETIC_ENERGY ), IV ( :, iS ) )
+      end if !-- iI
+    end do !-- iS
 
-!     select case ( trim ( G % CoordinateSystem ) )
-!     case ( 'RECTANGULAR' )
-!       do iS = 1, T % nSelected
-!         iI = T % iaSelected ( iS )
-!         if ( iI == T % MOMENTUM ( 1 ) ) then
-!           call Copy ( S_1, Integrand ( iS ) % Value )
-!         else if ( iI == T % MOMENTUM ( 2 ) ) then
-!           call Copy ( S_2, Integrand ( iS ) % Value )
-!         else if ( iI == T % MOMENTUM ( 3 ) ) then
-!           call Copy ( S_3, Integrand ( iS ) % Value )
-!         else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
-!           call ComputeDensity_AM_Rectangular &
-!                  ( X_2, X_3, S_2, S_3, Integrand ( iS ) % Value )
-!         else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
-!           call ComputeDensity_AM_Rectangular &
-!                  ( X_3, X_1, S_3, S_1, Integrand ( iS ) % Value )
-!         else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
-!           call ComputeDensity_AM_Rectangular &
-!                  ( X_1, X_2, S_1, S_2, Integrand ( iS ) % Value )
-!         end if !-- iI
-!       end do !-- iS
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'RECTANGULAR' )
+      do iS  =  1, T % nSelected
+        iI  =  T % iaSelected ( iS )
+        if ( iI  ==  T % MOMENTUM ( 1 ) ) then
+          call Copy ( S_1, IV ( :, iS ) )
+        else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
+          call Copy ( S_2, IV ( :, iS ) )
+        else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
+          call Copy ( S_3, IV ( :, iS ) )
+        else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
+          call ComputeDensity_AM_Rectangular &
+                 ( X_2, X_3, S_2, S_3, IV ( :, iS ) )
+        else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
+          call ComputeDensity_AM_Rectangular &
+                 ( X_3, X_1, S_3, S_1, IV ( :, iS ) )
+        else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
+          call ComputeDensity_AM_Rectangular &
+                 ( X_1, X_2, S_1, S_2, IV ( :, iS ) )
+        end if !-- iI
+      end do !-- iS
 !     case ( 'CYLINDRICAL' )
 !       do iS = 1, T % nSelected
 !         iI = T % iaSelected ( iS )
@@ -359,12 +350,80 @@ contains
 !             call Copy ( S_3, Integrand ( iS ) % Value )
 !         end if !-- iI
 !       end do !-- iS
-!     end select !-- CoordinateSystem
+    end select !-- CoordinateSystem
 
-!     end associate !-- N, etc.
-!     end select !-- C
+    end associate !-- D, etc.
+    end associate !-- CSV, etc.
+    end select !-- A
+    end select !-- CS
  
-!   end subroutine ComputeInteriorIntegrand_G
+  end subroutine ComputeInteriorIntegrand_G
+
+
+  subroutine ComputeInteriorIntegrand_N ( T, CS )
+
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
+
+!     integer ( KDI ) :: &
+!       iS, &  !-- iSelected
+!       iI     !-- iIntegral
+
+!     call T % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
+
+!     select type ( A => T % Atlas )
+!     class is ( Atlas_SC_Form )    
+!     select type ( GA => A % Geometry_ASC )
+!     class is ( Geometry_ASC_Form )
+
+!     select type ( C )
+!     class is ( Fluid_D_Form )
+!     select type ( G )
+!     class is ( Geometry_N_Form )
+
+!     associate &
+!       ( M   => C % Value ( :, C % BARYON_MASS ), &
+!         D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
+!         Phi => G % Value ( :, G % POTENTIAL ) )
+
+!     select case ( trim ( GA % GravitySolverType ) )
+!     case ( 'UNIFORM', 'CENTRAL_MASS' )  !-- External potential
+!       do iS = 1, T % nSelected
+!         iI = T % iaSelected ( iS )
+!         if ( iI == T % GRAVITATIONAL_ENERGY ) then
+!           Integrand ( iS ) % Value  =  M * D * Phi
+!         else if ( iI == T % TOTAL_ENERGY ) then
+!           Integrand ( iS ) % Value  &
+!             =  Integrand ( iS ) % Value  +  M * D * Phi
+!         end if !-- iI
+!       end do !-- iS     
+!     case default
+!       do iS = 1, T % nSelected
+!         iI = T % iaSelected ( iS )
+!         if ( iI == T % GRAVITATIONAL_ENERGY ) then
+!           Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
+!         else if ( iI == T % TOTAL_ENERGY ) then
+!           Integrand ( iS ) % Value  &
+!             =  Integrand ( iS ) % Value  +  0.5_KDR * M * D * Phi
+!         end if !-- iI
+!       end do !-- iS     
+!     end select !-- GravitySolverType
+
+!     end associate !-- M, etc.
+
+!     class default 
+!       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+!       call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+!       call Show ( 'ComputeInteriorIntegrand_N', 'subroutine', CONSOLE % ERROR )
+!       call PROGRAM_HEADER % Abort ( )
+!     end select !-- G
+!     end select !-- C
+!     end select !-- GA
+!     end select !-- A
+
+  end subroutine ComputeInteriorIntegrand_N
 
 
 !   subroutine ComputeBoundaryIntegrand_CSL_G &
@@ -534,79 +593,6 @@ contains
 !   end subroutine ComputeBoundaryIntegrand_CSL_G
 
 
-!   subroutine ComputeInteriorIntegrand_N &
-!                ( T, Integrand, C, G, nDimensions )
-
-!     class ( Tally_F_D_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_1D_Form ), dimension ( : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     integer ( KDI ), intent ( in ) :: &
-!       nDimensions
-
-!     integer ( KDI ) :: &
-!       iS, &  !-- iSelected
-!       iI     !-- iIntegral
-
-!     call T % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
-
-!     select type ( A => T % Atlas )
-!     class is ( Atlas_SC_Form )    
-!     select type ( GA => A % Geometry_ASC )
-!     class is ( Geometry_ASC_Form )
-
-!     select type ( C )
-!     class is ( Fluid_D_Form )
-!     select type ( G )
-!     class is ( Geometry_N_Form )
-
-!     associate &
-!       ( M   => C % Value ( :, C % BARYON_MASS ), &
-!         D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-!         Phi => G % Value ( :, G % POTENTIAL ) )
-
-!     select case ( trim ( GA % GravitySolverType ) )
-!     case ( 'UNIFORM', 'CENTRAL_MASS' )  !-- External potential
-!       do iS = 1, T % nSelected
-!         iI = T % iaSelected ( iS )
-!         if ( iI == T % GRAVITATIONAL_ENERGY ) then
-!           Integrand ( iS ) % Value  =  M * D * Phi
-!         else if ( iI == T % TOTAL_ENERGY ) then
-!           Integrand ( iS ) % Value  &
-!             =  Integrand ( iS ) % Value  +  M * D * Phi
-!         end if !-- iI
-!       end do !-- iS     
-!     case default
-!       do iS = 1, T % nSelected
-!         iI = T % iaSelected ( iS )
-!         if ( iI == T % GRAVITATIONAL_ENERGY ) then
-!           Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
-!         else if ( iI == T % TOTAL_ENERGY ) then
-!           Integrand ( iS ) % Value  &
-!             =  Integrand ( iS ) % Value  +  0.5_KDR * M * D * Phi
-!         end if !-- iI
-!       end do !-- iS     
-!     end select !-- GravitySolverType
-
-!     end associate !-- M, etc.
-
-!     class default 
-!       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
-!       call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'ComputeInteriorIntegrand_N', 'subroutine', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- G
-!     end select !-- C
-!     end select !-- GA
-!     end select !-- A
-
-!   end subroutine ComputeInteriorIntegrand_N
-
-
 !   subroutine ComputeBoundaryIntegrand_CSL_N &
 !                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
@@ -717,52 +703,52 @@ contains
 !   end subroutine ComputeBoundaryIntegrand_CSL_N
 
 
-!   subroutine ComputeDensity_KE ( S_1, S_2, S_3, V_1, V_2, V_3, I )
+  subroutine ComputeDensity_KE ( S_1, S_2, S_3, V_1, V_2, V_3, I )
 
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       S_1, S_2, S_3, &
-!       V_1, V_2, V_3
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      S_1, S_2, S_3, &
+      V_1, V_2, V_3
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      I
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
+    integer ( KDI ) :: &
+      iV, &
+      nV
 
-!     nV = size ( I )
+    nV = size ( I )
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nV
-!       I ( iV ) = 0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
-!                              +  S_2 ( iV ) * V_2 ( iV )  &
-!                              +  S_3 ( iV ) * V_3 ( iV )  )
-!     end do
-!     !$OMP end parallel do
+    !$OMP parallel do
+    do iV  =  1,  nV
+      I ( iV )  =  0.5_KDR  *  (    S_1 ( iV ) * V_1 ( iV )  &
+                                 +  S_2 ( iV ) * V_2 ( iV )  &
+                                 +  S_3 ( iV ) * V_3 ( iV )  )
+    end do
+    !$OMP end parallel do
 
-!   end subroutine ComputeDensity_KE
+  end subroutine ComputeDensity_KE
 
 
-!   subroutine ComputeDensity_AM_Rectangular ( X_J, X_K, S_J, S_K, I_I )
+  subroutine ComputeDensity_AM_Rectangular ( X_J, X_K, S_J, S_K, I_I )
 
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       X_J, X_K, &
-!       S_J, S_K
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       I_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X_J, X_K, &
+      S_J, S_K
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      I_I
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
+    integer ( KDI ) :: &
+      iV, &
+      nV
 
-!     nV = size ( I_I )
+    nV = size ( I_I )
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nV
-!       I_I ( iV ) =  X_J ( iV ) * S_K ( iV ) -  X_K ( iV ) * S_J ( iV )
-!     end do
-!     !$OMP end parallel do
+    !$OMP parallel do
+    do iV = 1, nV
+      I_I ( iV )  =  X_J ( iV ) * S_K ( iV )  -  X_K ( iV ) * S_J ( iV )
+    end do
+    !$OMP end parallel do
 
-!   end subroutine ComputeDensity_AM_Rectangular
+  end subroutine ComputeDensity_AM_Rectangular
 
 
 !   subroutine ComputeDensity_LM_CylindricalHorizontal &
