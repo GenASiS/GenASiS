@@ -500,7 +500,7 @@ contains
 
     associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
     call CS % TallyBoundary ( iExtent ) % Element &
-           % ComputeBoundary ( CS % BoundaryFluence_SCG )
+           % ComputeBoundary ( CS, CS % BoundaryFluence_SCG )
     end associate !-- iExtent
 
     call CS % BoundaryFluence_SCG % Clear ( )

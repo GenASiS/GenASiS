@@ -52,8 +52,8 @@ module Tally_CS__Form
       ComputeInteriorIntegrand
     procedure, public, pass :: &
       ComputeBoundaryIntegrand
-!     procedure, public, nopass :: &
-!       ComputeFacePositions
+    procedure, public, nopass :: &
+      ComputeFacePositions
   end type Tally_CS_Form
 
   type, public :: Tally_CS_Element
@@ -210,10 +210,12 @@ contains
   end subroutine ComputeInterior
 
 
-  subroutine ComputeBoundary ( T, BoundaryFluence )
+  subroutine ComputeBoundary ( T, CS, BoundaryFluence )
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BoundaryFluence  !-- boundary slab
 
@@ -234,7 +236,7 @@ contains
       end associate !-- BI
     end if
 
-    call T % ComputeBoundaryIntegrand ( C, BoundaryFluence ) 
+    call T % ComputeBoundaryIntegrand ( CS, C, BoundaryFluence ) 
 
     associate ( BI  =>  T % BoundaryIntegral )
     call BI % Compute ( )
@@ -368,10 +370,12 @@ contains
   end subroutine ComputeInteriorIntegrand
 
   
-  subroutine ComputeBoundaryIntegrand ( T, C, BF )
+  subroutine ComputeBoundaryIntegrand ( T, CS, C, BF )
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
@@ -391,9 +395,9 @@ contains
       do iF = 1, 2
 
         if ( iF == 1 ) then
-          iC = Cy % iaInner ( iD )
+          iC  =  Cy % iaInner ( iD )
         else if ( iF == 2 ) then
-          iC = Cy % iaOuter ( iD )
+          iC  =  Cy % iaOuter ( iD )
         end if
 
         do iI  =  1,  T % nSelected
@@ -412,80 +416,77 @@ contains
   end subroutine ComputeBoundaryIntegrand
 
 
-!   subroutine ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
+  subroutine ComputeFacePositions ( G, C, iD, iF, X_1, X_2, X_3 )
 
-!     class ( Chart_SL_Template ), intent ( in ) :: &
-!       CSL
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     integer ( KDI ), intent ( in ) :: &
-!       iD, &  !-- iDimension
-!       iF     !-- iFace
-!     real ( KDR ), dimension ( :, :, : ), intent ( out ), target :: &
-!       X_1, X_2, X_3
+    class ( Geometry_F_Form ), intent ( in ) :: &
+      G
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iD, &  !-- iDimension
+      iF     !-- iFace
+    real ( KDR ), dimension ( :, :, : ), intent ( out ), target :: &
+      X_1, X_2, X_3
 
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       oB   !-- oBoundary
-!     real ( KDR ), dimension ( :, :, : ), pointer :: &
-!       XC_1, XC_2, XC_3, &
-!       dXL_1, dXL_2, dXL_3, &
-!       X_iD, dXL_iD
+    integer ( KDI ), dimension ( 3 ) :: &
+      oB, &   !-- oBoundary
+      nB      !-- nBoundary
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      XC_1, XC_2, XC_3, &
+      XE_I_1, XE_I_2, XE_I_3, &
+      X_iD, &
+      XE_I_iD
 
-!     call CSL % SetVariablePointer &
-!            ( G % Value ( :, G % CENTER_U ( 1 ) ), XC_1 )
-!     call CSL % SetVariablePointer &
-!            ( G % Value ( :, G % CENTER_U ( 2 ) ), XC_2 )
-!     call CSL % SetVariablePointer &
-!            ( G % Value ( :, G % CENTER_U ( 3 ) ), XC_3 )
-!     call CSL % SetVariablePointer &
-!            ( G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), dXL_1 )
-!     call CSL % SetVariablePointer &
-!            ( G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), dXL_2 )
-!     call CSL % SetVariablePointer &
-!            ( G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), dXL_3 )
+    associate ( GV  =>  G % Storage_GS % Value )
+    call C % SetFieldPointer ( GV ( :, G % CENTER_U_1 ), XC_1 )
+    call C % SetFieldPointer ( GV ( :, G % CENTER_U_2 ), XC_2 )
+    call C % SetFieldPointer ( GV ( :, G % CENTER_U_3 ), XC_3 )
+    call C % SetFieldPointer ( GV ( :, G % EDGE_I_U_1 ), XE_I_1 )
+    call C % SetFieldPointer ( GV ( :, G % EDGE_I_U_2 ), XE_I_2 )
+    call C % SetFieldPointer ( GV ( :, G % EDGE_I_U_3 ), XE_I_3 )
+    end associate !-- GSV
 
-!     select case ( iD )
-!     case ( 1 )
-!         X_iD =>   X_1
-!       dXL_iD => dXL_1
-!     case ( 2 ) 
-!         X_iD =>   X_2
-!       dXL_iD => dXL_2
-!     case ( 3 ) 
-!         X_iD =>   X_3
-!       dXL_iD => dXL_3
-!     end select !-- iD
+    select case ( iD )
+    case ( 1 )
+         X_iD  =>  X_1
+      XE_I_iD  =>  XE_I_1
+    case ( 2 ) 
+         X_iD  =>  X_2
+      XE_I_iD  =>  XE_I_2
+    case ( 3 ) 
+         X_iD  =>  X_3
+      XE_I_iD  =>  XE_I_3
+    end select !-- iD
 
-!     !-- Geometry. Here proper cell indexing begins at 1
-!     select case ( iF )
-!       case ( 1 ) !-- inner
-!         oB = 0
-!       case ( 2 ) !-- outer
-!         oB = 0
-!         oB ( iD ) = oB ( iD ) + CSL % nCellsBrick ( iD )
-!     end select !-- iF
-!     ! X_1 = XC_1 ( oB ( 1 ) + 1 : oB ( 1 ) + nB ( 1 ), &
-!     !              oB ( 2 ) + 1 : oB ( 2 ) + nB ( 2 ), &
-!     !              oB ( 3 ) + 1 : oB ( 3 ) + nB ( 3 ) )
-!     ! X_2 = XC_2 ( oB ( 1 ) + 1 : oB ( 1 ) + nB ( 1 ), &
-!     !              oB ( 2 ) + 1 : oB ( 2 ) + nB ( 2 ), &
-!     !              oB ( 3 ) + 1 : oB ( 3 ) + nB ( 3 ) )
-!     ! X_3 = XC_3 ( oB ( 1 ) + 1 : oB ( 1 ) + nB ( 1 ), &
-!     !              oB ( 2 ) + 1 : oB ( 2 ) + nB ( 2 ), &
-!     !              oB ( 3 ) + 1 : oB ( 3 ) + nB ( 3 ) )
-!     call CopyCollapse ( XC_1, X_1, oB + CSL % nGhostLayers )
-!     call CopyCollapse ( XC_2, X_2, oB + CSL % nGhostLayers )
-!     call CopyCollapse ( XC_3, X_3, oB + CSL % nGhostLayers )
-        
-!     !    X_iD  =  X_iD  -  dXL_iD ( oB ( 1 ) + 1 : oB ( 1 ) + nB ( 1 ), &
-!     !                              oB ( 2 ) + 1 : oB ( 2 ) + nB ( 2 ), &
-!     !                              oB ( 3 ) + 1 : oB ( 3 ) + nB ( 3 ) )
-!     call MultiplyAddCollapse &
-!            ( X_iD, dXL_iD, -1.0_KDR, oB + CSL % nGhostLayers )
+    !-- Geometry. Here proper cell indexing begins at 1
+    select case ( iF )
+    case ( 1 ) !-- inner
+      oB  =  0
+    case ( 2 ) !-- outer
+      oB  =  0
+      oB ( iD )  =  C % nCellsBrick ( iD )
+    end select !-- iF
 
-!     nullify ( XC_1, XC_2, XC_3, dXL_1, dXL_2, dXL_3, X_iD, dXL_iD )
+    nB  =  shape ( X_1 )
 
-!   end subroutine ComputeFacePositions
+    X_1 = XC_1 ( oB ( 1 )  +  1  :  oB ( 1 )  +  nB ( 1 ), &
+                 oB ( 2 )  +  1  :  oB ( 2 )  +  nB ( 2 ), &
+                 oB ( 3 )  +  1  :  oB ( 3 )  +  nB ( 3 ) )
+    X_2 = XC_2 ( oB ( 1 )  +  1  :  oB ( 1 )  +  nB ( 1 ), &
+                 oB ( 2 )  +  1  :  oB ( 2 )  +  nB ( 2 ), &
+                 oB ( 3 )  +  1  :  oB ( 3 )  +  nB ( 3 ) )
+    X_3 = XC_3 ( oB ( 1 )  +  1  :  oB ( 1 )  +  nB ( 1 ), &
+                 oB ( 2 )  +  1  :  oB ( 2 )  +  nB ( 2 ), &
+                 oB ( 3 )  +  1  :  oB ( 3 )  +  nB ( 3 ) )
+!     call CopyCollapse ( XC_1, X_1, oB + C % nGhostLayers )
+!     call CopyCollapse ( XC_2, X_2, oB + C % nGhostLayers )
+!     call CopyCollapse ( XC_3, X_3, oB + C % nGhostLayers )
+
+    X_iD  =  XE_I_iD ( oB ( 1 )  +  1  :  oB ( 1 )  +  nB ( 1 ), &
+                       oB ( 2 )  +  1  :  oB ( 2 )  +  nB ( 2 ), &
+                       oB ( 3 )  +  1  :  oB ( 3 )  +  nB ( 3 ) )
+
+  end subroutine ComputeFacePositions
 
 
 end module Tally_CS__Form

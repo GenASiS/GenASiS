@@ -41,21 +41,21 @@ module Tally_F_D__Form
       ComputeInteriorIntegrand_G
     procedure, public, pass :: &
       ComputeInteriorIntegrand_N
-!     procedure, public, pass :: &
-!       ComputeBoundaryIntegrand_CSL_G
-!     procedure, public, pass :: &
-!       ComputeBoundaryIntegrand_CSL_N
+    procedure, public, pass :: &
+      ComputeBoundaryIntegrand_G
+    procedure, public, pass :: &
+      ComputeBoundaryIntegrand_N
   end type Tally_F_D_Form
 
     private :: &
       ComputeDensity_KE, &
-      ComputeDensity_AM_Rectangular!, &
+      ComputeDensity_AM_Rectangular, &
 !       ComputeDensity_LM_CylindricalHorizontal, &
 !       ComputeDensity_AM_CylindricalHorizontal, &
 !       ComputeDensity_LM_SphericalHorizontal, &
 !       ComputeDensity_LM_SphericalVertical, &
 !       ComputeDensity_AM_SphericalHorizontal, &
-!       ComputeFluence_AM_Rectangular, &
+      ComputeFluence_AM_Rectangular!, &
 !       ComputeFluence_LM_CylindricalHorizontal, &
 !       ComputeFluence_AM_CylindricalHorizontal, &
 !       ComputeFluence_LM_SphericalVertical, &
@@ -187,30 +187,30 @@ contains
   end subroutine ComputeInteriorIntegrand
 
 
-  subroutine ComputeBoundaryIntegrand ( T, C, BF )
+  subroutine ComputeBoundaryIntegrand ( T, CS, C, BF )
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BF
 
-!     select type ( G )
-!     type is ( Geometry_G_Form )
-!       call T % ComputeBoundaryIntegrand_CSL_G &
-!              ( Integrand, C, CSL, G, BoundaryFluence )
-!     class is ( Geometry_N_Form )
-!       call T % ComputeBoundaryIntegrand_CSL_N &
-!              ( Integrand, C, CSL, G, BoundaryFluence )
-!     class default 
-!       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
-!       call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'ComputeInteriorIntegrand', 'subroutine', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- G
+    select type ( G  =>  T % Geometry )
+    type is ( Gravitation_G_Form )
+      call T % ComputeBoundaryIntegrand_G ( CS, C, BF )
+    class is ( Gravitation_N_H_Form )
+      call T % ComputeBoundaryIntegrand_N ( CS, C, BF )
+    class default 
+      call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeBoundaryIntegrand', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- G
     
-!   end subroutine ComputeBoundaryIntegrand_CSL
+  end subroutine ComputeBoundaryIntegrand
 
 
   subroutine ComputeInteriorIntegrand_G ( T, CS )
@@ -419,188 +419,187 @@ contains
   end subroutine ComputeInteriorIntegrand_N
 
 
-!   subroutine ComputeBoundaryIntegrand_CSL_G &
-!                ( T, Integrand, C, CSL, G, BoundaryFluence )
+  subroutine ComputeBoundaryIntegrand_G ( T, CS, C, BF )
 
-!     class ( Tally_F_D_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( Chart_SL_Template ), intent ( in ) :: &
-!       CSL
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-!       BoundaryFluence
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BF
 
-!     integer ( KDI ) :: &
-!       iD, &   !-- iDimension
-!       iF, &   !-- iFace
-!       iC, &   !-- iConnectivity
-!       iS, &   !-- iSelected
-!       iI, &   !-- iIntegral
-!       iFluence, &
-!       iDensity, &
-!       iMomentum_1, &
-!       iMomentum_2, &
-!       iMomentum_3
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       nB    !-- nBoundary
-!     real ( KDR ), dimension ( :, :, : ), allocatable :: &
-!       X_1, X_2, X_3
+    integer ( KDI ) :: &
+      iD, &   !-- iDimension
+      iF, &   !-- iFace
+      iC, &   !-- iConnectivity
+      iS, &   !-- iSelected
+      iI, &   !-- iIntegral
+      iFluence, &
+      iDensity, &
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3
+    integer ( KDI ), dimension ( 3 ) :: &
+      nB    !-- nBoundary
+    real ( KDR ), dimension ( :, :, : ), allocatable :: &
+      X_1, X_2, X_3
 
-!     select type ( C )
-!     class is ( Fluid_D_Form )
+    select type ( CS )
+      class is ( Fluid_D_Form )
+    associate &
+      ( G   =>  T % Geometry, &
+        I   =>  T % BoundaryIntegral % Integrand, &
+        Cy  =>  C % Connectivity )
        
-!     do iFluence = 1, C % N_CONSERVED
-!       if ( C % iaConserved ( iFluence ) == C % CONSERVED_BARYON_DENSITY ) &
-!         iDensity = iFluence
-!       if ( C % iaConserved ( iFluence ) == C % MOMENTUM_DENSITY_D ( 1 ) ) &
-!         iMomentum_1 = iFluence
-!       if ( C % iaConserved ( iFluence ) == C % MOMENTUM_DENSITY_D ( 2 ) ) &
-!         iMomentum_2 = iFluence
-!       if ( C % iaConserved ( iFluence ) == C % MOMENTUM_DENSITY_D ( 3 ) ) &
-!         iMomentum_3 = iFluence
-!     end do !-- iFluence
+    do iFluence  =  1,  CS % nBalanced
+      if ( CS % iaBalanced ( iFluence )  ==  CS % BARYON_DENSITY_B ) &
+        iDensity = iFluence
+      if ( CS % iaBalanced ( iFluence )  ==  CS % MOMENTUM_DENSITY_D ( 1 ) ) &
+        iMomentum_1 = iFluence
+      if ( CS % iaBalanced ( iFluence )  ==  CS % MOMENTUM_DENSITY_D ( 2 ) ) &
+        iMomentum_2 = iFluence
+      if ( CS % iaBalanced ( iFluence )  ==  CS % MOMENTUM_DENSITY_D ( 3 ) ) &
+        iMomentum_3 = iFluence
+    end do !-- iFluence
 
-!     associate ( Cnnct => CSL % Atlas % Connectivity )
-!     do iD = 1, CSL % nDimensions
-!       nB = shape ( BoundaryFluence ( 1, Cnnct % iaInner ( iD ) ) % Value )
+    do iD  =  1,  C % nDimensions
 
-!       !-- Geometry
-!       allocate ( X_1 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
-!       allocate ( X_2 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
-!       allocate ( X_3 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
+      nB = shape ( BF ( 1, Cy % iaInner ( iD ) ) % Value )
 
-!       do iF = 1, 2
-!         if ( iF == 1 ) then
-!           iC = Cnnct % iaInner ( iD )
-!         else if ( iF == 2 ) then
-!           iC = Cnnct % iaOuter ( iD )
-!         end if
+      !-- Geometry
+      allocate ( X_1 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
+      allocate ( X_2 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
+      allocate ( X_3 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
 
-!         associate &
-!           ( D   => BoundaryFluence ( iDensity,    iC ) % Value, &
-!             S_1 => BoundaryFluence ( iMomentum_1, iC ) % Value, &
-!             S_2 => BoundaryFluence ( iMomentum_2, iC ) % Value, &
-!             S_3 => BoundaryFluence ( iMomentum_3, iC ) % Value )
-!         call T % ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
-!         select case ( trim ( G % CoordinateSystem ) )
-!         case ( 'RECTANGULAR' )
-!           do iS = 1, T % nSelected
-!             iI = T % iaSelected ( iS )
-!             if ( iI == T % BARYON_NUMBER ) then
-!               call CopyCollapse ( D, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 1 ) ) then
-!               call CopyCollapse ( S_1, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 2 ) ) then
-!               call CopyCollapse ( S_2, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 3 ) ) then
-!               call CopyCollapse ( S_3, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
-!               call ComputeFluence_AM_Rectangular &
-!                      ( X_2, X_3, S_2, S_3, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
-!               call ComputeFluence_AM_Rectangular &
-!                      ( X_3, X_1, S_3, S_1, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
-!               call ComputeFluence_AM_Rectangular &
-!                      ( X_1, X_2, S_1, S_2, Integrand ( iS, iC ) % Value )
-!             end if !-- iI
-!           end do !-- iS
+      do iF = 1, 2
+
+        if ( iF == 1 ) then
+          iC  =  Cy % iaInner ( iD )
+        else if ( iF == 2 ) then
+          iC  =  Cy % iaOuter ( iD )
+        end if
+
+        associate &
+          ( D    =>  BF ( iDensity,    iC ) % Value, &
+            S_1  =>  BF ( iMomentum_1, iC ) % Value, &
+            S_2  =>  BF ( iMomentum_2, iC ) % Value, &
+            S_3  =>  BF ( iMomentum_3, iC ) % Value )
+
+        call T % ComputeFacePositions ( G, C, iD, iF, X_1, X_2, X_3 )
+
+        select case ( trim ( C % CoordinateSystem ) )
+        case ( 'RECTANGULAR' )
+          do iS  =  1,  T % nSelected
+            iI = T % iaSelected ( iS )
+            if ( iI  ==  T % BARYON_NUMBER ) then
+              call Copy ( D, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % MOMENTUM ( 1 ) ) then
+              call Copy ( S_1, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
+              call Copy ( S_2, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
+              call Copy ( S_3, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
+              call ComputeFluence_AM_Rectangular &
+                     ( X_2, X_3, S_2, S_3, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
+              call ComputeFluence_AM_Rectangular &
+                     ( X_3, X_1, S_3, S_1, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
+              call ComputeFluence_AM_Rectangular &
+                     ( X_1, X_2, S_1, S_2, I ( iS, iC ) % Value )
+            end if !-- iI
+          end do !-- iS
 !         case ( 'CYLINDRICAL' )
 !           do iS = 1, T % nSelected
 !             iI = T % iaSelected ( iS )
-!             if ( iI == T % BARYON_NUMBER ) then
-!               call CopyCollapse ( D, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 1 ) ) then
+!             if ( iI  ==  T % BARYON_NUMBER ) then
+!               call Copy ( D, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % MOMENTUM ( 1 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_LM_CylindricalHorizontal &
-!                        ( X_1, X_3, S_1, S_3, 1, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 2 ) ) then
+!                        ( X_1, X_3, S_1, S_3, 1, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_LM_CylindricalHorizontal &
-!                        ( X_1, X_3, S_1, S_3, 2, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 3 ) ) then
+!                        ( X_1, X_3, S_1, S_3, 2, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
 !               if ( CSL % nDimensions > 1 ) &
-!                 call Copy ( S_2, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
+!                 call Copy ( S_2, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_AM_CylindricalHorizontal &
 !                        ( X_1, X_2, X_3, S_1, S_2, S_3, 1, &
-!                          Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
+!                          I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_AM_CylindricalHorizontal &
 !                        ( X_1, X_2, X_3, S_1, S_2, S_3, 2, &
-!                          Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
+!                          I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
 !               if ( CSL % nDimensions > 1 ) &
-!                 call Copy ( S_3, Integrand ( iS, iC ) % Value )
+!                 call Copy ( S_3, I ( iS, iC ) % Value )
 !             end if !-- iI
 !           end do !-- iS
 !         case ( 'SPHERICAL' )
 !           do iS = 1, T % nSelected
 !             iI = T % iaSelected ( iS )
-!             if ( iI == T % BARYON_NUMBER ) then
-!               call CopyCollapse ( D, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 1 ) ) then
+!             if ( iI  ==  T % BARYON_NUMBER ) then
+!               call Copy ( D, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % MOMENTUM ( 1 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_LM_SphericalHorizontal &
 !                        ( X_1, X_2, X_3, S_1, S_2, S_3, 1, &
-!                          Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 2 ) ) then
+!                          I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_LM_SphericalHorizontal &
 !                        ( X_1, X_2, X_3, S_1, S_2, S_3, 2, &
-!                          Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % MOMENTUM ( 3 ) ) then
+!                          I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
 !               if ( CSL % nDimensions > 1 ) &
 !                 call ComputeFluence_LM_SphericalVertical &
-!                        ( X_1, X_2, S_1, S_2, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
+!                        ( X_1, X_2, S_1, S_2, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_AM_SphericalHorizontal &
-!                        ( X_2, X_3, S_2, S_3, 1, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
+!                        ( X_2, X_3, S_2, S_3, 1, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
 !               if ( CSL % nDimensions > 2 ) &
 !                 call ComputeFluence_AM_SphericalHorizontal &
-!                        ( X_2, X_3, S_2, S_3, 2, Integrand ( iS, iC ) % Value )
-!             else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
+!                        ( X_2, X_3, S_2, S_3, 2, I ( iS, iC ) % Value )
+!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
 !               if ( CSL % nDimensions > 1 ) &
-!                 call CopyCollapse ( S_3, Integrand ( iS, iC ) % Value )
+!                 call Copy ( S_3, I ( iS, iC ) % Value )
 !             end if !-- iI
 !           end do !-- iS
-!         end select !-- CoordinateSystem
-!         end associate !-- D, etc.
+        end select !-- CoordinateSystem
+        end associate !-- D, etc.
 
-!       end do !-- iF
-!       deallocate ( X_1, X_2, X_3 )
-!     end do !-- iD
-!     end associate !-- Cnnct
+      end do !-- iF
 
-!     end select !-- C
+      deallocate ( X_1, X_2, X_3 )
+
+    end do !-- iD
+
+    end associate !-- G, etc.
+    end select !-- CS
        
-!   end subroutine ComputeBoundaryIntegrand_CSL_G
+  end subroutine ComputeBoundaryIntegrand_G
 
 
-!   subroutine ComputeBoundaryIntegrand_CSL_N &
-!                ( T, Integrand, C, CSL, G, BoundaryFluence )
+  subroutine ComputeBoundaryIntegrand_N ( T, CS, C, BF )
 
-!     class ( Tally_F_D_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( Chart_SL_Template ), intent ( in ) :: &
-!       CSL
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-!       BoundaryFluence
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    class ( FieldSetForm ), intent ( in ) :: &
+      CS
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BF
 
 !     integer ( KDI ) :: &
 !       iD, &   !-- iDimension
@@ -693,7 +692,7 @@ contains
 !     end select !-- C
 !     nullify ( Phi )
 
-!   end subroutine ComputeBoundaryIntegrand_CSL_N
+  end subroutine ComputeBoundaryIntegrand_N
 
 
   subroutine ComputeDensity_KE ( S_1, S_2, S_3, V_1, V_2, V_3, I )
@@ -966,34 +965,34 @@ contains
 !   end subroutine ComputeDensity_AM_SphericalHorizontal
 
 
-!   subroutine ComputeFluence_AM_Rectangular ( X_J, X_K, S_J, S_K, I_I )
+  subroutine ComputeFluence_AM_Rectangular ( X_J, X_K, S_J, S_K, I_I )
 
-!     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-!       X_J, X_K, &
-!       S_J, S_K
-!     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-!       I_I
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      X_J, X_K, &
+      S_J, S_K
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      I_I
 
-!     integer ( KDI ) :: &
-!       iV, jV, kV
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       nV
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nV
 
-!     nV = shape ( I_I )
+    nV = shape ( I_I )
 
-!     !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-!     do kV = 1, nV ( 3 )
-!       do jV = 1, nV ( 2 )
-!         do iV = 1, nV ( 1 )
-!           I_I ( iV, jV, kV ) &
-!             =  X_J ( iV, jV, kV ) * S_K ( iV, jV, kV ) &
-!                -  X_K ( iV, jV, kV ) * S_J ( iV, jV, kV )
-!         end do
-!       end do
-!     end do
-!     !$OMP end parallel do
+    !$OMP parallel do collapse ( 3 )
+    do kV = 1, nV ( 3 )
+      do jV = 1, nV ( 2 )
+        do iV = 1, nV ( 1 )
+          I_I ( iV, jV, kV ) &
+            =  X_J ( iV, jV, kV ) * S_K ( iV, jV, kV ) &
+               -  X_K ( iV, jV, kV ) * S_J ( iV, jV, kV )
+        end do
+      end do
+    end do
+    !$OMP end parallel do
 
-!   end subroutine ComputeFluence_AM_Rectangular
+  end subroutine ComputeFluence_AM_Rectangular
 
 
 !   subroutine ComputeFluence_LM_CylindricalHorizontal &
