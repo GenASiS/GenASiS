@@ -232,8 +232,8 @@ contains
       ( G    =>  T % Geometry, &
         C    =>  A % Chart_GS, &
         CSV  =>  CS % Storage_GS % Value, &
-        GV   =>  T % Geometry % Storage_GS % Value, &
-        IV   =>  T % InteriorIntegral % Integrand % Storage_GS % Value )
+         GV  =>  T % Geometry % Storage_GS % Value, &
+         IV  =>  T % InteriorIntegral % Integrand % Storage_GS % Value )
     associate &
       ( D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
         V_1  =>  CSV ( :, CS % VELOCITY_U_1 ), &
@@ -242,9 +242,9 @@ contains
         S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), & 
         S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), & 
         S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
-        X_1  =>  GV ( :, G % CENTER_U_1 ), &
-        X_2  =>  GV ( :, G % CENTER_U_2 ), &
-        X_3  =>  GV ( :, G % CENTER_U_3 ) )
+        X_1  =>   GV ( :, G % CENTER_U_1 ), &
+        X_2  =>   GV ( :, G % CENTER_U_2 ), &
+        X_3  =>   GV ( :, G % CENTER_U_3 ) )
 
     do iS  =  1,  T % nSelected
       iI  =  T % iaSelected ( iS )
@@ -360,29 +360,29 @@ contains
     class ( FieldSetForm ), intent ( in ) :: &
       CS
 
-!     integer ( KDI ) :: &
-!       iS, &  !-- iSelected
-!       iI     !-- iIntegral
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iI     !-- iIntegral
 
-!     call T % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
+    call T % ComputeInteriorIntegrand_G ( CS )
 
-!     select type ( A => T % Atlas )
-!     class is ( Atlas_SC_Form )    
-!     select type ( GA => A % Geometry_ASC )
-!     class is ( Geometry_ASC_Form )
+    select type ( CS )
+      class is ( Fluid_D_Form )
+    select type ( G  =>  T % Geometry )
+      class is ( Gravitation_N_H_Form )
+    select type ( A  =>  CS % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( CSV  =>  CS % Storage_GS % Value, &
+         GV  =>  G % Storage_GS % Value, &
+         IV  =>  T % InteriorIntegral % Integrand % Storage_GS % Value )
+    associate &
+      ( M    =>  CSV ( :, CS % BARYON_MASS ), &
+        D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
+        Phi  =>   GV ( :, G % POTENTIAL ) )
 
-!     select type ( C )
-!     class is ( Fluid_D_Form )
-!     select type ( G )
-!     class is ( Geometry_N_Form )
-
-!     associate &
-!       ( M   => C % Value ( :, C % BARYON_MASS ), &
-!         D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-!         Phi => G % Value ( :, G % POTENTIAL ) )
-
-!     select case ( trim ( GA % GravitySolverType ) )
-!     case ( 'UNIFORM', 'CENTRAL_MASS' )  !-- External potential
+!    select case ( trim ( GA % GravitySolverType ) )
+!    case ( 'UNIFORM', 'CENTRAL_MASS' )  !-- External potential
 !       do iS = 1, T % nSelected
 !         iI = T % iaSelected ( iS )
 !         if ( iI == T % GRAVITATIONAL_ENERGY ) then
@@ -393,28 +393,23 @@ contains
 !         end if !-- iI
 !       end do !-- iS     
 !     case default
-!       do iS = 1, T % nSelected
-!         iI = T % iaSelected ( iS )
-!         if ( iI == T % GRAVITATIONAL_ENERGY ) then
-!           Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
-!         else if ( iI == T % TOTAL_ENERGY ) then
-!           Integrand ( iS ) % Value  &
-!             =  Integrand ( iS ) % Value  +  0.5_KDR * M * D * Phi
-!         end if !-- iI
-!       end do !-- iS     
+
+      do iS  =  1,  T % nSelected
+        iI  =  T % iaSelected ( iS )
+        if ( iI  ==  T % GRAVITATIONAL_ENERGY ) then
+          IV ( :, iS )  =  0.5_KDR * M * D * Phi
+        else if ( iI  ==  T % TOTAL_ENERGY ) then
+          IV ( :, iS )  =  IV ( :, iS )  +  0.5_KDR * M * D * Phi
+        end if !-- iI
+      end do !-- iS     
+
 !     end select !-- GravitySolverType
 
-!     end associate !-- M, etc.
-
-!     class default 
-!       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
-!       call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'ComputeInteriorIntegrand_N', 'subroutine', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- G
-!     end select !-- C
-!     end select !-- GA
-!     end select !-- A
+    end associate !-- M, etc.
+    end associate !-- CSV, etc.
+    end select !-- A
+    end select !-- G
+    end select !-- CS
 
   end subroutine ComputeInteriorIntegrand_N
 
