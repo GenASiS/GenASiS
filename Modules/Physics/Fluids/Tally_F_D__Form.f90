@@ -35,8 +35,8 @@ module Tally_F_D__Form
       Finalize
     procedure, public, pass :: &
       ComputeInteriorIntegrand
-!     procedure, public, pass :: &
-!       ComputeBoundaryIntegrand_CSL
+    procedure, public, pass :: &
+      ComputeBoundaryIntegrand
     procedure, public, pass :: &
       ComputeInteriorIntegrand_G
     procedure, public, pass :: &
@@ -187,21 +187,14 @@ contains
   end subroutine ComputeInteriorIntegrand
 
 
-!   subroutine ComputeBoundaryIntegrand_CSL &
-!                ( T, Integrand, C, CSL, G, BoundaryFluence )
+  subroutine ComputeBoundaryIntegrand ( T, C, BF )
 
-!     class ( Tally_F_D_Form ), intent ( inout ) :: &
-!       T
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-!       Integrand
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
-!     class ( Chart_SL_Template ), intent ( in ) :: &
-!       CSL
-!     class ( GeometryFlatForm ), intent ( in ) :: &
-!       G
-!     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-!       BoundaryFluence
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    class ( Chart_GS_Form ), intent ( in ) :: &
+      C
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BF
 
 !     select type ( G )
 !     type is ( Geometry_G_Form )
