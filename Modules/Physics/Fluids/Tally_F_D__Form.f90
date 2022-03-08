@@ -506,10 +506,10 @@ contains
               call Copy ( S_2, I ( iS, iC ) % Value )
             else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
               call Copy ( S_3, I ( iS, iC ) % Value )
-            else if ( iI  ==  T % KINETIC_ENERGY ) then
-              iKineticEnergy  =  iS
-              call ComputeFluence_KE_Rectangular &
-                     ( S_1, S_2, S_3, M, D, I ( iS, iC ) % Value )
+            ! else if ( iI  ==  T % KINETIC_ENERGY ) then
+            !   iKineticEnergy  =  iS
+            !   call ComputeFluence_KE_Rectangular &
+            !          ( S_1, S_2, S_3, M, D, I ( iS, iC ) % Value )
             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
               call ComputeFluence_AM_Rectangular &
                      ( X_2, X_3, S_2, S_3, I ( iS, iC ) % Value )
@@ -537,10 +537,10 @@ contains
             else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
               if ( C % nDimensions > 1 ) &
                 call Copy ( S_2, I ( iS, iC ) % Value )
-            else if ( iI  ==  T % KINETIC_ENERGY ) then
-              iKineticEnergy  =  iS
-              call ComputeFluence_KE_Cylindrical &
-                     ( S_1, S_2, M, D, I ( iS, iC ) % Value )
+            ! else if ( iI  ==  T % KINETIC_ENERGY ) then
+            !   iKineticEnergy  =  iS
+            !   call ComputeFluence_KE_Cylindrical &
+            !          ( S_1, S_2, M, D, I ( iS, iC ) % Value )
             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
               if ( C % nDimensions > 2 ) &
                 call ComputeFluence_AM_CylindricalHorizontal &
@@ -575,10 +575,10 @@ contains
               if ( C % nDimensions > 1 ) &
                 call ComputeFluence_LM_SphericalVertical &
                        ( X_1, X_2, S_1, S_2, I ( iS, iC ) % Value )
-           else if ( iI  ==  T % KINETIC_ENERGY ) then
-             iKineticEnergy  =  iS
-             call ComputeFluence_KE_Spherical &
-                    ( S_1, M, D, I ( iS, iC ) % Value )
+           ! else if ( iI  ==  T % KINETIC_ENERGY ) then
+           !   iKineticEnergy  =  iS
+           !   call ComputeFluence_KE_Spherical &
+           !          ( S_1, M, D, I ( iS, iC ) % Value )
             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
               if ( C % nDimensions > 2 ) &
                 call ComputeFluence_AM_SphericalHorizontal &
@@ -598,8 +598,9 @@ contains
         do iS  =  1, T % nSelected
           iI  =  T % iaSelected ( iS )
           if ( iI  ==  T % TOTAL_ENERGY ) then
-            call Copy ( I ( iKineticEnergy, iC ) % Value, &
-                        I ( iS, iC ) % Value )
+            ! call Copy ( I ( iKineticEnergy, iC ) % Value, &
+            !             I ( iS, iC ) % Value )
+            call Clear ( I ( iS, iC ) % Value )
           end if !-- iI
         end do !-- iS
 
