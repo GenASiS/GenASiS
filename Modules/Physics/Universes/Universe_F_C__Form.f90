@@ -480,23 +480,56 @@ contains
       allocate ( Fluid_P_I_Form  ::  I % CurrentSet_X )
       select type ( F  =>  I % CurrentSet_X )
         class is ( Fluid_P_I_Form )
-      call F % Initialize ( G, U % Units_F )
 
-      allocate ( U % SA_Fluid )
-      associate &
-        ( SA     =>  U % SA_Fluid, &
-           A_SA  =>  U % PositionSpace_SA )
-      allocate ( Fluid_P_I_Form :: SA % FieldSet_SA )
-      select type ( F_SA  =>  SA % FieldSet_SA )
-        type is ( Fluid_P_I_Form )
-      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
-        class is ( Geometry_F_Form )
-      call F_SA % Initialize &
-             ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
-      call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
-      end select !-- G_SA
-      end select !-- F_SA
-      end associate !-- SA, etc.
+        !-- TallyInterior must be allocated before F % Initialize...
+        allocate ( Tally_F_P_Form :: F % TallyInterior )
+        allocate ( Tally_F_P_Form :: F % TallyTotal )
+        allocate ( Tally_F_P_Form :: F % TallyChange )
+        select type ( TI  =>  F % TallyInterior )
+          type is ( Tally_F_P_Form )
+        call TI % Initialize ( G, U % Units_F ( 1 ) )
+        end select !-- TI
+        select type ( TT  =>  F % TallyTotal )
+          type is ( Tally_F_P_Form )
+        call TT % Initialize ( G, U % Units_F ( 1 ) )
+        end select !-- TT
+        select type ( TC  =>  F % TallyChange )
+          type is ( Tally_F_P_Form )
+        call TC % Initialize ( G, U % Units_F ( 1 ) )
+        end select !-- TC
+
+        !-- ( Initialize the Fluid)
+        call F % Initialize ( G, U % Units_F )
+
+        !-- ... but TallyBoundary needs F % Initialize already called.
+        allocate ( F % TallyBoundary ( F % nBoundaries ) )
+        do iB  =  1,  F % nBoundaries
+          allocate ( Tally_F_P_Form :: F % TallyBoundary ( iB ) % Element )
+          select type ( TB  =>  F % TallyBoundary ( iB ) % Element )
+            type is ( Tally_F_P_Form )
+          call TB % Initialize ( G, U % Units_F ( 1 ) )
+          end select !-- TB
+        end do !-- iB
+
+        !-- Boundary accumulation storage
+        call F % AllocateBoundary_SCG ( nT = F % TallyInterior % nSelected )
+
+        !-- Spherical average
+        allocate ( U % SA_Fluid )
+        associate &
+          ( SA     =>  U % SA_Fluid, &
+             A_SA  =>  U % PositionSpace_SA )
+        allocate ( Fluid_P_I_Form :: SA % FieldSet_SA )
+        select type ( F_SA  =>  SA % FieldSet_SA )
+          type is ( Fluid_P_I_Form )
+        select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+          class is ( Geometry_F_Form )
+        call F_SA % Initialize &
+               ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+        call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+        end select !-- G_SA
+        end select !-- F_SA
+        end associate !-- SA, etc.
 
       end select !-- F
 
