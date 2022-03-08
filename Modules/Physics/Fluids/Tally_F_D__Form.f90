@@ -50,15 +50,16 @@ module Tally_F_D__Form
     private :: &
       ComputeDensity_KE, &
       ComputeDensity_AM_Rectangular, &
-!       ComputeDensity_LM_CylindricalHorizontal, &
-!       ComputeDensity_AM_CylindricalHorizontal, &
+      ComputeDensity_LM_CylindricalHorizontal, &
+      ComputeDensity_AM_CylindricalHorizontal, &
       ComputeDensity_LM_SphericalHorizontal, &
       ComputeDensity_LM_SphericalVertical, &
       ComputeDensity_AM_SphericalHorizontal, &
       ComputeFluence_KE_Rectangular, &
       ComputeFluence_AM_Rectangular, &
-!       ComputeFluence_LM_CylindricalHorizontal, &
-!       ComputeFluence_AM_CylindricalHorizontal, &
+      ComputeFluence_LM_CylindricalHorizontal, &
+      ComputeFluence_KE_Cylindrical, &
+      ComputeFluence_AM_CylindricalHorizontal, &
       ComputeFluence_LM_SphericalVertical, &
       ComputeFluence_KE_Spherical, &
       ComputeFluence_AM_SphericalHorizontal, &
@@ -288,35 +289,35 @@ contains
                  ( X_1, X_2, S_1, S_2, IV ( :, iS ) )
         end if !-- iI
       end do !-- iS
-!     case ( 'CYLINDRICAL' )
-!       do iS = 1, T % nSelected
-!         iI = T % iaSelected ( iS )
-!         if ( iI == T % MOMENTUM ( 1 ) ) then
-!           if ( nDimensions > 2 ) &
-!             call ComputeDensity_LM_CylindricalHorizontal &
-!                    ( X_1, X_3, S_1, S_3, 1, Integrand ( iS ) % Value )
-!         else if ( iI == T % MOMENTUM ( 2 ) ) then
-!           if ( nDimensions > 2 ) &
-!             call ComputeDensity_LM_CylindricalHorizontal &
-!                    ( X_1, X_3, S_1, S_3, 2, Integrand ( iS ) % Value )
-!         else if ( iI == T % MOMENTUM ( 3 ) ) then
-!           if ( nDimensions > 1 ) &
-!             call Copy ( S_2, Integrand ( iS ) % Value )
-!         else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
-!           if ( nDimensions > 2 ) &
-!             call ComputeDensity_AM_CylindricalHorizontal &
-!                    ( X_1, X_2, X_3, S_1, S_2, S_3, 1, &
-!                      Integrand ( iS ) % Value )
-!         else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
-!           if ( nDimensions > 2 ) &
-!             call ComputeDensity_AM_CylindricalHorizontal &
-!                    ( X_1, X_2, X_3, S_1, S_2, S_3, 2, &
-!                      Integrand ( iS ) % Value )
-!         else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
-!           if ( nDimensions > 1 ) &
-!             call Copy ( S_3, Integrand ( iS ) % Value )
-!         end if !-- iI
-!       end do !-- iS
+    case ( 'CYLINDRICAL' )
+      do iS  =  1,  T % nSelected
+        iI  =  T % iaSelected ( iS )
+        if ( iI  ==  T % MOMENTUM ( 1 ) ) then
+          if ( C % nDimensions > 2 ) &
+            call ComputeDensity_LM_CylindricalHorizontal &
+                   ( X_1, X_3, S_1, S_3, 1, IV ( :, iS ) )
+        else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
+          if ( C % nDimensions > 2 ) &
+            call ComputeDensity_LM_CylindricalHorizontal &
+                   ( X_1, X_3, S_1, S_3, 2, IV ( :, iS ) )
+        else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
+          if ( C % nDimensions > 1 ) &
+            call Copy ( S_2, IV ( :, iS ) )
+        else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
+          if ( C % nDimensions > 2 ) &
+            call ComputeDensity_AM_CylindricalHorizontal &
+                   ( X_1, X_2, X_3, S_1, S_2, S_3, 1, &
+                     IV ( :, iS ) )
+        else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
+          if ( C % nDimensions > 2 ) &
+            call ComputeDensity_AM_CylindricalHorizontal &
+                   ( X_1, X_2, X_3, S_1, S_2, S_3, 2, &
+                     IV ( :, iS ) )
+        else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
+          if ( C % nDimensions > 1 ) &
+            call Copy ( S_3, IV ( :, iS ) )
+        end if !-- iI
+      end do !-- iS
     case ( 'SPHERICAL' )
       do iS  =  1, T % nSelected
         iI  =  T % iaSelected ( iS )
@@ -520,37 +521,41 @@ contains
                      ( X_1, X_2, S_1, S_2, I ( iS, iC ) % Value )
             end if !-- iI
           end do !-- iS
-!         case ( 'CYLINDRICAL' )
-!           do iS = 1, T % nSelected
-!             iI = T % iaSelected ( iS )
-!             if ( iI  ==  T % BARYON_NUMBER ) then
-!               call Copy ( D, I ( iS, iC ) % Value )
-!             else if ( iI  ==  T % MOMENTUM ( 1 ) ) then
-!               if ( CSL % nDimensions > 2 ) &
-!                 call ComputeFluence_LM_CylindricalHorizontal &
-!                        ( X_1, X_3, S_1, S_3, 1, I ( iS, iC ) % Value )
-!             else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
-!               if ( CSL % nDimensions > 2 ) &
-!                 call ComputeFluence_LM_CylindricalHorizontal &
-!                        ( X_1, X_3, S_1, S_3, 2, I ( iS, iC ) % Value )
-!             else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
-!               if ( CSL % nDimensions > 1 ) &
-!                 call Copy ( S_2, I ( iS, iC ) % Value )
-!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
-!               if ( CSL % nDimensions > 2 ) &
-!                 call ComputeFluence_AM_CylindricalHorizontal &
-!                        ( X_1, X_2, X_3, S_1, S_2, S_3, 1, &
-!                          I ( iS, iC ) % Value )
-!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
-!               if ( CSL % nDimensions > 2 ) &
-!                 call ComputeFluence_AM_CylindricalHorizontal &
-!                        ( X_1, X_2, X_3, S_1, S_2, S_3, 2, &
-!                          I ( iS, iC ) % Value )
-!             else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
-!               if ( CSL % nDimensions > 1 ) &
-!                 call Copy ( S_3, I ( iS, iC ) % Value )
-!             end if !-- iI
-!           end do !-- iS
+        case ( 'CYLINDRICAL' )
+          do iS  =  1,  T % nSelected
+            iI  =  T % iaSelected ( iS )
+            if ( iI  ==  T % BARYON_NUMBER ) then
+              call Copy ( D, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % MOMENTUM ( 1 ) ) then
+              if ( C % nDimensions > 2 ) &
+                call ComputeFluence_LM_CylindricalHorizontal &
+                       ( X_1, X_3, S_1, S_3, 1, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % MOMENTUM ( 2 ) ) then
+              if ( C % nDimensions > 2 ) &
+                call ComputeFluence_LM_CylindricalHorizontal &
+                       ( X_1, X_3, S_1, S_3, 2, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % MOMENTUM ( 3 ) ) then
+              if ( C % nDimensions > 1 ) &
+                call Copy ( S_2, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % KINETIC_ENERGY ) then
+              iKineticEnergy  =  iS
+              call ComputeFluence_KE_Cylindrical &
+                     ( S_1, S_2, M, D, I ( iS, iC ) % Value )
+            else if ( iI  ==  T % ANGULAR_MOMENTUM ( 1 ) ) then
+              if ( C % nDimensions > 2 ) &
+                call ComputeFluence_AM_CylindricalHorizontal &
+                       ( X_1, X_2, X_3, S_1, S_2, S_3, 1, &
+                         I ( iS, iC ) % Value )
+            else if ( iI  ==  T % ANGULAR_MOMENTUM ( 2 ) ) then
+              if ( C % nDimensions > 2 ) &
+                call ComputeFluence_AM_CylindricalHorizontal &
+                       ( X_1, X_2, X_3, S_1, S_2, S_3, 2, &
+                         I ( iS, iC ) % Value )
+            else if ( iI  ==  T % ANGULAR_MOMENTUM ( 3 ) ) then
+              if ( C % nDimensions > 1 ) &
+                call Copy ( S_3, I ( iS, iC ) % Value )
+            end if !-- iI
+          end do !-- iS
         case ( 'SPHERICAL' )
           do iS = 1, T % nSelected
             iI  =  T % iaSelected ( iS )
@@ -772,96 +777,96 @@ contains
   end subroutine ComputeDensity_AM_Rectangular
 
 
-!   subroutine ComputeDensity_LM_CylindricalHorizontal &
-!                ( X_1, X_3, S_1, S_3, iD, I_I )
+  subroutine ComputeDensity_LM_CylindricalHorizontal &
+               ( X_1, X_3, S_1, S_3, iD, I_I )
 
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       X_1, X_3, &
-!       S_1, S_3
-!     integer ( KDI ), intent ( in ) :: &
-!       iD
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       I_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X_1, X_3, &
+      S_1, S_3
+    integer ( KDI ), intent ( in ) :: &
+      iD
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      I_I
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
-!     real ( KDR ) :: &
-!       SqrtTiny
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny
 
-!     nV = size ( I_I )
+    nV = size ( I_I )
     
-!     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
-!     select case ( iD )
-!     case ( 1 )
-!       !$OMP parallel do private ( iV )
-!       do iV = 1, nV
-!         I_I ( iV )  =     cos ( X_3 ( iV ) )  *  S_1 ( iV )  &
-!                        -  sin ( X_3 ( iV ) )  &
-!                           /  max ( X_1 ( iV ), SqrtTiny )  &
-!                           *  S_3 ( iV ) 
-!       end do
-!       !$OMP end parallel do
-!     case ( 2 )
-!       !$OMP parallel do private ( iV )
-!       do iV = 1, nV
-!         I_I ( iV )  =     sin ( X_3 ( iV ) )  *  S_1 ( iV )  &
-!                        +  cos ( X_3 ( iV ) )  &
-!                           /  max ( X_1 ( iV ), SqrtTiny )  &
-!                           *  S_3 ( iV ) 
-!       end do
-!       !$OMP end parallel do
-!     end select
+    select case ( iD )
+    case ( 1 )
+      !$OMP parallel do
+      do iV = 1, nV
+        I_I ( iV )  =     cos ( X_3 ( iV ) )  *  S_1 ( iV )  &
+                       -  sin ( X_3 ( iV ) )  &
+                          /  max ( X_1 ( iV ), SqrtTiny )  &
+                          *  S_3 ( iV ) 
+      end do
+      !$OMP end parallel do
+    case ( 2 )
+      !$OMP parallel do
+      do iV = 1, nV
+        I_I ( iV )  =     sin ( X_3 ( iV ) )  *  S_1 ( iV )  &
+                       +  cos ( X_3 ( iV ) )  &
+                          /  max ( X_1 ( iV ), SqrtTiny )  &
+                          *  S_3 ( iV ) 
+      end do
+      !$OMP end parallel do
+    end select
 
-!   end subroutine ComputeDensity_LM_CylindricalHorizontal
+  end subroutine ComputeDensity_LM_CylindricalHorizontal
 
 
-!   subroutine ComputeDensity_AM_CylindricalHorizontal &
-!                ( X_1, X_2, X_3, S_1, S_2, S_3, iD, I_I )
+  subroutine ComputeDensity_AM_CylindricalHorizontal &
+               ( X_1, X_2, X_3, S_1, S_2, S_3, iD, I_I )
 
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       X_1, X_2, X_3, &
-!       S_1, S_2, S_3
-!     integer ( KDI ), intent ( in ) :: &
-!       iD
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       I_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X_1, X_2, X_3, &
+      S_1, S_2, S_3
+    integer ( KDI ), intent ( in ) :: &
+      iD
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      I_I
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
-!     real ( KDR ) :: &
-!       SqrtTiny
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny
 
-!     nV = size ( I_I )
+    nV = size ( I_I )
 
-!     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
-!     select case ( iD )
-!     case ( 1 )
-!       !$OMP parallel do private ( iV )
-!       do iV = 1, nV
-!         I_I ( iV )  =  sin ( X_3 ( iV ) )  *  (   X_1 ( iV )  *  S_2 ( iV )  &
-!                                                 - X_2 ( iV )  *  S_1 ( iV ) ) &
-!                        - X_2 ( iV )  *  cos ( X_3 ( iV ) )  &
-!                          /  max ( X_1 ( iV ), SqrtTiny )  &
-!                          *  S_3 ( iV )                         
-!       end do
-!       !$OMP end parallel do
-!     case ( 2 )
-!       !$OMP parallel do private ( iV )
-!       do iV = 1, nV
-!         I_I ( iV )  =  cos ( X_3 ( iV ) )  *  (   X_2 ( iV )  *  S_1 ( iV )  &
-!                                                 - X_1 ( iV )  *  S_2 ( iV ) ) &
-!                        - X_2 ( iV )  *  sin ( X_3 ( iV ) )  &
-!                          /  max ( X_1 ( iV ), SqrtTiny )  &
-!                          *  S_3 ( iV )                         
-!       end do
-!       !$OMP end parallel do
-!     end select
+    select case ( iD )
+    case ( 1 )
+      !$OMP parallel do
+      do iV = 1, nV
+        I_I ( iV )  =  sin ( X_3 ( iV ) )  *  (   X_1 ( iV )  *  S_2 ( iV )  &
+                                                - X_2 ( iV )  *  S_1 ( iV ) ) &
+                       - X_2 ( iV )  *  cos ( X_3 ( iV ) )  &
+                         /  max ( X_1 ( iV ), SqrtTiny )  &
+                         *  S_3 ( iV )                         
+      end do
+      !$OMP end parallel do
+    case ( 2 )
+      !$OMP parallel do
+      do iV = 1, nV
+        I_I ( iV )  =  cos ( X_3 ( iV ) )  *  (   X_2 ( iV )  *  S_1 ( iV )  &
+                                                - X_1 ( iV )  *  S_2 ( iV ) ) &
+                       - X_2 ( iV )  *  sin ( X_3 ( iV ) )  &
+                         /  max ( X_1 ( iV ), SqrtTiny )  &
+                         *  S_3 ( iV )                         
+      end do
+      !$OMP end parallel do
+    end select
 
-!   end subroutine ComputeDensity_AM_CylindricalHorizontal
+  end subroutine ComputeDensity_AM_CylindricalHorizontal
 
 
   subroutine ComputeDensity_LM_SphericalHorizontal &
@@ -1019,7 +1024,7 @@ contains
               =  0.5_KDR  *  (    S_1 ( iV, jV, kV ) * S_1 ( iV, jV, kV ) &
                                +  S_2 ( iV, jV, kV ) * S_2 ( iV, jV, kV ) &
                                +  S_2 ( iV, jV, kV ) * S_2 ( iV, jV, kV ) ) &
-                          /  ( D ( iV, jV, kV ) )
+                          /  ( D ( iV, jV, kV ) )  !-- FIXME: M * D
         end do
       end do
     end do
@@ -1058,120 +1063,153 @@ contains
   end subroutine ComputeFluence_AM_Rectangular
 
 
-!   subroutine ComputeFluence_LM_CylindricalHorizontal &
-!                ( X_1, X_3, S_1, S_3, iD, I_I )
+  subroutine ComputeFluence_LM_CylindricalHorizontal &
+               ( X_1, X_3, S_1, S_3, iD, I_I )
 
-!     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-!       X_1, X_3, &
-!       S_1, S_3
-!     integer ( KDI ), intent ( in ) :: &
-!       iD
-!     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-!       I_I
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      X_1, X_3, &
+      S_1, S_3
+    integer ( KDI ), intent ( in ) :: &
+      iD
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      I_I
 
-!     integer ( KDI ) :: &
-!       iV, jV, kV
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       nV
-!     real ( KDR ) :: &
-!       SqrtTiny
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny
 
-!     nV = shape ( I_I )
+    nV = shape ( I_I )
 
-!     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
-!     select case ( iD )
-!     case ( 1 )
-!       !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-!       do kV = 1, nV ( 3 )
-!         do jV = 1, nV ( 2 )
-!           do iV = 1, nV ( 1 )
-!             I_I ( iV, jV, kV )  &
-!               =  cos ( X_3 ( iV, jV, kV ) )  *  S_1 ( iV, jV, kV )  &
-!                  -  sin ( X_3 ( iV, jV, kV ) )  &
-!                     /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
-!                     *  S_3 ( iV, jV, kV ) 
-!           end do
-!         end do
-!       end do
-!       !$OMP end parallel do
-!     case ( 2 )
-!       !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-!       do kV = 1, nV ( 3 )
-!         do jV = 1, nV ( 2 )
-!           do iV = 1, nV ( 1 )
-!             I_I ( iV, jV, kV )  &
-!               =  sin ( X_3 ( iV, jV, kV ) )  *  S_1 ( iV, jV, kV )  &
-!                  +  cos ( X_3 ( iV, jV, kV ) )  &
-!                     /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
-!                     *  S_3 ( iV, jV, kV ) 
-!           end do
-!         end do
-!       end do
-!       !$OMP end parallel do
-!     end select
+    select case ( iD )
+    case ( 1 )
+      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+      do kV = 1, nV ( 3 )
+        do jV = 1, nV ( 2 )
+          do iV = 1, nV ( 1 )
+            I_I ( iV, jV, kV )  &
+              =  cos ( X_3 ( iV, jV, kV ) )  *  S_1 ( iV, jV, kV )  &
+                 -  sin ( X_3 ( iV, jV, kV ) )  &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
+                    *  S_3 ( iV, jV, kV ) 
+          end do
+        end do
+      end do
+      !$OMP end parallel do
+    case ( 2 )
+      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+      do kV = 1, nV ( 3 )
+        do jV = 1, nV ( 2 )
+          do iV = 1, nV ( 1 )
+            I_I ( iV, jV, kV )  &
+              =  sin ( X_3 ( iV, jV, kV ) )  *  S_1 ( iV, jV, kV )  &
+                 +  cos ( X_3 ( iV, jV, kV ) )  &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
+                    *  S_3 ( iV, jV, kV ) 
+          end do
+        end do
+      end do
+      !$OMP end parallel do
+    end select
 
-!   end subroutine ComputeFluence_LM_CylindricalHorizontal
+  end subroutine ComputeFluence_LM_CylindricalHorizontal
 
 
-!   subroutine ComputeFluence_AM_CylindricalHorizontal &
-!                ( X_1, X_2, X_3, S_1, S_2, S_3, iD, I_I )
+  subroutine ComputeFluence_KE_Cylindrical ( S_1, S_2, M, D, I_I )
 
-!     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-!       X_1, X_2, X_3, &
-!       S_1, S_2, S_3
-!     integer ( KDI ), intent ( in ) :: &
-!       iD
-!     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-!       I_I
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      S_1, S_2, &
+      M, &
+      D
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      I_I
 
-!     integer ( KDI ) :: &
-!       iV, jV, kV
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       nV
-!     real ( KDR ) :: &
-!       SqrtTiny
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nV
 
-!     nV = shape ( I_I )
+    nV = shape ( I_I )
 
-!     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+    !$OMP parallel do collapse ( 3 )
+    do kV = 1, nV ( 3 )
+      do jV = 1, nV ( 2 )
+        do iV = 1, nV ( 1 )
+          if ( D ( iV, jV, kV )  >  0.0_KDR ) &
+            I_I ( iV, jV, kV ) &
+              =  0.5_KDR  *  (    S_1 ( iV, jV, kV ) * S_1 ( iV, jV, kV ) &
+                               +  S_2 ( iV, jV, kV ) * S_2 ( iV, jV, kV ) ) &
+                          /  ( D ( iV, jV, kV ) )  !-- FIXME: M * D
+        end do
+      end do
+    end do
+    !$OMP end parallel do
 
-!     select case ( iD )
-!     case ( 1 )
-!       !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-!       do kV = 1, nV ( 3 )
-!         do jV = 1, nV ( 2 )
-!           do iV = 1, nV ( 1 )
-!             I_I ( iV, jV, kV )  &
-!               =  sin ( X_3 ( iV, jV, kV ) )  &
-!                    *  (   X_1 ( iV, jV, kV )  *  S_2 ( iV, jV, kV )  &
-!                         - X_2 ( iV, jV, kV )  *  S_1 ( iV, jV, kV ) ) &
-!                  -  X_2 ( iV, jV, kV )  *  cos ( X_3 ( iV, jV, kV ) )  &
-!                     /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
-!                     *  S_3 ( iV, jV, kV )                         
-!           end do
-!         end do
-!       end do
-!       !$OMP end parallel do
-!     case ( 2 )
-!       !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-!       do kV = 1, nV ( 3 )
-!         do jV = 1, nV ( 2 )
-!           do iV = 1, nV ( 1 )
-!             I_I ( iV, jV, kV )  &
-!               =  cos ( X_3 ( iV, jV, kV ) )  &
-!                    *  (   X_2 ( iV, jV, kV )  *  S_1 ( iV, jV, kV )  &
-!                         - X_1 ( iV, jV, kV )  *  S_2 ( iV, jV, kV ) ) &
-!                  -  X_2 ( iV, jV, kV )  *  sin ( X_3 ( iV, jV, kV ) )  &
-!                     /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
-!                     *  S_3 ( iV, jV, kV )                         
-!           end do
-!         end do
-!       end do
-!       !$OMP end parallel do
-!     end select
+  end subroutine ComputeFluence_KE_Cylindrical
 
-!   end subroutine ComputeFluence_AM_CylindricalHorizontal
+
+  subroutine ComputeFluence_AM_CylindricalHorizontal &
+               ( X_1, X_2, X_3, S_1, S_2, S_3, iD, I_I )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      X_1, X_2, X_3, &
+      S_1, S_2, S_3
+    integer ( KDI ), intent ( in ) :: &
+      iD
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      I_I
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny
+
+    nV = shape ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+
+    select case ( iD )
+    case ( 1 )
+      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+      do kV = 1, nV ( 3 )
+        do jV = 1, nV ( 2 )
+          do iV = 1, nV ( 1 )
+            I_I ( iV, jV, kV )  &
+              =  sin ( X_3 ( iV, jV, kV ) )  &
+                   *  (   X_1 ( iV, jV, kV )  *  S_2 ( iV, jV, kV )  &
+                        - X_2 ( iV, jV, kV )  *  S_1 ( iV, jV, kV ) ) &
+                 -  X_2 ( iV, jV, kV )  *  cos ( X_3 ( iV, jV, kV ) )  &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
+                    *  S_3 ( iV, jV, kV )                         
+          end do
+        end do
+      end do
+      !$OMP end parallel do
+    case ( 2 )
+      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+      do kV = 1, nV ( 3 )
+        do jV = 1, nV ( 2 )
+          do iV = 1, nV ( 1 )
+            I_I ( iV, jV, kV )  &
+              =  cos ( X_3 ( iV, jV, kV ) )  &
+                   *  (   X_2 ( iV, jV, kV )  *  S_1 ( iV, jV, kV )  &
+                        - X_1 ( iV, jV, kV )  *  S_2 ( iV, jV, kV ) ) &
+                 -  X_2 ( iV, jV, kV )  *  sin ( X_3 ( iV, jV, kV ) )  &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
+                    *  S_3 ( iV, jV, kV )                         
+          end do
+        end do
+      end do
+      !$OMP end parallel do
+    end select
+
+  end subroutine ComputeFluence_AM_CylindricalHorizontal
 
 
   subroutine ComputeFluence_LM_SphericalHorizontal &
@@ -1304,7 +1342,7 @@ contains
           if ( D ( iV, jV, kV )  >  0.0_KDR ) &
             I_I ( iV, jV, kV ) &
               =  0.5_KDR  *  ( S_1 ( iV, jV, kV ) * S_1 ( iV, jV, kV ) ) &
-                          /  ( D ( iV, jV, kV ) )
+                          /  ( D ( iV, jV, kV ) )  !-- FIXME: M * D
         end do
       end do
     end do
