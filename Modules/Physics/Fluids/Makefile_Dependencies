@@ -71,6 +71,15 @@ Tally_F_D__Form.o: \
   Fluid_D__Form.o \
   Tally_F_D__Form.f90
 
+Tally_F_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P__Form.o \
+  Tally_F_D__Form.o \
+  Tally_F_P__Form.f90
+
 DivergencePart_F_D_T__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -199,6 +208,7 @@ Fluids.o: \
   Fluid_P_I__Form.o \
   Fluid_P_HN__Form.o \
   Tally_F_D__Form.o \
+  Tally_F_P__Form.o \
   DivergencePart_F_D_T__Form.o \
   DivergencePart_F_D_V__Form.o \
   DivergencePart_F_P_T__Form.o \
