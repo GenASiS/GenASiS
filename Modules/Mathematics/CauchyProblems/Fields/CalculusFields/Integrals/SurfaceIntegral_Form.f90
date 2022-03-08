@@ -86,8 +86,8 @@ contains
         associate &
           ( I_I  =>  SI % Integrand ( iI, C % Connectivity % iaInner ( iD ) ), &
             I_O  =>  SI % Integrand ( iI, C % Connectivity % iaOuter ( iD ) ) )
-          call I_I % Initialize ( nS )
-          call I_O % Initialize ( nS )
+          call I_I % Initialize ( nS, ClearOption = .true. )
+          call I_O % Initialize ( nS, ClearOption = .true. )
         end associate !-- I_I, I_O
       end do !-- iI
     end do !-- iD
