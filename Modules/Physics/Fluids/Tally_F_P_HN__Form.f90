@@ -1,25 +1,24 @@
-module Tally_F_P__Form
+module Tally_F_P_HN__Form
 
-  !-- Tally_Fluid_Perfect__Form
+  !-- Tally_Fluid_Perfect_HeavyNucleus_Form
 
   use Basics
   use Mathematics
   use Gravitations
   use Units_F__Form
-  use Fluid_P__Form
-  use Tally_F_D__Form
+  use Fluid_P_HN__Form
+  use Tally_F_P__Form
 
   implicit none
   private
-  
+
     integer ( KDI ), private, parameter :: &
-      N_INTEGRALS_P = 2
+      N_INTEGRALS_HN = 1
   
-  type, public, extends ( Tally_F_D_Form ) :: Tally_F_P_Form
+  type, public, extends ( Tally_F_P_Form ) :: Tally_F_P_HN_Form
     integer ( KDI ) :: &
-      N_INTEGRALS_P   = N_INTEGRALS_P, &
-      FLUID_ENERGY    = 0, &
-      INTERNAL_ENERGY = 0
+      N_INTEGRALS_HN = N_INTEGRALS_HN, &
+      ELECTRON_NUMBER = 0
   contains
     procedure, private, pass :: &
       InitializeFluid
@@ -31,7 +30,7 @@ module Tally_F_P__Form
       ComputeInteriorIntegrand_G
     procedure, public, pass :: &
       ComputeBoundaryIntegrand_G
-  end type Tally_F_P_Form
+  end type Tally_F_P_HN_Form
 
 
 contains
@@ -39,7 +38,7 @@ contains
 
   subroutine InitializeFluid ( T, G, Units )
     
-    class ( Tally_F_P_Form ), intent ( inout ) :: &
+    class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
@@ -49,22 +48,19 @@ contains
     integer ( KDI ) :: &
       oI     !-- oIntegral
 
-    oI  =  T % N_INTEGRALS_D
+    oI  =  T % N_INTEGRALS_D  +  T % N_INTEGRALS_P
     if ( T % nIntegrals  ==  0 ) &
-      T % nIntegrals  =  oI  +  T % N_INTEGRALS_P
+      T % nIntegrals  =  oI  +  T % N_INTEGRALS_HN
     
-    call T % Tally_F_D_Form % Initialize ( G, Units )
+    call T % Tally_F_P_Form % Initialize ( G, Units )
     
-    T % FLUID_ENERGY     =  oI + 1
-    T % INTERNAL_ENERGY  =  oI + 2
+    T % ELECTRON_NUMBER  =  oI + 1
     
-    T % Variable ( oI + 1 : oI + T % N_INTEGRALS_P ) &
-      = [ 'FluidEnergy   ', &
-          'InternalEnergy' ]
+    T % Variable ( oI + 1 : oI + T % N_INTEGRALS_HN ) &
+      = [ 'ElectronNumber' ]
 
-    T % Unit ( oI + 1 : oI + T % N_INTEGRALS_P ) &
-      = [ Units % Energy, &
-          Units % Energy ]
+    T % Unit ( oI + 1 : oI + T % N_INTEGRALS_HN ) &
+      = [ Units % Number ]
 
     call T % SelectVariables ( )
 
@@ -73,7 +69,7 @@ contains
   
   subroutine SelectVariables ( T ) 
     
-    class ( Tally_F_P_Form ), intent ( inout ) :: &
+    class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
 
     if ( allocated ( T % iaSelected ) ) &
@@ -81,31 +77,33 @@ contains
 
     select type ( G  =>  T % Geometry )
     type is ( Gravitation_G_Form )
-      T % nSelected  =  10
+      T % nSelected = 11
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
         = [ T % BARYON_NUMBER, &
+            T % ELECTRON_NUMBER, &
             T % MOMENTUM, &
             T % FLUID_ENERGY, &
             T % INTERNAL_ENERGY, &
             T % KINETIC_ENERGY, &
-            T % ANGULAR_MOMENTUM ]
+            T % ANGULAR_MOMENTUM ]    
     class is ( Gravitation_N_H_Form )
-      T % nSelected  =  12
+      T % nSelected = 13
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
         = [ T % BARYON_NUMBER, &
+            T % ELECTRON_NUMBER, &
             T % MOMENTUM, &
             T % FLUID_ENERGY, &
             T % INTERNAL_ENERGY, &
             T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM, &
             T % GRAVITATIONAL_ENERGY, &
-            T % TOTAL_ENERGY ]
+            T % TOTAL_ENERGY ]    
     class default 
-      call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
-      call Show ( 'Tally_F_P_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SelectVariables', 'subroutine', CONSOLE % ERROR )            
+      call Show ( 'This type is not implemented yet', CONSOLE % WARNING )
+      call Show ( 'Tally_F_P_HN__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SelectVariables', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- G
 
@@ -114,7 +112,7 @@ contains
 
   impure elemental subroutine Finalize ( T )
   
-    type ( Tally_F_P_Form ), intent ( inout ) :: &
+    type ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
 
   end subroutine Finalize
@@ -122,7 +120,7 @@ contains
 
   subroutine ComputeInteriorIntegrand_G ( T, CS )
 
-    class ( Tally_F_P_Form ), intent ( inout ) :: &
+    class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
     class ( FieldSetForm ), intent ( in ) :: &
       CS
@@ -131,29 +129,24 @@ contains
       iS, &  !-- iSelected
       iI     !-- iIntegral
 
-    call T % Tally_F_D_Form % ComputeInteriorIntegrand_G ( CS )
+    call T % Tally_F_P_Form % ComputeInteriorIntegrand_G ( CS )
 
     select type ( CS )
-      class is ( Fluid_P_Form )
+      class is ( Fluid_P_HN_Form )
     associate &
       ( CSV  =>  CS % Storage_GS % Value, &
         IV  =>  T % InteriorIntegral % Integrand % Storage_GS % Value )
     associate &
-      ( CE  =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-        IE  =>  CSV ( :, CS % ENERGY_DENSITY_C ) )
+      ( DE  =>  CSV ( :, CS % ELECTRON_DENSITY_B ) )
 
-    do iS  =  1, T % nSelected
+    do iS  =  1,  T % nSelected
       iI  =  T % iaSelected ( iS )
-      if ( iI  ==  T % FLUID_ENERGY ) then
-        call Copy ( CE, IV ( :, iS ) )
-      else if ( iI  ==  T % TOTAL_ENERGY ) then
-        call Copy ( CE, IV ( :, iS ) )
-      else if ( iI  ==  T % INTERNAL_ENERGY ) then
-        call Copy ( IE, IV ( :, iS ) )
+      if ( iI  ==  T % ELECTRON_NUMBER ) then
+        call Copy ( DE, IV ( :, iS ) )
       end if !-- iI
     end do !-- iS
 
-    end associate !-- CE, etc.
+    end associate !-- DE
     end associate !-- CSV, etc.
     end select !-- CS
 
@@ -162,7 +155,7 @@ contains
 
   subroutine ComputeBoundaryIntegrand_G ( T, CS, C, BF )
 
-    class ( Tally_F_P_Form ), intent ( inout ) :: &
+    class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
     class ( FieldSetForm ), intent ( in ) :: &
       CS
@@ -176,28 +169,26 @@ contains
       iS, &   !-- iSelected
       iI, &   !-- iIntegral
       iFluence, &
-      iEnergy
+      iElectron
 
-    call T % Tally_F_D_Form % ComputeBoundaryIntegrand_G ( CS, C, BF )
+    call T % Tally_F_P_Form % ComputeBoundaryIntegrand_G ( CS, C, BF )
 
     select type ( CS )
-      class is ( Fluid_P_Form )
+      class is ( Fluid_P_HN_Form )
     associate &
       ( I   =>  T % BoundaryIntegral % Integrand, &
         Cy  =>  C % Connectivity )
        
-    do iFluence  =  1,  CS % nBalanced
-      if ( CS % iaBalanced ( iFluence )  ==  CS % ENERGY_DENSITY_B ) &
-        iEnergy = iFluence
+    do iFluence = 1, CS % nBalanced
+      if ( CS % iaBalanced ( iFluence ) == CS % ELECTRON_DENSITY_B ) &
+        iElectron = iFluence
     end do !-- iFluence
 
-    do iF  =  1, Cy % nFaces
-      associate  ( CE  =>  BF ( iEnergy, iF ) % Value )
-      do iS  =  1, T % nSelected
+    do iF = 1, Cy % nFaces
+      associate ( CE  =>  BF ( iElectron, iF ) % Value )
+      do iS  =  1,  T % nSelected
         iI  =  T % iaSelected ( iS )
-        if ( iI  ==  T % FLUID_ENERGY ) then
-          call Copy ( CE, I ( iS, iF ) % Value )
-        else if ( iI  ==  T % TOTAL_ENERGY ) then
+        if ( iI  ==  T % ELECTRON_NUMBER ) then
           call Copy ( CE, I ( iS, iF ) % Value )
         end if !-- iI
       end do !-- iS
@@ -210,4 +201,4 @@ contains
   end subroutine ComputeBoundaryIntegrand_G
 
 
-end module Tally_F_P__Form
+end module Tally_F_P_HN__Form

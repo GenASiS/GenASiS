@@ -8,6 +8,7 @@ module Fluids
   use Fluid_P_HN__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
+  use Tally_F_P_HN__Form
   use DivergencePart_F_D_T__Form
   use DivergencePart_F_D_V__Form
   use DivergencePart_F_P_T__Form
