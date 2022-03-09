@@ -6,6 +6,7 @@ module Integrator_H__Form
   use Manifolds
   use Fields
   use Steps
+  use Series_B__Form
 
   implicit none
   private
@@ -29,8 +30,7 @@ module Integrator_H__Form
       iTimer_CC  = 0, &   !-- ComputeCycle
       iTimer_PC  = 0, &   !-- PrepareCycle
       iTimer_CTN = 0, &   !-- Compute_T_New
-      iTimer_CT   = 0     !-- ComputeTally
-      ! iTimerWriteSeries = 0, &
+      iTimer_CT  = 0      !-- ComputeTally
     real ( KDR ) :: &
       T_Start               = 0.0_KDR, &
       T_Finish              = 1.0_KDR, &
@@ -40,7 +40,10 @@ module Integrator_H__Form
     type ( MeasuredValueForm ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), allocatable :: &
-      dT_Candidate
+      dT_Candidate, &
+      MaxTime, &
+      MinTime, &
+      MeanTime
     logical ( KDL ) :: &
       Start, &
       Restart, &
@@ -65,6 +68,8 @@ module Integrator_H__Form
       Geometry_X
     class ( Step_RK_H_Form ), allocatable :: &
       Step_X
+    class ( Series_B_Form ), allocatable :: &
+      Series
     class ( * ), pointer :: &
       System => null ( )
     procedure ( SI ), public, pointer :: &
@@ -87,6 +92,8 @@ module Integrator_H__Form
       Set_T_CheckpointInterval => null ( )
     procedure ( C_dT_L ), pointer :: &
       Compute_dT_Local => null ( )
+    procedure ( IS ), pointer :: &
+      InitializeSeries => null ( )
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H
@@ -248,12 +255,20 @@ module Integrator_H__Form
         T_Option
     end subroutine C_dT_L
 
+    subroutine IS ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine IS
+    
   end interface
 
   
     private :: &
       Set_T_CheckpointInterval, &
-      Compute_dT_Local
+      Compute_dT_Local, &
+      InitializeSeries
           
 
 contains
@@ -525,6 +540,8 @@ contains
     if ( I % Name == '' ) &
       return
 
+    if ( allocated ( I % Series ) ) &
+      deallocate ( I % Series )
     if ( allocated ( I % Step_X ) ) &
       deallocate ( I % Step_X )
     if ( allocated ( I % Geometry_X ) ) &
@@ -954,6 +971,13 @@ contains
       I % Compute_dT_Local  =>  Compute_dT_Local
     end if
 
+    if ( .not. associated ( I % InitializeSeries ) ) then
+      call Show ( 'InitializeSeries method unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % InitializeSeries  =>  InitializeSeries
+    end if
+
     RestartFrom  =  - huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
 
@@ -995,10 +1019,6 @@ contains
       iTSC, &  !-- iTimeStepCandidates
       TallyIgnorability, &
       StatisticsIgnorability
-    real ( KDR ), dimension ( : ), allocatable :: &
-      MaxTime, &
-      MinTime, &
-      MeanTime
 !     logical ( KDL ) :: &
 !       WriteSeries
     type ( TimerForm ), pointer :: &
@@ -1006,14 +1026,11 @@ contains
       T_CT, &
       T_A, &
       T_W
-!       Timer_WS
     
-!     Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
-
-      T_UH  =>  I % Timer_UH ( LevelOption = T_AC % Level + 1 )
-      T_CT  =>  I % Timer_CT ( LevelOption = T_AC % Level + 1 )
-      T_A   =>  I % Timer_A  ( LevelOption = T_AC % Level + 1 )
-      T_W   =>  I % Timer_W  ( LevelOption = T_AC % Level + 1 )
+    T_UH  =>  I % Timer_UH ( LevelOption = T_AC % Level + 1 )
+    T_CT  =>  I % Timer_CT ( LevelOption = T_AC % Level + 1 )
+    T_A   =>  I % Timer_A  ( LevelOption = T_AC % Level + 1 )
+    T_W   =>  I % Timer_W  ( LevelOption = T_AC % Level + 1 )
 
     call Show ( 'Checkpoint reached', I % IGNORABILITY )
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
@@ -1046,6 +1063,23 @@ contains
 !      WriteSeries = .true.
     end if
 
+    associate ( nT  =>  PROGRAM_HEADER % nTimers )
+    if ( allocated ( I % MaxTime ) ) deallocate ( I % MaxTime )
+    if ( allocated ( I % MinTime ) ) deallocate ( I % MinTime )
+    if ( allocated ( I % MeanTime ) ) deallocate ( I % MeanTime )
+    allocate ( I % MaxTime ( nT ), I % MinTime ( nT ), I % MeanTime ( nT ) )
+    call PROGRAM_HEADER % ShowStatistics &
+           ( StatisticsIgnorability, &
+             CommunicatorOption = PROGRAM_HEADER % Communicator, &
+             MaxTimeOption = I % MaxTime, MinTimeOption = I % MinTime, &
+             MeanTimeOption = I % MeanTime )
+    end associate !-- nT
+
+!     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
+!     if ( WriteSeries .and. .not. I % NoWrite .and. .not. I % Restart ) &
+!       call I % WriteTimeSeries ( )
+!     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
+
     call T_CT % Start ( )   
     call I % ComputeTally &
            ( ChangeOption = ChangeOption, &
@@ -1061,23 +1095,6 @@ contains
       call I % Write ( T_W )
       call T_W % Stop ( )
     end if
-
-    associate ( nT  =>  PROGRAM_HEADER % nTimers )
-    allocate ( MaxTime ( nT ), MinTime ( nT ), MeanTime ( nT ) )
-    call PROGRAM_HEADER % ShowStatistics &
-           ( StatisticsIgnorability, &
-             CommunicatorOption = PROGRAM_HEADER % Communicator, &
-             MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
-             MeanTimeOption = MeanTime )
-    end associate !-- nT
-
-!     if ( .not. I % Restart ) &
-!       call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
-
-!     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
-!     if ( WriteSeries .and. .not. I % NoWrite .and. .not. I % Restart ) &
-!       call I % WriteTimeSeries ( )
-!     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
 
     I % CheckpointDue  =  .false.
     if ( I % T  <  I % T_Finish ) then
@@ -1260,6 +1277,12 @@ contains
     call T_SS % Stop ( )
     end associate !-- Sp_X
 
+    if ( .not. I % Start .and. .not. I % Restart ) then
+      if ( .not. allocated ( I % Series ) ) &    
+        call I % InitializeSeries ( )
+      call I % Series % Record ( I % MaxTime, I % MinTime, I % MeanTime )
+    end if
+
   end subroutine Analyze_H
 
 
@@ -1291,6 +1314,9 @@ contains
              CycleNumberOption  =  I % iCycle )
     !-- Base's GIS must be closed before call to Bundle % Write ( ).
     call GIS % Close ( )
+
+    if ( allocated ( I % Series ) ) &
+      call I % Series % Write ( )
 
     call T_X % Stop ( )
     end associate !-- S_X
@@ -1509,6 +1535,22 @@ contains
     dT_Candidate ( 1 )  =  I % T_CheckpointInterval  /  10
     
   end subroutine Compute_dT_Local
+
+
+  subroutine InitializeSeries ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    allocate ( I % Series )
+    associate ( S  =>  I % Series )
+    call S % Initialize &
+      ( I % GridImageStream, I % dT_Label, I % Name, I % Unit_T, &
+        I % dT_Candidate, I % T, I % Communicator % Rank, I % nWrite, &
+        I % iCycle )
+    end associate !-- S
+
+  end subroutine InitializeSeries
 
 
 end module Integrator_H__Form
