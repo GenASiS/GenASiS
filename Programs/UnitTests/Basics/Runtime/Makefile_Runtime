@@ -45,7 +45,7 @@ GetMemoryUsage_Command_Test: Specifiers.a Devices.a DataManagement.a \
 	$(LINK) $(FLAGS) \
           -o GetMemoryUsage_Command_Test_$(MACHINE) \
           GetMemoryUsage_Command_Test.o GetMemoryUsage_Command.o \
-          CommandLineOptions_Form.o \
+          MemoryUsage_C_macOS.o MemoryUsage_macOS.o CommandLineOptions_Form.o \
           FileSystem.a MessagePassing.a Display.a DataManagement.a \
           Devices.a Specifiers.a $(LIBRARIES)
 
@@ -63,6 +63,7 @@ clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
+	rm -f InitializeRandomSeed_Command_Test_*
 	rm -f CommandLineOptions_Form_Test_*
 	rm -f WallTime_Function_Test_*
 	rm -f Timer_Form_Test_*
@@ -83,7 +84,7 @@ InitializeRandomSeed_Command_Test.o: \
   MessagePassing.o \
   InitializeRandomSeed_Command.o \
   InitializeRandomSeed_Command_Test.f90
- 
+
 CommandLineOptions_Form_Test.o: \
   Specifiers.o \
   Display.o \
@@ -110,6 +111,7 @@ GetMemoryUsage_Command_Test.o: \
   Display.o \
   MessagePassing.o \
   CommandLineOptions_Form.o \
+  MemoryUsage_C_macOS.o \
   GetMemoryUsage_Command.o \
   GetMemoryUsage_Command_Test.f90
 

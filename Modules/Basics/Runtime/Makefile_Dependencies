@@ -20,6 +20,13 @@ Timer_Form.o: \
   WallTime_Function.o \
   Timer_Form.f90
 
+MemoryUsage_macOS.o: \
+  MemoryUsage_macOS.c
+
+MemoryUsage_C_macOS.o: \
+  MemoryUsage_macOS.o \
+  MemoryUsage_C_macOS.f90
+
 GetMemoryUsage_Command.o: \
   Specifiers.o \
   DataManagement.o \
