@@ -255,15 +255,6 @@ contains
 
     integer ( KDI ) :: &
       iT  !-- iTimer
-    type ( MeasuredValueForm )  :: &
-      Memory_HWM, &
-      Memory_Max_HWM, &
-      Memory_Min_HWM, &
-      Memory_Mean_HWM, &
-      Memory_RSS, &
-      Memory_Max_RSS, &
-      Memory_Min_RSS, &
-      Memory_Mean_RSS
 
     associate &
       ( BV => S % Basic % Value, &
@@ -290,22 +281,14 @@ contains
     BV ( iV, S % TIME )   =  S % T
     BV ( iV, S % CYCLE )  =  S % iCycle
 
-    call GetMemoryUsage &
-           ( Memory_HWM, Memory_RSS, S % IGNORABILITY + 1, &
-             PROGRAM_HEADER % Communicator, &
-             Max_HWM_Option  = Memory_Max_HWM, &
-             Min_HWM_Option  = Memory_Min_HWM, &
-             Mean_HWM_Option = Memory_Mean_HWM, &
-             Max_RSS_Option  = Memory_Max_RSS, &
-             Min_RSS_Option  = Memory_Min_RSS, &
-             Mean_RSS_Option = Memory_Mean_RSS )
-
-    BV ( iV, S % MEMORY_MAX_HWM )  = Memory_Max_HWM
-    BV ( iV, S % MEMORY_MIN_HWM )  = Memory_Min_HWM
-    BV ( iV, S % MEMORY_MEAN_HWM ) = Memory_Mean_HWM
-    BV ( iV, S % MEMORY_MAX_RSS )  = Memory_Max_RSS
-    BV ( iV, S % MEMORY_MIN_RSS )  = Memory_Min_RSS
-    BV ( iV, S % MEMORY_MEAN_RSS ) = Memory_Mean_RSS
+    associate ( MU  =>  PROGRAM_HEADER % MemoryUsage )
+    BV ( iV, S % MEMORY_MAX_HWM )   =  MU % HighWaterMarkMax
+    BV ( iV, S % MEMORY_MIN_HWM )   =  MU % HighWaterMarkMin
+    BV ( iV, S % MEMORY_MEAN_HWM )  =  MU % HighWaterMarkMean
+    BV ( iV, S % MEMORY_MAX_RSS )   =  MU % ResidentSetSizeMax
+    BV ( iV, S % MEMORY_MIN_RSS )   =  MU % ResidentSetSizeMin
+    BV ( iV, S % MEMORY_MEAN_RSS )  =  MU % ResidentSetSizeMean
+    end associate !-- MU
 
     if ( S % iCycle  >  0 ) then
 
