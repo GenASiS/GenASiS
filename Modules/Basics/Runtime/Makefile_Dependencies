@@ -20,18 +20,19 @@ Timer_Form.o: \
   WallTime_Function.o \
   Timer_Form.f90
 
-MemoryUsage_macOS.o: \
-  MemoryUsage_macOS.c
+GetMemoryUsage_macOS_C.o: \
+  GetMemoryUsage_macOS_C.c
 
-MemoryUsage_C_macOS.o: \
-  MemoryUsage_macOS.o \
-  MemoryUsage_C_macOS.f90
+GetMemoryUsage_macOS_Command.o: \
+  GetMemoryUsage_macOS_C.o \
+  GetMemoryUsage_macOS_Command.f90
 
 GetMemoryUsage_Command.o: \
   Specifiers.o \
   DataManagement.o \
   Display.o \
   MessagePassing.o \
+  GetMemoryUsage_macOS_Command.o \
   GetMemoryUsage_Command.f90
 
 PROGRAM_HEADER_Singleton.o: \

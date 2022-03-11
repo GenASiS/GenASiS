@@ -14,7 +14,8 @@ program GetMemoryUsage_Command_Test
     iStrg, &
     nValues, &
     DisplayRank
-  integer ( KDI ), target :: &
+  double precision, target :: &
+    HWM_kB, &
     RSS_kB
   type ( MeasuredValueForm ) :: &
     HighWaterMark, &
@@ -89,17 +90,6 @@ program GetMemoryUsage_Command_Test
   call Show &
          ( AcrossProcessesMeanResidentSetSize, &
            'Mean resident set size' )
-
-  !-- macOS
-
-  call Show ( 'macOS:' )
-
-  call ShowMemory_macOS ( )
-  call C % Synchronize ( )
-
-  RSS_kB  =  0
-  call GetMemory_macOS ( c_loc ( RSS_kB ) )
-  call Show ( RSS_kB, 'RSS_kB' )
 
   deallocate ( C )
 

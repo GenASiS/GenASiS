@@ -8,6 +8,7 @@ module GetMemoryUsage_Command
   use DataManagement
   use Display
   use MessagePassing
+  use GetMemoryUsage_macOS_Command
 
   implicit none
   private
@@ -48,6 +49,9 @@ contains
       
     integer ( KDI ) :: &
       Status
+    double precision, target :: &
+      HWM_kB, &
+      RSS_kB
     real ( KDR ), dimension ( : ), pointer :: &
       Incoming
     logical ( KDL ) :: &
@@ -73,31 +77,34 @@ contains
       call Mean_RSS_Option % Initialize ( 'kB', 0.0_KDR )
     
     inquire ( file = MEMORY_INFO_FILE, exist = MemoryInfoFileExists )
-    if ( .not. MemoryInfoFileExists ) then
-      call Show &
-             ( 'Memory info file does not exist on this system', &
-               Ignorability )
-      return
-    end if
+    if ( MemoryInfoFileExists ) then
+
+      open ( FileUnit, file = MEMORY_INFO_FILE, iostat = Status )
+      
+      if ( Status /= 0 ) then
+        call Show ( 'Failure in opening memory info file', Ignorability )
+        return
+      end if
+       
+      do while ( .true. )
+        read ( FileUnit, '(a)', iostat = Status ) Buffer
+        if ( Buffer ( : 6 ) == 'VmHWM:' ) &
+          read ( Buffer ( 8 : ), * ) HWM % Number
+        if ( Buffer ( : 6 ) == 'VmRSS:' ) &
+          read ( buffer ( 8 : ), * ) RSS % Number 
+        if ( Status < 0 ) exit 
+      end do
+       
+      close ( FileUnit )
+
+    else !-- macOS
+
+      call GetMemoryUsage_macOS ( c_loc ( HWM_kB ), c_loc ( RSS_kB ) )
+      HWM % Number  =  HWM_kB
+      RSS % Number  =  RSS_kB
+
+    end if !-- MemoryInfoFileExists
      
-    open ( FileUnit, file = MEMORY_INFO_FILE, iostat = Status )
-    
-    if ( Status /= 0 ) then
-      call Show ( 'Failure in opening memory info file', Ignorability )
-      return
-    end if
-     
-    do while ( .true. )
-      read ( FileUnit, '(a)', iostat = Status ) Buffer
-      if ( Buffer ( : 6 ) == 'VmHWM:' ) &
-        read ( Buffer ( 8 : ), * ) HWM % Number
-      if ( Buffer ( : 6 ) == 'VmRSS:' ) &
-        read ( buffer ( 8 : ), * ) RSS % Number 
-      if ( Status < 0 ) exit 
-    end do
-     
-    close ( FileUnit )
-    
     !-- across processes value :
     
     if ( present ( C_Option ) &

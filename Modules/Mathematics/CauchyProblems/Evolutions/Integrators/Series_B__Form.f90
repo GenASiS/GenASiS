@@ -345,6 +345,7 @@ contains
 
     call GIS % Open ( GIS % ACCESS_CREATE, SeriesOption = .false. )
     call Show ( 'Writing ' // trim ( S % Type ), S % IGNORABILITY )
+    call Show ( S % Name, 'Name', S % IGNORABILITY )
     call CI % ClearGrid ( )
     call CI % SetGridWrite  &
            ( Directory = 'Series', &

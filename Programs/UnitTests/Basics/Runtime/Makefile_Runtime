@@ -45,7 +45,8 @@ GetMemoryUsage_Command_Test: Specifiers.a Devices.a DataManagement.a \
 	$(LINK) $(FLAGS) \
           -o GetMemoryUsage_Command_Test_$(MACHINE) \
           GetMemoryUsage_Command_Test.o GetMemoryUsage_Command.o \
-          MemoryUsage_C_macOS.o MemoryUsage_macOS.o CommandLineOptions_Form.o \
+          GetMemoryUsage_macOS_C.o GetMemoryUsage_macOS_Command.o \
+          CommandLineOptions_Form.o \
           FileSystem.a MessagePassing.a Display.a DataManagement.a \
           Devices.a Specifiers.a $(LIBRARIES)
 
@@ -54,7 +55,8 @@ PROGRAM_HEADER_Singleton_Test: Specifiers.a Devices.a DataManagement.a \
 	$(LINK) $(FLAGS) \
           -o PROGRAM_HEADER_Singleton_Test_$(MACHINE) \
           PROGRAM_HEADER_Singleton_Test.o PROGRAM_HEADER_Singleton.o \
-          GetMemoryUsage_Command.o Timer_Form.o WallTime_Function.o \
+          GetMemoryUsage_Command.o GetMemoryUsage_macOS_C.o \
+          GetMemoryUsage_macOS_Command.o Timer_Form.o WallTime_Function.o \
           CommandLineOptions_Form.o \
           FileSystem.a MessagePassing.a Display.a DataManagement.a \
           Devices.a Specifiers.a $(LIBRARIES)
