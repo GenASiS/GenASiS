@@ -4,17 +4,17 @@
 
 module PROGRAM_HEADER_Singleton
 
-  use ISO_FORTRAN_ENV
-  use OMP_LIB
+  use iso_fortran_env
+  use omp_lib
   use Specifiers
   use Devices
   use Display
   use MessagePassing
   use FileSystem
   use InitializeRandomSeed_Command
-  use Timer_Form
   use CommandLineOptions_Form
-  use GetMemoryUsage_Command
+  use Timer_Form
+  use MemoryUsage_Form
   !  use petsc
 
   implicit none
@@ -40,10 +40,12 @@ module PROGRAM_HEADER_Singleton
       Communicator 
     type ( ParameterStreamForm ), allocatable :: &
       ParameterStream
-    type ( TimerForm ), dimension ( : ), allocatable :: &
-      Timer
     type ( CommandLineOptionsForm ), allocatable :: &
       CommandLineOptions
+    type ( TimerForm ), dimension ( : ), allocatable :: &
+      Timer
+    type ( MemoryUsageForm ), allocatable :: &
+      MemoryUsage
   contains
     procedure, public, nopass :: &
       Initialize
@@ -221,6 +223,8 @@ contains
     call PH % AddTimer &
            ( 'Execution', Level = 0, Handle = PH % iTimerExecution )
     call PH % Timer ( PH % iTimerExecution ) % Start ( )
+
+    allocate ( PH % MemoryUsage )
 
 !    call Show ( 'Initializing PETSc', CONSOLE % INFO_1)
 !    call PETSCINITIALIZE ( PETSC_NULL_CHARACTER, Error )
@@ -848,23 +852,11 @@ contains
       MinTimeOption, &
       MeanTimeOption
       
-    type ( MeasuredValueForm )  :: &
-      HighWaterMark, &
-      MaxHighWaterMark, &
-      MinHighWaterMark, &
-      MeanHighWaterMark, &
-      ResidentSetSize, &
-      MaxResidentSetSize, &
-      MinResidentSetSize, &
-      MeanResidentSetSize, &
-      DeviceMemoryTotal, &
-      DeviceMemoryFree, &
-      DeviceMemoryUsed
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
-      
+    
     PH => PROGRAM_HEADER 
-      
+  
     call Show ( 'Program timing', Ignorability )
 
     call ReadTimers &
@@ -872,56 +864,8 @@ contains
              MeanTimeOption )
 
     call Show ( 'Program memory usage', Ignorability )
-    
-    if ( present ( CommunicatorOption ) ) then
-      call GetMemoryUsage &
-             ( HighWaterMark, ResidentSetSize, Ignorability, &
-               C_Option        = CommunicatorOption, &
-               Max_HWM_Option  = MaxHighWaterMark, &
-               Min_HWM_Option  = MinHighWaterMark, &
-               Mean_HWM_Option = MeanHighWaterMark, &
-               Max_RSS_Option  = MaxResidentSetSize, &
-               Min_RSS_Option  = MinResidentSetSize, &
-               Mean_RSS_Option = MeanResidentSetSize )
-    else
-      call GetMemoryUsage &
-             ( HighWaterMark, ResidentSetSize, Ignorability )
-    end if
-    
-    call Show ( HighWaterMark, 'This process HWM', Ignorability )
-    call Show ( ResidentSetSize, 'This process RSS', Ignorability )
-    
-    if ( present ( CommunicatorOption ) ) then
-      
-      call Show ( MaxHighWaterMark, 'Across processes max HWM', &
-                  Ignorability )
-      call Show ( MinHighWaterMark, 'Across processes min HWM', &
-                  Ignorability + 1 )
-      call Show ( MeanHighWaterMark, 'Across processes mean HWM', &
-                  Ignorability + 1 )
-      
-      call Show ( MaxResidentSetSize, 'Across processes max RSS', &
-                  Ignorability )
-      call Show ( MinResidentSetSize, 'Across processes min RSS', &
-                  Ignorability + 1 )
-      call Show ( MeanResidentSetSize, 'Across processes mean RSS', &
-                  Ignorability + 1 )
-    
-    end if
-    
-    if ( OffloadEnabled ( ) ) then
-      call Show ( 'Device memory info', Ignorability )
-      call GetDeviceMemoryInfo &
-             ( DeviceMemoryTotal, DeviceMemoryUsed, DeviceMemoryFree )
-      call Show ( DeviceMemoryTotal, 'This process device memory', &
-                  Ignorability )
-      call Show ( DeviceMemoryUsed,  'This process device memory used', &
-                  Ignorability )
-      call Show ( DeviceMemoryFree,  'This process device memory free', &
-                  Ignorability )
-    end if
-    
-    nullify ( PH )
+
+    call PH % MemoryUsage % Compute ( Ignorability, CommunicatorOption )
 
   end subroutine ShowStatistics 
   
@@ -969,10 +913,12 @@ contains
            ( CONSOLE % INFO_1, &
              CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-    if ( allocated ( PH % CommandLineOptions ) ) &
-      deallocate ( PH % CommandLineOptions ) 
+    if ( allocated ( PH % MemoryUsage ) ) &
+      deallocate ( PH % MemoryUsage )
     if ( allocated ( PH % Timer ) ) &
       deallocate ( PH % Timer )
+    if ( allocated ( PH % CommandLineOptions ) ) &
+      deallocate ( PH % CommandLineOptions ) 
     if ( allocated ( PH % ParameterStream ) ) &
       deallocate ( PH % ParameterStream )
     if ( allocated ( PH % Communicator ) ) &

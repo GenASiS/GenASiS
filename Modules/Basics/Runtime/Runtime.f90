@@ -5,6 +5,7 @@ module Runtime
   use WallTime_Function
   use Timer_Form
   use GetMemoryUsage_Command
+  use MemoryUsage_Form
   use PROGRAM_HEADER_Singleton
 
 end module Runtime

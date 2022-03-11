@@ -29,11 +29,18 @@ GetMemoryUsage_macOS_Command.o: \
 
 GetMemoryUsage_Command.o: \
   Specifiers.o \
-  DataManagement.o \
   Display.o \
   MessagePassing.o \
   GetMemoryUsage_macOS_Command.o \
   GetMemoryUsage_Command.f90
+
+MemoryUsage_Form.o: \
+  Specifiers.o \
+  Devices.o \
+  Display.o \
+  MessagePassing.o \
+  GetMemoryUsage_Command.o \
+  MemoryUsage_Form.f90
 
 PROGRAM_HEADER_Singleton.o: \
   Specifiers.o \
@@ -42,9 +49,9 @@ PROGRAM_HEADER_Singleton.o: \
   MessagePassing.o \
   FileSystem.o \
   InitializeRandomSeed_Command.o \
-  Timer_Form.o \
   CommandLineOptions_Form.o \
-  GetMemoryUsage_Command.o \
+  Timer_Form.o \
+  MemoryUsage_Form.o \
   PROGRAM_HEADER_Singleton.f90
 
 Runtime.o: \

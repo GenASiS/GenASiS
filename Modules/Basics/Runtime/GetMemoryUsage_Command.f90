@@ -3,9 +3,8 @@
 
 module GetMemoryUsage_Command
   
-  use MPI
+  use iso_c_binding
   use Specifiers
-  use DataManagement
   use Display
   use MessagePassing
   use GetMemoryUsage_macOS_Command

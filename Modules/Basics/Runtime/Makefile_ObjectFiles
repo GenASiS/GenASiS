@@ -1,6 +1,7 @@
 RUNTIME = \
   Runtime.o \
   PROGRAM_HEADER_Singleton.o \
+  MemoryUsage_Form.o \
   GetMemoryUsage_Command.o \
   GetMemoryUsage_macOS_Command.o \
   GetMemoryUsage_macOS_C.o \
