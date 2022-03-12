@@ -590,22 +590,27 @@ contains
         call Show ( trim ( S % Variable ( iVrbl ) ), 'Variable', &
                     CONSOLE % INFO_6 )
         call Show ( S % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
-
+        
+        associate &
+          ( S_V_Proper &
+              => S % Value ( GI % oValue + 1 &
+                               : GI % oValue + GI % nTotalCells, : ) )
+         
         Error = DBGETCURVE &
                   ( GI % Stream % MeshBlockHandle, &
                     trim ( S % Variable ( iVrbl ) ), &
                     len_trim ( S % Variable ( iVrbl ) ), &
                     GI % nTotalCells, GI % NodeCoordinate_1, &
-                    S % Value ( GI % oValue + 1 &
-                                   : GI % oValue + GI % nTotalCells, &
-                                 iVrbl ), &
+                    S_V_Proper ( :, iVrbl ), &
                     DataType, nTotalCells )
 
         !-- FIXME: An assumption is made that the unit used to write
         !          and read are the same. A better way would be to read
         !          the unit directly from Silo file.
-        S % Value ( :, iVrbl ) &
-          = S % Value ( :, iVrbl ) * S % Unit ( iVrbl ) % Number
+        S_V_Proper ( :, iVrbl ) &
+          = S_V_Proper ( :, iVrbl ) * S % Unit ( iVrbl ) % Number
+          
+        end associate !-- S_V_Proper
 
       end do
 
