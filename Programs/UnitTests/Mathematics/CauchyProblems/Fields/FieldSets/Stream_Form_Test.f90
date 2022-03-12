@@ -125,7 +125,7 @@ program Stream_Form_Test
   call  S_234 % Show ( )
   call  S_5   % Show ( )
 
-  nGhostExchanges  =  1000
+  nGhostExchanges  =  1
   call PROGRAM_HEADER % GetParameter ( nGhostExchanges, 'nGhostExchanges' )
 
   call TestReadWrite ( S,     FS,     FS_R )
@@ -184,7 +184,7 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       F_3D  !-- Field
     type ( TimerForm ), pointer :: &
-      T
+      T_G
 
     call Show ( 'Ghost exchange' )
     call Show ( FS % Name, 'FieldSet' )
@@ -227,21 +227,14 @@ contains
     call FS % UpdateDevice ( )
 
     do iGE  =  1, nGhostExchanges
-
-      T  =>  FS % TimerGhost ( LevelOption = 1 )
-      call T % Start ( )
-
-      if ( .not. FS % DevicesCommunicate ) &
-        call FS % UpdateHost ( )
-
+      T_G  =>  FS % TimerGhost ( Level = 1 )
+      call T_G % Start ( )
       call FS % ExchangeGhostData ( )
-
-      if ( .not. FS % DevicesCommunicate ) &
-        call FS % UpdateDevice ( )
-
-      call T % Stop ( )
-
+      call T_G % Stop ( )
     end do !-- iGE
+
+    if ( FS % DevicesCommunicate ) &
+      call FS % UpdateHost ( )
 
     do iS  =  1, FS % nFields
       iF  =  FS % iaSelected ( iS )
@@ -255,25 +248,9 @@ contains
       end associate !-- F, etc.
     end do !-- iF
 
-    if ( FS % DevicesCommunicate ) then
-      call FS % UpdateHost ( )
-      do iS  =  1, FS % nFields
-        iF  =  FS % iaSelected ( iS )
-        associate &
-          ( F    =>  FS % Storage_GS % Value ( :, iF ), &
-            F_U  =>  FS % Storage_GS % Unit ( iF ) )
-        call C % SetFieldPointer ( F, F_3D )
-        call Show ( 'Field after update host', CONSOLE % INFO_2 )
-        call Show ( FS % Field ( iF ), 'Field', CONSOLE % INFO_2 )
-        call ShowField ( F_3D, F_U, C % nGhostLayers, C % nDimensions )
-        end associate !-- F, etc.
-      end do !-- iF
-    end if !-- DevicesCommunicate
-
     end associate !-- nCB
     end associate !-- C
     end select !-- A
-    nullify ( F_3D, T )
 
   end subroutine SetFieldSet
 
@@ -335,19 +312,18 @@ contains
 
     class ( StreamForm ), intent ( inout ) :: &
       S
+
     type ( TimerForm ), pointer :: &
-      T
+      T_W
 
-    T  =>  S % TimerWrite ( LevelOption = 1 )
-    call T % Start ( )
-
+    T_W  =>  S % TimerWrite ( Level = 1 )
+    call T_W % Start ( )
     associate ( GIS  =>  S % GridImageStream ) 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call   S % Write ( )
     call GIS % Close ( )
     end associate !-- GIS
-
-    call T % Stop ( )
+    call T_W % Stop ( )
 
   end subroutine WriteStream
 
@@ -364,12 +340,17 @@ contains
       iF     !-- iField
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       F_3D  !-- Field
+    type ( TimerForm ), pointer :: &
+      T_R
 
+    T_R  =>  S % TimerRead ( Level = 1 )
+    call T_R % Start ( )
     associate ( GIS  =>  S % GridImageStream ) 
     call GIS % Open ( GIS % ACCESS_READ, NumberOption = GIS % Number )
     call  S % Read ( )
     call GIS % Close ( )
     end associate !-- GIS
+    call T_R % Stop ( )
 
     select type ( A  =>  FS % Atlas )
       class is ( Atlas_SCG_Form )

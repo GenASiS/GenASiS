@@ -63,12 +63,6 @@ module FieldSet_Form
       Show => Show_FS
     procedure, public, pass :: &
       TimerGhost
-    procedure, private, pass :: &
-      TimerGhost_UH
-    procedure, private, pass :: &
-      TimerGhost_EG
-    procedure, private, pass :: &
-      TimerGhost_UD
     procedure, public, pass :: &
       CloneGhostTimers
     procedure, public, pass :: &
@@ -508,143 +502,30 @@ contains
   end subroutine Show_FS
 
 
-  function TimerGhost ( FS, NameRootOption, LevelOption ) result ( T )
+  function TimerGhost ( FS, Level, NameRootOption ) result ( T )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
+    integer ( KDI ), intent ( in ) :: &
+      Level
     character ( * ), intent ( in ), optional :: &
       NameRootOption
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
     type ( TimerForm ), pointer :: &
       T
 
     character ( LDL ) :: &
-      NameRoot, &
-      TimerName
+      NameRoot
 
     NameRoot  =  FS % Name
     if ( present ( NameRootOption ) ) &
       NameRoot  =  NameRootOption
 
-    associate ( iT  =>  FS % iTimerGhost )
-
-    if ( iT == 0 ) then
-      TimerName  =  'Ghst_' // trim ( NameRoot )
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = FS % iTimerGhost, &
+               Name = 'Ghst_' // trim ( NameRoot ), &
+               Level = Level )
 
   end function TimerGhost
-
-
-  function TimerGhost_UH ( FS, LevelOption ) result ( T )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-    type ( TimerForm ), pointer :: &
-      T_G
-
-    T_G  =>  FS % TimerGhost ( )
-
-    associate ( iT  =>  FS % iTimerGhost_UH )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( T_G % Name ) // '_UpdtHst'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function TimerGhost_UH
-
-
-  function TimerGhost_EG ( FS, LevelOption ) result ( T )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-    type ( TimerForm ), pointer :: &
-      T_G
-
-    T_G  =>  FS % TimerGhost ( )
-
-    associate ( iT  =>  FS % iTimerGhost_EG )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( T_G % Name ) // '_Exchng'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function TimerGhost_EG
-
-
-  function TimerGhost_UD ( FS, LevelOption ) result ( T )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-    type ( TimerForm ), pointer :: &
-      T_G
-
-    T_G  =>  FS % TimerGhost ( )
-
-    associate ( iT  =>  FS % iTimerGhost_UD )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( T_G % Name ) // '_UpdtDvc'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function TimerGhost_UD
 
 
   subroutine CloneGhostTimers ( FS, FS_S )
@@ -846,8 +727,14 @@ contains
     if ( FS % DeviceMemory .and. .not. FS % DevicesCommunicate &
          .and. present ( T_Option ) ) &
     then
-      T_UH  =>  FS % TimerGhost_UH ( LevelOption = T_Option % Level + 1 )
-      T_EG  =>  FS % TimerGhost_EG ( LevelOption = T_Option % Level + 1 )
+      T_UH  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = FS % iTimerGhost_UH, &
+                    Name = trim ( T_Option % Name ) // '_UpdtHst', &
+                    Level = T_Option % Level + 1 )
+      T_EG  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = FS % iTimerGhost_EG, &
+                    Name = trim ( T_Option % Name ) // '_Exchng', &
+                    Level = T_Option % Level + 1 )
     else
       T_UH  =>  null ( )
       T_EG  =>  null ( )
@@ -890,8 +777,14 @@ contains
     if ( FS % DeviceMemory .and. .not. FS % DevicesCommunicate &
          .and. present ( T_Option ) ) &
     then
-      T_EG  =>  FS % TimerGhost_EG ( LevelOption = T_Option % Level + 1 )
-      T_UD  =>  FS % TimerGhost_UD ( LevelOption = T_Option % Level + 1 )
+      T_EG  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = FS % iTimerGhost_EG, &
+                    Name = trim ( T_Option % Name ) // '_Exchng', &
+                    Level = T_Option % Level + 1 )
+      T_UD  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = FS % iTimerGhost_UD, &
+                    Name = trim ( T_Option % Name ) // '_UpdtDvc', &
+                    Level = T_Option % Level + 1 )
     else
       T_EG  =>  null ( )
       T_UD  =>  null ( )

@@ -156,7 +156,7 @@ contains
     call FS % UpdateDevice ( )
 
     do iGE  =  1, nGhostExchanges
-      T_G  =>  FS % TimerGhost ( LevelOption = 1 )
+      T_G  =>  FS % TimerGhost ( Level = 1 )
       call T_G % Start ( )
       call FS % ExchangeGhostData ( T_Option = T_G )
       call T_G % Stop ( )

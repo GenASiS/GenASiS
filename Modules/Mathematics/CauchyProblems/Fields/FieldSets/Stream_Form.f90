@@ -16,7 +16,8 @@ module Stream_Form
       IGNORABILITY = 0, &
       nFieldSets   = 0
     integer ( KDI ) :: &
-      iTimerWrite  = 0
+      iTimerWrite = 0, &
+      iTimerRead  = 0
     logical ( KDL ) :: &
       Verbose = .false.
     character ( LDL ) :: &
@@ -40,6 +41,8 @@ module Stream_Form
       Show => Show_S
     procedure, public, pass :: &
       TimerWrite
+    procedure, public, pass :: &
+      TimerRead
     procedure, public, pass :: &
       Write
     procedure, public, pass :: &
@@ -213,34 +216,38 @@ contains
   end subroutine Show_S
 
 
-  function TimerWrite ( S, LevelOption ) result ( T )
+  function TimerWrite ( S, Level ) result ( T )
 
     class ( StreamForm ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+    integer ( KDI ), intent ( in ) :: &
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDF ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimerWrite )
-
-    if ( iT == 0 ) then
-      TimerName  =  'Write_' // trim ( S % Name )
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimerWrite, &
+               Name = 'Wrt_' // trim ( S % Name ), &
+               Level = Level )
 
   end function TimerWrite
+
+
+  function TimerRead ( S, Level ) result ( T )
+
+    class ( StreamForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimerRead, &
+               Name = 'Rd_' // trim ( S % Name ), &
+               Level = Level )
+
+  end function TimerRead
 
 
   subroutine Write ( S, DirectoryOption, TimeOption, CycleNumberOption )
