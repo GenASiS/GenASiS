@@ -20,6 +20,13 @@ Timer_Form.o: \
   WallTime_Function.o \
   Timer_Form.f90
 
+Timer_1D__Form.o: \
+  Specifiers.o \
+  Display.o \
+  MessagePassing.o \
+  Timer_Form.o \
+  Timer_1D__Form.f90
+
 GetMemoryUsage_macOS_C.o: \
   GetMemoryUsage_macOS_C.c
 
@@ -51,6 +58,7 @@ PROGRAM_HEADER_Singleton.o: \
   InitializeRandomSeed_Command.o \
   CommandLineOptions_Form.o \
   Timer_Form.o \
+  Timer_1D__Form.o \
   MemoryUsage_Form.o \
   PROGRAM_HEADER_Singleton.f90
 
@@ -59,6 +67,7 @@ Runtime.o: \
   CommandLineOptions_Form.o \
   WallTime_Function.o \
   Timer_Form.o \
+  Timer_1D__Form.o \
   GetMemoryUsage_Command.o \
   PROGRAM_HEADER_Singleton.o \
   Runtime.f90

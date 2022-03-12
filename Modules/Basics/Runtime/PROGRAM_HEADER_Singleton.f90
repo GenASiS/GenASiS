@@ -5,7 +5,7 @@
 module PROGRAM_HEADER_Singleton
 
   use iso_fortran_env
-  use omp_lib
+  use OMP_LIB
   use Specifiers
   use Devices
   use Display
@@ -14,24 +14,17 @@ module PROGRAM_HEADER_Singleton
   use InitializeRandomSeed_Command
   use CommandLineOptions_Form
   use Timer_Form
+  use Timer_1D__Form
   use MemoryUsage_Form
   !  use petsc
 
   implicit none
   private
 
-    integer ( KDI ), private, parameter :: &
-      MAX_TIMERS = 128
-
   type, public :: ProgramHeaderSingleton
     integer ( KDI ) :: &
-      nTimers = 0, &
-      MaxThreads = 0, &
-      TimerMinLevel = 0, &
-      TimerMaxLevel = 0, &
+      MaxThreads      = 0, &
       iTimerExecution = 0
-    real ( KDR ) :: &
-      TimerDisplayFraction
     character ( LDL ) :: &
       Dimensionality = ''
     character ( LDF ) :: &
@@ -42,8 +35,8 @@ module PROGRAM_HEADER_Singleton
       ParameterStream
     type ( CommandLineOptionsForm ), allocatable :: &
       CommandLineOptions
-    type ( TimerForm ), dimension ( : ), allocatable :: &
-      Timer
+    type ( Timer_1D_Form ), allocatable :: &
+      Timer_1D
     type ( MemoryUsageForm ), allocatable :: &
       MemoryUsage
   contains
@@ -78,11 +71,9 @@ module PROGRAM_HEADER_Singleton
            GetParameter_1D_MeasuredValue, GetParameter_1D_Logical, &
            GetParameter_1D_Character
     procedure, public, nopass :: &
-      AddTimer
+      Timer
     procedure, public, nopass :: &
-      TimerPointer
-    procedure, public, nopass :: &
-      ShowStatistics
+      RecordStatistics
     procedure, public, nopass :: &
       RestoreStatistics
     procedure, public, nopass :: &
@@ -90,7 +81,6 @@ module PROGRAM_HEADER_Singleton
     final :: &
       Finalize
   end type ProgramHeaderSingleton
-  
   
   type ( ProgramHeaderSingleton ), public, target, allocatable :: &
     PROGRAM_HEADER
@@ -118,6 +108,11 @@ contains
       OMP_ScheduleChunkSize
     integer ( OMP_SCHED_KIND ) :: &
       OMP_ScheduleKind
+    real ( KDR ) :: &
+      TimerDisplayFraction
+    logical ( KDL ) :: &
+      AppendDimensionality, &
+      DimensionalityFound
     character ( 5 ) :: &
       Encoding
     character ( LDL )  :: &
@@ -126,9 +121,8 @@ contains
       OMP_ScheduleLabelPrefix
     character ( LDF ) :: &
       Filename
-    logical ( KDL ) :: &
-      AppendDimensionality, &
-      DimensionalityFound
+    type ( TimerForm ), pointer :: &
+      T
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
     procedure ( ), pointer :: &
@@ -203,26 +197,15 @@ contains
            ( Filename, PH % Communicator % Rank, &
              IgnorabilityOption = CONSOLE % INFO_1 )
 
-    call Show ( 'Setting Timer parameters', CONSOLE % INFO_1 )
-    allocate ( PH % Timer ( MAX_TIMERS ) )
-
-    PH % TimerMinLevel = 2
-    call PROGRAM_HEADER % GetParameter ( PH % TimerMinLevel, 'TimerMinLevel' )
-    call Show ( PH % TimerMinLevel, 'TimerMinLevel', CONSOLE % INFO_1 )
-
-    PH % TimerMaxLevel = huge ( 1_KDI )
-    call PROGRAM_HEADER % GetParameter ( PH % TimerMaxLevel, 'TimerMaxLevel' )
-    call Show ( PH % TimerMaxLevel, 'TimerMaxLevel', CONSOLE % INFO_1 )
-
-    PH % TimerDisplayFraction = 0.1_KDR
-    call PROGRAM_HEADER % GetParameter &
-           ( PH % TimerDisplayFraction, 'TimerDisplayFraction' )
-    call Show ( PH % TimerDisplayFraction, 'TimerDisplayFraction', &
-                CONSOLE % INFO_1 )
-
-    call PH % AddTimer &
-           ( 'Execution', Level = 0, Handle = PH % iTimerExecution )
-    call PH % Timer ( PH % iTimerExecution ) % Start ( )
+    TimerDisplayFraction  =  0.1_KDR
+    call PH % GetParameter &
+           ( TimerDisplayFraction, 'TimerDisplayFraction' )
+    allocate ( PH % Timer_1D )
+    associate ( T_1D  =>  PH % Timer_1D )
+    call T_1D % Initialize ( TimerDisplayFraction )
+    call T_1D % Get ( PH % iTimerExecution, 'Execution', 0, T )
+    call T % Start ( )
+    end associate !-- T_1D
 
     allocate ( PH % MemoryUsage )
 
@@ -798,59 +781,55 @@ contains
   end subroutine GetParameter_1D_Character
 
 
-  subroutine AddTimer ( Name, Handle, Level )
+  function Timer ( Handle, Name, Level ) result ( T )
 
-    character ( * ), intent ( in ) :: &
-      Name
     integer ( KDI ), intent ( inout ) :: &
       Handle
+    character ( * ), intent ( in ) :: &
+      Name
     integer ( KDI ), intent ( in ) :: &
       Level    
+    type ( TimerForm ), pointer :: &
+      T
 
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
 
-    PH => PROGRAM_HEADER 
-      
-    PH % nTimers = PH % nTimers + 1
-    Handle = PH % nTimers
+    PH  =>  PROGRAM_HEADER 
 
-    call PH % Timer ( Handle ) % Initialize ( Name, Level )
+    associate ( T_1D  =>  PH % Timer_1D )
 
-    call Show ( 'Adding a Timer', CONSOLE % INFO_2 )
-    call Show ( PH % Timer ( Handle ) % Name, 'Name', CONSOLE % INFO_2 )
-    call Show ( PH % Timer ( Handle ) % Level, 'Level', CONSOLE % INFO_2 )
+    if ( Handle  <=  0 ) then  !-- New
 
-  end subroutine AddTimer
+      if ( T_1D % nTimers  ==  T_1D % MAX_TIMERS ) then
+        call Show ( 'Maximum number of timers reached', CONSOLE % ERROR )
+        call Show ( T_1D % nTimers, 'nTimers', CONSOLE % ERROR )
+        call Show ( T_1D % MAX_TIMERS, 'MAX_TIMERS', CONSOLE % ERROR )
+        call PH % Abort ( )
+      end if
+
+      if ( Level  >  T_1D % LevelMax ) then
+        call Show ( 'Timer level exceeds maximum', CONSOLE % ERROR )
+        call Show ( Level, 'Level', CONSOLE % ERROR )
+        call Show ( T_1D % LevelMax, 'LevelMax', CONSOLE % ERROR )
+        call PH % Abort ( )
+      end if
+
+    endif  !-- New
+
+    call T_1D % Get ( Handle, Name, Level, T )
+
+    end associate !-- T_1D
+
+  end function Timer
 
 
-  function TimerPointer ( Handle ) result ( TP )
-
-    integer ( KDI ), intent ( in ) :: &
-      Handle
-    type ( TimerForm ), pointer :: &
-      TP
-
-    TP => null ( )
-
-    if ( Handle > 0 ) &
-      TP => PROGRAM_HEADER % Timer ( Handle )
-
-  end function TimerPointer
-
-
-  subroutine ShowStatistics &
-               ( Ignorability, CommunicatorOption, MaxTimeOption, &
-                 MinTimeOption, MeanTimeOption )
+  subroutine RecordStatistics ( Ignorability, CommunicatorOption )
   
     integer ( KDI ), intent ( in ) :: &
       Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
-    real ( KDR ), dimension ( : ), intent ( out ), optional :: &
-      MaxTimeOption, &
-      MinTimeOption, &
-      MeanTimeOption
       
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
@@ -858,31 +837,26 @@ contains
     PH => PROGRAM_HEADER 
   
     call Show ( 'Program timing', Ignorability )
-
-    call ReadTimers &
-           ( Ignorability, CommunicatorOption, MaxTimeOption, MinTimeOption, &
-             MeanTimeOption )
+    call ReadTimers ( Ignorability, CommunicatorOption )
 
     call Show ( 'Program memory usage', Ignorability )
-
     call PH % MemoryUsage % Compute ( Ignorability, CommunicatorOption )
 
-  end subroutine ShowStatistics 
+  end subroutine RecordStatistics 
   
   
-  subroutine RestoreStatistics &
-               ( Ignorability, CommunicatorOption, MeanTimeOption )
+  subroutine RestoreStatistics ( TimeMean, Ignorability, CommunicatorOption )
   
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeMean
     integer ( KDI ), intent ( in ) :: &
       Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
-    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      MeanTimeOption
       
     call Show ( 'Restoring program timing', Ignorability )
 
-    call RestoreTimers ( Ignorability, CommunicatorOption, MeanTimeOption )
+    call RestoreTimers ( TimeMean, Ignorability, CommunicatorOption )
 
   end subroutine RestoreStatistics
 
@@ -909,14 +883,14 @@ contains
 !    call Show ( 'Finalizing PETSc', CONSOLE % INFO_1)
 !    call PETSCFINALIZE ( Error )
     
-    call PH % ShowStatistics &
+    call PH % RecordStatistics &
            ( CONSOLE % INFO_1, &
              CommunicatorOption = PROGRAM_HEADER % Communicator )
 
     if ( allocated ( PH % MemoryUsage ) ) &
       deallocate ( PH % MemoryUsage )
-    if ( allocated ( PH % Timer ) ) &
-      deallocate ( PH % Timer )
+    if ( allocated ( PH % Timer_1D ) ) &
+      deallocate ( PH % Timer_1D )
     if ( allocated ( PH % CommandLineOptions ) ) &
       deallocate ( PH % CommandLineOptions ) 
     if ( allocated ( PH % ParameterStream ) ) &
@@ -989,220 +963,74 @@ contains
   end subroutine PrepareAndShow_OMP_Environment
   
 
-  subroutine ReadTimers &
-               ( Ignorability, CommunicatorOption, MaxTimeOption, &
-                 MinTimeOption, MeanTimeOption )
+  subroutine ReadTimers ( Ignorability, CommunicatorOption )
 
     integer ( KDI ), intent ( in ) :: &
       Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
-    real ( KDR ), dimension ( : ), intent ( out ), optional :: &
-      MaxTimeOption, &
-      MinTimeOption, &
-      MeanTimeOption
-      
-    integer ( KDI ) :: &
-      iT
-    real ( KDR ) :: &
-      ExecutionTime, &
-      MaxMinusMeanFraction
-    type ( MeasuredValueForm ) :: &
-      MaxMinusMean
-    logical ( KDL ), dimension ( MAX_TIMERS ) :: &
-      Running
+
     type ( CollectiveOperation_I_Form ) :: &
-      CO_nTimers
-    type ( CollectiveOperation_R_Form ) :: &
       CO
-    type ( TimerForm ), dimension ( MAX_TIMERS ) :: &
-      MaxTimer, &
-      MinTimer, &
-      MeanTimer
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
    
     PH => PROGRAM_HEADER 
 
-    call Show ( 'Running timer intervals', Ignorability + 2 )
-    Running = .false.
-    do iT = 1, PH % nTimers
-      if ( PH % Timer ( iT ) % iStart  >  0 ) then
-        Running ( iT ) = .true.
-        call PH % Timer ( iT ) % Stop ( )
-        call PH % Timer ( iT ) % ShowInterval ( Ignorability + 2 )
-      end if
-    end do
-
-    call Show ( 'This process timers', Ignorability + 1 )
-    do iT = 1, PH % nTimers
-      call PH % Timer ( iT ) % ShowTotal ( Ignorability + 1 )
-    end do !-- iT
-
     if ( present ( CommunicatorOption ) ) then
 
       !-- nTimers sanity check
-      call CO_nTimers % Initialize &
+      call CO % Initialize &
              ( CommunicatorOption, nOutgoing = [ 1 ], &
                nIncoming = [ CommunicatorOption % Size ], &
                RootOption = CONSOLE % DisplayRank )
-      CO_nTimers % Outgoing % Value  =  PH % nTimers
-      call CO_nTimers % Gather ( )
+      CO % Outgoing % Value  =  PH % Timer_1D % nTimers
+      call CO % Gather ( )
       if ( CommunicatorOption % Rank  ==  CONSOLE % DisplayRank ) then
-        if ( any ( CO_nTimers % Incoming % Value &
-                     /=  CO_nTimers % Incoming % Value ( 1 ) ) ) &
+        if ( any ( CO % Incoming % Value  /=  CO % Incoming % Value ( 1 ) ) ) &
         then
           call Show ( 'Unequal number of timers across processes', &
                       CONSOLE % ERROR )
           call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
           call Show ( 'ReadTimers', 'subroutine', CONSOLE % ERROR )
-          call Show ( CO_nTimers % Incoming % Value, 'nTimers', &
-                      CONSOLE % ERROR )
+          call Show ( CO % Incoming % Value, 'nTimers', CONSOLE % ERROR )
           call PROGRAM_HEADER % Abort ( )
         end if !-- unequal nTimers
       end if !-- CONSOLE % DisplayRank
 
-      call CO % Initialize &
-             ( CommunicatorOption, &
-               nOutgoing = [ PH % nTimers ], nIncoming = [ PH % nTimers ] )
+    end if !-- CommunicatorOption
 
-      do iT = 1, PH % nTimers
-        call MaxTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
-        call MinTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
-        call MeanTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
-        CO % Outgoing % Value ( iT ) = PH % Timer ( iT ) % TotalTime
-      end do !-- iT
-
-      call Show ( 'Max timers', Ignorability + 1 )
-      call CO % Reduce ( REDUCTION % MAX )
-      do iT = 1, PH % nTimers
-        call MaxTimer ( iT ) % TotalTime % Initialize &
-               ( 's', CO % Incoming % Value ( iT ) )
-        call MaxTimer ( iT ) % ShowTotal ( Ignorability + 1 )
-        if ( present ( MaxTimeOption ) ) &
-          MaxTimeOption ( iT ) = MaxTimer ( iT ) % TotalTime
-      end do !-- iT
-      
-      call Show ( 'Min timers', Ignorability + 1 )
-      call CO % Reduce ( REDUCTION % MIN )
-      do iT = 1, PH % nTimers
-        call MinTimer ( iT ) % TotalTime % Initialize &
-               ( 's', CO % Incoming % Value ( iT ) )
-        call MinTimer ( iT ) % ShowTotal ( Ignorability + 1 )
-        if ( present ( MinTimeOption ) ) &
-          MinTimeOption ( iT ) = MinTimer ( iT ) % TotalTime
-      end do !-- iT
-      
-      call Show ( 'Mean timers', Ignorability + 1 )
-      call CO % Reduce ( REDUCTION % SUM )
-      do iT = 1, PH % nTimers
-        call MeanTimer ( iT ) % TotalTime % Initialize &
-               ( 's', CO % Incoming % Value ( iT ) &
-                      / CommunicatorOption % Size )
-        call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
-        if ( present ( MeanTimeOption ) ) &
-          MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
-      end do !-- iT
-      
-      call Show ( 'Significant Mean Timers', Ignorability )
-      do iT = 1, PH % nTimers
-        if ( iT == 1 ) &
-          ExecutionTime = MeanTimer ( iT ) % TotalTime
-        if ( MeanTimer ( iT ) % Level  &
-               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
-             .or. ( MeanTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
-                    .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
-                            >=  PH % TimerDisplayFraction ) ) &
-        then
-          call MeanTimer ( iT ) % ShowTotal ( Ignorability )
-        end if
-      end do !-- iT
-
-      call Show ( 'Significant MAX - MEAN', Ignorability )
-      do iT = 1, PH % nTimers
-        MaxMinusMean  =  MaxTimer ( iT ) % TotalTime &
-                         -  MeanTimer ( iT ) % TotalTime
-        if ( iT == 1 ) &
-          ExecutionTime = MeanTimer ( iT ) % TotalTime
-        if ( MeanTimer ( iT ) % Level  &
-               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
-             .or. ( MeanTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
-                    .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
-                            >=  PH % TimerDisplayFraction ) ) &
-        then
-          MaxMinusMeanFraction  &
-            =  abs ( MaxMinusMean % Number ) &
-                    /  max ( MeanTimer ( iT ) % TotalTime % Number, &
-                             sqrt ( tiny ( 0.0_KDR ) ) )
-          if ( MaxMinusMeanFraction  >=  PH % TimerDisplayFraction &
-               .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
-                       >=  PH % TimerDisplayFraction ) &
-            call Show ( MaxMinusMean, &
-                        'MAX - MEAN ' // MeanTimer ( iT ) % Name, &
-                        Ignorability )
-        end if
-      end do !-- iT
-
-    end if !-- present ( CommunicatorOption )
-
-    do iT = 1, PH % nTimers
-      if ( Running ( iT ) ) call PH % Timer ( iT ) % Start ( )
-    end do
+    call PH % Timer_1D % Read ( Ignorability, CommunicatorOption )
 
   end subroutine ReadTimers
 
 
-  subroutine RestoreTimers &
-               ( Ignorability, CommunicatorOption, MeanTimeOption )
+  subroutine RestoreTimers ( TimeMean, Ignorability, CommunicatorOption )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeMean
     integer ( KDI ), intent ( in ) :: &
       Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
-    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      MeanTimeOption
 
-    integer ( KDI ) :: &
-      iT
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
    
     PH => PROGRAM_HEADER 
 
-    if ( present ( MeanTimeOption ) ) then
+    associate ( nT  =>  PH % Timer_1D % nTimers )
+    if ( size ( TimeMean )  /=  nT ) then
+      call Show ( 'Incorrect number of timer values', CONSOLE % ERROR )
+      call Show ( size ( TimeMean ), 'size ( TimeMean )', CONSOLE % ERROR )
+      call Show ( nT, 'nTimers', CONSOLE % ERROR )
+      call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
+      call Show ( 'RestoreTimers', 'subroutine', CONSOLE % ERROR )
+      call PH % Abort ( )
+    end if
+    end associate !-- nT
 
-      if ( present ( CommunicatorOption ) ) then
-
-        call CO % Initialize &
-               ( CommunicatorOption, &
-                 nOutgoing = [ PH % nTimers ], nIncoming = [ PH % nTimers ], &
-                 RootOption = CONSOLE % DisplayRank )
-
-        if ( CommunicatorOption % Rank  ==  CONSOLE % DisplayRank ) &
-          CO % Outgoing % Value  =  MeanTimeOption
-
-        call CO % Broadcast ( )
-
-      end if !-- present ( CommunicatorOption )
-
-      if ( size ( MeanTimeOption ) /= PH % nTimers ) then
-        call Show ( 'Incorrect number of timer values', CONSOLE % ERROR )
-        call Show ( size ( MeanTimeOption ), 'size ( MeanTimeOption )', &
-                    CONSOLE % ERROR )
-        call Show ( PH % nTimers, 'nTimers', CONSOLE % ERROR )
-        call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
-        call Show ( 'RestoreTimers', 'subroutine', CONSOLE % ERROR )
-        call PH % Abort ( )
-      end if
-
-      do iT = 1, PH % nTimers
-        call PH % Timer ( iT ) % RestoreTotal ( CO % Incoming % Value ( iT ) )
-        call PH % Timer ( iT ) % ShowTotal ( Ignorability + 1 )
-      end do !-- iT
-
-    end if !-- present ( MeanTimeOption )
+    call PH % Timer_1D % Restore ( TimeMean, Ignorability, CommunicatorOption )
 
   end subroutine RestoreTimers
 
