@@ -12,12 +12,12 @@ module Poisson_H__Form
   type, public :: Poisson_H_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-!       iTimerSolve = 0, &
-!       iTimerCombineMoments = 0, &
-!       iTimerClearSolution = 0, &
-!       iTimerLocalSolution = 0, &
-!       iTimerExchangeSolution = 0, &
-!       iTimerBoundarySolution = 0, &
+      iTimer = 0, &
+      iTimer_CM = 0, &  !-- CombineMoments
+      iTimer_CS = 0, &  !-- ClearSolution
+      iTimer_LS = 0, &  !-- LocalSolution
+      iTimer_ES = 0, &  !-- ExchangeSolution
+      iTimer_BS = 0, &  !-- BoundarySolution
       nEquations = 0, &
       MaxDegree = 0
     character ( LDF ) :: &
@@ -29,10 +29,10 @@ module Poisson_H__Form
   contains
     procedure, public, pass :: &
       Initialize_H
-!     procedure, public, pass :: &
-!       InitializeTimers
     procedure, public, pass :: &
       Show => Show_P
+    procedure, public, pass :: &
+      Timer
     procedure, public, pass :: &
       Solve
     final :: &
@@ -89,53 +89,6 @@ contains
   end subroutine Initialize_H
 
 
-!   subroutine InitializeTimers ( P, BaseLevel )
-
-!     class ( PoissonTemplate ), intent ( inout ) :: &
-!       P
-!     integer ( KDI ), intent ( in ) :: &
-!       BaseLevel
-
-!     call PROGRAM_HEADER % AddTimer &
-!            ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
-
-!     if ( allocated ( P % LaplacianMultipoleOld_1 ) ) then
-!       associate ( L => P % LaplacianMultipoleOld_1 )
-!       call L % InitializeTimers ( BaseLevel + 1 )
-!       end associate !-- L
-!     end if
-
-!     if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
-!       associate ( L => P % LaplacianMultipoleOld_2 )
-!       call L % InitializeTimers ( BaseLevel + 1 )
-!       end associate !-- L
-!     end if
-
-!     if ( allocated ( P % LaplacianMultipole ) ) then
-!       associate ( L => P % LaplacianMultipole )
-!       call L % InitializeTimers ( BaseLevel + 1 )
-!       end associate !-- L
-!     end if
-
-!     call PROGRAM_HEADER % AddTimer &
-!            ( 'CombineMoments', P % iTimerCombineMoments, &
-!              Level = BaseLevel + 1 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'ClearSolution', P % iTimerClearSolution, &
-!                Level = BaseLevel + 2 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'LocalSolution', P % iTimerLocalSolution, &
-!                Level = BaseLevel + 2 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'ExchangeSolution', P % iTimerExchangeSolution, &
-!                Level = BaseLevel + 2 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'BoundarySolution', P % iTimerBoundarySolution, &
-!                Level = BaseLevel + 2 )
-
-!   end subroutine InitializeTimers
-
-
   subroutine Show_P ( P )
 
     class ( Poisson_H_Form ), intent ( in ) :: &
@@ -155,7 +108,24 @@ contains
   end subroutine Show_P
 
 
-  subroutine Solve ( P, Solution, Source )
+  function Timer ( P, Level ) result ( T )
+
+    class ( Poisson_H_Form ), intent ( inout ) :: &
+      P
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = P % iTimer, &
+               Name = trim ( P % Name ) // '_Slv', &
+               Level = Level )
+
+  end function Timer
+
+
+  subroutine Solve ( P, Solution, Source, T_Option )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
@@ -163,18 +133,14 @@ contains
       Solution
     class ( FieldSetForm ), intent ( inout ) :: &
       Source
-
-!     type ( TimerForm ), pointer :: &
-!       Timer
-
-!     Timer  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerSolve )
-!     if ( associated ( Timer ) ) call Timer % Start ( )
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
 
-      call P % Solve_M ( Solution, Source )
-
+      call P % Solve_M ( Solution, Source, T_Option = T_Option )
+   
     case default
       call Show ( 'Solver type not supported', CONSOLE % ERROR )
       call Show ( P % SolverType, 'Type', CONSOLE % ERROR )
@@ -182,8 +148,6 @@ contains
       call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- SolverType
-
-!     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine Solve
 
@@ -205,7 +169,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine Solve_M ( P, Solution, Source )
+  subroutine Solve_M ( P, Solution, Source, T_Option )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
@@ -213,14 +177,37 @@ contains
       Solution
     class ( FieldSetForm ), intent ( inout ) :: &
       Source
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    type ( TimerForm ), pointer :: &
+      T_L, &
+      T_CM
 
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 3 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 3 )
 
     if ( allocated ( P % Laplacian_M ) ) then
       associate ( L  =>  P % Laplacian_M )
-      call L % ComputeMoments ( Source )
-      call P % CombineMoments ( Solution )
+      if ( present ( T_Option ) ) then
+
+        T_L  =>  L % Timer ( Level = T_Option % Level + 1 )
+        call T_L % Start ( )
+        call L % ComputeMoments ( Source, T_Option = T_L )
+        call T_L % Stop ( )
+
+        T_CM  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = P % iTimer_CM, &
+                      Name = trim ( P % Name ) // '_CmbnMmnts', &
+                      Level = T_Option % Level + 1 )
+        call T_CM % Start ( )
+        call P % CombineMoments ( Solution, T_Option = T_CM )
+        call T_CM % Stop ( )
+
+      else
+        call L % ComputeMoments ( Source )
+        call P % CombineMoments ( Solution )
+      end if
       end associate !-- LA
     else
       call Show ( 'Laplacian_M not allocated', CONSOLE % ERROR )
@@ -232,19 +219,20 @@ contains
   end subroutine Solve_M
 
 
-  subroutine CombineMoments ( P, Solution )
+  subroutine CombineMoments ( P, Solution, T_Option )
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
-!     type ( TimerForm ), pointer :: &
-!       Timer, &
-!       Timer_CS, &
-!       Timer_LS, &
-!       Timer_ES, &
-!       Timer_BS
+    type ( TimerForm ), pointer :: &
+      T_CS, &
+      T_LS, &
+      T_ES, &
+      T_BS
 
     if ( .not. allocated ( P % Laplacian_M ) ) then
       call Show ( 'Laplacian_M not allocated', CONSOLE % ERROR )
@@ -253,37 +241,49 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-!     Timer     =>  PROGRAM_HEADER % TimerPointer ( P % iTimerCombineMoments )
-!     Timer_CS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerClearSolution )
-!     Timer_LS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerLocalSolution )
-!     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
-!     Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
-
-!     if ( associated ( Timer ) ) call Timer % Start ( )
+    if ( present ( T_Option ) ) then
+      T_CS  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = P % iTimer_CS, &
+                    Name = trim ( P % Name ) // '_ClrSltn', &
+                    Level = T_Option % Level + 1 )
+      T_LS  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = P % iTimer_LS, &
+                    Name = trim ( P % Name ) // '_LclSltn', &
+                    Level = T_Option % Level + 1 )
+      T_ES  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = P % iTimer_ES, &
+                    Name = trim ( P % Name ) // '_ExchngSltn', &
+                    Level = T_Option % Level + 1 )
+      T_BS  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = P % iTimer_BS, &
+                    Name = trim ( P % Name ) // '_BndrySltn', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_CS  =>  null ( )
+      T_LS  =>  null ( )
+      T_ES  =>  null ( )
+      T_BS  =>  null ( )
+    end if
 
     call Show ( 'Combining Moments', P % IGNORABILITY + 4 )
 
-!     if ( associated ( Timer_CS ) ) call Timer_CS % Start ( )
+    if ( associated ( T_CS ) ) call T_CS % Start ( )
     call Solution % Clear ( )
-!     if ( associated ( Timer_CS ) ) call Timer_CS % Stop ( )
+    if ( associated ( T_CS ) ) call T_CS % Stop ( )
 
-!     if ( associated ( Timer_LS ) ) call Timer_LS % Start ( )
-!     if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
-!       call P % CombineMomentsLocalOld_2 ( Solution )
+    if ( associated ( T_LS ) ) call T_LS % Start ( )
     if ( allocated ( P % Laplacian_M ) ) then
       call P % CombineMomentsLocal ( Solution )
     end if
-!     if ( associated ( Timer_LS ) ) call Timer_LS % Stop ( )
+    if ( associated ( T_LS ) ) call T_LS % Stop ( )
 
-!     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
+    if ( associated ( T_ES ) ) call T_ES % Start ( )
     call P % ExchangeSolution ( Solution )
-!     if ( associated ( Timer_ES ) ) call Timer_ES % Stop ( )
+    if ( associated ( T_ES ) ) call T_ES % Stop ( )
 
-!     if ( associated ( Timer_BS ) ) call Timer_BS % Start ( )
+    if ( associated ( T_BS ) ) call T_BS % Start ( )
     call P % ApplyBoundarySolution ( Solution )
-!     if ( associated ( Timer_BS ) ) call Timer_BS % Stop ( )
-
-!     if ( associated ( Timer ) ) call Timer % Stop ( )
+    if ( associated ( T_BS ) ) call T_BS % Stop ( )
 
   end subroutine CombineMoments
 

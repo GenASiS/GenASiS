@@ -236,6 +236,9 @@ contains
     type ( FieldSetForm ), allocatable :: &
       Source, &
       Reference
+    type ( TimerForm ), pointer :: &
+      T_CM, &
+      T_W
 
     call Show ( 'Testing homogeneous sphere' )
 
@@ -273,12 +276,18 @@ contains
 
     call Source % UpdateDevice ( )
 
-    call L % ComputeMoments ( Source )
+    T_CM  =>  L % Timer ( Level = 1 )
+    call T_CM % Start ( )
+    call L % ComputeMoments ( Source, T_Option = T_CM )
+    call T_CM % Stop ( )
     call L % ShowMoments ( )
 
+    T_W  =>  S % TimerWrite ( Level = 1 )
+    call T_W % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )
     call GIS % Close ( )
+    call T_W % Stop ( )
 
     end associate !-- C
 

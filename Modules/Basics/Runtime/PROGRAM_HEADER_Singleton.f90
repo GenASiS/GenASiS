@@ -105,7 +105,8 @@ contains
       
     integer ( KDI )  :: &
       DisplayRank, &
-      OMP_ScheduleChunkSize
+      OMP_ScheduleChunkSize, &
+      TimerLevelMin
     integer ( OMP_SCHED_KIND ) :: &
       OMP_ScheduleKind
     real ( KDR ) :: &
@@ -198,11 +199,13 @@ contains
              IgnorabilityOption = CONSOLE % INFO_1 )
 
     TimerDisplayFraction  =  0.1_KDR
-    call PH % GetParameter &
-           ( TimerDisplayFraction, 'TimerDisplayFraction' )
+    TimerLevelMin  =  2
+    call PH % GetParameter ( TimerDisplayFraction, 'TimerDisplayFraction' )
+    call PH % GetParameter ( TimerLevelMin, 'TimerLevelMin' )
+
     allocate ( PH % Timer_1D )
     associate ( T_1D  =>  PH % Timer_1D )
-    call T_1D % Initialize ( TimerDisplayFraction )
+    call T_1D % Initialize ( TimerDisplayFraction, TimerLevelMin )
     call T_1D % Get ( PH % iTimerExecution, 'Execution', 0, T )
     call T % Start ( )
     end associate !-- T_1D

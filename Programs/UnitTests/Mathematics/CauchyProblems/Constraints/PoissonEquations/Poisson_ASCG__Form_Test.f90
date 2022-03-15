@@ -92,7 +92,9 @@ contains
   subroutine TestHomogeneousSpheres ( )
 
     integer ( KDI ) :: &
-      iE  !-- iEquation
+      iE, &  !-- iEquation
+      iS, &  !-- iSolve
+      nSolve
     real ( KDR ), dimension ( nEquations ) :: &
       RadiusDensity, &
       Density
@@ -105,6 +107,9 @@ contains
       Difference
     type ( GradientForm ), allocatable :: &
       Gradient
+    type ( TimerForm ), pointer :: &
+      T_P, &
+      T_W
 
     call Show ( 'Testing homogeneous spheres' )
 
@@ -173,14 +178,28 @@ contains
     
     call Source % UpdateDevice ( )
 
-    call PA % Solve ( Solution, Source )
+    nSolve  =  10
+    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
+    call Show ( 'Poisson solve' )
+    call Show ( nSolve, 'nSolve' )
+
+    T_P  =>  PA % Timer ( Level = 1 )
+    call T_P % Start ( )
+    do iS  =  1,  nSolve
+      call PA % Solve ( Solution, Source, T_Option = T_P )
+    end do !-- iS
+    call T_P % Stop ( )
+
     call ComputeError ( Difference, Solution, Reference )
 
     call Gradient % Compute ( iD = 1 )
 
+    T_W  =>  S % TimerWrite ( Level = 1 )
+    call T_W % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )
     call GIS % Close ( )
+    call T_W % Stop ( )
 
     end associate !-- C
 

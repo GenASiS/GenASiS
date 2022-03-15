@@ -227,7 +227,7 @@ contains
 
     T  =>  PROGRAM_HEADER % Timer &
              ( Handle = S % iTimerWrite, &
-               Name = 'Wrt_' // trim ( S % Name ), &
+               Name = trim ( S % Name ) // '_Wrt', &
                Level = Level )
 
   end function TimerWrite
@@ -244,7 +244,7 @@ contains
 
     T  =>  PROGRAM_HEADER % Timer &
              ( Handle = S % iTimerRead, &
-               Name = 'Rd_' // trim ( S % Name ), &
+               Name = trim ( S % Name ) // '_Rd', &
                Level = Level )
 
   end function TimerRead

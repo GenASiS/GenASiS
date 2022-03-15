@@ -48,16 +48,18 @@ module Timer_1D__Form
 contains
 
 
-  subroutine Initialize ( T_1D, DisplayFraction )
+  subroutine Initialize ( T_1D, DisplayFraction, LevelMin )
 
     class ( Timer_1D_Form ), intent ( inout ) :: &
       T_1D
-    real ( KDR ), intent ( in ), optional :: &
+    real ( KDR ), intent ( in ) :: &
       DisplayFraction
+    integer ( KDI ), intent ( in ) :: &
+      LevelMin
 
     call Show ( 'Setting Timer parameters', CONSOLE % INFO_1 )
 
-    T_1D % LevelMin  =  2
+    T_1D % LevelMin  =  LevelMin
     call Show ( T_1D % LevelMin, 'LevelMin', CONSOLE % INFO_1 )
 
     T_1D % LevelMax  =  10  !-- Should match "Suffix" length in Timer_Form

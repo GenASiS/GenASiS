@@ -183,14 +183,14 @@ contains
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  DP % Timer_F ( LevelOption = 1 )
+    T  =>  DP % Timer_F ( Level = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       call DP % ComputeFluxes ( FS_F, CS, iC = 1, iD = iD )
     end do
     call T % Stop ( )
 
-    T  =>  S % TimerWrite ( LevelOption = 1 )
+    T  =>  S % TimerWrite ( Level = 1 )
     call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )

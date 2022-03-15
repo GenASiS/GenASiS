@@ -26,12 +26,12 @@ module Laplacian_M_H__Form
       nEquations = 0, &
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
-!     integer ( KDI ) :: &
-!       iTimerComputeMoments = 0, &
-!       iTimerClearMoments = 0, &
-!       iTimerLocalMoments = 0, &
-!       iTimerReduceMoments = 0, &
-!       iTimerAddMoments = 0
+    integer ( KDI ) :: &
+      iTimer = 0, &
+      iTimer_CM = 0, &  !-- ClearMoments
+      iTimer_LM = 0, &  !-- LocalMoments
+      iTimer_RM = 0, &  !-- ReduceMoments
+      iTimer_AM = 0     !-- AddMoments
     logical ( KDL ) :: &
       DeviceMemory = .false., &
       PinnedMemory = .false., &
@@ -67,8 +67,8 @@ module Laplacian_M_H__Form
       Initialize_H
     procedure, public, pass :: &
       Show => Show_L
-!     procedure, public, pass :: &
-!       InitializeTimers
+    procedure, public, pass :: &
+      Timer
     procedure, public, pass :: &
       ComputeMoments
     final :: &
@@ -170,28 +170,6 @@ contains
   end subroutine Initialize_H
 
 
-!   subroutine InitializeTimers ( L, BaseLevel )
-
-!     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
-!       L
-!     integer ( KDI ), intent ( in ) :: &
-!       BaseLevel
-
-!     call PROGRAM_HEADER % AddTimer &
-!            ( 'ComputeMoments', L % iTimerComputeMoments, Level = BaseLevel )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'ClearMoments', L % iTimerClearMoments, Level = BaseLevel + 1 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'LocalMoments', L % iTimerLocalMoments, Level = BaseLevel + 1 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'ReduceMoments', L % iTimerReduceMoments, &
-!                Level = BaseLevel + 1 )
-!       call PROGRAM_HEADER % AddTimer &
-!              ( 'AddMoments', L % iTimerAddMoments, Level = BaseLevel + 1 )
-
-!   end subroutine InitializeTimers
-
-
   subroutine Show_L ( L )
 
     class ( Laplacian_M_H_Form ), intent ( in ) :: &
@@ -216,27 +194,61 @@ contains
   end subroutine Show_L
 
 
-  subroutine ComputeMoments ( L, Source )
+  function Timer ( L, Level ) result ( T )
+
+    class ( Laplacian_M_H_Form ), intent ( inout ) :: &
+      L
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = L % iTimer, &
+               Name = trim ( L % Name ) // '_CmptMmnts', &
+               Level = Level )
+
+  end function Timer
+
+
+  subroutine ComputeMoments ( L, Source, T_Option )
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
     class ( FieldSetForm ), intent ( inout ) :: &
       Source
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
-    ! type ( TimerForm ), pointer :: &
-    !   Timer, &
-    !   Timer_CM, &
-    !   Timer_LM, &
-    !   Timer_RM, &
-    !   Timer_AM
+    type ( TimerForm ), pointer :: &
+      T_CM, &
+      T_LM, &
+      T_RM, &
+      T_AM
 
-    ! Timer     =>  PROGRAM_HEADER % TimerPointer ( L % iTimerComputeMoments )
-    ! Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerClearMoments )
-    ! Timer_LM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerLocalMoments )
-    ! Timer_RM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerReduceMoments )
-    ! Timer_AM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerAddMoments )
-
-    ! if ( associated ( Timer ) ) call Timer % Start ( )
+    if ( present ( T_Option ) ) then
+      T_CM  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = L % iTimer_CM, &
+                    Name = trim ( L % Name ) // '_ClrMmnts', &
+                    Level = T_Option % Level + 1 )
+      T_LM  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = L % iTimer_LM, &
+                    Name = trim ( L % Name ) // '_LclMmnts', &
+                    Level = T_Option % Level + 1 )
+      T_RM  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = L % iTimer_RM, &
+                    Name = trim ( L % Name ) // '_RdcMmnts', &
+                    Level = T_Option % Level + 1 )
+      T_AM  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = L % iTimer_AM, &
+                    Name = trim ( L % Name ) // '_AddMmnts', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_CM  =>  null ( )
+      T_LM  =>  null ( )
+      T_RM  =>  null ( )
+      T_AM  =>  null ( )
+    end if
 
     call Show ( 'Computing Moments', L % IGNORABILITY + 4 )
 
@@ -244,27 +256,25 @@ contains
       (   AM  =>  L %   AngularMoments, &
         MyAM  =>  L % MyAngularMoments )
 
-    ! if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
+    if ( associated ( T_CM ) ) call T_CM % Start ( )
     call MyAM % Clear ( )
-    ! if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
+    if ( associated ( T_CM ) ) call T_CM % Stop ( )
 
-    ! if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
+    if ( associated ( T_LM ) ) call T_LM % Start ( )
     call L % ComputeAngularMomentsLocal ( Source )
-    ! if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
+    if ( associated ( T_LM ) ) call T_LM % Stop ( )
 
-    ! if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
+    if ( associated ( T_RM ) ) call T_RM % Start ( )
     if ( .not. L % DevicesCommunicate ) call MyAM % UpdateHost ( ) 
     call L % CO_AngularMoments % Reduce ( REDUCTION % SUM )
     if ( .not. L % DevicesCommunicate ) call AM % UpdateDevice ( ) 
-    ! if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
+    if ( associated ( T_RM ) ) call T_RM % Stop ( )
 
-    ! if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
+    if ( associated ( T_AM ) ) call T_AM % Start ( )
     call L % ComputeRadialMoments ( )
-    ! if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
+    if ( associated ( T_AM ) ) call T_AM % Stop ( )
     
     end associate !-- M, etc.
-
-    ! if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeMoments
 

@@ -176,14 +176,14 @@ contains
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  ES % Timer ( LevelOption = 1 )
+    T  =>  ES % Timer ( Level = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       call ES % Compute ( iC = 1, iD = iD )
     end do
     call T % Stop ( )
 
-    T  =>  S % TimerWrite ( LevelOption = 1 )
+    T  =>  S % TimerWrite ( Level = 1 )
     call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )

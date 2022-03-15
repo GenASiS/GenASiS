@@ -69,7 +69,7 @@ contains
     if ( ES % Type  ==  '' ) &
       ES % Type  =  'an EigenspeedSet_F' 
     
-    Name  =  'E_' // trim ( FS_CS % Name )
+    Name  =  'Egnspd_' // trim ( FS_CS % Name )
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( FS_CS % Name )
 
@@ -113,32 +113,19 @@ contains
   end subroutine InitializeAllocate_ES
 
 
-  function Timer ( ES, LevelOption ) result ( T )
+  function Timer ( ES, Level ) result ( T )
 
     class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
       ES
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+    integer ( KDI ), intent ( in ) :: &
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  ES % iTimer )
-
-    if ( iT == 0 ) then
-      TimerName  =  ES % Name
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = ES % iTimer, &
+               Name = ES % Name, &
+               Level = Level )
 
   end function Timer
 
