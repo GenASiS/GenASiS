@@ -127,7 +127,7 @@ contains
 
 
   subroutine InitializeAllocate &
-               ( R, G, FS, PrefixOption, OrderOption )
+               ( R, G, FS, SuffixOption, OrderOption )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
@@ -136,7 +136,7 @@ contains
     class ( FieldSetForm ), intent ( in ), target :: &
       FS
     character ( * ), intent ( in ), optional :: &
-      PrefixOption
+      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
@@ -151,9 +151,9 @@ contains
 
     R % IGNORABILITY  =  FS % Atlas % IGNORABILITY
 
-    R % Name  =  'R_' // trim ( FS % Name )
-    if ( present ( PrefixOption ) ) &
-      R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
+    R % Name  =  trim ( FS % Name ) // '_Rcnstrctn'
+    if ( present ( SuffixOption ) ) &
+      R % Name  =  trim ( FS % Name ) // '_' // trim ( SuffixOption )
 
     call Show ( 'InitializeAllocating a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
@@ -211,7 +211,7 @@ contains
 
 
   subroutine InitializeAssociate &
-               ( R, G, FS, O_IL, O_IR, iaS, PrefixOption, OrderOption )
+               ( R, G, FS, O_IL, O_IR, iaS, SuffixOption, OrderOption )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
@@ -223,15 +223,15 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaS
     character ( * ), intent ( in ), optional :: &
-      PrefixOption
+      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
     R % IGNORABILITY  =  FS % Atlas % IGNORABILITY
 
-    R % Name  =  'R_' // trim ( FS % Name )
-    if ( present ( PrefixOption ) ) &
-      R % Name  =  trim ( PrefixOption ) // '_' // trim ( FS % Name )
+    R % Name  =  trim ( FS % Name ) // '_Rcnstrctn' 
+    if ( present ( SuffixOption ) ) &
+      R % Name  =  trim ( FS % Name ) // '_' // trim ( SuffixOption )
 
     call Show ( 'InitializeAssociating a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
@@ -372,32 +372,19 @@ contains
   end subroutine Show_R
 
 
-  function Timer ( R, LevelOption ) result ( T )
+  function Timer ( R, Level ) result ( T )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+    integer ( KDI ), intent ( in ) :: &
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  R % iTimer )
-
-    if ( iT == 0 ) then
-      TimerName  =  R % Name
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = R % iTimer, &
+               Name = trim ( R % Name ), &
+               Level = Level )
 
   end function Timer
 

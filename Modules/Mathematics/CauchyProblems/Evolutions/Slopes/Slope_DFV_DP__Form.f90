@@ -75,9 +75,9 @@ contains
 
     if ( S % TimerName  ==  '' ) &
       S % TimerName  &
-        =  'S_DFV_DP_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
+        =  trim ( CS % Name ) // '_Slp_DFV_DP_' // trim ( DP % Name )
 
-    Name  =  'S_DFV_DP_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
+    Name  =  trim ( CS % Name ) // '_Slp_DFV_DP_' // trim ( DP % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 

@@ -47,9 +47,9 @@ contains
       S % Type  =  'a Slope_DFV_F_DT'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_F_DT_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DT'
 
-    Name  =  'S_DFV_F_DT_' // trim ( RS % CurrentSet % Name )
+    Name  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DT'
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 

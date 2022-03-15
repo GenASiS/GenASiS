@@ -194,8 +194,8 @@ contains
 
     associate ( C  =>  S % Atlas % Chart ( 1 ) % Element )
 
-    T      =>  S % Timer ( LevelOption = 1 )
-    T_RPP  =>  RS % Timer_P ( LevelOption = T % Level + 1 )
+    T      =>  S % Timer ( Level = 1 )
+    T_RPP  =>  RS % Timer_P ( Level = T % Level + 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       do iD  =  1,  C % nDimensions
@@ -211,7 +211,7 @@ contains
 
     end associate !-- C
 
-    T  =>  Sm % TimerWrite ( LevelOption = 1 )
+    T  =>  Sm % TimerWrite ( Level = 1 )
     call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call Sm % Write ( )

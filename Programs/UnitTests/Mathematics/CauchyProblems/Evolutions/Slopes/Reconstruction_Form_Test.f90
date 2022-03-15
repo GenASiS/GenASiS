@@ -103,16 +103,16 @@ program Reconstruction_Form_Test
   allocate ( R_2 )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
   call R_0 % Initialize &
-         ( G, FS, PrefixOption = 'Rcnstrctn_0', OrderOption = 0 )
+         ( G, FS, SuffixOption = 'Rcnstrctn_0', OrderOption = 0 )
   call R_1 % Initialize &
-         ( G, FS, PrefixOption = 'Rcnstrctn_1', OrderOption = 1 )
+         ( G, FS, SuffixOption = 'Rcnstrctn_1', OrderOption = 1 )
   call R_2 % Initialize &
-         ( G, FS, PrefixOption = 'Rcnstrctn_2', OrderOption = 2 )
+         ( G, FS, SuffixOption = 'Rcnstrctn_2', OrderOption = 2 )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   !-- Get all Reconstruction timers initialized
-  T  =>  R_0 % Timer ( LevelOption = 1 )
-  T  =>  R_1 % Timer ( LevelOption = 1 )
-  T  =>  R_2 % Timer ( LevelOption = 1 )
+  T  =>  R_0 % Timer ( Level = 1 )
+  T  =>  R_1 % Timer ( Level = 1 )
+  T  =>  R_2 % Timer ( Level = 1 )
 
   call  A   % Show ( )
   call FS   % Show ( )
@@ -297,7 +297,7 @@ contains
       call Show ( iD, 'iDimension' )
       call Show ( nCompute, 'nCompute' )
 
-      T  =>  R % Timer ( LevelOption = 1 )
+      T  =>  R % Timer ( Level = 1 )
       call T % Start ( )
       do iC  =  1,  nCompute
         call R % Compute ( iC = 1, iD = iD )
@@ -324,7 +324,7 @@ contains
 
     end do !-- iD
 
-    T  =>  S % TimerWrite ( LevelOption = 1 )
+    T  =>  S % TimerWrite ( Level = 1 )
     call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )

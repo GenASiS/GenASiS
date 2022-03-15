@@ -22,11 +22,14 @@ module RiemannSolver_HLL__Form
     integer ( KDI ) :: &
       iFiducialDensityFlux = 0
     integer ( KDI ) :: &
-      iTimer_P   = 0, &
-      iTimer_C   = 0, &
-      iTimer_CFP = 0, &
-      iTimer_A   = 0, &
-      iTimer_K   = 0
+      iTimer_P   = 0, &  !-- Prepare
+      iTimer_C   = 0, &  !-- Compute
+      iTimer_R   = 0, &  !-- Reconstruction
+      iTimer_CFP = 0, &  !-- ComputeFromPrimitive
+      iTimer_E   = 0, &  !-- Eigenspeeds
+      iTimer_A   = 0, &  !-- Alpha
+      iTimer_F   = 0, &  !-- Flux
+      iTimer_K   = 0     !-- Kernel
     character ( LDL ) :: &
       ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
@@ -37,7 +40,6 @@ module RiemannSolver_HLL__Form
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
     class ( EigenspeedSet_F_Form ), allocatable :: &
-      EigenspeedSet, &
       EigenspeedSet_IL, EigenspeedSet_IR
     class ( ReconstructionForm ), allocatable :: &
       Reconstruction_PS
@@ -54,12 +56,6 @@ module RiemannSolver_HLL__Form
       Timer_P  !-- Prepare
     procedure, public, pass :: &
       Timer_C  !-- Compute
-    procedure, private, pass :: &
-      Timer_CFP  !-- ComputeFromPrimitive
-    procedure, private, pass :: &
-      Timer_A  !-- Alpha
-    procedure, private, pass :: &
-      Timer_K  !-- Kernel  
     procedure, public, pass :: &
       Prepare
     procedure, public, pass :: &
@@ -183,7 +179,7 @@ contains
     if ( RS % Type  ==  '' ) &
       RS % Type  =  'a RiemannSolver_HLL' 
     
-    Name  =  'RS_' // trim ( CS % Name )
+    Name  =  trim ( CS % Name ) // '_RmnnSlvr'
     if ( present ( PrefixOption ) ) &
       Name  =  trim ( PrefixOption ) // '_' // trim ( CS % Name )
 
@@ -202,7 +198,7 @@ contains
       associate ( PS  =>  RS % PrimitiveSet )
       call PS % Initialize &
              ( CS, CS % iaPrimitive, &
-               NameOption = 'P_' // trim ( CS % Name ), &
+               NameOption = trim ( CS % Name ) // '_Prmtv', &
                IgnorabilityOption = CS % IGNORABILITY + 1 )
 
     allocate &
@@ -397,154 +393,38 @@ contains
   end subroutine Show_FS
 
 
-  function Timer_P ( RS, LevelOption ) result ( T )
+  function Timer_P ( RS, Level ) result ( T )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+    integer ( KDI ), intent ( in ) :: &
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  RS % iTimer_P )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_P'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = RS % iTimer_P, &
+               Name = trim ( RS % Name ) // '_Prpr', &
+               Level = Level )
 
   end function Timer_P
 
 
-  function Timer_C ( RS, LevelOption ) result ( T )
+  function Timer_C ( RS, Level ) result ( T )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
     integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  RS % iTimer_C )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_C'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = RS % iTimer_C, &
+               Name = trim ( RS % Name ) // '_Cmpt', &
+               Level = Level )
 
   end function Timer_C
-
-
-  function Timer_CFP ( RS, LevelOption ) result ( T )
-
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  RS % iTimer_CFP )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_CFP' 
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_CFP
-
-
-  function Timer_A ( RS, LevelOption ) result ( T )
-
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  RS % iTimer_A )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_A' 
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_A
-
-
-  function Timer_K ( RS, LevelOption ) result ( T )
-
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  RS % iTimer_K )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( RS % Name ) // '_K' 
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_K
 
 
   ! subroutine Compute ( RS, iC, iD, T_Option, iS_Option )
@@ -611,10 +491,22 @@ contains
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
-      T_RPS  =>  RPS    % Timer     ( LevelOption = T_Option % Level + 1 )
-      T_CFP  =>   RS    % Timer_CFP ( LevelOption = T_Option % Level + 1 )
-      T_ES   =>   ES_IL % Timer     ( LevelOption = T_Option % Level + 1 )
-      T_A    =>   RS    % Timer_A   ( LevelOption = T_Option % Level + 1 )
+      T_RPS  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_R, &
+                     Name = trim ( RS % Name ) // '_Rcnstrctn', &
+                     Level = T_Option % Level + 1 )
+      T_CFP  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_CFP, &
+                     Name = trim ( RS % Name ) // '_FrmPrmtv', &
+                     Level = T_Option % Level + 1 )
+      T_ES   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_E, &
+                     Name = trim ( RS % Name ) // '_Egnspds', &
+                     Level = T_Option % Level + 1 )
+      T_A    =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_A, &
+                     Name = trim ( RS % Name ) // '_Alpha', &
+                     Level = T_Option % Level + 1 )
     else
       T_RPS  =>  null ( )
       T_CFP  =>  null ( )
@@ -697,8 +589,14 @@ contains
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
-      T_F   =>   DP % Timer_F ( LevelOption = T_Option % Level + 1 )
-      T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
+      T_F   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_F, &
+                     Name = trim ( RS % Name ) // '_Flx', &
+                     Level = T_Option % Level + 1 )
+      T_K   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_K, &
+                     Name = trim ( RS % Name ) // '_Krnl', &
+                     Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
       T_K   =>  null ( )
@@ -777,7 +675,10 @@ contains
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
-      T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
+      T_K   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_K, &
+                     Name = trim ( RS % Name ) // '_Krnl', &
+                     Level = T_Option % Level + 1 )
     else
       T_K   =>  null ( )
     end if !-- T_Option
@@ -853,8 +754,14 @@ contains
          FS_IR  =>  RS % FluxSet_IR )
 
     if ( present ( T_Option ) ) then
-      T_F   =>   DP % Timer_F ( LevelOption = T_Option % Level + 1 )
-      T_K   =>   RS % Timer_K ( LevelOption = T_Option % Level + 1 )
+      T_F   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_F, &
+                     Name = trim ( RS % Name ) // '_Flx', &
+                     Level = T_Option % Level + 1 )
+      T_K   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_K, &
+                     Name = trim ( RS % Name ) // '_Krnl', &
+                     Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
       T_K   =>  null ( )
@@ -922,8 +829,6 @@ contains
       deallocate ( RS % EigenspeedSet_IR )
     if ( allocated ( RS % EigenspeedSet_IL ) ) &
       deallocate ( RS % EigenspeedSet_IL )
-    if ( allocated ( RS % EigenspeedSet ) ) &
-      deallocate ( RS % EigenspeedSet )
     if ( allocated ( RS % FluxSet_IR ) ) &
       deallocate ( RS % FluxSet_IR )
     if ( allocated ( RS % FluxSet_IL ) ) &

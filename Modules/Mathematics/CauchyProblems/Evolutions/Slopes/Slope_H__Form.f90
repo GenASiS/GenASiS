@@ -16,8 +16,8 @@ module Slope_H__Form
     integer ( KDI ) :: &
       nComponents = 0
     integer ( KDI ) :: &
-      iTimer            = 0, &
-      iTimer_MA = 0
+      iTimer    = 0, &
+      iTimer_MA = 0  !-- MultiplyAdd
     logical ( KDL ) :: &
       StreamComponents = .true.
     character ( LDL ) :: &
@@ -33,8 +33,6 @@ module Slope_H__Form
       Show => Show_FS
     procedure, public, pass :: &
       Timer
-    procedure, private, pass :: &
-      Timer_MA
     procedure, public, pass :: &
       CloneTimers
     procedure, public, pass :: &
@@ -165,64 +163,21 @@ contains
   end subroutine Show_FS
 
 
-  function Timer ( S, LevelOption ) result ( T )
+  function Timer ( S, Level ) result ( T )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer )
-
-    if ( iT == 0 ) then
-      TimerName  =  S % TimerName
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimer, &
+               Name = S % TimerName, &
+               Level = Level )
 
   end function Timer
-
-
-  function Timer_MA ( S, LevelOption ) result ( T )
-
-    class ( Slope_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_MA )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % TimerName ) // '_MA' 
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_MA
 
 
   subroutine CloneTimers ( S, S_S )
@@ -273,7 +228,7 @@ contains
           ( SC  =>  S % Component ( iC ) % Element )
 
         if ( present ( T_Option ) ) then
-          T_C  =>  SC % Timer ( LevelOption = T_Option % Level + 1 )
+          T_C  =>  SC % Timer ( Level = T_Option % Level + 1 )
           call T_C % Start ( )
           call SC % Compute ( T_Option = T_C )
           call T_C % Stop ( )
@@ -316,7 +271,10 @@ contains
     if ( S % nComponents  >  0 ) then
 
       if ( present ( T_Option ) ) then
-        T_MA  =>  S % Timer_MA ( LevelOption = T_Option % Level + 1 )
+        T_MA  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_MA, &
+                      Name = trim ( S % TimerName ) // '_MA', &
+                      Level = T_Option % Level + 1 )
       else
         T_MA  =>  null ( )
       end if

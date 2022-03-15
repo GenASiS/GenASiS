@@ -44,7 +44,7 @@ contains
 
 
   subroutine InitializeAllocate_ES &
-               ( ES, CS, FS_CS, FieldOption, PrefixOption, nFieldsOption )
+               ( ES, CS, FS_CS, FieldOption, SuffixOption, nFieldsOption )
 
     class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
       ES
@@ -55,7 +55,7 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
-      PrefixOption
+      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       nFieldsOption
  
@@ -69,9 +69,9 @@ contains
     if ( ES % Type  ==  '' ) &
       ES % Type  =  'an EigenspeedSet_F' 
     
-    Name  =  'Egnspd_' // trim ( FS_CS % Name )
-    if ( present ( PrefixOption ) ) &
-      Name  =  trim ( PrefixOption ) // '_' // trim ( FS_CS % Name )
+    Name  =  trim ( FS_CS % Name ) // '_Egnspd'
+    if ( present ( SuffixOption ) ) &
+      Name  =  trim ( FS_CS % Name ) // '_' //trim ( SuffixOption )
 
     ES % FieldSet_CS  =>  FS_CS
     ES % CurrentSet   =>  CS

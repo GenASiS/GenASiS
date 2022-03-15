@@ -187,14 +187,14 @@ contains
     call Show ( S % Name, 'Slope' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  S % Timer ( LevelOption = 1 )
+    T  =>  S % Timer ( Level = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       call S % Compute ( T_Option = T )
     end do !-- iC
     call T % Stop ( )
 
-    T  =>  Sm % TimerWrite ( LevelOption = 1 )
+    T  =>  Sm % TimerWrite ( Level = 1 )
     call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call Sm % Write ( )

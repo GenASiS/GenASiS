@@ -23,8 +23,6 @@ module Slope_DFV_PD__Form
       InitializeAllocate_PD
     generic, public :: &
       Initialize => InitializeAllocate_PD
-    procedure, private, pass :: &
-      Timer_K
     procedure, public, pass :: &
       CloneTimers
     procedure, public, pass :: &
@@ -105,9 +103,9 @@ contains
 
     if ( S % TimerName  ==  '' ) &
       S % TimerName  &
-        =  'S_DFV_PD_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
+        =  trim ( CS % Name ) // '_Slp_DFV_PD_' // trim ( DP % Name ) 
 
-    Name  =  'S_DFV_PD_' // trim ( DP % Name ) // '_' // trim ( CS % Name )
+    Name  =  trim ( CS % Name ) // '_Slp_DFV_PD_' // trim ( DP % Name )
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -127,36 +125,6 @@ contains
     end associate !-- CS
 
   end subroutine InitializeAllocate_PD
-
-
-  function Timer_K ( S, LevelOption ) result ( T )
-
-    class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_K )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % TimerName ) // '_K' 
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_K
 
 
   subroutine CloneTimers ( S, S_S )
@@ -215,8 +183,11 @@ contains
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
-      T_RS  =>  RS % Timer_C     ( LevelOption = T_Option % Level + 1 )
-      T_K   =>   S % Timer_K ( LevelOption = T_Option % Level + 1 )
+      T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
+      T_K   =>  PROGRAM_HEADER % Timer &
+                  ( Handle = S % iTimer_K, &
+                    Name = trim ( S % TimerName ) // '_K', &
+                    Level = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )
       T_K   =>  null ( )
@@ -318,8 +289,11 @@ contains
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
-      T_RS  =>  RS % Timer_C ( LevelOption = T_Option % Level + 1 )
-      T_K   =>   S % Timer_K ( LevelOption = T_Option % Level + 1 )
+      T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
+      T_K   =>  PROGRAM_HEADER % Timer &
+                  ( Handle = S % iTimer_K, &
+                    Name = trim ( S % TimerName ) // '_K', &
+                    Level = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )
       T_K   =>  null ( )

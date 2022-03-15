@@ -53,9 +53,9 @@ contains
       S % Type  =  'a Slope_DFV_F_DP'
 
     if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_F_DP_' // trim ( RS % CurrentSet % Name )
+      S % TimerName  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DP'
 
-    Name  =  'S_DFV_F_DP_' // trim ( RS % CurrentSet % Name )
+    Name  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DP'
     if ( present ( SuffixOption ) ) &
       Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
@@ -123,7 +123,7 @@ contains
       associate ( RS  =>  S % RiemannSolver )
       
       if ( present ( T_Option ) ) then
-        T_RPP  =>  RS % Timer_P ( LevelOption = T_Option % Level + 1 )
+        T_RPP  =>  RS % Timer_P ( Level = T_Option % Level + 1 )
       else
         T_RPP  =>  null ( )
       end if

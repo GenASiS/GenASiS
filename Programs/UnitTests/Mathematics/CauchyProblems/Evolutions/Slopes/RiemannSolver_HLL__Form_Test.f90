@@ -200,19 +200,19 @@ contains
 
     do iC  =  1,  nCompute
 
-      T  =>  RS % Timer_P ( LevelOption = 1 )
+      T  =>  RS % Timer_P ( Level = 1 )
       call T % Start ( )
       call RS % Prepare ( iC = 1, iD = iD, T_Option = T )
       call T % Stop ( )
 
-      T  =>  RS % Timer_C ( LevelOption = 1 )
+      T  =>  RS % Timer_C ( Level = 1 )
       call T % Start ( )
       call RS % Compute ( DP, iC = 1, iD = iD, T_Option = T )
       call T % Stop ( )
 
     end do
 
-    T  =>  S % TimerWrite ( LevelOption = 1 )
+    T  =>  S % TimerWrite ( Level = 1 )
     call T % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S % Write ( )
