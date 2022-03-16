@@ -213,11 +213,6 @@ contains
 
       Time  =  Time + TimeStep
 
-      T  =>  S % TimerSlopeSum ( Level = 1 )
-      call T % Start ( )
-      call S % ComputeSlopeSum ( )
-      call T % Stop ( )
-
       T  =>  Sm % TimerWrite ( Level = 1 )
       call T % Start ( )
       call GIS % Open ( GIS % ACCESS_CREATE )

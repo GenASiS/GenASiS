@@ -464,7 +464,7 @@ contains
   ! end subroutine Compute
 
 
-  subroutine Prepare ( RS, iC, iD, T_Option, iS_Option )
+  subroutine Prepare ( RS, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -473,8 +473,6 @@ contains
       iD     !-- iDimensions
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option  !-- iStage_Option
 
     type ( TimerForm ), pointer :: &
       T_RPS, &
@@ -515,7 +513,7 @@ contains
     end if !-- T_Option
 
     if ( associated ( T_RPS ) ) call T_RPS % Start ( )
-    call RPS % Compute ( iC, iD, iS_Option )
+    call RPS % Compute ( iC, iD )
     if ( associated ( T_RPS ) ) call T_RPS % Stop ( )
 
     if ( associated ( T_CFP ) ) call T_CFP % Start ( )

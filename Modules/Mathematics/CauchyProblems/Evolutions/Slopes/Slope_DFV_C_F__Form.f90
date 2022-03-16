@@ -22,8 +22,8 @@ module Slope_DFV_C_F__Form
       InitializeAllocate_C_F
     generic, public :: &
       Initialize => InitializeAllocate_C_F
-    procedure, public, pass :: &
-      CloneTimers
+!    procedure, public, pass :: &
+!      CloneTimers
     procedure, public, pass :: &
       ComputeChart
     procedure, public, pass :: &
@@ -134,26 +134,26 @@ contains
   end subroutine InitializeAllocate_C_F
 
 
-  subroutine CloneTimers ( S, S_S )
+  ! subroutine CloneTimers ( S, S_S )
 
-    class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
-      S
-    class ( Slope_H_Form ), intent ( in ) :: &
-      S_S  !-- S_Source
+  !   class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
+  !     S
+  !   class ( Slope_H_Form ), intent ( in ) :: &
+  !     S_S  !-- S_Source
 
-    integer ( KDI ) :: &
-      iC  !-- iComponent
+  !   integer ( KDI ) :: &
+  !     iC  !-- iComponent
 
-    call S % Slope_H_Form % CloneTimers ( S_S )
+  !   call S % Slope_H_Form % CloneTimers ( S_S )
 
-    select type ( S_S )
-    class is ( Slope_DFV_C_F_Form )
+  !   select type ( S_S )
+  !   class is ( Slope_DFV_C_F_Form )
 
-    S % iTimer_K  =  S_S % iTimer_K
+  !   S % iTimer_K  =  S_S % iTimer_K
 
-    end select !-- S_S
+  !   end select !-- S_S
 
-  end subroutine CloneTimers
+  ! end subroutine CloneTimers
 
 
   subroutine ComputeChart ( S, iC, T_Option )

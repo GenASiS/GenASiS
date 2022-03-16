@@ -22,8 +22,6 @@ module Step_RK_CS__Form
       Balanced, &
       Intermediate, &
       Solution
-    type ( FieldSetElement ), dimension ( : ), allocatable :: &
-      SolutionStage
     class ( CurrentSetForm ), pointer :: &
       CurrentSet
     class ( Coarsening_C_Form ), pointer :: &
@@ -63,6 +61,7 @@ module Step_RK_CS__Form
 
     private :: &
       SetSlope_CS, &
+      SetSlopeStage_CS, &
       StoreSolution_CS
 
 contains
@@ -177,6 +176,8 @@ contains
 
     if ( .not. associated ( S % SetSlope ) ) &
       S % SetSlope  =>  SetSlope_CS
+    if ( .not. associated ( S % SetSlopeStage ) ) &
+      S % SetSlopeStage  =>  SetSlopeStage_CS
 
     call S % Initialize_H &
            ( CS % Atlas, &
@@ -188,34 +189,14 @@ contains
   end subroutine Initialize_CS
 
 
-  subroutine SetStream ( S, Sm, StagesOption )
+  subroutine SetStream ( S, Sm )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
-    logical ( KDL ), intent ( in ), optional :: &
-      StagesOption
 
-    integer ( KDI ) :: &
-      iS  !-- iStage
-    logical ( KDL ) :: &
-      Stages
-    character ( 1 ) :: &
-      StageNumber
-
-    Stages  =  .false.
-    if ( present ( StagesOption ) ) &
-      Stages  =  StagesOption
-    call PROGRAM_HEADER % GetParameter ( Stages, 'StreamStages' )
-
-    call S % SetStream_H ( Sm, StagesOption = Stages )
-
-    ! if ( Stages ) then
-    !   associate ( RSA  =>  S % RiemannSolver )
-    !   call RSA % SetStream ( Sm, S % nStages )
-    !   end associate !-- RSA
-    ! end if !-- Stages
+    call S % SetStream_H ( Sm )
 
   end subroutine SetStream
 
@@ -261,8 +242,6 @@ contains
       deallocate ( S % DivergencePart )
     if ( allocated ( S % DivergenceTotal ) ) &
       deallocate ( S % DivergenceTotal )
-    if ( allocated ( S % SolutionStage ) ) &
-      deallocate ( S % SolutionStage )
     if ( allocated ( S % Solution ) ) &
       deallocate ( S % Solution )
     if ( allocated ( S % Intermediate ) ) &
@@ -285,13 +264,6 @@ contains
         Y     =>  S % Solution )
 
     call CS_B % Copy ( Y )
-
-    !-- For diagnostic I/O
-    if ( allocated ( S % SolutionStage ) ) then
-      associate ( Y_S  =>  S % SolutionStage ( 1 ) % Element )
-      call CS_B % Copy ( Y_S )
-      end associate !-- Y_S
-    end if
 
     end associate !-- CS_B, etc.
 
@@ -330,7 +302,7 @@ contains
 
     associate &
       ( Y_I  =>  S % Intermediate, &
-        K    =>  S % SlopeStage ( iK ) % Element )
+        K    =>  S % SlopeStageNew ( iK ) % Element )
 
     call Y_I % MultiplyAdd ( K, dT * A )
 
@@ -357,30 +329,18 @@ contains
       T_SS, &  !-- StoreSolution
       T_CS, &  !-- ComputeSlope
       T_EG, &  !-- ExchangeGhost
-      T_C      !-- Coarsen
+      T_C,  &  !-- Coarsen
+      T_AS     !-- AccumulateSlope
 
-    associate ( K  =>  S % SlopeStage ( iS ) % Element )
+    associate &
+      ( K  =>  S % Slope, &
+        K_Stage  =>  S % SlopeStageNew ( iS ) % Element )
 
     if ( iS  >  1 ) then
-
-      associate ( K_1  =>  S % SlopeStage ( 1 ) % Element )
-      call K % CloneTimers ( K_1 )
-      end associate !-- K_1
-
       associate ( Y_I  =>  S % Intermediate )
-
       T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level )
       call StoreSolution_CS ( S, Y_I, T_Option = T_SS )
-  
-      !-- For diagnostic I/O
-      if ( allocated ( S % SolutionStage ) ) then
-        associate ( Y_S  =>  S % SolutionStage ( iS ) % Element )
-        call Y_I % Copy ( Y_S )
-        end associate !-- Y_S
-      end if
-
       end associate !-- Y_I, etc.
- 
     end if !-- iStage > 1
 
     !-- Compute slope
@@ -393,6 +353,8 @@ contains
     if ( associated ( T_CS ) ) call T_CS % Start ( )
     call K % Compute ( T_Option = T_CS )
     if ( associated ( T_CS ) ) call T_CS % Stop ( )
+
+    !-- Coarsening
 
     if ( associated ( S % Coarsening ) ) then
       if ( present ( T_Option ) ) then
@@ -421,13 +383,28 @@ contains
     call K % ExchangeGhostData ( )
     if ( associated ( T_EG ) ) call T_EG % Stop ( )
 
-    end associate !-- K
+    !-- Accumulations
 
-    !-- Boundary
+    if ( present ( T_Option ) ) then
+      T_AS  =>  S % TimerAccumulateSlope ( Level = T_Option % Level + 1 )
+    else
+      T_AS  =>  null ( )
+    end if
+    if ( associated ( T_AS ) ) call T_AS % Start ( )
+
+    call K % Copy ( K_Stage )
+
+    call S % AccumulateSlope ( iS ) 
 
     associate ( CS  =>  S % CurrentSet )
     call CS % AccumulateBoundaryFluence ( dT  *  S % B ( iS ) )
     end associate !-- CS
+
+    if ( associated ( T_AS ) ) call T_AS % Stop ( )
+
+    !-- Cleanup
+
+    end associate !-- K, etc.
 
   end subroutine ComputeStage
 
@@ -447,7 +424,7 @@ contains
 
     associate &
       ( Y  =>  S % Solution, &
-        K  =>  S % SlopeStage ( iS ) % Element )
+        K  =>  S % SlopeStageNew ( iS ) % Element )
 
     call Y % MultiplyAdd ( K, dT * B )
 
@@ -470,17 +447,12 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine SetSlope_CS ( S, K, iS_Option )
+  subroutine SetSlope_CS ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
     class ( Slope_H_Form ), intent ( out ), allocatable :: &
       K
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
-
-    character ( 1 ) :: &
-      StageNumber
 
     select type ( S )
       class is ( Step_RK_CS_Form )
@@ -488,36 +460,57 @@ contains
       allocate ( Slope_DFV_F_DT_Form :: K )
       select type ( K )
         class is ( Slope_DFV_F_DT_Form )
-      if ( present ( iS_Option ) ) then
-        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-        call K % Initialize &
-               ( S % RiemannSolver, S % DivergenceTotal, &
-                 SuffixOption = StageNumber )
-      else
-        call K % Initialize &
-               ( S % RiemannSolver, S % DivergenceTotal, &
-                 IgnorabilityOption = S % IGNORABILITY )
-      end if
+      call K % Initialize &
+             ( S % RiemannSolver, S % DivergenceTotal, &
+               IgnorabilityOption = S % IGNORABILITY )
       end select !-- K
     else if ( allocated ( S % DivergencePart ) ) then
       allocate ( Slope_DFV_F_DP_Form :: K )
       select type ( K )
         class is ( Slope_DFV_F_DP_Form )
-      if ( present ( iS_Option ) ) then
-        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-        call K % Initialize &
-               ( S % RiemannSolver, S % DivergencePart, &
-                 SuffixOption = StageNumber )
-      else
-        call K % Initialize &
-               ( S % RiemannSolver, S % DivergencePart, &
-                 IgnorabilityOption = S % IGNORABILITY )
-      end if
+      call K % Initialize &
+             ( S % RiemannSolver, S % DivergencePart, &
+               IgnorabilityOption = S % IGNORABILITY )
       end select !-- K
     end if
     end select !-- S
 
   end subroutine SetSlope_CS
+
+
+  subroutine SetSlopeStage_CS ( S, K, iS )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( FieldSetForm ), intent ( out ), allocatable :: &
+      K
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    character ( 1 ) :: &
+      StageNumber
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+    associate &
+      ( CS  =>  S % CurrentSet )
+
+    write ( StageNumber, fmt = '(i1.1)' ) iS
+
+    allocate ( K )
+    call K % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Balanced, &
+             NameOption = 'Slope_' // StageNumber, &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             nFieldsOption = CS % nBalanced, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+
+    end associate !-- CS
+    end select !-- S
+
+  end subroutine SetSlopeStage_CS
 
 
   subroutine StoreSolution_CS ( S, Y, T_Option )

@@ -21,8 +21,8 @@ module Step_RK_H__Form
       iTimer_II_A = 0, &  !-- IncrementIntermediate
       iTimer_CS   = 0, &  !-- ComputeStage
       iTimer_IS_B = 0, &  !-- IncrementSolution
-      iTimer_SF   = 0, &  !-- StoreFinal
-      iTimer_SS   = 0     !-- SlopeSum
+      iTimer_SS   = 0, &  !-- StoreSolution
+      iTimer_AS   = 0     !-- AccumulateSlope
     real ( KDR ), dimension ( : ), allocatable :: &
       C, &  !-- RungeKutta nodes
       B     !-- RungeKutta weights
@@ -34,11 +34,16 @@ module Step_RK_H__Form
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
     class ( Slope_H_Form ), allocatable :: &
+      Slope, &
       SlopeSum
-    type ( Slope_H_Element ), dimension ( : ), allocatable :: &
-      SlopeStage
+    type ( FieldSetElement ), dimension ( : ), allocatable :: &
+      SlopeStageNew
+!    type ( Slope_H_Element ), dimension ( : ), allocatable :: &
+!      SlopeStage
     procedure ( SS ), pointer :: &
       SetSlope => null ( )
+    procedure ( SSS ), pointer :: &
+      SetSlopeStage => null ( )
   contains
     procedure, public, pass :: &
       Initialize_H  !-- Do not overload: needs overriding of SetSlope
@@ -53,11 +58,13 @@ module Step_RK_H__Form
     procedure, public, pass :: &
       TimerStoreSolution
     procedure, public, pass :: &
-      TimerSlopeSum
+      TimerAccumulateSlope
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
-      ComputeSlopeSum
+      AccumulateSlope
+!    procedure, public, pass :: &
+!      ComputeSlopeSum
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -76,7 +83,7 @@ module Step_RK_H__Form
 
   interface
 
-    subroutine SS ( S, K, iS_Option )
+    subroutine SS ( S, K )
       use Basics
       use Slopes
       import Step_RK_H_Form
@@ -85,14 +92,26 @@ module Step_RK_H__Form
         S
       class ( Slope_H_Form ), intent ( out ), allocatable :: &
         K
-      integer ( KDI ), intent ( in ), optional :: &
-        iS_Option
     end subroutine SS
+
+    subroutine SSS ( S, K, iS )
+      use Basics
+      use Fields
+      import Step_RK_H_Form
+      implicit none
+      class ( Step_RK_H_Form ), intent ( in ) :: &
+        S
+      class ( FieldSetForm ), intent ( out ), allocatable :: &
+        K
+      integer ( KDI ), intent ( in ) :: &
+        iS
+    end subroutine SSS
 
   end interface
 
     private :: &
-      SetSlope_H
+      SetSlope_H, &
+      SetSlopeStage_H
 
 contains
 
@@ -178,10 +197,14 @@ contains
 
     if ( .not. associated ( S % SetSlope ) ) &
       S % SetSlope  =>  SetSlope_H
+    if ( .not. associated ( S % SetSlopeStage ) ) &
+      S % SetSlopeStage  =>  SetSlopeStage_H
 
-    allocate ( S % SlopeStage ( nS ) )
+     call S % SetSlope ( S % Slope )
+
+    allocate ( S % SlopeStageNew ( nS ) )
     do iS  =  1,  nS
-      call S % SetSlope ( S % SlopeStage ( iS ) % Element, iS_Option = iS )
+      call S % SetSlopeStage ( S % SlopeStageNew ( iS ) % Element, iS )
     end do !-- iS
 
     end associate !-- nS
@@ -189,21 +212,15 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine SetStream_H ( S, Sm, StagesOption )
+  subroutine SetStream_H ( S, Sm )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     class ( StreamForm ), intent ( inout ) :: &
       Sm
-    logical ( KDL ), intent ( in ), optional :: &
-      StagesOption
 
     integer ( KDI ) :: &
       iS  !-- iStage
-    logical ( KDL ) :: &
-      Stages
-    character ( 1 ) :: &
-      StageNumber
 
     if ( .not. allocated ( S % SlopeSum ) ) then
       call S % SetSlope ( S % SlopeSum )
@@ -212,59 +229,6 @@ contains
       end associate !-- K_Sum
     end if !-- allocated SlopeSum
     
-    Stages  =  .false.
-    if ( present ( StagesOption ) ) &
-      Stages  =  StagesOption
-
-    if ( Stages ) then
-
-!       associate &
-!         ( CS    =>  S % CurrentSet, &
-!            SA_1  =>  S % SlopeStage ( 1 ) % Element )
-!       associate &
-!         ( SC  =>  SA_1 % FieldSet_C ( 1 ) % Element )
-!       associate &
-!         (       DeviceMemory  =>  SC % Storage_FSC % DeviceMemory, &
-!                 PinnedMemory  =>  SC % Storage_FSC % DeviceMemory, &
-!           DevicesCommunicate  =>  SC % GhostExchange_FSC % DevicesCommunicate )
-      associate &
-        ( nS  =>  S % nStages )
-
-!       allocate ( S % SolutionStage ( nS ) )
-!       do iS  =  1, nS
-!         write ( StageNumber, fmt = '(i1.1)' ) iS
-!         allocate ( S % SolutionStage ( iS ) % Element )
-!         associate ( SSA  =>  S % SolutionStage ( iS ) % Element )
-!         call SSA % Initialize &
-!                ( SA_1 % Atlas, &
-!                  FieldOption = SC % Field, &
-!                  NameOption = 'Solution_' // StageNumber // '_' &
-!                               // trim ( CS % Name ), &
-!                  DeviceMemoryOption = DeviceMemory, &
-!                  PinnedMemoryOption = PinnedMemory, &
-!                  DevicesCommunicateOption = DevicesCommunicate, &
-!                  nFieldsOption = SC % nFields )
-!         call Sm % AddFieldSet ( SSA )
-!         end associate !-- SSA
-!       end do !-- iS
-
-      ! associate ( RSA  =>  S % RiemannSolver )
-      ! call RSA % SetStream ( Sm, nS )
-      ! end associate !-- RSA
-
-      do iS  =  1,  nS
-        associate ( SS  =>  S % SlopeStage ( iS ) % Element )
-        call SS % SetStream ( Sm )
-        end associate !-- SS
-      end do !-- iS
-
-      end associate !-- nS
-!       end associate !-- DeviceMemory, etc.
-!       end associate !-- SC
-!       end associate !-- CS, etc.
-
-    end if !-- Stages
-
   end subroutine SetStream_H
 
 
@@ -296,7 +260,7 @@ contains
     call Show ( S % C, 'C', lRealOption = 2 )
 
     do iS  =  1, S % nStages
-      call S % SlopeStage ( iS ) % Element % Show ( )
+      call S % SlopeStageNew ( iS ) % Element % Show ( )
     end do !-- iS
     if ( allocated ( S % SlopeSum ) ) &
       call S % SlopeSum % Show ( )
@@ -331,14 +295,14 @@ contains
       T
 
     T  =>  PROGRAM_HEADER % Timer &
-             ( Handle = S % iTimer_SF, &
+             ( Handle = S % iTimer_SS, &
                Name = trim ( S % Name ) // '_StrSltn', &
                Level = Level )
 
   end function TimerStoreSolution
 
 
-  function TimerSlopeSum ( S, Level ) result ( T )
+  function TimerAccumulateSlope ( S, Level ) result ( T )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -348,11 +312,11 @@ contains
       T
 
     T  =>  PROGRAM_HEADER % Timer &
-             ( Handle = S % iTimer_SS, &
-               Name = trim ( S % Name) // '_SlpSm', &
+             ( Handle = S % iTimer_AS, &
+               Name = trim ( S % Name) // '_AccmltSlp', &
                Level = Level )
 
-  end function TimerSlopeSum
+  end function TimerAccumulateSlope
 
 
   subroutine Compute ( S, T, dT, T_Option )
@@ -471,30 +435,53 @@ contains
   end subroutine Compute
 
 
-  subroutine ComputeSlopeSum ( S )
+  subroutine AccumulateSlope ( S, iS )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
-
-    integer ( KDI ) :: &
+    integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
 
     if ( .not. allocated ( S % SlopeSum ) ) &
       return
 
-    associate ( K_Sum  =>  S % SlopeSum )
+    associate &
+      ( K_Sum  =>  S % SlopeSum, &
+        K      =>  S % Slope )
 
-    call K_Sum % ClearRecursive ( )
+    if ( iS == 1 ) &
+      call K_Sum % ClearRecursive ( )
+    call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
 
-    do iS  =  1,  S % nStages
-      associate ( K  =>  S % SlopeStage ( iS ) % Element )
-      call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
-      end associate !-- K
-    end do !-- iS
+    end associate !-- K_Sum, etc.
 
-    end associate !-- K_Sum
+  end subroutine AccumulateSlope
 
-  end subroutine ComputeSlopeSum
+
+  ! subroutine ComputeSlopeSum ( S )
+
+  !   class ( Step_RK_H_Form ), intent ( inout ) :: &
+  !     S
+
+  !   integer ( KDI ) :: &
+  !     iS  !-- iStage
+
+  !   if ( .not. allocated ( S % SlopeSum ) ) &
+  !     return
+
+  !   associate ( K_Sum  =>  S % SlopeSum )
+
+  !   call K_Sum % ClearRecursive ( )
+
+  !   do iS  =  1,  S % nStages
+  !     associate ( K  =>  S % SlopeStage ( iS ) % Element )
+  !     call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
+  !     end associate !-- K
+  !   end do !-- iS
+
+  !   end associate !-- K_Sum
+
+  ! end subroutine ComputeSlopeSum
 
 
   impure elemental subroutine Finalize ( S )
@@ -502,10 +489,12 @@ contains
     type ( Step_RK_H_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % SlopeStage ) ) &
-      deallocate ( S % SlopeStage )
+    if ( allocated ( S % SlopeStageNew ) ) &
+      deallocate ( S % SlopeStageNew )
     if ( allocated ( S % SlopeSum ) ) &
       deallocate ( S % SlopeSum )
+    if ( allocated ( S % Slope ) ) &
+      deallocate ( S % Slope )
     if ( allocated ( S % A ) ) &
       deallocate ( S % A )
     if ( allocated ( S % B ) ) &
@@ -617,37 +606,47 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine SetSlope_H ( S, K, iS_Option )
+  subroutine SetSlope_H ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
     class ( Slope_H_Form ), intent ( out ), allocatable :: &
       K
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
-
-    character ( 1 ) :: &
-      StageNumber
-    character ( LDL ) :: &
-      Name
 
     allocate ( Slope_H_Form :: K )
     associate ( A  =>  S % Atlas )
-
-    Name  =  'Slope'
-    if ( present ( iS_Option ) ) then
-      write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-      Name  =  trim ( Name ) // '_' // StageNumber
-    end if
-
     call K % Initialize &
            ( A, &
-             NameOption = Name, &
+             NameOption = 'Slope', &
              IgnorabilityOption = A % IGNORABILITY )
-
     end associate !-- A
 
   end subroutine SetSlope_H
+
+
+  subroutine SetSlopeStage_H ( S, K, iS )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( FieldSetForm ), intent ( out ), allocatable :: &
+      K
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    character ( 1 ) :: &
+      StageNumber
+
+    write ( StageNumber, fmt = '(i1.1)' ) iS
+
+    allocate ( K )
+    associate ( A  =>  S % Atlas )
+    call K % Initialize &
+           ( A, &
+             NameOption = 'Slope_' // StageNumber, &
+             IgnorabilityOption = A % IGNORABILITY )
+    end associate !-- A
+
+  end subroutine SetSlopeStage_H
 
 
 end module Step_RK_H__Form

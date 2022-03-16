@@ -33,8 +33,8 @@ module Slope_H__Form
       Show => Show_FS
     procedure, public, pass :: &
       Timer
-    procedure, public, pass :: &
-      CloneTimers
+!    procedure, public, pass :: &
+!      CloneTimers
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
@@ -180,30 +180,30 @@ contains
   end function Timer
 
 
-  subroutine CloneTimers ( S, S_S )
+  ! subroutine CloneTimers ( S, S_S )
 
-    class ( Slope_H_Form ), intent ( inout ) :: &
-      S
-    class ( Slope_H_Form ), intent ( in ) :: &
-      S_S  !-- S_Source
+  !   class ( Slope_H_Form ), intent ( inout ) :: &
+  !     S
+  !   class ( Slope_H_Form ), intent ( in ) :: &
+  !     S_S  !-- S_Source
 
-    integer ( KDI ) :: &
-      iC  !-- iComponent
+  !   integer ( KDI ) :: &
+  !     iC  !-- iComponent
 
-    S % iTimer     =  S_S % iTimer
-    S % iTimer_MA  =  S_S % iTimer_MA
+  !   S % iTimer     =  S_S % iTimer
+  !   S % iTimer_MA  =  S_S % iTimer_MA
 
-    call S % CloneGhostTimers ( S_S )
+  !   call S % CloneGhostTimers ( S_S )
 
-    do iC  =  1, S % nComponents
-      associate &
-        ( SC    =>  S   % Component ( iC ) % Element, &
-          SC_S  =>  S_S % Component ( iC ) % Element )
-      call SC % CloneTimers ( SC_S )
-      end associate !-- SC, etc.
-    end do !-- iC
+  !   do iC  =  1, S % nComponents
+  !     associate &
+  !       ( SC    =>  S   % Component ( iC ) % Element, &
+  !         SC_S  =>  S_S % Component ( iC ) % Element )
+  !     call SC % CloneTimers ( SC_S )
+  !     end associate !-- SC, etc.
+  !   end do !-- iC
 
-  end subroutine CloneTimers
+  ! end subroutine CloneTimers
 
 
   subroutine Compute ( S, T_Option )

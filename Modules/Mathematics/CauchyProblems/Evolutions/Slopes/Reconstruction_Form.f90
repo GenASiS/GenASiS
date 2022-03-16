@@ -26,10 +26,6 @@ module Reconstruction_Form
       Output_IR => null ( )
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
-    type ( FieldSetElement ), dimension ( :, : ), allocatable :: &
-      StageDimension_IL, &
-      StageDimension_IR, &
-      StageDimension
   contains
     procedure, private, pass :: &
       InitializeAllocate
@@ -254,14 +250,12 @@ contains
   end subroutine InitializeAssociate
 
 
-  subroutine SetStream ( R, S, nS )
+  subroutine SetStream ( R, S )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
     class ( StreamForm ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ) :: &
-      nS  !-- nStages
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
@@ -278,75 +272,6 @@ contains
     do iC  =  2, A % nCharts
       nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
     end do
-
-    allocate ( R % StageDimension ( nS, nD ) )
-    if ( R % AllocatedOutput ) then
-      allocate ( R % StageDimension_IL ( nS, nD ) )
-      allocate ( R % StageDimension_IR ( nS, nD ) )
-    end if !-- AllocatedOutput
-    do iS  =  1, nS
-      do iD  =  1, nD
-
-        write ( StageNumber, fmt = '(i1.1)' ) iS
-        write ( DimensionNumber, fmt = '(i1.1)' ) iD
-
-        allocate &
-          ( R % StageDimension ( iS, iD ) % Element )
-        associate &
-          ( SD  =>  R % StageDimension ( iS, iD ) % Element, &
-            FS  =>  R % FieldSet )
-        call SD % Initialize &
-               ( FS % Atlas, &
-                 FieldOption = FS % Field, &
-                 NameOption = 'R_' // trim ( FS % Name ) // '_' &
-                              // StageNumber // '_' // DimensionNumber, &
-                 DeviceMemoryOption = FS % DeviceMemory, &
-                 DevicesCommunicateOption = FS % DevicesCommunicate, &
-                 nFieldsOption = size ( FS % Field ), &
-                 IgnorabilityOption = R % IGNORABILITY + 1 )
-        call S % AddFieldSet ( SD, iaSelectedOption = FS % iaSelected )
-        end associate !-- SD, etc.
-
-        if ( R % AllocatedOutput ) then
-
-          allocate &
-            ( R % StageDimension_IL ( iS, iD ) % Element )
-          associate &
-            ( SD  =>  R % StageDimension_IL ( iS, iD ) % Element, &
-               O  =>  R % Output_IL )
-          call SD % Initialize &
-                 ( O % Atlas, &
-                   FieldOption = O % Field, &
-                   NameOption = trim ( O % Name ) // '_' // StageNumber // '_' &
-                                // DimensionNumber, &
-                   DeviceMemoryOption = FS % DeviceMemory, &
-                   DevicesCommunicateOption = FS % DevicesCommunicate, &
-                   nFieldsOption = O % nFields, &
-                   IgnorabilityOption = R % IGNORABILITY + 1 )
-          call S % AddFieldSet ( SD )
-          end associate !-- SD, etc.
-
-          allocate &
-            ( R % StageDimension_IR ( iS, iD ) % Element )
-          associate &
-            ( SD  =>  R % StageDimension_IR ( iS, iD ) % Element, &
-               O  =>  R % Output_IR )
-          call SD % Initialize &
-                 ( O % Atlas, &
-                   FieldOption = O % Field, &
-                   NameOption = trim ( O % Name ) // '_' // StageNumber // '_' &
-                                // DimensionNumber, &
-                   DeviceMemoryOption = FS % DeviceMemory, &
-                   DevicesCommunicateOption = FS % DevicesCommunicate, &
-                   nFieldsOption = O % nFields, &
-                   IgnorabilityOption = R % IGNORABILITY + 1 )
-          call S % AddFieldSet ( SD )
-          end associate !-- SD, etc.
-
-        end if !-- AllocatedOutput
-
-      end do !-- iD
-    end do !-- iS
 
     end associate !-- A
     end associate !-- FS
@@ -389,15 +314,13 @@ contains
   end function Timer
 
 
-  subroutine Compute ( R, iC, iD, iS_Option )
+  subroutine Compute ( R, iC, iD )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
       iD     !-- iDimensions
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     real ( KDR ), dimension ( :, :, : ), pointer :: &
        X, &
@@ -481,33 +404,6 @@ contains
     end associate !-- GV, etc.
     end associate !-- G, etc.
 
-    if ( allocated ( R % StageDimension ) .and. present ( iS_Option ) ) &
-    then
-      associate &
-        ( SD  =>  R % StageDimension ( iS_Option, iD ) % Element, &
-          FS  =>  R % FieldSet )
-      call FS % Copy ( SD )
-      end associate !-- SD, etc.
-    end if
-
-    if ( allocated ( R % StageDimension_IL ) .and. present ( iS_Option ) ) &
-    then
-      associate &
-        ( SD  =>  R % StageDimension_IL ( iS_Option, iD ) % Element, &
-           O  =>  R % Output_IL )
-      call O % Copy ( SD )
-      end associate !-- SD, etc.
-    end if
-
-    if ( allocated ( R % StageDimension_IR ) .and. present ( iS_Option ) ) &
-    then
-      associate &
-        ( SD  =>  R % StageDimension_IR ( iS_Option, iD ) % Element, &
-           O  =>  R % Output_IR )
-      call O % Copy ( SD )
-      end associate !-- SD, etc.
-    end if
-
   end subroutine Compute
 
 
@@ -515,13 +411,6 @@ contains
 
     type ( ReconstructionForm ), intent ( inout ) :: &
       R
-
-    if ( allocated ( R % StageDimension ) ) &
-      deallocate ( R % StageDimension )
-    if ( allocated ( R % StageDimension_IR ) ) &
-      deallocate ( R % StageDimension_IR )
-    if ( allocated ( R % StageDimension_IL ) ) &
-      deallocate ( R % StageDimension_IL )
 
     if ( R % AllocatedOutput ) then
       deallocate ( R % Output_IR )

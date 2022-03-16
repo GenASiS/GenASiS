@@ -63,8 +63,8 @@ module FieldSet_Form
       Show => Show_FS
     procedure, public, pass :: &
       TimerGhost
-    procedure, public, pass :: &
-      CloneGhostTimers
+!    procedure, public, pass :: &
+!      CloneGhostTimers
     procedure, public, pass :: &
       Clear => Clear_FS
     procedure, public, pass ( FS_S ) :: &
@@ -528,19 +528,19 @@ contains
   end function TimerGhost
 
 
-  subroutine CloneGhostTimers ( FS, FS_S )
+  ! subroutine CloneGhostTimers ( FS, FS_S )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    class ( FieldSetForm ), intent ( in ) :: &
-      FS_S
+  !   class ( FieldSetForm ), intent ( inout ) :: &
+  !     FS
+  !   class ( FieldSetForm ), intent ( in ) :: &
+  !     FS_S
 
-    FS % iTimerGhost     =  FS_S % iTimerGhost
-    FS % iTimerGhost_UH  =  FS_S % iTimerGhost_UH
-    FS % iTimerGhost_EG  =  FS_S % iTimerGhost_EG
-    FS % iTimerGhost_UD  =  FS_S % iTimerGhost_UD
+  !   FS % iTimerGhost     =  FS_S % iTimerGhost
+  !   FS % iTimerGhost_UH  =  FS_S % iTimerGhost_UH
+  !   FS % iTimerGhost_EG  =  FS_S % iTimerGhost_EG
+  !   FS % iTimerGhost_UD  =  FS_S % iTimerGhost_UD
 
-  end subroutine CloneGhostTimers
+  ! end subroutine CloneGhostTimers
 
 
   subroutine Clear_FS ( FS, UseDeviceOption )
