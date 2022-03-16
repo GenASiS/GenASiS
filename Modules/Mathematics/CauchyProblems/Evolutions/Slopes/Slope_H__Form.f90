@@ -167,7 +167,7 @@ contains
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ) :: &
       Level
     type ( TimerForm ), pointer :: &
       T

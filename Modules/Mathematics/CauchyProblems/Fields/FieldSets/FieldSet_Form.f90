@@ -522,7 +522,7 @@ contains
 
     T  =>  PROGRAM_HEADER % Timer &
              ( Handle = FS % iTimerGhost, &
-               Name = 'Ghst_' // trim ( NameRoot ), &
+               Name = trim ( NameRoot ) // '_Ghst', &
                Level = Level )
 
   end function TimerGhost

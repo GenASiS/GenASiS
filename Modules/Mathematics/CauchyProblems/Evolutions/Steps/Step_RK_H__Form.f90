@@ -51,19 +51,9 @@ module Step_RK_H__Form
     procedure, public, pass :: &
       Timer
     procedure, public, pass :: &
+      TimerStoreSolution
+    procedure, public, pass :: &
       TimerSlopeSum
-    procedure, private, pass :: &
-      Timer_LI
-    procedure, private, pass :: &
-      Timer_II
-    procedure, private, pass :: &
-      Timer_II_A
-    procedure, private, pass :: &
-      Timer_CS
-    procedure, private, pass :: &
-      Timer_IS_B
-    procedure, private, pass :: &
-      Timer_SF
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
@@ -314,244 +304,55 @@ contains
   end subroutine Show_S
 
 
-  function Timer ( S, LevelOption ) result ( T )
+  function Timer ( S, Level ) result ( T )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+    integer ( KDI ), intent ( in ) :: &
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer )
-
-    if ( iT == 0 ) then
-      TimerName  =  S % Name
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimer, &
+               Name = S % Name, &
+               Level = Level )
 
   end function Timer
 
 
-  function TimerSlopeSum ( S, LevelOption ) result ( T )
+  function TimerStoreSolution ( S, Level ) result ( T )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
+    integer ( KDI ), intent ( in ) :: &
+      Level
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      TimerName
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimer_SF, &
+               Name = trim ( S % Name ) // '_StrSltn', &
+               Level = Level )
 
-    associate ( iT  =>  S % iTimer_SS )
+  end function TimerStoreSolution
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_SlpSm'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  function TimerSlopeSum ( S, Level ) result ( T )
 
-    end associate !-- iT
+    class ( Step_RK_H_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimer_SS, &
+               Name = trim ( S % Name) // '_SlpSm', &
+               Level = Level )
 
   end function TimerSlopeSum
-
-
-  function Timer_LI ( S, LevelOption ) result ( T )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_LI )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_LdIntl'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_LI
-
-
-  function Timer_II ( S, LevelOption ) result ( T )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_II )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_IntlzIntmdt'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_II
-
-
-  function Timer_II_A ( S, LevelOption ) result ( T )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_II_A )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_IncrmntIntmdt'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_II_A
-
-
-  function Timer_CS ( S, LevelOption ) result ( T )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_CS )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_CmptStg'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_CS
-
-
-  function Timer_IS_B ( S, LevelOption ) result ( T )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_IS_B )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_IncrmntSltn'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_IS_B
-
-
-  function Timer_SF ( S, LevelOption ) result ( T )
-
-    class ( Step_RK_H_Form ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
-
-    character ( LDL ) :: &
-      TimerName
-
-    associate ( iT  =>  S % iTimer_SF )
-
-    if ( iT == 0 ) then
-      TimerName  =  trim ( S % Name ) // '_StrFnl'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
-
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
-
-    end associate !-- iT
-
-  end function Timer_SF
 
 
   subroutine Compute ( S, T, dT, T_Option )
@@ -573,15 +374,24 @@ contains
       T_II_A, &
       T_CS, &
       T_IS_B, &
-      T_SF
+      T_SS
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     if ( present ( T_Option ) ) then
-      T_LI    =>  S % Timer_LI   ( LevelOption = T_Option % Level + 1 )
-      T_II    =>  S % Timer_II   ( LevelOption = T_Option % Level + 1 )
-      T_II_A  =>  S % Timer_II_A ( LevelOption = T_Option % Level + 1 )
+      T_LI    =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_LI, &
+                      Name = trim ( S % Name ) // '_LdIntl', &
+                      Level = T_Option % Level + 1 )
+      T_II    =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_II, &
+                      Name = trim ( S % Name ) // '_IntlzIntmdt', &
+                      Level = T_Option % Level + 1 )
+      T_II_A  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_II_A, &
+                      Name = trim ( S % Name ) // '_IncrmntIntmdt', &
+                      Level = T_Option % Level + 1 )
     else
       T_LI    =>  null ( )
       T_II    =>  null ( )
@@ -619,7 +429,10 @@ contains
       if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
 
       if ( present ( T_Option ) ) then
-        T_CS  =>  S % Timer_CS ( LevelOption = T_Option % Level + 1 )
+        T_CS  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_CS, &
+                      Name = trim ( S % Name ) // '_CmptStg', &
+                      Level = T_Option % Level + 1 )
         call T_CS % Start ( )
         call S % ComputeStage ( T, dT, iS, T_Option = T_CS )
         call T_CS % Stop ( )
@@ -630,11 +443,14 @@ contains
     end do !-- iS
 
     if ( present ( T_Option ) ) then
-      T_IS_B  =>  S % Timer_IS_B ( LevelOption = T_Option % Level + 1 )
-      T_SF    =>  S % Timer_SF   ( LevelOption = T_Option % Level + 1 )
+      T_IS_B  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_IS_B, &
+                      Name = trim ( S % Name ) // '_IncrmntSltn', &
+                      Level = T_Option % Level + 1 )
+      T_SS    =>  S % TimerStoreSolution ( Level = T_Option % Level + 1 )
     else
       T_IS_B  =>  null ( )
-      T_SF    =>  null ( )
+      T_SS    =>  null ( )
     end if
 
     if ( associated ( T_IS_B ) ) call T_IS_B % Start ( )
@@ -648,9 +464,9 @@ contains
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )
 
     !-- On exit, Solution  =  Y_(N+1) (new value)
-    if ( associated ( T_SF ) ) call T_SF % Start ( )
-    call S % StoreSolution ( )
-    if ( associated ( T_SF ) ) call T_SF % Stop ( )
+    if ( associated ( T_SS ) ) call T_SS % Start ( )
+    call S % StoreSolution ( T_SS )
+    if ( associated ( T_SS ) ) call T_SS % Stop ( )
 
   end subroutine Compute
 
@@ -787,10 +603,12 @@ contains
   end subroutine IncrementSolution
 
 
-  subroutine StoreSolution ( S )
+  subroutine StoreSolution ( S, T_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     call Show ( 'StoreSolution should be overridden', CONSOLE % WARNING )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )

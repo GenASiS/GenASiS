@@ -43,12 +43,12 @@ program Step_RK_H__Form_Test
   call S  % Show ( )
   call Sm % Show ( )
 
-  T  =>  S % TimerSlopeSum ( LevelOption = 1 )
+  T  =>  S % TimerSlopeSum ( Level = 1 )
   call T % Start ( )
   call S % ComputeSlopeSum ( )
   call T % Stop ( )
 
-  T  =>  S % Timer ( LevelOption = 1 )
+  T  =>  S % Timer ( Level = 1 )
   call T % Start ( )
   call S % Compute ( T = 0.0_KDR, dT = 1.0e-2_KDR, T_Option = T )
   call T % Stop ( )

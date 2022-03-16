@@ -12,6 +12,12 @@ module Step_RK_CS__Form
   private
 
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_Form
+     integer ( KDI ) :: &
+      iTimer_Crsn    = 0, &  !-- Coarsen
+      iTimer_SC      = 0, &  !-- SolutionCopy
+      iTimer_CFB     = 0, &  !-- ComputeFromBalanced
+      iTimer_Cnstrnt = 0, &  !-- Constraint  
+      iTimer_BC      = 0     !-- BoundaryCondition
     type ( FieldSetForm ), allocatable :: &
       Balanced, &
       Intermediate, &
@@ -56,7 +62,8 @@ module Step_RK_CS__Form
   end type Step_RK_CS_Form
 
     private :: &
-      SetSlope_CS
+      SetSlope_CS, &
+      StoreSolution_CS
 
 contains
 
@@ -88,7 +95,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Step_RK_CS'
 
-    Name  =  'Step_' // trim ( CS % Name )
+    Name  =  trim ( CS % Name ) // '_Stp' 
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
@@ -347,8 +354,10 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
     type ( TimerForm ), pointer :: &
-      T_C, &
-      T_EG
+      T_SS, &  !-- StoreSolution
+      T_CS, &  !-- ComputeSlope
+      T_EG, &  !-- ExchangeGhost
+      T_C      !-- Coarsen
 
     associate ( K  =>  S % SlopeStage ( iS ) % Element )
 
@@ -358,15 +367,11 @@ contains
       call K % CloneTimers ( K_1 )
       end associate !-- K_1
 
-      associate &
-        (  Y_I  =>  S % Intermediate, &
-          CS_B  =>  S % Balanced, &
-          CS    =>  S % CurrentSet )
+      associate ( Y_I  =>  S % Intermediate )
 
-      call Y_I % Copy ( CS_B )
-      call CS % ComputeFromBalanced ( )
-      call CS % ApplyBoundaryConditions ( )
-    
+      T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level )
+      call StoreSolution_CS ( S, Y_I, T_Option = T_SS )
+  
       !-- For diagnostic I/O
       if ( allocated ( S % SolutionStage ) ) then
         associate ( Y_S  =>  S % SolutionStage ( iS ) % Element )
@@ -381,28 +386,38 @@ contains
     !-- Compute slope
 
     if ( present ( T_Option ) ) then
-      T_C  =>  K % Timer ( LevelOption = T_Option % Level + 1 )
-      call T_C % Start ( )
+      T_CS  =>  K % Timer ( Level = T_Option % Level + 1 )
     else
-      T_C   =>  null ( )
+      T_CS   =>  null ( )
     end if
-    call K % Compute ( T_Option = T_C )
-    if ( associated ( T_C ) ) call T_C % Stop ( )
+    if ( associated ( T_CS ) ) call T_CS % Start ( )
+    call K % Compute ( T_Option = T_CS )
+    if ( associated ( T_CS ) ) call T_CS % Stop ( )
 
     if ( associated ( S % Coarsening ) ) then
+      if ( present ( T_Option ) ) then
+        T_C  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_Crsn, &
+                     Name = trim ( K % Name ) // '_Crsn', &
+                     Level = T_Option % Level + 1 )
+      else
+        T_C  =>  null ( )
+      end if
+      if ( associated ( T_C ) ) call T_C % Start ( )
       call S % Coarsening % Compute ( K )
+      if ( associated ( T_C ) ) call T_C % Stop ( )
     end if
 
     !-- Slope ghost exchange
 
     if ( present ( T_Option ) ) then
       T_EG  =>  K % TimerGhost &
-                  ( NameRootOption = K % TimerName, &
-                    LevelOption = T_Option % Level + 1 )
-      call T_EG % Start ( )
+                  ( Level = T_Option % Level + 1, &
+                    NameRootOption = K % TimerName )
     else
       T_EG  =>  null ( )
     end if
+    if ( associated ( T_EG ) ) call T_EG % Start ( )
     call K % ExchangeGhostData ( )
     if ( associated ( T_EG ) ) call T_EG % Stop ( )
 
@@ -441,22 +456,17 @@ contains
   end subroutine IncrementSolution
 
 
-  subroutine StoreSolution ( S )
+  subroutine StoreSolution ( S, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
-    associate &
-      (  Y    =>  S % Solution, &
-        CS_B  =>  S % Balanced, &
-        CS    =>  S % CurrentSet )
-
-    call  Y % Copy ( CS_B )
-    call CS % ComputeFromBalanced ( )
-    call CS % ApplyBoundaryConditions ( )
+    associate ( Y  =>  S % Solution )
+    call StoreSolution_CS ( S, Y, T_Option )
+    end associate !-- Y
   
-    end associate !-- Y, etc.
- 
   end subroutine StoreSolution
 
 
@@ -508,6 +518,68 @@ contains
     end select !-- S
 
   end subroutine SetSlope_CS
+
+
+  subroutine StoreSolution_CS ( S, Y, T_Option )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    type ( FieldSetForm ), intent ( in ) :: &
+      Y
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    type ( TimerForm ), pointer :: &
+      T_SC, &   !-- SolutionCopy
+      T_CFB, &  !-- ComputeFromBalanced
+      T_C, &    !-- Constraint
+      T_BC      !-- BoundaryConditions
+
+    associate &
+      ( CS_B  =>  S % Balanced, &
+        CS    =>  S % CurrentSet )
+
+    if ( present ( T_Option ) ) then
+      T_SC   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_SC, &
+                     Name = trim ( S % Name ) // '_CpySltn', &
+                     Level = T_Option % Level + 1 )
+      T_CFB  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_CFB, &
+                     Name = trim ( S % Name ) // '_FrmBlncd', &
+                     Level = T_Option % Level + 1 )
+      T_C    =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_Cnstrnt, &
+                     Name = trim ( S % Name ) // '_Cnstrnt', &
+                     Level = T_Option % Level + 1 )
+      T_BC   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_BC, &
+                     Name = trim ( S % Name ) // '_BndryCndtns', &
+                     Level = T_Option % Level + 1 )
+    else
+      T_SC   =>  null ( )
+      T_CFB  =>  null ( )
+      T_C    =>  null ( )
+      T_BC   =>  null ( )
+    end if
+
+    if ( associated ( T_SC ) ) call T_SC % Start ( )
+    call  Y % Copy ( CS_B )
+    if ( associated ( T_SC ) ) call T_SC % Stop ( )
+
+    if ( associated ( T_CFB ) .and. associated ( T_C ) ) then
+      call CS % ComputeFromBalanced ( T_CFB_Option = T_CFB, T_C_Option = T_C )
+    else
+      call CS % ComputeFromBalanced ( )
+    end if
+
+    if ( associated ( T_BC ) ) call T_BC % Start ( )
+    call CS % ApplyBoundaryConditions ( )
+    if ( associated ( T_BC ) ) call T_BC % Stop ( )
+  
+    end associate !-- CS_B
+
+  end subroutine StoreSolution_CS
 
 
 end module Step_RK_CS__Form

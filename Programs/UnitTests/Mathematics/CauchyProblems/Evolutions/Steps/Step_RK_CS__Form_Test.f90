@@ -62,7 +62,7 @@ program Step_RK_CS__Form_Test
   do iD  =  1, 3
     write ( Dimension, fmt = '(i1.1)' ) iD
     call ES ( iD ) % Initialize &
-           ( CS, CS, PrefixOption = 'Egnspd_' // Dimension )
+           ( CS, CS, SuffixOption = 'Egnspd_' // Dimension )
   end do !-- iD
 
   allocate ( S )
@@ -206,19 +206,19 @@ contains
       call Show ( Time, 'Time' )
       call Show ( TimeStep, 'TimeStep' )
 
-      T  =>  S % Timer ( LevelOption = 1 )
+      T  =>  S % Timer ( Level = 1 )
       call T % Start ( )
       call S % Compute ( T = Time, dT = TimeStep, T_Option = T )
       call T % Stop ( )
 
       Time  =  Time + TimeStep
 
-      T  =>  S % TimerSlopeSum ( LevelOption = 1 )
+      T  =>  S % TimerSlopeSum ( Level = 1 )
       call T % Start ( )
       call S % ComputeSlopeSum ( )
       call T % Stop ( )
 
-      T  =>  Sm % TimerWrite ( LevelOption = 1 )
+      T  =>  Sm % TimerWrite ( Level = 1 )
       call T % Start ( )
       call GIS % Open ( GIS % ACCESS_CREATE )
       call Sm % Write &
