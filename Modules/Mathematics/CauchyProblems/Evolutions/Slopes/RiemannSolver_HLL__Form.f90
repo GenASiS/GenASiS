@@ -20,8 +20,6 @@ module RiemannSolver_HLL__Form
       ALPHA_MINUS_U   = 0, &
       N_SOLVER_SPEEDS = 0
     integer ( KDI ) :: &
-      iFiducialDensityFlux = 0
-    integer ( KDI ) :: &
       iTimer_P   = 0, &  !-- Prepare
       iTimer_C   = 0, &  !-- Compute
       iTimer_R   = 0, &  !-- Reconstruction
@@ -48,8 +46,6 @@ module RiemannSolver_HLL__Form
       InitializeAllocate_RS
     generic, public :: &
       Initialize => InitializeAllocate_RS
-    procedure, public, pass :: &
-      SetStream
     procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
@@ -328,45 +324,6 @@ contains
   end subroutine InitializeAllocate_RS
 
 
-  subroutine SetStream ( RS, S, nS )
-
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-      RS
-    class ( StreamForm ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ) :: &
-      nS  !-- nStages
-
-    integer ( KDI ) :: &
-      iC, &  !-- iChart
-      nD     !-- nDimensions
-    character ( 1 ) :: &
-!      StageNumber, &
-      DimensionNumber
-
-    associate ( A  =>  RS % Atlas )
-    nD  =  A % Chart ( 1 ) % Element % nDimensions
-    do iC  =  2, A % nCharts
-      nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
-    end do
-    end associate !-- A
-
-    ! select case ( trim ( RS % ReconstructedSet ) )
-    ! case ( 'PRIMITIVE' )
-    !   associate ( RPS  =>  RS % Reconstruction_PS )
-    !   call RPS % SetStream ( S, nS )
-    !   end associate !-- RPS
-    ! case default
-    !   call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
-    !   call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
-    !   call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
-    !   call Show ( 'SetStream', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- ReconstructedSet
-
-  end subroutine SetStream
-
-
   subroutine Show_FS ( FS )
 
     class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
@@ -425,43 +382,6 @@ contains
                Level = Level )
 
   end function Timer_C
-
-
-  ! subroutine Compute ( RS, iC, iD, T_Option, iS_Option )
-
-  !   class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
-  !     RS
-  !   integer ( KDI ), intent ( in ) :: &
-  !     iC, &  !-- iChart
-  !     iD     !-- iDimensions
-  !   type ( TimerForm ), intent ( in ), optional :: &
-  !     T_Option
-  !   integer ( KDI ), intent ( in ), optional :: &
-  !     iS_Option  !-- iStage_Option
-
-  !   call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
-  !   call Show ( RS % Name, 'Name', RS % IGNORABILITY + 3 )
-
-  !   select case ( trim ( RS % ReconstructedSet ) )
-  !   case ( 'FLUXES' )
-  !     call ComputeWithReconstructedFluxes ( RS, iC, iD, T_Option, iS_Option )
-  !   case ( 'PRIMITIVE' )
-  !     call ComputeWithReconstructedPrimitive ( RS, iC, iD, T_Option, iS_Option )
-  !   case default
-  !     call Show ( 'ReconstructedSet not recognized', CONSOLE % ERROR )
-  !     call Show ( RS % ReconstructedSet, 'ReconstructedSet', CONSOLE % ERROR )
-  !     call Show ( 'RiemannSolver_HLL__Form', 'module', CONSOLE % ERROR )
-  !     call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-  !     call PROGRAM_HEADER % Abort ( )
-  !   end select !-- ReconstructedSet
-
-  !   if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
-  !     associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
-  !     call RS % Copy ( SDC )
-  !     end associate !-- SDC
-  !   end if
-
-  ! end subroutine Compute
 
 
   subroutine Prepare ( RS, iC, iD, T_Option )
@@ -552,7 +472,7 @@ contains
   end subroutine Prepare
 
 
-  subroutine ComputeFlux ( RS, DP, iC, iD, T_Option, iS_Option )
+  subroutine ComputeFlux ( RS, DP, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -563,8 +483,6 @@ contains
       iD      !-- iDimensions
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option  !-- iStage_Option
 
     integer ( KDI ) :: &
       iF 
@@ -634,16 +552,10 @@ contains
 
     end associate !-- CS, etc.
 
-    ! if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
-    !   associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
-    !   call RS % Copy ( SDC )
-    !   end associate !-- SDC
-    ! end if
-    
   end subroutine ComputeFlux
 
 
-  subroutine ComputeDiffusion ( RS, iC, iD, T_Option, iS_Option )
+  subroutine ComputeDiffusion ( RS, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -652,8 +564,6 @@ contains
       iD      !-- iDimensions
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option  !-- iStage_Option
 
     integer ( KDI ) :: &
       iF 
@@ -710,16 +620,10 @@ contains
 
     end associate !-- CS, etc.
 
-    ! if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
-    !   associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
-    !   call RS % Copy ( SDC )
-    !   end associate !-- SDC
-    ! end if
-    
   end subroutine ComputeDiffusion
 
 
-  subroutine Compute ( RS, DP, iC, iD, T_Option, iS_Option )
+  subroutine Compute ( RS, DP, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
@@ -730,8 +634,6 @@ contains
       iD      !-- iDimensions
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option  !-- iStage_Option
 
     integer ( KDI ) :: &
       iF 
@@ -807,12 +709,6 @@ contains
 
     end associate !-- CS, etc.
 
-    ! if ( allocated ( RS % StageDimension ) .and. present ( iS_Option ) ) then
-    !   associate ( SDC  =>  RS % StageDimension ( iS_Option, iD ) % Element )
-    !   call RS % Copy ( SDC )
-    !   end associate !-- SDC
-    ! end if
-    
   end subroutine Compute
 
 

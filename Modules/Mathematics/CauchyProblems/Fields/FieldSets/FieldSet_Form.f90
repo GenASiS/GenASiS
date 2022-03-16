@@ -63,8 +63,6 @@ module FieldSet_Form
       Show => Show_FS
     procedure, public, pass :: &
       TimerGhost
-!    procedure, public, pass :: &
-!      CloneGhostTimers
     procedure, public, pass :: &
       Clear => Clear_FS
     procedure, public, pass ( FS_S ) :: &
@@ -502,45 +500,21 @@ contains
   end subroutine Show_FS
 
 
-  function TimerGhost ( FS, Level, NameRootOption ) result ( T )
+  function TimerGhost ( FS, Level ) result ( T )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       FS
     integer ( KDI ), intent ( in ) :: &
       Level
-    character ( * ), intent ( in ), optional :: &
-      NameRootOption
     type ( TimerForm ), pointer :: &
       T
 
-    character ( LDL ) :: &
-      NameRoot
-
-    NameRoot  =  FS % Name
-    if ( present ( NameRootOption ) ) &
-      NameRoot  =  NameRootOption
-
     T  =>  PROGRAM_HEADER % Timer &
              ( Handle = FS % iTimerGhost, &
-               Name = trim ( NameRoot ) // '_Ghst', &
+               Name = trim ( FS % Name ) // '_Ghst', &
                Level = Level )
 
   end function TimerGhost
-
-
-  ! subroutine CloneGhostTimers ( FS, FS_S )
-
-  !   class ( FieldSetForm ), intent ( inout ) :: &
-  !     FS
-  !   class ( FieldSetForm ), intent ( in ) :: &
-  !     FS_S
-
-  !   FS % iTimerGhost     =  FS_S % iTimerGhost
-  !   FS % iTimerGhost_UH  =  FS_S % iTimerGhost_UH
-  !   FS % iTimerGhost_EG  =  FS_S % iTimerGhost_EG
-  !   FS % iTimerGhost_UD  =  FS_S % iTimerGhost_UD
-
-  ! end subroutine CloneGhostTimers
 
 
   subroutine Clear_FS ( FS, UseDeviceOption )

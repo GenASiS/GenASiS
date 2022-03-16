@@ -21,8 +21,6 @@ module Slope_DFV_DD__Form
       InitializeAllocate_DD
     generic, public :: &
       Initialize => InitializeAllocate_DD
-!    procedure, public, pass :: &
-!      CloneTimers
     procedure, public, pass :: &
       ComputeDimension
     final :: &
@@ -58,15 +56,12 @@ module Slope_DFV_DD__Form
 contains
 
 
-  subroutine InitializeAllocate_DD &
-               ( S, RS, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_DD ( S, RS, IgnorabilityOption )
 
     class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -78,13 +73,7 @@ contains
 
     associate ( CS  =>  RS % CurrentSet )
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  &
-        =  trim ( CS % Name ) // '_Slp_DFV_DD'
-
     Name  =  trim ( CS % Name ) // '_Slp_DFV_DD'
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % RiemannSolver   =>  RS
 
@@ -101,28 +90,6 @@ contains
     end associate !-- CS
 
   end subroutine InitializeAllocate_DD
-
-
-  ! subroutine CloneTimers ( S, S_S )
-
-  !   class ( Slope_DFV_DD_Form ), intent ( inout ) :: &
-  !     S
-  !   class ( Slope_H_Form ), intent ( in ) :: &
-  !     S_S  !-- S_Source
-
-  !   integer ( KDI ) :: &
-  !     iC  !-- iComponent
-
-  !   call S % Slope_H_Form % CloneTimers ( S_S )
-
-  !   select type ( S_S )
-  !   class is ( Slope_DFV_DD_Form )
-
-  !   S % iTimer_K  =  S_S % iTimer_K
-
-  !   end select !-- S_S
-
-  ! end subroutine CloneTimers
 
 
   subroutine ComputeDimension ( S, iC, iD, T_Option )
@@ -156,7 +123,7 @@ contains
       T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % TimerName ) // '_K', &
+                    Name = trim ( S % Name ) // '_K', &
                     Level = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )

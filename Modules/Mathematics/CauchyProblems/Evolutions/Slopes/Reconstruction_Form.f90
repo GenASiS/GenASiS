@@ -34,8 +34,6 @@ module Reconstruction_Form
     generic, public :: &
       Initialize => InitializeAllocate, InitializeAssociate
     procedure, public, pass :: &
-      SetStream
-    procedure, public, pass :: &
       Show => Show_R
     procedure, public, pass :: &
       Timer
@@ -122,8 +120,7 @@ module Reconstruction_Form
 contains
 
 
-  subroutine InitializeAllocate &
-               ( R, G, FS, SuffixOption, OrderOption )
+  subroutine InitializeAllocate ( R, G, FS, OrderOption )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
@@ -131,8 +128,6 @@ contains
       G
     class ( FieldSetForm ), intent ( in ), target :: &
       FS
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
@@ -148,8 +143,6 @@ contains
     R % IGNORABILITY  =  FS % Atlas % IGNORABILITY
 
     R % Name  =  trim ( FS % Name ) // '_Rcnstrctn'
-    if ( present ( SuffixOption ) ) &
-      R % Name  =  trim ( FS % Name ) // '_' // trim ( SuffixOption )
 
     call Show ( 'InitializeAllocating a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
@@ -206,8 +199,7 @@ contains
   end subroutine InitializeAllocate
 
 
-  subroutine InitializeAssociate &
-               ( R, G, FS, O_IL, O_IR, iaS, SuffixOption, OrderOption )
+  subroutine InitializeAssociate ( R, G, FS, O_IL, O_IR, iaS, OrderOption )
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
@@ -218,16 +210,12 @@ contains
       O_IL, O_IR
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaS
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
 
     R % IGNORABILITY  =  FS % Atlas % IGNORABILITY
 
     R % Name  =  trim ( FS % Name ) // '_Rcnstrctn' 
-    if ( present ( SuffixOption ) ) &
-      R % Name  =  trim ( FS % Name ) // '_' // trim ( SuffixOption )
 
     call Show ( 'InitializeAssociating a Reconstruction', R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
@@ -250,35 +238,6 @@ contains
   end subroutine InitializeAssociate
 
 
-  subroutine SetStream ( R, S )
-
-    class ( ReconstructionForm ), intent ( inout ) :: &
-      R
-    class ( StreamForm ), intent ( inout ) :: &
-      S
-
-    integer ( KDI ) :: &
-      iC, &  !-- iChart
-      iS, &  !-- iStage
-      iD, &  !-- iDimension
-      nD     !-- nDimensions
-    character ( 1 ) :: &
-      StageNumber, &
-      DimensionNumber
-
-    associate ( FS  =>  R % FieldSet )
-    associate ( A  =>  FS % Atlas )
-    nD  =  A % Chart ( 1 ) % Element % nDimensions
-    do iC  =  2, A % nCharts
-      nD  =  max ( nD, A % Chart ( iC ) % Element % nDimensions )
-    end do
-
-    end associate !-- A
-    end associate !-- FS
-
-  end subroutine SetStream
-
-
   subroutine Show_R ( R )
 
     class ( ReconstructionForm ), intent ( in ) :: &
@@ -290,7 +249,6 @@ contains
     call Show ( R % Order,      'Order', R % IGNORABILITY )
     call Show ( R % iaSelected, 'iaSelected', R % IGNORABILITY + 1 )
 
-!    call R % FieldSet % Show ( )
     call R % Output_IL % Show ( )
     call R % Output_IR % Show ( )
 

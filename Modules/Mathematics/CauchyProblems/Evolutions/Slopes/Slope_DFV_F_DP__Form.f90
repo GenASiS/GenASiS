@@ -30,8 +30,7 @@ module Slope_DFV_F_DP__Form
 contains
 
 
-  subroutine InitializeAllocate_F &
-               ( S, RS, DP_1D, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_F ( S, RS, DP_1D, IgnorabilityOption )
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
@@ -39,8 +38,6 @@ contains
       RS
     type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
       DP_1D
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -52,12 +49,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_F_DP'
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DP'
-
     Name  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DP'
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % RiemannSolver  =>  RS
 
@@ -81,8 +73,7 @@ contains
       allocate ( Slope_DFV_DP_Form :: S % Component ( nSC ) % Element )
       select type ( SDP  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_DP_Form )
-        call SDP % Initialize &
-               ( RS, DP_1D ( iDP ) % Element, SuffixOption )
+        call SDP % Initialize ( RS, DP_1D ( iDP ) % Element )
       end select !-- SDP
     end do !-- iDP
     end associate !-- nSC
@@ -94,7 +85,7 @@ contains
     allocate ( Slope_DFV_DD_Form :: S % Component ( nSC ) % Element )
     select type ( SDD  =>  S % Component ( nSC ) % Element )
     class is ( Slope_DFV_DD_Form )
-      call SDD % Initialize ( RS, SuffixOption )
+      call SDD % Initialize ( RS )
     end select !-- SDD
     end associate !-- nSC
 

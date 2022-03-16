@@ -22,8 +22,6 @@ module Slope_DFV_C_F__Form
       InitializeAllocate_C_F
     generic, public :: &
       Initialize => InitializeAllocate_C_F
-!    procedure, public, pass :: &
-!      CloneTimers
     procedure, public, pass :: &
       ComputeChart
     procedure, public, pass :: &
@@ -79,14 +77,12 @@ module Slope_DFV_C_F__Form
 contains
 
 
-  subroutine InitializeAllocate_C_F ( S, DP, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_C_F ( S, DP, IgnorabilityOption )
 
     class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
       S
     class ( DivergencePart_CS_Form ), intent ( in ), target :: &
       DP
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -98,13 +94,7 @@ contains
     
     associate ( CS  =>  DP % CurrentSet )
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  &
-        =  trim ( CS % Name ) // '_Slp_DFV_C_F_' // trim ( DP % Name )
-
     Name  =  trim ( CS % Name ) // '_Slp_DFV_C_F_' // trim ( DP % Name )
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % DivergencePart  =>  DP
 
@@ -132,28 +122,6 @@ contains
     end associate !-- CS
 
   end subroutine InitializeAllocate_C_F
-
-
-  ! subroutine CloneTimers ( S, S_S )
-
-  !   class ( Slope_DFV_C_F_Form ), intent ( inout ) :: &
-  !     S
-  !   class ( Slope_H_Form ), intent ( in ) :: &
-  !     S_S  !-- S_Source
-
-  !   integer ( KDI ) :: &
-  !     iC  !-- iComponent
-
-  !   call S % Slope_H_Form % CloneTimers ( S_S )
-
-  !   select type ( S_S )
-  !   class is ( Slope_DFV_C_F_Form )
-
-  !   S % iTimer_K  =  S_S % iTimer_K
-
-  !   end select !-- S_S
-
-  ! end subroutine CloneTimers
 
 
   subroutine ComputeChart ( S, iC, T_Option )
@@ -190,7 +158,7 @@ contains
     if ( present ( T_Option ) ) then
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % TimerName ) // '_K', &
+                    Name = trim ( S % Name ) // '_K', &
                     Level = T_Option % Level + 1 )
     else
       T_K  =>  null ( )
@@ -287,7 +255,7 @@ contains
     if ( present ( T_Option ) ) then
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % TimerName ) // '_K', &
+                    Name = trim ( S % Name ) // '_K', &
                     Level = T_Option % Level + 1 )
     else
       T_K  =>  null ( )
@@ -364,7 +332,6 @@ contains
       deallocate ( S % Stress_UD )
 
   end subroutine Finalize
-
 
 
 end module Slope_DFV_C_F__Form

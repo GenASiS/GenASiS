@@ -37,9 +37,7 @@ module Step_RK_H__Form
       Slope, &
       SlopeSum
     type ( FieldSetElement ), dimension ( : ), allocatable :: &
-      SlopeStageNew
-!    type ( Slope_H_Element ), dimension ( : ), allocatable :: &
-!      SlopeStage
+      SlopeStage
     procedure ( SS ), pointer :: &
       SetSlope => null ( )
     procedure ( SSS ), pointer :: &
@@ -63,8 +61,6 @@ module Step_RK_H__Form
       Compute
     procedure, public, pass :: &
       AccumulateSlope
-!    procedure, public, pass :: &
-!      ComputeSlopeSum
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -202,9 +198,9 @@ contains
 
      call S % SetSlope ( S % Slope )
 
-    allocate ( S % SlopeStageNew ( nS ) )
+    allocate ( S % SlopeStage ( nS ) )
     do iS  =  1,  nS
-      call S % SetSlopeStage ( S % SlopeStageNew ( iS ) % Element, iS )
+      call S % SetSlopeStage ( S % SlopeStage ( iS ) % Element, iS )
     end do !-- iS
 
     end associate !-- nS
@@ -260,7 +256,7 @@ contains
     call Show ( S % C, 'C', lRealOption = 2 )
 
     do iS  =  1, S % nStages
-      call S % SlopeStageNew ( iS ) % Element % Show ( )
+      call S % SlopeStage ( iS ) % Element % Show ( )
     end do !-- iS
     if ( allocated ( S % SlopeSum ) ) &
       call S % SlopeSum % Show ( )
@@ -458,39 +454,13 @@ contains
   end subroutine AccumulateSlope
 
 
-  ! subroutine ComputeSlopeSum ( S )
-
-  !   class ( Step_RK_H_Form ), intent ( inout ) :: &
-  !     S
-
-  !   integer ( KDI ) :: &
-  !     iS  !-- iStage
-
-  !   if ( .not. allocated ( S % SlopeSum ) ) &
-  !     return
-
-  !   associate ( K_Sum  =>  S % SlopeSum )
-
-  !   call K_Sum % ClearRecursive ( )
-
-  !   do iS  =  1,  S % nStages
-  !     associate ( K  =>  S % SlopeStage ( iS ) % Element )
-  !     call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
-  !     end associate !-- K
-  !   end do !-- iS
-
-  !   end associate !-- K_Sum
-
-  ! end subroutine ComputeSlopeSum
-
-
   impure elemental subroutine Finalize ( S )
 
     type ( Step_RK_H_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % SlopeStageNew ) ) &
-      deallocate ( S % SlopeStageNew )
+    if ( allocated ( S % SlopeStage ) ) &
+      deallocate ( S % SlopeStage )
     if ( allocated ( S % SlopeSum ) ) &
       deallocate ( S % SlopeSum )
     if ( allocated ( S % Slope ) ) &

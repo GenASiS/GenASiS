@@ -15,8 +15,6 @@ module Slope_DFV_DP__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_DP_Form
     logical ( KDL ) :: &
       StreamFluxes
-    character ( LDL ) :: &
-      Suffix = ''
     type ( FieldSetElement ), dimension ( : ), allocatable :: &
       FluxSetDimension, &
       FluxSet_IL_Dimension, &
@@ -45,8 +43,7 @@ module Slope_DFV_DP__Form
 contains
 
 
-  subroutine InitializeAllocate_DP &
-               ( S, RS, DP, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_DP ( S, RS, DP, IgnorabilityOption )
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
@@ -54,8 +51,6 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DP
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -73,13 +68,7 @@ contains
 
     associate ( CS  =>  RS % CurrentSet )
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  &
-        =  trim ( CS % Name ) // '_Slp_DFV_DP_' // trim ( DP % Name )
-
     Name  =  trim ( CS % Name ) // '_Slp_DFV_DP_' // trim ( DP % Name )
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -100,14 +89,14 @@ contains
     allocate ( Slope_DFV_PD_Form :: S % Component ( nSC ) % Element )
     select type ( SPD  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_PD_Form )
-    call SPD % Initialize ( RS, DP, SuffixOption )
+    call SPD % Initialize ( RS, DP )
     end select !-- SPD
 
     nSC  =  nSC + 1
     allocate ( Slope_DFV_C_F_Form :: S % Component ( nSC ) % Element )
     select type ( SCF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_C_F_Form )
-    call SCF % Initialize ( DP, SuffixOption )
+    call SCF % Initialize ( DP )
     end select !-- SCF
 
     end associate !-- nSC

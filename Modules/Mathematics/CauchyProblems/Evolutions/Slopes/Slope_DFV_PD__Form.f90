@@ -23,8 +23,6 @@ module Slope_DFV_PD__Form
       InitializeAllocate_PD
     generic, public :: &
       Initialize => InitializeAllocate_PD
-!    procedure, public, pass :: &
-!      CloneTimers
     procedure, public, pass :: &
       ComputeDimension
     procedure, public, pass :: &
@@ -79,8 +77,7 @@ module Slope_DFV_PD__Form
 contains
 
 
-  subroutine InitializeAllocate_PD &
-               ( S, RS, DP, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_PD ( S, RS, DP, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
@@ -88,8 +85,6 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ), target :: &
       DP
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption    
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -101,13 +96,7 @@ contains
 
     associate ( CS  =>  RS % CurrentSet )
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  &
-        =  trim ( CS % Name ) // '_Slp_DFV_PD_' // trim ( DP % Name ) 
-
     Name  =  trim ( CS % Name ) // '_Slp_DFV_PD_' // trim ( DP % Name )
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     S % DivergencePart  =>  DP
     S % RiemannSolver   =>  RS
@@ -186,7 +175,7 @@ contains
       T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % TimerName ) // '_K', &
+                    Name = trim ( S % Name ) // '_K', &
                     Level = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )
@@ -292,7 +281,7 @@ contains
       T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % TimerName ) // '_K', &
+                    Name = trim ( S % Name ) // '_K', &
                     Level = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )

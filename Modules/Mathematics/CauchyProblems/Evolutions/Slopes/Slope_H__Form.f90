@@ -20,8 +20,6 @@ module Slope_H__Form
       iTimer_MA = 0  !-- MultiplyAdd
     logical ( KDL ) :: &
       StreamComponents = .true.
-    character ( LDL ) :: &
-      TimerName = ''
     type ( Slope_H_Element ), dimension ( : ), pointer :: &
       Component => null ( )
   contains
@@ -33,8 +31,6 @@ module Slope_H__Form
       Show => Show_FS
     procedure, public, pass :: &
       Timer
-!    procedure, public, pass :: &
-!      CloneTimers
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
@@ -105,9 +101,6 @@ contains
              UnitOption, VectorIndicesOption, nFieldsOption, &
              IgnorabilityOption = Ignorability )
 
-    if ( FS % TimerName  ==  '' ) &
-      FS % TimerName  =  FS % Name
-
     allocate ( FS % Component ( MAX_COMPONENTS ) )
 
   end subroutine InitializeAllocate_FS
@@ -174,36 +167,10 @@ contains
 
     T  =>  PROGRAM_HEADER % Timer &
              ( Handle = S % iTimer, &
-               Name = S % TimerName, &
+               Name = S % Name, &
                Level = Level )
 
   end function Timer
-
-
-  ! subroutine CloneTimers ( S, S_S )
-
-  !   class ( Slope_H_Form ), intent ( inout ) :: &
-  !     S
-  !   class ( Slope_H_Form ), intent ( in ) :: &
-  !     S_S  !-- S_Source
-
-  !   integer ( KDI ) :: &
-  !     iC  !-- iComponent
-
-  !   S % iTimer     =  S_S % iTimer
-  !   S % iTimer_MA  =  S_S % iTimer_MA
-
-  !   call S % CloneGhostTimers ( S_S )
-
-  !   do iC  =  1, S % nComponents
-  !     associate &
-  !       ( SC    =>  S   % Component ( iC ) % Element, &
-  !         SC_S  =>  S_S % Component ( iC ) % Element )
-  !     call SC % CloneTimers ( SC_S )
-  !     end associate !-- SC, etc.
-  !   end do !-- iC
-
-  ! end subroutine CloneTimers
 
 
   subroutine Compute ( S, T_Option )
@@ -273,7 +240,7 @@ contains
       if ( present ( T_Option ) ) then
         T_MA  =>  PROGRAM_HEADER % Timer &
                     ( Handle = S % iTimer_MA, &
-                      Name = trim ( S % TimerName ) // '_MA', &
+                      Name = trim ( S % Name ) // '_MA', &
                       Level = T_Option % Level + 1 )
       else
         T_MA  =>  null ( )

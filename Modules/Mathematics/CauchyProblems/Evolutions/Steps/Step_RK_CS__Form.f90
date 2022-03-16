@@ -302,7 +302,7 @@ contains
 
     associate &
       ( Y_I  =>  S % Intermediate, &
-        K    =>  S % SlopeStageNew ( iK ) % Element )
+        K    =>  S % SlopeStage ( iK ) % Element )
 
     call Y_I % MultiplyAdd ( K, dT * A )
 
@@ -334,7 +334,7 @@ contains
 
     associate &
       ( K  =>  S % Slope, &
-        K_Stage  =>  S % SlopeStageNew ( iS ) % Element )
+        K_Stage  =>  S % SlopeStage ( iS ) % Element )
 
     if ( iS  >  1 ) then
       associate ( Y_I  =>  S % Intermediate )
@@ -373,9 +373,7 @@ contains
     !-- Slope ghost exchange
 
     if ( present ( T_Option ) ) then
-      T_EG  =>  K % TimerGhost &
-                  ( Level = T_Option % Level + 1, &
-                    NameRootOption = K % TimerName )
+      T_EG  =>  K % TimerGhost ( Level = T_Option % Level + 1 )
     else
       T_EG  =>  null ( )
     end if
@@ -424,7 +422,7 @@ contains
 
     associate &
       ( Y  =>  S % Solution, &
-        K  =>  S % SlopeStageNew ( iS ) % Element )
+        K  =>  S % SlopeStage ( iS ) % Element )
 
     call Y % MultiplyAdd ( K, dT * B )
 

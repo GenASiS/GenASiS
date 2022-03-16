@@ -26,8 +26,7 @@ module Slope_DFV_F_DT__Form
 contains
 
 
-  subroutine InitializeAllocate_F &
-               ( S, RS, DT, SuffixOption, IgnorabilityOption )
+  subroutine InitializeAllocate_F ( S, RS, DT, IgnorabilityOption )
 
     class ( Slope_DFV_F_DT_Form ), intent ( inout ) :: &
       S
@@ -35,8 +34,6 @@ contains
       RS
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DT
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -46,12 +43,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_F_DT'
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DT'
-
     Name  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_F_DT'
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
 
     associate ( CS  =>  RS % CurrentSet )
     call S % Slope_H_Form % Initialize &
@@ -73,14 +65,14 @@ contains
     allocate ( Slope_DFV_PD_Form :: S % Component ( nSC ) % Element )
     select type ( SPD  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_PD_Form )
-    call SPD % Initialize ( RS, DT, SuffixOption )
+    call SPD % Initialize ( RS, DT )
     end select !-- SPD
 
     nSC  =  nSC + 1
     allocate ( Slope_DFV_C_F_Form :: S % Component ( nSC ) % Element )
     select type ( SCF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_C_F_Form )
-    call SCF % Initialize ( DT, SuffixOption )
+    call SCF % Initialize ( DT )
     end select !-- SCF
 
     S % StreamComponents  =  .false.
