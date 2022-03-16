@@ -153,11 +153,11 @@ contains
 
     !-- Timer
 
-    S % N_SERIES_TIMER  =  PROGRAM_HEADER % nTimers
+    S % N_SERIES_TIMER  =  PROGRAM_HEADER % Timer_1D % nTimers
 
     allocate ( SeriesName ( S % N_SERIES_TIMER ) )
     do iT  =  1, S % N_SERIES_TIMER
-      SeriesName ( iT )  =  PROGRAM_HEADER % Timer ( iT ) % Name
+      SeriesName ( iT )  =  PROGRAM_HEADER % Timer_1D % Element ( iT ) % Name
     end do !-- iT
 
     allocate ( SeriesUnit ( S % N_SERIES_TIMER ) )
@@ -244,14 +244,10 @@ contains
   end subroutine Initialize_B
 
 
-  subroutine Record ( S, MaxTime, MinTime, MeanTime )
+  subroutine Record ( S )
 
     class ( Series_B_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      MaxTime, &
-      MinTime, &
-      MeanTime
 
     integer ( KDI ) :: &
       iT  !-- iTimer
@@ -292,15 +288,20 @@ contains
 
     if ( S % iCycle  >  0 ) then
 
+      associate &
+        ( TimeMax   =>  PROGRAM_HEADER % Timer_1D % TimeMax, &
+          TimeMin   =>  PROGRAM_HEADER % Timer_1D % TimeMin, &
+          TimeMean  =>  PROGRAM_HEADER % Timer_1D % TimeMean )
       do iT  =  1, S % N_SERIES_TIMER
-        TV_Max  ( iV, iT ) = MaxTime  ( iT ) / S % iCycle
-        TV_Min  ( iV, iT ) = MinTime  ( iT ) / S % iCycle
-        TV_Mean ( iV, iT ) = MeanTime ( iT ) / S % iCycle
+        TV_Max  ( iV, iT ) = TimeMax  ( iT ) / S % iCycle
+        TV_Min  ( iV, iT ) = TimeMin  ( iT ) / S % iCycle
+        TV_Mean ( iV, iT ) = TimeMean ( iT ) / S % iCycle
         call Show ( TV_Max ( iV, iT ), &
                     T_Max % Unit ( iT ), &
                     trim ( T_Max % Variable ( iT ) ) // ' per cycle', &
                     S % IGNORABILITY + 1 )
       end do !-- iT
+      end associate !-- TimeMax, etc.
 
       dTV ( iV, : )  =  S % dT_Candidate
 
@@ -378,14 +379,14 @@ contains
 !   end subroutine Read
 
 
-!   subroutine Restore ( S, MaxTime, MinTime, MeanTime )
+!   subroutine Restore ( S, TimeMax, TimeMin, TimeMean )
 
 !     class ( Series_B_Form ), intent ( inout ) :: &
 !       S
 !     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       MaxTime, &
-!       MinTime, &
-!       MeanTime
+!       TimeMax, &
+!       TimeMin, &
+!       TimeMean
 
 !     integer ( KDI ) :: &
 !       iT  !-- iTimer
@@ -403,12 +404,12 @@ contains
 !     call Show ( iV, 'iTime', S % IGNORABILITY )
 
 !     do iT = 1, S % N_SERIES_TIMER
-!       MaxTime  ( iT )  =  TV_Max  ( iV, iT )  *  I % iCycle
-!       MinTime  ( iT )  =  TV_Min  ( iV, iT )  *  I % iCycle
-!       MeanTime ( iT )  =  TV_Mean ( iV, iT )  *  I % iCycle
-!       call Show ( MeanTime ( iT ), &
+!       TimeMax  ( iT )  =  TV_Max  ( iV, iT )  *  I % iCycle
+!       TimeMin  ( iT )  =  TV_Min  ( iV, iT )  *  I % iCycle
+!       TimeMean ( iT )  =  TV_Mean ( iV, iT )  *  I % iCycle
+!       call Show ( TimeMean ( iT ), &
 !                   T_Mean % Unit ( iT ), &
-!                   trim ( T_Mean % Variable ( iT ) ) // ' (MeanTime)', &
+!                   trim ( T_Mean % Variable ( iT ) ) // ' (TimeMean)', &
 !                   S % IGNORABILITY )
 !     end do !-- iT
 

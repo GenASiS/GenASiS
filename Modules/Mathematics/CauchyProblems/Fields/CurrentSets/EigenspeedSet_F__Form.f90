@@ -71,7 +71,7 @@ contains
     
     Name  =  trim ( FS_CS % Name ) // '_Egnspd'
     if ( present ( SuffixOption ) ) &
-      Name  =  trim ( FS_CS % Name ) // '_' //trim ( SuffixOption )
+      Name  =  trim ( FS_CS % Name ) // '_Egnspd_' // trim ( SuffixOption )
 
     ES % FieldSet_CS  =>  FS_CS
     ES % CurrentSet   =>  CS

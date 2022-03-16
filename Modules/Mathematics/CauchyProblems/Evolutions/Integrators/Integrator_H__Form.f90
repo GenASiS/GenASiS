@@ -32,18 +32,15 @@ module Integrator_H__Form
       iTimer_CTN = 0, &   !-- Compute_T_New
       iTimer_CT  = 0      !-- ComputeTally
     real ( KDR ) :: &
-      T_Start               = 0.0_KDR, &
-      T_Finish              = 1.0_KDR, &
-      T_CheckpointInterval  = 0.0_KDR, &
-      T_Checkpoint          = 0.0_KDR, & 
-      T                     = 0.0_KDR
+      T_Start              = 0.0_KDR, &
+      T_Finish             = 1.0_KDR, &
+      T_CheckpointInterval = 0.0_KDR, &
+      T_Checkpoint         = 0.0_KDR, & 
+      T                    = 0.0_KDR
     type ( MeasuredValueForm ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), allocatable :: &
-      dT_Candidate, &
-      MaxTime, &
-      MinTime, &
-      MeanTime
+      dT_Candidate
     logical ( KDL ) :: &
       Start, &
       Restart, &
@@ -115,24 +112,24 @@ module Integrator_H__Form
       ShowSteps
     procedure, public, pass :: &  !-- 2
       ShowCheckpointing
-    procedure, private, pass :: &
-      Timer_E
-    procedure, private, pass :: &
-      Timer_AC
-    procedure, private, pass :: &
-      Timer_UH
-    procedure, public, pass :: &
-      Timer_A
-    procedure, public, pass :: &
-      Timer_W
-    procedure, private, pass :: &
-      Timer_CC
-    procedure, private, pass :: &
-      Timer_PC
-    procedure, private, pass :: &
-      Timer_CTN
-    procedure, private, pass :: &
-      Timer_CT
+    ! procedure, private, pass :: &
+    !   Timer_E
+    ! procedure, private, pass :: &
+    !   Timer_AC
+    ! procedure, private, pass :: &
+    !   Timer_UH
+    ! procedure, public, pass :: &
+    !   Timer_A
+    ! procedure, public, pass :: &
+    !   Timer_W
+    ! procedure, private, pass :: &
+    !   Timer_CC
+    ! procedure, private, pass :: &
+    !   Timer_PC
+    ! procedure, private, pass :: &
+    !   Timer_CTN
+    ! procedure, private, pass :: &
+    !   Timer_CT
     procedure, private, pass :: &   !-- 2
       PrepareInitial
     procedure, private, pass :: &   !-- 2
@@ -419,7 +416,8 @@ contains
       ( S_X  =>  I % Checkpoint_X, &
         A_X  =>  I % X, &
         GIS  =>  I % GridImageStream )
-    call S_X % Initialize ( A_X, GIS, NameOption = A_X % Name )
+    call S_X % Initialize &
+           ( A_X, GIS, NameOption = 'Stream_' // trim ( A_X % Name ) )
     call I % Geometry_X % SetStream ( S_X )
     end associate !--SA
     
@@ -440,18 +438,22 @@ contains
       T_A, &
       T_W
 
-!     call I % InitializeTimeSeries ( )
-
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
 
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
-    T_E   =>  I % Timer_E  ( LevelOption = 1 )
+    T_E  =>  PROGRAM_HEADER % Timer &
+               ( Handle = I % iTimer_E, &
+                 Name = trim ( I % Name ) // '_Evltn', &
+                 Level = 1 )
     call T_E % Start ( )
 
-    T_AC  =>  I % Timer_AC ( LevelOption = T_E % Level + 1 )
+    T_AC  =>  PROGRAM_HEADER % Timer &
+                ( Handle = I % iTimer_AC, &
+                  Name = trim ( I % Name ) // '_Chckpnt', &
+                  Level = T_E % Level + 1 )
     call T_AC % Start ( )
     call I % AdministerCheckpoint ( T_AC, ChangeOption = .false. )
     call T_AC % Stop ( )
@@ -459,7 +461,10 @@ contains
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
-      T_CC  =>  I % Timer_CC ( LevelOption = T_E % Level + 1 )
+      T_CC  =>  PROGRAM_HEADER % Timer &
+                ( Handle = I % iTimer_CC, &
+                  Name = trim ( I % Name ) // '_CmptCcl', &
+                  Level = T_E % Level + 1 )
       call T_CC % Start ( )
       call I % ComputeCycle ( T_CC )
       call T_CC % Stop ( )
@@ -484,12 +489,18 @@ contains
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then
 
-        T_A   =>  I % Timer_A  ( )
+        T_A   =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_A, &
+                      Name = trim ( I % Name ) // '_Anlz', &
+                      Level = T_AC % Level + 1 )
         call T_A % Start ( )
         call I % Analyze ( T_A )
         call T_A % Stop ( )
 
-        T_W   =>  I % Timer_W ( )
+        T_W   =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_W, &
+                      Name = trim ( I % Name ) // '_Wrt', &
+                      Level = T_AC % Level + 1 )
         call T_W % Start ( )
         call I % Write ( T_W )
         call T_W % Stop ( )
@@ -635,274 +646,274 @@ contains
   end subroutine ShowCheckpointing
 
 
-  function Timer_E ( I, LevelOption ) result ( T )
+  ! function Timer_E ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_E )
+  !   associate ( iT  =>  I % iTimer_E )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_Evltn'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_Evltn'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_E
+  ! end function Timer_E
 
 
-  function Timer_AC ( I, LevelOption ) result ( T )
+  ! function Timer_AC ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_AC )
+  !   associate ( iT  =>  I % iTimer_AC )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_Chckpnt'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_Chckpnt'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_AC
+  ! end function Timer_AC
 
 
-  function Timer_UH ( I, LevelOption ) result ( T )
+  ! function Timer_UH ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_UH )
+  !   associate ( iT  =>  I % iTimer_UH )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_UpdtHst'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_UpdtHst'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_UH
+  ! end function Timer_UH
 
 
-  function Timer_A ( I, LevelOption ) result ( T )
+  ! function Timer_A ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_A )
+  !   associate ( iT  =>  I % iTimer_A )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_Anlz'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_Anlz'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_A
+  ! end function Timer_A
 
 
-  function Timer_W ( I, LevelOption ) result ( T )
+  ! function Timer_W ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_W )
+  !   associate ( iT  =>  I % iTimer_W )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_Wrt'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_Wrt'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_W
+  ! end function Timer_W
 
 
-  function Timer_CC ( I, LevelOption ) result ( T )
+  ! function Timer_CC ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_CC )
+  !   associate ( iT  =>  I % iTimer_CC )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_CmptCcl'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_CmptCcl'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_CC
+  ! end function Timer_CC
 
 
-  function Timer_PC ( I, LevelOption ) result ( T )
+  ! function Timer_PC ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_PC )
+  !   associate ( iT  =>  I % iTimer_PC )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_PrprCcl'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_PrprCcl'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_PC
+  ! end function Timer_PC
 
 
-  function Timer_CTN ( I, LevelOption ) result ( T )
+  ! function Timer_CTN ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_CTN )
+  !   associate ( iT  =>  I % iTimer_CTN )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_CmptTmStp'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_CmptTmStp'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_CTN
+  ! end function Timer_CTN
 
 
-  function Timer_CT ( I, LevelOption ) result ( T )
+  ! function Timer_CT ( I, LevelOption ) result ( T )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ), optional :: &
-      LevelOption
-    type ( TimerForm ), pointer :: &
-      T
+  !   class ( Integrator_H_Form ), intent ( inout ) :: &
+  !     I
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     LevelOption
+  !   type ( TimerForm ), pointer :: &
+  !     T
 
-    character ( LDL ) :: &
-      TimerName
+  !   character ( LDL ) :: &
+  !     TimerName
 
-    associate ( iT  =>  I % iTimer_CT )
+  !   associate ( iT  =>  I % iTimer_CT )
 
-    if ( iT == 0 ) then
-      TimerName  =  trim ( I % Name ) // '_CmptTlly'
-      if ( present ( LevelOption ) ) then
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
-      else
-        call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
-      end if
-    end if
+  !   if ( iT == 0 ) then
+  !     TimerName  =  trim ( I % Name ) // '_CmptTlly'
+  !     if ( present ( LevelOption ) ) then
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, LevelOption )
+  !     else
+  !       call PROGRAM_HEADER % AddTimer ( TimerName, iT, Level = 1 )
+  !     end if
+  !   end if
 
-    T  =>  PROGRAM_HEADER % TimerPointer ( iT )
+  !   T  =>  PROGRAM_HEADER % TimerPointer ( iT )
 
-    end associate !-- iT
+  !   end associate !-- iT
 
-  end function Timer_CT
+  ! end function Timer_CT
 
 
   subroutine PrepareInitial ( I )
@@ -1027,10 +1038,22 @@ contains
       T_A, &
       T_W
     
-    T_UH  =>  I % Timer_UH ( LevelOption = T_AC % Level + 1 )
-    T_CT  =>  I % Timer_CT ( LevelOption = T_AC % Level + 1 )
-    T_A   =>  I % Timer_A  ( LevelOption = T_AC % Level + 1 )
-    T_W   =>  I % Timer_W  ( LevelOption = T_AC % Level + 1 )
+    T_UH  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_UH, &
+                      Name = trim ( I % Name ) // '_UpdtHst', &
+                      Level = T_AC % Level + 1 )
+    T_CT  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_CT, &
+                      Name = trim ( I % Name ) // '_CmptTlly', &
+                      Level = T_AC % Level + 1 )
+    T_A   =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_A, &
+                      Name = trim ( I % Name ) // '_Anlz', &
+                      Level = T_AC % Level + 1 )
+    T_W   =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_W, &
+                      Name = trim ( I % Name ) // '_Wrt', &
+                      Level = T_AC % Level + 1 )
 
     call Show ( 'Checkpoint reached', I % IGNORABILITY )
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
@@ -1063,17 +1086,9 @@ contains
 !      WriteSeries = .true.
     end if
 
-    associate ( nT  =>  PROGRAM_HEADER % nTimers )
-    if ( allocated ( I % MaxTime ) ) deallocate ( I % MaxTime )
-    if ( allocated ( I % MinTime ) ) deallocate ( I % MinTime )
-    if ( allocated ( I % MeanTime ) ) deallocate ( I % MeanTime )
-    allocate ( I % MaxTime ( nT ), I % MinTime ( nT ), I % MeanTime ( nT ) )
-    call PROGRAM_HEADER % ShowStatistics &
+    call PROGRAM_HEADER % RecordStatistics &
            ( StatisticsIgnorability, &
-             CommunicatorOption = PROGRAM_HEADER % Communicator, &
-             MaxTimeOption = I % MaxTime, MinTimeOption = I % MinTime, &
-             MeanTimeOption = I % MeanTime )
-    end associate !-- nT
+             CommunicatorOption = PROGRAM_HEADER % Communicator )
 
 !     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
 !     if ( WriteSeries .and. .not. I % NoWrite .and. .not. I % Restart ) &
@@ -1135,12 +1150,18 @@ contains
       T_CTN, &
       T_S
 
-    T_PC  =>  I % Timer_PC ( LevelOption = T_CC % Level + 1 )
+    T_PC  =>  PROGRAM_HEADER % Timer &
+                ( Handle = I % iTimer_PC, &
+                  Name = trim ( I % Name ) // '_PprCcl', &
+                  Level = T_CC % Level + 1 )
     call T_PC % Start ( )
     call I % PrepareCycle ( )
     call T_PC % Stop ( )
 
-    T_CTN  =>  I % Timer_CTN ( LevelOption = T_CC % Level + 1 )
+    T_CTN  =>  PROGRAM_HEADER % Timer &
+                ( Handle = I % iTimer_CTN, &
+                  Name = trim ( I % Name ) // '_CmptDt', &
+                  Level = T_CC % Level + 1 )
     call T_CTN % Start ( )
     call I % Compute_T_New ( T_New )
     call T_CTN % Stop ( )
@@ -1151,7 +1172,7 @@ contains
     ! select type ( Chart => PS % Chart )
     ! class is ( Chart_SLD_Form )
 
-    T_S  =>  S % Timer ( LevelOption = T_CC % Level + 1 )
+    T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
     call T_S % Start ( )
     call S % Compute ( I % T, dT, T_Option = T_S )
     call T_S % Stop ( )
@@ -1270,17 +1291,10 @@ contains
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
 
-    associate ( Sp_X  =>  I % Step_X )
-    T_SS  =>  Sp_X % TimerSlopeSum ( LevelOption = T_A % Level + 1 )
-    call T_SS % Start ( )
-    call Sp_X % ComputeSlopeSum ( )
-    call T_SS % Stop ( )
-    end associate !-- Sp_X
-
     if ( .not. I % Start .and. .not. I % Restart ) then
       if ( .not. allocated ( I % Series ) ) &    
         call I % InitializeSeries ( )
-      call I % Series % Record ( I % MaxTime, I % MinTime, I % MeanTime )
+      call I % Series % Record ( )
     end if
 
   end subroutine Analyze_H
@@ -1305,7 +1319,7 @@ contains
 
     associate ( GIS => I % GridImageStream )
     associate ( S_X  =>  I % Checkpoint_X )
-    T_X  =>  S_X % TimerWrite ( LevelOption = T_W % Level + 1 )
+    T_X  =>  S_X % TimerWrite ( Level = T_W % Level + 1 )
     call T_X % Start ( )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
