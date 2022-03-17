@@ -51,6 +51,7 @@ module YahilLattimer_Form
       InitializeUniverse, &
       InitializeDiagnostics, &
       SetInitial, &
+      ResetInitial, &
       SetReference
 
       private :: &
@@ -233,6 +234,7 @@ contains
              nCellsPolarOption = 128 )
 
     YL % Integrator % SetInitial    =>  SetInitial
+    YL % Integrator % ResetInitial  =>  ResetInitial
     YL % Integrator % SetReference  =>  SetReference
     YL % Integrator % System        =>  YL
 
@@ -342,6 +344,22 @@ contains
     end select !-- YL
 
   end subroutine SetInitial
+  
+  
+  subroutine ResetInitial ( I, RestartFrom, T_Restart )
+  
+  
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      RestartFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      T_Restart
+    
+    call SetInitial ( I )
+    call I % ResetInitial_H ( RestartFrom, T_Restart )
+
+  end subroutine ResetInitial
 
 
   subroutine SetReference ( I )
