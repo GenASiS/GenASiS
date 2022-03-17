@@ -444,17 +444,17 @@ contains
 
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
-
-    call Show ( 'Starting evolution', I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
-
+    
     T_E   =>  I % Timer_E  ( LevelOption = 1 )
     call T_E % Start ( )
-
+    
     T_AC  =>  I % Timer_AC ( LevelOption = T_E % Level + 1 )
     call T_AC % Start ( )
     call I % AdministerCheckpoint ( T_AC, ChangeOption = .false. )
     call T_AC % Stop ( )
+    
+    call Show ( 'Starting evolution', I % IGNORABILITY )
+    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )

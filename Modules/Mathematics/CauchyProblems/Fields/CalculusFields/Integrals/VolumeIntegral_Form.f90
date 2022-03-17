@@ -87,8 +87,8 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    call Show ( 'Computing a VolumeIntegral', VI % IGNORABILITY )
-    call Show ( VI % Name, 'Name', VI % IGNORABILITY )
+    call Show ( 'Computing a VolumeIntegral', VI % IGNORABILITY + 1 )
+    call Show ( VI % Name, 'Name', VI % IGNORABILITY + 1 )
 
     Reduce = .true.
     if ( present ( ReduceOption ) ) &
@@ -108,7 +108,7 @@ contains
 
     call ComputeIntegral_SCG &
            ( C % ProperCell, IV, GV ( :, G % VOLUME ), VI % Output )
-    call Show ( VI % Output, 'MyIntegral', VI % IGNORABILITY )
+    call Show ( VI % Output, 'MyIntegral', VI % IGNORABILITY + 1 )
 
     if ( C % Distributed .and. Reduce ) then
       call CO % Initialize &
@@ -118,7 +118,7 @@ contains
       VI % Output  =  CO % Incoming % Value
     end if
 
-    call Show ( VI % Output, 'Integral', VI % IGNORABILITY )
+    call Show ( VI % Output, 'Integral', VI % IGNORABILITY + 1 )
 
     end associate !-- C, etc.
 

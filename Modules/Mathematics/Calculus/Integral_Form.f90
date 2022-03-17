@@ -124,7 +124,7 @@ contains
     H  =  B - A
     
     R ( 0, iC )  =  0.5_KDR * H * ( F ( P, A )  +  F ( P, B ) )
-    call Show ( R ( : 0, iC ), 'R', I % IGNORABILITY )
+    call Show ( R ( : 0, iC ), 'R', CONSOLE % INFO_7 )
 
     I % Success  =  .false.
 
@@ -158,9 +158,9 @@ contains
       P_Abs  =  abs ( R ( iI, iC )  -  R ( iI - 1, iP ) )
       P_Rel  =  P_Abs  /  max ( abs ( R ( iI, iC ) ), tiny ( 0.0_KDR ) )
 
-      call Show ( R ( : iI, iC ), 'R', I % IGNORABILITY )
-      call Show ( I % AbsolutePrecision, 'AbsolutePrecision', I % IGNORABILITY )
-      call Show ( I % RelativePrecision, 'RelativePrecision', I % IGNORABILITY )
+      call Show ( R ( : iI, iC ), 'R', CONSOLE % INFO_7 )
+      call Show ( I % AbsolutePrecision, 'AbsolutePrecision', CONSOLE % INFO_7 )
+      call Show ( I % RelativePrecision, 'RelativePrecision', CONSOLE % INFO_7 )
 
       if ( any ( [ P_Abs, P_Rel ]  <=  P_Req ) ) then
         I % Success  =  .true.

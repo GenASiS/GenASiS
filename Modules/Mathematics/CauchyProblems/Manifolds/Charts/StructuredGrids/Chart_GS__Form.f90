@@ -321,27 +321,27 @@ contains
 
     if ( C % Distributed ) then
       call C % PortalFace_L_R % Show &
-             ( 'PortalFace_L_R', C % IGNORABILITY + 1 )
+             ( 'PortalFace_L_R', C % IGNORABILITY + 2 )
       call C % PortalFace_R_L % Show &
-             ( 'PortalFace_R_L', C % IGNORABILITY + 1 )
+             ( 'PortalFace_R_L', C % IGNORABILITY + 2 )
       call C % PortalEdge_LL_RR % Show &
-             ( 'PortalEdge_LL_RR', C % IGNORABILITY + 1 )
+             ( 'PortalEdge_LL_RR', C % IGNORABILITY + 2 )
       call C % PortalEdge_RR_LL % Show &
-             ( 'PortalEdge_RR_LL', C % IGNORABILITY + 1 )
+             ( 'PortalEdge_RR_LL', C % IGNORABILITY + 2 )
       call C % PortalEdge_LR_RL % Show &
-             ( 'PortalEdge_LR_RL', C % IGNORABILITY + 1 )
+             ( 'PortalEdge_LR_RL', C % IGNORABILITY + 2 )
       call C % PortalEdge_RL_LR % Show &
-             ( 'PortalEdge_RL_LR', C % IGNORABILITY + 1 )
+             ( 'PortalEdge_RL_LR', C % IGNORABILITY + 2 )
     end if !-- Distributed
 
     do iD = 1, nD
-      call Show ( iD, 'iDimension', C % IGNORABILITY + 1 )
+      call Show ( iD, 'iDimension', C % IGNORABILITY + 3 )
       call Show ( C % Edge ( iD ) % Value, C % CoordinateUnit ( iD ), &
-                  'Edge', C % IGNORABILITY + 1 )
+                  'Edge', C % IGNORABILITY + 3 )
       call Show ( C % Width ( iD ) % Value, C % CoordinateUnit ( iD ), &
-                  'Width', C % IGNORABILITY + 1 )
+                  'Width', C % IGNORABILITY + 3 )
       call Show ( C % Center ( iD ) % Value, C % CoordinateUnit ( iD ), &
-                  'Center', C % IGNORABILITY + 1 )
+                  'Center', C % IGNORABILITY + 3 )
     end do !-- iD
 
     end associate !-- nD
