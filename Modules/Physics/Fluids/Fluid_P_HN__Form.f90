@@ -726,25 +726,47 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS )
+  subroutine ComputeFromBalanced ( CS, T_Option )
 
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       CS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     integer ( KDI ) :: &
       iC
+    type ( TimerForm ), pointer :: &
+      T_G, &
+      T_K
 
     call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     select type ( G  =>  CS % Geometry )
       class is ( Gravitation_N_H_Form )
+    if ( present ( T_Option ) ) then
+      T_G  =>  G % Timer ( Level = T_Option % Level + 1 ) 
+    else
+      T_G  =>  null ( )
+    end if
+    if ( associated ( T_G ) ) call T_G % Start ( )
     call G % Solve &
            ( CS, &
              iBaryonMass = CS % BARYON_MASS, &
              iBaryonDensity = CS % BARYON_DENSITY_B )
     end select !-- G
+    if ( associated ( T_G ) ) call T_G % Stop ( )
 
+    if ( present ( T_Option ) ) then
+      T_K  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = CS % iTimer_CFB, &
+                   Name = trim ( T_Option % Name ) // '_Krnl', &
+                   Level = T_Option % Level + 1 )
+    else
+      T_K  =>  null ( )
+    end if
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
@@ -823,6 +845,7 @@ contains
       end associate !-- FV, etc.
 
     end do !-- iC
+    if ( associated ( T_K ) ) call T_K % Stop ( )
 
   end subroutine ComputeFromBalanced
 

@@ -23,6 +23,9 @@ module Series_B__Form
       MEMORY_MIN_RSS, &
       MEMORY_MEAN_RSS
     integer ( KDI ) :: &
+      iTimerRecord = 0, &
+      iTimerWrite  = 0
+    integer ( KDI ) :: &
       iTime = 0
     integer ( KDI ), pointer :: &
       iCycle => null ( )
@@ -30,15 +33,15 @@ module Series_B__Form
       T => null ( )
     real ( KDR ), dimension ( : ), pointer :: &
       dT_Candidate => null ( )
+    character ( LDF ) :: &
+      Type = '', &
+      Name = ''
     type ( StorageForm ), allocatable :: &
       Basic, &
       TimerMax, &
       TimerMin, &
       TimerMean, &
       dT
-    character ( LDF ) :: &
-      Type = '', &
-      Name = ''
     type ( GridImageStreamForm ), allocatable :: &
       GridImageStream
     type ( CurveImageForm ), allocatable :: &
@@ -48,6 +51,10 @@ module Series_B__Form
       Initialize_B
     generic, public :: &
       Initialize => Initialize_B
+    procedure, public, pass :: &
+      TimerRecord
+    procedure, public, pass :: &
+      TimerWrite
     procedure, public, pass :: &
       Record
     procedure, public, pass :: &
@@ -65,7 +72,7 @@ contains
 
 
   subroutine Initialize_B &
-               ( S, GIS, dT_Label, NameSuffix, Unit_T, dT_Candidate, T, &
+               ( S, GIS, dT_Label, Unit_T, dT_Candidate, T, &
                  CommunicatorRank, nWrite, iCycle )
 
     class ( Series_B_Form ), intent ( inout ) :: &
@@ -74,8 +81,6 @@ contains
       GIS
     character ( * ), dimension ( : ), intent ( in ) :: &
       dT_Label
-    character ( * ), intent ( in ) :: &
-      NameSuffix
     type ( MeasuredValueForm ), intent ( in ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
@@ -101,7 +106,7 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Series_B' 
 
-    S % Name  =  'Series_' // trim ( NameSuffix ) 
+    S % Name  =  'Series'
 
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
@@ -242,6 +247,40 @@ contains
     end associate !-- B
 
   end subroutine Initialize_B
+
+
+  function TimerRecord ( S, Level ) result ( T )
+
+    class ( Series_B_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimerRecord, &
+               Name = trim ( S % Name ) // '_Rcd', &
+               Level = Level )
+
+  end function TimerRecord
+
+
+  function TimerWrite ( S, Level ) result ( T )
+
+    class ( Series_B_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimerWrite, &
+               Name = trim ( S % Name ) // '_Wrt', &
+               Level = Level )
+
+  end function TimerWrite
 
 
   subroutine Record ( S )

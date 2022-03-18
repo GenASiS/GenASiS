@@ -319,7 +319,7 @@ contains
       dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
-    type ( TimerForm ), intent ( in ), optional :: &
+    type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
     integer ( KDI ) :: &
@@ -337,8 +337,18 @@ contains
 
     if ( iS  >  1 ) then
       associate ( Y_I  =>  S % Intermediate )
-      T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level )
-      call StoreSolution_CS ( S, Y_I, T_Option = T_SS )
+      if ( present ( T_Option ) ) then
+        T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level )
+        !-- Pause and then restart ComputeStage timer T_Option to avoid double 
+        !   counting time to be attributed to StoreSolution timer T_SS
+        call T_Option % Stop ( )  !-- Pause ComputeStage timer
+        call T_SS % Start ( )
+        call StoreSolution_CS ( S, Y_I, T_Option = T_SS )
+        call T_SS % Stop ( )
+        call T_Option % Start ( )  !-- Restart ComputeStage timer
+      else
+        call StoreSolution_CS ( S, Y_I )
+      end if
       end associate !-- Y_I, etc.
     end if !-- iStage > 1
 
@@ -533,30 +543,22 @@ contains
                    ( Handle = S % iTimer_SC, &
                      Name = trim ( S % Name ) // '_CpySltn', &
                      Level = T_Option % Level + 1 )
-      T_CFB  =>  PROGRAM_HEADER % Timer &
-                   ( Handle = S % iTimer_CFB, &
-                     Name = trim ( S % Name ) // '_FrmBlncd', &
-                     Level = T_Option % Level + 1 )
-      T_BC   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = S % iTimer_BC, &
-                     Name = trim ( S % Name ) // '_BndryCndtns', &
-                     Level = T_Option % Level + 1 )
     else
       T_SC   =>  null ( )
-      T_CFB  =>  null ( )
-      T_BC   =>  null ( )
     end if
-
     if ( associated ( T_SC ) ) call T_SC % Start ( )
     call  Y % Copy ( CS_B )
     if ( associated ( T_SC ) ) call T_SC % Stop ( )
 
+    if ( present ( T_Option ) ) then
+      T_CFB  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_CFB, &
+                     Name = trim ( S % Name ) // '_FrmBlncd', &
+                     Level = T_Option % Level + 1 )
+    else
+      T_CFB  =>  null ( )
+    end if
     if ( associated ( T_CFB ) ) then
-! call Show ( T_CFB % Name, '>>> T_CFB Name', CONSOLE % ERROR )
-! call Show ( T_CFB % Level, '>>> T_CFB Level', CONSOLE % ERROR )
-! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
-!             CONSOLE % ERROR )
-! call PROGRAM_HEADER % Communicator % Synchronize ( )
       call T_CFB % Start ( )
       call CS % ComputeFromBalanced ( T_Option = T_CFB )
       call T_CFB % Stop ( )
@@ -564,6 +566,14 @@ contains
       call CS % ComputeFromBalanced ( )
     end if
 
+    if ( present ( T_Option ) ) then
+      T_BC   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = S % iTimer_BC, &
+                     Name = trim ( S % Name ) // '_BndryCndtns', &
+                     Level = T_Option % Level + 1 )
+    else
+      T_BC   =>  null ( )
+    end if
     if ( associated ( T_BC ) ) call T_BC % Start ( )
     call CS % ApplyBoundaryConditions ( )
     if ( associated ( T_BC ) ) call T_BC % Stop ( )

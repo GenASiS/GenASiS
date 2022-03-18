@@ -27,7 +27,7 @@ contains
 
   subroutine InitializeAllocate_N_DT &
                ( S, RS, DT, iVelocity_F, iMomentum_B, iBaryonMass_F, &
-                 iBaryonDensity_F, iEnergy_B, SuffixOption )
+                 iBaryonDensity_F, iEnergy_B )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
@@ -42,8 +42,6 @@ contains
       iBaryonMass_F, &
       iBaryonDensity_F, &
       iEnergy_B
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
 
     character ( LDL ) :: &
       Name
@@ -51,12 +49,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_N'
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_N_' // trim ( RS % CurrentSet % Name )
-
-    Name  =  'S_DFV_N_' // trim ( RS % CurrentSet % Name )
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
+    Name  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_N'
 
     associate ( F  =>  RS % CurrentSet )
 
@@ -79,7 +72,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_DT_Form )
 
-    call SF % Initialize ( RS, DT, SuffixOption )
+    call SF % Initialize ( RS, DT )
 
     end select !-- SF
 
@@ -92,7 +85,7 @@ contains
 
     call SCN % Initialize &
            ( F, iVelocity_F, iMomentum_B, iBaryonMass_F, iBaryonDensity_F, &
-             iEnergy_B, SuffixOption )
+             iEnergy_B )
 
     end select !-- SCN
 
@@ -106,7 +99,7 @@ contains
 
   subroutine InitializeAllocate_N_DP &
                ( S, RS, DP_1D, iVelocity_F, iMomentum_B, iBaryonMass_F, &
-                 iBaryonDensity_F, iEnergy_B, SuffixOption )
+                 iBaryonDensity_F, iEnergy_B )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
@@ -121,8 +114,6 @@ contains
       iBaryonMass_F, &
       iBaryonDensity_F, &
       iEnergy_B
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption
 
     character ( LDL ) :: &
       Name
@@ -130,12 +121,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_N'
 
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_N_' // trim ( RS % CurrentSet % Name )
-
-    Name  =  'S_DFV_N_' // trim ( RS % CurrentSet % Name )
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
+    Name  =  trim ( RS % CurrentSet % Name ) // '_Slp_DFV_N'
 
     associate ( F  =>  RS % CurrentSet )
 
@@ -158,7 +144,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_DP_Form )
 
-    call SF % Initialize ( RS, DP_1D, SuffixOption )
+    call SF % Initialize ( RS, DP_1D )
 
     end select !-- SF
 
@@ -171,7 +157,7 @@ contains
 
     call SCN % Initialize &
            ( F, iVelocity_F, iMomentum_B, iBaryonMass_F, iBaryonDensity_F, &
-             iEnergy_B, SuffixOption )
+             iEnergy_B )
 
     end select !-- SCN
 

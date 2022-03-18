@@ -94,10 +94,11 @@ contains
       end associate !-- nT
 
       associate ( T_New  =>  T_1D % Element ( Handle ) )
-      call T_New % Initialize ( Name, Level )
+      call T_New % Initialize ( Name, Level, HandleOption = Handle )
       call Show ( 'Adding a Timer', CONSOLE % INFO_3 )
       call Show ( T_New % Name, 'Name', CONSOLE % INFO_3 )
       call Show ( T_New % Level, 'Level', CONSOLE % INFO_3 )
+      call Show ( T_New % Handle, 'Handle', CONSOLE % INFO_3 )
       end associate !-- T_New
 
     end if

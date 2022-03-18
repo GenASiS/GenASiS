@@ -97,7 +97,7 @@ contains
 
     if ( .not. allocated ( I % dT_Label ) ) then
       allocate ( I % dT_Label ( 1 ) )
-      I % dT_Label ( 1 ) = 'Fluid advection'
+      I % dT_Label ( 1 ) = 'FluidAdvection'
     end if
 
     call I % Initialize &

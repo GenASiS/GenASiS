@@ -407,12 +407,9 @@ contains
                     ( Handle = S % iTimer_IS_B, &
                       Name = trim ( S % Name ) // '_IncrmntSltn', &
                       Level = T_Option % Level + 1 )
-      T_SS    =>  S % TimerStoreSolution ( Level = T_Option % Level + 1 )
     else
       T_IS_B  =>  null ( )
-      T_SS    =>  null ( )
     end if
-
     if ( associated ( T_IS_B ) ) call T_IS_B % Start ( )
     !-- Assemble stages
     do iS = 1, S % nStages
@@ -424,9 +421,14 @@ contains
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )
 
     !-- On exit, Solution  =  Y_(N+1) (new value)
-    if ( associated ( T_SS ) ) call T_SS % Start ( )
-    call S % StoreSolution ( T_SS )
-    if ( associated ( T_SS ) ) call T_SS % Stop ( )
+    if ( present ( T_Option ) ) then
+      T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level + 1 )
+      call T_SS % Start ( )
+      call S % StoreSolution ( T_Option = T_SS )
+      call T_SS % Stop ( )
+    else
+      call S % StoreSolution ( )
+    end if
 
   end subroutine Compute
 
@@ -535,7 +537,7 @@ contains
       dT
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
-    type ( TimerForm ), intent ( in ), optional :: &
+    type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
     call Show ( 'ComputeStage should be overridden', CONSOLE % WARNING )

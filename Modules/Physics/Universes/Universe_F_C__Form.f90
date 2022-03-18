@@ -163,8 +163,8 @@ contains
     if ( .not. allocated ( I % dT_Label ) ) then
       if ( any ( trim ( GravitationType ) == [ 'NEWTON_SG' ] ) ) then
         allocate ( I % dT_Label ( 2 ) )
-        I % dT_Label ( 1 )  =  'Fluid advection'
-        I % dT_Label ( 2 )  =  'Gravitation acceleration'
+        I % dT_Label ( 1 )  =  'FluidAdvection'
+        I % dT_Label ( 2 )  =  'GravitationAcceleration'
         U % GravityFactor  =  0.7_KDR
         if ( present ( GravityFactorOption ) ) &
           U % GravityFactor  =  GravityFactorOption
@@ -857,14 +857,16 @@ contains
   end subroutine Compute_dT_CS_CGS_C
 
 
-  subroutine Analyze_C ( I, T_A )
+  subroutine Analyze_C ( I, TallyIgnorability, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    type ( TimerForm ), intent ( in ) :: &
-      T_A
+    integer ( KDI ), intent ( in ) :: &
+      TallyIgnorability
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
-    call I % Analyze_H ( T_A )
+    call I % Analyze_H ( TallyIgnorability, T_Option )
 
     !-- Spherical average
 
@@ -886,28 +888,35 @@ contains
   end subroutine Analyze_C
 
 
-  subroutine Write_C ( I, T_W )
+  subroutine Write_C ( I, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    type ( TimerForm ), intent ( in ) :: &
-      T_W
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     type ( TimerForm ), pointer :: &
-      T_PS
+      T_PS, &
+      T_S
 
     !-- Reproduce and expand Write_H functionality rather than call Write_H 
-    !   functionality to avoid multiple GIS % Open calls.
+    !   functionality to avoid multiple GIS % Open calls and multiple file sets.
 
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )
+
+    !-- Position space
+
     associate &
       ( GIS     =>  I % GridImageStream, &
           S_PS  =>  I % Checkpoint_X, &
           S_SA  =>  U % Stream_SA )
-    T_PS  =>  S_PS % TimerWrite ( LevelOption = T_W % Level + 1 )
-    call T_PS % Start ( )
-
+    if ( present ( T_Option ) ) then
+      T_PS  =>  S_PS % TimerWrite ( Level = T_Option % Level + 1 )
+    else
+      T_PS  => null ( )
+    end if
+    if ( associated ( T_PS ) ) call T_PS % Start ( )
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S_PS % Write &
            ( TimeOption  =  I % T  /  I % Unit_T, &
@@ -917,21 +926,35 @@ contains
              CycleNumberOption  =  I % iCycle )
     call GIS % Close ( )
 
-    call T_PS % Stop ( )
+    if ( associated ( T_PS ) ) call T_PS % Stop ( )
     end associate !-- GIS, etc.
+
+    !-- Series
+
+    if ( allocated ( I % Series ) ) then
+      associate ( S  =>  I % Series )
+      if ( present ( T_Option ) ) then
+        T_S  =>  S % TimerWrite ( Level = T_Option % Level + 1 )
+      else
+        T_S  =>  null ( )
+      end if
+      if ( associated ( T_S ) ) call T_S % Start ( )
+      call S % Write ( )
+      if ( associated ( T_S ) ) call T_S % Stop ( )
+      end associate !-- S
+    end if
+
     end select !-- U
 
   end subroutine Write_C
 
 
-  subroutine SetSlope_N_SG ( S, K, iS_Option )
+  subroutine SetSlope_N_SG ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
     class ( Slope_H_Form ), intent ( out ), allocatable :: &
       K
-    integer ( KDI ), intent ( in ), optional :: &
-      iS_Option
 
     integer ( KDI ) :: &
       iEnergy_B
@@ -972,49 +995,23 @@ contains
     end select !-- F
 
     if ( allocated ( S % DivergenceTotal ) ) then
-      if ( present ( iS_Option ) ) then
-        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-        call K % Initialize &
-               ( S % RiemannSolver, &
-                 S % DivergenceTotal, &
-                 iVelocity_F = F % VELOCITY_U, &
-                 iMomentum_B = iMomentum_B, &
-                 iBaryonMass_F = F % BARYON_MASS, &
-                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
-                 iEnergy_B = iEnergy_B, &
-                 SuffixOption = StageNumber )
-      else
-        call K % Initialize &
-               ( S % RiemannSolver, &
-                 S % DivergenceTotal, &
-                 iVelocity_F = F % VELOCITY_U, &
-                 iMomentum_B = iMomentum_B, &
-                 iBaryonMass_F = F % BARYON_MASS, &
-                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
-                 iEnergy_B = iEnergy_B )
-      end if
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               S % DivergenceTotal, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
     else if ( allocated ( S % DivergencePart ) ) then
-      if ( present ( iS_Option ) ) then
-        write ( StageNumber, fmt = '(i1.1)' ) iS_Option
-        call K % Initialize &
-               ( S % RiemannSolver, &
-                 S % DivergencePart, &
-                 iVelocity_F = F % VELOCITY_U, &
-                 iMomentum_B = iMomentum_B, &
-                 iBaryonMass_F = F % BARYON_MASS, &
-                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
-                 iEnergy_B = iEnergy_B, &
-                 SuffixOption = StageNumber )
-      else
-        call K % Initialize &
-               ( S % RiemannSolver, &
-                 S % DivergencePart, &
-                 iVelocity_F = F % VELOCITY_U, &
-                 iMomentum_B = iMomentum_B, &
-                 iBaryonMass_F = F % BARYON_MASS, &
-                 iBaryonDensity_F = F % BARYON_DENSITY_B, &
-                 iEnergy_B = iEnergy_B )
-      end if
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               S % DivergencePart, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
     end if  !-- DivergenceTotal
 
     end select !-- F

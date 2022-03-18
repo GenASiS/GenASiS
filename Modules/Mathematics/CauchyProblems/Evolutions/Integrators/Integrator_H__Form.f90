@@ -26,11 +26,12 @@ module Integrator_H__Form
       iTimer_AC  = 0, &   !-- AdministerCheckpoint
       iTimer_UH  = 0, &   !-- UpdateHost
       iTimer_A   = 0, &   !-- Analyze
+      iTimer_SR  = 0, &   !-- SetReference
+      iTimer_CT  = 0, &   !-- ComputeTally
       iTimer_W   = 0, &   !-- Write
       iTimer_CC  = 0, &   !-- ComputeCycle
       iTimer_PC  = 0, &   !-- PrepareCycle
-      iTimer_CTN = 0, &   !-- Compute_T_New
-      iTimer_CT  = 0      !-- ComputeTally
+      iTimer_CTN = 0      !-- Compute_T_New
     real ( KDR ) :: &
       T_Start              = 0.0_KDR, &
       T_Finish             = 1.0_KDR, &
@@ -172,24 +173,26 @@ module Integrator_H__Form
         I
     end subroutine SS_I
 
-    subroutine A ( I, T_A )
+    subroutine A ( I, TallyIgnorability, T_Option )
       use Basics
       import Integrator_H_Form
       implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
-      type ( TimerForm ), intent ( in ) :: &
-        T_A
+      integer ( KDI ), intent ( in ) :: &
+        TallyIgnorability
+      type ( TimerForm ), intent ( in ), optional :: &
+        T_Option
     end subroutine A
     
-    subroutine W ( I, T_W )
+    subroutine W ( I, T_Option )
       use Basics
       import Integrator_H_Form
       implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
-      type ( TimerForm ), intent ( in ) :: &
-        T_W
+      type ( TimerForm ), intent ( in ), optional :: &
+        T_Option
     end subroutine W
 
     subroutine R ( I, ReadFrom, T, CycleNumber )
@@ -432,13 +435,7 @@ contains
                  Level = 1 )
     call T_E % Start ( )
 
-    T_AC  =>  PROGRAM_HEADER % Timer &
-                ( Handle = I % iTimer_AC, &
-                  Name = trim ( I % Name ) // '_Chckpnt', &
-                  Level = T_E % Level + 1 )
-    call T_AC % Start ( )
-    call I % AdministerCheckpoint ( T_AC, ChangeOption = .false. )
-    call T_AC % Stop ( )
+    call I % AdministerCheckpoint ( )
 
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -459,9 +456,7 @@ contains
         =  minval ( I % dT_Candidate ) &
              /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
       if ( dT_Ratio  <  1.0e-8  *  I % nWrite ) then
-        call T_AC % Start ( )
-        call I % AdministerCheckpoint ( T_AC )
-        call T_AC % Stop ( )
+        call I % AdministerCheckpoint ( )
         call Show ( '*** dT_Ratio too small', CONSOLE % WARNING, &
                     nLeadingLinesOption = 2 )
         call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING, &
@@ -470,28 +465,17 @@ contains
       end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then
-
-        T_A   =>  PROGRAM_HEADER % Timer &
-                    ( Handle = I % iTimer_A, &
-                      Name = trim ( I % Name ) // '_Anlz', &
-                      Level = T_AC % Level + 1 )
-        call T_A % Start ( )
-        call I % Analyze ( T_A )
-        call T_A % Stop ( )
-
-        T_W   =>  PROGRAM_HEADER % Timer &
-                    ( Handle = I % iTimer_W, &
-                      Name = trim ( I % Name ) // '_Wrt', &
-                      Level = T_AC % Level + 1 )
-        call T_W % Start ( )
-        call I % Write ( T_W )
-        call T_W % Stop ( )
-
+        call I % Analyze ( TallyIgnorability = I % IGNORABILITY + 1 )
+        call I % Write ( )
       end if
 
       if ( I % CheckpointDue ) then
+        T_AC  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_AC, &
+                      Name = trim ( I % Name ) // '_Chckpnt', &
+                      Level = T_E % Level + 1 )
         call T_AC % Start ( )
-        call I % AdministerCheckpoint ( T_AC )
+        call I % AdministerCheckpoint ( T_Option = T_AC )
         call T_AC % Stop ( )
       end if
 
@@ -729,44 +713,22 @@ contains
   end subroutine PrepareEvolution
 
 
-  subroutine AdministerCheckpoint ( I, T_AC, ChangeOption )
+  subroutine AdministerCheckpoint ( I, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
     type ( TimerForm ), intent ( in ), optional :: &
-      T_AC
-    logical ( KDL ), intent ( in ), optional :: &
-      ChangeOption
+      T_Option
 
     integer ( KDI ) :: &
       iTSC, &  !-- iTimeStepCandidates
       TallyIgnorability, &
       StatisticsIgnorability
-!     logical ( KDL ) :: &
-!       WriteSeries
     type ( TimerForm ), pointer :: &
       T_UH, &
-      T_CT, &
       T_A, &
       T_W
     
-    T_UH  =>  PROGRAM_HEADER % Timer &
-                    ( Handle = I % iTimer_UH, &
-                      Name = trim ( I % Name ) // '_UpdtHst', &
-                      Level = T_AC % Level + 1 )
-    T_CT  =>  PROGRAM_HEADER % Timer &
-                    ( Handle = I % iTimer_CT, &
-                      Name = trim ( I % Name ) // '_CmptTlly', &
-                      Level = T_AC % Level + 1 )
-    T_A   =>  PROGRAM_HEADER % Timer &
-                    ( Handle = I % iTimer_A, &
-                      Name = trim ( I % Name ) // '_Anlz', &
-                      Level = T_AC % Level + 1 )
-    T_W   =>  PROGRAM_HEADER % Timer &
-                    ( Handle = I % iTimer_W, &
-                      Name = trim ( I % Name ) // '_Wrt', &
-                      Level = T_AC % Level + 1 )
-
     call Show ( 'Checkpoint reached', I % IGNORABILITY )
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
@@ -779,49 +741,68 @@ contains
       end do !-- iTSC
     end if
 
-    call T_UH % Start ( )   
-    call I % UpdateHost ( )
-    call T_UH % Stop ( )
+    !-- Update host
 
-!     WriteSeries = .true.
+    if ( present ( T_Option ) ) then
+      T_UH  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = I % iTimer_UH, &
+                    Name = trim ( I % Name ) // '_UpdtHst', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_UH  =>  null ( )
+    end if
+    if ( associated ( T_UH ) ) call T_UH % Start ( )   
+    call I % UpdateHost ( )
+    if ( associated ( T_UH ) ) call T_UH % Stop ( )
+
+    !-- Record statistics
 
     if ( .not. I % Start & !.and. .not. I % Restart &
          .and. I % T  <  I % T_Finish &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
-      TallyIgnorability       =  I % IGNORABILITY + 2
-      StatisticsIgnorability  =  I % IGNORABILITY + 2
-!      WriteSeries = .false.
+      StatisticsIgnorability  =  I % IGNORABILITY + 1
+      TallyIgnorability       =  I % IGNORABILITY + 1
     else
-      TallyIgnorability       =  CONSOLE % INFO_1
-      StatisticsIgnorability  =  CONSOLE % INFO_1
-!      WriteSeries = .true.
+      StatisticsIgnorability  =  I % IGNORABILITY
+      TallyIgnorability       =  I % IGNORABILITY
     end if
 
     call PROGRAM_HEADER % RecordStatistics &
            ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-!     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
-!     if ( WriteSeries .and. .not. I % NoWrite .and. .not. I % Restart ) &
-!       call I % WriteTimeSeries ( )
-!     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
+    !-- Analyze
 
-    call T_CT % Start ( )   
-    call I % ComputeTally &
-           ( ChangeOption = ChangeOption, &
-             IgnorabilityOption  = TallyIgnorability )
-    call T_CT % Stop ( )   
+    if ( present ( T_Option ) ) then
+      T_A  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = I % iTimer_A, &
+                   Name = trim ( I % Name ) // '_Anlz', &
+                   Level = T_Option % Level + 1 )
+      call T_A % Start ( )   
+      call I % Analyze ( TallyIgnorability, T_Option = T_A )
+      call T_A % Stop ( )   
+    else
+      call I % Analyze ( TallyIgnorability )
+    end if
 
-    call T_A % Start ( )   
-    call I % Analyze ( T_A )
-    call T_A % Stop ( )   
+    !-- Write
 
     if ( .not. I % NoWrite .and. .not. I % Restart ) then
-      call T_W % Start ( )
-      call I % Write ( T_W )
-      call T_W % Stop ( )
+      if ( present ( T_Option ) ) then
+        T_W  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = I % iTimer_W, &
+                     Name = trim ( I % Name ) // '_Wrt', &
+                     Level = T_Option % Level + 1 )
+        call T_W % Start ( )
+        call I % Write ( T_Option = T_W )
+        call T_W % Stop ( )
+      else
+        call I % Write ( )
+      end if
     end if
+
+    !-- Checkpoint
 
     I % CheckpointDue  =  .false.
     if ( I % T  <  I % T_Finish ) then
@@ -990,49 +971,96 @@ contains
   end subroutine ComputeTally
 
 
-  subroutine Analyze_H ( I, T_A )
+  subroutine Analyze_H ( I, TallyIgnorability, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    type ( TimerForm ), intent ( in ) :: &
-      T_A
+    integer ( KDI ), intent ( in ) :: &
+      TallyIgnorability
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     type ( TimerForm ), pointer :: &
-      T_SS
+      T_SR, &
+      T_CT, &
+      T_R
 
-    if ( associated ( I % SetReference ) ) &
+    !-- Reference
+
+    if ( associated ( I % SetReference ) ) then
+      if ( present ( T_Option ) ) then
+        T_SR  =>  PROGRAM_HEADER % Timer &
+                    ( Handle = I % iTimer_SR, &
+                      Name = trim ( I % Name ) // '_StRfrnc', &
+                      Level = T_Option % Level + 1 )
+      else
+        T_SR  =>  null ( )
+      end if
+      if ( associated ( T_SR ) ) call T_SR % Start ( )   
       call I % SetReference ( )
+      if ( associated ( T_SR ) ) call T_SR % Stop ( )
+    end if
+
+    !-- Tally
+
+    if ( present ( T_Option ) ) then
+      T_CT  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = I % iTimer_CT, &
+                    Name = trim ( I % Name ) // '_CmptTlly', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_CT  =>  null ( )
+    end if
+    if ( associated ( T_CT ) ) call T_CT % Start ( )   
+    call I % ComputeTally &
+           ( ChangeOption = .not. I % Start, &
+             IgnorabilityOption  = TallyIgnorability )
+    if ( associated ( T_CT ) ) call T_CT % Stop ( )   
+
+    !-- Series
 
     if ( .not. I % Start .and. .not. I % Restart ) then
-      if ( .not. allocated ( I % Series ) ) &    
+
+      if ( .not. allocated ( I % Series ) ) &
         call I % InitializeSeries ( )
-      call I % Series % Record ( )
+
+      associate ( S  =>  I % Series )
+      if ( present ( T_Option ) ) then
+        T_R  =>  S % TimerRecord ( Level = T_Option % Level + 1 )
+      else
+        T_R  =>  null ( )
+      end if
+      if ( associated ( T_R ) ) call T_R % Start ( )
+      call S % Record ( )
+      if ( associated ( T_R ) ) call T_R % Stop ( )
+      end associate !-- S
+
     end if
 
   end subroutine Analyze_H
 
 
-  subroutine Write_H ( I, T_W )
+  subroutine Write_H ( I, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    type ( TimerForm ), intent ( in ) :: &
-      T_W
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     type ( TimerForm ), pointer :: &
-      T_X
+      T_X, &
+      T_S
 
-    ! if ( allocated ( I % MomentumSpace ) ) then
-    !   select type ( MS => I % MomentumSpace )
-    !   class is ( Bundle_SLL_ASC_CSLD_Form )
-    !     call MS % MarkFibersWritten ( )
-    !   end select !-- MS
-    ! end if !-- MomentumSpace
+    !-- Base space
 
     associate ( GIS => I % GridImageStream )
     associate ( S_X  =>  I % Checkpoint_X )
-    T_X  =>  S_X % TimerWrite ( Level = T_W % Level + 1 )
-    call T_X % Start ( )
+    if ( present ( T_Option ) ) then
+      T_X  =>  S_X % TimerWrite ( Level = T_Option % Level + 1 )
+    else
+      T_X  => null ( )
+    end if
+    if ( associated ( T_X ) ) call T_X % Start ( )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call S_X % Write &
@@ -1041,12 +1069,33 @@ contains
     !-- Base's GIS must be closed before call to Bundle % Write ( ).
     call GIS % Close ( )
 
-    if ( allocated ( I % Series ) ) &
-      call I % Series % Write ( )
-
-    call T_X % Stop ( )
+    if ( associated ( T_X ) ) call T_X % Stop ( )
     end associate !-- S_X
     end associate !-- GIS
+
+    !-- Series
+
+    if ( allocated ( I % Series ) ) then
+      associate ( S  =>  I % Series )
+      if ( present ( T_Option ) ) then
+        T_S  =>  S % TimerWrite ( Level = T_Option % Level + 1 )
+      else
+        T_S  =>  null ( )
+      end if
+      if ( associated ( T_S ) ) call T_S % Start ( )
+      call S % Write ( )
+      if ( associated ( T_S ) ) call T_S % Stop ( )
+      end associate !-- S
+    end if
+
+    !-- Tangent space
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % MarkFibersWritten ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
 
     ! if ( allocated ( I % MomentumSpace ) ) then
     !   select type ( MS => I % MomentumSpace )
@@ -1271,9 +1320,8 @@ contains
     allocate ( I % Series )
     associate ( S  =>  I % Series )
     call S % Initialize &
-      ( I % GridImageStream, I % dT_Label, I % Name, I % Unit_T, &
-        I % dT_Candidate, I % T, I % Communicator % Rank, I % nWrite, &
-        I % iCycle )
+      ( I % GridImageStream, I % dT_Label, I % Unit_T, I % dT_Candidate, &
+        I % T, I % Communicator % Rank, I % nWrite, I % iCycle )
     end associate !-- S
 
   end subroutine InitializeSeries

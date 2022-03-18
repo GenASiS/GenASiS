@@ -10,7 +10,8 @@ module Timer_Form
   type, public :: TimerForm
     integer ( KDI ) :: &
       iStart = 0, &
-      Level
+      Level, &
+      Handle = -1
     type ( MeasuredValueForm ) :: &
       StartTime, &
       StopTime, &
@@ -43,7 +44,7 @@ module Timer_Form
 contains
 
 
-  subroutine InitializeNameLevel ( T, Name, Level )
+  subroutine InitializeNameLevel ( T, Name, Level, HandleOption )
 
     class ( TimerForm ), intent ( inout ) :: &
       T
@@ -51,6 +52,8 @@ contains
       Name
     integer ( KDI ), intent ( in ) :: &
       Level
+    integer ( KDI ), intent ( in ), optional :: &
+      HandleOption
 
     integer ( KDI ) :: &
       oName, &
@@ -69,6 +72,8 @@ contains
 
     T % Name   =  TruncatedName
     T % Level  =  Level
+    if ( present ( HandleOption ) ) &
+      T % Handle  =  HandleOption
 
     call T % StartTime % Initialize ( 's', 0.0_KDR )
     call T % StopTime % Initialize ( 's', 0.0_KDR )
@@ -85,8 +90,9 @@ contains
     class ( TimerForm ), intent ( in ) :: &
       T_Target
 
-    T % Name  = T_Target % Name
-    T % Level = T_Target % Level
+    T % Name    =  T_Target % Name
+    T % Level   =  T_Target % Level
+    T % Handle  =  T_Target % Handle
 
     call T % StartTime % Initialize ( 's', 0.0_KDR )
     call T % StopTime % Initialize ( 's', 0.0_KDR )

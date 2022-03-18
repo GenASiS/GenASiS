@@ -66,6 +66,9 @@ contains
       Fluid, &
       Reference, &
       Difference
+    type ( TimerForm ), pointer :: &
+      T_G, &
+      T_W
 
     call Show ( 'Testing homogeneous spheres' )
 
@@ -110,15 +113,21 @@ contains
     
       call Fluid % UpdateDevice ( )
 
+      T_G  =>  G % Timer ( Level = 1 )
+      call T_G % Start ( )
       call G % Solve ( Fluid, iBaryonMass = 1, iBaryonDensity = 2 )
+      call T_G % Stop ( )
 
       call Show ( Radius ( iHS ), 'Radius', nLeadingLinesOption = 2 )
       call Show ( Density ( iHS ), 'Density' )
       call ComputeError ( Difference, G % Solution, Reference )
 
+      T_W  =>  S % TimerWrite ( Level = 1 )
+      call T_W % Start ( )
       call GIS % Open ( GIS % ACCESS_CREATE )
       call S % Write ( )
       call GIS % Close ( )
+      call T_W % Stop ( )
 
     end do !-- iHS
 

@@ -77,7 +77,7 @@ contains
 
   subroutine InitializeAllocate_C_N &
                ( S, Fluid, iVelocity_F, iMomentum_B, iBaryonMass_F, &
-                 iBaryonDensity_F, iEnergy_B, SuffixOption )
+                 iBaryonDensity_F, iEnergy_B )
 
     class ( Slope_DFV_C_N_Form ), intent ( inout ) :: &
       S
@@ -90,8 +90,6 @@ contains
       iBaryonMass_F, &
       iBaryonDensity_F, &
       iEnergy_B
-    character ( * ), intent ( in ), optional :: &
-      SuffixOption    
 
     character ( LDL ) :: &
       Name
@@ -99,12 +97,7 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_DFV_C_N' 
     
-    if ( S % TimerName  ==  '' ) &
-      S % TimerName  =  'S_DFV_C_N_' // trim ( Fluid % Name )
-
-    Name  =  'S_DFV_C_N_' // trim ( Fluid % Name )
-    if ( present ( SuffixOption ) ) &
-      Name  =  trim ( Name ) // '_' // trim ( SuffixOption )
+    Name  =  trim ( Fluid % Name ) // '_Slp_DFV_C_N'
 
     S % Fluid  =>  Fluid
 

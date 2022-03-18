@@ -24,11 +24,15 @@ module Gravitation_N_H__Form
       POTENTIAL_GRADIENT_D_3 = 0
     integer ( KDI ), dimension ( 3 ) :: &
       POTENTIAL_GRADIENT_D = 0
+    integer ( KDI ) :: &
+      iTimer = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
     procedure, public, pass ( G ) :: &
       SetStream
+    procedure, public, pass :: &
+      Timer
     procedure, public, pass :: &
       Solve
     final :: &
@@ -183,6 +187,23 @@ contains
                                        G % POTENTIAL_GRADIENT_D ] )
 
   end subroutine SetStream
+
+
+  function Timer ( G, Level ) result ( T )
+
+    class ( Gravitation_N_H_Form ), intent ( inout ) :: &
+      G
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = G % iTimer, &
+               Name = trim ( G % Name ) // '_Slv', &
+               Level = Level )
+
+  end function Timer
 
 
   subroutine Solve ( G, F, iBaryonMass, iBaryonDensity )
