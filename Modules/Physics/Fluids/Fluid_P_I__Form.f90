@@ -532,8 +532,8 @@ contains
            ( CS, &
              iBaryonMass = CS % BARYON_MASS, &
              iBaryonDensity = CS % BARYON_DENSITY_B )
-    end select !-- G
     if ( associated ( T_G ) ) call T_G % Stop ( )
+    end select !-- G
 
     if ( present ( T_Option ) ) then
       T_K  =>  PROGRAM_HEADER % Timer &
