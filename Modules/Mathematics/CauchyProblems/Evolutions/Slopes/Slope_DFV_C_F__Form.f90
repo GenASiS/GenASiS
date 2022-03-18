@@ -12,7 +12,8 @@ module Slope_DFV_C_F__Form
 
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_C_F_Form
     integer ( KDI ) :: &
-      iTimer_K = 0
+      iTimer_S = 0, &  !-- Stresses
+      iTimer_K = 0     !-- Kernel
     type ( FieldSetForm ), allocatable :: &
       Stress_UD
     class ( DivergencePart_CS_Form ), pointer :: &
@@ -144,10 +145,13 @@ contains
       S_M_1, &
       S_M_2
     type ( TimerForm ), pointer :: &
+      T_C, &
+      T_S, &
       T_K
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+    call Show ( iC, 'iChart', S % IGNORABILITY + 2 )
 
     associate &
       ( DP  =>  S % DivergencePart ) 
@@ -156,23 +160,30 @@ contains
         G     =>  DP % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
+      T_S   =>  PROGRAM_HEADER % Timer &
+                  ( Handle = S % iTimer_S, &
+                    Name = trim ( S % Name ) // '_Strss', &
+                    Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % Name ) // '_K', &
+                    Name = trim ( S % Name ) // '_Krnl', &
                     Level = T_Option % Level + 1 )
     else
+      T_S  =>  null ( )
       T_K  =>  null ( )
-    end if
-
-    if ( iC == 1 ) then
-      if ( associated ( T_K ) ) call T_K % Start ( )
-      call S % Clear ( )
-      if ( associated ( T_K ) ) call T_K % Stop ( )
     end if
 
     associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
 
+    iMomentum_1  =  -1
+    iMomentum_2  =  -1
+
+    if ( associated ( T_S ) ) call T_S % Start ( )
     call DP % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+    if ( associated ( T_S ) ) call T_S % Stop ( )
+
+    if ( iMomentum_1  <  0  .or.  iMomentum_2  <  0 ) &
+      return
 
     if ( associated ( T_K ) ) call T_K % Start ( )
 
@@ -241,6 +252,7 @@ contains
       S_M_1, &
       S_M_2
     type ( TimerForm ), pointer :: &
+      T_S, &
       T_K
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
@@ -253,23 +265,32 @@ contains
         G     =>  DT % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
+      T_S   =>  PROGRAM_HEADER % Timer &
+                  ( Handle = S % iTimer_S, &
+                    Name = trim ( S % Name ) // '_Strss', &
+                    Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % Name ) // '_K', &
+                    Name = trim ( S % Name ) // '_Krnl', &
                     Level = T_Option % Level + 1 )
     else
+      T_S  =>  null ( )
       T_K  =>  null ( )
     end if
-
-    if ( associated ( T_K ) ) call T_K % Start ( )
-    call S % Clear ( )
-    if ( associated ( T_K ) ) call T_K % Stop ( )
 
     do iC  =  1,  S % Atlas % nCharts
        
       associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
 
+      iMomentum_1  =  -1
+      iMomentum_2  =  -1
+
+      if ( associated ( T_S ) ) call T_S % Start ( )
       call DT % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+      if ( associated ( T_S ) ) call T_S % Stop ( )
+
+      if ( iMomentum_1  <  0  .or.  iMomentum_2  <  0 ) &
+        return
 
       if ( associated ( T_K ) ) call T_K % Start ( )
 

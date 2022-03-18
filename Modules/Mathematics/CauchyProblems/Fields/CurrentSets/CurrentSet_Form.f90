@@ -390,13 +390,12 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS, T_CFB_Option, T_C_Option )
+  subroutine ComputeFromBalanced ( CS, T_Option )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
     type ( TimerForm ), intent ( in ), optional :: &
-      T_CFB_Option, &  !-- T_ComputeFromBalanced
-      T_C_Option       !-- T_Constraint
+      T_Option
 
   end subroutine ComputeFromBalanced
 

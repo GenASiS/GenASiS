@@ -16,7 +16,6 @@ module Step_RK_CS__Form
       iTimer_Crsn    = 0, &  !-- Coarsen
       iTimer_SC      = 0, &  !-- SolutionCopy
       iTimer_CFB     = 0, &  !-- ComputeFromBalanced
-      iTimer_Cnstrnt = 0, &  !-- Constraint  
       iTimer_BC      = 0     !-- BoundaryCondition
     type ( FieldSetForm ), allocatable :: &
       Balanced, &
@@ -523,7 +522,6 @@ contains
     type ( TimerForm ), pointer :: &
       T_SC, &   !-- SolutionCopy
       T_CFB, &  !-- ComputeFromBalanced
-      T_C, &    !-- Constraint
       T_BC      !-- BoundaryConditions
 
     associate &
@@ -539,10 +537,6 @@ contains
                    ( Handle = S % iTimer_CFB, &
                      Name = trim ( S % Name ) // '_FrmBlncd', &
                      Level = T_Option % Level + 1 )
-      T_C    =>  PROGRAM_HEADER % Timer &
-                   ( Handle = S % iTimer_Cnstrnt, &
-                     Name = trim ( S % Name ) // '_Cnstrnt', &
-                     Level = T_Option % Level + 1 )
       T_BC   =>  PROGRAM_HEADER % Timer &
                    ( Handle = S % iTimer_BC, &
                      Name = trim ( S % Name ) // '_BndryCndtns', &
@@ -550,7 +544,6 @@ contains
     else
       T_SC   =>  null ( )
       T_CFB  =>  null ( )
-      T_C    =>  null ( )
       T_BC   =>  null ( )
     end if
 
@@ -558,8 +551,15 @@ contains
     call  Y % Copy ( CS_B )
     if ( associated ( T_SC ) ) call T_SC % Stop ( )
 
-    if ( associated ( T_CFB ) .and. associated ( T_C ) ) then
-      call CS % ComputeFromBalanced ( T_CFB_Option = T_CFB, T_C_Option = T_C )
+    if ( associated ( T_CFB ) ) then
+! call Show ( T_CFB % Name, '>>> T_CFB Name', CONSOLE % ERROR )
+! call Show ( T_CFB % Level, '>>> T_CFB Level', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+!             CONSOLE % ERROR )
+! call PROGRAM_HEADER % Communicator % Synchronize ( )
+      call T_CFB % Start ( )
+      call CS % ComputeFromBalanced ( T_Option = T_CFB )
+      call T_CFB % Stop ( )
     else
       call CS % ComputeFromBalanced ( )
     end if

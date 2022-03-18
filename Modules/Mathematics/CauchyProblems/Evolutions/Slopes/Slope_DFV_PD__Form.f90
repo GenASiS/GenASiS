@@ -13,7 +13,8 @@ module Slope_DFV_PD__Form
 
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_PD_Form
     integer ( KDI ) :: &
-      iTimer_K = 0
+      iTimer_C = 0, &  !-- Clear
+      iTimer_K = 0     !-- Kernel
     class ( DivergencePart_CS_Form ), pointer :: &
       DivergencePart => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
@@ -116,28 +117,6 @@ contains
   end subroutine InitializeAllocate_PD
 
 
-  ! subroutine CloneTimers ( S, S_S )
-
-  !   class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
-  !     S
-  !   class ( Slope_H_Form ), intent ( in ) :: &
-  !     S_S  !-- S_Source
-
-  !   integer ( KDI ) :: &
-  !     iC  !-- iComponent
-
-  !   call S % Slope_H_Form % CloneTimers ( S_S )
-
-  !   select type ( S_S )
-  !   class is ( Slope_DFV_PD_Form )
-
-  !   S % iTimer_K  =  S_S % iTimer_K
-
-  !   end select !-- S_S
-
-  ! end subroutine CloneTimers
-
-
   subroutine ComputeDimension ( S, iC, iD, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
@@ -164,6 +143,7 @@ contains
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+    call Show ( iD, 'Dimension', S % IGNORABILITY + 2 )
 
     associate &
       ( RS  =>  S % RiemannSolver, &
@@ -265,7 +245,9 @@ contains
       S_4D, &
       F_I_4D
     type ( TimerForm ), pointer :: &
-      T_RS, &
+      T_C, &
+      T_RSP, &
+      T_RSC, &
       T_K
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
@@ -278,35 +260,56 @@ contains
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
-      T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
-      T_K   =>  PROGRAM_HEADER % Timer &
-                  ( Handle = S % iTimer_K, &
-                    Name = trim ( S % Name ) // '_K', &
+      T_C   =>  PROGRAM_HEADER % Timer &
+                  ( Handle = S % iTimer_C, &
+                    Name = trim ( S % Name ) // '_Clr', &
                     Level = T_Option % Level + 1 )
     else
-      T_RS  =>  null ( )
-      T_K   =>  null ( )
+      T_C   =>  null ( )
     end if
-
-    if ( associated ( T_K ) ) call T_K % Start ( )
+    if ( associated ( T_C ) ) call T_C % Start ( )
     call S % Clear ( )
-    if ( associated ( T_K ) ) call T_K % Stop ( )
+    if ( associated ( T_C ) ) call T_C % Stop ( )
 
     do iC  =  1,  S % Atlas % nCharts
        
       associate ( C  =>  S % Atlas % Chart ( iC ) % Element )
       do iD  =  1, C % nDimensions
 
-        if ( associated ( T_RS ) ) then
-          call T_RS % Start ( )
-          call RS % Prepare ( iC, iD, T_Option = T_RS )
-          call RS % Compute ( DP, iC, iD, T_Option = T_RS )
-          call T_RS % Stop ( )
+        if ( present ( T_Option ) ) then
+          T_RSP  =>  RS % Timer_P ( Level = T_Option % Level + 1 )
+        else
+          T_RSP  =>  null ( )
+        end if
+        if ( associated ( T_RSP ) ) then
+          call T_RSP % Start ( )
+          call RS % Prepare ( iC, iD, T_Option = T_RSP )
+          call T_RSP % Stop ( )
         else
           call RS % Prepare ( iC, iD )
+        end if
+
+        if ( present ( T_Option ) ) then
+          T_RSC  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
+        else
+          T_RSC  =>  null ( )
+        end if
+        if ( associated ( T_RSC ) ) then
+          call T_RSC % Start ( )
+          call RS % Compute ( DP, iC, iD, T_Option = T_RSC )
+          call T_RSC % Stop ( )
+        else
           call RS % Compute ( DP, iC, iD )
         end if
 
+        if ( present ( T_Option ) ) then
+          T_K   =>  PROGRAM_HEADER % Timer &
+                      ( Handle = S % iTimer_K, &
+                        Name = trim ( S % Name ) // '_Krnl', &
+                        Level = T_Option % Level + 1 )
+        else
+          T_K   =>  null ( )
+        end if
         if ( associated ( T_K ) ) call T_K % Start ( )
 
         call S % Storage ( iC ) % ReassociateHost &

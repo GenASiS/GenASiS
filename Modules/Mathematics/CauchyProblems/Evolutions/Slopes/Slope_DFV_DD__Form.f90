@@ -123,7 +123,7 @@ contains
       T_RS  =>  RS % Timer_C ( Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                   ( Handle = S % iTimer_K, &
-                    Name = trim ( S % Name ) // '_K', &
+                    Name = trim ( S % Name ) // '_Krnl', &
                     Level = T_Option % Level + 1 )
     else
       T_RS  =>  null ( )
