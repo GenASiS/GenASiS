@@ -52,8 +52,23 @@ contains
     integer ( KDI ), intent ( in ) :: &
       Level
 
-    T % Name  = Name
-    T % Level = Level
+    integer ( KDI ) :: &
+      oName, &
+      LabelLength
+    character ( LDL ) :: &
+      TruncatedName
+
+    LabelLength  =  35  !-- Show_Command
+
+    !-- Truncate the beginning of the name to maintain proper indentation
+    TruncatedName  =  Name
+    if ( len_trim ( Name )  + 1 + Level  >  LabelLength ) then
+      oName  =  len_trim ( Name )  + 1 + Level  -  LabelLength
+      TruncatedName  =  Name ( oName + 1 : )
+    end if
+
+    T % Name   =  TruncatedName
+    T % Level  =  Level
 
     call T % StartTime % Initialize ( 's', 0.0_KDR )
     call T % StopTime % Initialize ( 's', 0.0_KDR )

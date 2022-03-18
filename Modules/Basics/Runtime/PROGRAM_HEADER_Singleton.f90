@@ -808,6 +808,8 @@ contains
         call Show ( 'Maximum number of timers reached', CONSOLE % ERROR )
         call Show ( T_1D % nTimers, 'nTimers', CONSOLE % ERROR )
         call Show ( T_1D % MAX_TIMERS, 'MAX_TIMERS', CONSOLE % ERROR )
+        call Show ( Name, 'Requested timer', CONSOLE % ERROR )
+        call Show ( PH % Communicator % Rank, 'Rank', CONSOLE % ERROR )
         call PH % Abort ( )
       end if
 
@@ -815,6 +817,8 @@ contains
         call Show ( 'Timer level exceeds maximum', CONSOLE % ERROR )
         call Show ( Level, 'Level', CONSOLE % ERROR )
         call Show ( T_1D % LevelMax, 'LevelMax', CONSOLE % ERROR )
+        call Show ( Name, 'Requested timer', CONSOLE % ERROR )
+        call Show ( PH % Communicator % Rank, 'Rank', CONSOLE % ERROR )
         call PH % Abort ( )
       end if
 
