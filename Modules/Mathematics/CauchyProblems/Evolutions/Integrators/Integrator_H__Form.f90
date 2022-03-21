@@ -123,7 +123,7 @@ module Integrator_H__Form
       ComputeCycle
     procedure, private, pass :: &   !-- 3
       SetInitial_H
-    procedure, private, pass :: &   !-- 3
+    procedure, public, pass :: &   !-- 3
       ResetInitial_H
     procedure, private, pass :: &  !-- 3
       ShowSystem_H
@@ -904,7 +904,7 @@ contains
   end subroutine SetInitial_H
 
 
-  subroutine ResetInitial_H ( I, RestartFrom, T_Restart )
+  subroutine ResetInitial_H ( I, RestartFrom, T_Restart  )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -919,8 +919,13 @@ contains
     !   MaxTime, &
     !   MinTime, &
     !   MeanTime
-
+    
     call I % Read ( RestartFrom, T_Restart, CycleNumber )
+    
+    call Show ( 'Restarting', I % IGNORABILITY )
+    call Show ( RestartFrom, 'RestartFrom', I % IGNORABILITY )
+    call Show ( T_Restart, I % Unit_T, 'T_Restart', I % IGNORABILITY )
+    call Show ( CycleNumber, 'CycleNumber', I % IGNORABILITY )
 
     I % iCheckpoint  =  RestartFrom
     I % iCycle       =  CycleNumber  !-- needed by RestoreTimeSeries

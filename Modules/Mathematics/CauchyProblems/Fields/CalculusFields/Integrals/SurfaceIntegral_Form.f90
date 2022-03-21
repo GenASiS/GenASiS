@@ -61,7 +61,7 @@ contains
     if ( present ( NameOption ) ) &
       SI % Name  =  NameOption
 
-    call Show ( 'Initializing a VolumeIntegral', SI % IGNORABILITY )
+    call Show ( 'Initializing a SurfaceIntegral', SI % IGNORABILITY )
     call Show ( SI % Name, 'Name', SI % IGNORABILITY )
 
     SI % nIntegrals  =   nIntegrals
@@ -126,8 +126,8 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    call Show ( 'Computing a VolumeIntegral', SI % IGNORABILITY )
-    call Show ( SI % Name, 'Name', SI % IGNORABILITY )
+    call Show ( 'Computing a SurfaceIntegral', SI % IGNORABILITY + 1 )
+    call Show ( SI % Name, 'Name', SI % IGNORABILITY + 1 )
 
     Reduce = .true.
     if ( present ( ReduceOption ) ) &
@@ -206,7 +206,7 @@ contains
 
     end do !-- iD
 
-    call Show ( SI % Output, 'MyIntegral', SI % IGNORABILITY )
+    call Show ( SI % Output, 'MyIntegral', SI % IGNORABILITY + 1 )
 
     if ( C % Distributed .and. Reduce ) then
       call CO % Initialize &
@@ -216,7 +216,7 @@ contains
       SI % Output  =  CO % Incoming % Value
     end if !-- Reduce
 
-    call Show ( SI % Output, 'Integral', SI % IGNORABILITY )
+    call Show ( SI % Output, 'Integral', SI % IGNORABILITY + 1 )
 
     end associate !-- Cy
     end associate !-- C, etc.

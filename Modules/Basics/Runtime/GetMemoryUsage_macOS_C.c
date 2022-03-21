@@ -1,11 +1,15 @@
 // https://stackoverflow.com/questions/18389581/memory-used-by-a-process-under-mac-os-x
 // https://stackoverflow.com/questions/60751839/how-i-can-get-peak-memory-of-a-process-on-mac-os
 
+#ifdef __APPLE__
 #include <mach/mach.h>
 #include <stdio.h>
+#endif
 
 void GetMemoryUsage_macOS_C ( double *hwm_kb, double *rss_kb )
 {
+  
+#ifdef __APPLE__
   kern_return_t error;
   mach_msg_type_number_t outCount;
   mach_task_basic_info_data_t taskinfo;
@@ -22,4 +26,6 @@ void GetMemoryUsage_macOS_C ( double *hwm_kb, double *rss_kb )
   } else {
     printf("error %d\n", (int)error);
   }
+#endif
+  
 }
