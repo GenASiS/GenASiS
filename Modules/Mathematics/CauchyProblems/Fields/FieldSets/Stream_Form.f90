@@ -161,7 +161,7 @@ contains
     call FS_S % Initialize &
            ( FS, iaSelected, &
              NameOption = NameOption, &
-             IgnorabilityOption = FS % IGNORABILITY + 1 )
+             IgnorabilityOption = S % IGNORABILITY + 2 )
     
     do iC  =  1, S % Atlas % nCharts
       associate &

@@ -143,7 +143,7 @@ module Integrator_H__Form
       ComputeCycle
     procedure, private, pass :: &   !-- 3
       SetInitial_H
-    procedure, private, pass :: &   !-- 3
+    procedure, public, pass :: &   !-- 3
       ResetInitial_H
     procedure, private, pass :: &  !-- 3
       ShowSystem_H
@@ -444,17 +444,17 @@ contains
 
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
-
-    call Show ( 'Starting evolution', I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
-
+    
     T_E   =>  I % Timer_E  ( LevelOption = 1 )
     call T_E % Start ( )
-
+    
     T_AC  =>  I % Timer_AC ( LevelOption = T_E % Level + 1 )
     call T_AC % Start ( )
     call I % AdministerCheckpoint ( T_AC, ChangeOption = .false. )
     call T_AC % Stop ( )
+    
+    call Show ( 'Starting evolution', I % IGNORABILITY )
+    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -1190,7 +1190,7 @@ contains
   end subroutine SetInitial_H
 
 
-  subroutine ResetInitial_H ( I, RestartFrom, T_Restart )
+  subroutine ResetInitial_H ( I, RestartFrom, T_Restart  )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -1205,8 +1205,13 @@ contains
     !   MaxTime, &
     !   MinTime, &
     !   MeanTime
-
+    
     call I % Read ( RestartFrom, T_Restart, CycleNumber )
+    
+    call Show ( 'Restarting', I % IGNORABILITY )
+    call Show ( RestartFrom, 'RestartFrom', I % IGNORABILITY )
+    call Show ( T_Restart, I % Unit_T, 'T_Restart', I % IGNORABILITY )
+    call Show ( CycleNumber, 'CycleNumber', I % IGNORABILITY )
 
     I % iCheckpoint  =  RestartFrom
     I % iCycle       =  CycleNumber  !-- needed by RestoreTimeSeries
