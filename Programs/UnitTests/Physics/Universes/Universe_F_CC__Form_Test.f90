@@ -22,7 +22,8 @@ program Universe_F_CC__Form_Test
   allocate ( U )
   call U % Initialize &
          ( FluidType = 'DUST', &
-           GravitationType = 'NEWTON_SG' )
+           GravitationType = 'NEWTON_SG', &
+           DimensionlessOption = .true. )
   call U % Show ( )
 
   associate ( I  =>  U % Integrator )
@@ -31,14 +32,20 @@ program Universe_F_CC__Form_Test
 
   call SetFluid ( )
 
-  T_A  =>  I % Timer_A ( )
+  T_A  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = I % iTimer_A, &
+                   Name = trim ( I % Name ) // '_Anlz', &
+                   Level = 1 )
   call T_A % Start ( )
-  call I % Analyze ( T_A )
+  call I % Analyze ( TallyIgnorability = CONSOLE % INFO_1, T_Option = T_A )
   call T_A % Stop ( )
 
-  T_W  =>  I % Timer_W ( )
+  T_W  =>  PROGRAM_HEADER % Timer &
+             ( Handle = I % iTimer_W, &
+               Name = trim ( I % Name ) // '_Wrt', &
+               Level = 1 )
   call T_W % Start ( )
-  call I % Write ( T_W )
+  call I % Write ( T_Option = T_W )
   call T_W % Stop ( )
 
   end associate !-- I
@@ -57,6 +64,7 @@ contains
     real ( KDR ) :: &
       dS
     real ( KDR ), dimension ( :, :, : ), pointer :: &
+      N, &
       S_1, S_2, S_3
 
     call Show ( 'Setting Fluid' )
@@ -74,9 +82,20 @@ contains
         nCB  =>  C % nCellsBrick, &
         iaB  =>  C % iaBrick )
 
+    call C % SetFieldPointer ( FV ( :, F % BARYON_DENSITY_C ), N )
     call C % SetFieldPointer ( FV ( :, F % MOMENTUM_DENSITY_D_1 ), S_1 )
     call C % SetFieldPointer ( FV ( :, F % MOMENTUM_DENSITY_D_2 ), S_2 )
     call C % SetFieldPointer ( FV ( :, F % MOMENTUM_DENSITY_D_3 ), S_3 )
+
+    do kC = 1, nCB ( 3 )
+      do jC = 1, nCB ( 2 )
+        do iC = 1, nCB ( 1 )
+          N ( iC, jC, kC )  =  1.0_KDR
+        end do
+      end do
+    end do
+
+    call F % ComputeFromInitial ( )  !-- Ensure BARYON_MASS set
 
     do kC = 1, nCB ( 3 )
       do jC = 1, nCB ( 2 )
@@ -88,37 +107,35 @@ contains
       end do
     end do
 
-    if ( C % nDimensions < 2 ) &
-      return
-
-    dS  =  CONSTANT % PI  /  C % nCells ( 2 )
-
-    do kC = 1, nCB ( 3 )
-      do jC = 1, nCB ( 2 )
-        do iC = 1, nCB ( 1 )
-          S_2 ( iC, jC, kC )  &
-            =  S_2 ( iC, jC, kC )  &
-               +  sin ( ( ( iaB ( 2 ) - 1 ) * nCB ( 2 )  +  jC - 0.5_KDR )  &
-                        *  dS )
+    if ( C % nDimensions  >  1 ) then
+      dS  =  CONSTANT % PI  /  C % nCells ( 2 )
+      do kC = 1, nCB ( 3 )
+        do jC = 1, nCB ( 2 )
+          do iC = 1, nCB ( 1 )
+            S_2 ( iC, jC, kC )  &
+              =  S_2 ( iC, jC, kC )  &
+                 +  cos ( ( ( iaB ( 2 ) - 1 ) * nCB ( 2 )  +  jC - 0.5_KDR )  &
+                          *  dS )
+          end do
         end do
       end do
-    end do
+    end if
 
-    if ( C % nDimensions < 3 ) &
-      return
-
-    dS  =  2.0_KDR * CONSTANT % PI  /  C % nCells ( 3 )
-
-    do kC = 1, nCB ( 3 )
-      do jC = 1, nCB ( 2 )
-        do iC = 1, nCB ( 1 )
-          S_3 ( iC, jC, kC )  &
-            =  S_3 ( iC, jC, kC )  &
-               +  sin ( ( ( iaB ( 3 ) - 1 ) * nCB ( 3 )  +  kC - 0.5_KDR )  &
-                        *  dS )
+    if ( C % nDimensions  >  2 ) then
+      dS  =  2.0_KDR * CONSTANT % PI  /  C % nCells ( 3 )
+      do kC = 1, nCB ( 3 )
+        do jC = 1, nCB ( 2 )
+          do iC = 1, nCB ( 1 )
+            S_3 ( iC, jC, kC )  &
+              =  S_3 ( iC, jC, kC )  &
+                 +  cos ( ( ( iaB ( 3 ) - 1 ) * nCB ( 3 )  +  kC - 0.5_KDR )  &
+                          *  dS )
+          end do
         end do
       end do
-    end do
+    end if
+
+    call F % ComputeFromBalanced ( )
 
     end associate !-- FV, etc.
     end select !-- C

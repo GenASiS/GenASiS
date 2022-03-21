@@ -43,8 +43,8 @@ module Integrator_H__Form
     real ( KDR ), dimension ( : ), allocatable :: &
       dT_Candidate
     logical ( KDL ) :: &
-      Start, &
-      Restart, &
+      Start = .true., &
+      Restart = .false., &
       NoWrite, &
       AllWrite, &
       T_CheckpointExact, &
@@ -419,9 +419,7 @@ contains
     type ( TimerForm ), pointer :: &
       T_E, &
       T_AC, &
-      T_CC, &
-      T_A, &
-      T_W
+      T_CC
 
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )

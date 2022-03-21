@@ -198,7 +198,7 @@ contains
                nCellsPolarOption = nCellsPolarOption )
 
     end if !-- Dimensionless
-
+    
     allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_SA )
     select type ( PS_SA  =>  U % PositionSpace_SA )
       class is ( Atlas_SCG_CC_Form )
