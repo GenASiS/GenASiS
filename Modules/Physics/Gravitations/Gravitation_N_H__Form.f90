@@ -206,7 +206,7 @@ contains
   end function Timer
 
 
-  subroutine Solve ( G, F, iBaryonMass, iBaryonDensity )
+  subroutine Solve ( G, F, iBaryonMass, iBaryonDensity, T_Option )
 
     class ( Gravitation_N_H_Form ), intent ( inout ) :: &
       G
@@ -215,6 +215,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &
       iBaryonDensity
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     call Show ( 'Solve should be overridden', CONSOLE % WARNING )
     call Show ( G % Name, 'Name', CONSOLE % WARNING )

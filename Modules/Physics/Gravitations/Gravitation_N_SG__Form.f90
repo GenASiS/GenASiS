@@ -10,6 +10,9 @@ module Gravitation_N_SG__Form
   private
 
   type, public, extends ( Gravitation_N_H_Form ) :: Gravitation_N_SG_Form
+    integer ( KDI ) :: &
+      iTimer_S = 0, &  !-- Source
+      iTimer_G = 0     !-- Gradient
     real ( KDR ) :: &
       GravitationalConstant
     type ( FieldSetForm ), allocatable :: &
@@ -205,7 +208,7 @@ contains
   end subroutine Show_FS
 
 
-  subroutine Solve ( G, F, iBaryonMass, iBaryonDensity )
+  subroutine Solve ( G, F, iBaryonMass, iBaryonDensity, T_Option )
 
     class ( Gravitation_N_SG_Form ), intent ( inout ) :: &
       G
@@ -214,14 +217,33 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &
       iBaryonDensity
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
 
     integer ( KDI ) :: &
       iC, &
       iD
+    type ( TimerForm ), pointer :: &
+      T_S, &  !-- Source
+      T_P, &  !-- Poisson
+      T_G     !-- Gradient
+
+    !-- Source
 
     associate &
       (  S  =>  G % Source, &
         nC  =>  G % Atlas % nCharts )
+
+    if ( present ( T_Option ) ) then
+      T_S  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = G % iTimer_S, &
+                   Name = trim ( T_Option % Name ) // '_Src', &
+                   Level = T_Option % Level + 1 )
+    else
+      T_S  =>  null ( )
+    end if
+
+    if ( associated ( T_S ) ) call T_S % Start ( )
     do iC  =  1, nC
       associate &
         ( FV  =>  F % Storage ( iC ) % Value, &
@@ -236,15 +258,41 @@ contains
 
       end associate !-- FV, etc.
     end do !-- iC
+    if ( associated ( T_S ) ) call T_S % Stop ( )
+
     end associate !-- S, etc.
 
+    !-- Poisson
+
     associate ( P  =>  G % Poisson )
-    call P % Solve ( G % Solution, G % Source )
+
+    if ( present ( T_Option ) ) then
+      T_P  =>  P % Timer ( Level = T_Option % Level + 1 )
+      call T_P % Start ( )
+      call P % Solve ( G % Solution, G % Source, T_Option = T_P )
+      call T_P % Stop ( )
+    else
+      call P % Solve ( G % Solution, G % Source )
+    end if
+
     end associate !-- P
+
+    !-- Gradient
 
     associate &
       (  Gt  =>  G % Gradient, &
         nC   =>  G % Atlas % nCharts )
+
+    if ( present ( T_Option ) ) then
+      T_G  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = G % iTimer_G, &
+                   Name = trim ( T_Option % Name ) // '_Grdnt', &
+                   Level = T_Option % Level + 1 )
+    else
+      T_G  =>  null ( )
+    end if
+
+    if ( associated ( T_G ) ) call T_G % Start ( )
     do iC  =  1, nC
       associate ( nD  =>  G % Atlas % Chart ( iC ) % Element % nDimensions )
       do iD  =  1, nD
@@ -255,6 +303,8 @@ contains
       end do !-- iD
       end associate !-- nD
     end do !-- iC
+    if ( associated ( T_G ) ) call T_G % Stop ( )
+
     end associate !-- Gt, etc.
 
   end subroutine Solve

@@ -746,15 +746,19 @@ contains
       class is ( Gravitation_N_H_Form )
     if ( present ( T_Option ) ) then
       T_G  =>  G % Timer ( Level = T_Option % Level + 1 ) 
+      call T_G % Start ( )
+      call G % Solve &
+             ( CS, &
+               iBaryonMass = CS % BARYON_MASS, &
+               iBaryonDensity = CS % BARYON_DENSITY_B, &
+               T_Option = T_G )
+      call T_G % Stop ( )
     else
-      T_G  =>  null ( )
+      call G % Solve &
+             ( CS, &
+               iBaryonMass = CS % BARYON_MASS, &
+               iBaryonDensity = CS % BARYON_DENSITY_B )
     end if
-    if ( associated ( T_G ) ) call T_G % Start ( )
-    call G % Solve &
-           ( CS, &
-             iBaryonMass = CS % BARYON_MASS, &
-             iBaryonDensity = CS % BARYON_DENSITY_B )
-    if ( associated ( T_G ) ) call T_G % Stop ( )
     end select !-- G
 
     if ( present ( T_Option ) ) then
