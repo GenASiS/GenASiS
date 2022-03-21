@@ -804,10 +804,6 @@ contains
 
     if ( Handle  <=  0 ) then  !-- New
 
-      call Show ( 'Adding a Timer', CONSOLE % INFO_3 )
-      call Show ( PH % Timer ( Handle ) % Name, 'Name', CONSOLE % INFO_3 )
-      call Show ( PH % Timer ( Handle ) % Level, 'Level', CONSOLE % INFO_3 )
-
       if ( T_1D % nTimers  ==  T_1D % MAX_TIMERS ) then
         call Show ( 'Maximum number of timers reached', CONSOLE % ERROR )
         call Show ( T_1D % nTimers, 'nTimers', CONSOLE % ERROR )
