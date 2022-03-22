@@ -187,31 +187,6 @@ contains
 !             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-    !-- SphericalAverage Stream
-
-    if ( allocated ( U % PositionSpace_SA ) ) then
-      allocate ( U % Stream_SA )
-      associate &
-        (   A_SA  =>  U % PositionSpace_SA, &
-            S_SA  =>  U % Stream_SA, &
-          GIS     =>  I % GridImageStream, &
-            S     =>  I % Checkpoint_X )
-
-      call S_SA % Initialize &
-             ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
-
-      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
-        class is ( Geometry_F_Form )
-      select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
-        class is ( Fluid_D_Form )
-      call G_SA % SetStream ( S_SA )
-      call F_SA % SetStream ( S_SA )
-      end select !-- F_SA
-      end select !-- G_SA
-
-      end associate !-- A_SA, etc.
-    end if !-- allocated PositionSpace_SA
-
     !-- AzimuthalAverage Stream
 
     if ( allocated ( U % PositionSpace_AA ) ) then
@@ -236,6 +211,31 @@ contains
 
       end associate !-- A_AA, etc.
     end if !-- allocated PositionSpace_AA
+
+    !-- SphericalAverage Stream
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      allocate ( U % Stream_SA )
+      associate &
+        (   A_SA  =>  U % PositionSpace_SA, &
+            S_SA  =>  U % Stream_SA, &
+          GIS     =>  I % GridImageStream, &
+            S     =>  I % Checkpoint_X )
+
+      call S_SA % Initialize &
+             ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
+
+      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+        class is ( Geometry_F_Form )
+      select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+        class is ( Fluid_D_Form )
+      call G_SA % SetStream ( S_SA )
+      call F_SA % SetStream ( S_SA )
+      end select !-- F_SA
+      end select !-- G_SA
+
+      end associate !-- A_SA, etc.
+    end if !-- allocated PositionSpace_SA
 
     !-- Integrator methods
 
@@ -353,21 +353,6 @@ contains
 
       allocate ( iaAverage ( 0 ) )
 
-      !-- Spherical average
-      if ( allocated ( U % PositionSpace_SA ) ) then
-        allocate ( U % SA_Gravitation )
-        associate &
-          ( SA     =>  U % SA_Gravitation, &
-             A_SA  =>  U % PositionSpace_SA )
-        allocate ( Gravitation_G_Form :: SA % FieldSet_SA )
-        select type ( G_SA  =>  SA % FieldSet_SA )
-          type is ( Gravitation_G_Form )
-        call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
-        call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
-        end select !-- G_SA
-        end associate !-- SA, etc.
-      end if !-- allocated PositionSpace_SA
-
       !-- Azimuthal average
       if ( allocated ( U % PositionSpace_AA ) ) then
         allocate ( U % AA_Gravitation )
@@ -382,6 +367,21 @@ contains
         end select !-- G_AA
         end associate !-- AA, etc.
       end if !-- allocated PositionSpace_AA
+
+      !-- Spherical average
+      if ( allocated ( U % PositionSpace_SA ) ) then
+        allocate ( U % SA_Gravitation )
+        associate &
+          ( SA     =>  U % SA_Gravitation, &
+             A_SA  =>  U % PositionSpace_SA )
+        allocate ( Gravitation_G_Form :: SA % FieldSet_SA )
+        select type ( G_SA  =>  SA % FieldSet_SA )
+          type is ( Gravitation_G_Form )
+        call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
+        call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
+        end select !-- G_SA
+        end associate !-- SA, etc.
+      end if !-- allocated PositionSpace_SA
 
       end select !-- G
 
@@ -405,21 +405,6 @@ contains
       allocate &
         ( iaAverage, source = [ G % POTENTIAL, G % POTENTIAL_GRADIENT_D ] )
 
-      !-- Spherical average
-      if ( allocated ( U % PositionSpace_SA ) ) then
-        allocate ( U % SA_Gravitation )
-        associate &
-          ( SA     =>  U % SA_Gravitation, &
-             A_SA  =>  U % PositionSpace_SA )
-        allocate ( Gravitation_N_H_Form :: SA % FieldSet_SA )
-        select type ( G_SA  =>  SA % FieldSet_SA )
-          type is ( Gravitation_N_H_Form )
-        call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
-        call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
-        end select !-- G_SA
-        end associate !-- SA, etc.
-      end if !-- allocated PositionSpace_SA
-
       !-- Azimuthal average
       if ( allocated ( U % PositionSpace_AA ) ) then
         allocate ( U % AA_Gravitation )
@@ -434,6 +419,21 @@ contains
         end select !-- G_AA
         end associate !-- AA, etc.
       end if !-- allocated PositionSpace_AA
+
+      !-- Spherical average
+      if ( allocated ( U % PositionSpace_SA ) ) then
+        allocate ( U % SA_Gravitation )
+        associate &
+          ( SA     =>  U % SA_Gravitation, &
+             A_SA  =>  U % PositionSpace_SA )
+        allocate ( Gravitation_N_H_Form :: SA % FieldSet_SA )
+        select type ( G_SA  =>  SA % FieldSet_SA )
+          type is ( Gravitation_N_H_Form )
+        call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
+        call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
+        end select !-- G_SA
+        end associate !-- SA, etc.
+      end if !-- allocated PositionSpace_SA
 
       end select !-- G
 
@@ -534,25 +534,6 @@ contains
         !-- Boundary accumulation storage
         call F % AllocateBoundary_SCG ( nT = F % TallyInterior % nSelected )
 
-        !-- Spherical average
-        if ( allocated ( U % PositionSpace_SA ) ) then
-          allocate ( U % SA_Fluid )
-          associate &
-            ( SA     =>  U % SA_Fluid, &
-               A_SA  =>  U % PositionSpace_SA )
-          allocate ( Fluid_D_Form :: SA % FieldSet_SA )
-          select type ( F_SA  =>  SA % FieldSet_SA )
-            type is ( Fluid_D_Form )
-          select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
-            class is ( Geometry_F_Form )
-          call F_SA % Initialize &
-                 ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
-          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
-          end select !-- G_SA
-          end select !-- F_SA
-          end associate !-- SA, etc.
-        end if !-- allocated PositionSpace_SA
-
         !-- Azimuthal average
         if ( allocated ( U % PositionSpace_AA ) ) then
           allocate ( U % AA_Fluid )
@@ -571,6 +552,25 @@ contains
           end select !-- F_AA
           end associate !-- AA, etc.
         end if !-- allocated PositionSpace_AA
+
+        !-- Spherical average
+        if ( allocated ( U % PositionSpace_SA ) ) then
+          allocate ( U % SA_Fluid )
+          associate &
+            ( SA     =>  U % SA_Fluid, &
+               A_SA  =>  U % PositionSpace_SA )
+          allocate ( Fluid_D_Form :: SA % FieldSet_SA )
+          select type ( F_SA  =>  SA % FieldSet_SA )
+            type is ( Fluid_D_Form )
+          select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+            class is ( Geometry_F_Form )
+          call F_SA % Initialize &
+                 ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+          end select !-- G_SA
+          end select !-- F_SA
+          end associate !-- SA, etc.
+        end if !-- allocated PositionSpace_SA
 
       end select !-- F
       
@@ -613,25 +613,6 @@ contains
         !-- Boundary accumulation storage
         call F % AllocateBoundary_SCG ( nT = F % TallyInterior % nSelected )
 
-        !-- Spherical average
-        if ( allocated ( U % PositionSpace_SA ) ) then
-          allocate ( U % SA_Fluid )
-          associate &
-            ( SA     =>  U % SA_Fluid, &
-               A_SA  =>  U % PositionSpace_SA )
-          allocate ( Fluid_P_I_Form :: SA % FieldSet_SA )
-          select type ( F_SA  =>  SA % FieldSet_SA )
-            type is ( Fluid_P_I_Form )
-          select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
-            class is ( Geometry_F_Form )
-          call F_SA % Initialize &
-                 ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
-          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
-          end select !-- G_SA
-          end select !-- F_SA
-          end associate !-- SA, etc.
-        end if !-- allocated PositionSpace_SA
-
         !-- Azimuthal average
         if ( allocated ( U % PositionSpace_AA ) ) then
           allocate ( U % AA_Fluid )
@@ -650,6 +631,25 @@ contains
           end select !-- F_AA
           end associate !-- AA, etc.
         end if !-- allocated PositionSpace_AA
+
+        !-- Spherical average
+        if ( allocated ( U % PositionSpace_SA ) ) then
+          allocate ( U % SA_Fluid )
+          associate &
+            ( SA     =>  U % SA_Fluid, &
+               A_SA  =>  U % PositionSpace_SA )
+          allocate ( Fluid_P_I_Form :: SA % FieldSet_SA )
+          select type ( F_SA  =>  SA % FieldSet_SA )
+            type is ( Fluid_P_I_Form )
+          select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+            class is ( Geometry_F_Form )
+          call F_SA % Initialize &
+                 ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+          end select !-- G_SA
+          end select !-- F_SA
+          end associate !-- SA, etc.
+        end if !-- allocated PositionSpace_SA
 
       end select !-- F
 
@@ -692,25 +692,6 @@ contains
         !-- Boundary accumulation storage
         call F % AllocateBoundary_SCG ( nT = F % TallyInterior % nSelected )
 
-        !-- Spherical average
-        if ( allocated ( U % PositionSpace_SA ) ) then
-          allocate ( U % SA_Fluid )
-          associate &
-            ( SA     =>  U % SA_Fluid, &
-               A_SA  =>  U % PositionSpace_SA )
-          allocate ( Fluid_P_HN_Form :: SA % FieldSet_SA )
-          select type ( F_SA  =>  SA % FieldSet_SA )
-            type is ( Fluid_P_HN_Form )
-          select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
-            class is ( Geometry_F_Form )
-          call F_SA % Initialize &
-                 ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
-          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
-          end select !-- G_SA
-          end select !-- F_SA
-          end associate !-- SA, etc.
-        end if !-- allocated PositionSpace_SA
-
         !-- Azimuthal average
         if ( allocated ( U % PositionSpace_AA ) ) then
           allocate ( U % AA_Fluid )
@@ -729,6 +710,25 @@ contains
           end select !-- F_AA
           end associate !-- AA, etc.
         end if !-- allocated PositionSpace_AA
+
+        !-- Spherical average
+        if ( allocated ( U % PositionSpace_SA ) ) then
+          allocate ( U % SA_Fluid )
+          associate &
+            ( SA     =>  U % SA_Fluid, &
+               A_SA  =>  U % PositionSpace_SA )
+          allocate ( Fluid_P_HN_Form :: SA % FieldSet_SA )
+          select type ( F_SA  =>  SA % FieldSet_SA )
+            type is ( Fluid_P_HN_Form )
+          select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+            class is ( Geometry_F_Form )
+          call F_SA % Initialize &
+                 ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
+          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+          end select !-- G_SA
+          end select !-- F_SA
+          end associate !-- SA, etc.
+        end if !-- allocated PositionSpace_SA
 
       end select !-- F
 
@@ -918,19 +918,19 @@ contains
     if ( allocated ( U % Coarsening ) ) &
       call U % Coarsening % Show ( )
 
-    if ( allocated ( U % PositionSpace_SA ) ) then
-      call U % PositionSpace_SA % Show ( )
-      call U % SA_Gravitation % FieldSet_SA % Show ( )
-      call U % SA_Fluid % FieldSet_SA % Show ( )
-      call U % Stream_SA % Show ( )
-    end if !-- allocated PositionSpace_SA
-
     if ( allocated ( U % PositionSpace_AA ) ) then
       call U % PositionSpace_AA % Show ( )
       call U % AA_Gravitation % FieldSet_AA % Show ( )
       call U % AA_Fluid % FieldSet_AA % Show ( )
       call U % Stream_AA % Show ( )
     end if !-- allocated PositionSpace_AA
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      call U % PositionSpace_SA % Show ( )
+      call U % SA_Gravitation % FieldSet_SA % Show ( )
+      call U % SA_Fluid % FieldSet_SA % Show ( )
+      call U % Stream_SA % Show ( )
+    end if !-- allocated PositionSpace_SA
 
   end subroutine ShowDiagnostics
 
@@ -1021,22 +1021,6 @@ contains
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )
 
-    !-- Spherical average
-
-    if ( allocated ( U % PositionSpace_SA ) ) then
-      select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
-        class is ( Fluid_D_Form )
-
-      call F_SA % ComputeFromInitial ( )  !-- Ensure BARYON_MASS set
-
-      call U % SA_Gravitation % Compute ( )
-      call U % SA_Fluid % Compute ( )
-
-      call F_SA % ComputeFromBalanced ( )
-
-      end select !-- F_SA
-    end if !-- allocated PositionSpace_SA
-
     !-- Azimuthal average
 
     if ( allocated ( U % PositionSpace_AA ) ) then
@@ -1052,6 +1036,22 @@ contains
 
       end select !-- F_AA
     end if !-- allocated PositionSpace_AA
+
+    !-- Spherical average
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+        class is ( Fluid_D_Form )
+
+      call F_SA % ComputeFromInitial ( )  !-- Ensure BARYON_MASS set
+
+      call U % SA_Gravitation % Compute ( )
+      call U % SA_Fluid % Compute ( )
+
+      call F_SA % ComputeFromBalanced ( )
+
+      end select !-- F_SA
+    end if !-- allocated PositionSpace_SA
 
     end select !-- U
 
@@ -1092,15 +1092,6 @@ contains
            ( TimeOption  =  I % T  /  I % Unit_T, &
              CycleNumberOption  =  I % iCycle )
 
-    !-- Spherical average
-    if ( allocated ( U % PositionSpace_SA ) ) then
-      associate ( S_SA  =>  U % Stream_SA )
-      call S_SA % Write &
-             ( TimeOption  =  I % T  /  I % Unit_T, &
-               CycleNumberOption  =  I % iCycle )
-      end associate !-- S_SA
-    end if !-- allocated PositionSpace_SA
-
     !-- Azimuthal average
     if ( allocated ( U % PositionSpace_AA ) ) then
       associate ( S_AA  =>  U % Stream_AA )
@@ -1109,6 +1100,15 @@ contains
                CycleNumberOption  =  I % iCycle )
       end associate !-- S_AA
     end if !-- allocated PositionSpace_AA
+
+    !-- Spherical average
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      associate ( S_SA  =>  U % Stream_SA )
+      call S_SA % Write &
+             ( TimeOption  =  I % T  /  I % Unit_T, &
+               CycleNumberOption  =  I % iCycle )
+      end associate !-- S_SA
+    end if !-- allocated PositionSpace_SA
 
     call GIS % Close ( )
     if ( associated ( T_PS ) ) call T_PS % Stop ( )
