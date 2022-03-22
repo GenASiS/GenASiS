@@ -18,9 +18,9 @@ module Atlas_SCG_CC__Form
     procedure, private, pass :: &
       Initialize_SCG_CC
     procedure, private, pass :: &
-      Initialize_SCG_CC_SA  !-- SphericalAverage
+      Initialize_SCG_CC_A  !-- SphericalAverage
     generic, public :: &
-      Initialize => Initialize_SCG_CC, Initialize_SCG_CC_SA
+      Initialize => Initialize_SCG_CC, Initialize_SCG_CC_A
     final :: &
       Finalize
   end type Atlas_SCG_CC_Form
@@ -147,30 +147,47 @@ contains
   end subroutine Initialize_SCG_CC
 
 
-  subroutine Initialize_SCG_CC_SA ( A, A_S )
+  subroutine Initialize_SCG_CC_A ( A, A_S, nDimensions )
 
     class ( Atlas_SCG_CC_Form ), intent ( inout ) :: &
       A
     class ( Atlas_SCG_CC_Form ), intent ( in ) :: &
       A_S  !-- Source
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    character ( 3 ) :: &
+      Suffix
 
     associate ( C_S  =>  A_S % Chart_GS_CC )
+
+    select case ( nDimensions )
+    case ( 1 )
+      Suffix = '_SA'
+    case ( 2 )
+      Suffix = '_AA'
+    case default
+      call Show ( 'Expecting nDimensions = 1 or 2', CONSOLE % ERROR )
+      call Show ( '(spherical or azimuthal average)', CONSOLE % ERROR )
+      call Show ( nDimensions, 'nDimensions', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
 
     call A % Initialize &
            ( RadiusMax = C_S % RadiusMax, &
              RadiusCore = C_S % RadiusScale, &
              CommunicatorOption = C_S % Communicator, &
-             NameOption = trim ( A_S % Name ) // '_SA', &
+             NameOption = trim ( A_S % Name ) // Suffix, &
              CoordinateUnitOption = C_S % CoordinateUnit, &
              RadialRatioOption = C_S % RadialRatio, &
              nGhostLayersOption = C_S % nGhostLayers, &
              nCellsPolarOption = C_S % nCellsPolar, &
              nEqualOption = C_S % nEqual, &
-             nDimensionsOption = 1 )
+             nDimensionsOption = nDimensions )
 
     end associate !-- C_S
 
-  end subroutine Initialize_SCG_CC_SA
+  end subroutine Initialize_SCG_CC_A
 
 
   impure elemental subroutine Finalize ( A )

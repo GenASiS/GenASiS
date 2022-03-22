@@ -9,7 +9,8 @@ program Atlas_SCG_CC__Form_Test
 
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A, &
-    A_SA
+    A_SA, &  !-- SphericalAverage
+    A_AA     !-- AzimuthalAverage
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
@@ -23,13 +24,26 @@ program Atlas_SCG_CC__Form_Test
            CommunicatorOption = PROGRAM_HEADER % Communicator, &
            NameOption = 'PositionSpace' )
 
-  allocate ( A_SA )
-  call A_SA % Initialize ( A )
+  if ( A % Chart_GS_CC % nDimensions  >  1 ) then
+    allocate ( A_SA )
+    call A_SA % Initialize ( A, nDimensions = 1 )
+  end if
+
+  if ( A % Chart_GS_CC % nDimensions  >  2 ) then
+    allocate ( A_AA )
+    call A_AA % Initialize ( A, nDimensions = 2 )
+  end if
 
   call A % Show ( )
-  call A_SA % Show ( )
-
-  deallocate ( A_SA )
+  if ( allocated ( A_SA ) ) &
+    call A_SA % Show ( )
+  if ( allocated ( A_AA ) ) &
+    call A_AA % Show ( )
+  
+  if ( allocated ( A_AA ) ) &
+    deallocate ( A_AA )
+  if ( allocated ( A_SA ) ) &
+    deallocate ( A_SA )
   deallocate ( A )
   deallocate ( PROGRAM_HEADER )
 

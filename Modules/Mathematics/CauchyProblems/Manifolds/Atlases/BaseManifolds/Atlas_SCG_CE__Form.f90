@@ -16,9 +16,9 @@ module Atlas_SCG_CE__Form
     procedure, private, pass :: &
       Initialize_SCG_CE
     procedure, private, pass :: &
-      Initialize_SCG_CE_SA  !-- SphericalAverage
+      Initialize_SCG_CE_A  !-- Average
     generic, public :: &
-      Initialize => Initialize_SCG_CE, Initialize_SCG_CE_SA
+      Initialize => Initialize_SCG_CE, Initialize_SCG_CE_A
     final :: &
       Finalize
   end type Atlas_SCG_CE_Form
@@ -96,29 +96,46 @@ contains
   end subroutine Initialize_SCG_CE
 
 
-  subroutine Initialize_SCG_CE_SA ( A, A_S )
+  subroutine Initialize_SCG_CE_A ( A, A_S, nDimensions )
 
     class ( Atlas_SCG_CE_Form ), intent ( inout ) :: &
       A
     class ( Atlas_SCG_CE_Form ), intent ( in ) :: &
       A_S  !-- Source
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    character ( 3 ) :: &
+      Suffix
 
     associate ( C_S  =>  A_S % Chart_GS_CE )
+
+    select case ( nDimensions )
+    case ( 1 )
+      Suffix = '_SA'
+    case ( 2 )
+      Suffix = '_AA'
+    case default
+      call Show ( 'Expecting nDimensions = 1 or 2', CONSOLE % ERROR )
+      call Show ( '(spherical or azimuthal average)', CONSOLE % ERROR )
+      call Show ( nDimensions, 'nDimensions', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
 
     call A % Initialize &
            ( RadiusMax = C_S % RadiusMax, &
              RadiusExcision = C_S % RadiusScale, &
              CommunicatorOption = C_S % Communicator, &
-             NameOption = trim ( A_S % Name ) // '_SA', &
+             NameOption = trim ( A_S % Name ) // Suffix, &
              CoordinateUnitOption = C_S % CoordinateUnit, &
              RadialRatioOption = C_S % RadialRatio, &
              nGhostLayersOption = C_S % nGhostLayers, &
              nCellsPolarOption = C_S % nCellsPolar, &
-             nDimensionsOption = 1 )
+             nDimensionsOption = nDimensions )
 
     end associate !-- C_S
 
-  end subroutine Initialize_SCG_CE_SA
+  end subroutine Initialize_SCG_CE_A
 
 
   impure elemental subroutine Finalize ( A )
