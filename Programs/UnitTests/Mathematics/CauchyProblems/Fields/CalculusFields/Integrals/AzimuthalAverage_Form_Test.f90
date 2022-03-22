@@ -1,4 +1,4 @@
-program SphericalAverage_Form_Test
+program AzimuthalAverage_Form_Test
 
   use Basics
   use Manifolds
@@ -12,20 +12,20 @@ program SphericalAverage_Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A, &
-    A_SA
+    A_AA
   type ( Geometry_F_Form ), allocatable :: &
     G, &
-    G_SA
+    G_AA
   type ( FieldSetForm ), allocatable :: &
     FS
   type ( StreamForm ), allocatable :: &
     S, &
-    S_SA
-  type ( SphericalAverageForm ), allocatable :: &
-    SA
+    S_AA
+  type ( AzimuthalAverageForm ), allocatable :: &
+    AA
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'SphericalAverage_Form_Test' )
+  call PROGRAM_HEADER % Initialize ( 'AzimuthalAverage_Form_Test' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -58,51 +58,51 @@ program SphericalAverage_Form_Test
   call FS    % Show ( )
   call  S    % Show ( )
 
-  if ( A % Chart_GS_CC % nDimensions  >  1 ) then
+  if ( A % Chart_GS_CC % nDimensions  >  2 ) then
 
-    allocate ( A_SA )
-    call A_SA % Initialize ( A, nDimensions = 1 )
+    allocate ( A_AA )
+    call A_AA % Initialize ( A, nDimensions = 2 )
 
-    allocate ( S_SA )
-    call S_SA % Initialize &
-           ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
+    allocate ( S_AA )
+    call S_AA % Initialize &
+           ( A_AA, GIS, NameOption = trim ( S % Name ) // '_AA' )
 
-    allocate ( G_SA )
-    call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
-    call G_SA % SetStream ( S_SA )
+    allocate ( G_AA )
+    call G_AA % Initialize ( A_AA, NameOption = trim ( G % Name ) // '_AA' )
+    call G_AA % SetStream ( S_AA )
 
-    allocate ( SA )
-    call SA % Initialize ( G, FS, A_SA )
+    allocate ( AA )
+    call AA % Initialize ( G, FS, A_AA )
 
-    associate ( FS_SA  =>  SA % FieldSet_SA )
+    associate ( FS_AA  =>  AA % FieldSet_AA )
 
-    call S_SA % AddFieldSet ( FS_SA )
+    call S_AA % AddFieldSet ( FS_AA )
 
-    call  A_SA % Show ( )
-    call  G_SA % Show ( )
-    call FS_SA % Show ( )
-    call  S_SA % Show ( )
+    call  A_AA % Show ( )
+    call  G_AA % Show ( )
+    call FS_AA % Show ( )
+    call  S_AA % Show ( )
 
-    end associate !-- FS_SA
+    end associate !-- FS_AA
 
   end if !-- nDimensions > 1
 
   call SetFields ( )
 
-  if ( allocated ( A_SA ) ) &
-    call SA % Compute ( IgnorabilityOption = CONSOLE % INFO_1 )
+  if ( allocated ( A_AA ) ) &
+    call AA % Compute ( IgnorabilityOption = CONSOLE % INFO_1 )
 
   call GIS % Open ( GIS % ACCESS_CREATE )
   call S    % Write ( )
-  if ( allocated ( A_SA ) ) &
-    call S_SA % Write ( )
+  if ( allocated ( A_AA ) ) &
+    call S_AA % Write ( )
   call GIS % Close ( )
 
-  if ( allocated ( A_SA ) ) then
-    deallocate ( SA )
-    deallocate ( G_SA )
-    deallocate ( S_SA )
-    deallocate ( A_SA )
+  if ( allocated ( A_AA ) ) then
+    deallocate ( AA )
+    deallocate ( G_AA )
+    deallocate ( S_AA )
+    deallocate ( A_AA )
   end if
   deallocate ( FS )
   deallocate ( G )
@@ -178,4 +178,4 @@ contains
   end subroutine SetFields
 
 
-end program SphericalAverage_Form_Test
+end program AzimuthalAverage_Form_Test

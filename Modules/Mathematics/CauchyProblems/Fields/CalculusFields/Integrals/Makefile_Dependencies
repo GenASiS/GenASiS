@@ -13,13 +13,22 @@ SurfaceIntegral_Form.o: \
 SphericalAverage_Form.o: \
   Basics.o \
   Manifolds.o \
+  FieldSets.o \
   Geometries.o \
   SphericalAverage_Form.f90
+
+AzimuthalAverage_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  AzimuthalAverage_Form.f90
 
 Integrals.o: \
   VolumeIntegral_Form.o \
   SurfaceIntegral_Form.o \
   SphericalAverage_Form.o \
+  AzimuthalAverage_Form.o \
   Integrals.f90
 
 Integrals.a: $(INTEGRALS)
