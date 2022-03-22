@@ -199,12 +199,21 @@ contains
 
     end if !-- Dimensionless
 
-    
+    !-- Spherical average
     if ( PS % Chart_GS_CC % nDimensions  >  1 ) then
       allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_SA )
       select type ( PS_SA  =>  U % PositionSpace_SA )
         class is ( Atlas_SCG_CC_Form )
-      call PS_SA % Initialize ( PS )
+      call PS_SA % Initialize ( PS, nDimensions = 1 )
+      end select !-- PS_SA
+    end if !-- nDimensions
+
+    !-- Azimuthal average
+    if ( PS % Chart_GS_CC % nDimensions  >  2 ) then
+      allocate ( Atlas_SCG_CC_Form :: U % PositionSpace_AA )
+      select type ( PS_SA  =>  U % PositionSpace_AA )
+        class is ( Atlas_SCG_CC_Form )
+      call PS_SA % Initialize ( PS, nDimensions = 2 )
       end select !-- PS_SA
     end if !-- nDimensions
 
