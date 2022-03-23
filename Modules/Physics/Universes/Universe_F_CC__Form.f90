@@ -274,7 +274,7 @@ contains
 
   subroutine Set_T_CheckpointInterval ( I )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
       I
 
     integer ( KDI ) :: &
@@ -303,14 +303,32 @@ contains
       Incoming_2D
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
+    class ( Atlas_H_Form ), pointer :: &
+      A_SA
+    class ( FieldSetForm ), pointer :: &
+      G_SA, &
+      F_SA      
 
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )
-    select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      A_SA  =>  U % PositionSpace_SA
+      G_SA  =>  U % SA_Gravitation % FieldSet_SA
+      F_SA  =>  U % SA_Fluid % FieldSet_SA
+    else !-- 1D
+      A_SA  =>  I % X
+      G_SA  =>  I % Geometry_X
+      F_SA  =>  I % CurrentSet_X
+    end if
+
+    select type ( F_SA )
       class is ( Fluid_D_Form )
-    select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+    select type ( G_SA )
       class is ( Gravitation_G_Form )
-    select type ( A_SA  =>  F_SA % Atlas )
+    select type ( A_SA )
       class is ( Atlas_SCG_Form )
     associate &
       ( C_SA    =>  A_SA % Chart_GS, &
@@ -432,6 +450,7 @@ contains
     end select !-- A_SA
     end select !-- G_SA
     end select !-- F_SA
+    end select !-- I
     end select !-- U
 
   end subroutine Set_T_CheckpointInterval

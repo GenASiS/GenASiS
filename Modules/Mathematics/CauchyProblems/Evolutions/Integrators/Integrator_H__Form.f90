@@ -219,7 +219,7 @@ module Integrator_H__Form
     subroutine STCI ( I )
       import Integrator_H_Form
       implicit none
-      class ( Integrator_H_Form ), intent ( inout ) :: &
+      class ( Integrator_H_Form ), intent ( inout ), target :: &
         I
     end subroutine STCI
 
@@ -1288,7 +1288,7 @@ contains
 
   subroutine Set_T_CheckpointInterval ( I )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
       I
 
     I % T_CheckpointInterval &
