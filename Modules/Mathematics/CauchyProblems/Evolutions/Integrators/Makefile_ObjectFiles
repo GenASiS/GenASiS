@@ -3,4 +3,5 @@ INTEGRATORS = \
   Integrator_CS__Kernel.o \
   Integrator_CS__Form.o \
   Integrator_H__Form.o \
+  Series_CS__Form.o \
   Series_B__Form.o

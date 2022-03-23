@@ -72,8 +72,8 @@ contains
 
 
   subroutine Initialize_B &
-               ( S, GIS, dT_Label, Unit_T, dT_Candidate, T, &
-                 CommunicatorRank, nWrite, iCycle )
+               ( S, GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
+                 nWrite, iCycle )
 
     class ( Series_B_Form ), intent ( inout ) :: &
       S

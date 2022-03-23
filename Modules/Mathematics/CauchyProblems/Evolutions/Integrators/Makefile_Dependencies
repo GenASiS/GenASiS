@@ -2,6 +2,12 @@ Series_B__Form.o: \
   Basics.o \
   Series_B__Form.f90
 
+Series_CS__Form.o: \
+  Basics.o \
+  Fields.o \
+  Series_B__Form.o \
+  Series_CS__Form.f90
+
 Integrator_H__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -15,6 +21,7 @@ Integrator_CS__Form.o: \
   Manifolds.o \
   Fields.o \
   Steps.o \
+  Series_CS__Form.o \
   Integrator_H__Form.o \
   Integrator_CS__Form.f90
 
@@ -25,6 +32,7 @@ Integrator_CS__Kernel.o: \
 
 Integrators.o: \
   Series_B__Form.o \
+  Series_CS__Form.o \
   Integrator_H__Form.o \
   Integrator_CS__Form.o \
   Integrators.f90

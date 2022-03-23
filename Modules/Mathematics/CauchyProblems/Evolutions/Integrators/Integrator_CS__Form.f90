@@ -6,6 +6,7 @@ module Integrator_CS__Form
   use Manifolds
   use Fields
   use Steps
+  use Series_CS__Form
   use Integrator_H__Form
 
   implicit none
@@ -38,7 +39,8 @@ module Integrator_CS__Form
   end type Integrator_CS_Form
 
     private :: &
-      Compute_dT_Local
+      Compute_dT_Local, &
+      InitializeSeries
 
       private :: &
         Compute_dT_CS_CGS_Kernel
@@ -115,6 +117,7 @@ contains
     end if
 
     I % Compute_dT_Local  =>  Compute_dT_Local
+    I % InitializeSeries  =>  InitializeSeries
 
     call I % Integrator_H_Form % Initialize &
            ( CommunicatorOption, NameOption, DeviceMemoryOption, &
@@ -360,6 +363,27 @@ contains
     end select !-- I
 
   end subroutine Compute_dT_Local
+
+
+  subroutine InitializeSeries ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    allocate ( Series_CS_Form :: I % Series )
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    select type ( S  =>  I % Series )
+      class is ( Series_CS_Form )
+    call S % Initialize &
+      ( I % CurrentSet_X, I % GridImageStream, I % dT_Label, I % Unit_T, &
+        I % dT_Candidate, I % T, I % Communicator % Rank, I % nWrite, &
+        I % iCycle )
+    end select !-- S
+    end select !-- I
+
+  end subroutine InitializeSeries
 
 
 end module Integrator_CS__Form
