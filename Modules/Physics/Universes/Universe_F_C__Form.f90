@@ -1007,16 +1007,19 @@ contains
   end subroutine Compute_dT_CS_CGS_C
 
 
-  subroutine Analyze_C ( I, TallyIgnorability, T_Option )
+  subroutine Analyze_C ( I, Ignorability, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
     integer ( KDI ), intent ( in ) :: &
-      TallyIgnorability
+      Ignorability
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
-    call I % Analyze_H ( TallyIgnorability, T_Option )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    call I % Analyze_CS ( I, Ignorability, T_Option )
+    end select !-- I
 
     select type ( U  =>  I % System )
       class is ( Universe_F_C_Form )

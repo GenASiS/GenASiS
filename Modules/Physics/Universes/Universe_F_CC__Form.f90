@@ -101,6 +101,8 @@ contains
              nCellsPolarOption = nCellsPolarOption, &
              nWriteOption = nWriteOption ) 
 
+    !-- Integrator methods
+
     associate ( I  =>  U % Integrator )
     I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
     I % Compute_dT_Local          =>  Compute_dT_Local

@@ -13,6 +13,8 @@ module Integrator_CS__Form
   private
 
   type, public, extends ( Integrator_H_Form ) :: Integrator_CS_Form
+    integer ( KDI ) :: &
+      iTimer_CT  = 0  !-- ComputeTally
     real ( KDR ) :: &
       CourantFactor
     class ( CurrentSetForm ), allocatable :: &
@@ -34,6 +36,8 @@ module Integrator_CS__Form
       UpdateHost => UpdateHost_CS
     procedure, private, pass :: &  !-- 3
       ComputeTally
+    procedure, public, nopass :: &   !-- 3
+      Analyze_CS
     procedure, public, pass :: &
       Compute_dT_CS_CGS
   end type Integrator_CS_Form
@@ -116,13 +120,16 @@ contains
       I % dT_Label ( 1 ) = 'FastEigenspeed'
     end if
 
-    I % Compute_dT_Local  =>  Compute_dT_Local
-    I % InitializeSeries  =>  InitializeSeries
-
     call I % Integrator_H_Form % Initialize &
            ( CommunicatorOption, NameOption, DeviceMemoryOption, &
              PinnedMemoryOption, DevicesCommunicateOption, &
              Unit_T_Option, T_FinishOption, nWriteOption )
+
+    !-- Integrator methods
+
+    I % Compute_dT_Local  =>  Compute_dT_Local
+    I % InitializeSeries  =>  InitializeSeries
+    I % Analyze           =>  Analyze_CS
 
     !-- CurrentSet, if necessary
 
@@ -281,6 +288,46 @@ contains
     end associate !-- CS
 
   end subroutine ComputeTally
+
+
+  subroutine Analyze_CS ( I, Ignorability, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      Ignorability
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    type ( TimerForm ), pointer :: &
+      T_CT
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+
+    !-- Tally
+
+    if ( present ( T_Option ) ) then
+      T_CT  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = I % iTimer_CT, &
+                    Name = trim ( I % Name ) // '_CmptTlly', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_CT  =>  null ( )
+    end if
+    if ( associated ( T_CT ) ) call T_CT % Start ( )   
+    call I % ComputeTally &
+           ( ChangeOption = .not. I % Start, &
+             IgnorabilityOption  = Ignorability )
+    if ( associated ( T_CT ) ) call T_CT % Stop ( )   
+
+    !-- Analyze_H
+
+    call I % Analyze_H ( Ignorability, T_Option )
+
+    end select !-- I
+
+  end subroutine Analyze_CS
 
 
   subroutine Compute_dT_CS_CGS ( I, dT, iC, T_Option )

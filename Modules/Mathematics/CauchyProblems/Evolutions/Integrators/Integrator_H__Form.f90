@@ -27,7 +27,6 @@ module Integrator_H__Form
       iTimer_UH  = 0, &   !-- UpdateHost
       iTimer_A   = 0, &   !-- Analyze
       iTimer_SR  = 0, &   !-- SetReference
-      iTimer_CT  = 0, &   !-- ComputeTally
       iTimer_W   = 0, &   !-- Write
       iTimer_CC  = 0, &   !-- ComputeCycle
       iTimer_PC  = 0, &   !-- PrepareCycle
@@ -129,8 +128,6 @@ module Integrator_H__Form
       ShowSystem_H
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_H
-    procedure, private, pass :: &   !-- 3
-      ComputeTally
     procedure, public, pass :: &   !-- 3
       Analyze_H
     procedure, private, pass :: &   !-- 3
@@ -173,14 +170,14 @@ module Integrator_H__Form
         I
     end subroutine SS_I
 
-    subroutine A ( I, TallyIgnorability, T_Option )
+    subroutine A ( I, Ignorability, T_Option )
       use Basics
       import Integrator_H_Form
       implicit none
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
       integer ( KDI ), intent ( in ) :: &
-        TallyIgnorability
+        Ignorability
       type ( TimerForm ), intent ( in ), optional :: &
         T_Option
     end subroutine A
@@ -463,7 +460,7 @@ contains
       end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then
-        call I % Analyze ( TallyIgnorability = I % IGNORABILITY + 1 )
+        call I % Analyze ( Ignorability = I % IGNORABILITY + 1 )
         call I % Write ( )
       end if
 
@@ -720,8 +717,7 @@ contains
 
     integer ( KDI ) :: &
       iTSC, &  !-- iTimeStepCandidates
-      TallyIgnorability, &
-      StatisticsIgnorability
+      Ignorability
     type ( TimerForm ), pointer :: &
       T_UH, &
       T_A, &
@@ -759,16 +755,13 @@ contains
          .and. I % T  <  I % T_Finish &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
-      StatisticsIgnorability  =  I % IGNORABILITY + 1
-      TallyIgnorability       =  I % IGNORABILITY + 1
+      Ignorability  =  I % IGNORABILITY + 1
     else
-      StatisticsIgnorability  =  I % IGNORABILITY
-      TallyIgnorability       =  I % IGNORABILITY
+      Ignorability  =  I % IGNORABILITY
     end if
 
     call PROGRAM_HEADER % RecordStatistics &
-           ( StatisticsIgnorability, &
-             CommunicatorOption = PROGRAM_HEADER % Communicator )
+           ( Ignorability, CommunicatorOption = PROGRAM_HEADER % Communicator )
 
     !-- Analyze
 
@@ -778,10 +771,10 @@ contains
                    Name = trim ( I % Name ) // '_Anlz', &
                    Level = T_Option % Level + 1 )
       call T_A % Start ( )   
-      call I % Analyze ( TallyIgnorability, T_Option = T_A )
+      call I % Analyze ( Ignorability, T_Option = T_A )
       call T_A % Stop ( )   
     else
-      call I % Analyze ( TallyIgnorability )
+      call I % Analyze ( Ignorability )
     end if
 
     !-- Write
@@ -962,30 +955,17 @@ contains
   end subroutine UpdateHost_H
 
 
-  subroutine ComputeTally ( I, ChangeOption, IgnorabilityOption )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    logical ( KDL ), intent ( in ), optional :: &
-      ChangeOption      
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
-
-  end subroutine ComputeTally
-
-
-  subroutine Analyze_H ( I, TallyIgnorability, T_Option )
+  subroutine Analyze_H ( I, Ignorability, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
     integer ( KDI ), intent ( in ) :: &
-      TallyIgnorability
+      Ignorability
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     type ( TimerForm ), pointer :: &
       T_SR, &
-      T_CT, &
       T_R
 
     !-- Reference
@@ -1003,22 +983,6 @@ contains
       call I % SetReference ( )
       if ( associated ( T_SR ) ) call T_SR % Stop ( )
     end if
-
-    !-- Tally
-
-    if ( present ( T_Option ) ) then
-      T_CT  =>  PROGRAM_HEADER % Timer &
-                  ( Handle = I % iTimer_CT, &
-                    Name = trim ( I % Name ) // '_CmptTlly', &
-                    Level = T_Option % Level + 1 )
-    else
-      T_CT  =>  null ( )
-    end if
-    if ( associated ( T_CT ) ) call T_CT % Start ( )   
-    call I % ComputeTally &
-           ( ChangeOption = .not. I % Start, &
-             IgnorabilityOption  = TallyIgnorability )
-    if ( associated ( T_CT ) ) call T_CT % Stop ( )   
 
     !-- Series
 
