@@ -8,8 +8,11 @@ module Measures_F_CC__Form
   implicit none
   private
 
-    integer ( KDI ), public, parameter :: &
-      N_MEASURES = 11
+    integer ( KDI ), private, parameter :: &
+      N_MEASURES_D    =  8, &
+      N_MEASURES_P    = 10, &
+      N_MEASURES_P_HN = 11, &
+      N_MEASURES      = 11
 
   type, public :: Measures_F_CC_Form
     integer ( KDI ) :: &
@@ -26,18 +29,12 @@ module Measures_F_CC__Form
       Temperature_C, &
       EntropyPerBaryon_C, &
       ElectronFraction_C
+    real ( KDR ), dimension ( N_MEASURES ) :: &
+      Measure
+    type ( MeasuredValueForm ), dimension ( N_MEASURES ) :: &
+      Unit
     character ( LDL ), dimension ( N_MEASURES ) :: &
-      Name = [ 'VelocityMax        ', &
-               'Radius_V_Max       ', &
-               'Baryons_V_Max      ', &
-               'Mass_V_Max         ', &
-               'BaryonDensity_V_Max', &
-               'MassDensity_V_Max  ', &
-               'BaryonDensity_C    ', &
-               'MassDensity_C      ', &
-               'Temperature_C      ', &
-               'EntropyPerBaryon_C ', &
-               'ElectronFraction_C ' ]
+      Name
     class ( Atlas_H_Form ), pointer :: &
       Atlas_SA => null ( )
     class ( FieldSetForm ), pointer :: &
@@ -86,6 +83,48 @@ contains
     M % Geometry_SA  =>  G_SA
     M % Units_F      =>  Units_F
 
+    M % Name = [ 'VelocityMax        ', &
+                 'Radius_V_Max       ', &
+                 'Baryons_V_Max      ', &
+                 'Mass_V_Max         ', &
+                 'BaryonDensity_V_Max', &
+                 'MassDensity_V_Max  ', &
+                 'BaryonDensity_C    ', &
+                 'MassDensity_C      ', &
+                 'Temperature_C      ', &
+                 'EntropyPerBaryon_C ', &
+                 'ElectronFraction_C ' ]
+
+    associate ( UF  =>  M % Units_F )
+    M % Unit  =  [ UF % Velocity_U ( 1 ), &     !-- VelocityMax
+                   UF % Coordinate_PS ( 1 ), &  !-- Radius_V_Max
+                   UF % Number, &               !-- Baryons_V_Max
+                   UF % Mass, &                 !-- Mass_V_Max
+                   UF % NumberDensity, &        !-- BaryonDensity_V_Max
+                   UF % MassDensity, &          !-- MassDensity_V_Max
+                   UF % NumberDensity, &        !-- BaryonDensity_C
+                   UF % MassDensity, &          !-- MassDensity_C
+                   UF % Temperature, &          !-- Temperature_C
+                   UF % EnergyDensity &
+                     /  UF % NumberDensity  &
+                     /  UF % Temperature, &     !-- EntropyPerBaryon_C
+                   UNIT % IDENTITY ]            !-- ElectronFraction_C
+    end associate !-- UF
+
+    select type ( F_SA )
+    class is ( Fluid_P_HN_Form )
+      M % nMeasures  =  N_MEASURES_P_HN
+    class is ( Fluid_P_Form )
+      M % nMeasures  =  N_MEASURES_P
+    class is ( Fluid_D_Form )
+      M % nMeasures  =  N_MEASURES_D
+    class default
+      call Show ( 'Fluid type not found', CONSOLE % ERROR )
+      call Show ( 'Measures_F_CC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- F_SA
+
   end subroutine Initialize
 
 
@@ -98,6 +137,7 @@ contains
       iP, &  !-- iProcess
       iR, &  !-- iRadius
       iC, &  !-- iCell
+      iM, &  !-- iMeasure
       oC, &  !-- oCell
       oI, &  !-- oIncoming
       nF
@@ -240,25 +280,26 @@ contains
     if ( allocated ( T ) )  T_C  =  T ( 1 )
     if ( allocated ( Y ) )  Y_C  =  Y ( 1 )
 
+    !-- Record
+
+    M % Measure (  1 )  =      V_Max
+    M % Measure (  2 )  =    R_V_Max
+    M % Measure (  3 )  =    B_V_Max
+    M % Measure (  4 )  =    M_V_Max
+    M % Measure (  5 )  =    N_V_Max
+    M % Measure (  6 )  =  Rho_V_Max
+    M % Measure (  7 )  =    N_C
+    M % Measure (  8 )  =  Rho_C
+    M % Measure (  9 )  =    T_C
+    M % Measure ( 10 )  =    S_C
+    M % Measure ( 11 )  =    Y_C
+
     !-- Display
 
     call Show ( 'Fluid_CentralCore Measures' )
-    call Show ( V_Max, UF % Velocity_U ( 1 ), 'VelocityMax' )
-    call Show ( R_V_Max, UF % Coordinate_PS ( 1 ), 'Radius_V_Max' )
-    call Show ( B_V_Max, UF % Number, 'Baryons_V_Max' )
-    call Show ( M_V_Max, UF % Mass, 'Mass_V_Max' )
-    call Show ( N_V_Max, UF % NumberDensity, 'BaryonDensity_V_Max' )
-    call Show ( Rho_V_Max, UF % MassDensity, 'MassDensity_V_Max' )
-    call Show ( N_C, UF % NumberDensity, 'BaryonDensity_C' )
-    call Show ( Rho_C, UF % MassDensity, 'MassDensity_C' )
-    if ( allocated ( T ) ) &
-      call Show ( T_C, UF % Temperature, 'Temperature_C' )
-    if ( allocated ( S ) ) &
-      call Show ( S_C, UF % EnergyDensity  /  UF % NumberDensity  &
-                       /  UF % Temperature, &
-                  'EntropyPerBaryon_C' )
-    if ( allocated ( Y ) ) &
-      call Show ( Y_C, 'ElectronFraction_C' )
+    do iM  =  1,  M % nMeasures
+      call Show ( M % Measure ( iM ), M % Unit ( iM ), M % Name ( iM ) )
+    end do !-- iM
 
     !-- Cleanup
 

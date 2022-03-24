@@ -5,6 +5,11 @@ Measures_F_CC__Form.o: \
   Fluids.o \
   Measures_F_CC__Form.f90
 
+Series_F_CC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Series_F_CC__Form.f90
+
 Universe_H__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -47,6 +52,7 @@ Universe_F_CC__Kernel.o: \
 
 Universes.o: \
   Measures_F_CC__Form.o \
+  Series_F_CC__Form.o \
   Universe_H__Form.o \
   Universe_F_B__Form.o \
   Universe_F_C__Form.o \

@@ -61,9 +61,9 @@ module Universe_F_C__Form
     procedure, public, pass :: &
       Compute_dT_CS_CGS_C
     procedure, public, nopass :: &
-      Analyze_C
+      Analyze_F_C
     procedure, public, nopass :: &
-      Write_C
+      Write_F_C
   end type Universe_F_C_Form
 
     private :: &
@@ -239,8 +239,8 @@ contains
 
     !-- Integrator methods
 
-    I % Analyze  =>  Analyze_C
-    I % Write    =>  Write_C
+    I % Analyze  =>  Analyze_F_C
+    I % Write    =>  Write_F_C
 
     end select !-- I
 
@@ -1008,7 +1008,7 @@ contains
   end subroutine Compute_dT_CS_CGS_C
 
 
-  subroutine Analyze_C ( I, Ignorability, T_Option )
+  subroutine Analyze_F_C ( I, Ignorability, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -1059,10 +1059,10 @@ contains
 
     end select !-- U
 
-  end subroutine Analyze_C
+  end subroutine Analyze_F_C
 
 
-  subroutine Write_C ( I, T_Option )
+  subroutine Write_F_C ( I, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -1135,7 +1135,7 @@ contains
 
     end select !-- U
 
-  end subroutine Write_C
+  end subroutine Write_F_C
 
 
   subroutine SetSlope_N_SG ( S, K )
