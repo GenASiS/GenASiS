@@ -337,6 +337,17 @@ contains
       end select !-- F_SA
     end if
 
+    if ( allocated ( YL % AA_Fluid ) ) then
+      select type ( F_AA  =>  YL % AA_Fluid % FieldSet_AA )
+      class is ( Fluid_P_I_Form )
+        call F_AA % SetAdiabaticIndex &
+               ( Gamma )
+        call F_AA % SetFiducialParameters &
+               ( FiducialBaryonDensity = Rho_I, &
+                 FiducialPressure = P_I )
+      end select !-- F_AA
+    end if
+
     end associate !-- Gamma, etc.
 
     end associate !-- C
