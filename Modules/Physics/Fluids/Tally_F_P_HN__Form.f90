@@ -86,7 +86,8 @@ contains
             T % FLUID_ENERGY, &
             T % INTERNAL_ENERGY, &
             T % KINETIC_ENERGY, &
-            T % ANGULAR_MOMENTUM ]    
+            T % ANGULAR_MOMENTUM, &
+            T % ENTROPY ]    
     class is ( Gravitation_N_H_Form )
       T % nSelected = 13
       allocate ( T % iaSelected ( T % nSelected ) )
@@ -98,6 +99,7 @@ contains
             T % INTERNAL_ENERGY, &
             T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM, &
+            T % ENTROPY, &
             T % GRAVITATIONAL_ENERGY, &
             T % TOTAL_ENERGY ]    
     class default 

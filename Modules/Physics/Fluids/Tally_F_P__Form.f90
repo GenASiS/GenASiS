@@ -13,13 +13,14 @@ module Tally_F_P__Form
   private
   
     integer ( KDI ), private, parameter :: &
-      N_INTEGRALS_P = 2
+      N_INTEGRALS_P = 3
   
   type, public, extends ( Tally_F_D_Form ) :: Tally_F_P_Form
     integer ( KDI ) :: &
       N_INTEGRALS_P   = N_INTEGRALS_P, &
       FLUID_ENERGY    = 0, &
-      INTERNAL_ENERGY = 0
+      INTERNAL_ENERGY = 0, &
+      ENTROPY         = 0
   contains
     procedure, private, pass :: &
       InitializeFluid
@@ -32,6 +33,9 @@ module Tally_F_P__Form
     procedure, public, pass :: &
       ComputeBoundaryIntegrand_G
   end type Tally_F_P_Form
+
+    private :: &
+      ComputeDensity_S
 
 
 contains
@@ -57,14 +61,17 @@ contains
     
     T % FLUID_ENERGY     =  oI + 1
     T % INTERNAL_ENERGY  =  oI + 2
+    T % ENTROPY          =  oI + 3
     
     T % Variable ( oI + 1 : oI + T % N_INTEGRALS_P ) &
       = [ 'FluidEnergy   ', &
-          'InternalEnergy' ]
+          'InternalEnergy', &
+          'Entropy       ' ]
 
     T % Unit ( oI + 1 : oI + T % N_INTEGRALS_P ) &
       = [ Units % Energy, &
-          Units % Energy ]
+          Units % Energy, &
+          Units % Energy  /  Units % Temperature ]
 
     call T % SelectVariables ( )
 
@@ -89,7 +96,8 @@ contains
             T % FLUID_ENERGY, &
             T % INTERNAL_ENERGY, &
             T % KINETIC_ENERGY, &
-            T % ANGULAR_MOMENTUM ]
+            T % ANGULAR_MOMENTUM, &
+            T % ENTROPY ]
     class is ( Gravitation_N_H_Form )
       T % nSelected  =  12
       allocate ( T % iaSelected ( T % nSelected ) )
@@ -100,6 +108,7 @@ contains
             T % INTERNAL_ENERGY, &
             T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM, &
+            T % ENTROPY, &
             T % GRAVITATIONAL_ENERGY, &
             T % TOTAL_ENERGY ]
     class default 
@@ -139,17 +148,21 @@ contains
       ( CSV  =>  CS % Storage_GS % Value, &
         IV  =>  T % InteriorIntegral % Integrand % Storage_GS % Value )
     associate &
-      ( CE  =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-        IE  =>  CSV ( :, CS % ENERGY_DENSITY_C ) )
+      ( BE  =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+        IE  =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+        SB  =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+        N   =>  CSV ( :, CS % BARYON_DENSITY_C ) )
 
     do iS  =  1, T % nSelected
       iI  =  T % iaSelected ( iS )
       if ( iI  ==  T % FLUID_ENERGY ) then
-        call Copy ( CE, IV ( :, iS ) )
+        call Copy ( BE, IV ( :, iS ) )
       else if ( iI  ==  T % TOTAL_ENERGY ) then
-        call Copy ( CE, IV ( :, iS ) )
+        call Copy ( BE, IV ( :, iS ) )
       else if ( iI  ==  T % INTERNAL_ENERGY ) then
         call Copy ( IE, IV ( :, iS ) )
+      else if ( iI  ==  T % ENTROPY ) then
+        call ComputeDensity_S ( SB, N, IV ( :, iS ) )
       end if !-- iI
     end do !-- iS
 
@@ -208,6 +221,29 @@ contains
     end select !-- CS
 
   end subroutine ComputeBoundaryIntegrand_G
+
+
+  subroutine ComputeDensity_S ( SB, N, I )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      SB, &
+      N
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( I )
+
+    !$OMP parallel do
+    do iV  =  1,  nV
+      I ( iV )  =  SB ( iV )  *  N ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeDensity_S
 
 
 end module Tally_F_P__Form
