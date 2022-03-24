@@ -5,4 +5,5 @@ UNIVERSES = \
   Universe_F_C__Kernel.o \
   Universe_F_C__Form.o \
   Universe_F_B__Form.o \
-  Universe_H__Form.o
+  Universe_H__Form.o \
+  Measures_F_CC__Form.o
