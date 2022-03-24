@@ -29,6 +29,7 @@ module Units_F__Form
     !-- Global
     type ( MeasuredValueForm ) :: &
       Number, &
+      Mass, &
       Energy, &
       Momentum, &
       AngularMomentum
@@ -80,6 +81,7 @@ contains
                                         *  UNIT % SPEED_MKS
         !-- Global
         U % Number           =  UNIT % MOLE
+        U % Mass             =  UNIT % KILOGRAM
         U % Energy           =  UNIT % JOULE
         U % Momentum         =  UNIT % KILOGRAM  *  UNIT % SPEED_MKS
         U % AngularMomentum  =  U % Momentum  *  UNIT % METER
@@ -111,6 +113,7 @@ contains
                                         /  UNIT % SPEED_OF_LIGHT
         !-- Global
         U % Number           =  UNIT % SOLAR_BARYON_NUMBER
+        U % Mass             =  UNIT % SOLAR_MASS
         U % Energy           =  UNIT % ENERGY_SOLAR_MASS
         U % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
         U % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
@@ -165,6 +168,7 @@ contains
 
     call Show ( 'Units -- Global' )
     call Show ( U % Number,          'Number', IgnorabilityOption )
+    call Show ( U % Mass,            'Mass', IgnorabilityOption )
     call Show ( U % Energy,          'Energy', IgnorabilityOption )
     call Show ( U % Momentum,        'Momentum', IgnorabilityOption )
     call Show ( U % AngularMomentum, 'AngularMomentum', IgnorabilityOption )

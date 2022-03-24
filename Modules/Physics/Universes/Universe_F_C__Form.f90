@@ -488,6 +488,7 @@ contains
            *  U % Units_F ( 1 ) % Coordinate_PS ( 1 ) ** 2
 
       U % Units_F ( 1 ) % Number           =  UNIT % SOLAR_BARYON_NUMBER
+      U % Units_F ( 1 ) % Mass             =  UNIT % SOLAR_MASS
       U % Units_F ( 1 ) % Energy           =  UNIT % ENERGY_SOLAR_MASS
       U % Units_F ( 1 ) % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
       U % Units_F ( 1 ) % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER

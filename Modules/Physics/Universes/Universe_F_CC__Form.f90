@@ -12,6 +12,18 @@ module Universe_F_CC__Form
   private
 
   type, public, extends ( Universe_F_C_Form ) :: Universe_F_CC_Form
+    real ( KDR ) :: &
+      VelocityMax, &
+      Radius_V_Max, &
+      Baryons_V_Max, &
+      Mass_V_Max, &
+      BaryonDensity_V_Max, &
+      MassDensity_V_Max, &
+      BaryonDensity_C, &
+      MassDensity_C, &
+      Temperature_C, &
+      EntropyPerBaryon_C, &
+      ElectronFraction_C
   contains
     procedure, private, pass :: &
       Initialize_F_CC
@@ -284,22 +296,24 @@ contains
       iR, &  !-- iRadius
       iC, &  !-- iCell
       oC, &  !-- oCell
-      oI     !-- oIncoming
+      oI, &  !-- oIncoming
+      nF
     real ( KDR ) :: &
       Constant_G, &
-      D_Min, &
-      V_Max, &
-      R_V_Max, &
-      B_V_Max, &
-      N_V_Max, &
-      N_Max, &
       T_V, &
       T_N
     real ( KDR ), dimension ( : ), allocatable :: &
        R, &
       dV, &
        N, &
-       V
+       V, &
+       T, &
+       S, &
+       Y
+    real ( KDR ), dimension ( : ), pointer :: &
+      T_P, &
+      S_P, &
+      Y_P
     real ( KDR ), dimension ( :, : ), pointer :: &
       Outgoing_2D, &
       Incoming_2D
@@ -312,7 +326,7 @@ contains
       F_SA      
 
     select type ( U  =>  I % System )
-      class is ( Universe_F_C_Form )
+      class is ( Universe_F_CC_Form )
     select type ( I )
       class is ( Integrator_CS_Form )
 
@@ -343,11 +357,28 @@ contains
         nC    =>  C_SA % nCells ( 1 ), &
         nCB   =>  C_SA % nCellsBrick ( 1 ), &
         nP    =>  C_SA % Communicator % Size, &
-        nF    =>  4, &
          R_P  =>  G_SA_V ( :, G_SA % CENTER_U_1 ), &
         dV_P  =>  G_SA_V ( :, G_SA % VOLUME ), &
          N_P  =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
          V_P  =>  F_SA_V ( :, F_SA % VELOCITY_U_1 ) )
+
+    nF   =   4
+    T_P  =>  null ( )
+    S_P  =>  null ( )
+    Y_P  =>  null ( )
+
+    select type ( F_SA )
+    class is ( Fluid_P_Form )
+      nF   =   nF + 2
+      T_P  =>  F_SA_V ( :, F_SA % TEMPERATURE )
+      S_P  =>  F_SA_V ( :, F_SA % ENTROPY_PER_BARYON )
+    end select !-- F_SA
+
+    select type ( F_SA )
+    class is ( Fluid_P_HN_Form )
+      nF   =   nF + 1
+      Y_P  =>  F_SA_V ( :, F_SA % ELECTRON_FRACTION )
+    end select !-- F_SA
 
     !-- Gather spherically averaged density and velocity
     !   (assume decomposition in spherical shells)
@@ -357,16 +388,24 @@ contains
            ( C_SA % Communicator, &
              nOutgoing = [ nF * nCB ], nIncoming = [ nF * nC ] )
 
-    oC  =  C_SA % nGhostLayers ( 1 )
     Outgoing_2D ( 1 : nCB, 1 : nF )  =>  CO % Outgoing % Value
-    Outgoing_2D ( 1 : nCB, 1 )      =    R_P ( nGL + 1 : nGL + nCB )
-    Outgoing_2D ( 1 : nCB, 2 )      =   dV_P ( nGL + 1 : nGL + nCB )
-    Outgoing_2D ( 1 : nCB, 3 )      =    N_P ( nGL + 1 : nGL + nCB )
-    Outgoing_2D ( 1 : nCB, 4 )      =    V_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 1 )  =   R_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 2 )  =  dV_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 3 )  =   N_P ( nGL + 1 : nGL + nCB )
+    Outgoing_2D ( 1 : nCB, 4 )  =   V_P ( nGL + 1 : nGL + nCB )
+    if ( associated ( T_P ) ) &
+      Outgoing_2D ( 1 : nCB, 5 )  =  T_P ( nGL + 1 : nGL + nCB )
+    if ( associated ( S_P ) ) &
+      Outgoing_2D ( 1 : nCB, 6 )  =  S_P ( nGL + 1 : nGL + nCB )
+    if ( associated ( Y_P ) ) &
+      Outgoing_2D ( 1 : nCB, 7 )  =  Y_P ( nGL + 1 : nGL + nCB )
 
     call CO % Gather ( )
 
     allocate ( R ( nC ), dV ( nC ), N ( nC ), V ( nC ) )
+    if ( associated ( T_P ) ) allocate ( T ( nC ) )
+    if ( associated ( S_P ) ) allocate ( S ( nC ) )
+    if ( associated ( Y_P ) ) allocate ( Y ( nC ) )
     do iP  =  0,  nP - 1
       oC  =  iP * nCB
       oI  =  oC * nF
@@ -376,9 +415,29 @@ contains
       dV ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 2 )
        N ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 3 )
        V ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 4 )
+      if ( allocated ( T ) ) &
+        T ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 5 )
+      if ( allocated ( S ) ) &
+        S ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 6 )
+      if ( allocated ( Y ) ) &
+        Y ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 7 )
     end do !-- iP
 
-    !-- Velocity
+    associate &
+      ( Units_F    =>  U % Units_F ( 1 ), &
+          V_Max    =>  U % VelocityMax, &
+          R_V_Max  =>  U % Radius_V_Max, &
+          B_V_Max  =>  U % Baryons_V_Max, &
+          M_V_Max  =>  U % Mass_V_Max, &
+          N_V_Max  =>  U % BaryonDensity_V_Max, &
+        Rho_V_Max  =>  U % MassDensity_V_Max, &
+          N_C      =>  U % BaryonDensity_C, &
+        Rho_C      =>  U % MassDensity_C, &
+          T_C      =>  U % Temperature_C, &
+          S_C      =>  U % EntropyPerBaryon_C, &
+          Y_C      =>  U % ElectronFraction_C )
+
+    !-- VelocityMax
 
     V_Max  =  maxval ( abs ( V ) )
 
@@ -392,15 +451,19 @@ contains
       end if
     end do !-- iC
 
-    R_V_Max  =  R ( iR )
+      R_V_Max  =  R ( iR )
+      B_V_Max  =  sum ( N ( : iR )  *  dV ( : iR ) )
+      M_V_Max  =  M_B * B_V_Max
+      N_V_Max  =  B_V_Max  /  sum ( dV ( : iR ) )
+    Rho_V_Max  =  M_B * N_V_Max
 
-    !-- Density
+    !-- Center
 
-    B_V_Max  =  sum ( N ( : iR )  *  dV ( : iR ) )
-
-    N_V_Max  =  B_V_Max  /  sum ( dV ( : iR ) )
-
-    N_Max  =  maxval ( N )
+      N_C  =  N ( 1 )
+    Rho_C  =  M_B  *  N_C
+    if ( allocated ( S ) )  S_C  =  S ( 1 )
+    if ( allocated ( T ) )  T_C  =  T ( 1 )
+    if ( allocated ( Y ) )  Y_C  =  Y ( 1 )
 
     !-- Time scales and CheckpointTimeInterval
 
@@ -412,31 +475,39 @@ contains
       Constant_G  =  CONSTANT % GRAVITATIONAL
     end if
 
-    T_N  =  ( Constant_G * M_B * min ( N_V_Max, N_Max ) ) ** ( -0.5_KDR )
+    T_N  =  ( Constant_G * M_B * min ( N_V_Max, N_C ) ) ** ( -0.5_KDR )
 
     I % T_CheckpointInterval  =  min ( T_V, T_N )  /  I % nWrite
 
     !-- Display
 
     call Show ( 'Time Scales', I % IGNORABILITY )
-    call Show ( V_Max, F_SA % Unit ( F_SA % VELOCITY_U_1, 1 ), &
+    call Show ( V_Max, Units_F % Velocity_U ( 1 ), &
                 'VelocityMax', I % IGNORABILITY )
-    call Show ( R_V_Max, G_SA % Unit ( G_SA % CENTER_U_1, 1 ), &
-                'RadiusVelocityMax', I % IGNORABILITY )
-    call Show ( B_V_Max, U % Units_F ( 1 ) % Number, &
-                'BaryonsVelocityMax', I % IGNORABILITY )
-    call Show ( N_V_Max, F_SA % Unit ( F_SA % BARYON_DENSITY_C, 1 ), &
-                'DensityVelocityMax', I % IGNORABILITY )
-    call Show ( N_Max, F_SA % Unit ( F_SA % BARYON_DENSITY_C, 1 ), &
-                'DensityMax', I % IGNORABILITY )
-    ! call Show ( NumberDensityAve, FC % Units % NumberDensity, &
-    !             'NumberDensityAve', I % IGNORABILITY )
-    ! call Show ( NumberDensityMax, FC % Units % NumberDensity, &
-    !             'NumberDensityMax', I % IGNORABILITY )
-    ! call Show ( BaryonMass * NumberDensityAve, FC % Units % MassDensity, &
-    !             'MassDensityAve', I % IGNORABILITY )
-    ! call Show ( BaryonMass * NumberDensityMax, FC % Units % MassDensity, &
-    !             'MassDensityMax', I % IGNORABILITY )
+    call Show ( R_V_Max, Units_F % Coordinate_PS ( 1 ), &
+                'Radius_V_Max', I % IGNORABILITY )
+    call Show ( B_V_Max, Units_F % Number, &
+                'Baryons_V_Max', I % IGNORABILITY )
+    call Show ( M_V_Max, Units_F % Mass, &
+                'Mass_V_Max', I % IGNORABILITY )
+    call Show ( N_V_Max, Units_F % NumberDensity, &
+                'BaryonDensity_V_Max', I % IGNORABILITY )
+    call Show ( Rho_V_Max, Units_F % MassDensity, &
+                'MassDensity_V_Max', I % IGNORABILITY )
+    call Show ( N_C, Units_F % NumberDensity, &
+                'BaryonDensity_C', I % IGNORABILITY )
+    call Show ( Rho_C, Units_F % MassDensity, &
+                'MassDensity_C', I % IGNORABILITY )
+    if ( allocated ( T ) ) &
+      call Show ( T_C, Units_F % Temperature, &
+                  'Temperature_C', I % IGNORABILITY )
+    if ( allocated ( S ) ) &
+      call Show ( S_C, Units_F % EnergyDensity  /  Units_F % NumberDensity  &
+                       /  Units_F % Temperature, &
+                  'EntropyPerBaryon_C', I % IGNORABILITY )
+    if ( allocated ( Y ) ) &
+      call Show ( Y_C, &
+                  'ElectronFraction_C', I % IGNORABILITY )
     call Show ( T_V, I % Unit_T, &
                 'T_Velocity', I % IGNORABILITY )
     call Show ( T_N, I % Unit_T, &
@@ -444,10 +515,8 @@ contains
 
     !-- Cleanup
 
-    deallocate ( V, N, dV, R )
-    deallocate ( CO )
-
-    end associate !-- nC, etc.
+    end associate !-- Units_F, etc.
+    end associate !-- nGL, etc.
     end associate !-- C_SA
     end select !-- A_SA
     end select !-- G_SA
