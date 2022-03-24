@@ -326,14 +326,16 @@ contains
                FiducialPressure = P_I )
     end associate !-- F_R
 
-    select type ( F_SA  =>  YL % SA_Fluid % FieldSet_SA )
-    class is ( Fluid_P_I_Form )
-      call F_SA % SetAdiabaticIndex &
-             ( Gamma )
-      call F_SA % SetFiducialParameters &
-             ( FiducialBaryonDensity = Rho_I, &
-               FiducialPressure = P_I )
-    end select !-- F_SA
+    if ( allocated ( YL % SA_Fluid ) ) then
+      select type ( F_SA  =>  YL % SA_Fluid % FieldSet_SA )
+      class is ( Fluid_P_I_Form )
+        call F_SA % SetAdiabaticIndex &
+               ( Gamma )
+        call F_SA % SetFiducialParameters &
+               ( FiducialBaryonDensity = Rho_I, &
+                 FiducialPressure = P_I )
+      end select !-- F_SA
+    end if
 
     end associate !-- Gamma, etc.
 
