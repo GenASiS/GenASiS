@@ -77,7 +77,7 @@ contains
 
     select type ( G  =>  T % Geometry )
     type is ( Gravitation_G_Form )
-      T % nSelected = 11
+      T % nSelected = 12
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
         = [ T % BARYON_NUMBER, &
@@ -89,7 +89,7 @@ contains
             T % ANGULAR_MOMENTUM, &
             T % ENTROPY ]    
     class is ( Gravitation_N_H_Form )
-      T % nSelected = 13
+      T % nSelected = 14
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
         = [ T % BARYON_NUMBER, &

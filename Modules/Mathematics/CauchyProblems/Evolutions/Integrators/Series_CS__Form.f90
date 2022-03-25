@@ -71,7 +71,7 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Series_CS' 
 
-    call S % Initialize &
+    call S % Series_B_Form % Initialize &
            ( GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
              nWrite, iCycle  )
 
