@@ -12,11 +12,11 @@ module Measures_F_CC__Form
       N_MEASURES_D    =  8, &
       N_MEASURES_P    = 10, &
       N_MEASURES_P_HN = 11, &
-      N_MEASURES      = 11
+      N_MEASURES_MAX  = 11
 
   type, public :: Measures_F_CC_Form
     integer ( KDI ) :: &
-      nMeasures = N_MEASURES
+      nMeasures
     real ( KDR ) :: &
       VelocityMax, &
       Radius_V_Max, &
@@ -29,11 +29,11 @@ module Measures_F_CC__Form
       Temperature_C, &
       EntropyPerBaryon_C, &
       ElectronFraction_C
-    real ( KDR ), dimension ( N_MEASURES ) :: &
-      Measure
-    type ( MeasuredValueForm ), dimension ( N_MEASURES ) :: &
+    real ( KDR ), dimension ( N_MEASURES_MAX ) :: &
+      Value
+    type ( MeasuredValueForm ), dimension ( N_MEASURES_MAX ) :: &
       Unit
-    character ( LDL ), dimension ( N_MEASURES ) :: &
+    character ( LDL ), dimension ( N_MEASURES_MAX ) :: &
       Name
     class ( Atlas_H_Form ), pointer :: &
       Atlas_SA => null ( )
@@ -282,23 +282,23 @@ contains
 
     !-- Record
 
-    M % Measure (  1 )  =      V_Max
-    M % Measure (  2 )  =    R_V_Max
-    M % Measure (  3 )  =    B_V_Max
-    M % Measure (  4 )  =    M_V_Max
-    M % Measure (  5 )  =    N_V_Max
-    M % Measure (  6 )  =  Rho_V_Max
-    M % Measure (  7 )  =    N_C
-    M % Measure (  8 )  =  Rho_C
-    M % Measure (  9 )  =    T_C
-    M % Measure ( 10 )  =    S_C
-    M % Measure ( 11 )  =    Y_C
+    M % Value (  1 )  =      V_Max
+    M % Value (  2 )  =    R_V_Max
+    M % Value (  3 )  =    B_V_Max
+    M % Value (  4 )  =    M_V_Max
+    M % Value (  5 )  =    N_V_Max
+    M % Value (  6 )  =  Rho_V_Max
+    M % Value (  7 )  =    N_C
+    M % Value (  8 )  =  Rho_C
+    M % Value (  9 )  =    T_C
+    M % Value ( 10 )  =    S_C
+    M % Value ( 11 )  =    Y_C
 
     !-- Display
 
     call Show ( 'Fluid_CentralCore Measures' )
     do iM  =  1,  M % nMeasures
-      call Show ( M % Measure ( iM ), M % Unit ( iM ), M % Name ( iM ) )
+      call Show ( M % Value ( iM ), M % Unit ( iM ), M % Name ( iM ) )
     end do !-- iM
 
     !-- Cleanup

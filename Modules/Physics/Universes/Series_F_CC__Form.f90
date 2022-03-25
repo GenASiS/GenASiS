@@ -11,9 +11,9 @@ module Series_F_CC__Form
 
   type, public, extends ( Series_CS_Form ) :: Series_F_CC_Form
     type ( StorageForm ), allocatable :: &
-      Measures
+      Measures_F_CC
     class ( Measures_F_CC_Form ), pointer :: &
-      Measures_F_CC => null ( )
+      Measures => null ( )
   contains
     procedure, private, pass :: &
       Initialize_F_CC
@@ -71,7 +71,7 @@ contains
            ( CS, GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
              nWrite, iCycle  )
 
-    S % Measures_F_CC  =>  M
+    S % Measures  =>  M
 
     allocate ( SeriesName ( M % nMeasures ) )
     allocate ( SeriesUnit ( M % nMeasures ) )
@@ -80,9 +80,9 @@ contains
       SeriesUnit ( iM )  =  M % Unit ( iM )
     end do !-- iS
 
-    allocate ( S % Measures )
+    allocate ( S % Measures_F_CC )
     associate &
-      ( SM  =>  S % Measures, &
+      ( SM  =>  S % Measures_F_CC, &
         SB  =>  S % Basic )
     call SM % Initialize &
            ( [ SB % nValues, M % nMeasures ], &
@@ -110,10 +110,10 @@ contains
     call S % Series_CS_Form % Record ( )
 
     associate &
-      (  SMV  =>  S % Measures % Value, &
+      (  SMV  =>  S % Measures_F_CC % Value, &
         iT    =>  S % iTime, &
-          MV  =>  S % Measures_F_CC % Measure, &
-        nM    =>  S % Measures_F_CC % nMeasures )
+          MV  =>  S % Measures % Value, &
+        nM    =>  S % Measures % nMeasures )
     do iM  =  1,  nM
       SMV ( iT, iM )  =  MV ( iM )
     end do !-- iM
@@ -127,10 +127,10 @@ contains
     type ( Series_F_CC_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % Measures ) ) &
-      deallocate ( S % Measures )
+    if ( allocated ( S % Measures_F_CC ) ) &
+      deallocate ( S % Measures_F_CC )
 
-    nullify ( S % Measures_F_CC )
+    nullify ( S % Measures )
 
   end subroutine Finalize
 
