@@ -1295,8 +1295,7 @@ contains
     associate ( S  =>  I % Series )
     call S % Initialize &
       ( I % GridImageStream, I % dT_Label, I % Unit_T, I % dT_Candidate, &
-        I % T, I % Communicator % Rank, I % RestartFrom, I % nWrite, &
-        I % iCycle )
+        I % T, I % Communicator % Rank, I % nWrite, I % iCycle )
     end associate !-- S
 
   end subroutine InitializeSeries

@@ -76,7 +76,7 @@ contains
 
   subroutine Initialize_B &
                ( S, GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
-                 RestartFrom, nWrite, iCycle )
+                 nWrite, iCycle )
 
     class ( Series_B_Form ), intent ( inout ) :: &
       S
@@ -92,7 +92,6 @@ contains
       T
     integer ( KDI ), intent ( in ) :: &
       CommunicatorRank, &
-      RestartFrom, &
       nWrite
     integer ( KDI ), intent ( in ), target :: &
       iCycle
@@ -102,8 +101,6 @@ contains
       nTimes
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       SeriesUnit
-    character ( LDN ) :: &
-      Suffix
     character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName
 
@@ -116,8 +113,6 @@ contains
 
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
-
-    S % iTime  =  max ( 0, RestartFrom )
 
     !-- Safe margin for cases where nWrite is only an estimate
     nTimes  =  max ( 50 * nWrite, 1000 )
@@ -230,10 +225,8 @@ contains
       associate &
         ( CI     =>  S % CurveImage, &
           GIS_S  =>  S % GridImageStream )
-      write ( Suffix, fmt = '(i7.7)' ) max ( 0, RestartFrom )
       call GIS_S % Initialize &
-             ( trim ( GIS % Name ) // '_' // trim ( S % Name ) // '_' &
-               // Suffix, &
+             ( trim ( GIS % Name ) // '_' // trim ( S % Name ), &
                WorkingDirectoryOption = GIS % WorkingDirectory )
       call CI % Initialize ( GIS_S ) 
       call CI % AddStorage ( B )

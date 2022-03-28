@@ -39,7 +39,7 @@ contains
 
   subroutine Initialize_CS &
                ( S, CS, GIS, dT_Label, Unit_T, dT_Candidate, T, &
-                 CommunicatorRank, RestartFrom, nWrite, iCycle )
+                 CommunicatorRank, nWrite, iCycle )
 
     class ( Series_CS_Form ), intent ( inout ) :: &
       S
@@ -57,7 +57,6 @@ contains
       T
     integer ( KDI ), intent ( in ) :: &
       CommunicatorRank, &
-      RestartFrom, &
       nWrite
     integer ( KDI ), intent ( in ), target :: &
       iCycle
@@ -74,7 +73,7 @@ contains
 
     call S % Series_B_Form % Initialize &
            ( GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
-             RestartFrom, nWrite, iCycle )
+             nWrite, iCycle )
 
     S % TallyInterior  =>  CS % TallyInterior
     S % TallyBoundary  =>  CS % TallyBoundary ( 1 ) % Element

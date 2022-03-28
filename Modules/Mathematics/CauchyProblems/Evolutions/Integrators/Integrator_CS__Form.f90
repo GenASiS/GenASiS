@@ -423,8 +423,8 @@ contains
       class is ( Series_CS_Form )
     call S % Initialize &
       ( I % CurrentSet_X, I % GridImageStream, I % dT_Label, I % Unit_T, &
-        I % dT_Candidate, I % T, I % Communicator % Rank, I % RestartFrom, &
-        I % nWrite, I % iCycle )
+        I % dT_Candidate, I % T, I % Communicator % Rank, I % nWrite, &
+        I % iCycle )
     end select !-- S
     end select !-- I
 
