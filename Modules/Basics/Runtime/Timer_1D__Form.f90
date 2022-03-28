@@ -124,32 +124,27 @@ contains
       MaxMinusMeanFraction
     type ( MeasuredValueForm ) :: &
       MaxMinusMean
-    logical ( KDL ), dimension ( MAX_TIMERS ) :: &
+    logical ( KDL ) :: &
       Running
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
     associate ( nT  =>  T_1D % nTimers )
 
-    call Show ( 'Running timer intervals', Ignorability + 2 )
-    Running  =  .false.
-    do iT  =  1, nT
-      associate ( T  =>  T_1D % Element ( iT ) )
-      if ( T % iStart  >  0 ) then
-        Running ( iT )  =  .true.
-        call T % Stop ( )
-        call T % ShowInterval ( Ignorability + 2 )
-      end if
-      end associate !-- T
-    end do !-- iT
-
     call Show ( 'This process timers', Ignorability + 1 )
     do iT  =  1,  nT
       associate &
         ( T         =>  T_1D % Element ( iT ), &
           TimeThis  =>  T_1D % TimeThis ( iT ) )
+      Running  =  .false.
+      if ( T % iStart  >  0 ) then
+        Running  =  .true.
+        call T % Stop ( )
+      end if
       call T % ShowTotal ( Ignorability + 1 )
       TimeThis  =  T % TotalTime
+      if ( Running ) &
+        call T % Start ( )
       end associate !-- T
     end do !-- iT
 
@@ -250,14 +245,6 @@ contains
       end do !-- iT
 
     end if !-- CommunicatorOption
-
-    do iT  =  1, nT
-      if ( Running ( iT ) ) then
-        associate ( T  =>  T_1D % Element ( iT ) )
-        call T % Start ( )
-        end associate !-- T
-      end if
-    end do
 
     end associate !-- nT
 
