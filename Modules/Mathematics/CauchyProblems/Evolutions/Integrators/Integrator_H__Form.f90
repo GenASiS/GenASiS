@@ -13,13 +13,18 @@ module Integrator_H__Form
 
   type, public :: Integrator_H_Form
     integer ( KDI ) :: &
-      IGNORABILITY = 0, &
+      IGNORABILITY = 0
+    integer ( KDI ) :: &
       iCycle, &
-      iCheckpoint, &
       nRampCycles, &
-      FinishCycle, &
+      FinishCycle
+    integer ( KDI ) :: &
+      iCheckpoint, &
+      RestartFrom
+    integer ( KDI ) :: &
+      n_dT_Candidates
+    integer ( KDI ) :: &
       nWrite, &
-      n_dT_Candidates, &
       CheckpointDisplayInterval
     integer ( KDI ) :: &
       iTimer_E   = 0, &   !-- Evolution
@@ -192,7 +197,7 @@ module Integrator_H__Form
         T_Option
     end subroutine W
 
-    subroutine R ( I, ReadFrom, T, CycleNumber )
+    subroutine R ( I, ReadFrom, T )
       use Basics
       import Integrator_H_Form
       implicit none
@@ -202,8 +207,6 @@ module Integrator_H__Form
         ReadFrom
       type ( MeasuredValueForm ), intent ( out ) :: &
         T
-      integer ( KDI ), intent ( out ) :: &
-        CycleNumber
     end subroutine R
 
     subroutine SR ( I )
@@ -343,6 +346,7 @@ contains
     end if
     I % n_dT_Candidates  =  size ( I % dT_Label )
     allocate ( I % dT_Candidate ( I % n_dT_Candidates ) )
+    I % dT_Candidate  =  0.0_KDR
 
     I % iCycle = 0
     I % iCheckpoint = 0
@@ -421,6 +425,8 @@ contains
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
 
+    call I % AdministerCheckpoint ( )
+
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
@@ -429,8 +435,6 @@ contains
                  Name = trim ( I % Name ) // '_Evltn', &
                  Level = 1 )
     call T_E % Start ( )
-
-    call I % AdministerCheckpoint ( )
 
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -612,8 +616,6 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    integer ( KDI ) :: &
-      RestartFrom
     type ( MeasuredValueForm ) :: &
       T_Restart
 
@@ -680,11 +682,11 @@ contains
       I % InitializeSeries  =>  InitializeSeries
     end if
 
-    RestartFrom  =  - huge ( 1 )
-    call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
+    I % RestartFrom  =  - huge ( 1 )
+    call PROGRAM_HEADER % GetParameter ( I % RestartFrom, 'RestartFrom' )
 
-    if ( RestartFrom >= 0 ) then
-      call I % ResetInitial ( RestartFrom, T_Restart )
+    if ( I % RestartFrom  >=  0 ) then
+      call I % ResetInitial ( I % RestartFrom, T_Restart )
       I % Start    =  .false.
       I % Restart  =  .true.
       I % T        =  T_Restart
@@ -727,12 +729,21 @@ contains
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY )
-    if ( .not. I % Start .and. .not. I % Restart ) then
+    if ( .not. I % Start  .and.  .not. I % Restart ) then
       do iTSC = 1, I % n_dT_Candidates
         call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
                     trim ( I % dT_Label ( iTSC ) ) // ' dT', &
                     I % IGNORABILITY )
       end do !-- iTSC
+    end if
+
+    if ( I % Start  .or.  I % Restart  &
+         .or. mod ( I % iCheckpoint, I % CheckpointDisplayInterval )  >  0  &
+         .or. I % T  >=  I % T_Finish )  &
+    then
+      Ignorability  =  I % IGNORABILITY
+    else
+      Ignorability  =  I % IGNORABILITY  +  1
     end if
 
     !-- Update host
@@ -750,15 +761,6 @@ contains
     if ( associated ( T_UH ) ) call T_UH % Stop ( )
 
     !-- Record statistics
-
-    if ( .not. I % Start & !.and. .not. I % Restart &
-         .and. I % T  <  I % T_Finish &
-         .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
-    then
-      Ignorability  =  I % IGNORABILITY + 1
-    else
-      Ignorability  =  I % IGNORABILITY
-    end if
 
     call PROGRAM_HEADER % RecordStatistics &
            ( Ignorability, CommunicatorOption = PROGRAM_HEADER % Communicator )
@@ -895,7 +897,7 @@ contains
   end subroutine SetInitial_H
 
 
-  subroutine ResetInitial_H ( I, RestartFrom, T_Restart  )
+  subroutine ResetInitial_H ( I, RestartFrom, T_Restart )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -904,22 +906,17 @@ contains
     type ( MeasuredValueForm ), intent ( out ) :: &
       T_Restart
 
-    integer ( KDI ) :: &
-      CycleNumber
     ! real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
     !   MaxTime, &
     !   MinTime, &
     !   MeanTime
     
-    call I % Read ( RestartFrom, T_Restart, CycleNumber )
+    call I % Read ( RestartFrom, T_Restart )
     
     call Show ( 'Restarting', I % IGNORABILITY )
-    call Show ( RestartFrom, 'RestartFrom', I % IGNORABILITY )
-    call Show ( T_Restart, I % Unit_T, 'T_Restart', I % IGNORABILITY )
-    call Show ( CycleNumber, 'CycleNumber', I % IGNORABILITY )
-
-    I % iCheckpoint  =  RestartFrom
-    I % iCycle       =  CycleNumber  !-- needed by RestoreTimeSeries
+    call Show ( I % iCheckpoint, 'RestartFrom', I % IGNORABILITY )
+    call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
+    call Show ( T_Restart, I % Unit_T, 'T', I % IGNORABILITY )
 
     ! call I % ReadTimeSeries ( nSeries = RestartFrom + 1 )
 
@@ -1018,6 +1015,13 @@ contains
       T_X, &
       T_S
 
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % MarkFibersWritten ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
     !-- Base space
 
     associate ( GIS => I % GridImageStream )
@@ -1060,13 +1064,6 @@ contains
     ! if ( allocated ( I % MomentumSpace ) ) then
     !   select type ( MS => I % MomentumSpace )
     !   class is ( Bundle_SLL_ASC_CSLD_Form )
-    !     call MS % MarkFibersWritten ( )
-    !   end select !-- MS
-    ! end if !-- MomentumSpace
-
-    ! if ( allocated ( I % MomentumSpace ) ) then
-    !   select type ( MS => I % MomentumSpace )
-    !   class is ( Bundle_SLL_ASC_CSLD_Form )
     !     call MS % Write &
     !            ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
     !              CycleNumberOption = I % iCycle )
@@ -1081,7 +1078,7 @@ contains
   end subroutine Write_H
 
 
-  subroutine Read_H ( I, ReadFrom, T, CycleNumber )
+  subroutine Read_H ( I, ReadFrom, T )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -1089,7 +1086,8 @@ contains
       ReadFrom
     type ( MeasuredValueForm ), intent ( out ) :: &
       T
-    integer ( KDI ), intent ( out ) :: &
+
+    integer ( KDI ) :: &
       CycleNumber
 
     ! if ( allocated ( I % MomentumSpace ) ) then
@@ -1099,6 +1097,8 @@ contains
     !   end select !-- MS
     ! end if !-- MomentumSpace
 
+    !-- Base space
+
     associate ( GIS => I % GridImageStream )
     call GIS % Open ( GIS % ACCESS_READ, NumberOption = ReadFrom )
 
@@ -1107,11 +1107,18 @@ contains
            ( TimeOption = T, &
              CycleNumberOption = CycleNumber )
     T  =  T  *  I % Unit_T
+    I % iCheckpoint  =  ReadFrom
+    I % iCycle       =  CycleNumber
     end associate !-- SA
 
     !-- Base's GIS must be closed before call to Bundle % Write ( ).
     call GIS % Close ( )
 
+    !-- Series
+
+
+    !-- Tangent space
+    
     ! if ( allocated ( I % MomentumSpace ) ) then
     !   select type ( MS => I % MomentumSpace )
     !   class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -1288,7 +1295,8 @@ contains
     associate ( S  =>  I % Series )
     call S % Initialize &
       ( I % GridImageStream, I % dT_Label, I % Unit_T, I % dT_Candidate, &
-        I % T, I % Communicator % Rank, I % nWrite, I % iCycle )
+        I % T, I % Communicator % Rank, I % RestartFrom, I % nWrite, &
+        I % iCycle )
     end associate !-- S
 
   end subroutine InitializeSeries

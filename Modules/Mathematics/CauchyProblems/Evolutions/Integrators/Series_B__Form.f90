@@ -24,9 +24,10 @@ module Series_B__Form
       MEMORY_MEAN_RSS
     integer ( KDI ) :: &
       iTimerRecord = 0, &
-      iTimerWrite  = 0
+      iTimerWrite  = 0, &
+      iTimerRead   = 0
     integer ( KDI ) :: &
-      iTime = 0
+      iTime
     integer ( KDI ), pointer :: &
       iCycle => null ( )
     real ( KDR ), pointer :: &
@@ -56,11 +57,13 @@ module Series_B__Form
     procedure, public, pass :: &
       TimerWrite
     procedure, public, pass :: &
+      TimerRead
+    procedure, public, pass :: &
       Record
     procedure, public, pass :: &
       Write
-!     procedure, public, pass :: &
-!       Read
+    procedure, public, pass :: &
+      Read
 !     procedure, public, pass :: &
 !       Restore
     final :: &
@@ -73,7 +76,7 @@ contains
 
   subroutine Initialize_B &
                ( S, GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
-                 nWrite, iCycle )
+                 RestartFrom, nWrite, iCycle )
 
     class ( Series_B_Form ), intent ( inout ) :: &
       S
@@ -89,6 +92,7 @@ contains
       T
     integer ( KDI ), intent ( in ) :: &
       CommunicatorRank, &
+      RestartFrom, &
       nWrite
     integer ( KDI ), intent ( in ), target :: &
       iCycle
@@ -98,6 +102,8 @@ contains
       nTimes
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       SeriesUnit
+    character ( LDN ) :: &
+      Suffix
     character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName
 
@@ -110,6 +116,8 @@ contains
 
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
+
+    S % iTime  =  max ( 0, RestartFrom )
 
     !-- Safe margin for cases where nWrite is only an estimate
     nTimes  =  max ( 50 * nWrite, 1000 )
@@ -222,8 +230,10 @@ contains
       associate &
         ( CI     =>  S % CurveImage, &
           GIS_S  =>  S % GridImageStream )
+      write ( Suffix, fmt = '(i7.7)' ) max ( 0, RestartFrom )
       call GIS_S % Initialize &
-             ( trim ( GIS % Name ) // '_Series', &
+             ( trim ( GIS % Name ) // '_' // trim ( S % Name ) // '_' &
+               // Suffix, &
                WorkingDirectoryOption = GIS % WorkingDirectory )
       call CI % Initialize ( GIS_S ) 
       call CI % AddStorage ( B )
@@ -281,6 +291,23 @@ contains
                Level = Level )
 
   end function TimerWrite
+
+
+  function TimerRead ( S, Level ) result ( T )
+
+    class ( Series_B_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimerRead, &
+               Name = trim ( S % Name ) // '_Rd', &
+               Level = Level )
+
+  end function TimerRead
 
 
   subroutine Record ( S )
@@ -385,76 +412,75 @@ contains
   end subroutine Write
 
 
-!   subroutine Read ( S, nSeries )
+  subroutine Read ( S, nSeries )
 
-!     class ( Series_B_Form ), intent ( inout ) :: &
-!       S
-!     integer ( KDI ), intent ( in ) :: &
-!       nSeries
+    class ( Series_B_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      nSeries
 
-!     S % iTime  =  nSeries
+    S % iTime  =  nSeries
 
-!     if ( .not. allocated ( S % GridImageStream ) ) &
-!       return
+    if ( .not. allocated ( S % GridImageStream ) ) &
+      return
 
-!     call Show ( 'Reading ' // trim ( S % Type ), S % IGNORABILITY )
+    call Show ( 'Reading ' // trim ( S % Type ), S % IGNORABILITY )
 
-!     associate &
-!       ( GIS => S % GridImageStream, &
-!         SB  => S % SeriesBasic, &
-!         CI => S % CurveImage )
+    associate &
+      ( GIS => S % GridImageStream, &
+        SB  => S % Basic, &
+        CI => S % CurveImage )
 
-!     call GIS % Open ( GIS % ACCESS_READ, SeriesOption = .false. )
-!     call CI % ClearGrid ( )
-!     call CI % SetGridRead  &
-!            ( Directory = 'Series', &
-!              nProperCells = nSeries, &
-!              oValue = 0 )
-!     call CI % Read ( StorageOnlyOption = .true. )
-!     call GIS % Close ( ) 
+    call GIS % Open ( GIS % ACCESS_READ, SeriesOption = .false. )
+    call CI % ClearGrid ( )
+    call CI % SetGridRead  &
+           ( Directory = 'Series', &
+             nProperCells = nSeries, &
+             oValue = 0 )
+    call CI % Read ( StorageOnlyOption = .true. )
+    call GIS % Close ( ) 
 
-!     end associate !-- GIS, etc.
+    end associate !-- GIS, etc.
 
-!   end subroutine Read
+  end subroutine Read
 
 
-!   subroutine Restore ( S, TimeMax, TimeMin, TimeMean )
+  subroutine Restore ( S, TimeMax, TimeMin, TimeMean )
 
-!     class ( Series_B_Form ), intent ( inout ) :: &
-!       S
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       TimeMax, &
-!       TimeMin, &
-!       TimeMean
+    class ( Series_B_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      TimeMax, &
+      TimeMin, &
+      TimeMean
 
-!     integer ( KDI ) :: &
-!       iT  !-- iTimer
+    integer ( KDI ) :: &
+      iT  !-- iTimer
 
-!     associate &
-!       ( I   => S % Integrator, &
-!         T_Mean  => S % TimerMean, &
-!         TV_Max  => S % TimerMax % Value, &
-!         TV_Min  => S % TimerMin % Value, &
-!         TV_Mean => S % TimerMean % Value, &
-!         iV  => S % iTime )
+    associate &
+      ( T_Mean   =>  S % TimerMean, &
+        TV_Max   =>  S % TimerMax % Value, &
+        TV_Min   =>  S % TimerMin % Value, &
+        TV_Mean  =>  S % TimerMean % Value, &
+        iV  =>  S % iTime )
 
-!     call Show ( 'Restoring Series data', S % IGNORABILITY )
-!     call Show ( S % Name, 'Name', S % IGNORABILITY )
-!     call Show ( iV, 'iTime', S % IGNORABILITY )
+    call Show ( 'Restoring Series data', S % IGNORABILITY )
+    call Show ( S % Name, 'Name', S % IGNORABILITY )
+    call Show ( iV, 'iTime', S % IGNORABILITY )
 
-!     do iT = 1, S % N_SERIES_TIMER
-!       TimeMax  ( iT )  =  TV_Max  ( iV, iT )  *  I % iCycle
-!       TimeMin  ( iT )  =  TV_Min  ( iV, iT )  *  I % iCycle
-!       TimeMean ( iT )  =  TV_Mean ( iV, iT )  *  I % iCycle
-!       call Show ( TimeMean ( iT ), &
-!                   T_Mean % Unit ( iT ), &
-!                   trim ( T_Mean % Variable ( iT ) ) // ' (TimeMean)', &
-!                   S % IGNORABILITY )
-!     end do !-- iT
+    do iT  =  1,  S % N_SERIES_TIMER
+      TimeMax  ( iT )  =  TV_Max  ( iV, iT )  *  S % iCycle
+      TimeMin  ( iT )  =  TV_Min  ( iV, iT )  *  S % iCycle
+      TimeMean ( iT )  =  TV_Mean ( iV, iT )  *  S % iCycle
+      call Show ( TimeMean ( iT ), &
+                  T_Mean % Unit ( iT ), &
+                  trim ( T_Mean % Variable ( iT ) ) // ' (TimeMean)', &
+                  S % IGNORABILITY )
+    end do !-- iT
 
-!     end associate !-- I, etc.
+    end associate !-- T_Mean, etc.
 
-!   end subroutine Restore
+  end subroutine Restore
 
 
   impure elemental subroutine Finalize ( S )
