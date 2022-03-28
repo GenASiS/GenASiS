@@ -355,9 +355,11 @@ contains
     if ( S % iCycle  >  0 ) then
 
       associate &
-        ( TimeMax   =>  PROGRAM_HEADER % Timer_1D % TimeMax, &
-          TimeMin   =>  PROGRAM_HEADER % Timer_1D % TimeMin, &
-          TimeMean  =>  PROGRAM_HEADER % Timer_1D % TimeMean )
+        ( T_1D  =>  PROGRAM_HEADER % Timer_1D )
+      associate &
+        ( TimeMax   =>  T_1D % PreviousMax   +  T_1D % TimeMax, &
+          TimeMin   =>  T_1D % PreviousMin   +  T_1D % TimeMin, &
+          TimeMean  =>  T_1D % PreviousMean  +  T_1D % TimeMean )
       do iT  =  1, S % N_SERIES_TIMER
         TV_Max  ( iV, iT ) = TimeMax  ( iT ) / S % iCycle
         TV_Min  ( iV, iT ) = TimeMin  ( iT ) / S % iCycle
@@ -368,6 +370,7 @@ contains
                     S % IGNORABILITY + 1 )
       end do !-- iT
       end associate !-- TimeMax, etc.
+      end associate !-- T_1D
 
       dTV ( iV, : )  =  S % dT_Candidate
 
@@ -445,14 +448,10 @@ contains
   end subroutine Read
 
 
-  subroutine Restore ( S, TimeMax, TimeMin, TimeMean )
+  subroutine Restore ( S )
 
     class ( Series_B_Form ), intent ( inout ) :: &
       S
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      TimeMax, &
-      TimeMin, &
-      TimeMean
 
     integer ( KDI ) :: &
       iT  !-- iTimer
@@ -468,6 +467,10 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY )
     call Show ( iV, 'iTime', S % IGNORABILITY )
 
+    associate &
+        ( TimeMax   =>  PROGRAM_HEADER % Timer_1D % PreviousMax, &
+          TimeMin   =>  PROGRAM_HEADER % Timer_1D % PreviousMin, &
+          TimeMean  =>  PROGRAM_HEADER % Timer_1D % PreviousMean )
     do iT  =  1,  S % N_SERIES_TIMER
       TimeMax  ( iT )  =  TV_Max  ( iV, iT )  *  S % iCycle
       TimeMin  ( iT )  =  TV_Min  ( iV, iT )  *  S % iCycle
@@ -477,6 +480,7 @@ contains
                   trim ( T_Mean % Variable ( iT ) ) // ' (TimeMean)', &
                   S % IGNORABILITY )
     end do !-- iT
+    end associate !-- TimeMax, etc.
 
     end associate !-- T_Mean, etc.
 

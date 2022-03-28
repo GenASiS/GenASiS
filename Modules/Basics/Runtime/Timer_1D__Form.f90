@@ -21,10 +21,14 @@ module Timer_1D__Form
     real ( KDR ) :: &
       DisplayFraction
     real ( KDR ), dimension ( MAX_TIMERS ) :: &
-      TimeThis, &
-      TimeMax, &
-      TimeMin, &
-      TimeMean
+      TimeThis = 0.0_KDR, &
+      TimeMax  = 0.0_KDR, &
+      TimeMin  = 0.0_KDR, &
+      TimeMean = 0.0_KDR
+    real ( KDR ), dimension ( MAX_TIMERS ) :: &
+      PreviousMax  = 0.0_KDR, &  !-- From prior run segments before restart
+      PreviousMin  = 0.0_KDR, &
+      PreviousMean = 0.0_KDR
     type ( TimerForm ), dimension ( MAX_TIMERS ) :: &
       Element
     type ( TimerForm ), dimension ( MAX_TIMERS ) :: &
@@ -38,8 +42,6 @@ module Timer_1D__Form
       Get
     procedure, public, pass :: &
       Read
-    procedure, public, pass :: &
-      Restore
     final :: &
       Finalize
   end type Timer_1D_Form
@@ -249,53 +251,6 @@ contains
     end associate !-- nT
 
   end subroutine Read
-
-
-  subroutine Restore ( T_1D, TimeMean, Ignorability, CommunicatorOption )
-
-    class ( Timer_1D_Form ), intent ( inout ) :: &
-      T_1D
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeMean
-    integer ( KDI ), intent ( in ) :: &
-      Ignorability
-    type ( CommunicatorForm ), intent ( in ), optional :: &
-      CommunicatorOption
-
-    integer ( KDI ) :: &
-      iT
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-
-    associate ( nT  =>  T_1D % nTimers )
-
-    if ( present ( CommunicatorOption ) ) then
-
-      call CO % Initialize &
-             ( CommunicatorOption, &
-               nOutgoing = [ nT ], nIncoming = [ nT ], &
-               RootOption = CONSOLE % DisplayRank )
-
-      if ( CommunicatorOption % Rank  ==  CONSOLE % DisplayRank ) &
-        CO % Outgoing % Value  =  TimeMean
-
-      call CO % Broadcast ( )
-
-      TimeMean  =  CO % Incoming % Value
-
-    end if !-- present ( CommunicatorOption )
-
-    call Show ( 'Restored mean timers', Ignorability + 1 )
-    do iT  =  1,  nT
-      associate ( T  =>  T_1D % Element ( iT ) )
-      call T % RestoreTotal ( TimeMean ( iT ) )
-      call T % ShowTotal ( Ignorability + 1 )
-      end associate !-- T
-    end do !-- iT
-
-    end associate !-- nT
-
-  end subroutine Restore
 
 
   impure elemental subroutine Finalize ( T_1D )

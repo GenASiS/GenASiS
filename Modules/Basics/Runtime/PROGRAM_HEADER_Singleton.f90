@@ -75,8 +75,6 @@ module PROGRAM_HEADER_Singleton
     procedure, public, nopass :: &
       RecordStatistics
     procedure, public, nopass :: &
-      RestoreStatistics
-    procedure, public, nopass :: &
       Abort => Abort_PH  !-- avoids conflict with intrinsic "abort"
     final :: &
       Finalize
@@ -87,8 +85,7 @@ module PROGRAM_HEADER_Singleton
 
     private :: &
       PrepareAndShow_OMP_Environment, &
-      ReadTimers, &
-      RestoreTimers
+      ReadTimers
       
 contains
 
@@ -852,22 +849,6 @@ contains
   end subroutine RecordStatistics 
   
   
-  subroutine RestoreStatistics ( TimeMean, Ignorability, CommunicatorOption )
-  
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeMean
-    integer ( KDI ), intent ( in ) :: &
-      Ignorability
-    type ( CommunicatorForm ), intent ( in ), optional :: &
-      CommunicatorOption
-      
-    call Show ( 'Restoring program timing', Ignorability )
-
-    call RestoreTimers ( TimeMean, Ignorability, CommunicatorOption )
-
-  end subroutine RestoreStatistics
-
-
   subroutine Abort_PH ( )
   
     if ( PROGRAM_HEADER % Communicator % Initialized ) then
@@ -1010,36 +991,6 @@ contains
     call PH % Timer_1D % Read ( Ignorability, CommunicatorOption )
 
   end subroutine ReadTimers
-
-
-  subroutine RestoreTimers ( TimeMean, Ignorability, CommunicatorOption )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeMean
-    integer ( KDI ), intent ( in ) :: &
-      Ignorability
-    type ( CommunicatorForm ), intent ( in ), optional :: &
-      CommunicatorOption
-
-    type ( ProgramHeaderSingleton ), pointer :: &
-      PH
-   
-    PH => PROGRAM_HEADER 
-
-    associate ( nT  =>  PH % Timer_1D % nTimers )
-    if ( size ( TimeMean )  /=  nT ) then
-      call Show ( 'Incorrect number of timer values', CONSOLE % ERROR )
-      call Show ( size ( TimeMean ), 'size ( TimeMean )', CONSOLE % ERROR )
-      call Show ( nT, 'nTimers', CONSOLE % ERROR )
-      call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
-      call Show ( 'RestoreTimers', 'subroutine', CONSOLE % ERROR )
-      call PH % Abort ( )
-    end if
-    end associate !-- nT
-
-    call PH % Timer_1D % Restore ( TimeMean, Ignorability, CommunicatorOption )
-
-  end subroutine RestoreTimers
 
 
 end module PROGRAM_HEADER_Singleton
