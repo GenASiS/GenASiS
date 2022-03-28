@@ -315,7 +315,7 @@ contains
     end if
     if ( associated ( T_CT ) ) call T_CT % Start ( )   
     call I % ComputeTally &
-           ( ChangeOption = .not. I % Start, &
+           ( ChangeOption = .not. I % Start .and. .not. I % Restart, &
              IgnorabilityOption  = Ignorability )
     if ( associated ( T_CT ) ) call T_CT % Stop ( )   
 

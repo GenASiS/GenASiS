@@ -16,6 +16,7 @@ module Integrator_H__Form
       IGNORABILITY = 0
     integer ( KDI ) :: &
       iCycle, &
+      iCycleRestart, &
       nRampCycles, &
       FinishCycle
     integer ( KDI ) :: &
@@ -349,6 +350,7 @@ contains
     I % dT_Candidate  =  0.0_KDR
 
     I % iCycle = 0
+    I % iCycleRestart = 0
     I % iCheckpoint = 0
     I % nRampCycles = 100
     call PROGRAM_HEADER % GetParameter ( I % nRampCycles, 'nRampCycles' )
@@ -906,11 +908,6 @@ contains
     type ( MeasuredValueForm ), intent ( out ) :: &
       T_Restart
 
-    ! real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
-    !   MaxTime, &
-    !   MinTime, &
-    !   MeanTime
-    
     call I % Read ( RestartFrom, T_Restart )
     
     call Show ( 'Restarting', I % IGNORABILITY )
@@ -918,15 +915,6 @@ contains
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( T_Restart, I % Unit_T, 'T', I % IGNORABILITY )
 
-    ! call I % ReadTimeSeries ( nSeries = RestartFrom + 1 )
-
-    ! call I % RestoreTimeSeries ( MaxTime, MinTime, MeanTime )
-
-    ! call PROGRAM_HEADER % RestoreStatistics &
-    !        ( Ignorability = CONSOLE % INFO_1, &
-    !          CommunicatorOption = PROGRAM_HEADER % Communicator, &
-    !          MeanTimeOption = MeanTime )
- 
   end subroutine ResetInitial_H
 
 
@@ -985,8 +973,15 @@ contains
 
     if ( .not. I % Start .and. .not. I % Restart ) then
 
-      if ( .not. allocated ( I % Series ) ) &
+      if ( .not. allocated ( I % Series ) ) then
         call I % InitializeSeries ( )
+        if ( I % RestartFrom  >  0 ) then
+          associate ( S  =>  I % Series )
+          call S % Read ( nSeries = I % RestartFrom )
+          call S % Restore ( I % iCycleRestart )
+          end associate !-- S
+        end if
+      end if
 
       associate ( S  =>  I % Series )
       if ( present ( T_Option ) ) then
@@ -1087,9 +1082,6 @@ contains
     type ( MeasuredValueForm ), intent ( out ) :: &
       T
 
-    integer ( KDI ) :: &
-      CycleNumber
-
     ! if ( allocated ( I % MomentumSpace ) ) then
     !   select type ( MS => I % MomentumSpace )
     !   class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -1105,17 +1097,14 @@ contains
     associate ( SA  =>  I % Checkpoint_X )
     call SA % Read &
            ( TimeOption = T, &
-             CycleNumberOption = CycleNumber )
+             CycleNumberOption = I % iCycleRestart )
     T  =  T  *  I % Unit_T
     I % iCheckpoint  =  ReadFrom
-    I % iCycle       =  CycleNumber
+    I % iCycle       =  I % iCycleRestart
     end associate !-- SA
 
     !-- Base's GIS must be closed before call to Bundle % Write ( ).
     call GIS % Close ( )
-
-    !-- Series
-
 
     !-- Tangent space
     

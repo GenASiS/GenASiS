@@ -27,7 +27,7 @@ module Series_B__Form
       iTimerWrite  = 0, &
       iTimerRead   = 0
     integer ( KDI ) :: &
-      iTime
+      iRecord = 0
     integer ( KDI ), pointer :: &
       iCycle => null ( )
     real ( KDR ), pointer :: &
@@ -64,8 +64,8 @@ module Series_B__Form
       Write
     procedure, public, pass :: &
       Read
-!     procedure, public, pass :: &
-!       Restore
+    procedure, public, pass :: &
+      Restore
     final :: &
       Finalize
   end type Series_B_Form
@@ -318,31 +318,31 @@ contains
         TV_Min  => S % TimerMin % Value, &
         TV_Mean => S % TimerMean % Value, &
         dTV     => S % dT % Value, &
-        iV      => S % iTime )
+        iR      => S % iRecord )
 
-    iV = iV + 1
+    iR  =  iR + 1
 
     call Show ( 'Recording Series data', S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
-    call Show ( iV, 'iTime', S % IGNORABILITY )
+    call Show ( iR, 'iRecord', S % IGNORABILITY )
 
-    if ( iV  >  size ( BV, dim = 1 ) ) then
+    if ( iR  >  size ( BV, dim = 1 ) ) then
       call Show ( 'Too many time series entries', CONSOLE % ERROR )
       call Show ( 'Series_Form', 'module', CONSOLE % ERROR )
       call Show ( 'Record', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
-    BV ( iV, S % TIME )   =  S % T
-    BV ( iV, S % CYCLE )  =  S % iCycle
+    BV ( iR, S % TIME )   =  S % T
+    BV ( iR, S % CYCLE )  =  S % iCycle
 
     associate ( MU  =>  PROGRAM_HEADER % MemoryUsage )
-    BV ( iV, S % MEMORY_MAX_HWM )   =  MU % HighWaterMarkMax
-    BV ( iV, S % MEMORY_MIN_HWM )   =  MU % HighWaterMarkMin
-    BV ( iV, S % MEMORY_MEAN_HWM )  =  MU % HighWaterMarkMean
-    BV ( iV, S % MEMORY_MAX_RSS )   =  MU % ResidentSetSizeMax
-    BV ( iV, S % MEMORY_MIN_RSS )   =  MU % ResidentSetSizeMin
-    BV ( iV, S % MEMORY_MEAN_RSS )  =  MU % ResidentSetSizeMean
+    BV ( iR, S % MEMORY_MAX_HWM )   =  MU % HighWaterMarkMax
+    BV ( iR, S % MEMORY_MIN_HWM )   =  MU % HighWaterMarkMin
+    BV ( iR, S % MEMORY_MEAN_HWM )  =  MU % HighWaterMarkMean
+    BV ( iR, S % MEMORY_MAX_RSS )   =  MU % ResidentSetSizeMax
+    BV ( iR, S % MEMORY_MIN_RSS )   =  MU % ResidentSetSizeMin
+    BV ( iR, S % MEMORY_MEAN_RSS )  =  MU % ResidentSetSizeMean
     end associate !-- MU
 
     if ( S % iCycle  >  0 ) then
@@ -354,10 +354,10 @@ contains
           TimeMin   =>  T_1D % PreviousMin   +  T_1D % TimeMin, &
           TimeMean  =>  T_1D % PreviousMean  +  T_1D % TimeMean )
       do iT  =  1, S % N_SERIES_TIMER
-        TV_Max  ( iV, iT ) = TimeMax  ( iT ) / S % iCycle
-        TV_Min  ( iV, iT ) = TimeMin  ( iT ) / S % iCycle
-        TV_Mean ( iV, iT ) = TimeMean ( iT ) / S % iCycle
-        call Show ( TV_Max ( iV, iT ), &
+        TV_Max  ( iR, iT ) = TimeMax  ( iT ) / S % iCycle
+        TV_Min  ( iR, iT ) = TimeMin  ( iT ) / S % iCycle
+        TV_Mean ( iR, iT ) = TimeMean ( iT ) / S % iCycle
+        call Show ( TV_Max ( iR, iT ), &
                     T_Max % Unit ( iT ), &
                     trim ( T_Max % Variable ( iT ) ) // ' per cycle', &
                     S % IGNORABILITY + 1 )
@@ -365,7 +365,7 @@ contains
       end associate !-- TimeMax, etc.
       end associate !-- T_1D
 
-      dTV ( iV, : )  =  S % dT_Candidate
+      dTV ( iR, : )  =  S % dT_Candidate
 
     end if
 
@@ -395,8 +395,8 @@ contains
     call CI % ClearGrid ( )
     call CI % SetGridWrite  &
            ( Directory = 'Series', &
-             NodeCoordinate = B % Value ( 1 : S % iTime, S % TIME ), &
-             nProperCells = S % iTime, &
+             NodeCoordinate = B % Value ( 1 : S % iRecord, S % TIME ), &
+             nProperCells = S % iRecord, &
              oValue = 0, &
              CoordinateUnitOption = B % Unit ( S % TIME ), &
              CoordinateLabelOption = 't' )
@@ -415,12 +415,13 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nSeries
 
-    S % iTime  =  nSeries
+    S % iRecord  =  nSeries
 
     if ( .not. allocated ( S % GridImageStream ) ) &
       return
 
     call Show ( 'Reading ' // trim ( S % Type ), S % IGNORABILITY )
+    call Show ( S % Name, 'Name', S % IGNORABILITY )
 
     associate &
       ( GIS => S % GridImageStream, &
@@ -441,10 +442,12 @@ contains
   end subroutine Read
 
 
-  subroutine Restore ( S )
+  subroutine Restore ( S, iCycleRestart )
 
     class ( Series_B_Form ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iCycleRestart
 
     integer ( KDI ) :: &
       iT  !-- iTimer
@@ -454,20 +457,20 @@ contains
         TV_Max   =>  S % TimerMax % Value, &
         TV_Min   =>  S % TimerMin % Value, &
         TV_Mean  =>  S % TimerMean % Value, &
-        iV  =>  S % iTime )
+        iR  =>  S % iRecord )
 
     call Show ( 'Restoring Series data', S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
-    call Show ( iV, 'iTime', S % IGNORABILITY )
+    call Show ( iR, 'iRecord', S % IGNORABILITY )
 
     associate &
         ( TimeMax   =>  PROGRAM_HEADER % Timer_1D % PreviousMax, &
           TimeMin   =>  PROGRAM_HEADER % Timer_1D % PreviousMin, &
           TimeMean  =>  PROGRAM_HEADER % Timer_1D % PreviousMean )
     do iT  =  1,  S % N_SERIES_TIMER
-      TimeMax  ( iT )  =  TV_Max  ( iV, iT )  *  S % iCycle
-      TimeMin  ( iT )  =  TV_Min  ( iV, iT )  *  S % iCycle
-      TimeMean ( iT )  =  TV_Mean ( iV, iT )  *  S % iCycle
+      TimeMax  ( iT )  =  TV_Max  ( iR, iT )  *  iCycleRestart
+      TimeMin  ( iT )  =  TV_Min  ( iR, iT )  *  iCycleRestart
+      TimeMean ( iT )  =  TV_Mean ( iR, iT )  *  iCycleRestart
       call Show ( TimeMean ( iT ), &
                   T_Mean % Unit ( iT ), &
                   trim ( T_Mean % Variable ( iT ) ) // ' (TimeMean)', &

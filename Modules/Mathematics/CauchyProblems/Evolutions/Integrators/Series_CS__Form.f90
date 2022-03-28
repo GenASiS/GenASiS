@@ -150,7 +150,7 @@ contains
         BV   =>  S % Boundary % Value, &
         TV   =>  S % Total % Value, &
         CV   =>  S % Change % Value, &
-        iT   =>  S % iTime, &
+        iR   =>  S % iRecord, &
         TIV  =>  S % TallyInterior % Value, &
         TBV  =>  S % TallyBoundary % Value, &
         TTV  =>  S % TallyTotal % Value, &
@@ -158,10 +158,10 @@ contains
         nS   =>  S % TallyTotal % nSelected, &
         iaS  =>  S % TallyTotal % iaSelected )
     do iS  =  1,  nS
-      IV ( iT, iS )  =  TIV ( iaS ( iS ) )
-      BV ( iT, iS )  =  TBV ( iaS ( iS ) )
-      TV ( iT, iS )  =  TTV ( iaS ( iS ) )
-      CV ( iT, iS )  =  TCV ( iaS ( iS ) )
+      IV ( iR, iS )  =  TIV ( iaS ( iS ) )
+      BV ( iR, iS )  =  TBV ( iaS ( iS ) )
+      TV ( iR, iS )  =  TTV ( iaS ( iS ) )
+      CV ( iR, iS )  =  TCV ( iaS ( iS ) )
     end do !-- iS
     end associate !-- TV, etc.
 
