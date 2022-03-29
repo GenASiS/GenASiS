@@ -111,11 +111,11 @@ contains
 
     associate &
       (  SMV  =>  S % Measures_F_CC % Value, &
-        iT    =>  S % iTime, &
+        iR    =>  S % iRecord, &
           MV  =>  S % Measures % Value, &
         nM    =>  S % Measures % nMeasures )
     do iM  =  1,  nM
-      SMV ( iT, iM )  =  MV ( iM )
+      SMV ( iR, iM )  =  MV ( iM )
     end do !-- iM
     end associate !-- SMV, etc.
 
