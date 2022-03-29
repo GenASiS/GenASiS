@@ -767,6 +767,22 @@ contains
     call PROGRAM_HEADER % RecordStatistics &
            ( Ignorability, CommunicatorOption = PROGRAM_HEADER % Communicator )
 
+    !-- Initialize series
+
+    if ( .not. I % Start .and. .not. I % Restart ) then
+
+      if ( .not. allocated ( I % Series ) ) then
+        call I % InitializeSeries ( )
+        if ( I % RestartFrom  >  0 ) then
+          associate ( S  =>  I % Series )
+          call S % Read ( nSeries = I % RestartFrom )
+          call S % Restore ( I % iCycleRestart )
+          end associate !-- S
+        end if
+      end if
+
+    end if
+
     !-- Analyze
 
     if ( present ( T_Option ) ) then
@@ -971,18 +987,7 @@ contains
 
     !-- Series
 
-    if ( .not. I % Start .and. .not. I % Restart ) then
-
-      if ( .not. allocated ( I % Series ) ) then
-        call I % InitializeSeries ( )
-        if ( I % RestartFrom  >  0 ) then
-          associate ( S  =>  I % Series )
-          call S % Read ( nSeries = I % RestartFrom )
-          call S % Restore ( I % iCycleRestart )
-          end associate !-- S
-        end if
-      end if
-
+    if ( allocated ( I % Series ) ) then
       associate ( S  =>  I % Series )
       if ( present ( T_Option ) ) then
         T_R  =>  S % TimerRecord ( Level = T_Option % Level + 1 )
@@ -993,7 +998,6 @@ contains
       call S % Record ( )
       if ( associated ( T_R ) ) call T_R % Stop ( )
       end associate !-- S
-
     end if
 
   end subroutine Analyze_H

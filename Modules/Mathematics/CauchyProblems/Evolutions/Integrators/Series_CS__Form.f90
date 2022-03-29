@@ -27,8 +27,8 @@ module Series_CS__Form
       Initialize => Initialize_CS
     procedure, public, pass :: &
       Record
-!     procedure, public, pass :: &
-!       Restore
+    procedure, public, pass :: &
+      Restore
     final :: &
       Finalize
   end type Series_CS_Form
@@ -163,9 +163,59 @@ contains
       TV ( iR, iS )  =  TTV ( iaS ( iS ) )
       CV ( iR, iS )  =  TCV ( iaS ( iS ) )
     end do !-- iS
-    end associate !-- TV, etc.
+    end associate !-- IV, etc.
 
   end subroutine Record
+
+
+  subroutine Restore ( S, iCycleRestart )
+
+    class ( Series_CS_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iCycleRestart
+
+    integer ( KDI ) :: &
+      iS  !-- iSelected
+
+    call S % Series_B_Form % Restore ( iCycleRestart )
+
+    associate &
+      ( IV   =>  S % Interior % Value, &
+        BV   =>  S % Boundary % Value, &
+        TV   =>  S % Total % Value, &
+        CV   =>  S % Change % Value, &
+       iR    =>  S % iRecord, &
+        TIV  =>  S % TallyInterior % Value, &
+        TBV  =>  S % TallyBoundary % Value, &
+        TTV  =>  S % TallyTotal % Value, &
+        TCV  =>  S % TallyChange % Value, &
+        nS   =>  S % TallyTotal % nSelected, &
+        iaS  =>  S % TallyTotal % iaSelected )
+    do iS = 1, nS
+      TIV ( iaS ( iS ) )  =  IV ( iR, iS ) 
+      TBV ( iaS ( iS ) )  =  BV ( iR, iS )
+      TTV ( iaS ( iS ) )  =  TV ( iR, iS )
+      TCV ( iaS ( iS ) )  =  CV ( iR, iS )
+    end do !-- iS
+    end associate !-- IV, etc.
+
+    associate &
+      (  I  =>  S % Interior, &
+         B  =>  S % Boundary, &
+         T  =>  S % Total, &
+         C  =>  S % Change, &
+        TI  =>  S % TallyInterior, &
+        TB  =>  S % TallyBoundary, &
+        TT  =>  S % TallyTotal, &
+        TC  =>  S % TallyChange )
+    call TI % Show ( I % Name, CONSOLE % INFO_1 )
+    call TB % Show ( B % Name, CONSOLE % INFO_1 )
+    call TT % Show ( T % Name, CONSOLE % INFO_1 )
+    call TC % Show ( C % Name, CONSOLE % INFO_1 )
+    end associate !-- I, etc.
+
+  end subroutine Restore
 
 
   impure elemental subroutine Finalize ( S )
