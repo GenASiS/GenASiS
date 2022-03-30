@@ -29,7 +29,8 @@ module Coarsening_C_F__Form
   end type Coarsening_C_F_Form
 
     private :: &
-      ComputeKernel
+      ComputeKernel, &
+      ComputeMoreKernel
 
     interface
       
@@ -49,6 +50,22 @@ module Coarsening_C_F__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeKernel
+
+      module subroutine ComputeMoreKernel &
+               ( FS, CP, CA, nTh, nPh, iS_2, iS_3, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          FS
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          CP, &
+          CA
+        integer ( KDI ), intent ( in ) :: &
+          nTh, nPh, &
+          iS_2, iS_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeMoreKernel
 
     end interface
 
@@ -136,6 +153,16 @@ contains
              iS_3 = iMomentum_3, &
              UseDeviceOption = C % DeviceMemory )
     
+    call ComputeMoreKernel &
+           (  FS  = FS % Storage_GS % Value, &
+              CP  = C  % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
+              CA  = C  % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
+             nTh  = C_GS_CC % nCells ( 2 ), &
+             nPh  = C_GS_CC % nCells ( 3 ), &
+             iS_2 = iMomentum_2, &
+             iS_3 = iMomentum_3, &
+             UseDeviceOption = C % DeviceMemory )
+
     call FS % Storage_GS % ReassociateHost &
            ( AssociateVariablesOption = .true. )
 
