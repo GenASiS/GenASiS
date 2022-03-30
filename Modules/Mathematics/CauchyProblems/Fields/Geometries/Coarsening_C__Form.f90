@@ -136,6 +136,77 @@ contains
   end subroutine Initialize_C
 
 
+  subroutine Compute ( FS, C )
+
+    class ( FieldSetForm ), intent ( inout ) :: &
+      FS
+    class ( Coarsening_C_Form ), intent ( in ) :: &
+      C
+
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      dV_3D
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+      FS_4D
+
+    select type ( A  =>  FS % Atlas )
+      class is ( Atlas_SCG_CC_Form )
+    associate &
+      ( G        =>  C % Geometry, &
+        C_GS_CC  =>  A % Chart_GS_CC )
+
+    if ( C_GS_CC % nDimensions  ==  1 ) &
+      return
+      
+    call FS % Storage_GS % ReassociateHost &
+           ( AssociateVariablesOption = .false. )
+
+    call C_GS_CC % SetFieldPointer &
+           ( FS % Storage_GS % Value, FS_4D )
+    call C_GS_CC % SetFieldPointer &
+           ( G % Storage_GS % Value ( :, G % VOLUME ), dV_3D )
+       
+    call ComputeKernel &
+           ( FS_4D, dV_3D, &
+             iTh = C % iTheta, &
+             iPh = C % iPhi, &
+             iR  = C % iRadius, &
+             iaS = FS % iaSelected, &
+             oC  = C_GS_CC % nGhostLayers, &
+             nBC = C % nBlocksCoarsen, &
+             UseDeviceOption = C % DeviceMemory )
+
+    call FS % Storage_GS % ReassociateHost &
+           ( AssociateVariablesOption = .true. )
+
+    end associate !-- G, etc.
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Coarsening_C_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+  end subroutine Compute
+
+
+  impure elemental subroutine Finalize ( C )
+
+    type ( Coarsening_C_Form ), intent ( inout ) :: &
+      C
+
+    nullify ( C % Geometry )
+
+    if ( allocated ( C % iPhi ) ) &
+      deallocate ( C % iPhi )
+    if ( allocated ( C % iTheta ) ) &
+      deallocate ( C % iTheta )
+    if ( allocated ( C % iRadius ) ) &
+      deallocate ( C % iRadius )
+
+  end subroutine Finalize
+
+  
   subroutine SetCoarseningPolar ( C, R, CP )
     
     class ( Chart_GS_C_Form ), intent ( in ) :: &
@@ -387,75 +458,4 @@ contains
   end subroutine SetBlocks
 
 
-  subroutine Compute ( FS, C )
-
-    class ( FieldSetForm ), intent ( inout ) :: &
-      FS
-    class ( Coarsening_C_Form ), intent ( in ) :: &
-      C
-
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      dV_3D
-    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
-      FS_4D
-
-    select type ( A  =>  FS % Atlas )
-      class is ( Atlas_SCG_CC_Form )
-    associate &
-      ( G        =>  C % Geometry, &
-        C_GS_CC  =>  A % Chart_GS_CC )
-
-    if ( C_GS_CC % nDimensions  ==  1 ) &
-      return
-      
-    call FS % Storage_GS % ReassociateHost &
-           ( AssociateVariablesOption = .false. )
-
-    call C_GS_CC % SetFieldPointer &
-           ( FS % Storage_GS % Value, FS_4D )
-    call C_GS_CC % SetFieldPointer &
-           ( G % Storage_GS % Value ( :, G % VOLUME ), dV_3D )
-       
-    call ComputeKernel &
-           ( FS_4D, dV_3D, &
-             iTh = C % iTheta, &
-             iPh = C % iPhi, &
-             iR  = C % iRadius, &
-             iaS = FS % iaSelected, &
-             oC  = C_GS_CC % nGhostLayers, &
-             nBC = C % nBlocksCoarsen, &
-             UseDeviceOption = C % DeviceMemory )
-
-    call FS % Storage_GS % ReassociateHost &
-           ( AssociateVariablesOption = .true. )
-
-    end associate !-- G, etc.
-
-    class default
-      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Coarsening_C_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- A
-
-  end subroutine Compute
-
-
-  impure elemental subroutine Finalize ( C )
-
-    type ( Coarsening_C_Form ), intent ( inout ) :: &
-      C
-
-    nullify ( C % Geometry )
-
-    if ( allocated ( C % iPhi ) ) &
-      deallocate ( C % iPhi )
-    if ( allocated ( C % iTheta ) ) &
-      deallocate ( C % iTheta )
-    if ( allocated ( C % iRadius ) ) &
-      deallocate ( C % iRadius )
-
-  end subroutine Finalize
-
-  
 end module Coarsening_C__Form
