@@ -332,10 +332,12 @@ contains
       !-- Set nCoarsenPolar and nBlocksPolar
       do iR  =  1,  nR
         nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
-        if ( nCP ( iR )  >  1 ) then
-          nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
-        else
+        if ( nCP ( iR )  <=  1 ) then
           nBP ( iR )  =  0
+        else if ( nCP ( iR )  >  1  .and.  nCP ( iR )  <=  32 ) then
+          nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
+        else if ( nCP ( iR )  >  32 ) then
+          nBP ( iR )  =  1
         end if
       end do !-- iR
 
@@ -350,17 +352,28 @@ contains
 
       iBC  =  0
       do iR  =  1,  nR
-        do iBP  =  1,  nBP ( iR )
+        if ( nBP ( iR )  ==  1 ) then
 
           iBC  =  iBC + 1
 
           iRad ( iBC )  =  iR
 
-          oTh  =  ( iBP - 1 )  *  nCP ( iR )
-          iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
-          iPh ( 1 : 2, iBC )  =  [ 1, 1 ]
+          iTh ( 1 : 2, iBC )  =  [ 1, C % nCellsPolar ]
+          iPh ( 1 : 2, iBC )  =  [ 1, 1 ]          
 
-        end do !-- iBP
+        else
+          do iBP  =  1,  nBP ( iR )
+
+            iBC  =  iBC + 1
+
+            iRad ( iBC )  =  iR
+
+            oTh  =  ( iBP - 1 )  *  nCP ( iR )
+            iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
+            iPh ( 1 : 2, iBC )  =  [ 1, 1 ]
+
+          end do !-- iBP
+        end if
       end do !-- iR
 
     case ( 3 )
