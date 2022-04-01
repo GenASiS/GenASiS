@@ -14,6 +14,8 @@ module Coarsening_C__Form
     integer ( KDI ) :: &
       COARSENING_POLAR     = 0, &
       COARSENING_AZIMUTHAL = 0, &
+      N_BLOCKS_POLAR       = 0, &
+      N_BLOCKS_AZIMUTHAL   = 0, &
       BLOCK_LABEL          = 0  !-- Random label for visualization
     integer ( KDI ) :: &
       nBlocksCoarsen
@@ -82,21 +84,25 @@ contains
     if ( C % Type == '' ) &
       C % Type  =  'a Coarsening_C' 
     
-    C % COARSENING_POLAR      =  1
-    C % COARSENING_AZIMUTHAL  =  2
-    C % BLOCK_LABEL           =  3
+    C % COARSENING_POLAR     =  1
+    C % COARSENING_AZIMUTHAL =  2
+    C % N_BLOCKS_POLAR       =  3
+    C % N_BLOCKS_AZIMUTHAL   =  4
+    C % BLOCK_LABEL          =  5
 
     call C % FieldSetForm % Initialize &
            ( G % Atlas, &
              FieldOption &
                = [ 'CoarseningPolar    ', &
                    'CoarseningAzimuthal', &
+                   'nBlocksPolar       ', &
+                   'nBlocksAzimuthal   ', &
                    'BlockLabel         ' ], &
              NameOption = 'Coarsening', &
              DeviceMemoryOption = G % DeviceMemory, &
              PinnedMemoryOption = G % PinnedMemory, &
              DevicesCommunicateOption = G % DevicesCommunicate, &
-             nFieldsOption = 3 )
+             nFieldsOption = 5 )
 
     C % Geometry  =>  G
 
@@ -114,7 +120,9 @@ contains
                CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ) )
 
       call SetBlocks &
-             (  BL  = C % Storage_GS % Value ( :, C % BLOCK_LABEL ), &
+             (  BP  = C % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
+                BA  = C % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
+                BL  = C % Storage_GS % Value ( :, C % BLOCK_LABEL ), &
                 C   = A % Chart_GS_CC, &
                 CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
                 CA  = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
@@ -271,10 +279,12 @@ contains
   end subroutine SetCoarseningAzimuthal
 
 
-  subroutine SetBlocks ( BL, C, CP, CA, iTh, iPh, iRad, nBC )
+  subroutine SetBlocks ( BP, BA, BL, C, CP, CA, iTh, iPh, iRad, nBC )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      BL  !-- BlockNumber
+      BP, &  !-- nBlocksPolar
+      BA, &  !-- nBlocksAzimuthal
+      BL     !-- BlockLabel
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -310,10 +320,14 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       CP_3D, &
       CA_3D, &
+      BP_3D, &
+      BA_3D, &
       BL_3D
 
     call C % SetFieldPointer ( CP, CP_3D )
     call C % SetFieldPointer ( CA, CA_3D )
+    call C % SetFieldPointer ( BP, BP_3D )
+    call C % SetFieldPointer ( BA, BA_3D )
     call C % SetFieldPointer ( BL, BL_3D )
 
     associate &
@@ -363,6 +377,13 @@ contains
             iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
             iPh ( 1 : 2, iBC )  =  [ 1, 1 ]
 
+            !-- Visualization of nBlocksPolar
+            iTh_1  =  iTh ( 1, iBC )
+            iTh_2  =  iTh ( 2, iBC )
+            iPh_1  =  iPh ( 1, iBC )
+            iPh_2  =  iPh ( 2, iBC )
+            BP_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  =  nTh  /  nCP ( iR )
+
           end do !-- iBP
         else if ( nBP ( iR )  ==  1 ) then  !-- average over full polar range
 
@@ -372,6 +393,13 @@ contains
 
           iTh ( 1 : 2, iBC )  =  [ 1, nTh ]
           iPh ( 1 : 2, iBC )  =  [ 1, 1 ]          
+
+          !-- Visualization of nBlocksPolar
+          iTh_1  =  iTh ( 1, iBC )
+          iTh_2  =  iTh ( 2, iBC )
+          iPh_1  =  iPh ( 1, iBC )
+          iPh_2  =  iPh ( 2, iBC )
+          BP_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  =  1
 
         end if
       end do !-- iR
@@ -474,6 +502,16 @@ contains
                   iPh ( 1 : 2, iBC )  =  [ oPh  +  1, &
                                            oPh  +  nCA ( iR ) % Value ( iBP ) ]
 
+                  !-- Visualization of nBlocksPolar and nBlocksAzimuthal
+                  iTh_1  =  iTh ( 1, iBC )
+                  iTh_2  =  iTh ( 2, iBC )
+                  iPh_1  =  iPh ( 1, iBC )
+                  iPh_2  =  iPh ( 2, iBC )
+                  BP_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                    =  nTh  /  nCP ( iR )
+                  BA_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                    =  nPh  /  CA_Max
+
                 end do !-- iBA
               else  !-- average over full azimuthal range
 
@@ -485,6 +523,16 @@ contains
                   iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
 
                   iPh ( 1 : 2, iBC )  =  [ 1, nPh ]
+
+                  !-- Visualization of nBlocksPolar and nBlocksAzimuthal
+                  iTh_1  =  iTh ( 1, iBC )
+                  iTh_2  =  iTh ( 2, iBC )
+                  iPh_1  =  iPh ( 1, iBC )
+                  iPh_2  =  iPh ( 2, iBC )
+                  BP_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                    =  nTh  /  nCP ( iR )
+                  BA_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                    =  1
 
               end if
             end if
@@ -507,16 +555,36 @@ contains
                 iPh ( 1 : 2, iBC )  =  [ oPh  +  1, &
                                          oPh  +  nCA ( iR ) % Value ( iBP ) ]
 
+                !-- Visualization of nBlocksPolar and nBlocksAzimuthal
+                iTh_1  =  iTh ( 1, iBC )
+                iTh_2  =  iTh ( 2, iBC )
+                iPh_1  =  iPh ( 1, iBC )
+                iPh_2  =  iPh ( 2, iBC )
+                BP_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                  =  1
+                BA_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                  =  nPh  /  CA_Max
+
               end do !-- iBA
             else  !-- average over full azimuthal range
 
-                iBC  =  iBC + 1
+              iBC  =  iBC + 1
 
-                iRad ( iBC )  =  iR
+              iRad ( iBC )  =  iR
 
-                iTh ( 1 : 2, iBC )  =  [ 1, nTh ]
+              iTh ( 1 : 2, iBC )  =  [ 1, nTh ]
 
-                iPh ( 1 : 2, iBC )  =  [ 1, nPh ]
+              iPh ( 1 : 2, iBC )  =  [ 1, nPh ]
+
+              !-- Visualization of nBlocksPolar and nBlocksAzimuthal
+              iTh_1  =  iTh ( 1, iBC )
+              iTh_2  =  iTh ( 2, iBC )
+              iPh_1  =  iPh ( 1, iBC )
+              iPh_2  =  iPh ( 2, iBC )
+              BP_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                =  1
+              BA_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  &
+                =  1
 
             end if
           end if
