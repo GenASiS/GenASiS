@@ -295,7 +295,7 @@ contains
       iPh_1, iPh_2, &  !-- iPhi_1, iPhi_2
       iBC, &           !-- iBlockCoarsen
       iBP, &           !-- iBlockPolar
-      iBA, &           !-- iBlock Azimuthal
+      iBA, &           !-- iBlockAzimuthal
       oTh, &           !-- oTheta
       oPh, &           !-- oPhi
       CA_Max
@@ -335,8 +335,8 @@ contains
         if ( nCP ( iR )  <=  1 ) then
           nBP ( iR )  =  0
         else if ( nCP ( iR )  >  1  .and.  nCP ( iR )  <=  32 ) then
-          nBP ( iR )  =  C % nCellsPolar  /  nCP ( iR )
-        else if ( nCP ( iR )  >  32 ) then
+          nBP ( iR )  =  nTh  /  nCP ( iR )
+        else if ( nCP ( iR )  >  32 ) then !-- average over full polar range
           nBP ( iR )  =  1
         end if
       end do !-- iR
@@ -352,16 +352,7 @@ contains
 
       iBC  =  0
       do iR  =  1,  nR
-        if ( nBP ( iR )  ==  1 ) then
-
-          iBC  =  iBC + 1
-
-          iRad ( iBC )  =  iR
-
-          iTh ( 1 : 2, iBC )  =  [ 1, C % nCellsPolar ]
-          iPh ( 1 : 2, iBC )  =  [ 1, 1 ]          
-
-        else
+        if ( nBP ( iR )  >  1 ) then
           do iBP  =  1,  nBP ( iR )
 
             iBC  =  iBC + 1
@@ -373,6 +364,15 @@ contains
             iPh ( 1 : 2, iBC )  =  [ 1, 1 ]
 
           end do !-- iBP
+        else if ( nBP ( iR )  ==  1 ) then  !-- average over full polar range
+
+          iBC  =  iBC + 1
+
+          iRad ( iBC )  =  iR
+
+          iTh ( 1 : 2, iBC )  =  [ 1, nTh ]
+          iPh ( 1 : 2, iBC )  =  [ 1, 1 ]          
+
         end if
       end do !-- iR
 
@@ -382,14 +382,21 @@ contains
       do iR  =  1, nR
         nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
         nBP ( iR )  =  0
-        do iTheta  =  1,  nTh,  nCP ( iR )
-          CA_Max  &
-            =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
-               +  0.5_KDR
-          CA_Max  =  min ( CA_Max, C % nCells ( 3 ) )
+        if ( nCP ( iR )  <=  32 ) then
+          do iTheta  =  1,  nTh,  nCP ( iR )
+            CA_Max  &
+              =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+                 +  0.5_KDR
+            CA_Max  =  min ( CA_Max, nPh )
+            if ( CA_Max  >  1 ) &
+              nBP ( iR )  =  nBP ( iR )  +  1
+          end do !-- iTheta
+        else  !-- average over full polar range
+          CA_Max  =  maxval ( CA_3D ( iR, 1 : nTh, 1 ) )  +  0.5_KDR
+          CA_Max  =  min ( CA_Max, nPh )
           if ( CA_Max  >  1 ) &
             nBP ( iR )  =  nBP ( iR )  +  1
-        end do !-- iTh
+        end if
       end do !-- iR
 
       !-- Set nCoarsenAzimuthal and nBlocksAzimuthal
@@ -397,17 +404,37 @@ contains
         call nCA ( iR ) % Initialize ( nBP ( iR ) )
         call nBA ( iR ) % Initialize ( nBP ( iR ) )
         iBP  =  0
-        do iTheta  =  1,  nTh,  nCP ( iR )
-          CA_Max  &
-            =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
-               +  0.5_KDR
-          CA_Max  =  min ( CA_Max, C % nCells ( 3 ) )
+        if ( nBP ( iR )  >  1 ) then
+          do iTheta  =  1,  nTh,  nCP ( iR )
+            CA_Max  &
+              =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+                 +  0.5_KDR
+            CA_Max  =  min ( CA_Max, nPh )
+            if ( CA_Max  >  1 ) then
+              iBP  =  iBP + 1
+              if ( CA_Max  <=  2 * 32 ) then
+                nCA ( iR ) % Value ( iBP )  =  CA_Max
+                nBA ( iR ) % Value ( iBP )  =  nPh  /  CA_Max
+              else  !-- average over full azimuthal range
+                nCA ( iR ) % Value ( iBP )  =  nPh
+                nBA ( iR ) % Value ( iBP )  =  1
+              end if !-- CA_Max <= 2 * 32
+            end if !-- CA_Max > 1
+          end do !-- iTheta
+        else if ( nBP ( iR )  ==  1 ) then  !-- average over full polar range
+          CA_Max  =  maxval ( CA_3D ( iR, 1 : nTh, 1 ) )  +  0.5_KDR
+          CA_Max  =  min ( CA_Max, nPh )
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
-            nCA ( iR ) % Value ( iBP )  =  CA_Max
-            nBA ( iR ) % Value ( iBP )  =  nPh  /  nCA ( iR ) % Value ( iBP )
-          end if
-        end do !-- iTheta
+            if ( CA_Max  <=  2 * 32 ) then
+              nCA ( iR ) % Value ( iBP )  =  CA_Max
+              nBA ( iR ) % Value ( iBP )  =  nPh  /  CA_Max
+            else  !-- average over full azimuthal range
+              nCA ( iR ) % Value ( iBP )  =  nPh
+              nBA ( iR ) % Value ( iBP )  =  1
+            end if !-- CA_Max <= 2 * 32
+          end if !-- CA_Max > 1
+        end if !-- nBP ( iR ) > 1
       end do !-- iR
 
       !-- Set nBlocksCoarsen
@@ -425,30 +452,75 @@ contains
       iBC  =  0
       do iR  =  1, nR
         iBP  =  0
-        do iTheta  =  1,  nTh,  nCP ( iR )
-          CA_Max  &
-            =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
-               +  0.5_KDR
-          CA_Max  =  min ( CA_Max, C % nCells ( 3 ) )
+        if ( nBP ( iR )  >  1 ) then
+          do iTheta  =  1,  nTh,  nCP ( iR )
+            CA_Max  &
+              =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+                 +  0.5_KDR
+            CA_Max  =  min ( CA_Max, nPh )
+            if ( CA_Max  >  1 ) then
+              iBP  =  iBP + 1
+              if ( CA_Max  <=  2 * 32 ) then
+                do iBA  =  1,  nBA ( iR ) % Value ( iBP )
+
+                  iBC  =  iBC + 1
+
+                  iRad ( iBC )  =  iR
+
+                  oTh  =  iTheta - 1
+                  iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
+
+                  oPh  =  ( iBA - 1 )  *  nCA ( iR ) % Value ( iBP )
+                  iPh ( 1 : 2, iBC )  =  [ oPh  +  1, &
+                                           oPh  +  nCA ( iR ) % Value ( iBP ) ]
+
+                end do !-- iBA
+              else  !-- average over full azimuthal range
+
+                  iBC  =  iBC + 1
+
+                  iRad ( iBC )  =  iR
+
+                  oTh  =  iTheta - 1
+                  iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
+
+                  iPh ( 1 : 2, iBC )  =  [ 1, nPh ]
+
+              end if
+            end if
+          end do !-- iTheta
+        else if ( nBP ( iR )  ==  1 ) then  !-- average over full polar range
+          CA_Max  =  maxval ( CA_3D ( iR, 1 : nTh, 1 ) )  +  0.5_KDR
+          CA_Max  =  min ( CA_Max, nPh )
           if ( CA_Max  >  1 ) then
             iBP  =  iBP + 1
-            do iBA  =  1,  nBA ( iR ) % Value ( iBP )
+            if ( CA_Max  <=  2 * 32 ) then
+              do iBA  =  1,  nBA ( iR ) % Value ( iBP )
 
-              iBC  =  iBC + 1
+                iBC  =  iBC + 1
 
-              iRad ( iBC )  =  iR
+                iRad ( iBC )  =  iR
 
-              oTh  =  iTheta - 1
-              iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
+                iTh ( 1 : 2, iBC )  =  [ 1, nTh ]
 
-              oPh  =  ( iBA - 1 )  *  nCA ( iR ) % Value ( iBP )
-              iPh ( 1 : 2, iBC )  =  [ oPh  +  1, &
-                                       oPh  +  nCA ( iR ) % Value ( iBP ) ]
+                oPh  =  ( iBA - 1 )  *  nCA ( iR ) % Value ( iBP )
+                iPh ( 1 : 2, iBC )  =  [ oPh  +  1, &
+                                         oPh  +  nCA ( iR ) % Value ( iBP ) ]
 
-            end do !-- iBA
+              end do !-- iBA
+            else  !-- average over full azimuthal range
+
+                iBC  =  iBC + 1
+
+                iRad ( iBC )  =  iR
+
+                iTh ( 1 : 2, iBC )  =  [ 1, nTh ]
+
+                iPh ( 1 : 2, iBC )  =  [ 1, nPh ]
+
+            end if
           end if
-        end do !-- iTheta
-
+        end if !-- nBP ( iR )  >  1
       end do !-- iR
 
     end select !-- nDimensions
