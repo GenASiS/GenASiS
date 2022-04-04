@@ -89,13 +89,15 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    nV = size ( CP )
+    nV = size ( FS, dim = 1 )
     
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
-        if ( CP ( iV )  >=  nTh  .or.  CA ( iV )  >=  nPh ) then
+        if (      ( BP ( iV )  >=  0.99  .and. BP ( iV )  <  0.99 * nBT ) &
+             .or. ( BA ( iV )  >=  0.99  .and. BA ( iV )  <  0.99 * nBT ) ) &
+        then
           FS ( iV, iS_2 )  =  0.0_KDR
           FS ( iV, iS_3 )  =  0.0_KDR
         end if
@@ -105,7 +107,9 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
-        if ( CP ( iV )  >=  nTh  .or.  CA ( iV )  >=  nPh ) then
+        if (      ( BP ( iV )  >=  0.99  .and. BP ( iV )  <  0.99 * nBT ) &
+             .or. ( BA ( iV )  >=  0.99  .and. BA ( iV )  <  0.99 * nBT ) ) &
+        then
           FS ( iV, iS_2 )  =  0.0_KDR
           FS ( iV, iS_3 )  =  0.0_KDR
         end if

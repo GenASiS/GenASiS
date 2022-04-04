@@ -12,7 +12,8 @@ module Coarsening_C_F__Form
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
       nRadiusZero, &
-      nPolarZero
+      nPolarZero, &
+      nBlocksThreshold
     class ( Fluid_D_Form ), pointer :: &
       Fluid => null ( )
   contains
@@ -52,16 +53,16 @@ module Coarsening_C_F__Form
       end subroutine ComputeKernel
 
       module subroutine ComputeMoreKernel &
-               ( FS, CP, CA, nTh, nPh, iS_2, iS_3, UseDeviceOption )
+               ( FS, BP, BA, nBT, iS_2, iS_3, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
           FS
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          CP, &
-          CA
+          BP, &
+          BA
         integer ( KDI ), intent ( in ) :: &
-          nTh, nPh, &
+          nBT, &
           iS_2, iS_3
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -89,10 +90,15 @@ contains
 
     C % Fluid        =>  F
 
-    C % nRadiusZero  =  1
-    C % nPolarZero   =  1
-    call PROGRAM_HEADER % GetParameter ( C % nRadiusZero, 'nRadiusZero' )    
-    call PROGRAM_HEADER % GetParameter ( C % nPolarZero,  'nPolarZero' )    
+    C % nRadiusZero       =  1
+    C % nPolarZero        =  1
+    C % nBlocksThreshold  =  8
+    call PROGRAM_HEADER % GetParameter &
+           ( C % nRadiusZero, 'nRadiusZero' )    
+    call PROGRAM_HEADER % GetParameter &
+           ( C % nPolarZero,  'nPolarZero' )    
+    call PROGRAM_HEADER % GetParameter &
+           ( C % nBlocksThreshold, 'nBlocksThreshold' )    
 
   end subroutine Initialize_C_F
 
@@ -106,6 +112,7 @@ contains
 
     call Show ( FS % nRadiusZero, 'nRadiusZero' )
     call Show ( FS % nPolarZero, 'nPolarZero' )
+    call Show ( FS % nBlocksThreshold, 'nBlocksThreshold' )
 
   end subroutine Show_FS
 
@@ -155,10 +162,9 @@ contains
     
     call ComputeMoreKernel &
            (  FS  = FS % Storage_GS % Value, &
-              CP  = C  % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
-              CA  = C  % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
-             nTh  = C_GS_CC % nCells ( 2 ), &
-             nPh  = C_GS_CC % nCells ( 3 ), &
+              BP  = C  % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
+              BA  = C  % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
+             nBT  = C  % nBlocksThreshold, &
              iS_2 = iMomentum_2, &
              iS_3 = iMomentum_3, &
              UseDeviceOption = C % DeviceMemory )
