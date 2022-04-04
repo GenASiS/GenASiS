@@ -17,8 +17,7 @@ module RiemannSolver_HLL__Form
       N_SOLVER_SPEEDS_HLL = N_SOLVER_SPEEDS_HLL
     integer ( KDI ) :: &
       ALPHA_PLUS_U    = 0, &
-      ALPHA_MINUS_U   = 0, &
-      N_SOLVER_SPEEDS = 0
+      ALPHA_MINUS_U   = 0
     integer ( KDI ) :: &
       iTimer_P   = 0, &  !-- Prepare
       iTimer_C   = 0, &  !-- Compute
@@ -283,12 +282,9 @@ contains
 
     !-- Field indices
 
-    if ( present ( nFieldsOption ) ) then
+    nFields  =  nB  +  RS % N_SOLVER_SPEEDS_HLL
+    if ( present ( nFieldsOption ) )  &
       nFields  =  nFieldsOption
-    else
-      RS % N_SOLVER_SPEEDS  =  RS % N_SOLVER_SPEEDS_HLL
-      nFields  =  nB  +  RS % N_SOLVER_SPEEDS
-    end if
 
     RS % ALPHA_PLUS_U   =  nB  +  1
     RS % ALPHA_MINUS_U  =  nB  +  2
@@ -303,7 +299,7 @@ contains
 
     Field ( : nB )  =  CS % Balanced
 
-    Field ( nB + 1 : nB + RS % N_SOLVER_SPEEDS ) &
+    Field ( nB + 1 : nB + RS % N_SOLVER_SPEEDS_HLL ) &
       =  [ 'AlphaPlus_U ', &
            'AlphaMinus_U' ]
           
