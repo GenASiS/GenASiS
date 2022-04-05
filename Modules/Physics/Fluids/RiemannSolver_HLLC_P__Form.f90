@@ -16,7 +16,7 @@ module RiemannSolver_HLLC_P__Form
     integer ( KDI ) :: &
       N_SOLVER_SPEEDS_HLLC = N_SOLVER_SPEEDS_HLLC
     integer ( KDI ) :: &
-      ALPHA_CENTER = 0
+      ALPHA_CENTER_U = 0
     type ( FieldSetForm ), allocatable :: &
       Metric_I
   contains
@@ -27,6 +27,32 @@ module RiemannSolver_HLLC_P__Form
     final :: &
       Finalize
   end type RiemannSolver_HLLC_P_Form
+
+    private :: &
+      ComputeCenterSpeedKernel
+
+    interface 
+
+      module subroutine ComputeCenterSpeedKernel &
+                   ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, M_IL, M_IR, &
+                     D_IL, D_IR, S_IL, S_IR, AP_I, AM_I, M_UU, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          AC_I
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          F_D_IL, F_D_IR, &
+          F_S_IL, F_S_IR, &
+          M_IL, M_IR, &
+          D_IL, D_IR, &
+          S_IL, S_IR, &
+          AP_I, &
+          AM_I, &
+          M_UU
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeCenterSpeedKernel
+
+    end interface
 
 
 contains
@@ -67,7 +93,7 @@ contains
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
-    RS % ALPHA_CENTER   =  nB  +  1
+    RS % ALPHA_CENTER_U   =  oF  +  1
 
     !-- Field names
 
@@ -78,7 +104,7 @@ contains
     end if !-- FieldOption
 
     Field ( oF + 1 : oF + RS % N_SOLVER_SPEEDS_HLLC ) &
-      =  [ 'AlphaCenter' ]
+      =  [ 'AlphaCenter_U' ]
           
     !-- FieldSet
 
@@ -107,7 +133,7 @@ contains
 
   subroutine Compute ( RS, DP, iC, iD, T_Option )
 
-    class ( RiemannSolver_HLLC_P_Form ), intent ( inout ) :: &
+    class ( RiemannSolver_HLLC_P_Form ), intent ( inout ), target :: &
       RS
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
@@ -117,15 +143,70 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
+    integer ( KDI ) :: &
+      iDensity, &
+      iMomentum
+    real ( KDR ), dimension ( : ), pointer :: &
+      M_UU
+
     call RS % RiemannSolver_HLL_Form % Compute ( DP, iC, iD, T_Option )
 
+    select type ( CS  =>  RS % CurrentSet )
+      class is ( Fluid_P_Form )
     associate &
-      ( G    =>  RS % CurrentSet % Geometry, &
+      ( G    =>  CS % Geometry, &
         M_I  =>  RS % Metric_I)
     
     call G % ComputeReconstruction ( M_I, iC, iD )
 
+    associate &
+      ( RSV      =>  RS % Storage ( iC ) % Value, &
+        FS_IL_V  =>  RS % FluxSet_IL % Storage ( iC ) % Value, &
+        FS_IR_V  =>  RS % FluxSet_IR % Storage ( iC ) % Value, &
+        CS_IL_V  =>  RS % CurrentSet_IL % Storage ( iC ) % Value, &
+        CS_IR_V  =>  RS % CurrentSet_IR % Storage ( iC ) % Value )
+
+    associate &
+      ( M_DD_11  =>  M_I % Storage ( iC ) % Value ( :, 1 ), &
+        M_DD_22  =>  M_I % Storage ( iC ) % Value ( :, 2 ), &
+        M_DD_33  =>  M_I % Storage ( iC ) % Value ( :, 3 ), &
+        M_UU_11  =>  M_I % Storage ( iC ) % Value ( :, 4 ), &
+        M_UU_22  =>  M_I % Storage ( iC ) % Value ( :, 5 ), &
+        M_UU_33  =>  M_I % Storage ( iC ) % Value ( :, 6 ) )
+
+    select case ( iD )
+    case ( 1 )
+      M_UU  =>  M_UU_11
+    case ( 2 ) 
+      M_UU  =>  M_UU_22
+    case ( 3 )
+      M_UU  =>  M_UU_33
+    end select
+
+    call Search ( CS % iaBalanced, CS % BARYON_DENSITY_C,          iDensity )
+    call Search ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D ( iD ), iMomentum )
+
+    call ComputeCenterSpeedKernel &
+           (  AC_I  = RSV     ( :, RS % ALPHA_CENTER_U ), &
+             F_D_IL = FS_IL_V ( :, iDensity ), &
+             F_D_IR = FS_IR_V ( :, iDensity ), &
+             F_S_IL = FS_IL_V ( :, iMomentum ), &
+             F_S_IR = FS_IR_V ( :, iMomentum ), &
+               M_IL = CS_IL_V ( :, CS % BARYON_MASS ), &
+               M_IR = CS_IR_V ( :, CS % BARYON_MASS ), &
+               D_IL = CS_IL_V ( :, CS % BARYON_DENSITY_C ), &
+               D_IR = CS_IR_V ( :, CS % BARYON_DENSITY_C ), &
+               S_IL = CS_IL_V ( :, CS % MOMENTUM_DENSITY_D ( iD ) ), &
+               S_IR = CS_IR_V ( :, CS % MOMENTUM_DENSITY_D ( iD ) ), &
+              AP_I  = RSV     ( :, RS % ALPHA_PLUS_U ), &
+              AM_I  = RSV     ( :, RS % ALPHA_MINUS_U ), &
+               M_UU = M_UU, &
+             UseDeviceOption = RS % DeviceMemory )
+
+    end associate !-- M_DD_11, etc.
+    end associate !-- RSV, etc.
     end associate !-- G, etc.
+    end select !-- CS
 
   end subroutine Compute
 

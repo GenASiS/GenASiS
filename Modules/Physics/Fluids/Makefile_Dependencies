@@ -95,6 +95,11 @@ RiemannSolver_HLLC_P__Form.o: \
   Fluid_P__Form.o \
   RiemannSolver_HLLC_P__Form.f90
 
+RiemannSolver_HLLC_P__Kernel.o: \
+  Basics.o \
+  RiemannSolver_HLLC_P__Form.o \
+  RiemannSolver_HLLC_P__Kernel.f90
+
 DivergencePart_F_D_T__Form.o: \
   Basics.o \
   Mathematics.o \

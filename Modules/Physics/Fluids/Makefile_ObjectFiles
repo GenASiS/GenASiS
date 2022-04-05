@@ -18,6 +18,7 @@ FLUIDS = \
   DivergencePart_F_D_V__Form.o \
   DivergencePart_F_D_T__Kernel.o \
   DivergencePart_F_D_T__Form.o \
+  RiemannSolver_HLLC_P__Kernel.o \
   RiemannSolver_HLLC_P__Form.o \
   Tally_F_P_HN__Form.o \
   Tally_F_P__Form.o \

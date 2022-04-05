@@ -621,7 +621,7 @@ contains
 
   subroutine Compute ( RS, DP, iC, iD, T_Option )
 
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+    class ( RiemannSolver_HLL_Form ), intent ( inout ), target :: &
       RS
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
