@@ -77,7 +77,7 @@ contains
   end procedure ComputeKernel
 
 
-  module procedure ComputeMoreKernel 
+  module procedure ComputeBlocksKernel 
 
     integer ( KDI ) :: &
       iV, &
@@ -117,7 +117,46 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure ComputeMoreKernel
+  end procedure ComputeBlocksKernel
+
+
+  module procedure ComputeRadiusKernel 
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV = size ( FS, dim = 1 )
+    
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        if ( R ( iV )  <  RZ ) then
+          FS ( iV, iS_2 )  =  0.0_KDR
+          FS ( iV, iS_3 )  =  0.0_KDR
+        end if
+      end do !-- iV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        if ( R ( iV )  <  RZ ) then
+          FS ( iV, iS_2 )  =  0.0_KDR
+          FS ( iV, iS_3 )  =  0.0_KDR
+        end if
+      end do !-- iV
+      !$OMP end parallel do
+    end if
+
+  end procedure ComputeRadiusKernel
 
 
 end submodule Coarsening_C_F__Kernel

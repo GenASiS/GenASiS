@@ -12,8 +12,10 @@ module Coarsening_C_F__Form
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
       nRadiusZero, &
-      nPolarZero, &
-      nBlocksThreshold
+      nPolarZero!, &
+!      nBlocksThreshold
+    real ( KDR ) :: &
+      RadiusZero = 0.0_KDR
     class ( Fluid_D_Form ), pointer :: &
       Fluid => null ( )
   contains
@@ -31,7 +33,7 @@ module Coarsening_C_F__Form
 
     private :: &
       ComputeKernel, &
-      ComputeMoreKernel
+      ComputeBlocksKernel
 
     interface
       
@@ -52,7 +54,7 @@ module Coarsening_C_F__Form
           UseDeviceOption
       end subroutine ComputeKernel
 
-      module subroutine ComputeMoreKernel &
+      module subroutine ComputeBlocksKernel &
                ( FS, BP, BA, nBT, iS_2, iS_3, UseDeviceOption )
         use Basics
         implicit none
@@ -66,7 +68,23 @@ module Coarsening_C_F__Form
           iS_2, iS_3
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeMoreKernel
+      end subroutine ComputeBlocksKernel
+
+      module subroutine ComputeRadiusKernel &
+               ( FS, R, RZ, iS_2, iS_3, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          FS
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          R
+        real ( KDR ), intent ( in ) :: &
+          RZ
+        integer ( KDI ), intent ( in ) :: &
+          iS_2, iS_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeRadiusKernel
 
     end interface
 
@@ -90,15 +108,31 @@ contains
 
     C % Fluid        =>  F
 
-    C % nRadiusZero       =  1
-    C % nPolarZero        =  1
-    C % nBlocksThreshold  =  8
+    C % nRadiusZero  =  1
+    C % nPolarZero   =  1
+!    C % nBlocksThreshold  =  8
     call PROGRAM_HEADER % GetParameter &
            ( C % nRadiusZero, 'nRadiusZero' )    
     call PROGRAM_HEADER % GetParameter &
-           ( C % nPolarZero,  'nPolarZero' )    
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nBlocksThreshold, 'nBlocksThreshold' )    
+           ( C % nPolarZero, 'nPolarZero' )    
+!    call PROGRAM_HEADER % GetParameter &
+!           ( C % nBlocksThreshold, 'nBlocksThreshold' )    
+
+    select type ( A  =>  C % Atlas )
+      class is ( Atlas_SCG_CC_Form )
+    associate &
+      ( C_GS_CC  =>  A % Chart_GS_CC )
+
+    C % RadiusZero  =  C_GS_CC % RadiusCore  /  3.0_KDR    
+    call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )    
+
+    end associate !-- C_GS_CC
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Coarsening_C_F__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize_C_F', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
 
   end subroutine Initialize_C_F
 
@@ -112,7 +146,22 @@ contains
 
     call Show ( FS % nRadiusZero, 'nRadiusZero' )
     call Show ( FS % nPolarZero, 'nPolarZero' )
-    call Show ( FS % nBlocksThreshold, 'nBlocksThreshold' )
+!    call Show ( FS % nBlocksThreshold, 'nBlocksThreshold' )
+    
+    select type ( A  =>  FS % Atlas )
+      class is ( Atlas_SCG_CC_Form )
+    associate &
+      ( C_GS_CC  =>  A % Chart_GS_CC )
+
+    call Show ( FS % RadiusZero, C_GS_CC % CoordinateUnit ( 1 ), 'RadiusZero' )
+
+    end associate !-- C_GS_CC
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Coarsening_C_F__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Show_FS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
 
   end subroutine Show_FS
 
@@ -134,6 +183,7 @@ contains
       class is ( Atlas_SCG_CC_Form )
     associate &
       ( F        =>  C % Fluid, &
+        G        =>  C % Geometry, &
         C_GS_CC  =>  A % Chart_GS_CC )
 
     call Search &
@@ -158,26 +208,32 @@ contains
              nPZ  = C % nPolarZero, &
              iS_2 = iMomentum_2, &
              iS_3 = iMomentum_3, &
-             UseDeviceOption = C % DeviceMemory )
+             UseDeviceOption = FS % DeviceMemory )
     
-    call ComputeMoreKernel &
+    ! call ComputeBlocksKernel &
+    !        (  FS  = FS % Storage_GS % Value, &
+    !           BP  = C  % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
+    !           BA  = C  % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
+    !          nBT  = C  % nBlocksThreshold, &
+    !          iS_2 = iMomentum_2, &
+    !          iS_3 = iMomentum_3, &
+    !          UseDeviceOption = C % DeviceMemory )
+
+    call ComputeRadiusKernel &
            (  FS  = FS % Storage_GS % Value, &
-              BP  = C  % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
-              BA  = C  % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
-             nBT  = C  % nBlocksThreshold, &
+              R   = G  % Storage_GS % Value ( :, G % CENTER_U_1 ), &
+              RZ  = C % RadiusZero, &
              iS_2 = iMomentum_2, &
              iS_3 = iMomentum_3, &
-             UseDeviceOption = C % DeviceMemory )
+             UseDeviceOption = FS % DeviceMemory )
 
     call FS % Storage_GS % ReassociateHost &
            ( AssociateVariablesOption = .true. )
 
-
     end associate !-- F, etc.
-
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Coarsening_C_F_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Coarsening_C_F__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
