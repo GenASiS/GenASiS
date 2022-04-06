@@ -180,7 +180,7 @@ contains
 
     !-- Courant factor
 
-    I % CourantFactor  =  0.7_KDR
+    I % CourantFactor  =  0.95_KDR
     call PROGRAM_HEADER % GetParameter ( I % CourantFactor, 'CourantFactor' )
 
   end subroutine Initialize_H
