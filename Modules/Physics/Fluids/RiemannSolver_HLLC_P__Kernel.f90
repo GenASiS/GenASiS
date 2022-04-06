@@ -84,4 +84,176 @@ contains
   end procedure ComputeCenterSpeedKernel
 
 
+  module procedure ComputeCenterStatesKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      AM_VL, &
+      AM_AC, &
+      AM_AC_Inv, &
+      AP_VR, &
+      AP_AC, &
+      AP_AC_Inv, &
+      SqrtTiny
+    logical ( KDL ) :: &  
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV = size ( AC_I )
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+
+    if ( UseDevice ) then
+            
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP private ( AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
+      !$OMP firstprivate ( SqrtTiny )
+      do iV  =  1,  nV
+
+        V_1_ICL ( iV )  =  V_1_IL ( iV )
+        V_1_ICR ( iV )  =  V_1_IR ( iV )
+
+        V_2_ICL ( iV )  =  V_2_IL ( iV )
+        V_2_ICR ( iV )  =  V_2_IR ( iV )
+
+        V_3_ICL ( iV )  =  V_3_IL ( iV )
+        V_3_ICR ( iV )  =  V_3_IR ( iV )
+
+        V_D_ICL ( iV )  =  AC_I ( iV )
+        V_D_ICR ( iV )  =  AC_I ( iV )
+
+        AM_VL     =  AM_I ( iV )  +  V_D_IL ( iV )
+        AM_AC     =  AM_I ( iV )  +  AC_I ( iV )
+  !      AM_AC_Inv =  1.0_KDR &
+  !                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
+        AM_AC_Inv =  1.0_KDR &
+                     / max ( abs ( AM_AC ), SqrtTiny )
+
+        AP_VR     =  AP_I ( iV )  -  V_D_IR ( iV )
+        AP_AC     =  AP_I ( iV )  -  AC_I ( iV )
+  !      AP_AC_Inv =  1.0_KDR &
+  !                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
+        AP_AC_Inv =  1.0_KDR &
+                     / max ( abs ( AP_AC ), SqrtTiny )
+
+        M_ICL ( iV )  =  M_IL ( iV )
+        M_ICR ( iV )  =  M_IR ( iV )
+
+        D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
+        D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
+
+        S_1_ICL ( iV )  =  M_DD_11 ( iV )  &
+                           *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_1_ICL ( iV )
+        S_1_ICR ( iV )  =  M_DD_11 ( iV )  &
+                           *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_1_ICR ( iV )
+
+        S_2_ICL ( iV )  =  M_DD_22 ( iV )  &
+                           *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
+        S_2_ICR ( iV )  =  M_DD_22 ( iV )  &
+                           *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
+
+        S_3_ICL ( iV )  =  M_DD_33 ( iV )  &
+                           *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
+        S_3_ICR ( iV )  =  M_DD_33 ( iV )  &
+                           *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
+
+        P_ICL ( iV )  =  P_IL ( iV )  +  S_D_IL  ( iV ) * AM_VL &
+                                      -  S_D_ICL ( iV ) * AM_AC
+        P_ICR ( iV )  =  P_IR ( iV )  -  S_D_IR  ( iV ) * AP_VR &
+                                      +  S_D_ICR ( iV ) * AP_AC
+
+        G_ICL ( iV )  =  ( G_IL ( iV ) * AM_VL &
+                           +  V_D_IL ( iV ) * P_IL ( iV ) &
+                           -  AC_I ( iV ) * P_ICL ( iV ) ) &
+                         * AM_AC_Inv
+        G_ICR ( iV )  =  ( G_IR ( iV ) * AP_VR &
+                           -  V_D_IR ( iV ) * P_IR ( iV ) &
+                           +  AC_I ( iV ) * P_ICR ( iV ) ) &
+                         * AP_AC_Inv
+
+      end do !-- iV
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else 
+      
+      ! !$OMP parallel do &
+      ! !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      ! !$OMP private ( AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
+      ! !$OMP firstprivate ( SqrtTiny )
+      do iV  =  1,  nV
+
+        V_1_ICL ( iV )  =  V_1_IL ( iV )
+        V_1_ICR ( iV )  =  V_1_IR ( iV )
+
+        V_2_ICL ( iV )  =  V_2_IL ( iV )
+        V_2_ICR ( iV )  =  V_2_IR ( iV )
+
+        V_3_ICL ( iV )  =  V_3_IL ( iV )
+        V_3_ICR ( iV )  =  V_3_IR ( iV )
+
+        V_D_ICL ( iV )  =  AC_I ( iV )
+        V_D_ICR ( iV )  =  AC_I ( iV )
+
+        AM_VL     =  AM_I ( iV )  +  V_D_IL ( iV )
+        AM_AC     =  AM_I ( iV )  +  AC_I ( iV )
+  !      AM_AC_Inv =  1.0_KDR &
+  !                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
+        AM_AC_Inv =  1.0_KDR &
+                     / max ( abs ( AM_AC ), SqrtTiny )
+
+        AP_VR     =  AP_I ( iV )  -  V_D_IR ( iV )
+        AP_AC     =  AP_I ( iV )  -  AC_I ( iV )
+  !      AP_AC_Inv =  1.0_KDR &
+  !                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
+        AP_AC_Inv =  1.0_KDR &
+                     / max ( abs ( AP_AC ), SqrtTiny )
+
+        M_ICL ( iV )  =  M_IL ( iV )
+        M_ICR ( iV )  =  M_IR ( iV )
+
+        D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
+        D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
+
+        S_1_ICL ( iV )  =  M_DD_11 ( iV )  &
+                           *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_1_ICL ( iV )
+        S_1_ICR ( iV )  =  M_DD_11 ( iV )  &
+                           *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_1_ICR ( iV )
+
+        S_2_ICL ( iV )  =  M_DD_22 ( iV )  &
+                           *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
+        S_2_ICR ( iV )  =  M_DD_22 ( iV )  &
+                           *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
+
+        S_3_ICL ( iV )  =  M_DD_33 ( iV )  &
+                           *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
+        S_3_ICR ( iV )  =  M_DD_33 ( iV )  &
+                           *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
+
+        P_ICL ( iV )  =  P_IL ( iV )  +  S_D_IL  ( iV ) * AM_VL &
+                                      -  S_D_ICL ( iV ) * AM_AC
+        P_ICR ( iV )  =  P_IR ( iV )  -  S_D_IR  ( iV ) * AP_VR &
+                                      +  S_D_ICR ( iV ) * AP_AC
+
+        G_ICL ( iV )  =  ( G_IL ( iV ) * AM_VL &
+                           +  V_D_IL ( iV ) * P_IL ( iV ) &
+                           -  AC_I ( iV ) * P_ICL ( iV ) ) &
+                         * AM_AC_Inv
+        G_ICR ( iV )  =  ( G_IR ( iV ) * AP_VR &
+                           -  V_D_IR ( iV ) * P_IR ( iV ) &
+                           +  AC_I ( iV ) * P_ICR ( iV ) ) &
+                         * AP_AC_Inv
+
+      end do !-- iV
+      ! !$OMP end parallel do
+
+    end if
+    
+  end procedure ComputeCenterStatesKernel
+
+
 end submodule RiemannSolver_HLLC_P__Kernel
