@@ -97,7 +97,7 @@ contains
     associate &
       ( I   =>  S % Interior, &
         By  =>  S % Boundary, &
-        T   =>  S % Total, &
+        Tl  =>  S % Total, &
         C   =>  S % Change, &
         Bc  =>  S % Basic )
     call I % Initialize &
@@ -110,7 +110,7 @@ contains
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
              NameOption = trim ( CS % Name ) // '_Boundary', &
              ClearOption = .true. )
-    call T % Initialize &
+    call Tl % Initialize &
            ( [ Bc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
              NameOption = trim ( CS % Name ) // '_Total', &
@@ -124,7 +124,7 @@ contains
       associate ( CI => S % CurveImage )
       call CI % AddStorage ( I )
       call CI % AddStorage ( By )
-      call CI % AddStorage ( T )
+      call CI % AddStorage ( Tl )
       call CI % AddStorage ( C )
       end associate !-- CI
     end if
