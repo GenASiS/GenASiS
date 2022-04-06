@@ -673,12 +673,12 @@ contains
       ( RSS     =>  RS % Storage ( iC ), &
         CSS_IL  =>  RS % CurrentSet_IL % Storage ( iC ), &
         CSS_IR  =>  RS % CurrentSet_IR % Storage ( iC ), &
-        RFS_IL  =>  RS % FluxSet_IL % Storage ( iC ), &
-        RFS_IR  =>  RS % FluxSet_IR % Storage ( iC ) )
+        FSS_IL  =>  RS % FluxSet_IL % Storage ( iC ), &
+        FSS_IR  =>  RS % FluxSet_IR % Storage ( iC ) )
     associate &
       (   RSV  =>  RSS % Value, &
-         F_IL  =>  RFS_IL % Value, &
-         F_IR  =>  RFS_IR % Value, &
+         F_IL  =>  FSS_IL % Value, &
+         F_IR  =>  FSS_IR % Value, &
          U_IL  =>  CSS_IL % Value, &
          U_IR  =>  CSS_IR % Value )
     
@@ -686,21 +686,21 @@ contains
     
     call CSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
-    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
-    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    call FSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call FSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
     
     call ComputeKernel &
            ( RSV, F_IL, F_IR, U_IL, U_IR, CS % iaBalanced, iaFluxes, &
              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
              UseDeviceOption = RS % DeviceMemory )
 
-    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
-    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+    call FSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call FSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
 
-    end associate !-- F_I, etc.
     end associate !-- RSV, etc.
+    end associate !-- RSS, etc.
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
     end associate !-- CS, etc.

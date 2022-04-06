@@ -181,10 +181,10 @@ contains
     
     else 
       
-      ! !$OMP parallel do &
-      ! !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      ! !$OMP private ( AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
-      ! !$OMP firstprivate ( SqrtTiny )
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP private ( AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
+      !$OMP firstprivate ( SqrtTiny )
       do iV  =  1,  nV
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )
@@ -249,11 +249,98 @@ contains
                          * AP_AC_Inv
 
       end do !-- iV
-      ! !$OMP end parallel do
+      !$OMP end parallel do
 
     end if
     
   end procedure ComputeCenterStatesKernel
+
+
+  module procedure ComputeKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      iF, &
+      iF_F, &
+      nV, &
+      nF
+    logical ( KDL ) :: &  
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+    
+    nV  =  size ( RSV, dim = 1 )
+    nF  =  size ( iaFluxes )
+    
+    associate &
+      ( F_I  => RSV, &
+        AP_I => RSV ( :, iAP ), &
+        AM_I => RSV ( :, iAM ), &
+        AC_I => RSV ( :, iAC ) )
+    
+    if ( UseDevice ) then
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iF_F )
+      do iF  =  1,  nF
+        do iV  =  1,  nV
+
+        !   !-- If flagged for diffusive flux, leave HLL flux in place
+        !   if ( DF_I ( iV ) > 0.0_KDR ) &
+        !     cycle
+
+          iF_F  =  iaFluxes ( iF )
+
+          if ( AP_I ( iV )  /=  0.0_KDR .and. AM_I ( iV )  /=  0.0_KDR ) then
+            !-- Use the appropriate center state flux
+            if ( AC_I ( iV )  >=  0.0_KDR ) then
+              F_I ( iV, iF_F )  =  F_ICL ( iV, iF_F )
+            else !-- AC < 0
+              F_I ( iV, iF_F )  =  F_ICR ( iV, iF_F )
+            end if !-- AC >= 0
+          else  !-- AP or AM == 0
+            !-- Leave HLL flux in place (which is upwind in this case)
+          end if !-- AP and AM /= 0
+
+        end do !-- iV
+      end do !-- iF
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+
+      !$OMP parallel do collapse ( 2 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF_F )
+      do iF  =  1,  nF
+        do iV  =  1,  nV
+
+        !   !-- If flagged for diffusive flux, leave HLL flux in place
+        !   if ( DF_I ( iV ) > 0.0_KDR ) &
+        !     cycle
+
+          iF_F  =  iaFluxes ( iF )
+
+          if ( AP_I ( iV )  /=  0.0_KDR .and. AM_I ( iV )  /=  0.0_KDR ) then
+            !-- Use the appropriate center state flux
+            if ( AC_I ( iV )  >=  0.0_KDR ) then
+              F_I ( iV, iF_F )  =  F_ICL ( iV, iF_F )
+            else !-- AC < 0
+              F_I ( iV, iF_F )  =  F_ICR ( iV, iF_F )
+            end if !-- AC >= 0
+          else  !-- AP or AM == 0
+            !-- Leave HLL flux in place (which is upwind in this case)
+          end if !-- AP and AM /= 0
+
+        end do !-- iV
+      end do !-- iF
+      !$OMP end parallel do
+    
+    end if
+
+    end associate   !-- F_I, AP_I, AM_I
+
+  end procedure ComputeKernel
 
 
 end submodule RiemannSolver_HLLC_P__Kernel

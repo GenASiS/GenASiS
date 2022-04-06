@@ -35,7 +35,9 @@ module RiemannSolver_HLLC_P__Form
       ComputeCenterStates_P
 
     private :: &
-      ComputeCenterSpeedKernel
+      ComputeCenterSpeedKernel, &
+      ComputeCenterStatesKernel, &
+      ComputeKernel
 
     interface 
 
@@ -101,6 +103,24 @@ module RiemannSolver_HLLC_P__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeCenterStatesKernel
+
+      module subroutine ComputeKernel &
+               ( RSV, F_ICL, F_ICR, iaFluxes, iAP, iAM, iAC, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          RSV     !-- RiemannSolver Value
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          F_ICL, F_ICR
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaFluxes
+        integer ( KDI ), intent ( in ) :: &
+          iAP, &  !-- iAlphaPlus
+          iAM, &  !-- iAlphaMinus
+          iAC
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeKernel
 
     end interface
 
@@ -223,7 +243,10 @@ contains
 
     integer ( KDI ) :: &
       iDensity, &
-      iMomentum
+      iMomentum, &
+      iF
+    integer ( KDI ), dimension ( RS % CurrentSet % nBalanced ) :: &
+      iaFluxes
     real ( KDR ), dimension ( : ), pointer :: &
       M_UU
 
@@ -233,18 +256,22 @@ contains
       class is ( Fluid_P_Form )
     associate &
       (  G      =>  CS % Geometry, &
+        FS_IL   =>  RS % FluxSet_IL, &
+        FS_IR   =>  RS % FluxSet_IR, &
+        CS_IL   =>  RS % CurrentSet_IL, &
+        CS_IR   =>  RS % CurrentSet_IR, &
         CS_ICL  =>  RS % CurrentSet_ICL, &
         CS_ICR  =>  RS % CurrentSet_ICR, &
-         M_I    =>  RS % Metric_I)
+         M_I    =>  RS % Metric_I )
     
     call G % ComputeReconstruction ( M_I, iC, iD )
 
     associate &
-      ( RSV      =>  RS % Storage ( iC ) % Value, &
-        FS_IL_V  =>  RS % FluxSet_IL % Storage ( iC ) % Value, &
-        FS_IR_V  =>  RS % FluxSet_IR % Storage ( iC ) % Value, &
-        CS_IL_V  =>  RS % CurrentSet_IL % Storage ( iC ) % Value, &
-        CS_IR_V  =>  RS % CurrentSet_IR % Storage ( iC ) % Value )
+      ( RSV      =>  RS    % Storage ( iC ) % Value, &
+        FS_IL_V  =>  FS_IL % Storage ( iC ) % Value, &
+        FS_IR_V  =>  FS_IR % Storage ( iC ) % Value, &
+        CS_IL_V  =>  CS_IL % Storage ( iC ) % Value, &
+        CS_IR_V  =>  CS_IR % Storage ( iC ) % Value )
     associate &
       ( M_DD_11  =>  M_I % Storage ( iC ) % Value ( :, 1 ), &
         M_DD_22  =>  M_I % Storage ( iC ) % Value ( :, 2 ), &
@@ -284,6 +311,32 @@ contains
 
     call RS % ComputeCenterStates ( iC, iD )
 
+    !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
+    call DP % ComputeFluxes ( FS_IL, CS_ICL, iC, iD )
+    call DP % ComputeFluxes ( FS_IR, CS_ICR, iC, iD )
+
+    associate &
+      ( FSS_IL  =>  FS_IL % Storage ( iC ), &
+        FSS_IR  =>  FS_IR % Storage ( iC ) )
+    associate &
+      ( F_IL  =>  FSS_IL % Value, &
+        F_IR  =>  FSS_IR % Value )
+
+    iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
+    
+    call FSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call FSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+
+    call ComputeKernel &
+           ( RSV, F_IL, F_IR, iaFluxes, &
+             RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, RS % ALPHA_CENTER_U, &
+             UseDeviceOption = RS % DeviceMemory )
+
+    call FSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call FSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+
+    end associate !-- F_IL, etc.
+    end associate !-- FSS_IL, etc.
     end associate !-- M_DD_11, etc.
     end associate !-- RSV, etc.
     end associate !-- G, etc.
@@ -331,9 +384,7 @@ contains
     select type ( CS  =>  RS % CurrentSet )
       class is ( Fluid_P_Form )
     associate &
-      ( CS_ICL  =>  RS % CurrentSet_ICL, &
-        CS_ICR  =>  RS % CurrentSet_ICR, &
-         M_I    =>  RS % Metric_I)
+      ( M_I  =>  RS % Metric_I )
     associate &
       ( RSV       =>  RS % Storage ( iC ) % Value, &
         CS_ICL_V  =>  RS % CurrentSet_ICL % Storage ( iC ) % Value, &
@@ -407,7 +458,7 @@ contains
 
     end associate !-- M_DD_11, etc.
     end associate !-- RSV, etc.
-    end associate !-- CS_ICL, etc.
+    end associate !-- M_I
     end select !-- CS
 
   end subroutine ComputeCenterStates_P
