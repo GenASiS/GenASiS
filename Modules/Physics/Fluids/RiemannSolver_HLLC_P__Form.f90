@@ -18,7 +18,8 @@ module RiemannSolver_HLLC_P__Form
     integer ( KDI ) :: &
       ALPHA_CENTER_U = 0
     type ( FieldSetForm ), allocatable :: &
-      Metric_I
+      Metric_I, &
+      CurrentSet_ICL, CurrentSet_ICR
   contains
     procedure, private, pass :: &
       InitializeAllocate_RS
@@ -128,6 +129,34 @@ contains
              nFieldsOption = 6 )
     end associate !-- M_I
 
+    !-- Center states
+
+    allocate &
+      ( RS % CurrentSet_ICL, &
+        RS % CurrentSet_ICR )
+    associate &
+      ( CS_ICL  =>  RS % CurrentSet_ICL, &
+        CS_ICR  =>  RS % CurrentSet_ICR )
+    call CS_ICL % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Field, &
+             NameOption = trim ( CS % Name ) // '_ICL', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             UnitOption = CS % Unit, &
+             nFieldsOption = CS % nFields, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    call CS_ICR % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Field, &
+             NameOption = trim ( CS % Name ) // '_ICR', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             UnitOption = CS % Unit, &
+             nFieldsOption = CS % nFields, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    end associate !-- CS_ICL, etc.
+
   end subroutine InitializeAllocate_RS
 
 
@@ -216,6 +245,10 @@ contains
     type ( RiemannSolver_HLLC_P_Form ), intent ( inout ) :: &
       RS
 
+    if ( allocated ( RS % CurrentSet_ICR ) ) &
+      deallocate ( RS % CurrentSet_ICR )
+    if ( allocated ( RS % CurrentSet_ICL ) ) &
+      deallocate ( RS % CurrentSet_ICL )
     if ( allocated ( RS % Metric_I ) ) &
       deallocate ( RS % Metric_I )
 

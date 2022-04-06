@@ -196,30 +196,30 @@ contains
                NameOption = trim ( CS % Name ) // '_Prmtv', &
                IgnorabilityOption = CS % IGNORABILITY + 1 )
 
-    allocate &
-      ( RS % CurrentSet_IL, &
-        RS % CurrentSet_IR )
-    associate &
-      ( CS_IL  =>  RS % CurrentSet_IL, &
-        CS_IR  =>  RS % CurrentSet_IR )
-    call CS_IL % Initialize &
-           ( CS % Atlas, &
-             FieldOption = CS % Field, &
-             NameOption = trim ( CS % Name ) // '_IL', &
-             DeviceMemoryOption = CS % DeviceMemory, &
-             DevicesCommunicateOption = CS % DevicesCommunicate, &
-             UnitOption = CS % Unit, &
-             nFieldsOption = CS % nFields, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
-    call CS_IR % Initialize &
-           ( CS % Atlas, &
-             FieldOption = CS % Field, &
-             NameOption = trim ( CS % Name ) // '_IR', &
-             DeviceMemoryOption = CS % DeviceMemory, &
-             DevicesCommunicateOption = CS % DevicesCommunicate, &
-             UnitOption = CS % Unit, &
-             nFieldsOption = CS % nFields, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
+      allocate &
+        ( RS % CurrentSet_IL, &
+          RS % CurrentSet_IR )
+      associate &
+        ( CS_IL  =>  RS % CurrentSet_IL, &
+          CS_IR  =>  RS % CurrentSet_IR )
+      call CS_IL % Initialize &
+             ( CS % Atlas, &
+               FieldOption = CS % Field, &
+               NameOption = trim ( CS % Name ) // '_IL', &
+               DeviceMemoryOption = CS % DeviceMemory, &
+               DevicesCommunicateOption = CS % DevicesCommunicate, &
+               UnitOption = CS % Unit, &
+               nFieldsOption = CS % nFields, &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )
+      call CS_IR % Initialize &
+             ( CS % Atlas, &
+               FieldOption = CS % Field, &
+               NameOption = trim ( CS % Name ) // '_IR', &
+               DeviceMemoryOption = CS % DeviceMemory, &
+               DevicesCommunicateOption = CS % DevicesCommunicate, &
+               UnitOption = CS % Unit, &
+               nFieldsOption = CS % nFields, &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )
 
       allocate ( RS % Reconstruction_PS )
       associate ( RPS  =>  RS % Reconstruction_PS )
