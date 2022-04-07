@@ -767,6 +767,8 @@ contains
 
     logical ( KDL ) :: &
       DivergenceParts
+    character ( LDL ) :: &
+      RiemannSolverType
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
@@ -835,15 +837,39 @@ contains
           call DT % Initialize ( F )
         end associate !-- DT
       class is ( Fluid_P_I_Form )
+
         allocate ( DivergencePart_F_P_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
+
+        RiemannSolverType = 'HLLC'
+        call PROGRAM_HEADER % GetParameter &
+               ( RiemannSolverType, 'RiemannSolverType' )
+        if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+          allocate ( RiemannSolver_HLLC_P_Form :: S % RiemannSolver )
+          associate ( RS  =>  S % RiemannSolver )
+          call RS % Initialize ( F )
+          end associate !-- RS
+        end if
+        
       class is ( Fluid_P_HN_Form )
+
         allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
+
+        RiemannSolverType = 'HLLC'
+        call PROGRAM_HEADER % GetParameter &
+               ( RiemannSolverType, 'RiemannSolverType' )
+        if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+          allocate ( RiemannSolver_HLLC_P_HN_Form :: S % RiemannSolver )
+          associate ( RS  =>  S % RiemannSolver )
+          call RS % Initialize ( F )
+          end associate !-- RS
+        end if
+        
       class default
         call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
         call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
