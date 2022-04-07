@@ -283,7 +283,7 @@ contains
       M_UU  =>  M_UU_33
     end select
 
-    call Search ( CS % iaBalanced, CS % BARYON_DENSITY_C,          iDensity )
+    call Search ( CS % iaBalanced, CS % BARYON_DENSITY_B,          iDensity )
     call Search ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D ( iD ), iMomentum )
 
     call ComputeCenterSpeedKernel &
