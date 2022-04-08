@@ -706,7 +706,9 @@ contains
             class is ( Geometry_F_Form )
           call F_AA % Initialize &
                  ( G_AA, U % Units_F, NameOption = trim ( F % Name ) // '_AA' )
-          call AA % Initialize ( G, F, A_AA, iaAverageOption = F % iaBalanced )
+          call AA % Initialize &
+                 ( G, F, A_AA, &
+                   iaAverageOption = [ F % iaBalanced, F % TEMPERATURE ] )
           end select !-- G_AA
           end select !-- F_AA
           end associate !-- AA, etc.
@@ -725,7 +727,9 @@ contains
             class is ( Geometry_F_Form )
           call F_SA % Initialize &
                  ( G_SA, U % Units_F, NameOption = trim ( F % Name ) // '_SA' )
-          call SA % Initialize ( G, F, A_SA, iaAverageOption = F % iaBalanced )
+          call SA % Initialize &
+                 ( G, F, A_SA, &
+                   iaAverageOption = [ F % iaBalanced, F % TEMPERATURE ] )
           end select !-- G_SA
           end select !-- F_SA
           end associate !-- SA, etc.
