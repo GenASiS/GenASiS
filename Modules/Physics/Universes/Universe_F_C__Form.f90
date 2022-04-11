@@ -843,7 +843,7 @@ contains
           call DT % Initialize ( F )
         end associate !-- DT
 
-        RiemannSolverType = 'HLLC'
+        RiemannSolverType = 'HLL'
         call PROGRAM_HEADER % GetParameter &
                ( RiemannSolverType, 'RiemannSolverType' )
         if ( trim ( RiemannSolverType ) == 'HLLC' ) then
@@ -860,7 +860,7 @@ contains
           call DT % Initialize ( F )
         end associate !-- DT
 
-        RiemannSolverType = 'HLLC'
+        RiemannSolverType = 'HLL'
         call PROGRAM_HEADER % GetParameter &
                ( RiemannSolverType, 'RiemannSolverType' )
         if ( trim ( RiemannSolverType ) == 'HLLC' ) then
