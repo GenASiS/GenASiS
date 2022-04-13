@@ -227,7 +227,7 @@ contains
     end select !-- A
     end select !-- F
     end select !-- I
-    end select !-- OS
+    end select !-- RP
 
   end subroutine SetInitial
 

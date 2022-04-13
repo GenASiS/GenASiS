@@ -67,7 +67,7 @@ module Universe_F_C__Form
   end type Universe_F_C_Form
 
     private :: &
-      SetSlope_N_SG
+      SetSlope_N
 
     private :: &
       Compute_dT_CS_CGS_C_Kernel
@@ -782,8 +782,8 @@ contains
       class is ( Step_RK_CS_Form )
 
     select type ( G )
-    class is ( Gravitation_N_SG_Form )
-      S % SetSlope  =>  SetSlope_N_SG
+    class is ( Gravitation_N_H_Form )
+      S % SetSlope  =>  SetSlope_N
     end select !-- G
 
     DivergenceParts  =  .false.
@@ -1164,7 +1164,7 @@ contains
   end subroutine Write_F_C
 
 
-  subroutine SetSlope_N_SG ( S, K )
+  subroutine SetSlope_N ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
@@ -1233,7 +1233,7 @@ contains
     end select !-- S
     end select !-- K
 
-  end subroutine SetSlope_N_SG
+  end subroutine SetSlope_N
 
 
 end module Universe_F_C__Form

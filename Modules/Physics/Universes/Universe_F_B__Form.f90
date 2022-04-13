@@ -35,6 +35,8 @@ module Universe_F_B__Form
       InitializeStep
    end type Universe_F_B_Form
 
+    private :: &
+      SetSlope_N
 
 contains
 
@@ -42,8 +44,8 @@ contains
   subroutine Initialize_F_B &
                ( U, FluidType, GravitationType, NameOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
-                 nCellsOption, nWriteOption )
-!                 CourantFactorOption, UniformAccelerationOption, &
+                 UniformAccelerationOption, nCellsOption, nWriteOption )
+!                 CourantFactorOption, 
 
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
@@ -56,9 +58,9 @@ contains
       MinCoordinateOption, &
       MaxCoordinateOption
     real ( KDR ), intent ( in ), optional :: &
-      FinishTimeOption!, &
+      FinishTimeOption, &
+      UniformAccelerationOption
 !       CourantFactorOption, &
-!       UniformAccelerationOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -85,8 +87,8 @@ contains
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsOption )
     call U % InitializeGravitation &
-           ( GravitationType )
-!              UniformAccelerationOption = UniformAccelerationOption, &
+           ( GravitationType, &
+             UniformAccelerationOption = UniformAccelerationOption )
     call U % InitializeFluid &
            ( FluidType )
     call U % InitializeStep &
@@ -163,14 +165,15 @@ contains
   end subroutine InitializePositionSpace
 
 
-  subroutine InitializeGravitation ( U, GravitationType )
+  subroutine InitializeGravitation &
+               ( U, GravitationType, UniformAccelerationOption )
 
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
     character ( * ), intent ( in ) :: &
       GravitationType
-!     real ( KDR ), intent ( in ), optional :: &
-!       UniformAccelerationOption
+    real ( KDR ), intent ( in ), optional :: &
+      UniformAccelerationOption
 
     associate ( I  =>  U % Integrator )
 
@@ -185,6 +188,26 @@ contains
                PinnedMemoryOption = U % PinnedMemory, &
                DevicesCommunicateOption = U % DevicesCommunicate )
       end select !-- G
+    case ( 'NEWTON_UA' )
+
+      if ( .not. present ( UniformAccelerationOption ) ) then
+        call Show ( 'UniformAccelerationOption not present', CONSOLE % ERROR )
+        call Show ( 'NEWTON_UA', 'GravitationType', CONSOLE % ERROR )
+        call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeGravitation', 'subroutine', CONSOLE % ERROR )
+      end if
+
+      allocate ( Gravitation_N_UA_Form  ::  I % Geometry_X )
+      select type ( G  =>  I % Geometry_X )
+        class is ( Gravitation_N_UA_Form )
+      call G % Initialize &
+             ( I % X, &
+               Acceleration = UniformAccelerationOption, &
+               DeviceMemoryOption = U % DeviceMemory, &
+               PinnedMemoryOption = U % PinnedMemory, &
+               DevicesCommunicateOption = U % DevicesCommunicate )
+      end select !-- G
+
     case default
       call Show ( 'GravitationType not recognized', CONSOLE % ERROR )
       call Show ( GravitationType, 'GravitationType', CONSOLE % ERROR )
@@ -324,10 +347,17 @@ contains
       class is ( Integrator_CS_Form )
     associate &
       ( F  =>  I % CurrentSet_X )
+    associate &
+      ( G  =>  I % Geometry_X )
 
     allocate ( Step_RK_CS_Form :: I % Step_X )
     select type ( S  =>  I % Step_X )
       class is ( Step_RK_CS_Form )
+
+    select type ( G )
+    class is ( Gravitation_N_H_Form )
+      S % SetSlope  =>  SetSlope_N
+    end select !-- G
 
     DivergenceParts  =  .false.
     call PROGRAM_HEADER % GetParameter ( DivergenceParts, 'DivergenceParts' )
@@ -399,10 +429,75 @@ contains
 
     end select !-- S
 
+    end associate !-- G
     end associate !-- F
     end select !-- I
 
   end subroutine InitializeStep
+
+
+  subroutine SetSlope_N ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    integer ( KDI ) :: &
+      iEnergy_B
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum_B
+    character ( 1 ) :: &
+      StageNumber
+
+    allocate ( Slope_DFV_N_Form :: K )
+
+    select type ( K )
+      class is ( Slope_DFV_N_Form )
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_D_Form ) 
+
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B ( 1 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B ( 2 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B ( 3 ) )
+
+    !-- Dust
+    iEnergy_B  =  0
+
+    !-- Perfect fluid
+    select type ( F )
+    class is ( Fluid_P_Form )
+      call Search &
+             ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_B )
+    end select !-- F
+
+    if ( allocated ( S % DivergenceTotal ) ) then
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               S % DivergenceTotal, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
+    else if ( allocated ( S % DivergencePart ) ) then
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               S % DivergencePart, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
+    end if  !-- DivergenceTotal
+
+    end select !-- F
+    end select !-- S
+    end select !-- K
+
+  end subroutine SetSlope_N
 
 
 end module Universe_F_B__Form
