@@ -19,14 +19,14 @@ module RiemannSolver_HLL__Form
       ALPHA_PLUS_U    = 0, &
       ALPHA_MINUS_U   = 0
     integer ( KDI ) :: &
-      iTimer_P   = 0, &  !-- Prepare
-      iTimer_C   = 0, &  !-- Compute
-      iTimer_R   = 0, &  !-- Reconstruction
-      iTimer_CFP = 0, &  !-- ComputeFromPrimitive
-      iTimer_E   = 0, &  !-- Eigenspeeds
-      iTimer_A   = 0, &  !-- Alpha
-      iTimer_F   = 0, &  !-- Flux
-      iTimer_K   = 0     !-- Kernel
+      iTimer_P     = 0, &  !-- Prepare
+      iTimer_C     = 0, &  !-- Compute
+      iTimer_R     = 0, &  !-- Reconstruction
+      iTimer_CFP   = 0, &  !-- ComputeFromPrimitive
+      iTimer_E     = 0, &  !-- Eigenspeeds
+      iTimer_A     = 0, &  !-- Alpha
+      iTimer_F     = 0, &  !-- Flux
+      iTimer_K_HLL = 0     !-- Kernel_HLL
     character ( LDL ) :: &
       ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
@@ -506,8 +506,8 @@ contains
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_K, &
-                     Name = trim ( RS % Name ) // '_Krnl', &
+                   ( Handle = RS % iTimer_K_HLL, &
+                     Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
@@ -580,8 +580,8 @@ contains
 
     if ( present ( T_Option ) ) then
       T_K   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_K, &
-                     Name = trim ( RS % Name ) // '_Krnl', &
+                   ( Handle = RS % iTimer_K_HLL, &
+                     Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_K   =>  null ( )
@@ -655,8 +655,8 @@ contains
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_K, &
-                     Name = trim ( RS % Name ) // '_Krnl', &
+                   ( Handle = RS % iTimer_K_HLL, &
+                     Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )

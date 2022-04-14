@@ -17,6 +17,13 @@ module RiemannSolver_HLLC_P__Form
       N_SOLVER_SPEEDS_HLLC = N_SOLVER_SPEEDS_HLLC
     integer ( KDI ) :: &
       ALPHA_CENTER_U = 0
+    integer ( KDI ) :: &
+      iTimer_HLL    = 0, &  !-- HLL
+      iTimer_GR     = 0, &  !-- GeometryReconstruction
+      iTimer_CSpd   = 0, &  !-- CenterSpeed
+      iTimer_CStt   = 0, &  !-- CenterState
+      iTimer_FC     = 0, &  !-- FluxCenter
+      iTimer_K_HLLC = 0     !-- Kernel_HLLC
     type ( FieldSetForm ), allocatable :: &
       Metric_I, &
       CurrentSet_ICL, CurrentSet_ICR
@@ -243,8 +250,26 @@ contains
       iaFluxes
     real ( KDR ), dimension ( : ), pointer :: &
       M_UU
+    type ( TimerForm ), pointer :: &
+      T_HLL, &
+      T_GR, &
+      T_CSpd, &
+      T_CStt, &
+      T_FC, &
+      T_K
 
+    if ( present ( T_Option ) ) then
+      T_HLL  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_HLL, &
+                     Name = trim ( RS % Name ) // '_HLL', &
+                     Level = T_Option % Level + 1 )
+    else
+      T_HLL  =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_HLL ) ) call T_HLL % Start ( )
     call RS % RiemannSolver_HLL_Form % Compute ( DP, iC, iD, T_Option )
+    if ( associated ( T_HLL ) ) call T_HLL % Stop ( )
 
     select type ( CS  =>  RS % CurrentSet )
       class is ( Fluid_P_Form )
@@ -258,7 +283,18 @@ contains
         CS_ICR  =>  RS % CurrentSet_ICR, &
          M_I    =>  RS % Metric_I )
     
+    if ( present ( T_Option ) ) then
+      T_GR  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = RS % iTimer_GR, &
+                    Name = trim ( RS % Name ) // '_GmtryRcnstrctn', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_GR  =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_GR ) ) call T_GR % Start ( )
     call G % ComputeReconstruction ( M_I, iC, iD )
+    if ( associated ( T_GR ) ) call T_GR % Stop ( )
 
     associate &
       ( RSV      =>  RS    % Storage ( iC ) % Value, &
@@ -286,6 +322,16 @@ contains
     call Search ( CS % iaBalanced, CS % BARYON_DENSITY_B,          iDensity )
     call Search ( CS % iaBalanced, CS % MOMENTUM_DENSITY_D ( iD ), iMomentum )
 
+    if ( present ( T_Option ) ) then
+      T_CSpd  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = RS % iTimer_CSpd, &
+                    Name = trim ( RS % Name ) // '_CntrSpd', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_CSpd  =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_CSpd ) ) call T_CSpd % Start ( )
     call ComputeCenterSpeedKernel &
            ( F_D_IL = FS_IL_V ( :, iDensity ), &
              F_D_IR = FS_IR_V ( :, iDensity ), &
@@ -302,12 +348,39 @@ contains
                M_UU = M_UU, &
               AC_I  = RSV     ( :, RS % ALPHA_CENTER_U ), &
              UseDeviceOption = RS % DeviceMemory )
+    if ( associated ( T_CSpd ) ) call T_CSpd % Stop ( )
 
+    if ( present ( T_Option ) ) then
+      T_CStt  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = RS % iTimer_CStt, &
+                    Name = trim ( RS % Name ) // '_CntrStt', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_CStt  =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_CStt ) ) call T_CStt % Start ( )
     call RS % ComputeCenterStates ( iC, iD )
+    if ( associated ( T_CStt ) ) call T_CStt % Stop ( )
+
+    if ( present ( T_Option ) ) then
+      T_FC  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = RS % iTimer_FC, &
+                    Name = trim ( RS % Name ) // '_FlxCntr', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_FC  =>  null ( )
+    end if !-- T_Option
 
     !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
+    if ( associated ( T_FC ) ) call T_FC % Start ( )
     call DP % ComputeFluxes ( FS_IL, CS_ICL, iC, iD )
     call DP % ComputeFluxes ( FS_IR, CS_ICR, iC, iD )
+    if ( associated ( T_FC ) ) call T_FC % Stop ( )
+
+    if ( associated ( T_CStt ) ) call T_CStt % Start ( )
+    call RS % ComputeCenterStates ( iC, iD )
+    if ( associated ( T_CStt ) ) call T_CStt % Stop ( )
 
     associate &
       ( FSS_IL  =>  FS_IL % Storage ( iC ), &
@@ -318,6 +391,16 @@ contains
 
     iaFluxes = [ ( iF, iF = 1, CS % nBalanced ) ]
     
+    if ( present ( T_Option ) ) then
+      T_K  =>  PROGRAM_HEADER % Timer &
+                  ( Handle = RS % iTimer_K_HLLC, &
+                    Name = trim ( RS % Name ) // '_Krnl_HLLC', &
+                    Level = T_Option % Level + 1 )
+    else
+      T_K  =>  null ( )
+    end if !-- T_Option
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
     call FSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call FSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
 
@@ -328,6 +411,7 @@ contains
 
     call FSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
     call FSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+    if ( associated ( T_K ) ) call T_K % Stop ( )
 
     end associate !-- F_IL, etc.
     end associate !-- FSS_IL, etc.
