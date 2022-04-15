@@ -366,6 +366,8 @@ contains
     integer ( KDI ) :: &
       iS, &  !-- iSelected
       iI     !-- iIntegral
+    real ( KDR ) :: &
+      Factor
 
     call T % ComputeInteriorIntegrand_G ( CS )
 
@@ -384,29 +386,26 @@ contains
         D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
         Phi  =>   GV ( :, G % POTENTIAL ) )
 
-!    select case ( trim ( GA % GravitySolverType ) )
-!    case ( 'UNIFORM', 'CENTRAL_MASS' )  !-- External potential
-!       do iS = 1, T % nSelected
-!         iI = T % iaSelected ( iS )
-!         if ( iI == T % GRAVITATIONAL_ENERGY ) then
-!           Integrand ( iS ) % Value  =  M * D * Phi
-!         else if ( iI == T % TOTAL_ENERGY ) then
-!           Integrand ( iS ) % Value  &
-!             =  Integrand ( iS ) % Value  +  M * D * Phi
-!         end if !-- iI
-!       end do !-- iS     
-!     case default
+    select type ( G )
+    type is ( Gravitation_N_UA_Form )
+      Factor  =  1.0_KDR  !-- external potential
+    type is ( Gravitation_N_SG_Form )
+      Factor  =  0.5_KDR  !-- self-gravity
+    class default 
+      call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeInteriorIntegrand_N', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- G
 
-      do iS  =  1,  T % nSelected
-        iI  =  T % iaSelected ( iS )
-        if ( iI  ==  T % GRAVITATIONAL_ENERGY ) then
-          IV ( :, iS )  =  0.5_KDR * M * D * Phi
-        else if ( iI  ==  T % TOTAL_ENERGY ) then
-          IV ( :, iS )  =  IV ( :, iS )  +  0.5_KDR * M * D * Phi
-        end if !-- iI
-      end do !-- iS     
-
-!     end select !-- GravitySolverType
+    do iS  =  1,  T % nSelected
+      iI  =  T % iaSelected ( iS )
+      if ( iI  ==  T % GRAVITATIONAL_ENERGY ) then
+        IV ( :, iS )  =  Factor * M * D * Phi
+      else if ( iI  ==  T % TOTAL_ENERGY ) then
+        IV ( :, iS )  =  IV ( :, iS )  +  Factor * M * D * Phi
+      end if !-- iI
+    end do !-- iS     
 
     end associate !-- M, etc.
     end associate !-- CSV, etc.

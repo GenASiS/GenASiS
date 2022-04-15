@@ -17,17 +17,16 @@ module RiemannSolver_HLL__Form
       N_SOLVER_SPEEDS_HLL = N_SOLVER_SPEEDS_HLL
     integer ( KDI ) :: &
       ALPHA_PLUS_U    = 0, &
-      ALPHA_MINUS_U   = 0, &
-      N_SOLVER_SPEEDS = 0
+      ALPHA_MINUS_U   = 0
     integer ( KDI ) :: &
-      iTimer_P   = 0, &  !-- Prepare
-      iTimer_C   = 0, &  !-- Compute
-      iTimer_R   = 0, &  !-- Reconstruction
-      iTimer_CFP = 0, &  !-- ComputeFromPrimitive
-      iTimer_E   = 0, &  !-- Eigenspeeds
-      iTimer_A   = 0, &  !-- Alpha
-      iTimer_F   = 0, &  !-- Flux
-      iTimer_K   = 0     !-- Kernel
+      iTimer_P     = 0, &  !-- Prepare
+      iTimer_C     = 0, &  !-- Compute
+      iTimer_R     = 0, &  !-- Reconstruction
+      iTimer_CFP   = 0, &  !-- ComputeFromPrimitive
+      iTimer_E     = 0, &  !-- Eigenspeeds
+      iTimer_A     = 0, &  !-- Alpha
+      iTimer_F     = 0, &  !-- Flux
+      iTimer_K_HLL = 0     !-- Kernel_HLL
     character ( LDL ) :: &
       ReconstructedSet = ''
     class ( FieldSetForm ), allocatable :: &
@@ -197,30 +196,30 @@ contains
                NameOption = trim ( CS % Name ) // '_Prmtv', &
                IgnorabilityOption = CS % IGNORABILITY + 1 )
 
-    allocate &
-      ( RS % CurrentSet_IL, &
-        RS % CurrentSet_IR )
-    associate &
-      ( CS_IL  =>  RS % CurrentSet_IL, &
-        CS_IR  =>  RS % CurrentSet_IR )
-    call CS_IL % Initialize &
-           ( CS % Atlas, &
-             FieldOption = CS % Field, &
-             NameOption = trim ( CS % Name ) // '_IL', &
-             DeviceMemoryOption = CS % DeviceMemory, &
-             DevicesCommunicateOption = CS % DevicesCommunicate, &
-             UnitOption = CS % Unit, &
-             nFieldsOption = CS % nFields, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
-    call CS_IR % Initialize &
-           ( CS % Atlas, &
-             FieldOption = CS % Field, &
-             NameOption = trim ( CS % Name ) // '_IR', &
-             DeviceMemoryOption = CS % DeviceMemory, &
-             DevicesCommunicateOption = CS % DevicesCommunicate, &
-             UnitOption = CS % Unit, &
-             nFieldsOption = CS % nFields, &
-             IgnorabilityOption = CS % IGNORABILITY + 1 )
+      allocate &
+        ( RS % CurrentSet_IL, &
+          RS % CurrentSet_IR )
+      associate &
+        ( CS_IL  =>  RS % CurrentSet_IL, &
+          CS_IR  =>  RS % CurrentSet_IR )
+      call CS_IL % Initialize &
+             ( CS % Atlas, &
+               FieldOption = CS % Field, &
+               NameOption = trim ( CS % Name ) // '_IL', &
+               DeviceMemoryOption = CS % DeviceMemory, &
+               DevicesCommunicateOption = CS % DevicesCommunicate, &
+               UnitOption = CS % Unit, &
+               nFieldsOption = CS % nFields, &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )
+      call CS_IR % Initialize &
+             ( CS % Atlas, &
+               FieldOption = CS % Field, &
+               NameOption = trim ( CS % Name ) // '_IR', &
+               DeviceMemoryOption = CS % DeviceMemory, &
+               DevicesCommunicateOption = CS % DevicesCommunicate, &
+               UnitOption = CS % Unit, &
+               nFieldsOption = CS % nFields, &
+               IgnorabilityOption = CS % IGNORABILITY + 1 )
 
       allocate ( RS % Reconstruction_PS )
       associate ( RPS  =>  RS % Reconstruction_PS )
@@ -283,12 +282,9 @@ contains
 
     !-- Field indices
 
-    if ( present ( nFieldsOption ) ) then
+    nFields  =  nB  +  RS % N_SOLVER_SPEEDS_HLL
+    if ( present ( nFieldsOption ) )  &
       nFields  =  nFieldsOption
-    else
-      RS % N_SOLVER_SPEEDS  =  RS % N_SOLVER_SPEEDS_HLL
-      nFields  =  nB  +  RS % N_SOLVER_SPEEDS
-    end if
 
     RS % ALPHA_PLUS_U   =  nB  +  1
     RS % ALPHA_MINUS_U  =  nB  +  2
@@ -303,7 +299,7 @@ contains
 
     Field ( : nB )  =  CS % Balanced
 
-    Field ( nB + 1 : nB + RS % N_SOLVER_SPEEDS ) &
+    Field ( nB + 1 : nB + RS % N_SOLVER_SPEEDS_HLL ) &
       =  [ 'AlphaPlus_U ', &
            'AlphaMinus_U' ]
           
@@ -510,8 +506,8 @@ contains
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_K, &
-                     Name = trim ( RS % Name ) // '_Krnl', &
+                   ( Handle = RS % iTimer_K_HLL, &
+                     Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
@@ -584,8 +580,8 @@ contains
 
     if ( present ( T_Option ) ) then
       T_K   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_K, &
-                     Name = trim ( RS % Name ) // '_Krnl', &
+                   ( Handle = RS % iTimer_K_HLL, &
+                     Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_K   =>  null ( )
@@ -625,7 +621,7 @@ contains
 
   subroutine Compute ( RS, DP, iC, iD, T_Option )
 
-    class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
+    class ( RiemannSolver_HLL_Form ), intent ( inout ), target :: &
       RS
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
@@ -659,8 +655,8 @@ contains
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_K, &
-                     Name = trim ( RS % Name ) // '_Krnl', &
+                   ( Handle = RS % iTimer_K_HLL, &
+                     Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
@@ -677,12 +673,12 @@ contains
       ( RSS     =>  RS % Storage ( iC ), &
         CSS_IL  =>  RS % CurrentSet_IL % Storage ( iC ), &
         CSS_IR  =>  RS % CurrentSet_IR % Storage ( iC ), &
-        RFS_IL  =>  RS % FluxSet_IL % Storage ( iC ), &
-        RFS_IR  =>  RS % FluxSet_IR % Storage ( iC ) )
+        FSS_IL  =>  RS % FluxSet_IL % Storage ( iC ), &
+        FSS_IR  =>  RS % FluxSet_IR % Storage ( iC ) )
     associate &
       (   RSV  =>  RSS % Value, &
-         F_IL  =>  RFS_IL % Value, &
-         F_IR  =>  RFS_IR % Value, &
+         F_IL  =>  FSS_IL % Value, &
+         F_IR  =>  FSS_IR % Value, &
          U_IL  =>  CSS_IL % Value, &
          U_IR  =>  CSS_IR % Value )
     
@@ -690,21 +686,21 @@ contains
     
     call CSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
-    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
-    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
+    call FSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
+    call FSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
     
     call ComputeKernel &
            ( RSV, F_IL, F_IR, U_IL, U_IR, CS % iaBalanced, iaFluxes, &
              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
              UseDeviceOption = RS % DeviceMemory )
 
-    call RFS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
-    call RFS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
+    call FSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
+    call FSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
     call CSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
 
-    end associate !-- F_I, etc.
     end associate !-- RSV, etc.
+    end associate !-- RSS, etc.
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
     end associate !-- CS, etc.

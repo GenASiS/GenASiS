@@ -1,8 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder RiemannProblem \
-  YahilLattimer #RayleighTaylor \
-     SedovTaylor FishboneMoncrief #LinMestelShu SASI \
+  RayleighTaylor YahilLattimer #SedovTaylor FishboneMoncrief #LinMestelShu SASI \
      ODE_Solve 
 
 include $(PATH_GENASIS)/Build/Makefile_Build

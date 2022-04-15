@@ -64,6 +64,8 @@ module Geometry_F__Form
       SetStream
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      ComputeReconstruction
     final :: &
       Finalize
   end type Geometry_F_Form
@@ -406,6 +408,87 @@ contains
   end subroutine Compute
 
 
+  subroutine ComputeReconstruction ( G, M_I, iC, iD )
+
+    class ( Geometry_F_Form ), intent ( inout ) :: &
+      G
+    type ( FieldSetForm ), intent ( inout ) :: &
+      M_I
+    integer ( KDI ), intent ( in ) :: &
+      iC, &   !-- iChart
+      iD      !-- iDimensions
+
+    associate &
+      ( A  =>  G % Atlas )
+    associate &
+      ( C        =>  A % Chart ( iC ) % Element, &
+        GV       =>  G % Storage ( iC ) % Value, &
+        M_DD_11  =>  M_I % Storage ( iC ) % Value ( :, 1 ), &
+        M_DD_22  =>  M_I % Storage ( iC ) % Value ( :, 2 ), &
+        M_DD_33  =>  M_I % Storage ( iC ) % Value ( :, 3 ), &
+        M_UU_11  =>  M_I % Storage ( iC ) % Value ( :, 4 ), &
+        M_UU_22  =>  M_I % Storage ( iC ) % Value ( :, 5 ), &
+        M_UU_33  =>  M_I % Storage ( iC ) % Value ( :, 6 ) )
+
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'RECTANGULAR' )
+      call Compute_M_R_Kernel &
+             ( M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+               UseDeviceOption = M_I % DeviceMemory )
+    case ( 'CYLINDRICAL' )
+      select case ( iD )
+      case ( 1 )
+        call Compute_M_C_Kernel &
+               ( GV ( :, G % EDGE_I_U_1 ), &
+                 C % nDimensions, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 UseDeviceOption = M_I % DeviceMemory )
+      case ( 2, 3 )
+        call Compute_M_C_Kernel &
+               ( GV ( :, G % CENTER_U_1 ), &
+                 C % nDimensions, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 UseDeviceOption = M_I % DeviceMemory )
+      end select !-- iD
+    case ( 'SPHERICAL' )
+      select case ( iD )
+      case ( 1 )
+        call Compute_M_S_Kernel &
+               ( GV ( :, G % EDGE_I_U_1 ), &
+                 GV ( :, G % CENTER_U_2 ), &
+                 C % nDimensions, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 UseDeviceOption = M_I % DeviceMemory )
+      case ( 2 )
+        call Compute_M_S_Kernel &
+               ( GV ( :, G % CENTER_U_1 ), &
+                 GV ( :, G % EDGE_I_U_2 ), &
+                 C % nDimensions, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 UseDeviceOption = M_I % DeviceMemory )
+      case ( 3 )
+        call Compute_M_S_Kernel &
+               ( GV ( :, G % CENTER_U_1 ), &
+                 GV ( :, G % CENTER_U_2 ), &
+                 C % nDimensions, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 UseDeviceOption = M_I % DeviceMemory )
+      end select !-- iD
+    case default
+      call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', &
+                  CONSOLE % ERROR )
+      call Show ( 'Geometry_F__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+    end associate !-- C, etc.
+    end associate !-- A
+
+  end subroutine ComputeReconstruction
+
+
   impure elemental subroutine Finalize ( G )
 
     type ( Geometry_F_Form ), intent ( inout ) :: &
@@ -561,7 +644,7 @@ contains
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Geometry_F_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Geometry_F__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetCoordinates', 'subroutine', CONSOLE % ERROR )
     end select !-- C  
     end associate !-- A, etc.
@@ -672,7 +755,7 @@ contains
       call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', &
                   CONSOLE % ERROR )
-      call Show ( 'Geometry_F_CH_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Geometry_F__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeFromCoordinates', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select

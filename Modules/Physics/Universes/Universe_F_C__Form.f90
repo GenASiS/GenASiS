@@ -67,7 +67,7 @@ module Universe_F_C__Form
   end type Universe_F_C_Form
 
     private :: &
-      SetSlope_N_SG
+      SetSlope_N
 
     private :: &
       Compute_dT_CS_CGS_C_Kernel
@@ -771,6 +771,8 @@ contains
 
     logical ( KDL ) :: &
       DivergenceParts
+    character ( LDL ) :: &
+      RiemannSolverType
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
@@ -784,8 +786,8 @@ contains
       class is ( Step_RK_CS_Form )
 
     select type ( G )
-    class is ( Gravitation_N_SG_Form )
-      S % SetSlope  =>  SetSlope_N_SG
+    class is ( Gravitation_N_H_Form )
+      S % SetSlope  =>  SetSlope_N
     end select !-- G
 
     DivergenceParts  =  .false.
@@ -839,15 +841,39 @@ contains
           call DT % Initialize ( F )
         end associate !-- DT
       class is ( Fluid_P_I_Form )
+
         allocate ( DivergencePart_F_P_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
+
+        RiemannSolverType = 'HLL'
+        call PROGRAM_HEADER % GetParameter &
+               ( RiemannSolverType, 'RiemannSolverType' )
+        if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+          allocate ( RiemannSolver_HLLC_P_Form :: S % RiemannSolver )
+          associate ( RS  =>  S % RiemannSolver )
+          call RS % Initialize ( F )
+          end associate !-- RS
+        end if
+        
       class is ( Fluid_P_HN_Form )
+
         allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
+
+        RiemannSolverType = 'HLL'
+        call PROGRAM_HEADER % GetParameter &
+               ( RiemannSolverType, 'RiemannSolverType' )
+        if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+          allocate ( RiemannSolver_HLLC_P_HN_Form :: S % RiemannSolver )
+          associate ( RS  =>  S % RiemannSolver )
+          call RS % Initialize ( F )
+          end associate !-- RS
+        end if
+        
       class default
         call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
         call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
@@ -1142,7 +1168,7 @@ contains
   end subroutine Write_F_C
 
 
-  subroutine SetSlope_N_SG ( S, K )
+  subroutine SetSlope_N ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
@@ -1211,7 +1237,7 @@ contains
     end select !-- S
     end select !-- K
 
-  end subroutine SetSlope_N_SG
+  end subroutine SetSlope_N
 
 
 end module Universe_F_C__Form

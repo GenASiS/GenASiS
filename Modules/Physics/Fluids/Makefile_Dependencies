@@ -89,6 +89,29 @@ Tally_F_P_HN__Form.o: \
   Tally_F_P__Form.o \
   Tally_F_P_HN__Form.f90
 
+RiemannSolver_HLLC_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  RiemannSolver_HLLC_P__Form.f90
+
+RiemannSolver_HLLC_P__Kernel.o: \
+  Basics.o \
+  RiemannSolver_HLLC_P__Form.o \
+  RiemannSolver_HLLC_P__Kernel.f90
+
+RiemannSolver_HLLC_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_HN__Form.o \
+  RiemannSolver_HLLC_P__Form.o \
+  RiemannSolver_HLLC_P_HN__Form.f90
+
+RiemannSolver_HLLC_P_HN__Kernel.o: \
+  Basics.o \
+  RiemannSolver_HLLC_P_HN__Form.o \
+  RiemannSolver_HLLC_P_HN__Kernel.f90
+
 DivergencePart_F_D_T__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -219,6 +242,8 @@ Fluids.o: \
   Tally_F_D__Form.o \
   Tally_F_P__Form.o \
   Tally_F_P_HN__Form.o \
+  RiemannSolver_HLLC_P_HN__Form.o \
+  RiemannSolver_HLLC_P__Form.o \
   DivergencePart_F_D_T__Form.o \
   DivergencePart_F_D_V__Form.o \
   DivergencePart_F_P_T__Form.o \

@@ -2,13 +2,21 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Gravitation_G__Form_Test Gravitation_N_SG__Form_Test
+all: Gravitation_G__Form_Test Gravitation_N_UA__Form_Test \
+  Gravitation_N_SG__Form_Test
 
 Gravitation_G__Form_Test: Basics.a Mathematics.a Gravitations.a \
   Gravitation_G__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Gravitation_G__Form_Test_$(MACHINE) \
           Gravitation_G__Form_Test.o Gravitations.a \
+          Mathematics.a Basics.a $(LIBRARIES)
+
+Gravitation_N_UA__Form_Test: Basics.a Mathematics.a Gravitations.a \
+  Gravitation_N_UA__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Gravitation_N_UA__Form_Test_$(MACHINE) \
+          Gravitation_N_UA__Form_Test.o Gravitations.a \
           Mathematics.a Basics.a $(LIBRARIES)
 
 Gravitation_N_SG__Form_Test: Basics.a Mathematics.a Gravitations.a \
@@ -23,6 +31,7 @@ clean:
 
 clobber: clean
 	rm -f Gravitation_G__Form_Test_*
+	rm -f Gravitation_N_UA__Form_Test_*
 	rm -f Gravitation_N_SG__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -34,6 +43,12 @@ Gravitation_G__Form_Test.o: \
   Mathematics.o \
   Gravitations.o \
   Gravitation_G__Form_Test.f90
+
+Gravitation_N_UA__Form_Test.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Gravitation_N_UA__Form_Test.f90
 
 Gravitation_N_SG__Form_Test.o: \
   Basics.o \
