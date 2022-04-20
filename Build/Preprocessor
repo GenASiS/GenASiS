@@ -1,9 +1,20 @@
 #ifdef ENABLE_OMP_OFFLOAD
+
 #define OMP_TARGET_DIRECTIVE target teams distribute
+#define OMP_TARGET_DISTRIBUTE_DIRECTIVE target teams distribute 
+
+#ifdef POWER_XL
 #define OMP_SCHEDULE_TARGET static, 1
 #define OMP_SCHEDULE_HOST runtime
-#define OMP_TARGET_DISTRIBUTE_DIRECTIVE target teams distribute 
 #define OMP_TARGET_DISTRIBUTE_SCHEDULE dist_schedule ( static, 1 )
+#endif
+
+#if defined(POWER_GCC) || defined(Cray_GCC) || defined(Cray_GCC_UMS) || defined (Cray_CCE) || defined (Cray_AMD)
+#define OMP_SCHEDULE_TARGET auto
+#define OMP_SCHEDULE_HOST runtime
+#define OMP_TARGET_DISTRIBUTE_SCHEDULE dist_schedule ( auto )
+#endif
+
 #else
 #define OMP_TARGET_DIRECTIVE
 #define OMP_SCHEDULE_TARGET runtime

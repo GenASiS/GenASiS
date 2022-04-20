@@ -48,7 +48,7 @@ endif
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 #-- The following stanzas check whether we are building with CUDA or HIP
-ifeq ( $(findstring nvidia,${CRAY_ACCEL_TARGET}), nvidia)
+ifeq ($(findstring nvidia,${CRAY_ACCEL_TARGET}), nvidia)
   DEVICE_CUDA    = 1
   DEVICE_COMPILE = nvcc -c
   INCLUDE_DEVICE = -I${CUDA_ROOT}/include
