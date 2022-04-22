@@ -396,11 +396,13 @@ contains
             R_W = GV ( :, G % WIDTH_U_1 ), &
             R_C = GV ( :, G % CENTER_U_1 ), &
             R_D = Radius, &
-            D = Density, &
-            V = Velocity, &
-            M = OS % Mass, &
-            AP = OS % AtmosphereParameter, &
-            N = FV ( :, F % BARYON_DENSITY_C ), &
+            D   = Density, &
+            V   = Velocity, &
+            M   = OS % Mass, &
+            D_0 = OS % DensityInitial, &
+            R_0 = OS % RadiusInitial, &
+            AP  = OS % AtmosphereParameter, &
+            N   = FV ( :, F % BARYON_DENSITY_C ), &
             V_1 = FV ( :, F % VELOCITY_U_1 ), &
             V_2 = FV ( :, F % VELOCITY_U_2 ), &
             V_3 = FV ( :, F % VELOCITY_U_3 ) )
@@ -449,7 +451,8 @@ contains
 
 
   subroutine SetFluidKernel &
-               ( ProperCell, R_E, R_W, R_C, R_D, D, V, M, AP, N, V_1, V_2, V_3 )
+               ( ProperCell, R_E, R_W, R_C, R_D, D, V, M, D_0, R_0, AP, &
+                 N, V_1, V_2, V_3 )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
@@ -462,6 +465,8 @@ contains
       D, &
       V, &
       M, &
+      D_0, &
+      R_0, &
       AP
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       N, &
@@ -491,7 +496,7 @@ contains
                        / ( R_O ** 3  -  R_I ** 3 )
         V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
       else
-        N   ( iV )  =  AP  *  D  *  ( R_C ( iV ) / R_D ) ** ( -1.5_KDR )
+        N   ( iV )  =  AP  *  D_0  *  ( R_C ( iV ) / R_0 ) ** ( -1.5_KDR )
         V_1 ( iV )  =  - sqrt ( 2.0_KDR * M / R_C ( iV ) )
       end if
 
