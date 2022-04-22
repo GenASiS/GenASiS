@@ -1,5 +1,3 @@
-#include "Preprocessor"
-
 module OppenheimerSnyder_Form
 
   !-- For example, Misner, Thorne, Wheeler p. 663, Eqs. (25.28)-(25.29)
@@ -250,14 +248,14 @@ contains
       ( C  =>  A % Chart_GS )
 
     associate &
-      ( R_Max => C % MaxCoordinate ( 1 ), &
-          R_0 => OS % RadiusInitial, &
-          D_0 => OS % DensityInitial, &
-          Tau => OS % TimeScale, &
-           AP => OS % AtmosphereParameter, &
-            M => OS % Mass, &
-           DF => OS % DensityFactor, &
-           RF => OS % RadiusFactor )
+      (     M  =>  OS % Mass, &
+          D_0  =>  OS % DensityInitial, &
+          R_0  =>  OS % RadiusInitial, &
+           DF  =>  OS % DensityFactor, &
+           RF  =>  OS % RadiusFactor, &
+          Tau  =>  OS % TimeScale, &
+           AP  =>  OS % AtmosphereParameter, &
+        R_Max  =>  C % MaxCoordinate ( 1 ) )
 
      Pi  =  CONSTANT % PI
       M  =  1.0_KDR
@@ -276,11 +274,10 @@ contains
 
     I % T_Finish  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
 
-    if ( R_0 > R_Max  ) then
+    if ( R_0  >  R_Max  ) then
       call Show ( 'RadiusInitial too large', CONSOLE % ERROR )
       call Show ( R_0, 'RadiusInitial', CONSOLE % ERROR )
-      call Show ( C % MaxCoordinate ( 1 ), 'RadiusMax', &
-                  CONSOLE % ERROR )
+      call Show ( R_Max, 'RadiusMax', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
