@@ -46,7 +46,7 @@ module LinMestelShu_Form
       SetReference
 
       private :: &
-      !   ZeroEta, &
+        ComputeSlope_LMS, &
         SetFluid
 
         private :: &
@@ -206,7 +206,7 @@ contains
     end select !-- I
 
     LMS % Integrator % SetInitial    =>  SetInitial
-!    LMS % Integrator % SetReference  =>  SetReference
+    LMS % Integrator % SetReference  =>  SetReference
     LMS % Integrator % System        =>  LMS
 
   end subroutine InitializeUniverse
@@ -230,6 +230,12 @@ contains
     call F_D % Initialize ( G, LMS % Units_F, NameOption = 'Difference' )
     call F_R % SetStream ( S )
     call F_D % SetStream ( S )
+
+    allocate ( LMS % DifferentialEquation )
+    associate ( DE  =>  LMS % DifferentialEquation )
+    call DE % Initialize ( LMS, nEquations = 4 )
+    DE % ComputeSlope  =>  ComputeSlope_LMS
+    end associate !-- R
 
     end associate !-- FA_R, etc.
 
@@ -273,7 +279,7 @@ contains
       Pi    =  CONSTANT % PI
       M     =  1.0_KDR
       D_0   =  1.0e-3_KDR
-      E_0   =  0.9_KDR
+      E_0   =  0.6_KDR
      DF_OS  =  1.0e1_KDR
      AP     =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
@@ -301,12 +307,6 @@ contains
     !   (OS = OppenheimerSnyder case) with the same mass and density
     R_0  =  R_OS  *  ( 1.0_KDR  -  E_0 ** 2 ) ** ( - 1.0_KDR / 6.0_KDR )
     Z_0  =  R_0  *  sqrt ( 1.0_KDR  -  E_0 ** 2 )
-
-    ! allocate ( LMS % Root )
-    ! associate ( R => LMS % Root )
-    ! call R % Initialize ( LMS )
-    ! R % Zero  =>  ZeroEta
-    ! end associate !-- R
 
     call SetFluid ( LMS, F )
     call F % SetBaryonDensityMin ( )
@@ -349,12 +349,119 @@ contains
   end subroutine SetReference
 
 
+  subroutine ComputeSlope_LMS ( LMS, X, Y, dYdX )
+
+    class ( * ), intent ( in ) :: &
+      LMS
+    real ( KDR ), intent ( in ) :: &
+      X
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Y
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      dYdX
+
+    real ( KDR ) :: &
+      SqrtTiny, &
+      TwoPi, &
+      E, &
+      A, &
+      C
+    
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+    TwoPi     =  2.0_KDR  *  CONSTANT % PI
+
+    select type ( LMS )
+      class is ( LinMestelShuForm )
+    associate &
+      ( E_0  =>  LMS % Eccentricity, &
+        D_0  =>  LMS % DensityInitial )
+
+    E  =  max ( sqrt ( max ( 1.0_KDR &
+                             -  ( Y ( 3 )  /  Y ( 1 ) ) ** 2  &
+                                *  ( 1.0_KDR  -  E_0 ** 2 ),  &
+                             SqrtTiny ) ), &
+                SqrtTiny )
+
+    A  =  TwoPi  *  sqrt ( ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) )  &
+          /  max ( E ** 3, SqrtTiny )  &
+          *  ( asin ( E )  &
+               -  E  *  sqrt ( ( 1.0_KDR - max ( E ** 2, SqrtTiny ) ) ) )
+
+    C  =  2.0_KDR  *  TwoPi  /  max ( E ** 2, SqrtTiny )  &
+          *  ( 1.0_KDR  -  sqrt ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) &
+                           *  asin ( E )  /  E )
+
+    dYdX ( 1 ) = Y ( 2 )
+    dYdX ( 3 ) = Y ( 4 )
+
+    if ( ( Y ( 1 )  *  Y ( 3 ) )  >  0.0_KDR ) then
+      dYdX ( 2 )  =  - D_0  *  A  &
+                       /  max ( ( Y ( 1 )  *  Y ( 3 ) ), SqrtTiny )
+    else
+      dYdX ( 2 )  =  - D_0  *  A  &
+                       /  min ( ( Y ( 1 ) * Y ( 3 ) ), - SqrtTiny )
+    end if
+
+    dYdX ( 4 )  =  - D_0  *  C &
+                     /  max ( ( Y ( 1 ) ** 2 ), SqrtTiny )
+
+    end associate !-- E_0 
+    end select !-- LMS
+
+  end subroutine ComputeSlope_LMS
+
+
   subroutine SetFluid ( LMS, F )
 
     class ( LinMestelShuForm ), intent ( inout ) :: &
       LMS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+
+    real ( KDR ) :: &
+      X_Start, &
+      X_Finish, &
+      H_Start, &
+      A_1, &
+      A_3, &
+      D
+
+    select type ( LMS )
+      class is ( LinMestelShuForm )
+    associate &
+      ( DE  =>  LMS % DifferentialEquation, &
+        T   =>  LMS % Integrator % T )
+    associate &
+      ( Y  =>  DE % Solution )
+
+    if ( T  >  0.0_KDR ) then
+
+      X_Start   =  0.0_KDR
+      X_Finish  =  T
+      H_Start   =  LMS % TimeScale_OS  *  1.0e-3
+
+      Y ( 1 )  =  1.0_KDR
+      Y ( 2 )  =  0.0_KDR
+      Y ( 3 )  =  1.0_KDR
+      Y ( 4 )  =  0.0_KDR
+
+      call DE % Integrate ( X_Start, X_Finish, H_Start )
+
+      A_1  =  Y ( 1 )  *  LMS % SemiMajor
+      A_3  =  Y ( 3 )  *  LMS % SemiMinor
+      D    =  LMS % DensityInitial  /  ( Y ( 1 ) ** 2  *  Y ( 3 ) )
+
+    else
+
+      A_1  =  LMS % SemiMajor
+      A_3  =  LMS % SemiMinor
+      D    =  LMS % DensityInitial
+
+    end if
+
+    end associate !-- Y, etc.
+    end associate !-- DE, etc.
+    end select !-- LMS
 
    !  real ( KDR ) :: &
    !    Pi, &
@@ -397,9 +504,9 @@ contains
              Th_W  = GV ( :, G % WIDTH_U_2 ), &
              Ph_W  = GV ( :, G % WIDTH_U_3 ), &
               R_C  = GV ( :, G % CENTER_U_1 ), &
-              A_1  = LMS % SemiMajor, &
-              A_3  = LMS % SemiMinor, &
-              D    = LMS % DensityInitial, &
+              A_1  = A_1, &
+              A_3  = A_3, &
+              D    = D, &
               M    = LMS % Mass, &
               D_OS = LMS % Density_OS, &
               R_OS = LMS % Radius_OS, &

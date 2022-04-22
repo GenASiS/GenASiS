@@ -221,6 +221,12 @@ contains
     call F_R % SetStream ( S )
     call F_D % SetStream ( S )
 
+    allocate ( OS % Root )
+    associate ( R  =>  OS % Root )
+    call R % Initialize ( OS )
+    R % Zero  =>  ZeroEta
+    end associate !-- R
+
     end associate !-- FA_R, etc.
 
   end subroutine InitializeDiagnostics
@@ -279,12 +285,6 @@ contains
       call Show ( R_Max, 'RadiusMax', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
-
-    allocate ( OS % Root )
-    associate ( R => OS % Root )
-    call R % Initialize ( OS )
-    R % Zero  =>  ZeroEta
-    end associate !-- R
 
     call SetFluid ( OS, F )
     call F % SetBaryonDensityMin ( )
