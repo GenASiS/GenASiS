@@ -46,8 +46,12 @@ module Fluid_D__Form
       InitializeAllocate_F
     generic, public :: &
       Initialize => InitializeAllocate_F
-    procedure, public, pass :: &
-      SetBaryonDensityMin
+    procedure, private, pass :: &
+      SetBaryonDensityMinValue
+    procedure, private, pass :: &
+      SetBaryonDensityMinFind
+    generic, public :: &
+      SetBaryonDensityMin => SetBaryonDensityMinValue, SetBaryonDensityMinFind
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass :: &
@@ -372,7 +376,7 @@ contains
   end subroutine InitializeAllocate_F
 
 
-  subroutine SetBaryonDensityMin ( F, BaryonDensityMin )
+  subroutine SetBaryonDensityMinValue ( F, BaryonDensityMin )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
@@ -387,7 +391,47 @@ contains
                 F % Unit ( F % BARYON_DENSITY_C, 1 ), 'BaryonDensityMin', &
                 F % IGNORABILITY + 1 )
 
-  end subroutine SetBaryonDensityMin
+  end subroutine SetBaryonDensityMinValue
+
+
+  subroutine SetBaryonDensityMinFind ( F )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+ 
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS, &
+        FV  =>  F % Storage_GS % Value )
+
+    call CO % Initialize &
+           ( C % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+
+    associate &
+      ( My_N_Min => CO % Outgoing % Value ( 1 ), &
+           N_Min => CO % Incoming % Value ( 1 ) )
+ 
+    My_N_Min  =  minval ( FV ( :, F % BARYON_DENSITY_C ) )
+
+    call CO % Reduce ( REDUCTION % MIN )
+
+    F % BaryonDensityMin  =  N_Min
+
+    call Show ( 'Setting BaryonDensityMin of a Fluid', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % BaryonDensityMin, &
+                F % Unit ( F % BARYON_DENSITY_C, 1 ), 'BaryonDensityMin', &
+                F % IGNORABILITY + 1 )
+
+    end associate !-- My_N_Min, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine SetBaryonDensityMinFind
 
 
   subroutine SetStream ( S, CS )

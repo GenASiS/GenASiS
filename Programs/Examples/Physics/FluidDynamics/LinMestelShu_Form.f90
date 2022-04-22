@@ -47,8 +47,7 @@ module LinMestelShu_Form
 
       private :: &
       !   ZeroEta, &
-        SetFluid!, &
-      !   SetBaryonDensityMin
+        SetFluid
 
         private :: &
           SetFluidKernel
@@ -148,20 +147,24 @@ contains
     class ( LinMestelShuForm ), intent ( in ) :: &
       U
 
-    ! real ( KDR ) :: &
-    !   Pi
+    real ( KDR ) :: &
+      Pi
 
     call U % Universe_F_CC_Form % ShowParameters ( )
 
-    ! Pi  =  CONSTANT % PI
+    Pi  =  CONSTANT % PI
 
-    ! call Show ( U % Mass, 'Mass' )
-    ! call Show ( U % DensityInitial, 'DensityInitial' )
-    ! call Show ( U % RadiusInitial, 'RadiusInitial' )
-    ! call Show ( U % DensityFactor, 'DensityFactor' )
-    ! call Show ( U % RadiusFactor, 'RadiusFactor' )
-    ! call Show ( Pi / 2  *  U % TimeScale, 'CollapseTime' )
-    ! call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
+    call Show ( U % Mass, 'Mass' )
+    call Show ( U % DensityInitial, 'DensityInitial' )
+    call Show ( U % Eccentricity, 'Eccentricity' )
+    call Show ( U % SemiMajor, 'SemiMajor' )
+    call Show ( U % SemiMinor, 'SemiMinor' )
+    call Show ( U % DensityFactor_OS, 'DensityFactor_OS' )
+    call Show ( U % RadiusFactor_OS, 'RadiusFactor_OS' )
+    call Show ( Pi / 2  *  U % TimeScale_OS, 'CollapseTime_OS' )
+    call Show ( U % Density_OS, 'Density_OS' )
+    call Show ( U % Radius_OS, 'Radius_OS' )
+    call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
 
   end subroutine ShowParameters
 
@@ -306,7 +309,7 @@ contains
     ! end associate !-- R
 
     call SetFluid ( LMS, F )
-    ! call SetBaryonDensityMin ( LMS, F )
+    call F % SetBaryonDensityMin ( )
 
     end associate !-- e0, etc.
 
@@ -385,20 +388,6 @@ contains
       ( FV  =>  F % Storage_GS % Value, &
         GV  =>  G % Storage_GS % Value )
 
-   ! call SetFluidKernel &
-   !        ( ProperCell = C % ProperCell, &
-   !          R_E = GV ( :, G % EDGE_I_U_1 ), &
-   !          R_W = GV ( :, G % WIDTH_U_1 ), &
-   !          R_C = GV ( :, G % CENTER_U_1 ), &
-   !          R_D = Radius, &
-   !          D = Density, &
-   !          V = Velocity, &
-   !          M = LMS % Mass, &
-   !          AP = LMS % AtmosphereParameter, &
-   !          N = FV ( :, F % BARYON_DENSITY_C ), &
-   !          V_1 = FV ( :, F % VELOCITY_U_1 ), &
-   !          V_2 = FV ( :, F % VELOCITY_U_2 ), &
-   !          V_3 = FV ( :, F % VELOCITY_U_3 ) )
     call SetFluidKernel &
            ( ProperCell = C % ProperCell, &
               R_E  = GV ( :, G % EDGE_I_U_1 ), &
@@ -426,61 +415,6 @@ contains
     end select !-- A
 
   end subroutine SetFluid
-
-
-!   subroutine SetFluidKernel &
-!                ( ProperCell, R_E, R_W, R_C, R_D, D, V, M, AP, N, V_1, V_2, V_3 )
-
-!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-!       ProperCell
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       R_E, &
-!       R_W, &
-!       R_C
-!     real ( KDR ), intent ( in ) :: &
-!       R_D, &
-!       D, &
-!       V, &
-!       M, &
-!       AP
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       N, &
-!       V_1, V_2, V_3
-
-!     integer ( KDI ) :: &
-!       iV, &  !-- iValue
-!       nV
-!     real ( KDR ) :: &
-!       R_I, R_O
-
-!     nV  =  size ( N )
-
-!     do iV  =  1,  nV
-
-! !-- Establish atmosphere at outer radial boundary   
-! !      if ( .not. ProperCell ( iV ) ) &
-! !        cycle
-
-!       R_I  =  R_E ( iV )
-!       R_O  =  R_E ( iV )  +  R_W ( iV )
-!       if ( R_O  <=  R_D ) then
-!         N   ( iV )  =  D
-!         V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
-!       else if ( R_I  <  R_D .and. R_O  >  R_D ) then
-!         N   ( iV )  =  D * ( R_D ** 3  -  R_I ** 3 ) &
-!                        / ( R_O ** 3  -  R_I ** 3 )
-!         V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
-!       else
-!         N   ( iV )  =  AP  *  D  *  ( R_C ( iV ) / R_D ) ** ( -1.5_KDR )
-!         V_1 ( iV )  =  - sqrt ( 2.0_KDR * M / R_C ( iV ) )
-!       end if
-
-!       V_2 ( iV )  =  0.0_KDR
-!       V_3 ( iV )  =  0.0_KDR
-
-!     end do !-- iV
-
-!   end subroutine SetFluidKernel
 
 
   subroutine SetFluidKernel &

@@ -42,8 +42,7 @@ module OppenheimerSnyder_Form
 
       private :: &
         ZeroEta, &
-        SetFluid, &
-        SetBaryonDensityMin
+        SetFluid
 
         private :: &
           SetFluidKernel
@@ -288,7 +287,7 @@ contains
     end associate !-- R
 
     call SetFluid ( OS, F )
-    call SetBaryonDensityMin ( OS, F )
+    call F % SetBaryonDensityMin ( )
 
     end associate !-- R_Max, etc.
 
@@ -412,42 +411,6 @@ contains
     end select !-- A
 
   end subroutine SetFluid
-
-
-  subroutine SetBaryonDensityMin ( OS, F )
-
-    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
-      OS
-    class ( Fluid_D_Form ), intent ( inout ) :: &
-      F
-
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-
-    select type ( A  =>  F % Atlas )
-      class is ( Atlas_SCG_Form )
-    associate &
-      ( C   =>  A % Chart_GS, &
-        FV  =>  F % Storage_GS % Value )
-
-    call CO % Initialize &
-           ( C % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
-
-    associate &
-      ( My_N_Min => CO % Outgoing % Value ( 1 ), &
-           N_Min => CO % Incoming % Value ( 1 ) )
- 
-    My_N_Min  =  minval ( FV ( :, F % BARYON_DENSITY_C ) )
-
-    call CO % Reduce ( REDUCTION % MIN )
-
-    call F % SetBaryonDensityMin ( N_Min )
-
-    end associate !-- My_N_Min, etc.
-    end associate !-- C, etc.
-    end select !-- A
-
-  end subroutine SetBaryonDensityMin
 
 
   subroutine SetFluidKernel &
