@@ -68,7 +68,7 @@ contains
 
   function Sine ( Parameters, X ) result ( F )
 
-    class ( * ), intent ( in ) :: &
+    class ( * ), intent ( inout ) :: &
       Parameters
     real ( KDR ), intent ( in ) :: &
       X
@@ -89,7 +89,7 @@ contains
   
   function Cosine ( Parameters, X ) result ( F )
 
-    class ( * ), intent ( in ) :: &
+    class ( * ), intent ( inout ) :: &
       Parameters
     real ( KDR ), intent ( in ) :: &
       X

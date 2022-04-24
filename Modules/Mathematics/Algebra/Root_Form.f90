@@ -46,7 +46,7 @@ module Root_Form
     function Z ( Parameters, X ) result ( F )
       use Basics
       implicit none
-      class ( * ), intent ( in ) :: &
+      class ( * ), intent ( inout ) :: &
         Parameters
       real ( KDR ), intent ( in ) :: &
         X

@@ -47,9 +47,11 @@ module LinMestelShu_Form
 
       private :: &
         ComputeSlope_LMS, &
+        SetFinishTime, &
         SetFluid
 
         private :: &
+          Zero_T, &
           SetFluidKernel
 
 
@@ -295,6 +297,7 @@ contains
 
     I % T_Finish  &
       =  0.5 * Tau_OS * ( Eta_OS  +  sin ( Eta_OS ) )
+call Show ( I % T_Finish, '>>> T_Finish OS' )
 
     if ( R_0  >  R_Max  ) then
       call Show ( 'SemiMajor axis too large', CONSOLE % ERROR )
@@ -411,6 +414,15 @@ contains
   end subroutine ComputeSlope_LMS
 
 
+  subroutine SetFinishTime ( LMS )
+
+    class ( LinMestelShuForm ), intent ( inout ) :: &
+      LMS
+
+    
+  end subroutine SetFinishTime
+
+
   subroutine SetFluid ( LMS, F )
 
     class ( LinMestelShuForm ), intent ( inout ) :: &
@@ -426,8 +438,6 @@ contains
       A_3, &
       D
 
-    select type ( LMS )
-      class is ( LinMestelShuForm )
     associate &
       ( DE  =>  LMS % DifferentialEquation, &
         T   =>  LMS % Integrator % T )
@@ -459,32 +469,8 @@ contains
 
     end if
 
-    end associate !-- Y, etc.
+    end associate !-- Y
     end associate !-- DE, etc.
-    end select !-- LMS
-
-   !  real ( KDR ) :: &
-   !    Pi, &
-   !    Eta, &
-   !    Radius, &
-   !    Density, &
-   !    Velocity
-
-   !  Pi  =  CONSTANT % PI
-
-   !  associate &
-   !    (  RF    =>  LMS % Root, &
-   !        D_0  =>  LMS % DensityInitial, &
-   !        R_0  =>  LMS % RadiusInitial, &
-   !      Tau    =>  LMS % TimeScale )
-
-   !  call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
-
-   !  Radius    =  0.5 * R_0 * ( 1 + cos ( Eta ) )
-   !  Density   =        D_0 * ( R_0 / Radius ) ** 3
-   !  Velocity  =    -   R_0 * sin ( Eta )  /  ( Tau * ( 1 + cos ( Eta ) ) )
-
-   !  end associate !-- RF, etc.
 
     select type ( A  =>  F % Atlas )
       class is ( Atlas_SCG_Form )
@@ -522,6 +508,48 @@ contains
     end select !-- A
 
   end subroutine SetFluid
+
+
+  function Zero_T ( LMS, T ) result ( F )
+
+    class ( * ), intent ( in ) :: &
+      LMS
+    real ( KDR ), intent ( in ) :: &
+      T
+    real ( KDR ) :: &
+      F
+
+    real ( KDR ) :: &
+      X_Start, &
+      X_Finish, &
+      H_Start
+
+    select type ( LMS )
+      class is ( LinMestelShuForm )
+    associate &
+      ( DE  =>  LMS % DifferentialEquation, &
+        DF  =>  LMS % DensityFactor_OS )
+    associate &
+      ( Y  =>  DE % Solution )
+
+    X_Start   =  0.0_KDR
+    X_Finish  =  T
+    H_Start   =  LMS % TimeScale_OS  *  1.0e-3
+
+    Y ( 1 )  =  1.0_KDR
+    Y ( 2 )  =  0.0_KDR
+    Y ( 3 )  =  1.0_KDR
+    Y ( 4 )  =  0.0_KDR
+
+    call DE % Integrate ( X_Start, X_Finish, H_Start )
+
+    F  =  DF  -  1.0_KDR  /  ( Y ( 1 ) ** 2  *  Y ( 3 ) )
+
+    end associate !-- Y
+    end associate !-- DE, etc.
+    end select !-- LMS
+    
+  end function Zero_T
 
 
   subroutine SetFluidKernel &
