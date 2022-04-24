@@ -15,7 +15,7 @@ module LinMestelShu_Form
       Eccentricity, &
       SemiMajor, &
       SemiMinor, &
-      DensityFactor_OS, &  !-- OppenheimerSnyder
+      DensityFactor, &
       RadiusFactor_OS, &   !-- OppenheimerSnyder
       TimeScale_OS, &      !-- OppenheimerSnyder
       Density_OS, &        !-- OppenheimerSnyder, initial
@@ -161,7 +161,7 @@ contains
     call Show ( U % Eccentricity, 'Eccentricity' )
     call Show ( U % SemiMajor, 'SemiMajor' )
     call Show ( U % SemiMinor, 'SemiMinor' )
-    call Show ( U % DensityFactor_OS, 'DensityFactor_OS' )
+    call Show ( U % DensityFactor, 'DensityFactor' )
     call Show ( U % RadiusFactor_OS, 'RadiusFactor_OS' )
     call Show ( Pi / 2  *  U % TimeScale_OS, 'CollapseTime_OS' )
     call Show ( U % Density_OS, 'Density_OS' )
@@ -251,7 +251,8 @@ contains
 
     real ( KDR ) :: &
       Pi, &
-      Eta_OS
+      Eta_OS, &
+      T_Finish_OS
 
     select type ( LMS  =>  I % System )
       class is ( LinMestelShuForm )
@@ -270,7 +271,7 @@ contains
           E_0    =>  LMS % Eccentricity, &
           R_0    =>  LMS % SemiMajor, &
           Z_0    =>  LMS % SemiMinor, &
-         DF_OS   =>  LMS % DensityFactor_OS, &
+         DF      =>  LMS % DensityFactor, &
          RF_OS   =>  LMS % RadiusFactor_OS, &
         Tau_OS   =>  LMS % TimeScale_OS, &
           D_OS   =>  LMS % Density_OS, &
@@ -282,22 +283,23 @@ contains
       M     =  1.0_KDR
       D_0   =  1.0e-3_KDR
       E_0   =  0.6_KDR
-     DF_OS  =  1.0e1_KDR
+     DF     =  1.0e1_KDR
      AP     =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
     call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
     call PROGRAM_HEADER % GetParameter ( E_0, 'Eccentricity' )
+    call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
     call PROGRAM_HEADER % GetParameter (  AP, 'AtmosphereParameter' )
 
       D_OS  =  D_0
     Tau_OS  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
       R_OS  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
-     RF_OS  =  DF_OS ** ( - 1.0_KDR / 3.0_KDR ) 
+     RF_OS  =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
     Eta_OS  =  acos ( 2.0 * RF_OS  -  1.0 )
 
-    I % T_Finish  &
-      =  0.5 * Tau_OS * ( Eta_OS  +  sin ( Eta_OS ) )
-call Show ( I % T_Finish, '>>> T_Finish OS' )
+    T_Finish_OS  =  0.5 * Tau_OS * ( Eta_OS  +  sin ( Eta_OS ) )
+
+    call SetFinishTime ( LMS, T_Finish_OS )
 
     if ( R_0  >  R_Max  ) then
       call Show ( 'SemiMajor axis too large', CONSOLE % ERROR )
@@ -414,12 +416,23 @@ call Show ( I % T_Finish, '>>> T_Finish OS' )
   end subroutine ComputeSlope_LMS
 
 
-  subroutine SetFinishTime ( LMS )
+  subroutine SetFinishTime ( LMS, T_Finish_OS )
 
     class ( LinMestelShuForm ), intent ( inout ) :: &
       LMS
+    real ( KDR ), intent ( in ) :: &
+      T_Finish_OS
 
-    
+    type ( RootForm ) :: &
+      R
+
+    call R % Initialize ( LMS )
+    R % Zero  =>  Zero_T
+
+    call R % Solve ( [ 0.95_KDR  *  T_Finish_OS,  &
+                       1.01_KDR  *  T_Finish_OS ], &
+                     LMS % Integrator % T_Finish )
+
   end subroutine SetFinishTime
 
 
@@ -512,7 +525,7 @@ call Show ( I % T_Finish, '>>> T_Finish OS' )
 
   function Zero_T ( LMS, T ) result ( F )
 
-    class ( * ), intent ( in ) :: &
+    class ( * ), intent ( inout ) :: &
       LMS
     real ( KDR ), intent ( in ) :: &
       T
@@ -528,7 +541,7 @@ call Show ( I % T_Finish, '>>> T_Finish OS' )
       class is ( LinMestelShuForm )
     associate &
       ( DE  =>  LMS % DifferentialEquation, &
-        DF  =>  LMS % DensityFactor_OS )
+        DF  =>  LMS % DensityFactor )
     associate &
       ( Y  =>  DE % Solution )
 

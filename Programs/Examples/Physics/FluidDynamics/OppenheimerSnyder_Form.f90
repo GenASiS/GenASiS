@@ -329,7 +329,7 @@ contains
 
   function ZeroEta ( OS, Eta ) result ( F )
 
-    class ( * ), intent ( in ) :: &
+    class ( * ), intent ( inout ) :: &
       OS
     real ( KDR ), intent ( in ) :: &
       Eta
