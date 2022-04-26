@@ -20,7 +20,7 @@ program Atlas_SCG_CE__Form_Test
   allocate ( A )
   call A % Initialize &
          ( RadiusMax = 10.0_KDR, &
-           RadiusExcision = 10.0_KDR / 8.0_KDR, &
+           RadiusExcision = 0.45_KDR, &
            CommunicatorOption = PROGRAM_HEADER % Communicator, &
            NameOption = 'PositionSpace' )
 
