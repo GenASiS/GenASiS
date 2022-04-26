@@ -34,8 +34,8 @@ contains
 
 
   subroutine Initialize_GS_C &
-               ( C, RadiusMin, RadiusMax, RadiusScale, CommunicatorOption, &
-                 NameOption, CoordinateUnitOption, RadialRatioOption, &
+               ( C, RadiusMin, RadiusMax, RadiusScale, RadialRatio, &
+                 CommunicatorOption, NameOption, CoordinateUnitOption, &
                  nGhostLayersOption, nCellsPolarOption, nEqualOption, &
                  nDimensionsOption )
 
@@ -44,15 +44,14 @@ contains
     real ( KDR ), intent ( in ) :: &
       RadiusMin, &
       RadiusMax, &
-      RadiusScale
+      RadiusScale, &
+      RadialRatio
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
-    real ( KDR ), intent ( in ), optional :: &
-      RadialRatioOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -98,11 +97,7 @@ contains
     if ( C % nCellsPolar  ==  0 ) &
       call C % SetPolar ( )
 
-!    C % RadialRatio  =  1.0_KDR
-2    C % RadialRatio  =  2.45_KDR
-    if ( present ( RadialRatioOption ) ) &
-      C % RadialRatio  =  RadialRatioOption
-    call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
+    C % RadialRatio  =  RadialRatio
 
     nCellsRadial     =  C % RadialRatio * C % nCellsPolar !-- Aim for RadiusMax
     nCellsPolar      =  C % nCellsPolar
@@ -116,7 +111,7 @@ contains
       C % MinWidth  =  C % RadiusScale  *  Pi / nCellsPolar
     end if
 
-    Ratio        =  0.0_KDR
+    Ratio  =  0.0_KDR
     if ( present ( nEqualOption ) ) then
       Ratio ( 1 )  =  1.0_KDR / nEqualOption
     else

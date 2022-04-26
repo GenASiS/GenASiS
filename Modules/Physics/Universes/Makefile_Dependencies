@@ -37,6 +37,14 @@ Universe_F_C__Kernel.o: \
   Universe_F_C__Form.o \
   Universe_F_C__Kernel.f90
 
+Universe_F_CE__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Fluids.o \
+  Universe_F_C__Form.o \
+  Universe_F_CE__Form.f90
+
 Universe_F_CC__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -58,6 +66,7 @@ Universes.o: \
   Universe_H__Form.o \
   Universe_F_B__Form.o \
   Universe_F_C__Form.o \
+  Universe_F_CE__Form.o \
   Universe_F_CC__Form.o \
   Universes.f90
 

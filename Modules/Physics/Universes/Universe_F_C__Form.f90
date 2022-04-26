@@ -105,7 +105,8 @@ contains
                ( U, FluidType, GravitationType, NameOption, &
                  DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
-                 GravityFactorOption, nCellsPolarOption, nWriteOption )
+                 GravityFactorOption, CentralMassOption, nCellsPolarOption, &
+                 nWriteOption )
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
@@ -122,7 +123,8 @@ contains
       RadiusCoreOption, &
       RadiusExcisionOption, &
       RadialRatioOption, &
-      GravityFactorOption
+      GravityFactorOption, &
+      CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption, &
       nWriteOption

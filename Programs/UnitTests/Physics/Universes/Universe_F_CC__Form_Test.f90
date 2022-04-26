@@ -1,6 +1,6 @@
 program Universe_F_CC__Form_Test
 
-  !-- Universe_Fluid_Box__Form_Test
+  !-- Universe_Fluid_CentralCore__Form_Test
 
   use Basics
   use Mathematics
@@ -37,7 +37,7 @@ program Universe_F_CC__Form_Test
                    Name = trim ( I % Name ) // '_Anlz', &
                    Level = 1 )
   call T_A % Start ( )
-  call I % Analyze ( TallyIgnorability = CONSOLE % INFO_1, T_Option = T_A )
+  call I % Analyze ( Ignorability = CONSOLE % INFO_1, T_Option = T_A )
   call T_A % Stop ( )
 
   T_W  =>  PROGRAM_HEADER % Timer &

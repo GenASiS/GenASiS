@@ -207,11 +207,10 @@ contains
 
     if ( U % Dimensionless ) then
 
-      RadiusMax  =  10.0_KDR
+      RadiusMax   =  10.0_KDR
+      RadiusCore  =  10.0_KDR / 8.0_KDR
       if ( present ( RadiusMaxOption ) ) &
         RadiusMax  =  RadiusMaxOption
-
-      RadiusCore  =  10.0_KDR / 8.0_KDR
       if ( present ( RadiusCoreOption ) ) &
         RadiusCore  =  RadiusCoreOption
 
@@ -224,9 +223,15 @@ contains
 
     else
 
-      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
+      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
       RadialRatio  =  5.9_KDR
+      if ( present ( RadiusMaxOption ) ) &
+        RadiusMax  =  RadiusMaxOption
+      if ( present ( RadiusCoreOption ) ) &
+        RadiusCore  =  RadiusCoreOption
+      if ( present ( RadialRatioOption ) ) &
+        RadialRatio  =  RadialRatioOption
 
       call PS % Initialize &
              ( RadiusMax = RadiusMax, &

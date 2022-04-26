@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Universe_F_B__Form_Test Universe_F_CC__Form_Test \
+all: Universe_F_B__Form_Test Universe_F_CE__Form_Test Universe_F_CC__Form_Test \
   #FluidSymmetricCurvilinear_Form_Test FluidCentralExcision_Form_Test
 
 Universe_F_B__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
@@ -22,14 +22,12 @@ FluidSymmetricCurvilinear_Form_Test: ThirdParty.a Basics.a Mathematics.a \
           StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
-FluidCentralExcision_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
-  StressEnergies.a FluidCentralExcision_Form_Test.o
+Universe_F_CE__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
+  Fluids.a Universes.a Universe_F_CE__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o FluidCentralExcision_Form_Test_$(MACHINE) \
-          FluidCentralExcision_Form_Test.o FluidCentralExcision_Form.o \
-          FluidCentral_Template.o ApplyGravity_F__Command.o \
-          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
-          Basics.a ThirdParty.a \
+          -o Universe_F_CE__Form_Test_$(MACHINE) \
+          Universe_F_CE__Form_Test.o Universes.a \
+          Fluids.a Gravitations.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
 Universe_F_CC__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \

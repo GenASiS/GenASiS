@@ -50,19 +50,27 @@ contains
       nCellsPolarOption, &
       nDimensionsOption
 
+    real ( KDR ) :: &
+      RadialRatio
+
     if ( C % Type  ==  '' ) &
       C % Type  =  'a Chart_GS_CE'
 
     C % RadiusExcision  =  RadiusExcision
 
+    RadialRatio  =  1.0_KDR
+    if ( present ( RadialRatioOption ) )  &
+      RadialRatio  =  RadialRatioOption
+    call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
+
     call C % Chart_GS_C_Form % Initialize &
            ( RadiusMin = RadiusExcision, &
              RadiusMax = RadiusMax, &
              RadiusScale = RadiusExcision, &
+             RadialRatio = RadialRatio, &
              CommunicatorOption = CommunicatorOption, &
              NameOption = NameOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
-             RadialRatioOption = RadialRatioOption, &
              nGhostLayersOption = nGhostLayersOption, &
              nCellsPolarOption = nCellsPolarOption, &
              nDimensionsOption = nDimensionsOption )

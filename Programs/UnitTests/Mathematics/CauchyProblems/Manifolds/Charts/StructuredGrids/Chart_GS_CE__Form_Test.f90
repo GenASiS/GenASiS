@@ -18,7 +18,7 @@ program Chart_GS_CE__Form_Test
   allocate ( C )
   call C % Initialize &
          ( RadiusMax = 10.0_KDR, &
-           RadiusExcision = 10.0_KDR / 8.0_KDR, &
+           RadiusExcision = 1.0_KDR, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   call C % Show ( )

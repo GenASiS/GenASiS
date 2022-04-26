@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder LinMestelShu \
-  RiemannProblem RayleighTaylor YahilLattimer #SedovTaylor FishboneMoncrief \
+  RiemannProblem RayleighTaylor FishboneMoncrief YahilLattimer #SedovTaylor \
   SASI
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -75,12 +75,12 @@ clobber: clean
 	rm -f SineWaveAdvection_*
 	rm -f SawtoothWaveAdvection_*
 	rm -f OppenheimerSnyder_*
+	rm -f LinMestelShu_*
 	rm -f RiemannProblem_*
 	rm -f RayleighTaylor_*
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
 	rm -f YahilLattimer_*
-	rm -f LinMestelShu_*
 	rm -f SASI_*
 
 PlaneWave_Form.o: \
