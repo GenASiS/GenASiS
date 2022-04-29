@@ -95,7 +95,7 @@ contains
     MaxCoordinate  =  [ C % RadiusMax,      Pi, 2.0_KDR * Pi ]
 
     if ( C % nCellsPolar  ==  0 ) &
-      call C % SetPolar ( )
+      call C % SetPolar ( nCellsPolarOption )
 
     C % RadialRatio  =  RadialRatio
 

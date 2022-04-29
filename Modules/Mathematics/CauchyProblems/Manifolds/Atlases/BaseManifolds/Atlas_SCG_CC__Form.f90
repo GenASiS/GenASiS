@@ -4,12 +4,12 @@ module Atlas_SCG_CC__Form
 
   use Basics
   use Charts
-  use Atlas_SCG__Form
+  use Atlas_SCG_C__Form
 
   implicit none
   private
 
-  type, public, extends ( Atlas_SCG_Form ) :: Atlas_SCG_CC_Form
+  type, public, extends ( Atlas_SCG_C_Form ) :: Atlas_SCG_CC_Form
     class ( Chart_GS_CC_Form ), pointer :: &
       Chart_GS_CC => null ( )
   contains
@@ -18,7 +18,7 @@ module Atlas_SCG_CC__Form
     procedure, private, pass :: &
       Initialize_SCG_CC
     procedure, private, pass :: &
-      Initialize_SCG_CC_A  !-- SphericalAverage
+      Initialize_SCG_CC_A  !-- Average
     generic, public :: &
       Initialize => Initialize_SCG_CC, Initialize_SCG_CC_A
     final :: &
@@ -141,6 +141,7 @@ contains
 
     select type ( C  =>  A % Chart ( 1 ) % Element )
     class is ( Chart_GS_CC_Form )
+      A % Chart_GS_C  =>  C
       A % Chart_GS_CC  =>  C
     end select !-- C
       

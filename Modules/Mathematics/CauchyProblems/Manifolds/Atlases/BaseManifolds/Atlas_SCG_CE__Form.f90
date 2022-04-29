@@ -4,15 +4,17 @@ module Atlas_SCG_CE__Form
 
   use Basics
   use Charts
-  use Atlas_SCG__Form
+  use Atlas_SCG_C__Form
 
   implicit none
   private
 
-  type, public, extends ( Atlas_SCG_Form ) :: Atlas_SCG_CE_Form
+  type, public, extends ( Atlas_SCG_C_Form ) :: Atlas_SCG_CE_Form
     class ( Chart_GS_CE_Form ), pointer :: &
       Chart_GS_CE => null ( )
   contains
+    procedure, private, pass :: &
+      Initialize_SCG
     procedure, private, pass :: &
       Initialize_SCG_CE
     procedure, private, pass :: &
@@ -25,6 +27,53 @@ module Atlas_SCG_CE__Form
 
 
 contains
+
+
+  subroutine Initialize_SCG &
+               ( A, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, NameOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, nBricksOption, &
+                 nBricksCompatibleOption, IgnorabilityOption, &
+                 nDimensionsOption, nEqualOption, iDimensionalityOption )
+
+    class ( Atlas_SCG_CE_Form ), intent ( inout ), target :: &
+      A
+    type ( CommunicatorForm ), intent ( in ), optional :: &
+      CommunicatorOption
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      SpacingOption, &
+      CoordinateLabelOption
+    character ( * ), intent ( in ), optional :: &
+      CoordinateSystemOption, &
+      NameOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnitOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption, &
+      RatioOption, &
+      ScaleOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nCellsOption, &
+      nGhostLayersOption, &
+      nBricksOption, &
+      nBricksCompatibleOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      nDimensionsOption, &
+      nEqualOption, &
+      iDimensionalityOption
+
+      call Show ( 'The method Initialize_SCG is not appropriate for ' &
+                  // 'this class.', CONSOLE % ERROR )
+      call Show ( 'Please use a different Initialize interface.', &
+                  CONSOLE % ERROR )
+      call Show ( 'Atlas_SCG_CE_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize_SCG', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+
+  end subroutine Initialize_SCG
 
 
   subroutine Initialize_SCG_CE &
@@ -90,6 +139,7 @@ contains
 
     select type ( C  =>  A % Chart ( 1 ) % Element )
     class is ( Chart_GS_CE_Form )
+      A % Chart_GS_C   =>  C
       A % Chart_GS_CE  =>  C
     end select !-- C
       

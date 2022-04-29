@@ -74,16 +74,25 @@ module Coarsening_C__Form
 contains
 
 
-  subroutine Initialize_C ( C, G )
+  subroutine Initialize_C ( C, G, NameOption )
 
     class ( Coarsening_C_Form ), intent ( inout ) :: &
       C
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+
+    character ( LDL ) :: &
+      Name
 
     if ( C % Type == '' ) &
       C % Type  =  'a Coarsening_C' 
-    
+
+    Name  =  'Coarsening'
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
+
     C % COARSENING_POLAR     =  1
     C % COARSENING_AZIMUTHAL =  2
     C % N_BLOCKS_POLAR       =  3
@@ -98,7 +107,7 @@ contains
                    'nBlocksPolar       ', &
                    'nBlocksAzimuthal   ', &
                    'BlockLabel         ' ], &
-             NameOption = 'Coarsening', &
+             NameOption = Name, &
              DeviceMemoryOption = G % DeviceMemory, &
              PinnedMemoryOption = G % PinnedMemory, &
              DevicesCommunicateOption = G % DevicesCommunicate, &
@@ -107,14 +116,14 @@ contains
     C % Geometry  =>  G
 
     select type ( A  =>  G % Atlas )
-    class is ( Atlas_SCG_CC_Form )
+    class is ( Atlas_SCG_C_Form )
 
       call SetCoarseningPolar &
-             ( C  = A % Chart_GS_CC, &
+             ( C  = A % Chart_GS_C, &
                R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
                CP = C % Storage_GS % Value ( :, C % COARSENING_POLAR ) )
       call SetCoarseningAzimuthal &
-             ( C  = A % Chart_GS_CC, &
+             ( C  = A % Chart_GS_C, &
                R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
                Th = G % Storage_GS % Value ( :, G % CENTER_U_2 ), &
                CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ) )
@@ -123,7 +132,7 @@ contains
              (  BP  = C % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
                 BA  = C % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
                 BL  = C % Storage_GS % Value ( :, C % BLOCK_LABEL ), &
-                C   = A % Chart_GS_CC, &
+                C   = A % Chart_GS_C, &
                 CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
                 CA  = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
                iTh  = C % iTheta, &
@@ -157,20 +166,20 @@ contains
       FS_4D
 
     select type ( A  =>  FS % Atlas )
-      class is ( Atlas_SCG_CC_Form )
+      class is ( Atlas_SCG_C_Form )
     associate &
       ( G        =>  C % Geometry, &
-        C_GS_CC  =>  A % Chart_GS_CC )
+        C_GS_C  =>  A % Chart_GS_C )
 
-    if ( C_GS_CC % nDimensions  ==  1 ) &
+    if ( C_GS_C % nDimensions  ==  1 ) &
       return
       
     call FS % Storage_GS % ReassociateHost &
            ( AssociateVariablesOption = .false. )
 
-    call C_GS_CC % SetFieldPointer &
+    call C_GS_C % SetFieldPointer &
            ( FS % Storage_GS % Value, FS_4D )
-    call C_GS_CC % SetFieldPointer &
+    call C_GS_C % SetFieldPointer &
            ( G % Storage_GS % Value ( :, G % VOLUME ), dV_3D )
        
     call ComputeKernel &
@@ -179,7 +188,7 @@ contains
              iPh = C % iPhi, &
              iR  = C % iRadius, &
              iaS = FS % iaSelected, &
-             oC  = C_GS_CC % nGhostLayers, &
+             oC  = C_GS_C % nGhostLayers, &
              nBC = C % nBlocksCoarsen, &
              UseDeviceOption = C % DeviceMemory )
 
