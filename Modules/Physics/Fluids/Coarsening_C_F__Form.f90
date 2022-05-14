@@ -106,27 +106,38 @@ contains
     
     call C % Coarsening_C_Form % Initialize ( G )
 
-    C % Fluid        =>  F
-
-    C % nRadiusZero  =  1
-    C % nPolarZero   =  1
-!    C % nBlocksThreshold  =  8
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nRadiusZero, 'nRadiusZero' )    
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nPolarZero, 'nPolarZero' )    
-!    call PROGRAM_HEADER % GetParameter &
-!           ( C % nBlocksThreshold, 'nBlocksThreshold' )    
+    C % Fluid  =>  F
 
     select type ( A  =>  C % Atlas )
-      class is ( Atlas_SCG_CC_Form )
-    associate &
-      ( C_GS_CC  =>  A % Chart_GS_CC )
+      class is ( Atlas_SCG_C_Form )
 
-    C % RadiusZero  =  C_GS_CC % RadiusCore  /  3.0_KDR    
-    call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )    
+    select type ( C_GS_C  =>  A % Chart_GS_C )
+    class is ( Chart_GS_CE_Form )
+      C % nRadiusZero  =  0
+      C % nPolarZero   =  1
+!      C % nBlocksThreshold  =  8
+      C % RadiusZero  =  0.0_KDR
+      call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )
+      call PROGRAM_HEADER % GetParameter &
+             ( C % nRadiusZero, 'nRadiusZero' )    
+      call PROGRAM_HEADER % GetParameter &
+             ( C % nPolarZero, 'nPolarZero' )    
+!      call PROGRAM_HEADER % GetParameter &
+!             ( C % nBlocksThreshold, 'nBlocksThreshold' )    
+    class is ( Chart_GS_CC_Form )
+      C % nRadiusZero  =  1
+      C % nPolarZero   =  1
+!      C % nBlocksThreshold  =  8
+      C % RadiusZero  =  C_GS_C % RadiusCore  /  10.0_KDR    
+      call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )
+      call PROGRAM_HEADER % GetParameter &
+             ( C % nRadiusZero, 'nRadiusZero' )    
+      call PROGRAM_HEADER % GetParameter &
+             ( C % nPolarZero, 'nPolarZero' )    
+!      call PROGRAM_HEADER % GetParameter &
+!             ( C % nBlocksThreshold, 'nBlocksThreshold' )    
+    end select !-- C_GS_C
 
-    end associate !-- C_GS_CC
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'Coarsening_C_F__Form', 'module', CONSOLE % ERROR )
@@ -149,13 +160,13 @@ contains
 !    call Show ( FS % nBlocksThreshold, 'nBlocksThreshold' )
     
     select type ( A  =>  FS % Atlas )
-      class is ( Atlas_SCG_CC_Form )
+      class is ( Atlas_SCG_C_Form )
     associate &
-      ( C_GS_CC  =>  A % Chart_GS_CC )
+      ( C_GS_C  =>  A % Chart_GS_C )
 
-    call Show ( FS % RadiusZero, C_GS_CC % CoordinateUnit ( 1 ), 'RadiusZero' )
+    call Show ( FS % RadiusZero, C_GS_C % CoordinateUnit ( 1 ), 'RadiusZero' )
 
-    end associate !-- C_GS_CC
+    end associate !-- C_GS_C
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'Coarsening_C_F__Form', 'module', CONSOLE % ERROR )
@@ -180,11 +191,11 @@ contains
       FS_4D
 
     select type ( A  =>  FS % Atlas )
-      class is ( Atlas_SCG_CC_Form )
+      class is ( Atlas_SCG_C_Form )
     associate &
-      ( F        =>  C % Fluid, &
-        G        =>  C % Geometry, &
-        C_GS_CC  =>  A % Chart_GS_CC )
+      ( F       =>  C % Fluid, &
+        G       =>  C % Geometry, &
+        C_GS_C  =>  A % Chart_GS_C )
 
     call Search &
            ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_2 )
@@ -196,14 +207,14 @@ contains
     call FS % Storage_GS % ReassociateHost &
            ( AssociateVariablesOption = .false. )
 
-    call C_GS_CC % SetFieldPointer &
+    call C_GS_C % SetFieldPointer &
            ( FS % Storage_GS % Value, FS_4D )
 
     call ComputeKernel &
            ( FS_4D, &
-             nC   = C_GS_CC % nCells, &
-             oC   = C_GS_CC % nGhostLayers, &
-             iaB  = C_GS_CC % iaBrick, &
+             nC   = C_GS_C % nCells, &
+             oC   = C_GS_C % nGhostLayers, &
+             iaB  = C_GS_C % iaBrick, &
              nRZ  = C % nRadiusZero, &
              nPZ  = C % nPolarZero, &
              iS_2 = iMomentum_2, &
