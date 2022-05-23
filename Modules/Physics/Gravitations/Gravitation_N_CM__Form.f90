@@ -1,6 +1,6 @@
-module Gravitation_N_UA__Form
+module Gravitation_N_CM__Form
 
-  !-- Gravitation_Newton_UniformAcceleration__Form
+  !-- Gravitation_Newton_CentralMass__Form
 
   use Basics
   use Mathematics
@@ -9,21 +9,22 @@ module Gravitation_N_UA__Form
   implicit none
   private
 
-  type, public, extends ( Gravitation_N_H_Form ) :: Gravitation_N_UA_Form
+  type, public, extends ( Gravitation_N_H_Form ) :: Gravitation_N_CM_Form
     real ( KDR ) :: &
-      Acceleration
+      GravitationalConstant, &
+      Mass
   contains
     procedure, private, pass :: &
-      InitializeAllocate_N_UA
+      InitializeAllocate_N_CM
     generic, public :: &
-      Initialize => InitializeAllocate_N_UA
+      Initialize => InitializeAllocate_N_CM
     procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
       Solve
     final :: &
       Finalize
-  end type Gravitation_N_UA_Form
+  end type Gravitation_N_CM_Form
 
     private :: &
       SolveKernel
@@ -31,16 +32,17 @@ module Gravitation_N_UA__Form
     interface
     
       module subroutine SolveKernel &
-               ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X, Y, Z, &
-                 A, nD, UseDeviceOption )
+               ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, R, G, M, nD, &
+                 UseDeviceOption )
         use Basics
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Phi, &
           GradPhi_1, GradPhi_2, GradPhi_3
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          X, Y, Z
+          R
         real ( KDR ), intent ( in ) :: &
-          A  !-- Acceleration
+          G, &  !-- Gravitational constant
+          M     !-- Central mass
         integer ( KDI ), intent ( in ) :: &
           nD
         logical ( KDL ), intent ( in ), optional :: &
@@ -53,18 +55,19 @@ module Gravitation_N_UA__Form
 contains
 
 
-  subroutine InitializeAllocate_N_UA &
-               ( G, A, Acceleration, FieldOption, VectorOption, &
+  subroutine InitializeAllocate_N_CM &
+               ( G, A, GravitationalConstant, Mass, FieldOption, VectorOption, &
                  NameOption, DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, AssociateFieldsOption, UnitOption, &
                  VectorIndicesOption, nFieldsOption, IgnorabilityOption )
 
-    class ( Gravitation_N_UA_Form ), intent ( inout ), target :: &
+    class ( Gravitation_N_CM_Form ), intent ( inout ), target :: &
       G
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
     real ( KDR ), intent ( in ) :: &
-      Acceleration
+      GravitationalConstant, &
+      Mass
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -92,14 +95,15 @@ contains
              DevicesCommunicateOption, AssociateFieldsOption, UnitOption, &
              VectorIndicesOption, nFieldsOption, IgnorabilityOption )
 
-    G % Acceleration  =  Acceleration
+    G % GravitationalConstant  =  GravitationalConstant
+    G % Mass                   =  Mass
 
-  end subroutine InitializeAllocate_N_UA
+  end subroutine InitializeAllocate_N_CM
 
 
   subroutine Show_FS ( FS )
 
-    class ( Gravitation_N_UA_Form ), intent ( in ) :: &
+    class ( Gravitation_N_CM_Form ), intent ( in ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -107,14 +111,14 @@ contains
 
     call FS % Gravitation_N_H_Form % Show ( )
 
-    call Show ( FS % Acceleration, 'Acceleration' )
+    call Show ( FS % Mass, 'Mass' )
 
   end subroutine Show_FS
 
 
   subroutine Solve ( G, F, iBaryonMass, iBaryonDensity, T_Option )
 
-    class ( Gravitation_N_UA_Form ), intent ( inout ) :: &
+    class ( Gravitation_N_CM_Form ), intent ( inout ) :: &
       G
     class ( FieldSetForm ), intent ( in ) :: &
       F  !-- Fluid
@@ -138,14 +142,24 @@ contains
           GradPhi_1  =>  GSV ( :, G % POTENTIAL_GRADIENT_D_1 ), &
           GradPhi_2  =>  GSV ( :, G % POTENTIAL_GRADIENT_D_2 ), &
           GradPhi_3  =>  GSV ( :, G % POTENTIAL_GRADIENT_D_3 ), &
-              X      =>  GSV ( :, G % CENTER_U_1 ), &
-              Y      =>  GSV ( :, G % CENTER_U_2 ), &
-              Z      =>  GSV ( :, G % CENTER_U_3 ) )
+              R      =>  GSV ( :, G % CENTER_U_1 ) )
+
+      select type ( C )
+      class is ( Chart_GS_C_Form )
 
       call SolveKernel &
-             ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X, Y, Z, &
-               A = G % Acceleration, nD = C % nDimensions, &
-               UseDeviceOption = G % DeviceMemory )
+             ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, R, &
+               G = G % GravitationalConstant, M = G % Mass, &
+               nD = C % nDimensions, UseDeviceOption = G % DeviceMemory )
+
+      class default
+        call Show ( 'Chart type not implemented', CONSOLE % ERROR )
+        call Show ( C % Name, 'Name', CONSOLE % ERROR )
+        call Show ( C % Type, 'Type', CONSOLE % ERROR )
+        call Show ( 'Gravitation_N_CM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select    
 
       end associate !-- Phi, etc.
       end associate !-- C, etc.
@@ -158,10 +172,10 @@ contains
 
   impure elemental subroutine Finalize ( G )
 
-    type ( Gravitation_N_UA_Form ), intent ( inout ) :: &
+    type ( Gravitation_N_CM_Form ), intent ( inout ) :: &
       G
 
   end subroutine Finalize
 
 
-end module Gravitation_N_UA__Form
+end module Gravitation_N_CM__Form

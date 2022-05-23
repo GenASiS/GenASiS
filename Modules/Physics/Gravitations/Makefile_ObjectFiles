@@ -5,6 +5,8 @@ GRAVITATIONS = \
   Slope_DFV_C_N__Form.o \
   Gravitation_N_SG__Kernel.o \
   Gravitation_N_SG__Form.o \
+  Gravitation_N_CM__Kernel.o \
+  Gravitation_N_CM__Form.o \
   Gravitation_N_UA__Kernel.o \
   Gravitation_N_UA__Form.o \
   Gravitation_N_H__Form.o \
