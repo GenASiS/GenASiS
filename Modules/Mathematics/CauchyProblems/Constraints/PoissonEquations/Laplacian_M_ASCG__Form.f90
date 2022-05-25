@@ -502,7 +502,8 @@ contains
       iA, &
       iR  !-- iRadial
     real ( KDR ) :: &
-      R_I, R_O
+      R_I, R_O, &
+      R_C
 
     do iR  =  1, nR
       R_I  =  R_E ( oR + iR )
@@ -514,10 +515,17 @@ contains
     ! do iM  =  0, M
     !   do iL  =  iM, L
     !     do iR  =  1, nR
-    !       RF_R ( iR, iA     )  =  R_C ( oR + iR ) ** iL
-    !       RF_R ( iR, iA + 1 )  =  R_C ( oR + iR ) ** iL
-    !       RF_I ( iR, iA     )  =  R_C ( oR + iR ) ** ( - ( iL + 1 ) )
-    !       RF_I ( iR, iA + 1 )  =  R_C ( oR + iR ) ** ( - ( iL + 1 ) ) 
+    !       ! RF_R ( iR, iA     )  =  R_C ( oR + iR ) ** iL
+    !       ! RF_R ( iR, iA + 1 )  =  R_C ( oR + iR ) ** iL
+    !       ! RF_I ( iR, iA     )  =  R_C ( oR + iR ) ** ( - ( iL + 1 ) )
+    !       ! RF_I ( iR, iA + 1 )  =  R_C ( oR + iR ) ** ( - ( iL + 1 ) ) 
+    !       R_I  =  R_E ( oR + iR )
+    !       R_O  =  R_E ( oR + iR + 1 )
+    !       R_C  =  0.5_KDR * ( R_I + R_O )
+    !       RF_R ( iR, iA     )  =  R_C ** iL
+    !       RF_R ( iR, iA + 1 )  =  R_C ** iL
+    !       RF_I ( iR, iA     )  =  R_C ** ( - ( iL + 1 ) )
+    !       RF_I ( iR, iA + 1 )  =  R_C ** ( - ( iL + 1 ) ) 
     !     end do !-- iR
     !     iA  =  iA + 2 !-- Cos, Sin
     !   end do !-- iL
@@ -528,7 +536,7 @@ contains
       do iL  =  iM, L
         do iR  =  1, nR
 
-          if ( iR  <  iL + 1 ) then !-- zero out high multipoles near the origin
+          if ( iR  ==  1  .and.  iL  >  1 ) then !-- avoid singularity below
 
             RF_R ( iR, iA )  =  0.0_KDR
             RF_I ( iR, iA )  =  0.0_KDR
