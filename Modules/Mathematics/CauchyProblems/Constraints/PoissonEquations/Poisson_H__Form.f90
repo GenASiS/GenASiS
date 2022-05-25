@@ -16,14 +16,19 @@ module Poisson_H__Form
       iTimer_CM = 0, &  !-- CombineMoments
       iTimer_CS = 0, &  !-- ClearSolution
       iTimer_LS = 0, &  !-- LocalSolution
+      iTimer_C  = 0, &  !-- Coarsening
       iTimer_ES = 0, &  !-- ExchangeSolution
       iTimer_BS = 0, &  !-- BoundarySolution
       nEquations = 0, &
       MaxDegree = 0
+    logical ( KDL ) :: &
+      Coarsen
     character ( LDF ) :: &
       Type = '', &
       Name = '', &
       SolverType = ''
+    type ( Coarsening_C_Form ), allocatable :: &
+      Coarsening
     class ( Laplacian_M_H_Form ), allocatable :: &
       Laplacian_M
   contains
@@ -85,6 +90,15 @@ contains
     P % MaxDegree  =  0
     if ( present ( MaxDegreeOption ) ) &
       P % MaxDegree  =  MaxDegreeOption
+
+    P % Coarsen  =  .true.
+    call PROGRAM_HEADER % GetParameter ( P % Coarsen, 'Coarsen' )
+    if ( P % Coarsen ) then
+      allocate ( P % Coarsening )
+      associate ( C  =>  P % Coarsening )
+      call C % Initialize ( G )
+      end associate !-- C
+    end if
 
   end subroutine Initialize_H
 
@@ -159,6 +173,8 @@ contains
 
     if ( allocated ( P % Laplacian_M ) ) &
       deallocate ( P % Laplacian_M )
+    if ( allocated ( P % Coarsening ) ) &
+      deallocate ( P % Coarsening )
 
     if ( P % Name == '' ) &
       return
@@ -231,6 +247,7 @@ contains
     type ( TimerForm ), pointer :: &
       T_CS, &
       T_LS, &
+      T_C, &
       T_ES, &
       T_BS
 
@@ -250,6 +267,10 @@ contains
                   ( Handle = P % iTimer_LS, &
                     Name = trim ( P % Name ) // '_LclSltn', &
                     Level = T_Option % Level + 1 )
+      T_C   =>  PROGRAM_HEADER % Timer &
+                  ( Handle = P % iTimer_C, &
+                    Name = trim ( P % Name ) // '_Crsng', &
+                    Level = T_Option % Level + 1 )
       T_ES  =>  PROGRAM_HEADER % Timer &
                   ( Handle = P % iTimer_ES, &
                     Name = trim ( P % Name ) // '_ExchngSltn', &
@@ -261,6 +282,7 @@ contains
     else
       T_CS  =>  null ( )
       T_LS  =>  null ( )
+      T_C   =>  null ( )
       T_ES  =>  null ( )
       T_BS  =>  null ( )
     end if
@@ -272,10 +294,14 @@ contains
     if ( associated ( T_CS ) ) call T_CS % Stop ( )
 
     if ( associated ( T_LS ) ) call T_LS % Start ( )
-    if ( allocated ( P % Laplacian_M ) ) then
+    if ( allocated ( P % Laplacian_M ) ) &
       call P % CombineMomentsLocal ( Solution )
-    end if
     if ( associated ( T_LS ) ) call T_LS % Stop ( )
+
+    if ( associated ( T_C ) ) call T_C % Start ( )
+    if ( allocated ( P % Coarsening ) ) &
+      call P % Coarsening % Compute ( Solution )
+    if ( associated ( T_C ) ) call T_C % Stop ( )
 
     if ( associated ( T_ES ) ) call T_ES % Start ( )
     call P % ExchangeSolution ( Solution )
