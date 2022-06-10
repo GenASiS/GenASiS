@@ -55,7 +55,7 @@ ifeq ($(CRAY_ACCEL_TARGET), nvidia70)
   LIBRARY_DEVICE = -L${CUDA_ROOT}/lib64 -lcudart
 endif
 
-ifeq ($(CRAY_ACCEL_TARGET), amd_gfx908)
+ifeq ($(CRAY_ACCEL_TARGET), amd_gfx90a)
   DEFINES       += -D__HIP_PLATFORM_HCC__
   DEVICE_HIP     = 1
   DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
