@@ -1,0 +1,7 @@
+include $(PATH_ATLASES)/Makefile_ObjectFiles
+include $(PATH_CHARTS)/Makefile_ObjectFiles
+
+MANIFOLDS = \
+  Manifolds.o \
+  $(ATLASES) \
+  $(CHARTS)

@@ -1,0 +1,9 @@
+POISSON_EQUATIONS = \
+  PoissonEquations.o \
+  Poisson_ASCG__Kernel.o \
+  Poisson_ASCG__Form.o \
+  Poisson_H__Form.o \
+  Laplacian_M_ASCG__Kernel.o \
+  Laplacian_M_ASCG__Form.o \
+  Laplacian_M_H__Kernel.o \
+  Laplacian_M_H__Form.o

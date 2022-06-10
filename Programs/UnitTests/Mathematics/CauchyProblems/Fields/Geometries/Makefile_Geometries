@@ -1,0 +1,46 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Geometry_F__Form_Test Coarsening_C__Form_Test
+
+Geometry_F__Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a Geometries.a \
+  Geometry_F__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Geometry_F__Form_Test_$(MACHINE) \
+          Geometry_F__Form_Test.o Geometries.a \
+          FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+Coarsening_C__Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Coarsening_C__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Coarsening_C__Form_Test_$(MACHINE) \
+          Coarsening_C__Form_Test.o Geometries.a \
+          FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Geometry_F__Form_Test_*
+	rm -f Coarsening_C__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELD_SETS)/Makefile_Dependencies
+include $(PATH_GEOMETRIES)/Makefile_Dependencies
+
+Geometry_F__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Geometry_F__Form_Test.f90
+
+Coarsening_C__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Coarsening_C__Form_Test.f90

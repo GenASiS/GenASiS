@@ -1,0 +1,10 @@
+Root_Form.o: \
+  Basics.o \
+  Root_Form.f90
+
+Algebra.o: \
+  Root_Form.o \
+  Algebra.f90
+
+Algebra.a: $(ALGEBRA)
+	ar r Algebra.a $(ALGEBRA)

@@ -1,0 +1,22 @@
+Step_RK_H__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Slopes.o \
+  Step_RK_H__Form.f90
+
+Step_RK_CS__Form.o: \
+  Basics.o \
+  Algebra.o \
+  Fields.o \
+  Slopes.o \
+  Step_RK_H__Form.o \
+  Step_RK_CS__Form.f90
+
+Steps.o: \
+  Step_RK_H__Form.o \
+  Step_RK_CS__Form.o \
+  Steps.f90
+
+Steps.a: $(STEPS)
+	ar r Steps.a $(STEPS)

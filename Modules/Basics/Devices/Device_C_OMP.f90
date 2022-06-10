@@ -11,8 +11,10 @@ module Device_C
     OnTarget, &
     AllocateTargetInteger, &
     AllocateTargetDouble, &
+    AllocateTargetLogical, &
     AssociateTargetInteger, &
     AssociateTargetDouble, &
+    AssociateTargetLogical, &
     DeallocateTarget, &
     DisassociateTarget, &
     AllocateHostDouble, &
@@ -69,6 +71,15 @@ module Device_C
     end function AllocateTargetDouble
     
     
+    type ( c_ptr ) function AllocateTargetLogical ( nValues ) &
+                              bind ( c, name = 'AllocateTargetLogical_OMP' )
+      use iso_c_binding
+      implicit none
+      integer ( c_int ), value :: &
+        nValues
+    end function AllocateTargetLogical
+    
+    
     integer ( c_int ) function AssociateTargetInteger &
                         ( Host, Device, nValues, oValue ) &
                         bind ( c, name = 'AssociateTargetInteger_OMP' )
@@ -97,6 +108,21 @@ module Device_C
         nValues, &
         oValue
     end function AssociateTargetDouble
+    
+    
+    integer ( c_int ) function AssociateTargetLogical &
+                        ( Host, Device, nValues, oValue ) &
+                        bind ( c, name = 'AssociateTargetLogical_OMP' )
+    
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &
+        Host, &
+        Device
+      integer ( c_int ), value :: &
+        nValues, &
+        oValue
+    end function AssociateTargetLogical
     
     
     subroutine DeallocateTarget ( Device ) bind ( c, name = 'FreeTarget_OMP' )

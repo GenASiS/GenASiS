@@ -1,0 +1,16 @@
+UNIVERSES = \
+  Universes.o \
+  RadiationCentralCore_Form.o \
+  RadiationBox_Form.o \
+  FluidCentralCore_Kernel.o \
+  FluidCentralCore_Form.o \
+  FluidCentralExcision_Form.o \
+  FluidCentral_Kernel.o \
+  FluidCentral_Template.o \
+  FluidSymmetricCurvilinear_Form.o \
+  FluidBox_Form.o \
+  TimeSeriesRadiationFluid_Form.o \
+  Universe_Template.o \
+  ApplyDeleptonization_F__Command.o \
+  ApplyGravity_F__Command.o \
+  ComputeGravity_Command.o

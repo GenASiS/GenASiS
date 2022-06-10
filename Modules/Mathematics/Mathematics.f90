@@ -1,7 +1,7 @@
 module Mathematics
 
-  use Manifolds
-  use Operations
-  use Solvers
+  use Algebra
+  use Calculus
+  use CauchyProblems
 
 end module Mathematics

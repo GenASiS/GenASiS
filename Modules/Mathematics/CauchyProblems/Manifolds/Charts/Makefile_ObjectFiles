@@ -1,0 +1,5 @@
+include $(PATH_STRUCTURED_GRIDS)/Makefile_ObjectFiles
+
+CHARTS = \
+  Charts.o \
+  $(STRUCTURED_GRIDS)

@@ -1,0 +1,14 @@
+include $(PATH_FIELD_SETS)/Makefile_Dependencies
+include $(PATH_GEOMETRIES)/Makefile_Dependencies
+include $(PATH_CALCULUS_FIELDS)/Makefile_Dependencies
+include $(PATH_CURRENT_SETS)/Makefile_Dependencies
+
+Fields.o: \
+  FieldSets.o \
+  Geometries.o \
+  CalculusFields.o \
+  CurrentSets.o \
+  Fields.f90
+
+Fields.a: $(FIELDS)
+	ar r Fields.a $(FIELDS)

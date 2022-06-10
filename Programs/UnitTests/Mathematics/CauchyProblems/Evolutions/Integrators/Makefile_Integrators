@@ -1,0 +1,46 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Integrator_H__Form_Test Integrator_CS__Form_Test
+
+Integrator_H__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
+  Steps.a Integrators.a Integrator_H__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Integrator_H__Form_Test_$(MACHINE) \
+          Integrator_H__Form_Test.o Integrators.a \
+          Steps.a Slopes.a Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+Integrator_CS__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
+  Steps.a Integrators.a Integrator_CS__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Integrator_CS__Form_Test_$(MACHINE) \
+          Integrator_CS__Form_Test.o Integrators.a \
+          Steps.a Slopes.a Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Integrator_H__Form_Test_*
+	rm -f Integrator_CS__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_SLOPES)/Makefile_Dependencies
+include $(PATH_STEPS)/Makefile_Dependencies
+include $(PATH_INTEGRATORS)/Makefile_Dependencies
+
+Integrator_H__Form_Test.o: \
+  Basics.o \
+  Integrators.o \
+  Integrator_H__Form_Test.f90
+
+Integrator_CS__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Integrators.o \
+  Integrator_CS__Form_Test.f90

@@ -1,0 +1,120 @@
+PATH_GENASIS = ../../../../..
+
+all: HomogeneousSpheroid #KuzminPlummer Satoh Logarithmic TwoPowerDensity CondensedSphere
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+HomogeneousSpheroid: Basics.a Mathematics.a HomogeneousSpheroid.o
+	$(LINK) $(FLAGS) \
+	  -o HomogeneousSpheroid_$(MACHINE) \
+	  HomogeneousSpheroid.o HomogeneousSpheroid_Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+KuzminPlummer: Basics.a Mathematics.a Density.a KuzminPlummerDisk.o
+	$(LINK) $(FLAGS) \
+	  -o KuzminPlummerDisk_$(MACHINE) \
+	  KuzminPlummerDisk.o KuzminPlummerDisk_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
+Satoh: Basics.a Mathematics.a Density.a SatohDisk.o
+	$(LINK) $(FLAGS) \
+	  -o SatohDisk_$(MACHINE) \
+	  SatohDisk.o SatohDisk_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
+Logarithmic: Basics.a Mathematics.a Density.a LogarithmicPotential.o
+	$(LINK) $(FLAGS) \
+	  -o LogarithmicPotential_$(MACHINE) \
+	  LogarithmicPotential.o LogarithmicPotential_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
+TwoPowerDensity: Basics.a Mathematics.a Density.a TwoPowerDensity.o
+	$(LINK) $(FLAGS) \
+	  -o TwoPowerDensity_$(MACHINE) \
+	  TwoPowerDensity.o TwoPowerDensity_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
+CondensedSphere: Basics.a Mathematics.a Density.a CondensedSphere.o
+	$(LINK) $(FLAGS) \
+	  -o CondensedSphere_$(MACHINE) \
+	  CondensedSphere.o CondensedSphere_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f HomogeneousSpheroid_*
+	rm -f KuzminPlummerDisk_*
+	rm -f SatohDisk_*
+	rm -f LogarithmicPotential_*
+	rm -f TwoPowerDensity_*
+	rm -f CondensedSphere_*
+
+HomogeneousSpheroid_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  HomogeneousSpheroid_Form.f90
+
+HomogeneousSpheroid.o: \
+  Basics.o \
+  HomogeneousSpheroid_Form.o \
+  HomogeneousSpheroid.f90
+
+KuzminPlummerDisk_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  KuzminPlummerDisk_Form.f90
+
+KuzminPlummerDisk.o: \
+  Basics.o \
+  KuzminPlummerDisk_Form.o \
+  KuzminPlummerDisk.f90
+
+SatohDisk_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  SatohDisk_Form.f90
+
+SatohDisk.o: \
+  Basics.o \
+  SatohDisk_Form.o \
+  SatohDisk.f90
+
+LogarithmicPotential_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  LogarithmicPotential_Form.f90
+
+LogarithmicPotential.o: \
+  Basics.o \
+  LogarithmicPotential_Form.o \
+  LogarithmicPotential.f90
+
+TwoPowerDensity_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  TwoPowerDensity_Form.f90
+
+TwoPowerDensity.o: \
+  Basics.o \
+  TwoPowerDensity_Form.o \
+  TwoPowerDensity.f90
+
+CondensedSphere_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  CondensedSphere_Form.f90
+
+CondensedSphere.o: \
+  Basics.o \
+  CondensedSphere_Form.o \
+  CondensedSphere.f90

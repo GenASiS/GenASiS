@@ -1,11 +1,11 @@
-include $(PATH_MANIFOLDS)/Makefile_Dependencies
-include $(PATH_OPERATIONS)/Makefile_Dependencies
-include $(PATH_SOLVERS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_CALCULUS)/Makefile_Dependencies
+include $(PATH_CAUCHY_PROBLEMS)/Makefile_Dependencies
 
 Mathematics.o: \
-  Manifolds.o \
-  Operations.o \
-  Solvers.o \
+  Algebra.o \
+  Calculus.o \
+  CauchyProblems.o \
   Mathematics.f90
 
 Mathematics.a: $(MATHEMATICS)

@@ -35,3 +35,11 @@
 #endif
 #else
 #endif
+
+#define MAP_DT_INVERSE
+#ifdef ENABLE_OMP_OFFLOAD
+#ifdef Cray_CCE
+#define MAP_DT_INVERSE map ( tofrom: dT_Inverse )
+#endif
+#else
+#endif

@@ -19,35 +19,40 @@ module YahilLattimer_Form
   implicit none
   private
 
-  type, public, extends ( FluidCentralCoreForm ) :: YahilLattimerForm
+  type, public, extends ( Universe_F_CC_Form ) :: YahilLattimerForm
     real ( KDR ) :: &
       AdiabaticIndex, &
       PolytropicConstant, &
       DensityDimensionless, &
       DensityInitial, &
       PressureInitial, &
+      DensityFinal, &
       CollapseTime
-    type ( SplineInterpolationForm ), dimension ( : ), allocatable :: &
-      SplineInterpolation
-    type ( Fluid_ASC_Form ), allocatable :: &
+    type ( InterpolationForm ), allocatable :: &
+      Interpolation_D, &
+      Interpolation_V
+    type ( Fluid_P_I_Form ), allocatable :: &
       Reference, &
       Difference
   contains
     procedure, private, pass :: &
-      Initialize_YL
-    generic, public :: &
-      Initialize => Initialize_YL
+      Initialize_H
     procedure, public, pass :: &
       ComputeError
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
   end type YahilLattimerForm
 
     private :: &
-      SetReference, &
-      InitializeFluidCentralCore, &
+      InitializeUniverse, &
       InitializeDiagnostics, &
-      SetProblem
+      SetInitial, &
+      ResetInitial, &
+      SetReference
 
       private :: &
         PrepareInterpolation, &
@@ -60,28 +65,31 @@ module YahilLattimer_Form
       iProfile_X = 1, &  !-- must match the Profile file columns
       iProfile_D = 2, &
       iProfile_V = 3
-    integer ( KDI ), private, parameter :: &
-      iSpline_D = 1, & !-- spline interpolation
-      iSpline_V = 2
 
 contains
 
 
-  subroutine Initialize_YL ( YL, Name )
+  subroutine Initialize_H ( U, NameOption )
 
     class ( YahilLattimerForm ), intent ( inout ), target :: &
-      YL
-    character ( * ), intent ( in ) :: &
+      U
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+
+    character ( LDL ) :: &
       Name
 
-    if ( YL % Type == '' ) &
-      YL % Type = 'a YahilLattimer'
+    if ( U % Type == '' ) &
+      U % Type = 'a YahilLattimer'
 
-    call InitializeFluidCentralCore ( YL, Name )
-    call InitializeDiagnostics ( YL )
-    call SetProblem ( YL )
+    Name  =  'YahilLattimer'
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
 
-  end subroutine Initialize_YL
+    call InitializeUniverse ( U, Name )
+    call InitializeDiagnostics ( U )
+
+  end subroutine Initialize_H
 
 
   subroutine ComputeError ( YL )
@@ -93,55 +101,53 @@ contains
       L1_Rho, &
       L1_V, &
       L1_P
-    class ( Fluid_P_I_Form ), pointer :: &
-      F_D, &
-      F_R
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    select type ( PS => YL % Integrator % PositionSpace )
-    class is ( Atlas_SC_Form )
-    
-    select type ( PSC => PS % Chart ) 
-    class is ( Chart_SLD_Form )
-    
-    F_D => YL % Difference % Fluid_P_I ( )
-    F_R => YL % Reference % Fluid_P_I ( )
-    
-    call CO % Initialize ( PS % Communicator, [ 6 ], [ 6 ] )
+    select type ( A  =>  YL % Reference % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C    =>  A % Chart_GS, &
+        F_R  =>  YL % Reference, &
+        F_D  =>  YL % Difference )
+    associate &
+      ( FV_R  =>  F_R % Storage_GS % Value, &
+        FV_D  =>  F_D % Storage_GS % Value )
+
+    call CO % Initialize ( C % Communicator, [ 6 ], [ 6 ] )
 
     associate &
-      ( D_Rho => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
-        R_Rho => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
-          D_V => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
-          R_V => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
-          D_P => F_D % Value ( :, F_D % PRESSURE ), &
-          R_P => F_R % Value ( :, F_R % PRESSURE ), &
-        Norm_D_Rho => CO % Incoming % Value ( 1 ), &
-        Norm_R_Rho => CO % Incoming % Value ( 2 ), &
-          Norm_D_V => CO % Incoming % Value ( 3 ), &
-          Norm_R_V => CO % Incoming % Value ( 4 ), &
-          Norm_D_P => CO % Incoming % Value ( 5 ), &
-          Norm_R_P => CO % Incoming % Value ( 6 ) )
+      ( D_Rho  =>  FV_D ( :, F_D % BARYON_DENSITY_C ), &
+        R_Rho  =>  FV_R ( :, F_R % BARYON_DENSITY_C ), &
+        D_V    =>  FV_D ( :, F_D % VELOCITY_U_1 ), &
+        R_V    =>  FV_R ( :, F_R % VELOCITY_U_1 ), &
+        D_P    =>  FV_D ( :, F_D % PRESSURE ), &
+        R_P    =>  FV_R ( :, F_R % PRESSURE ), &
+        Norm_D_Rho  =>  CO % Incoming % Value ( 1 ), &
+        Norm_R_Rho  =>  CO % Incoming % Value ( 2 ), &
+        Norm_D_V    =>  CO % Incoming % Value ( 3 ), &
+        Norm_R_V    =>  CO % Incoming % Value ( 4 ), &
+        Norm_D_P    =>  CO % Incoming % Value ( 5 ), &
+        Norm_R_P    =>  CO % Incoming % Value ( 6 ) )
 
     CO % Outgoing % Value ( 1 ) &
-      = sum ( abs ( D_Rho ), mask = PSC % IsProperCell )
+      =  sum ( abs ( D_Rho ), mask = C % ProperCell )
     CO % Outgoing % Value ( 2 ) &
-      = sum ( abs ( R_Rho ), mask = PSC % IsProperCell )
+      =  sum ( abs ( R_Rho ), mask = C % ProperCell )
     CO % Outgoing % Value ( 3 ) &
-      = sum ( abs ( D_V ), mask = PSC % IsProperCell )
+      =  sum ( abs ( D_V ), mask = C % ProperCell )
     CO % Outgoing % Value ( 4 ) &
-      = sum ( abs ( R_V ), mask = PSC % IsProperCell )
+      =  sum ( abs ( R_V ), mask = C % ProperCell )
     CO % Outgoing % Value ( 5 ) &
-      = sum ( abs ( D_P ), mask = PSC % IsProperCell )
+      =  sum ( abs ( D_P ), mask = C % ProperCell )
     CO % Outgoing % Value ( 6 ) &
-      = sum ( abs ( R_P ), mask = PSC % IsProperCell )
+      =  sum ( abs ( R_P ), mask = C % ProperCell )
 
     call CO % Reduce ( REDUCTION % SUM )
 
-    L1_Rho = Norm_D_Rho / Norm_R_Rho
-      L1_V = Norm_D_V / Norm_R_V
-      L1_P = Norm_D_P / Norm_R_P
+    L1_Rho  =  Norm_D_Rho / Norm_R_Rho
+    L1_V    =  Norm_D_V   / Norm_R_V
+    L1_P    =  Norm_D_P   / Norm_R_P
 
     call Show ( L1_Rho, '*** L1_Rho error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
@@ -151,9 +157,9 @@ contains
                 nTrailingLinesOption = 2 )
 
     end associate !-- D_Rho, etc.
-    end select !-- PSC
-    end select !-- PS
-    nullify ( F_D, F_R )
+    end associate !-- FV_R, etc.
+    end associate !-- C, etc.
+    end select !-- A
 
   end subroutine ComputeError
 
@@ -167,69 +173,72 @@ contains
       deallocate ( YL % Difference )
     if ( allocated ( YL % Reference ) ) &
       deallocate ( YL % Reference )
-    if ( allocated ( YL % SplineInterpolation ) ) &
-      deallocate ( YL % SplineInterpolation )
+    if ( allocated ( YL % Interpolation_V ) ) &
+      deallocate ( YL % Interpolation_V )
+    if ( allocated ( YL % Interpolation_D ) ) &
+      deallocate ( YL % Interpolation_D )
 
   end subroutine Finalize
 
 
-  subroutine SetReference ( I )
+  subroutine ShowParameters ( U )
 
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
+    class ( YahilLattimerForm ), intent ( in ) :: &
+      U
 
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_P_I_Form ), pointer :: &
-      F, &
-      F_R, &  !-- F_Reference
-      F_D     !-- F_Difference
+    call U % Universe_F_CC_Form % ShowParameters ( )
 
-    select type ( I )
-    class is ( Integrator_C_PS_Form )
+    call Show ( U % AdiabaticIndex, 'AdiabaticIndex' )
+    call Show ( U % DensityInitial, UNIT % MASS_DENSITY_CGS, &
+                'MassDensityInitial' )
+    call Show ( U % DensityInitial, UNIT % ENERGY_DENSITY_NUCLEAR, &
+                'MassDensityInitial' )
+    call Show ( U % DensityInitial  /  CONSTANT % ATOMIC_MASS_UNIT, &
+                UNIT % NUMBER_DENSITY_NUCLEAR, 'BaryonDensityInitial' )
+    call Show ( U % PressureInitial, UNIT % BARYE, 'PressureInitial' )
+    call Show ( U % PressureInitial, UNIT % ENERGY_DENSITY_NUCLEAR, &
+                'PressureInitial' )
+    call Show ( U % DensityFinal, UNIT % MASS_DENSITY_CGS, &
+                'MassDensityFinal' )
+    call Show ( U % DensityFinal, UNIT % ENERGY_DENSITY_NUCLEAR, &
+                'MassDensityFinal' )
+    call Show ( U % DensityFinal  /  CONSTANT % ATOMIC_MASS_UNIT, &
+                UNIT % NUMBER_DENSITY_NUCLEAR, 'BaryonDensityFinal' )
+    call Show ( U % CollapseTime, UNIT % SECOND, 'CollapseTime' )
 
-    select type ( YL => I % Universe )
-    class is ( YahilLattimerForm )
-
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_P_I ( )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
-    select type ( PSC => PS % Chart )
-    class is ( Chart_SLD_Form )
-
-    F_R => YL % Reference % Fluid_P_I ( )
-    call SetFluid ( YL, F_R, G, PSC )
-
-    F_D => YL % Difference % Fluid_P_I ( )
-    call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
-
-    end select !-- PSC
-    end select !-- PS
-    end select !-- FA
-    end select !-- OS
-    end select !-- I
-    nullify ( G, F, F_R, F_D )
-
-  end subroutine SetReference
+  end subroutine ShowParameters
 
 
-  subroutine InitializeFluidCentralCore ( YL, Name )
+  subroutine ShowDiagnostics ( U )
 
-    class ( YahilLattimerForm ), intent ( inout ) :: &
+    class ( YahilLattimerForm ), intent ( in ) :: &
+      U
+
+    call U % Reference % Show ( )
+    call U % Universe_F_CC_Form % ShowDiagnostics ( )
+
+  end subroutine ShowDiagnostics
+
+
+  subroutine InitializeUniverse ( YL, Name )
+
+    class ( YahilLattimerForm ), intent ( inout ), target :: &
       YL
     character ( * ), intent ( in )  :: &
       Name
     
     call YL % Initialize &
-           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', Name = Name )
-    YL % Integrator % SetReference => SetReference
+           ( FluidType = 'IDEAL', &
+             GravitationType = 'NEWTON_SG', &
+             NameOption = Name, &
+             nCellsPolarOption = 128 )
 
-  end subroutine InitializeFluidCentralCore
+    YL % Integrator % SetInitial    =>  SetInitial
+    YL % Integrator % ResetInitial  =>  ResetInitial
+    YL % Integrator % SetReference  =>  SetReference
+    YL % Integrator % System        =>  YL
+
+  end subroutine InitializeUniverse
 
 
   subroutine InitializeDiagnostics ( YL )
@@ -237,49 +246,42 @@ contains
     class ( YahilLattimerForm ), intent ( inout ) :: &
       YL
 
-    select type ( PS => YL % Integrator % PositionSpace )
-    class is ( Atlas_SC_Form )
-
     allocate ( YL % Reference )
     allocate ( YL % Difference )
-    call YL % Reference % Initialize &
-           ( PS, 'IDEAL', YL % Units, NameShortOption = 'Reference', &
-             AllocateSourcesOption = .false., &
-             AllocateFeaturesOption = .false., &
-             IgnorabilityOption = CONSOLE % INFO_2 )
-    call YL % Difference % Initialize &
-           ( PS, 'IDEAL', YL % Units, NameShortOption = 'Difference', &
-             AllocateSourcesOption = .false., &
-             AllocateFeaturesOption = .false., &
-             IgnorabilityOption = CONSOLE % INFO_2 )
+    associate &
+      ( F_R  =>  YL % Reference, &
+        F_D  =>  YL % Difference, &
+        G    =>  YL % Integrator % Geometry_X, &
+        S    =>  YL % Integrator % Checkpoint_X )
 
-    end select !-- PS
+    call F_R % Initialize ( G, YL % Units_F, NameOption = 'Reference' )
+    call F_D % Initialize ( G, YL % Units_F, NameOption = 'Difference' )
+    call F_R % SetStream ( S )
+    call F_D % SetStream ( S )
+
+    end associate !-- FA_R, etc.
 
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetProblem ( YL )
+  subroutine SetInitial ( I )
 
-    class ( YahilLattimerForm ), intent ( inout ) :: &
-      YL
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
 
     real ( KDR ) :: &
-      GC, &
-      DensityFinal, &
-      CollapseTime
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_P_I_Form ), pointer :: &
-      F
+      GC
 
+    select type ( YL  =>  I % System )
+      class is ( YahilLattimerForm )
     select type ( I => YL % Integrator )
-    class is ( Integrator_C_PS_Form )
-
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_I_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
 
     call PrepareInterpolation ( YL )
 
@@ -292,44 +294,113 @@ contains
           D_0 => YL % DensityDimensionless, &
         Rho_I => YL % DensityInitial, &
           P_I => YL % PressureInitial, &
-        Rho_F => DensityFinal, &
-          T_F => I % FinishTime )
+        Rho_F => YL % DensityFinal, &
+          T_F => I % T_Finish )
 
     Gamma  =  1.30_KDR
-    Rho_I  =  7.0e9_KDR * UNIT % MASS_DENSITY_CGS
-      P_I  =  6.0e27_KDR * UNIT % BARYE
-    Rho_F  =  1.0e14_KDR * UNIT % MASS_DENSITY_CGS
+    Rho_I  =  7.0e9_KDR   *  UNIT % MASS_DENSITY_CGS
+      P_I  =  6.0e27_KDR  *  UNIT % BARYE
+    Rho_F  =  1.0e14_KDR  *  UNIT % MASS_DENSITY_CGS
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
     call PROGRAM_HEADER % GetParameter ( Rho_I, 'DensityInitial' )
-    call PROGRAM_HEADER % GetParameter ( P_I, 'PressureInitial' )
+    call PROGRAM_HEADER % GetParameter ( P_I,   'PressureInitial' )
     call PROGRAM_HEADER % GetParameter ( Rho_F, 'DensityFinal' )
 
     Kappa  =  P_I  /  Rho_I ** Gamma
       T_C  =  sqrt ( D_0 / ( GC * Rho_I ) ) 
       T_F  =  T_C  -  sqrt ( D_0 / ( GC * Rho_F ) ) 
 
-    call Show ( Gamma, 'AdiabaticIndex' )
-    call Show ( Rho_I, UNIT % MASS_DENSITY_CGS, 'DensityInitial' )
-    call Show ( P_I, UNIT % BARYE, 'PressureInitial' )
-    call Show ( Rho_F, UNIT % MASS_DENSITY_CGS, 'DensityFinal' )
-    call Show ( T_C, UNIT % SECOND, 'CollapseTime' )
-    call Show ( T_F, UNIT % SECOND, 'Reset FinishTime' )
+    call F % SetAdiabaticIndex &
+           ( Gamma )
+    call F % SetFiducialParameters &
+           ( FiducialBaryonDensity = Rho_I, &
+             FiducialPressure = P_I )
 
-    select type ( PSC => PS % Chart )
-    class is ( Chart_SLD_Form )
+    call SetFluid ( YL, F )
 
-    G => PS % Geometry ( )
-    F => FA % Fluid_P_I ( )
-    call SetFluid ( YL, F, G, PSC )
+    associate ( F_R  =>  YL % Reference )
+      call F_R % SetAdiabaticIndex &
+             ( Gamma )
+      call F_R % SetFiducialParameters &
+             ( FiducialBaryonDensity = Rho_I, &
+               FiducialPressure = P_I )
+    end associate !-- F_R
 
-    end select !-- PSC
+    if ( allocated ( YL % SA_Fluid ) ) then
+      select type ( F_SA  =>  YL % SA_Fluid % FieldSet_SA )
+      class is ( Fluid_P_I_Form )
+        call F_SA % SetAdiabaticIndex &
+               ( Gamma )
+        call F_SA % SetFiducialParameters &
+               ( FiducialBaryonDensity = Rho_I, &
+                 FiducialPressure = P_I )
+      end select !-- F_SA
+    end if
+
+    if ( allocated ( YL % AA_Fluid ) ) then
+      select type ( F_AA  =>  YL % AA_Fluid % FieldSet_AA )
+      class is ( Fluid_P_I_Form )
+        call F_AA % SetAdiabaticIndex &
+               ( Gamma )
+        call F_AA % SetFiducialParameters &
+               ( FiducialBaryonDensity = Rho_I, &
+                 FiducialPressure = P_I )
+      end select !-- F_AA
+    end if
+
     end associate !-- Gamma, etc.
-    end select !-- PS
-    end select !-- FA
-    end select !-- I
-    nullify ( G, F )
 
-  end subroutine SetProblem
+    end associate !-- C
+    end select !-- A
+    end select !-- F
+    end select !-- I
+    end select !-- YL
+
+  end subroutine SetInitial
+  
+  
+  subroutine ResetInitial ( I, RestartFrom, T_Restart )
+  
+  
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      RestartFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      T_Restart
+    
+    call SetInitial ( I )
+    call I % ResetInitial_H ( RestartFrom, T_Restart )
+
+  end subroutine ResetInitial
+
+
+  subroutine SetReference ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( YL  =>  I % System )
+      class is ( YahilLattimerForm )
+    select type ( I  =>  YL % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+    associate &
+      ( F_R  =>  YL % Reference, &
+        F_D  =>  YL % Difference )
+
+    call SetFluid ( YL, F_R )
+    call F_R % ComputeFromPrimitive ( F_R )
+
+    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR, UseDeviceOption = .false. )
+
+    end associate !-- F_R, etc.
+    end select !-- F
+    end select !-- I
+    end select !-- YL
+
+  end subroutine SetReference
 
 
   subroutine PrepareInterpolation ( YL )
@@ -364,9 +435,11 @@ contains
 
     YL % DensityDimensionless  =  Profile ( 1, iProfile_D )
 
-    allocate ( YL % SplineInterpolation ( 2 ) )
+    allocate ( YL % Interpolation_D )
+    allocate ( YL % Interpolation_V )
     associate &
-      ( SI => YL % SplineInterpolation, &
+      ( I_D => YL % Interpolation_D, &
+        I_V => YL % Interpolation_V, &
         nProfile => size ( Profile, dim = 1 ) )
 
     allocate ( X ( nProfile + 1 ) )
@@ -381,54 +454,58 @@ contains
     D ( 1 )  =  D ( 2 )
     V ( 1 )  =  0.0_KDR
 
-    call SI ( iSpline_D ) % Initialize &
+    call I_D % Initialize &
            ( X, D, VerbosityOption = CONSOLE % INFO_3 )
-    call SI ( iSpline_V ) % Initialize &
+    call I_V % Initialize &
            ( X, V, VerbosityOption = CONSOLE % INFO_3 )
 
-    end associate !-- SI, etc.
+    end associate !-- I_D, etc.
 
   end subroutine PrepareInterpolation
 
 
-  subroutine SetFluid ( YL, F, G, PSC )
+  subroutine SetFluid ( YL, F )
 
     class ( YahilLattimerForm ), intent ( inout ) :: &
       YL
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
-    class ( Chart_SLD_Form ), intent ( inout ) :: &
-      PSC
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
 
-    call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
-    call F % SetFiducialParameters &
-           ( FiducialBaryonDensity = YL % DensityInitial, &
-             FiducialPressure = YL % PressureInitial )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS, &
+        G  =>  F % Geometry )
+    associate &
+      ( FV  =>  F % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
 
     call SetFluidKernel &
-           (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-                P = F % Value ( :, F % PRESSURE ), &
-                E = F % Value ( :, F % INTERNAL_ENERGY ), &
-              V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-              V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-              V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-             SI_D = YL % SplineInterpolation ( iSpline_D ), &
-             SI_V = YL % SplineInterpolation ( iSpline_V ), &
-             IsProperCell = PSC % IsProperCell, &
-                        R = G % Value ( :, G % CENTER_U ( 1 ) ), &
-               Minus_t_YL = YL % CollapseTime - YL % Integrator % Time, &
-                    Gamma = YL % AdiabaticIndex, &
-                    Kappa = YL % PolytropicConstant, &
-                        G = CONSTANT % GRAVITATIONAL, &
-                      amu = CONSTANT % ATOMIC_MASS_UNIT )
+           (    N = FV ( :, F % BARYON_DENSITY_C ), &
+                P = FV ( :, F % PRESSURE ), &
+                E = FV ( :, F % ENERGY_DENSITY_C ), &
+              V_1 = FV ( :, F % VELOCITY_U_1 ), &
+              V_2 = FV ( :, F % VELOCITY_U_2 ), &
+              V_3 = FV ( :, F % VELOCITY_U_3 ), &
+              I_D = YL % Interpolation_D, &
+              I_V = YL % Interpolation_V, &
+             ProperCell = C % ProperCell, &
+                R = GV ( :, G % CENTER_U_1 ), &
+             Minus_t_YL = YL % CollapseTime - YL % Integrator % T, &
+                  Gamma = YL % AdiabaticIndex, &
+                  Kappa = YL % PolytropicConstant, &
+                      G = CONSTANT % GRAVITATIONAL, &
+                    amu = CONSTANT % ATOMIC_MASS_UNIT )
     
+    end associate !-- FV, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
   end subroutine SetFluid
 
 
   subroutine SetFluidKernel &
-               ( N, P, E, V_1, V_2, V_3, SI_D, SI_V, IsProperCell, R, &
+               ( N, P, E, V_1, V_2, V_3, I_D, I_V, ProperCell, R, &
                  Minus_t_YL, Gamma, Kappa, G, amu )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -436,14 +513,14 @@ contains
       P, &
       E, &
       V_1, V_2, V_3
-    type ( SplineInterpolationForm ), intent ( in ) :: &
-      SI_D, &
-      SI_V
+    type ( InterpolationForm ), intent ( in ) :: &
+      I_D, &
+      I_V
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
+      ProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R
-    real ( KDR ) :: &
+    real ( KDR ), intent ( in ) :: &
       Minus_t_YL, &
       Gamma, &
       Kappa, &
@@ -451,27 +528,27 @@ contains
       amu
 
     integer ( KDI ) :: &
-      iV, &
-      nValues
+      iV, &  !-- iValue
+      nV
     real ( KDR ) :: &
       X, &
       D, &
       V
 
-    nValues = size ( N )
+    nV = size ( N )
       
     !$OMP parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-    do iV = 1, nValues
+    !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( X, D, V )
+    do iV  =  1,  nV
 
-      if ( .not. IsProperCell ( iV ) ) &
+      if ( .not. ProperCell ( iV ) ) &
         cycle
 
       X  =  Kappa ** ( -0.5_KDR )  *  G ** ( ( Gamma - 1.0_KDR ) / 2.0_KDR )  &
             *  R ( iV )  *  Minus_t_YL ** ( Gamma - 2.0_KDR )
- 
-      call SI_D % Evaluate ( X, D )
-      call SI_V % Evaluate ( X, V )
+      
+      call I_D % Evaluate ( X, D )
+      call I_V % Evaluate ( X, V )
 
       N ( iV )  =  D / ( amu  *  G  *  Minus_t_YL ** 2 )
 

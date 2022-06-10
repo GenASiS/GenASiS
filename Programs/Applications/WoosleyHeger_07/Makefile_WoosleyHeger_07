@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../..
 
-all: WoosleyHeger_07_A WoosleyHeger_07_D WoosleyHeger_07_G WoosleyHeger_07_S \
+all: WoosleyHeger_07_A #WoosleyHeger_07_D WoosleyHeger_07_G WoosleyHeger_07_S \
   GreyDegeneracySolver_Test
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -9,42 +9,42 @@ WoosleyHeger_07_A: ThirdParty.a GenASiS.a WoosleyHeger_07_A.o
 	$(LINK) $(FLAGS) \
            -o WoosleyHeger_07_A_$(MACHINE) \
            WoosleyHeger_07_A.o WoosleyHeger_07_A__Form.o \
-           WoosleyHeger_07__Template.o \
+           WoosleyHeger_07__Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-WoosleyHeger_07_D: ThirdParty.a GenASiS.a WoosleyHeger_07_D.o
-	$(LINK) $(FLAGS) \
-           -o WoosleyHeger_07_D_$(MACHINE) \
-           WoosleyHeger_07_D.o WoosleyHeger_07_D__Form.o \
-           WoosleyHeger_07_A__Form.o WoosleyHeger_07__Template.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+# WoosleyHeger_07_D: ThirdParty.a GenASiS.a WoosleyHeger_07_D.o
+# 	$(LINK) $(FLAGS) \
+#            -o WoosleyHeger_07_D_$(MACHINE) \
+#            WoosleyHeger_07_D.o WoosleyHeger_07_D__Form.o \
+#            WoosleyHeger_07_A__Form.o WoosleyHeger_07__Template.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-WoosleyHeger_07_G: ThirdParty.a GenASiS.a WoosleyHeger_07_G.o
-	$(LINK) $(FLAGS) \
-           -o WoosleyHeger_07_G_$(MACHINE) \
-           WoosleyHeger_07_G.o WoosleyHeger_07_RM__Form.o \
-           WoosleyHeger_07__Template.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+# WoosleyHeger_07_G: ThirdParty.a GenASiS.a WoosleyHeger_07_G.o
+# 	$(LINK) $(FLAGS) \
+#            -o WoosleyHeger_07_G_$(MACHINE) \
+#            WoosleyHeger_07_G.o WoosleyHeger_07_RM__Form.o \
+#            WoosleyHeger_07__Template.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-WoosleyHeger_07_S: ThirdParty.a GenASiS.a WoosleyHeger_07_S.o
-	$(LINK) $(FLAGS) \
-           -o WoosleyHeger_07_S_$(MACHINE) \
-           WoosleyHeger_07_S.o WoosleyHeger_07_RM__Form.o \
-           WoosleyHeger_07__Template.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+# WoosleyHeger_07_S: ThirdParty.a GenASiS.a WoosleyHeger_07_S.o
+# 	$(LINK) $(FLAGS) \
+#            -o WoosleyHeger_07_S_$(MACHINE) \
+#            WoosleyHeger_07_S.o WoosleyHeger_07_RM__Form.o \
+#            WoosleyHeger_07__Template.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-Findall_GPU_Test: ThirdParty.a Findall_GPU_Test.o
-	$(LINK) $(FLAGS) \
-           -o Findall_GPU_Test_$(MACHINE) \
-           Findall_GPU_Test.o ThirdParty.a $(LIBRARIES)
+# Findall_GPU_Test: ThirdParty.a Findall_GPU_Test.o
+# 	$(LINK) $(FLAGS) \
+#            -o Findall_GPU_Test_$(MACHINE) \
+#            Findall_GPU_Test.o ThirdParty.a $(LIBRARIES)
 
-GreyDegeneracySolver_Test: ThirdParty.a Basics.a NonlinearEquations.a \
-	GreyDegeneracySolver_Test.o
-	$(LINK) $(FLAGS) \
-          -o GreyDegeneracySolver_Test_$(MACHINE) \
-          GreyDegeneracySolver_Test.o \
-	  NonlinearEquations.a Basics.a ThirdParty.a \
-	  $(LIBRARIES)
+# GreyDegeneracySolver_Test: ThirdParty.a Basics.a NonlinearEquations.a \
+# 	GreyDegeneracySolver_Test.o
+# 	$(LINK) $(FLAGS) \
+#           -o GreyDegeneracySolver_Test_$(MACHINE) \
+#           GreyDegeneracySolver_Test.o \
+# 	  NonlinearEquations.a Basics.a ThirdParty.a \
+# 	  $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
@@ -52,16 +52,15 @@ clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	find . -type f -executable -name 'WoosleyHeger_07_*' -exec rm -f '{}' \;
-	find . -type f -executable -name 'GreyDegeneracySolver_Test_*' -exec rm -f '{}' \;
+	rm -f WoosleyHeger_07_*
 
-WoosleyHeger_07__Template.o: \
+WoosleyHeger_07__Form.o: \
   GenASiS.o \
-  WoosleyHeger_07__Template.f90
+  WoosleyHeger_07__Form.f90
 
 WoosleyHeger_07_A__Form.o: \
   GenASiS.o \
-  WoosleyHeger_07__Template.o \
+  WoosleyHeger_07__Form.o \
   WoosleyHeger_07_A__Form.f90
 
 WoosleyHeger_07_A.o: \
@@ -69,35 +68,35 @@ WoosleyHeger_07_A.o: \
   WoosleyHeger_07_A__Form.o \
   WoosleyHeger_07_A.f90
 
-WoosleyHeger_07_D__Form.o: \
-  GenASiS.o \
-  WoosleyHeger_07_A__Form.o \
-  WoosleyHeger_07_D__Form.f90
+# WoosleyHeger_07_D__Form.o: \
+#   GenASiS.o \
+#   WoosleyHeger_07_A__Form.o \
+#   WoosleyHeger_07_D__Form.f90
 
-WoosleyHeger_07_D.o: \
-  GenASiS.o \
-  WoosleyHeger_07_D__Form.o \
-  WoosleyHeger_07_D.f90
+# WoosleyHeger_07_D.o: \
+#   GenASiS.o \
+#   WoosleyHeger_07_D__Form.o \
+#   WoosleyHeger_07_D.f90
 
-WoosleyHeger_07_RM__Form.o: \
-  GenASiS.o \
-  WoosleyHeger_07__Template.o \
-  WoosleyHeger_07_RM__Form.f90
+# WoosleyHeger_07_RM__Form.o: \
+#   GenASiS.o \
+#   WoosleyHeger_07__Template.o \
+#   WoosleyHeger_07_RM__Form.f90
 
-WoosleyHeger_07_G.o: \
-  GenASiS.o \
-  WoosleyHeger_07_RM__Form.o \
-  WoosleyHeger_07_G.f90
+# WoosleyHeger_07_G.o: \
+#   GenASiS.o \
+#   WoosleyHeger_07_RM__Form.o \
+#   WoosleyHeger_07_G.f90
 
-WoosleyHeger_07_S.o: \
-  GenASiS.o \
-  WoosleyHeger_07_RM__Form.o \
-  WoosleyHeger_07_S.f90
+# WoosleyHeger_07_S.o: \
+#   GenASiS.o \
+#   WoosleyHeger_07_RM__Form.o \
+#   WoosleyHeger_07_S.f90
 
-Findall_GPU_Test.o: \
-  Findall_GPU_Test.f90
+# Findall_GPU_Test.o: \
+#   Findall_GPU_Test.f90
 
-GreyDegeneracySolver_Test.o: \
-  Basics.o \
-  NonlinearEquations.o \
-  GreyDegeneracySolver_Test.f90
+# GreyDegeneracySolver_Test.o: \
+#   Basics.o \
+#   NonlinearEquations.o \
+#   GreyDegeneracySolver_Test.f90

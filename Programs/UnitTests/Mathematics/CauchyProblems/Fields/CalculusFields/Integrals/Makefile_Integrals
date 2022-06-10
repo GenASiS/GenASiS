@@ -1,0 +1,77 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: VolumeIntegral_Form_Test SurfaceIntegral_Form_Test \
+  SphericalAverage_Form_Test AzimuthalAverage_Form_Test 
+
+VolumeIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Integrals.a VolumeIntegral_Form_Test.o
+	$(LINK) $(FLAGS) -o VolumeIntegral_Form_Test_$(MACHINE) \
+          VolumeIntegral_Form_Test.o Integrals.a \
+          Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+SurfaceIntegral_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Integrals.a SurfaceIntegral_Form_Test.o
+	$(LINK) $(FLAGS) -o SurfaceIntegral_Form_Test_$(MACHINE) \
+          SurfaceIntegral_Form_Test.o Integrals.a \
+          Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+SphericalAverage_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Integrals.a SphericalAverage_Form_Test.o
+	$(LINK) $(FLAGS) -o SphericalAverage_Form_Test_$(MACHINE) \
+          SphericalAverage_Form_Test.o Integrals.a \
+          Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+AzimuthalAverage_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  Geometries.a Integrals.a AzimuthalAverage_Form_Test.o
+	$(LINK) $(FLAGS) -o AzimuthalAverage_Form_Test_$(MACHINE) \
+          AzimuthalAverage_Form_Test.o Integrals.a \
+          Geometries.a FieldSets.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f VolumeIntegral_Form_Test_*
+	rm -f SurfaceIntegral_Form_Test_*
+	rm -f SphericalAverage_Form_Test_*
+	rm -f AzimuthalAverage_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies 
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies 
+include $(PATH_FIELD_SETS)/Makefile_Dependencies 
+include $(PATH_GEOMETRIES)/Makefile_Dependencies 
+include $(PATH_INTEGRALS)/Makefile_Dependencies 
+
+VolumeIntegral_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Integrals.o \
+  VolumeIntegral_Form_Test.f90
+
+SurfaceIntegral_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Geometries.o \
+  SurfaceIntegral_Form.o \
+  SurfaceIntegral_Form_Test.f90
+
+SphericalAverage_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Integrals.o \
+  SphericalAverage_Form_Test.f90
+
+AzimuthalAverage_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  Integrals.o \
+  AzimuthalAverage_Form_Test.f90

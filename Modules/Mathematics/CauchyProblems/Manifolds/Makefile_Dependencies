@@ -1,0 +1,10 @@
+include $(PATH_CHARTS)/Makefile_Dependencies
+include $(PATH_ATLASES)/Makefile_Dependencies
+
+Manifolds.o: \
+  Charts.o \
+  Atlases.o \
+  Manifolds.f90
+
+Manifolds.a: $(MANIFOLDS)
+	ar r Manifolds.a $(MANIFOLDS)

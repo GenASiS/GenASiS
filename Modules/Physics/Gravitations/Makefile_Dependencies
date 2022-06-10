@@ -1,0 +1,73 @@
+Gravitation_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_G__Form.f90
+
+Gravitation_N_H__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_G__Form.o \
+  Gravitation_N_H__Form.f90
+
+Gravitation_N_UA__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_N_H__Form.o \
+  Gravitation_N_UA__Form.f90
+
+Gravitation_N_UA__Kernel.o: \
+  Basics.o \
+  Gravitation_N_UA__Form.o \
+  Gravitation_N_UA__Kernel.f90
+
+Gravitation_N_CM__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_N_H__Form.o \
+  Gravitation_N_CM__Form.f90
+
+Gravitation_N_CM__Kernel.o: \
+  Basics.o \
+  Gravitation_N_CM__Form.o \
+  Gravitation_N_CM__Kernel.f90
+
+Gravitation_N_SG__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_N_H__Form.o \
+  Gravitation_N_SG__Form.f90
+
+Gravitation_N_SG__Kernel.o: \
+  Basics.o \
+  Gravitation_N_SG__Form.o \
+  Gravitation_N_SG__Kernel.f90
+
+Slope_DFV_C_N__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitation_N_H__Form.o \
+  Slope_DFV_C_N__Form.f90
+
+Slope_DFV_C_N__Kernel.o: \
+  Basics.o \
+  Slope_DFV_C_N__Form.o \
+  Slope_DFV_C_N__Kernel.f90
+
+Slope_DFV_N__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Slope_DFV_C_N__Form.o \
+  Slope_DFV_N__Form.f90
+
+Gravitations.o: \
+  Gravitation_G__Form.o \
+  Gravitation_N_H__Form.o \
+  Gravitation_N_UA__Form.o \
+  Gravitation_N_CM__Form.o \
+  Gravitation_N_SG__Form.o \
+  Slope_DFV_C_N__Form.o \
+  Slope_DFV_N__Form.o \
+  Gravitations.f90
+
+Gravitations.a: $(GRAVITATIONS)
+	ar r Gravitations.a $(GRAVITATIONS)

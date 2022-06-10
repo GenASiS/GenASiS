@@ -1,0 +1,10 @@
+PATH_CHARTS  = $(PATH_MANIFOLDS)/Charts
+PATH_ATLASES = $(PATH_MANIFOLDS)/Atlases
+
+include $(PATH_CHARTS)/Makefile_Path
+include $(PATH_ATLASES)/Makefile_Path
+
+VPATH_MANIFOLDS = \
+  $(VPATH_CHARTS):\
+  $(VPATH_ATLASES):\
+  $(PATH_MANIFOLDS)

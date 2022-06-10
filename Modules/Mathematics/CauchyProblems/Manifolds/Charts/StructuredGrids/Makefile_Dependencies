@@ -1,0 +1,40 @@
+Connectivity_Form.o: \
+  Basics.o \
+  Connectivity_Form.f90
+
+Chart_H__Form.o: \
+  Basics.o \
+  Connectivity_Form.o \
+  Chart_H__Form.f90
+
+Chart_GS__Form.o: \
+  Basics.o \
+  Chart_H__Form.o \
+  Chart_GS__Form.f90
+
+Chart_GS_C__Form.o: \
+  Basics.o \
+  Chart_GS__Form.o \
+  Chart_GS_C__Form.f90
+
+Chart_GS_CE__Form.o: \
+  Basics.o \
+  Chart_GS_C__Form.o \
+  Chart_GS_CC__Form.f90
+
+Chart_GS_CC__Form.o: \
+  Basics.o \
+  Chart_GS_C__Form.o \
+  Chart_GS_CC__Form.f90
+
+StructuredGrids.o: \
+  Connectivity_Form.o \
+  Chart_H__Form.o \
+  Chart_GS__Form.o \
+  Chart_GS_C__Form.o \
+  Chart_GS_CE__Form.o \
+  Chart_GS_CC__Form.o \
+  StructuredGrids.f90
+
+StructuredGrids.a: $(STRUCTURED_GRIDS)
+	ar r StructuredGrids.a $(STRUCTURED_GRIDS)

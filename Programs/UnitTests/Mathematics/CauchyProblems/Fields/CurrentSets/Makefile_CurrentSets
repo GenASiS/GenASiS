@@ -1,0 +1,70 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: CurrentSet_Form_Test DivergencePart_CS__Form_Test \
+  EigenspeedSet_F__Form_Test
+
+CurrentSet_Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a Geometries.a \
+  CalculusFields.a CurrentSets.a CurrentSet_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o CurrentSet_Form_Test_$(MACHINE) \
+          CurrentSet_Form_Test.o CurrentSets.a \
+          CalculusFields.a Geometries.a FieldSets.a Manifolds.a Algebra.a \
+          Basics.a $(LIBRARIES)
+
+DivergencePart_CS__Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  CalculusFields.a Geometries.a CurrentSets.a DivergencePart_CS__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o DivergencePart_CS__Form_Test_$(MACHINE) \
+          DivergencePart_CS__Form_Test.o CurrentSets.a \
+          CalculusFields.a Geometries.a FieldSets.a Manifolds.a Algebra.a \
+          Basics.a $(LIBRARIES)
+
+EigenspeedSet_F__Form_Test: Basics.a Algebra.a Manifolds.a FieldSets.a \
+  CalculusFields.a Geometries.a CurrentSets.a EigenspeedSet_F__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o EigenspeedSet_F__Form_Test_$(MACHINE) \
+          EigenspeedSet_F__Form_Test.o CurrentSets.a \
+          CalculusFields.a Geometries.a FieldSets.a Manifolds.a Algebra.a \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f CurrentSet_Form_Test_*
+	rm -f DivergencePart_CS__Form_Test_*
+	rm -f EigenspeedSet_F__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELD_SETS)/Makefile_Dependencies
+include $(PATH_GEOMETRIES)/Makefile_Dependencies
+include $(PATH_CALCULUS_FIELDS)/Makefile_Dependencies
+include $(PATH_CURRENT_SETS)/Makefile_Dependencies
+
+CurrentSet_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSets.o \
+  CurrentSet_Form_Test.f90
+
+DivergencePart_CS__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSets.o \
+  DivergencePart_CS__Form_Test.f90
+
+EigenspeedSet_F__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometries.o \
+  CurrentSets.o \
+  EigenspeedSet_F__Form_Test.f90

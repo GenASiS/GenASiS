@@ -5,7 +5,7 @@ module RayleighTaylor_Form
   implicit none
   private
 
-  type, public, extends ( FluidBoxForm ) :: RayleighTaylorForm
+  type, public, extends ( Universe_F_B_Form ) :: RayleighTaylorForm
     real ( KDR ), private :: &
       Acceleration, &
       DensityAbove, DensityBelow, &
@@ -13,16 +13,16 @@ module RayleighTaylor_Form
       AdiabaticIndex
   contains
     procedure, private, pass :: &
-      Initialize_RT
-    generic, public :: &
-      Initialize => Initialize_RT
+      Initialize_H
+    procedure, public, pass :: &
+      Show => Show_U
     final :: &
       Finalize
   end type RayleighTaylorForm
 
     private :: &
-      InitializeFluidBox, &
-      SetProblem
+      InitializeUniverse, &
+      SetInitial
 
       private :: &
         SetFluid
@@ -31,23 +31,46 @@ module RayleighTaylor_Form
           SetFluidKernel_2D, &
           SetFluidKernel_3D
     
+
 contains
 
 
-  subroutine Initialize_RT ( RT, Name )
+  subroutine Initialize_H ( U, NameOption )
 
-    class ( RayleighTaylorForm ), intent ( inout ) :: &
-      RT
-    character ( * ), intent ( in )  :: &
+    class ( RayleighTaylorForm ), intent ( inout ), target :: &
+      U
+    character ( * ), intent ( in ), optional  :: &
+      NameOption
+
+    character ( LDL ) :: &
       Name
 
-    if ( RT % Type == '' ) &
-      RT % Type = 'a RayleighTaylor'
+    if ( U % Type  ==  '' ) &
+      U % Type  =  'a RayleighTaylor'
 
-    call InitializeFluidBox ( RT, Name )
-    call SetProblem ( RT )
+    Name  =  'RayleighTaylor'
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
 
-  end subroutine Initialize_RT
+    call InitializeUniverse ( U, Name )
+
+  end subroutine Initialize_H
+
+
+  subroutine Show_U ( U )
+
+    class ( RayleighTaylorForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_H_Form % Show ( )
+
+    call Show ( U % Acceleration,   'Acceleration' )
+    call Show ( U % DensityAbove,   'DensityAbove' )
+    call Show ( U % DensityBelow,   'DensityBelow' )
+    call Show ( U % PressureBase,   'PressureBase' )
+    call Show ( U % AdiabaticIndex, 'AdiabaticIndex' )
+
+  end subroutine Show_U
 
 
   subroutine Finalize ( RT )
@@ -58,9 +81,9 @@ contains
   end subroutine Finalize
 
 
-  subroutine InitializeFluidBox ( RT, Name )
+  subroutine InitializeUniverse ( RT, Name )
 
-    class ( RayleighTaylorForm ), intent ( inout ) :: &
+    class ( RayleighTaylorForm ), intent ( inout ), target :: &
       RT
     character ( * ), intent ( in )  :: &
       Name
@@ -71,139 +94,141 @@ contains
       MinCoordinate, &
       MaxCoordinate
 
-    allocate ( RT % BoundaryConditionsFace ( 3 ) )
-    associate ( BCF => RT % BoundaryConditionsFace )
     select case ( trim ( PROGRAM_HEADER % Dimensionality ) )
     case ( '2D' )
       MinCoordinate = [ -0.25_KDR, -0.75_KDR, 0.0_KDR ]
       MaxCoordinate = [ +0.25_KDR, +0.75_KDR, 0.0_KDR ]
       nCells = [ 64, 192, 1 ]
-      call BCF ( 1 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
-      call BCF ( 2 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
     case ( '3D' )
       MinCoordinate = [ -0.25_KDR, -0.25_KDR, -0.75_KDR ]
       MaxCoordinate = [ +0.25_KDR, +0.25_KDR, +0.75_KDR ]
       nCells = [ 64, 64, 192 ]
-      call BCF ( 1 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
-      call BCF ( 2 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
-      call BCF ( 3 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
     end select
-    end associate !-- BCF
 
     RT % Acceleration  =  0.1_KDR
     call PROGRAM_HEADER % GetParameter &
            ( RT % Acceleration, 'Acceleration' )
 
     call RT % Initialize &
-           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', Name = Name, &
-             GravitySolverTypeOption = 'UNIFORM', &
+           ( FluidType = 'IDEAL', &
+             GravitationType = 'NEWTON_UA', &
+             NameOption = Name, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
              FinishTimeOption = 8.5_KDR, &
              UniformAccelerationOption = RT % Acceleration, &
              nCellsOption = nCells )
 
-  end subroutine InitializeFluidBox
-
-
-  subroutine SetProblem ( RT )
-
-    class ( RayleighTaylorForm ), intent ( inout ) :: &
-      RT
-
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_P_I_Form ), pointer :: &
-      F
-
-    select type ( I => RT % Integrator )
-    class is ( Integrator_C_PS_Form )
-
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    RT % DensityAbove   = 2.0_KDR
-    RT % DensityBelow   = 1.0_KDR
-    RT % PressureBase   = 2.5_KDR
-    RT % AdiabaticIndex = 1.4_KDR
-
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % DensityAbove, 'DensityAbove' )
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % DensityBelow, 'DensityBelow' )
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % AdiabaticIndex, 'AdiabaticIndex' )
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % Acceleration, 'Acceleration' )    
-
-    G => PS % Geometry ( )
-    F => FA % Fluid_P_I ( )
-    call SetFluid ( RT, F, G )
-
-    end select !-- PS
-    end select !-- FA
+    select type ( I  =>  RT % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    select case ( trim ( PROGRAM_HEADER % Dimensionality ) )
+    case ( '2D' )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 1 )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
+    case ( '3D' )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 1 )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 2 )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 3 )
+    end select !-- Dimensionality
+    end associate !-- F
     end select !-- I
-    nullify ( G, F )
+             
+    RT % Integrator % SetInitial  =>  SetInitial
+    RT % Integrator % System      =>  RT
 
-  end subroutine SetProblem
+  end subroutine InitializeUniverse
 
 
-  subroutine SetFluid ( RT, F, G )
+  subroutine SetInitial ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    ! real ( KDR ), dimension ( 3 ) :: &
+    !   Normal
+
+    select type ( RT  =>  I % System )
+      class is ( RayleighTaylorForm )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_I_Form )
+
+    RT % DensityAbove    =  2.0_KDR
+    RT % DensityBelow    =  1.0_KDR
+    RT % PressureBase    =  2.5_KDR
+    RT % AdiabaticIndex  =  1.4_KDR
+
+    call PROGRAM_HEADER % GetParameter ( RT % DensityAbove, 'DensityAbove' )
+    call PROGRAM_HEADER % GetParameter ( RT % DensityBelow, 'DensityBelow' )
+    call PROGRAM_HEADER % GetParameter ( RT % AdiabaticIndex, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( RT % Acceleration, 'Acceleration' )    
+
+    call SetFluid ( RT, F )
+
+    end select !-- F
+    end select !-- I
+    end select !-- RT
+
+  end subroutine SetInitial
+
+
+  subroutine SetFluid ( RT, F )
 
     class ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-
-    select type ( I => RT % Integrator )
-    class is ( Integrator_C_PS_Form )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
 
     call F % SetAdiabaticIndex ( RT % AdiabaticIndex )
 
-    select case ( PS % nDimensions )
-    case ( 2 )
+    associate &
+      ( G  =>  F % Geometry )
+    associate &
+      ( FV  =>  F % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
+
+    select case ( trim ( PROGRAM_HEADER % Dimensionality ) )
+    case ( '2D' )
 
       call SetFluidKernel_2D &
-             (       X = G % Value ( :, G % CENTER_U ( 1 ) ), &
-                     Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
+             (       X = GV ( :, G % CENTER_U_1 ), &
+                     Y = GV ( :, G % CENTER_U_2 ), &
                N_Above = RT % DensityAbove, &
                N_Below = RT % DensityBelow, &
                      A = RT % Acceleration, &
                  Gamma =  F % AdiabaticIndex, &
                    P_0 = RT % PressureBase, &
-                     N =  F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-                     E =  F % Value ( :, F % INTERNAL_ENERGY ), &
-                    VY = F % Value ( :, F % VELOCITY_U ( 2 ) ) )
+                     N = FV ( :, F % BARYON_DENSITY_C ), &
+                     E = FV ( :, F % ENERGY_DENSITY_C ), &
+                    VY = FV ( :, F % VELOCITY_U_2 ) )
 
-    case ( 3 )
+    case ( '3D' )
 
       call SetFluidKernel_3D &
-             (       X = G % Value ( :, G % CENTER_U ( 1 ) ), &
-                     Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
-                     Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
+             (       X = GV ( :, G % CENTER_U_1 ), &
+                     Y = GV ( :, G % CENTER_U_2 ), &
+                     Z = GV ( :, G % CENTER_U_3 ), &
                N_Above = RT % DensityAbove, &
                N_Below = RT % DensityBelow, &
                      A = RT % Acceleration, &
                  Gamma =  F % AdiabaticIndex, &
                    P_0 = RT % PressureBase, &
-                     N =  F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-                     E =  F % Value ( :, F % INTERNAL_ENERGY ), &
-                    VZ =  F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+                     N =  FV ( :, F % BARYON_DENSITY_C ), &
+                     E =  FV ( :, F % ENERGY_DENSITY_C ), &
+                    VZ =  FV ( :, F % VELOCITY_U_3 ) )
 
     end select !-- nDimensions
 
-    call F % ComputeFromPrimitive ( G )
-
-    end select !-- PS
-    end select !-- I
+    end associate !-- FV, etc.
+    end associate !-- G
 
   end subroutine SetFluid
 

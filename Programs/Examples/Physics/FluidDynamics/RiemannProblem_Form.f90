@@ -5,7 +5,7 @@ module RiemannProblem_Form
   implicit none
   private
 
-  type, public, extends ( FluidBoxForm ) :: RiemannProblemForm
+  type, public, extends ( Universe_F_B_Form ) :: RiemannProblemForm
     real ( KDR ) :: &
       Density_L, Density_R, &  !-- Left and Right
       Pressure_L, Pressure_R, &
@@ -15,22 +15,23 @@ module RiemannProblem_Form
       SinTheta, CosTheta, &
       SinPhi, CosPhi
     real ( KDR ), dimension ( 3 ) :: &
-      DP_1, DP_2, DP_3  !-- DiscontinuityPoint_1, etc.
+      DP_1, DP_2, DP_3, &  !-- DiscontinuityPoint_1, etc.
+      UnitNormal
   contains
     procedure, private, pass :: &
-      Initialize_RP
-    generic, public :: &
-      Initialize => Initialize_RP
+      Initialize_H
+    procedure, public, pass :: &
+      Show => Show_U
     final :: &
       Finalize
   end type RiemannProblemForm
 
     private :: &
-      InitializeFluidBox, &
-      SetProblem
+      InitializeUniverse, &
+      SetInitial
 
-    private :: &
-      SetFluid
+      private :: &
+        SetFluid
 
         private :: &
           SetFluidKernel
@@ -38,20 +39,52 @@ module RiemannProblem_Form
 contains
 
 
-  subroutine Initialize_RP ( RP, Name )
+  subroutine Initialize_H ( U, NameOption )
 
-    class ( RiemannProblemForm ), intent ( inout ) :: &
-      RP
-    character ( * ), intent ( in ) :: &
+    class ( RiemannProblemForm ), intent ( inout ), target :: &
+      U
+    character ( * ), intent ( in ), optional  :: &
+      NameOption
+
+    character ( LDL ) :: &
       Name
 
-    if ( RP % Type == '' ) &
-      RP % Type = 'a RiemannProblem'
+    if ( U % Type  ==  '' ) &
+      U % Type  =  'a RiemannProblem'
 
-    call InitializeFluidBox ( RP, Name )
-    call SetProblem ( RP )
+    Name  =  'RiemannProblem'
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
 
-  end subroutine Initialize_RP
+    call InitializeUniverse ( U, Name )
+
+  end subroutine Initialize_H
+
+
+  subroutine Show_U ( U )
+
+    class ( RiemannProblemForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_H_Form % Show ( )
+
+    call Show ( U % Density_L,      'Density_L' )
+    call Show ( U % Pressure_L,     'Pressure_L' )
+    call Show ( U % Speed_L,        'Speed_L' )
+    call Show ( U % Density_R,      'Density_R' )
+    call Show ( U % Pressure_R,     'Pressure_R' )
+    call Show ( U % Speed_R,        'Speed_R' )
+    call Show ( U % AdiabaticIndex, 'AdiabaticIndex' )
+    call Show ( U % DP_1,           'DiscontinuityPoint_1' )
+    call Show ( U % DP_2,           'DiscontinuityPoint_2' )
+    call Show ( U % DP_3,           'DiscontinuityPoint_3' )
+    call Show ( U % UnitNormal,     'UnitNormal' )
+    call Show ( U % SinTheta,       'SinTheta' )
+    call Show ( U % CosTheta,       'CosTheta' )
+    call Show ( U % SinPhi,         'SinPhi' )
+    call Show ( U % CosPhi,         'CosPhi' )
+
+  end subroutine Show_U
 
 
   subroutine Finalize ( RP )
@@ -62,92 +95,98 @@ contains
   end subroutine Finalize
 
 
-  subroutine InitializeFluidBox ( RP, Name )
+  subroutine InitializeUniverse ( RP, Name )
 
-    class ( RiemannProblemForm ), intent ( inout ) :: &
+    class ( RiemannProblemForm ), intent ( inout ), target :: &
       RP
     character ( * ), intent ( in )  :: &
       Name
 
     integer ( KDI ) :: &
-      iD  !-- iDimension
+      iD
 
-    allocate ( RP % BoundaryConditionsFace ( 3 ) )
-    associate ( BCF => RP % BoundaryConditionsFace )
-    do iD = 1, 3
-      call BCF ( iD ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )     
-    end do
-    end associate !-- BCF
-    
     call RP % Initialize &
-           ( FluidType = 'IDEAL', GeometryType = 'GALILEAN', Name = Name, &
+           ( FluidType = 'IDEAL', &
+             GravitationType = 'GALILEO', &
+             NameOption = Name, &
              nCellsOption = [ 128, 128, 128 ] )
 
-  end subroutine InitializeFluidBox
+    select type ( I  =>  RP % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    do iD  =  1, 3
+      call F % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = iD )
+    end do !-- iD
+    end associate !-- F
+    end select !-- I
+             
+    RP % Integrator % SetInitial  =>  SetInitial
+    RP % Integrator % System      =>  RP
+
+  end subroutine InitializeUniverse
 
 
-  subroutine SetProblem ( RP )
+  subroutine SetInitial ( I )
 
-    class ( RiemannProblemForm ), intent ( inout ) :: &
-      RP
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
 
     real ( KDR ), dimension ( 3 ) :: &
-      Normal, &
-      UnitNormal
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_P_I_Form ), pointer :: &
-      F
+      Normal
 
-    select type ( I => RP % Integrator )
-    class is ( Integrator_C_PS_Form )
+    select type ( RP  =>  I % System )
+      class is ( RiemannProblemForm )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_I_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
 
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
+    RP % Density_L       =  1.0_KDR
+    RP % Pressure_L      =  1.0_KDR
+    RP % Speed_L         =  0.0_KDR
+    RP % Density_R       =  0.125_KDR
+    RP % Pressure_R      =  0.1_KDR
+    RP % Speed_R         =  0.0_KDR
+    RP % AdiabaticIndex  =  1.4_KDR
 
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    RP % Density_L      = 1.0_KDR
-    RP % Pressure_L     = 1.0_KDR
-    RP % Speed_L        = 0.0_KDR
-    RP % Density_R      = 0.125_KDR
-    RP % Pressure_R     = 0.1_KDR
-    RP % Speed_R        = 0.0_KDR
-    RP % AdiabaticIndex = 1.4_KDR
-
-    call PROGRAM_HEADER % GetParameter ( RP % Density_L, 'DensityLeft' )
-    call PROGRAM_HEADER % GetParameter ( RP % Pressure_L, 'PressureLeft' )
-    call PROGRAM_HEADER % GetParameter ( RP % Speed_L, 'SpeedLeft' )
-    call PROGRAM_HEADER % GetParameter ( RP % Density_R, 'DensityRight' )
-    call PROGRAM_HEADER % GetParameter ( RP % Pressure_R, 'PressureRight' )
-    call PROGRAM_HEADER % GetParameter ( RP % Speed_R, 'SpeedRight' )
+    call PROGRAM_HEADER % GetParameter ( RP % Density_L,  'Density_L' )
+    call PROGRAM_HEADER % GetParameter ( RP % Pressure_L, 'Pressure_L' )
+    call PROGRAM_HEADER % GetParameter ( RP % Speed_L,    'Speed_L' )
+    call PROGRAM_HEADER % GetParameter ( RP % Density_R,  'Density_R' )
+    call PROGRAM_HEADER % GetParameter ( RP % Pressure_R, 'Pressure_R' )
+    call PROGRAM_HEADER % GetParameter ( RP % Speed_R,    'Speed_R' )
     call PROGRAM_HEADER % GetParameter ( RP % AdiabaticIndex, &
                                          'AdiabaticIndex' )
 
-    RP % Energy_L = RP % Pressure_L / ( RP % AdiabaticIndex - 1.0_KDR )
-    RP % Energy_R = RP % Pressure_R / ( RP % AdiabaticIndex - 1.0_KDR )
+    RP % Energy_L  =  RP % Pressure_L  /  ( RP % AdiabaticIndex - 1.0_KDR )
+    RP % Energy_R  =  RP % Pressure_R  /  ( RP % AdiabaticIndex - 1.0_KDR )
 
 
     !-- Three points define the plane of discontinuity
 
-    RP % DP_1 = [ 0.5_KDR, 0.0_KDR, 0.0_KDR ]
-    RP % DP_2 = [ 0.0_KDR, 0.5_KDR, 0.0_KDR ]
-    RP % DP_3 = [ 0.0_KDR, 0.0_KDR, 0.5_KDR ]
+    RP % DP_1  =  [ 0.5_KDR, 0.0_KDR, 0.0_KDR ]
+    RP % DP_2  =  [ 0.0_KDR, 0.5_KDR, 0.0_KDR ]
+    RP % DP_3  =  [ 0.0_KDR, 0.0_KDR, 0.5_KDR ]
 
-    if ( PS % nDimensions < 3 ) RP % DP_3 ( 3 ) &
-      = 0.1 * sqrt ( huge ( 1.0_KDR ) )
-    if ( PS % nDimensions < 2 ) RP % DP_2 ( 2 ) &
-      = 0.1 * sqrt ( huge ( 1.0_KDR ) )
+    if ( C % nDimensions  <  3 )  &
+      RP % DP_3 ( 3 )  =  0.1 * sqrt ( huge ( 1.0_KDR ) )
+    if ( C % nDimensions  <  2 )  &
+      RP % DP_2 ( 2 )  =  0.1 * sqrt ( huge ( 1.0_KDR ) )
 
     call PROGRAM_HEADER % GetParameter &
-           ( RP % DP_1 ( 1 : PS % nDimensions ), 'DiscontinuityPoint_1' )
-    if ( PS % nDimensions > 1 ) &
+           ( RP % DP_1 ( 1 : C % nDimensions ), 'DiscontinuityPoint_1' )
+    if ( C % nDimensions  >  1 ) &
       call PROGRAM_HEADER % GetParameter &
-             ( RP % DP_2 ( 1 : PS % nDimensions ), 'DiscontinuityPoint_2' )
-    if ( PS % nDimensions > 2 ) &
+             ( RP % DP_2 ( 1 : C % nDimensions ), 'DiscontinuityPoint_2' )
+    if ( C % nDimensions  >  2 ) &
       call PROGRAM_HEADER % GetParameter &
-             ( RP % DP_3 ( 1 : PS % nDimensions ), 'DiscontinuityPoint_3' )
+             ( RP % DP_3 ( 1 : C % nDimensions ), 'DiscontinuityPoint_3' )
 
 
     !-- Normal vector ( DP_2 - DP_1 ) x ( DP_3 - DP_1 )
@@ -164,56 +203,54 @@ contains
       = RP % DP_3 ( 1 ) * ( RP % DP_1 ( 2 ) - RP % DP_2 ( 2 )) &
           + RP % DP_1 ( 1 ) * (   RP % DP_2 ( 2 ) - RP % DP_3 ( 2 ) ) &
           + RP % DP_2 ( 1 ) * ( - RP % DP_1 ( 2 ) + RP % DP_3 ( 2 ) )
-    Normal = Normal / maxval ( Normal ) !-- to avoid overflow in the next line
-    UnitNormal = Normal / sqrt ( dot_product ( Normal, Normal ) )
-    call Show ( UnitNormal, 'UnitNormal', CONSOLE % INFO_3 )
+    Normal  =  Normal / maxval ( Normal ) !-- to avoid overflow in the next line
+    RP % UnitNormal  =  Normal / sqrt ( dot_product ( Normal, Normal ) )
   
-    RP % CosTheta = dot_product ( UnitNormal, [ 0.0_KDR, 0.0_KDR, 1.0_KDR ] )
-    RP % SinTheta = sqrt ( 1.0_KDR - RP % CosTheta ** 2 )
+    RP % CosTheta  =  &
+      dot_product ( RP % UnitNormal, [ 0.0_KDR, 0.0_KDR, 1.0_KDR ] )
+    RP % SinTheta  =  &
+      sqrt ( 1.0_KDR  -  RP % CosTheta ** 2 )
     if ( RP % SinTheta /= 0.0_KDR ) then
       RP % CosPhi &
-        = dot_product ( UnitNormal, [ 1.0_KDR, 0.0_KDR, 0.0_KDR ] ) &
-            / RP % SinTheta
+        =  dot_product ( RP % UnitNormal, [ 1.0_KDR, 0.0_KDR, 0.0_KDR ] ) &
+             / RP % SinTheta
       RP % SinPhi &
-        = dot_product ( UnitNormal, [ 0.0_KDR, 1.0_KDR, 0.0_KDR ] ) &
-            / RP % SinTheta
+        =  dot_product ( RP % UnitNormal, [ 0.0_KDR, 1.0_KDR, 0.0_KDR ] ) &
+             / RP % SinTheta
     else
-      RP % CosPhi = 1.0_KDR
-      RP % SinPhi = 0.0_KDR
+      RP % CosPhi  =  1.0_KDR
+      RP % SinPhi  =  0.0_KDR
     end if
-    call Show ( 'Angles defining normal vector', CONSOLE % INFO_3 )
-    call Show ( RP % SinTheta, 'SinTheta', CONSOLE % INFO_3 )
-    call Show ( RP % CosTheta, 'CosTheta', CONSOLE % INFO_3 )
-    call Show ( RP % SinPhi, 'SinPhi', CONSOLE % INFO_3 )
-    call Show ( RP % CosPhi, 'CosPhi', CONSOLE % INFO_3 )
+    call SetFluid ( RP, F )
 
-    G => PS % Geometry ( )
-    F => FA % Fluid_P_I ( )
-    call SetFluid ( RP, F, G )
-
-    end select !-- PS
-    end select !-- FA
+    end associate !-- C
+    end select !-- A
+    end select !-- F
     end select !-- I
-    nullify ( G, F )
+    end select !-- RP
 
-  end subroutine SetProblem
+  end subroutine SetInitial
 
 
-  subroutine SetFluid ( RP, F, G )
+  subroutine SetFluid ( RP, F )
 
     class ( RiemannProblemForm ), intent ( inout ) :: &
       RP
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
 
     call F % SetAdiabaticIndex ( RP % AdiabaticIndex )
 
+    associate &
+      ( G  =>  F % Geometry )
+    associate &
+      ( FV  =>  F % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
+
     call SetFluidKernel &
-           (      X = G % Value ( :, G % CENTER_U ( 1 ) ), &
-                  Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
-                  Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
+           (      X = GV ( :, G % CENTER_U ( 1 ) ), &
+                  Y = GV ( :, G % CENTER_U ( 2 ) ), &
+                  Z = GV ( :, G % CENTER_U ( 3 ) ), &
                DP_1 = RP % DP_1, &
              sTheta = RP % SinTheta, &
              cTheta = RP % CosTheta, &
@@ -225,11 +262,14 @@ contains
                 E_R = RP % Energy_R, &
                 V_L = RP % Speed_L, &
                 V_R = RP % Speed_R, &
-                  N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-                  E = F % Value ( :, F % INTERNAL_ENERGY ), &
-                 VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-                 VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-                 VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+                  N = FV ( :, F % BARYON_DENSITY_C ), &
+                  E = FV ( :, F % ENERGY_DENSITY_C ), &
+                 VX = FV ( :, F % VELOCITY_U_1 ), &
+                 VY = FV ( :, F % VELOCITY_U_2 ), &
+                 VZ = FV ( :, F % VELOCITY_U_3 ) )
+
+    end associate !-- FV, etc.
+    end associate !-- G
 
   end subroutine SetFluid
 

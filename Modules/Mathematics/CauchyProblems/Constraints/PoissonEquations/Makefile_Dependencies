@@ -1,0 +1,51 @@
+Laplacian_M_H__Form.o: \
+  Basics.o \
+  Calculus.o \
+  Manifolds.o \
+  Fields.o \
+  Laplacian_M_H__Form.f90
+
+Laplacian_M_H__Kernel.o: \
+  Basics.o \
+  Laplacian_M_H__Form.o \
+  Laplacian_M_H__Kernel.f90
+
+Laplacian_M_ASCG__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Laplacian_M_ASCG__Form.f90
+
+Laplacian_M_ASCG__Kernel.o: \
+  Basics.o \
+  Laplacian_M_ASCG__Form.o \
+  Laplacian_M_ASCG__Kernel.f90
+
+Poisson_H__Form.o: \
+  Basics.o \
+  Fields.o \
+  Laplacian_M_H__Form.o \
+  Poisson_H__Form.f90
+
+Poisson_ASCG__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Laplacian_M_ASCG__Form.o \
+  Poisson_H__Form.o \
+  Poisson_ASCG__Form.f90
+
+Poisson_ASCG__Kernel.o: \
+  Basics.o \
+  Poisson_ASCG__Form.o \
+  Poisson_ASCG__Kernel.f90
+
+PoissonEquations.o: \
+  Laplacian_M_H__Form.o \
+  Laplacian_M_ASCG__Form.o \
+  Poisson_H__Form.o \
+  Poisson_ASCG__Form.o \
+  PoissonEquations.f90
+
+PoissonEquations.a: $(POISSON_EQUATIONS)
+	ar r PoissonEquations.a $(POISSON_EQUATIONS)

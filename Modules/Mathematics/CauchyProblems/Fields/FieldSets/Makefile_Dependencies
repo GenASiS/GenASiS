@@ -1,0 +1,38 @@
+GhostExchange_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  GhostExchange_Form.f90
+
+Boundaries_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Boundaries_Form.f90
+
+Boundaries_Kernel.o: \
+  Basics.o \
+  Boundaries_Form.o \
+  Boundaries_Kernel.f90
+
+FieldSet_Form.o: \
+  Basics.o \
+  Algebra.o \
+  Manifolds.o \
+  GhostExchange_Form.o \
+  Boundaries_Form.o \
+  FieldSet_Form.f90
+
+Stream_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSet_Form.o \
+  Stream_Form.f90
+
+FieldSets.o: \
+  GhostExchange_Form.o \
+  Boundaries_Form.o \
+  FieldSet_Form.o \
+  Stream_Form.o \
+  FieldSets.f90
+
+FieldSets.a: $(FIELD_SETS)
+	ar r FieldSets.a $(FIELD_SETS)

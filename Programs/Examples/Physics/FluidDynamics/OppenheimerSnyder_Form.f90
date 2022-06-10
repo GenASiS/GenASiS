@@ -1,5 +1,3 @@
-#include "Preprocessor"
-
 module OppenheimerSnyder_Form
 
   !-- For example, Misner, Thorne, Wheeler p. 663, Eqs. (25.28)-(25.29)
@@ -9,35 +7,41 @@ module OppenheimerSnyder_Form
   implicit none
   private
 
-  type, public, extends ( FluidCentralCoreForm ) :: OppenheimerSnyderForm
+  type, public, extends ( Universe_F_CC_Form ) :: OppenheimerSnyderForm
     real ( KDR ) :: &
+      Mass, &
       DensityInitial, &
       RadiusInitial, &
-      TimeScale
-    type ( RootFinderForm ), allocatable :: &
-      RootFinder
-    type ( Fluid_ASC_Form ), allocatable :: &
+      DensityFactor, &
+      RadiusFactor, &
+      TimeScale, &
+      AtmosphereParameter
+    type ( RootForm ), allocatable :: &
+      Root
+    type ( Fluid_D_Form ), allocatable :: &
       Reference, &
       Difference
   contains
     procedure, private, pass :: &
-      Initialize_OS
-    generic, public :: &
-      Initialize => Initialize_OS
+      Initialize_H
     procedure, public, pass :: &
       ComputeError
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
   end type OppenheimerSnyderForm
 
     private :: &
-      SetReference, &
-      InitializeFluidCentralCore, &
+      InitializeUniverse, &
       InitializeDiagnostics, &
-      SetProblem
+      SetInitial, &
+      SetReference
 
       private :: &
-        EvaluateZeroEta, &
+        ZeroEta, &
         SetFluid
 
         private :: &
@@ -45,22 +49,28 @@ module OppenheimerSnyder_Form
 
 contains
 
+ 
+  subroutine Initialize_H ( U, NameOption )
 
-  subroutine Initialize_OS ( OS, Name )
+    class ( OppenheimerSnyderForm ), intent ( inout ), target :: &
+      U
+    character ( * ), intent ( in ), optional  :: &
+      NameOption
 
-    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
-      OS
-    character ( * ), intent ( in ) :: &
+    character ( LDL ) :: &
       Name
 
-    if ( OS % Type == '' ) &
-      OS % Type = 'an OppenheimerSnyder'
+    if ( U % Type  ==  '' ) &
+      U % Type  =  'an OppenheimerSnyder'
 
-    call InitializeFluidCentralCore ( OS, Name )
-    call InitializeDiagnostics ( OS )
-    call SetProblem ( OS )
+    Name  =  'OppenheimerSnyder'
+    if ( present ( NameOption ) ) &
+      Name  =  NameOption
 
-  end subroutine Initialize_OS
+    call InitializeUniverse ( U, Name )
+    call InitializeDiagnostics ( U )
+
+  end subroutine Initialize_H
 
 
   subroutine ComputeError ( OS )
@@ -70,44 +80,43 @@ contains
 
     real ( KDR ) :: &
       L1
-    class ( Fluid_D_Form ), pointer :: &
-      F_D, &
-      F_R
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
-    select type ( PS => OS % Integrator % PositionSpace )
-    class is ( Atlas_SC_Form )
-    
-    select type ( PSC => PS % Chart ) 
-    class is ( Chart_SLD_Form )
-    
-    F_D => OS % Difference % Fluid_D ( )
-    F_R => OS % Reference  % Fluid_D ( )
+    select type ( A  =>  OS % Reference % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C    =>  A % Chart_GS, &
+        F_R  =>  OS % Reference, &
+        F_D  =>  OS % Difference )
+    associate &
+      ( FV_R  =>  F_R % Storage_GS % Value, &
+        FV_D  =>  F_D % Storage_GS % Value )
 
-    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+    call CO % Initialize ( C % Communicator, [ 2 ], [ 2 ] )
 
     associate &
-      ( D => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
-        R => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
-        Norm_D => CO % Incoming % Value ( 1 ), &
-        Norm_R => CO % Incoming % Value ( 2 ) )
+      ( D  =>  FV_D ( :, F_D % BARYON_DENSITY_C ), &
+        R  =>  FV_R ( :, F_R % BARYON_DENSITY_C ), &
+        Norm_D  =>  CO % Incoming % Value ( 1 ), &
+        Norm_R  =>  CO % Incoming % Value ( 2 ) )
 
     CO % Outgoing % Value ( 1 ) &
-      = sum ( abs ( D ), mask = PSC % IsProperCell )
+      =  sum ( abs ( D ), mask = C % ProperCell )
     CO % Outgoing % Value ( 2 ) &
-      = sum ( abs ( R ), mask = PSC % IsProperCell )
+      =  sum ( abs ( R ), mask = C % ProperCell )
 
     call CO % Reduce ( REDUCTION % SUM )
 
-    L1 = Norm_D / Norm_R
-    call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
+    L1  =  Norm_D / Norm_R
+    call Show ( L1, '*** L1 error', &
+                nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
     end associate !-- D, etc.
-    end select !-- PSC
-    end select !-- PS
-    nullify ( F_D, F_R )
+    end associate !-- FV_R, etc.
+    end associate !-- C, etc.
+    end select !-- A
 
   end subroutine ComputeError
 
@@ -121,72 +130,76 @@ contains
       deallocate ( OS % Difference )
     if ( allocated ( OS % Reference ) ) &
       deallocate ( OS % Reference )
-    if ( allocated ( OS % RootFinder ) ) &
-      deallocate ( OS % RootFinder )
+    if ( allocated ( OS % Root ) ) &
+      deallocate ( OS % Root )
 
   end subroutine Finalize
 
 
-  subroutine SetReference ( I )
+  subroutine ShowParameters ( U )
 
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
+    class ( OppenheimerSnyderForm ), intent ( in ) :: &
+      U
 
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_D_Form ), pointer :: &
-      F, &
-      F_R, &  !-- F_Reference
-      F_D     !-- F_Difference
+    real ( KDR ) :: &
+      Pi
 
-    select type ( I )
-    class is ( Integrator_C_PS_Form )
+    call U % Universe_F_CC_Form % ShowParameters ( )
 
-    select type ( OS => I % Universe )
-    class is ( OppenheimerSnyderForm )
+    Pi  =  CONSTANT % PI
 
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_D ( )
+    call Show ( U % Mass, 'Mass' )
+    call Show ( U % DensityInitial, 'DensityInitial' )
+    call Show ( U % RadiusInitial, 'RadiusInitial' )
+    call Show ( U % DensityFactor, 'DensityFactor' )
+    call Show ( U % RadiusFactor, 'RadiusFactor' )
+    call Show ( Pi / 2  *  U % TimeScale, 'CollapseTime' )
+    call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
 
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
-    select type ( PSC => PS % Chart )
-    class is ( Chart_SLD_Form )
-
-    F_R => OS % Reference % Fluid_D ( )
-    call SetFluid ( OS, F_R, PSC, G )
-
-    F_D => OS % Difference % Fluid_D ( )
-    call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
-
-    end select !-- PSC
-    end select !-- PS
-    end select !-- FA
-    end select !-- OS
-    end select !-- I
-    nullify ( G, F, F_R, F_D )
-
-  end subroutine SetReference
+  end subroutine ShowParameters
 
 
-  subroutine InitializeFluidCentralCore ( OS, Name )
+  subroutine ShowDiagnostics ( U )
 
-    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
+    class ( OppenheimerSnyderForm ), intent ( in ) :: &
+      U
+
+    call U % Reference % Show ( )
+    call U % Universe_F_CC_Form % ShowDiagnostics ( )
+
+  end subroutine ShowDiagnostics
+
+
+  subroutine InitializeUniverse ( OS, Name )
+
+    class ( OppenheimerSnyderForm ), intent ( inout ), target :: &
       OS
     character ( * ), intent ( in )  :: &
       Name
-    
+
     call OS % Initialize &
-           ( FluidType = 'DUST', GeometryType = 'NEWTONIAN', Name = Name, &
+           ( FluidType = 'DUST', &
+             GravitationType = 'NEWTON_SG', &
+             NameOption = Name, &
              DimensionlessOption = .true., &
              GravityFactorOption = 0.01_KDR, &
-             LimiterParameterOption = 1.0_KDR )
-     OS % Integrator % SetReference => SetReference
+             nCellsPolarOption = 128 )
 
-  end subroutine InitializeFluidCentralCore
+    !-- Modify from default OUTFLOW to INFLOW outer radial boundary condition
+    select type ( I  =>  OS % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'INFLOW    ' ], iC = 1, iD = 1 )
+    end associate !-- F
+    end select !-- I
+
+    OS % Integrator % SetInitial    =>  SetInitial
+    OS % Integrator % SetReference  =>  SetReference
+    OS % Integrator % System        =>  OS
+
+  end subroutine InitializeUniverse
 
 
   subroutine InitializeDiagnostics ( OS )
@@ -194,234 +207,266 @@ contains
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
       OS
 
-    select type ( PS => OS % Integrator % PositionSpace )
-    class is ( Atlas_SC_Form )
+    allocate &
+      ( OS % Reference, &
+        OS % Difference )
+    associate &
+      ( F_R  =>  OS % Reference, &
+        F_D  =>  OS % Difference, &
+        G    =>  OS % Integrator % Geometry_X, &
+        S    =>  OS % Integrator % Checkpoint_X )
 
-    allocate ( OS % Reference )
-    allocate ( OS % Difference )
-    call OS % Reference % Initialize &
-           ( PS, 'DUST', OS % Units, NameShortOption = 'Reference', &
-             AllocateSourcesOption = .false., &
-             AllocateFeaturesOption = .false., &
-             IgnorabilityOption = CONSOLE % INFO_2 )
-    call OS % Difference % Initialize &
-           ( PS, 'DUST', OS % Units, NameShortOption = 'Difference', &
-             AllocateSourcesOption = .false., &
-             AllocateFeaturesOption = .false., &
-             IgnorabilityOption = CONSOLE % INFO_2 )
+    call F_R % Initialize ( G, OS % Units_F, NameOption = 'Reference' )
+    call F_D % Initialize ( G, OS % Units_F, NameOption = 'Difference' )
+    call F_R % SetStream ( S )
+    call F_D % SetStream ( S )
 
-    end select !-- PS
+    allocate ( OS % Root )
+    associate ( R  =>  OS % Root )
+    call R % Initialize ( OS )
+    R % Zero  =>  ZeroEta
+    end associate !-- R
+
+    end associate !-- FA_R, etc.
 
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetProblem ( OS )
+  subroutine SetInitial ( I )
 
-    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
-      OS
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
 
     real ( KDR ) :: &
       Pi, &
-      Mass, &
-      DensityFactor, &
-      RadiusFactor, &
       Eta
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_D_Form ), pointer :: &
-      F
 
-    select type ( I => OS % Integrator )
-    class is ( Integrator_C_PS_Form )
-
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
+    select type ( OS  =>  I % System )
+      class is ( OppenheimerSnyderForm )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
 
     associate &
-      ( R_Max => PS % Chart % MaxCoordinate ( 1 ), &
-          R_0 => OS % RadiusInitial, &
-          D_0 => OS % DensityInitial, &
-          Tau => OS % TimeScale, &
-            M => Mass, &
-           DF => DensityFactor, &
-           RF => RadiusFactor )
+      (     M  =>  OS % Mass, &
+          D_0  =>  OS % DensityInitial, &
+          R_0  =>  OS % RadiusInitial, &
+           DF  =>  OS % DensityFactor, &
+           RF  =>  OS % RadiusFactor, &
+          Tau  =>  OS % TimeScale, &
+           AP  =>  OS % AtmosphereParameter, &
+        R_Max  =>  C % MaxCoordinate ( 1 ) )
 
      Pi  =  CONSTANT % PI
       M  =  1.0_KDR
     D_0  =  1.0e-3_KDR
      DF  =  1.0e2_KDR
+     AP  =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
     call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
     call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
+    call PROGRAM_HEADER % GetParameter (  AP, 'AtmosphereParameter' )
 
-               Tau  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
-               R_0  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
-                RF  =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
-               Eta  =  acos ( 2.0 * RF  -  1.0 )
-    I % FinishTime  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
+    Tau    =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
+      R_0  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
+     RF    =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
+    Eta    =  acos ( 2.0 * RF  -  1.0 )
 
-    call Show ( 'OppenheimerSnyder parameters' )
-    call Show ( M, 'Mass' )
-    call Show ( D_0, 'DensityInitial' )
-    call Show ( R_0, 'RadiusInitial' )
-    call Show ( DF, 'DensityFactor' )
-    call Show ( RF, 'RadiusFactor' )
-    call Show ( Pi / 2  *  Tau, 'CollapseTime' )
-    call Show ( I % FinishTime, 'Reset FinishTime' )
+    I % T_Finish  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
 
-    if ( R_0 > R_Max  ) then
+    if ( R_0  >  R_Max  ) then
       call Show ( 'RadiusInitial too large', CONSOLE % ERROR )
       call Show ( R_0, 'RadiusInitial', CONSOLE % ERROR )
-      call Show ( PS % Chart % MaxCoordinate ( 1 ), 'RadiusMax', &
-                  CONSOLE % ERROR )
+      call Show ( R_Max, 'RadiusMax', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
-    allocate ( OS % RootFinder )
-    associate ( RF => OS % RootFinder )
-    call RF % Initialize ( OS )
-    RF % EvaluateZero  =>  EvaluateZeroEta
+    call SetFluid ( OS, F )
+    call F % SetBaryonDensityMin ( )
 
-    select type ( PSC => PS % Chart )
-    class is ( Chart_SLD_Form )
+    end associate !-- R_Max, etc.
 
-    G => PS % Geometry ( )
-    F => FA % Fluid_D ( )
-    call SetFluid ( OS, F, PSC, G )
-
-    end select !-- PSC
-    end associate !-- RF
-    end associate !-- D0, etc.
-    end select !-- PS
-    end select !-- FA
+    end associate !-- C
+    end select !-- A
+    end select !-- F
     end select !-- I
-    nullify ( G, F )
+    end select !-- OS
 
-  end subroutine SetProblem
+  end subroutine SetInitial
 
 
-  subroutine EvaluateZeroEta ( OS, Eta, Zero )
+  subroutine SetReference ( I )
 
-    class ( * ), intent ( in ) :: &
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( OS  =>  I % System )
+      class is ( OppenheimerSnyderForm )
+    select type ( I  =>  OS % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+    associate &
+      ( F_R  =>  OS % Reference, &
+        F_D  =>  OS % Difference )
+
+    call SetFluid ( OS, F_R )
+
+    call F_D % MultiplyAdd ( F, F_R, -1.0_KDR, UseDeviceOption = .false. )
+
+    end associate !-- F_R, etc.
+    end select !-- F
+    end select !-- I
+    end select !-- OS
+
+  end subroutine SetReference
+
+
+  function ZeroEta ( OS, Eta ) result ( F )
+
+    class ( * ), intent ( inout ) :: &
       OS
     real ( KDR ), intent ( in ) :: &
       Eta
-    real ( KDR ), intent ( out ) :: &
-      Zero
+    real ( KDR ) :: &
+      F
 
     select type ( OS )
-    class is ( OppenheimerSnyderForm )
-
+      class is ( OppenheimerSnyderForm )
     associate &
-      ( Tau  => OS % TimeScale, &
-        Time => OS % Integrator % Time )
+      ( Tau  =>  OS % TimeScale, &
+        T    =>  OS % Integrator % T )
 
-    Zero  =  2.0 * Time / Tau  -  ( Eta  +  sin ( Eta ) )
+    F  =  2.0 * T / Tau  -  ( Eta  +  sin ( Eta ) )
 
     end associate !-- Tau, etc.
     end select !-- OS
     
-  end subroutine EvaluateZeroEta
+  end function ZeroEta
 
 
-  subroutine SetFluid ( OS, F, PSC, G )
+  subroutine SetFluid ( OS, F )
 
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
       OS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
-    class ( Chart_SLD_Form ), intent ( inout ) :: &
-      PSC
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    
+
     real ( KDR ) :: &
       Pi, &
       Eta, &
       Radius, &
-      Density
+      Density, &
+      Velocity
 
     Pi  =  CONSTANT % PI
 
     associate &
-      ( RF => OS % RootFinder, &
-        D_0 => OS % DensityInitial, &
-        R_0 => OS % RadiusInitial )
+      (  RF    =>  OS % Root, &
+          D_0  =>  OS % DensityInitial, &
+          R_0  =>  OS % RadiusInitial, &
+        Tau    =>  OS % TimeScale )
 
     call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
 
-    Radius   =  0.5 * R_0 * ( 1 + cos ( Eta ) )
-    Density  =  D_0 * ( R_0 / Radius ) ** 3
+    Radius    =  0.5 * R_0 * ( 1 + cos ( Eta ) )
+    Density   =        D_0 * ( R_0 / Radius ) ** 3
+    Velocity  =    -   R_0 * sin ( Eta )  /  ( Tau * ( 1 + cos ( Eta ) ) )
 
     end associate !-- RF, etc.
 
-    call SetFluidKernel &
-           (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-               VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-               VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-               VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-                R = G % Value ( :, G % CENTER_U ( 1 ) ), &
-             dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
-             dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-             IsProperCell = PSC % IsProperCell, &
-             Density = Density, &
-             RadiusDensity = Radius )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS, &
+        G  =>  F % Geometry )
+    associate &
+      ( FV  =>  F % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
+
+   call SetFluidKernel &
+          ( ProperCell = C % ProperCell, &
+            R_E = GV ( :, G % EDGE_I_U_1 ), &
+            R_W = GV ( :, G % WIDTH_U_1 ), &
+            R_C = GV ( :, G % CENTER_U_1 ), &
+            R_D = Radius, &
+            D   = Density, &
+            V   = Velocity, &
+            M   = OS % Mass, &
+            D_0 = OS % DensityInitial, &
+            R_0 = OS % RadiusInitial, &
+            AP  = OS % AtmosphereParameter, &
+            N   = FV ( :, F % BARYON_DENSITY_C ), &
+            V_1 = FV ( :, F % VELOCITY_U_1 ), &
+            V_2 = FV ( :, F % VELOCITY_U_2 ), &
+            V_3 = FV ( :, F % VELOCITY_U_3 ) )
+
+    end associate !-- FV, etc.
+    end associate !-- C, etc.
+    end select !-- A
 
   end subroutine SetFluid
 
 
   subroutine SetFluidKernel &
-               ( N, VX, VY, VZ, R, dR_L, dR_R, &
-                 IsProperCell, Density, RadiusDensity )
+               ( ProperCell, R_E, R_W, R_C, R_D, D, V, M, D_0, R_0, AP, &
+                 N, V_1, V_2, V_3 )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N, &
-      VX, VY, VZ
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R, &
-      dR_L, &
-      dR_R
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
+      ProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R_E, &
+      R_W, &
+      R_C
     real ( KDR ), intent ( in ) :: &
-      Density, &
-      RadiusDensity
+      R_D, &
+      D, &
+      V, &
+      M, &
+      D_0, &
+      R_0, &
+      AP
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      V_1, V_2, V_3
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
-      nValues
+      nV
     real ( KDR ) :: &
-      R_In, R_Out
+      R_I, R_O
 
-    nValues = size ( R )
+    nV  =  size ( N )
 
-    !$OMP  parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, R_In, R_Out )
-    do iV = 1, nValues
+    do iV  =  1,  nV
 
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
+!-- Establish atmosphere at outer radial boundary   
+!      if ( .not. ProperCell ( iV ) ) &
+!        cycle
 
-      N  ( iV )  =  0.0_KDR
-      VX ( iV )  =  0.0_KDR
-      VY ( iV )  =  0.0_KDR
-      VZ ( iV )  =  0.0_KDR
+      R_I  =  R_E ( iV )
+      R_O  =  R_E ( iV )  +  R_W ( iV )
+      if ( R_O  <=  R_D ) then
+        N   ( iV )  =  D
+        V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
+      else if ( R_I  <  R_D .and. R_O  >  R_D ) then
+        N   ( iV )  =  D * ( R_D ** 3  -  R_I ** 3 ) &
+                       / ( R_O ** 3  -  R_I ** 3 )
+        V_1 ( iV )  =  V * ( R_C ( iV ) / R_D )
+      else
+        N   ( iV )  =  AP  *  D_0  *  ( R_C ( iV ) / R_0 ) ** ( -1.5_KDR )
+        V_1 ( iV )  =  - sqrt ( 2.0_KDR * M / R_C ( iV ) )
+      end if
 
-      R_In   =  R ( iV )  -  dR_L ( iV )
-      R_Out  =  R ( iV )  +  dR_R ( iV )
-
-      if ( R_Out  <  RadiusDensity ) &
-        N ( iV )  =  Density
-
-      if ( R_In < RadiusDensity .and. R_Out > RadiusDensity ) &
-        N ( iV )  =  Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
-                     / ( R_Out ** 3  -  R_In ** 3 )
+      V_2 ( iV )  =  0.0_KDR
+      V_3 ( iV )  =  0.0_KDR
 
     end do !-- iV
-    !$OMP end parallel do
 
   end subroutine SetFluidKernel
 

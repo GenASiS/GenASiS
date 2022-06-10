@@ -1,0 +1,12 @@
+include $(PATH_SLOPES)/Makefile_Dependencies
+include $(PATH_STEPS)/Makefile_Dependencies
+include $(PATH_INTEGRATORS)/Makefile_Dependencies
+
+Evolutions.o: \
+  Slopes.o \
+  Steps.o \
+  Integrators.o \
+  Evolutions.f90
+
+Evolutions.a: $(EVOLUTIONS)
+	ar r Evolutions.a $(EVOLUTIONS)

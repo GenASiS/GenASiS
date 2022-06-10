@@ -47,6 +47,8 @@ module UNIT_Singleton
       HERTZ, &
       KILOHERTZ
     type ( MeasuredValueForm ) :: &  !-- Speed
+      SPEED_MKS, &
+      SPEED_CGS, &
       SPEED_OF_LIGHT
     type ( MeasuredValueForm ) :: &  !-- Momentum
       MOMENTUM_SOLAR_MASS
@@ -75,12 +77,15 @@ module UNIT_Singleton
     type ( MeasuredValueForm ) :: &  !-- Energy/length conversion
       HBAR_C
     type ( MeasuredValueForm ) :: &  !-- Number density
+      NUMBER_DENSITY_MKS, &
       NUMBER_DENSITY_ANGSTROM, &
       NUMBER_DENSITY_NUCLEAR, &
       NUMBER_DENSITY_MEV_HBAR_C
     type ( MeasuredValueForm ) :: &  !-- Mass density
+      MASS_DENSITY_MKS, &
       MASS_DENSITY_CGS
     type ( MeasuredValueForm ) :: &  !-- Energy density
+      ENERGY_DENSITY_MKS, &
       ENERGY_DENSITY_NUCLEAR
     type ( MeasuredValueForm ) :: &  !-- Computer resources
       KILOBYTE, &
@@ -202,6 +207,8 @@ contains
            ( 1.0e+3_KDR * U % HERTZ, 'kHz' )
     
     !-- Speed
+    U % SPEED_MKS  =  U % METER  /  U % SECOND 
+    U % SPEED_CGS  =  U % CENTIMETER  /  U % SECOND 
     call U % SPEED_OF_LIGHT % Initialize &
            ( 'c', '', C % SPEED_OF_LIGHT )
 
@@ -277,6 +284,8 @@ contains
     end if
 
     !-- Number density
+    U % NUMBER_DENSITY_MKS &
+      =  1 / U % METER ** 3
     U % NUMBER_DENSITY_ANGSTROM &
       =  1 / U % ANGSTROM ** 3
     U % NUMBER_DENSITY_NUCLEAR &
@@ -285,10 +294,14 @@ contains
       =  U % MEGA_ELECTRON_VOLT ** 3  /  U % HBAR_C ** 3
 
     !-- Mass density
+    U % MASS_DENSITY_MKS &
+      =  U % KILOGRAM  /  U % METER ** 3
     U % MASS_DENSITY_CGS &
       =  U % GRAM  /  U % CENTIMETER ** 3
 
     !-- Energy density
+    U % ENERGY_DENSITY_MKS &
+      =  U % JOULE  /  U % METER ** 3
     U % ENERGY_DENSITY_NUCLEAR &
       =  U % MEGA_ELECTRON_VOLT  /  U % FEMTOMETER ** 3
 
@@ -355,6 +368,10 @@ contains
       Result = UNIT % HERTZ
     case ( 'KILOHERTZ' )  
       Result = UNIT % KILOHERTZ
+    case ( 'SPEED_MKS' ) 
+      Result = UNIT % SPEED_MKS
+    case ( 'SPEED_CGS' ) 
+      Result = UNIT % SPEED_CGS
     case ( 'SPEED_OF_LIGHT' ) 
       Result = UNIT % SPEED_OF_LIGHT
     case ( 'MOMENTUM_SOLAR_MASS' )
@@ -391,14 +408,20 @@ contains
       Result = UNIT % BOLTZMANN
     case ( 'HBAR_C' )
       Result = UNIT % HBAR_C
+    case ( 'NUMBER_DENSITY_MKS' )
+      Result = UNIT % NUMBER_DENSITY_MKS
     case ( 'NUMBER_DENSITY_ANGSTROM' )
       Result = UNIT % NUMBER_DENSITY_ANGSTROM
     case ( 'NUMBER_DENSITY_NUCLEAR' )
       Result = UNIT % NUMBER_DENSITY_NUCLEAR
     case ( 'NUMBER_DENSITY_MEV_HBAR_C' )
       Result = UNIT % NUMBER_DENSITY_MEV_HBAR_C
+    case ( 'MASS_DENSITY_MKS' )
+      Result = UNIT % MASS_DENSITY_MKS
     case ( 'MASS_DENSITY_CGS' )
       Result = UNIT % MASS_DENSITY_CGS
+    case ( 'ENERGY_DENSITY_MKS' )
+      Result = UNIT % ENERGY_DENSITY_MKS
     case ( 'ENERGY_DENSITY_NUCLEAR' )
       Result = UNIT % ENERGY_DENSITY_NUCLEAR
     case ( 'KILOBYTE' )

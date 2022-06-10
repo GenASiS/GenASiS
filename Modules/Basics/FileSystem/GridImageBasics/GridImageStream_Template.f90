@@ -121,7 +121,7 @@ contains
       DescriptionOption, &
       WorkingDirectoryOption
     
-    GIS % IGNORABILITY = CONSOLE % INFO_2
+    GIS % IGNORABILITY  =  CONSOLE % INFO_1
 
     call Show ( 'Initializing a GridImageStream', GIS % IGNORABILITY )
     call Show ( Name, 'Name', GIS % IGNORABILITY )

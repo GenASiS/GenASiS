@@ -1,0 +1,77 @@
+PATH_GENASIS = ../../../../..
+
+all: RectangularContraction_VLC RectangularExpansion_VLC \
+  SphericalContraction_VLC SphericalExpansion_VLC
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+RectangularContraction_VLC: Basics.a Mathematics.a RectangularContraction_VLC.o
+	$(LINK) $(FLAGS) \
+	  -o RectangularContraction_VLC_$(MACHINE) \
+	  RectangularContraction_VLC.o ImposedAdvection_VL__Form.o \
+          CurrentSet_VLC__Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+RectangularExpansion_VLC: Basics.a Mathematics.a RectangularExpansion_VLC.o
+	$(LINK) $(FLAGS) \
+	  -o RectangularExpansion_VLC_$(MACHINE) \
+	  RectangularExpansion_VLC.o ImposedAdvection_VL__Form.o \
+          CurrentSet_VLC__Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+SphericalContraction_VLC: Basics.a Mathematics.a SphericalContraction_VLC.o
+	$(LINK) $(FLAGS) \
+	  -o SphericalContraction_VLC_$(MACHINE) \
+	  SphericalContraction_VLC.o ImposedAdvection_VL__Form.o \
+          CurrentSet_VLC__Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+SphericalExpansion_VLC: Basics.a Mathematics.a SphericalExpansion_VLC.o
+	$(LINK) $(FLAGS) \
+	  -o SphericalExpansion_VLC_$(MACHINE) \
+	  SphericalExpansion_VLC.o ImposedAdvection_VL__Form.o \
+          CurrentSet_VLC__Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f RectangularContraction_VLC_*
+	rm -f RectangularExpansion_VLC_*
+	rm -f SphericalContraction_VLC_*
+	rm -f SphericalExpansion_VLC_*
+
+CurrentSet_VLC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  CurrentSet_VLC__Form.f90
+
+ImposedAdvection_VL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  CurrentSet_VLC__Form.o \
+  ImposedAdvection_VL__Form.f90
+
+RectangularContraction_VLC.o: \
+  Basics.o \
+  ImposedAdvection_VL__Form.o \
+  RectangularContraction_VLC.f90
+
+RectangularExpansion_VLC.o: \
+  Basics.o \
+  ImposedAdvection_VL__Form.o \
+  RectangularExpansion_VLC.f90
+
+SphericalContraction_VLC.o: \
+  Basics.o \
+  ImposedAdvection_VL__Form.o \
+  SphericalContraction_VLC.f90
+
+SphericalExpansion_VLC.o: \
+  Basics.o \
+  ImposedAdvection_VL__Form.o \
+  SphericalExpansion_VLC.f90

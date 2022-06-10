@@ -1,0 +1,30 @@
+Geometry_F__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometry_F__Form.f90
+
+Geometry_F__Kernel.o: \
+  Basics.o \
+  Geometry_F__Form.o \
+  Geometry_F__Kernel.f90
+
+Coarsening_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  FieldSets.o \
+  Geometry_F__Form.o \
+  Coarsening_C__Form.f90
+
+Coarsening_C__Kernel.o: \
+  Basics.o \
+  Coarsening_C__Form.o \
+  Coarsening_C__Kernel.f90
+
+Geometries.o: \
+  Geometry_F__Form.o \
+  Coarsening_C__Form.o \
+  Geometries.f90
+
+Geometries.a: $(GEOMETRIES)
+	ar r Geometries.a $(GEOMETRIES)

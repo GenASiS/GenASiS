@@ -1,30 +1,33 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWave SawtoothWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
-     ODE_Solve 
+all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder LinMestelShu \
+  RiemannProblem RayleighTaylor FishboneMoncrief YahilLattimer #SedovTaylor \
+  SASI
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-# include ../Makefile_ObjectFiles
-
-SineWave: ThirdParty.a GenASiS.a SineWave.o
+SineWaveAdvection: ThirdParty.a GenASiS.a SineWaveAdvection.o
 	$(LINK) $(FLAGS) \
-           -o SineWave_$(MACHINE) \
-           SineWave.o SineWave_Form.o PlaneWave_Template.o \
+           -o SineWaveAdvection_$(MACHINE) \
+           SineWaveAdvection.o SineWave_Form.o PlaneWave_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-SawtoothWave: ThirdParty.a GenASiS.a SawtoothWave.o
+SawtoothWaveAdvection: ThirdParty.a GenASiS.a SawtoothWaveAdvection.o
 	$(LINK) $(FLAGS) \
-          -o SawtoothWave_$(MACHINE) \
-          SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
+          -o SawtoothWaveAdvection_$(MACHINE) \
+          SawtoothWaveAdvection.o SawtoothWave_Form.o PlaneWave_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FLAGS) \
            -o OppenheimerSnyder_$(MACHINE) \
-           ODE_Solve_Command.o OppenheimerSnyder.o \
-	   OppenheimerSnyder_Form.o \
+           OppenheimerSnyder.o OppenheimerSnyder_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
+	$(LINK) $(FLAGS) \
+           -o LinMestelShu_$(MACHINE) \
+           LinMestelShu.o LinMestelShu_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
@@ -57,19 +60,6 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
           YahilLattimer.o YahilLattimer_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-# LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
-# 	$(LINK) $(FLAGS) \
-#            -o LinMestelShu_$(MACHINE) \
-#            ODE_Solve_Command.o LinMestelShu.o \
-# 	   LinMestelShu_Form.o \
-#            GenASiS.a ThirdParty.a $(LIBRARIES)\
-
-# ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
-# 	$(LINK) $(FLAGS) \
-#            -o ODE_Solve_Command_Test_$(MACHINE) \
-#            ODE_Solve_Command_Test.o ODE_Solve_Command.o \
-#            GenASiS.a ThirdParty.a $(LIBRARIES)
-
 # SASI: ThirdParty.a GenASiS.a SASI.o
 # 	$(LINK) $(FLAGS) \
 #           -o SASI_$(MACHINE) \
@@ -77,57 +67,63 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
 #           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
-# include ../Makefile_Dependencies
 
 clean: clean_ThirdParty
-	rm -f *.o *.a *.mod *.ld *.smod
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f SineWave_*
-	rm -f SawtoothWave_*
+	rm -f SineWaveAdvection_*
+	rm -f SawtoothWaveAdvection_*
 	rm -f OppenheimerSnyder_*
+	rm -f LinMestelShu_*
 	rm -f RiemannProblem_*
 	rm -f RayleighTaylor_*
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
 	rm -f YahilLattimer_*
-	rm -f LinMestelShu_*
 	rm -f SASI_*
-#	rm -f ODE_Solve_Command_*
 
-PlaneWave_Template.o: \
+PlaneWave_Form.o: \
   GenASiS.o \
-  PlaneWave_Template.f90
+  PlaneWave_Form.f90
 
 SineWave_Form.o: \
   GenASiS.o \
-  PlaneWave_Template.o \
+  PlaneWave_Form.o \
   SineWave_Form.f90
 
-SineWave.o: \
+SineWaveAdvection.o: \
   GenASiS.o \
   SineWave_Form.o \
-  SineWave.f90
+  SineWaveAdvection.f90
 
 SawtoothWave_Form.o: \
   Basics.o \
-  PlaneWave_Template.o \
+  PlaneWave_Form.o \
   SawtoothWave_Form.f90
 
-SawtoothWave.o: \
+SawtoothWaveAdvection.o: \
   Basics.o \
   SawtoothWave_Form.o \
-  SawtoothWave.f90
+  SawtoothWaveAdvection.f90
 
 OppenheimerSnyder_Form.o: \
   GenASiS.o \
-  ODE_Solve_Command.o \
   OppenheimerSnyder_Form.f90
 
 OppenheimerSnyder.o: \
   GenASiS.o \
   OppenheimerSnyder_Form.o \
   OppenheimerSnyder.f90
+
+LinMestelShu_Form.o: \
+  GenASiS.o \
+  LinMestelShu_Form.f90
+
+LinMestelShu.o: \
+  GenASiS.o \
+  LinMestelShu_Form.o \
+  LinMestelShu.f90
 
 RiemannProblem_Form.o: \
   GenASiS.o \
@@ -173,25 +169,6 @@ YahilLattimer.o: \
   GenASiS.o \
   YahilLattimer_Form.o \
   YahilLattimer.f90
-
-# ODE_Solve_Command.o: \
-#   GenASiS.o \
-#   ODE_Solve_Command.f90
-
-# ODE_Solve_Command_Test.o: \
-#   GenASiS.o \
-#   ODE_Solve_Command.o \
-#   ODE_Solve_Command_Test.f90
-
-# LinMestelShu_Form.o: \
-#   GenASiS.o \
-#   ODE_Solve_Command.o \
-#   LinMestelShu_Form.f90
-
-# LinMestelShu.o: \
-#   GenASiS.o \
-#   LinMestelShu_Form.o \
-#   LinMestelShu.f90
 
 # SASI_Form.o: \
 #   GenASiS.o \

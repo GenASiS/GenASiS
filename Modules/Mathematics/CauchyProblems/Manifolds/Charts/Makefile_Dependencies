@@ -1,0 +1,8 @@
+include $(PATH_STRUCTURED_GRIDS)/Makefile_Dependencies
+
+Charts.o: \
+  StructuredGrids.o \
+  Charts.f90
+
+Charts.a: $(CHARTS)
+	ar r Charts.a $(CHARTS)

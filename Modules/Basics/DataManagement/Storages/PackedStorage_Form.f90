@@ -29,7 +29,7 @@ module PackedStorage_Form
     procedure, public, pass :: &
       Load
     procedure, public, pass :: &
-      Add
+      Add => Add_PS
     procedure, public, pass :: &
       Store
     final :: &
@@ -129,7 +129,7 @@ contains
   end subroutine Load
   
     
-  subroutine Add ( PS, S )
+  subroutine Add_PS ( PS, S )
     
     class ( PackedStorageForm ), intent ( inout ) :: &
       PS
@@ -148,7 +148,7 @@ contains
                PS % iaUnpacked, PS % nValues )
     end do
 
-  end subroutine Add
+  end subroutine Add_PS
   
     
   subroutine Store ( PS, S )

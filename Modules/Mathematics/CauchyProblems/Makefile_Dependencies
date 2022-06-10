@@ -1,0 +1,14 @@
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_CONSTRAINTS)/Makefile_Dependencies
+include $(PATH_EVOLUTIONS)/Makefile_Dependencies
+
+CauchyProblems.o: \
+  Manifolds.o \
+  Fields.o \
+  Constraints.o \
+  Evolutions.o \
+  CauchyProblems.f90
+
+CauchyProblems.a: $(CAUCHY_PROBLEMS)
+	ar r CauchyProblems.a $(CAUCHY_PROBLEMS)

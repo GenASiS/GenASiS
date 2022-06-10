@@ -1,0 +1,25 @@
+PATH_GENASIS = ../../../../../
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Root_Form_Test 
+
+Root_Form_Test: Basics.a Algebra.a Root_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Root_Form_Test_$(MACHINE) \
+          Root_Form_Test.o \
+	  Algebra.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Root_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+
+Root_Form_Test.o: \
+  Basics.o \
+  Algebra.o \
+  Root_Form_Test.f90

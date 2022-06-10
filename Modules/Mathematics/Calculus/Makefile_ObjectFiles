@@ -1,0 +1,5 @@
+CALCULUS = \
+  Calculus.o \
+  DifferentialEquation_Form.o \
+  Interpolation_Form.o \
+  Integral_Form.o

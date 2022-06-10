@@ -1,0 +1,261 @@
+Units_F__Form.o: \
+  Basics.o \
+  Units_F__Form.f90
+
+EOS_P_HN_OConnorOtt__Form.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.f90
+
+EOS_P_HN_OConnorOtt__Kernel.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  EOS_P_HN_OConnorOtt__Kernel.f90
+
+Fluid_D__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_D__Form.f90
+
+Fluid_D__Kernel.o: \
+  Basics.o \
+  Fluid_D__Form.o \
+  Fluid_D__Kernel.f90
+
+Fluid_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_D__Form.o \
+  Fluid_P__Form.f90
+
+Fluid_P__Kernel.o: \
+  Basics.o \
+  Fluid_P__Form.o \
+  Fluid_P__Kernel.f90
+
+Fluid_P_I__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P__Form.o \
+  Fluid_P_I__Form.f90
+
+Fluid_P_I__Kernel.o: \
+  Basics.o \
+  Fluid_P_I__Form.o \
+  Fluid_P_I__Kernel.f90
+
+Fluid_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P__Form.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  Fluid_P_HN__Form.f90
+
+Fluid_P_HN__Kernel.o: \
+  Basics.o \
+  Fluid_P_HN__Form.o \
+  Fluid_P_HN__Kernel.f90
+
+Tally_F_D__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_D__Form.o \
+  Tally_F_D__Form.f90
+
+Tally_F_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P__Form.o \
+  Tally_F_D__Form.o \
+  Tally_F_P__Form.f90
+
+Tally_F_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Units_F__Form.o \
+  Fluid_P_HN__Form.o \
+  Tally_F_P__Form.o \
+  Tally_F_P_HN__Form.f90
+
+RiemannSolver_HLLC_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  RiemannSolver_HLLC_P__Form.f90
+
+RiemannSolver_HLLC_P__Kernel.o: \
+  Basics.o \
+  RiemannSolver_HLLC_P__Form.o \
+  RiemannSolver_HLLC_P__Kernel.f90
+
+RiemannSolver_HLLC_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_HN__Form.o \
+  RiemannSolver_HLLC_P__Form.o \
+  RiemannSolver_HLLC_P_HN__Form.f90
+
+RiemannSolver_HLLC_P_HN__Kernel.o: \
+  Basics.o \
+  RiemannSolver_HLLC_P_HN__Form.o \
+  RiemannSolver_HLLC_P_HN__Kernel.f90
+
+DivergencePart_F_D_T__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  DivergencePart_F_D_T__Form.f90
+
+DivergencePart_F_D_T__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_D_V__Form.o \
+  DivergencePart_F_D_V__Kernel.f90
+
+DivergencePart_F_D_V__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  DivergencePart_F_D_V__Form.f90
+
+DivergencePart_F_D_V__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_D_V__Form.o \
+  DivergencePart_F_D_V__Kernel.f90
+
+DivergencePart_F_P_T__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  DivergencePart_F_P_T__Form.f90
+
+DivergencePart_F_P_T__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_P_T__Form.o \
+  DivergencePart_F_P_T__Kernel.f90
+
+DivergencePart_F_P_V__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  DivergencePart_F_P_V__Form.f90
+
+DivergencePart_F_P_V__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_P_V__Form.o \
+  DivergencePart_F_P_V__Kernel.f90
+
+DivergencePart_F_P_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  DivergencePart_F_P_P__Form.f90
+
+DivergencePart_F_P_P__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_P_P__Form.o \
+  DivergencePart_F_P_P__Kernel.f90
+
+DivergencePart_F_P_HN_T__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  DivergencePart_F_P_HN_T__Form.f90
+
+DivergencePart_F_P_HN_T__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_P_HN_T__Form.o \
+  DivergencePart_F_P_HN_T__Kernel.f90
+
+DivergencePart_F_P_HN_V__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  DivergencePart_F_P_HN_V__Form.f90
+
+DivergencePart_F_P_HN_V__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_P_HN_V__Form.o \
+  DivergencePart_F_P_HN_V__Kernel.f90
+
+DivergencePart_F_P_HN_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_HN__Form.o \
+  DivergencePart_F_P_HN_P__Form.f90
+
+DivergencePart_F_P_HN_P__Kernel.o: \
+  Basics.o \
+  Mathematics.o \
+  DivergencePart_F_P_HN_P__Form.o \
+  DivergencePart_F_P_HN_P__Kernel.f90
+
+# Slope_DFV_F_F_P_HN__Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P_HN__Form.o \
+#   Slope_DFV_F_F_P_HN__Form.f90
+
+# Slope_DFV_N_F_P_HN__Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Gravitations.o \
+#   Slope_DFV_F_F_P_HN__Form.o \
+#   Slope_DFV_N_F_P_HN__Form.f90
+
+Coarsening_C_F__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Coarsening_C_F__Form.f90
+
+Coarsening_C_F__Kernel.o: \
+  Basics.o \
+  Coarsening_C_F__Form.o \
+  Coarsening_C_F__Kernel.f90
+
+Fluids.o: \
+  Units_F__Form.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  Fluid_D__Form.o \
+  Fluid_P__Form.o \
+  Fluid_P_I__Form.o \
+  Fluid_P_HN__Form.o \
+  Tally_F_D__Form.o \
+  Tally_F_P__Form.o \
+  Tally_F_P_HN__Form.o \
+  RiemannSolver_HLLC_P_HN__Form.o \
+  RiemannSolver_HLLC_P__Form.o \
+  DivergencePart_F_D_T__Form.o \
+  DivergencePart_F_D_V__Form.o \
+  DivergencePart_F_P_T__Form.o \
+  DivergencePart_F_P_V__Form.o \
+  DivergencePart_F_P_P__Form.o \
+  DivergencePart_F_P_HN_T__Form.o \
+  DivergencePart_F_P_HN_V__Form.o \
+  DivergencePart_F_P_HN_P__Form.o \
+  Coarsening_C_F__Form.o \
+  Fluids.f90
+#  Slope_DFV_F_F_P_HN__Form.o \
+#  Slope_DFV_N_F_P_HN__Form.o \
+
+Fluids.a: $(FLUIDS)
+	ar r Fluids.a $(FLUIDS)

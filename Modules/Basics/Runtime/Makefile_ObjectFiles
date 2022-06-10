@@ -1,7 +1,11 @@
 RUNTIME = \
   Runtime.o \
   PROGRAM_HEADER_Singleton.o \
+  MemoryUsage_Form.o \
   GetMemoryUsage_Command.o \
+  GetMemoryUsage_macOS_Command.o \
+  GetMemoryUsage_macOS_C.o \
+  Timer_1D__Form.o \
   Timer_Form.o \
   WallTime_Function.o \
   CommandLineOptions_Form.o \

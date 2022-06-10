@@ -1,0 +1,79 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Connectivity_Form_Test Chart_H__Form_Test Chart_GS__Form_Test \
+  Chart_GS_CE__Form_Test Chart_GS_CC__Form_Test
+
+Connectivity_Form_Test: Basics.a StructuredGrids.a \
+  Connectivity_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Connectivity_Form_Test_$(MACHINE) \
+          Connectivity_Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
+Chart_H__Form_Test: Basics.a StructuredGrids.a \
+  Chart_H__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_H__Form_Test_$(MACHINE) \
+          Chart_H__Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
+Chart_GS__Form_Test: Basics.a StructuredGrids.a \
+  Chart_GS__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_GS__Form_Test_$(MACHINE) \
+          Chart_GS__Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
+Chart_GS_CE__Form_Test: Basics.a StructuredGrids.a \
+  Chart_GS_CE__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_GS_CE__Form_Test_$(MACHINE) \
+          Chart_GS_CE__Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
+Chart_GS_CC__Form_Test: Basics.a StructuredGrids.a \
+  Chart_GS_CC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_GS_CC__Form_Test_$(MACHINE) \
+          Chart_GS_CC__Form_Test.o StructuredGrids.a \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Connectivity_Form_Test_*
+	rm -f Chart_H__Form_Test_*
+	rm -f Chart_GS__Form_Test_*
+	rm -f Chart_GS_CE__Form_Test_*
+	rm -f Chart_GS_CC__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_STRUCTURED_GRIDS)/Makefile_Dependencies
+
+Connectivity_Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Connectivity_Form_Test.f90
+
+Chart_H__Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Chart_H__Form_Test.f90
+
+Chart_GS__Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Chart_GS__Form_Test.f90
+
+Chart_GS_CE__Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Chart_GS_CE__Form_Test.f90
+
+Chart_GS_CC__Form_Test.o: \
+  Basics.o \
+  StructuredGrids.o \
+  Chart_GS_CC__Form_Test.f90

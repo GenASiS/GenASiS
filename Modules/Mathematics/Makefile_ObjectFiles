@@ -1,9 +1,9 @@
-include $(PATH_SOLVERS)/Makefile_ObjectFiles
-include $(PATH_OPERATIONS)/Makefile_ObjectFiles
-include $(PATH_MANIFOLDS)/Makefile_ObjectFiles
+include $(PATH_CAUCHY_PROBLEMS)/Makefile_ObjectFiles
+include $(PATH_CALCULUS)/Makefile_ObjectFiles
+include $(PATH_ALGEBRA)/Makefile_ObjectFiles
 
 MATHEMATICS = \
   Mathematics.o \
-  $(SOLVERS) \
-  $(OPERATIONS) \
-  $(MANIFOLDS)
+  $(CAUCHY_PROBLEMS) \
+  $(CALCULUS) \
+  $(ALGEBRA)

@@ -1,0 +1,47 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Step_RK_H__Form_Test Step_RK_CS__Form_Test
+
+Step_RK_H__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a Steps.a \
+  Step_RK_H__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Step_RK_H__Form_Test_$(MACHINE) \
+          Step_RK_H__Form_Test.o Steps.a \
+          Slopes.a Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+Step_RK_CS__Form_Test: Basics.a Algebra.a Manifolds.a Fields.a Slopes.a \
+  Steps.a Step_RK_CS__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Step_RK_CS__Form_Test_$(MACHINE) \
+          Step_RK_CS__Form_Test.o Steps.a \
+          Slopes.a Fields.a Manifolds.a Algebra.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Step_RK_H__Form_Test_*
+	rm -f Step_RK_CS__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_SLOPES)/Makefile_Dependencies
+include $(PATH_STEPS)/Makefile_Dependencies
+
+Step_RK_H__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Steps.o \
+  Step_RK_H__Form_Test.f90
+
+Step_RK_CS__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Steps.o \
+  Step_RK_CS__Form_Test.f90

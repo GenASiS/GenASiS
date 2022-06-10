@@ -1,0 +1,48 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Laplacian_M_ASCG__Form_Test Poisson_ASCG__Form_Test
+
+Laplacian_M_ASCG__Form_Test: Basics.a Algebra.a Calculus.a Manifolds.a \
+  Fields.a PoissonEquations.a Laplacian_M_ASCG__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Laplacian_M_ASCG__Form_Test_$(MACHINE) \
+          Laplacian_M_ASCG__Form_Test.o PoissonEquations.a \
+          Fields.a Manifolds.a Calculus.a Algebra.a Basics.a $(LIBRARIES)
+
+Poisson_ASCG__Form_Test: Basics.a Algebra.a Calculus.a Manifolds.a Fields.a \
+  PoissonEquations.a Poisson_ASCG__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Poisson_ASCG__Form_Test_$(MACHINE) \
+          Poisson_ASCG__Form_Test.o PoissonEquations.a \
+          Fields.a Manifolds.a Calculus.a Algebra.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Laplacian_M_ASCG__Form_Test_*
+	rm -f Poisson_ASCG__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_CALCULUS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
+
+Laplacian_M_ASCG__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  PoissonEquations.o \
+  Laplacian_M_ASCG__Form_Test.f90
+
+Poisson_ASCG__Form_Test.o: \
+  Basics.o \
+  Algebra.o \
+  Manifolds.o \
+  Fields.o \
+  PoissonEquations.o \
+  Poisson_ASCG__Form_Test.f90

@@ -1,0 +1,11 @@
+include $(PATH_CURRENT_SETS)/Makefile_ObjectFiles
+include $(PATH_CALCULUS_FIELDS)/Makefile_ObjectFiles
+include $(PATH_GEOMETRIES)/Makefile_ObjectFiles
+include $(PATH_FIELD_SETS)/Makefile_ObjectFiles
+
+FIELDS = \
+  Fields.o \
+  $(CURRENT_SETS) \
+  $(CALCULUS_FIELDS) \
+  $(GEOMETRIES) \
+  $(FIELD_SETS)

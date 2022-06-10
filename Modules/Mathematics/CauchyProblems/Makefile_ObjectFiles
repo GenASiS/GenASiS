@@ -1,0 +1,11 @@
+include $(PATH_EVOLUTIONS)/Makefile_ObjectFiles
+include $(PATH_CONSTRAINTS)/Makefile_ObjectFiles
+include $(PATH_FIELDS)/Makefile_ObjectFiles
+include $(PATH_MANIFOLDS)/Makefile_ObjectFiles
+
+CAUCHY_PROBLEMS = \
+  CauchyProblems.o \
+  $(EVOLUTIONS) \
+  $(CONSTRAINTS) \
+  $(FIELDS) \
+  $(MANIFOLDS)

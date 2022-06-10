@@ -1,0 +1,16 @@
+SLOPES = \
+  Slopes.o \
+  Slope_DFV_F_DP__Form.o \
+  Slope_DFV_DD__Kernel.o \
+  Slope_DFV_DD__Form.o \
+  Slope_DFV_DP__Form.o \
+  Slope_DFV_F_DT__Form.o \
+  Slope_DFV_C_F__Kernel.o \
+  Slope_DFV_C_F__Form.o \
+  Slope_DFV_PD__Kernel.o \
+  Slope_DFV_PD__Form.o \
+  Slope_H__Form.o \
+  RiemannSolver_HLL__Kernel.o \
+  RiemannSolver_HLL__Form.o \
+  Reconstruction_Kernel.o \
+  Reconstruction_Form.o

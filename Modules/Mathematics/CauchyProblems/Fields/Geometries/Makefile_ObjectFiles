@@ -1,0 +1,6 @@
+GEOMETRIES = \
+  Geometries.o \
+  Coarsening_C__Kernel.o \
+  Coarsening_C__Form.o \
+  Geometry_F__Kernel.o \
+  Geometry_F__Form.o

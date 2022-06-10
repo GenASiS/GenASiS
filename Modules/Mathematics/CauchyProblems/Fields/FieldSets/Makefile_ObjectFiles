@@ -1,0 +1,7 @@
+FIELD_SETS = \
+  FieldSets.o \
+  Stream_Form.o \
+  FieldSet_Form.o \
+  Boundaries_Kernel.o \
+  Boundaries_Form.o \
+  GhostExchange_Form.o

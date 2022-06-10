@@ -1,0 +1,10 @@
+include $(PATH_DERIVATIVES)/Makefile_Dependencies
+include $(PATH_INTEGRALS)/Makefile_Dependencies
+
+CalculusFields.o: \
+  Derivatives.o \
+  Integrals.o \
+  CalculusFields.f90
+
+CalculusFields.a: $(CALCULUS_FIELDS)
+	ar r CalculusFields.a $(CALCULUS_FIELDS)

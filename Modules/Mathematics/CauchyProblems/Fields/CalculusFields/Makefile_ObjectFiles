@@ -1,0 +1,7 @@
+include $(PATH_INTEGRALS)/Makefile_ObjectFiles
+include $(PATH_DERIVATIVES)/Makefile_ObjectFiles
+
+CALCULUS_FIELDS = \
+  CalculusFields.o \
+  $(INTEGRALS) \
+  $(DERIVATIVES)

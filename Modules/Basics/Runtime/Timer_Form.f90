@@ -10,7 +10,8 @@ module Timer_Form
   type, public :: TimerForm
     integer ( KDI ) :: &
       iStart = 0, &
-      Level
+      Level, &
+      Handle = -1
     type ( MeasuredValueForm ) :: &
       StartTime, &
       StopTime, &
@@ -33,17 +34,15 @@ module Timer_Form
       ShowInterval
     procedure, public, pass :: &
       ShowTotal
-    procedure, public, pass :: &
-      RestoreTotal
   end type TimerForm
 
-    character ( 8 ), private, parameter :: &
-      Suffix = '::::::::'
+    character ( 10 ), private, parameter :: &
+      Suffix = '::::::::::'
     
 contains
 
 
-  subroutine InitializeNameLevel ( T, Name, Level )
+  subroutine InitializeNameLevel ( T, Name, Level, HandleOption )
 
     class ( TimerForm ), intent ( inout ) :: &
       T
@@ -51,9 +50,28 @@ contains
       Name
     integer ( KDI ), intent ( in ) :: &
       Level
+    integer ( KDI ), intent ( in ), optional :: &
+      HandleOption
 
-    T % Name  = Name
-    T % Level = Level
+    integer ( KDI ) :: &
+      oName, &
+      LabelLength
+    character ( LDL ) :: &
+      TruncatedName
+
+    LabelLength  =  35  !-- Show_Command
+
+    !-- Truncate the beginning of the name to maintain proper indentation
+    TruncatedName  =  Name
+    if ( len_trim ( Name )  + 1 + Level  >  LabelLength ) then
+      oName  =  len_trim ( Name )  + 1 + Level  -  LabelLength
+      TruncatedName  =  Name ( oName + 1 : )
+    end if
+
+    T % Name   =  TruncatedName
+    T % Level  =  Level
+    if ( present ( HandleOption ) ) &
+      T % Handle  =  HandleOption
 
     call T % StartTime % Initialize ( 's', 0.0_KDR )
     call T % StopTime % Initialize ( 's', 0.0_KDR )
@@ -70,8 +88,9 @@ contains
     class ( TimerForm ), intent ( in ) :: &
       T_Target
 
-    T % Name  = T_Target % Name
-    T % Level = T_Target % Level
+    T % Name    =  T_Target % Name
+    T % Level   =  T_Target % Level
+    T % Handle  =  T_Target % Handle
 
     call T % StartTime % Initialize ( 's', 0.0_KDR )
     call T % StopTime % Initialize ( 's', 0.0_KDR )
@@ -155,23 +174,6 @@ contains
                 Ignorability )
 
   end subroutine ShowTotal
-
-
-  subroutine RestoreTotal ( T, TotalTime )
-
-    class ( TimerForm ), intent ( inout ) :: &
-      T
-    real ( KDR ), intent ( in ) :: &
-      TotalTime
-
-    type ( MeasuredValueForm ) :: &
-      TotalTime_MV
-
-    call TotalTime_MV % Initialize ( 's', TotalTime )
-  
-    T % TotalTime  =  TotalTime_MV
-
-  end subroutine RestoreTotal
 
 
 end module Timer_Form

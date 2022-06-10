@@ -1,0 +1,201 @@
+PATH_GENASIS = ../../../../..
+
+all: SineWaveAdvection SawtoothWaveAdvection #OppenheimerSnyder RiemannProblem RayleighTaylor \
+     SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
+     ODE_Solve 
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+SineWaveAdvection: ThirdParty.a GenASiS.a SineWaveAdvection.o
+	$(LINK) $(FLAGS) \
+           -o SineWaveAdvection_$(MACHINE) \
+           SineWaveAdvection.o SineWave_Form.o PlaneWave_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+SawtoothWaveAdvection: ThirdParty.a GenASiS.a SawtoothWaveAdvection.o
+	$(LINK) $(FLAGS) \
+          -o SawtoothWaveAdvection_$(MACHINE) \
+          SawtoothWaveAdvection.o SawtoothWave_Form.o PlaneWave_Form.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
+	$(LINK) $(FLAGS) \
+           -o OppenheimerSnyder_$(MACHINE) \
+           ODE_Solve_Command.o OppenheimerSnyder.o \
+	   OppenheimerSnyder_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
+	$(LINK) $(FLAGS) \
+          -o RiemannProblem_$(MACHINE) \
+          RiemannProblem.o RiemannProblem_Form.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+RayleighTaylor: ThirdParty.a GenASiS.a RayleighTaylor.o
+	$(LINK) $(FLAGS) \
+           -o RayleighTaylor_$(MACHINE) \
+           RayleighTaylor.o RayleighTaylor_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+SedovTaylor: ThirdParty.a GenASiS.a SedovTaylor.o
+	$(LINK) $(FLAGS) \
+          -o SedovTaylor_$(MACHINE) \
+          SedovTaylor.o SedovTaylor_Form.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+FishboneMoncrief: ThirdParty.a GenASiS.a FishboneMoncrief.o
+	$(LINK) $(FLAGS) \
+           -o FishboneMoncrief_$(MACHINE) \
+           FishboneMoncrief.o FishboneMoncrief_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
+	$(LINK) $(FLAGS) \
+          -o YahilLattimer_$(MACHINE) \
+          YahilLattimer.o YahilLattimer_Form.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+# LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
+# 	$(LINK) $(FLAGS) \
+#            -o LinMestelShu_$(MACHINE) \
+#            ODE_Solve_Command.o LinMestelShu.o \
+# 	   LinMestelShu_Form.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)\
+
+# ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
+# 	$(LINK) $(FLAGS) \
+#            -o ODE_Solve_Command_Test_$(MACHINE) \
+#            ODE_Solve_Command_Test.o ODE_Solve_Command.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)
+
+# SASI: ThirdParty.a GenASiS.a SASI.o
+# 	$(LINK) $(FLAGS) \
+#           -o SASI_$(MACHINE) \
+#           SASI.o SASI_Form.o \
+#           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+include $(PATH_GENASIS)/Build/Makefile_Dependencies
+# include ../Makefile_Dependencies
+
+clean: clean_ThirdParty
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f SineWaveAdvection_*
+	rm -f SawtoothWaveAdvection_*
+	rm -f OppenheimerSnyder_*
+	rm -f RiemannProblem_*
+	rm -f RayleighTaylor_*
+	rm -f SedovTaylor_*
+	rm -f FishboneMoncrief_*
+	rm -f YahilLattimer_*
+	rm -f LinMestelShu_*
+	rm -f SASI_*
+#	rm -f ODE_Solve_Command_*
+
+PlaneWave_Form.o: \
+  GenASiS.o \
+  PlaneWave_Form.f90
+
+SineWave_Form.o: \
+  GenASiS.o \
+  PlaneWave_Form.o \
+  SineWave_Form.f90
+
+SineWaveAdvection.o: \
+  GenASiS.o \
+  SineWave_Form.o \
+  SineWaveAdvection.f90
+
+SawtoothWave_Form.o: \
+  Basics.o \
+  PlaneWave_Form.o \
+  SawtoothWave_Form.f90
+
+SawtoothWaveAdvection.o: \
+  Basics.o \
+  SawtoothWave_Form.o \
+  SawtoothWaveAdvection.f90
+
+OppenheimerSnyder_Form.o: \
+  GenASiS.o \
+  ODE_Solve_Command.o \
+  OppenheimerSnyder_Form.f90
+
+OppenheimerSnyder.o: \
+  GenASiS.o \
+  OppenheimerSnyder_Form.o \
+  OppenheimerSnyder.f90
+
+RiemannProblem_Form.o: \
+  GenASiS.o \
+  RiemannProblem_Form.f90
+
+RiemannProblem.o: \
+  GenASiS.o \
+  RiemannProblem_Form.o \
+  RiemannProblem.f90
+
+RayleighTaylor_Form.o: \
+  GenASiS.o \
+  RayleighTaylor_Form.f90
+
+RayleighTaylor.o: \
+  GenASiS.o \
+  RayleighTaylor_Form.o \
+  RayleighTaylor.f90
+
+SedovTaylor_Form.o: \
+  GenASiS.o \
+  SedovTaylor_Form.f90
+
+SedovTaylor.o: \
+  GenASiS.o \
+  SedovTaylor_Form.o \
+  SedovTaylor.f90
+
+FishboneMoncrief_Form.o: \
+  GenASiS.o \
+  FishboneMoncrief_Form.f90
+
+FishboneMoncrief.o: \
+  GenASiS.o \
+  FishboneMoncrief_Form.o \
+  FishboneMoncrief.f90
+
+YahilLattimer_Form.o: \
+  GenASiS.o \
+  YahilLattimer_Form.f90
+
+YahilLattimer.o: \
+  GenASiS.o \
+  YahilLattimer_Form.o \
+  YahilLattimer.f90
+
+# ODE_Solve_Command.o: \
+#   GenASiS.o \
+#   ODE_Solve_Command.f90
+
+# ODE_Solve_Command_Test.o: \
+#   GenASiS.o \
+#   ODE_Solve_Command.o \
+#   ODE_Solve_Command_Test.f90
+
+# LinMestelShu_Form.o: \
+#   GenASiS.o \
+#   ODE_Solve_Command.o \
+#   LinMestelShu_Form.f90
+
+# LinMestelShu.o: \
+#   GenASiS.o \
+#   LinMestelShu_Form.o \
+#   LinMestelShu.f90
+
+# SASI_Form.o: \
+#   GenASiS.o \
+#   SASI_Form.f90
+
+# SASI.o: \
+#   GenASiS.o \
+#   SASI_Form.o \
+#   SASI.f90

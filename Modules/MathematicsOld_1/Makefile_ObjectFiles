@@ -1,0 +1,9 @@
+include $(PATH_SOLVERS)/Makefile_ObjectFiles
+include $(PATH_OPERATIONS)/Makefile_ObjectFiles
+include $(PATH_MANIFOLDS)/Makefile_ObjectFiles
+
+MATHEMATICS = \
+  Mathematics.o \
+  $(SOLVERS) \
+  $(OPERATIONS) \
+  $(MANIFOLDS)
