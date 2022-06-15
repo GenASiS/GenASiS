@@ -88,7 +88,7 @@ program Storage_Form_Test
   
   StartTime = OMP_GET_WTIME ( )
   call S ( 5 ) % UpdateDevice ( )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Overlay Storage Data Transfer'
   print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
   print*, 'Host-to-Device Time (s)        :', TotalTime
@@ -97,7 +97,7 @@ program Storage_Form_Test
   
   StartTime = OMP_GET_WTIME ( )
   call S ( 4 ) % UpdateDevice ( )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Primary Storage Data Transfer'
   print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
   print*, 'Host-to-Device Time (s)        :', TotalTime
@@ -106,7 +106,7 @@ program Storage_Form_Test
   
   StartTime = OMP_GET_WTIME ( )
   call S ( 5 ) % UpdateHost ( )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Overlay Storage Data Transfer'
   print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
   print*, 'Device-to-Host Time (s)        :', TotalTime
@@ -115,7 +115,7 @@ program Storage_Form_Test
 
   StartTime = OMP_GET_WTIME ( )
   call S ( 4 ) % UpdateHost ( )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Primary Storage Data Transfer'
   print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
   print*, 'Device-to-Host Time (s)        :', TotalTime
