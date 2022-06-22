@@ -124,7 +124,7 @@ program AllocateHost_Command_Test
   !-- Timing pinned memory update Host-to-Device
   StartTime = OMP_GET_WTIME ( )
   call UpdateDevice ( Pi_Value_2D, d_Pi_Value_2D )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinned memory Data Transfer'
   print*, 'Host-to-Device Time (s)        :', TotalTime
   print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -146,7 +146,7 @@ program AllocateHost_Command_Test
     call UpdateDevice ( Pi_Value_2D ( :, iVrbl ), d_Pi_Value_1D ( iVrbl ) )
   end do
   !$OMP end parallel do
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinnned memory Data Transfer Loop'
   print*, 'Host-to-Device Time (s)        :', TotalTime
   print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -155,7 +155,7 @@ program AllocateHost_Command_Test
   !-- Timing pinned memory update Device-To-Host
   StartTime = OMP_GET_WTIME ( )
   call UpdateHost ( d_Pi_Value_2D, Pi_Value_2D )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinned memory Data Transfer'
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -164,7 +164,7 @@ program AllocateHost_Command_Test
   !-- Timing pageable memory update Device-To-Host
 !  StartTime = OMP_GET_WTIME ( )
 !  call UpdateHost ( d_Pa_Value_2D, Pa_Value_2D )
-!  TotalTime = OMP_GET_WTIME ( ) - StartTime
+!  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
 !  print*, 'Pageable memory Data Transfer'
 !  print*, 'Device-to-Host Time (s)        :', TotalTime
 !  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -177,7 +177,7 @@ program AllocateHost_Command_Test
     call UpdateHost ( d_Pi_Value_1D ( iVrbl ), Pi_Value_2D ( :, iVrbl ) )
   end do
   !$OMP end parallel do
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinned memory Data Transfer Loop'
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
