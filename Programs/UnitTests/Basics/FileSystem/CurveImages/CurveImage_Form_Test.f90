@@ -79,7 +79,7 @@ program CurveImage_Form_Test
   
   call CI_Write % AddStorage ( S )
 
-  call CI_Write % SetGrid  &
+  call CI_Write % SetGridWrite  &
          ( Directory = 'Curves', NodeCoordinate = NodeCoordinate, &
            nProperCells = 20, oValue = 0 )
 
@@ -93,7 +93,8 @@ program CurveImage_Form_Test
   
   call CI_Read % Initialize ( GIS )
   
-  call CI_Read % SetReadAttributes ( Directory = 'Curves', oValue = 0 )
+  call CI_Read % SetGridRead &
+         ( Directory = 'Curves', nProperCells = 20, oValue = 0 )
 
   call CI_Read % Read ( )
   
@@ -130,11 +131,12 @@ program CurveImage_Form_Test
   call S_SO % Initialize &
          ( shape ( S % Value ), VariableOption = S % Variable, &
            NameOption = S % Name, UnitOption = S % Unit )
-  call CI_Read_SO % SetReadAttributes ( Directory = 'Curves', oValue = 0 )
+  call CI_Read_SO % SetGridRead &
+         ( Directory = 'Curves', nProperCells = 20, oValue = 0 )
   call CI_Read_SO % AddStorage ( S_SO )
-  call CI_Read_SO % SetGrid &
-         ( Directory = 'Curves', NodeCoordinate = NodeCoordinate, &
-           nProperCells = 20, oValue = 0 )
+!  call CI_Read_SO % SetGrid &
+!         ( Directory = 'Curves', NodeCoordinate = NodeCoordinate, &
+!           nProperCells = 20, oValue = 0 )
 
   call CI_Read_SO % Read ( StorageOnlyOption = .true. )
 
