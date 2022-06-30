@@ -79,7 +79,7 @@ program StructuredGridImage_Form_Test
 
   call SGI_Rect % AddStorage ( S )
   
-  call SGI_Rect % SetGrid  &
+  call SGI_Rect % SetGridWrite  &
          ( Directory = 'Rectilinear', &
            NodeCoordinate = NodeCoordinate, nDimensions = 2, &
            nProperCells = 12, nGhostCells = 0, oValue = 0, &
@@ -106,37 +106,39 @@ program StructuredGridImage_Form_Test
   
   call Clear ( S % Value )
 
-  call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
+!-- FIXME: Read needs updating with latest interface
+
+!   call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
   
-  call SGI_Read % Initialize ( GIS )
+!   call SGI_Read % Initialize ( GIS )
   
-  call SGI_Read % SetReadAttributes ( Directory = 'Rectilinear', oValue = 0 )
+! !  call SGI_Read % SetGridRead ( Directory = 'Rectilinear', oValue = 0 )
   
-  call SGI_Read % Read ( )
+!   call SGI_Read % Read ( )
   
-  call Show ( SGI_Read % nDimensions, 'nDimensions' )  
-  call Show ( SGI_Read % nNodes, 'nNodes' )
-  call Show ( SGI_Read % NodeCoordinate_1, 'NodeCoordinate_1' )
-  call Show ( SGI_Read % NodeCoordinate_2, 'NodeCoordinate_2' )
-  call Show ( SGI_Read % NodeCoordinate_3, 'NodeCoordinate_3' )
-  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
-              SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
-  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
-              SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
-  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
-              SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
+!   call Show ( SGI_Read % nDimensions, 'nDimensions' )  
+!   call Show ( SGI_Read % nNodes, 'nNodes' )
+!   call Show ( SGI_Read % NodeCoordinate_1, 'NodeCoordinate_1' )
+!   call Show ( SGI_Read % NodeCoordinate_2, 'NodeCoordinate_2' )
+!   call Show ( SGI_Read % NodeCoordinate_3, 'NodeCoordinate_3' )
+!   call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
+!               SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
+!   call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
+!               SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
+!   call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
+!               SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
               
-  call Clear ( SGI_Read % Storage ( 1 ) % Value )
+!   call Clear ( SGI_Read % Storage ( 1 ) % Value )
   
-  call SGI_Read % Read ( StorageOnlyOption = .true. )
-  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
-              SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
-  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
-              SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
-  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
-              SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
+!   call SGI_Read % Read ( StorageOnlyOption = .true. )
+!   call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
+!               SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
+!   call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
+!               SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
+!   call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
+!               SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
   
-  call GIS % Close ( )
+!   call GIS % Close ( )
   
   deallocate ( C )
 
