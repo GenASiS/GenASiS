@@ -15,7 +15,7 @@ module DistributedMesh_Form
       nProperCells = 0, &
       nGhostCells  = 0
     integer ( KDI ), private :: &
-      iTimer_IO
+      iTimer_IO = 0
     integer ( KDI ), dimension ( MAX_N_DIMENSIONS ) :: &
       iaBrick, &
       iaFirst, &
@@ -125,9 +125,6 @@ contains
       DM % BoundaryCondition = BoundaryConditionOption
 
     call ShowParameters ( DM )
-    
-    call PROGRAM_HEADER % AddTimer &
-           ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
   end subroutine Initialize
 
@@ -430,8 +427,12 @@ contains
       Edge
     character ( LDF ) :: &
       OutputDirectory
+    type ( TimerForm ), pointer :: &
+      T_IO
 
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    T_IO  =>  PROGRAM_HEADER % Timer &
+                ( DM % iTimer_IO, 'InputOutput', Level = 1 )
+    call T_IO % Start ( )
 
     !-- Output
     OutputDirectory = '../Output/'
@@ -503,7 +504,7 @@ contains
 
     end associate !-- GIS, CS
     
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
+    call T_IO % Stop ( )
 
   end subroutine SetImage
   
@@ -519,8 +520,13 @@ contains
       
     integer ( KDI ) :: &
       iS
+    type ( TimerForm ), pointer :: &
+      T_IO
           
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    T_IO  =>  PROGRAM_HEADER % Timer &
+                ( DM % iTimer_IO, 'InputOutput', Level = 1 )
+    call T_IO % Start ( )
+
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
 
@@ -547,9 +553,9 @@ contains
 
     end associate !-- GIS
     
-
     call Show ( DM % GridImageStream % Number, 'iImage', CONSOLE % INFO_1 )
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
+
+    call T_IO % Stop ( )
     
   end subroutine Write
 
@@ -565,12 +571,16 @@ contains
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption
       
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    type ( TimerForm ), pointer :: &
+      T_IO
+
+    T_IO  =>  PROGRAM_HEADER % Timer &
+                ( DM % iTimer_IO, 'InputOutput', Level = 1 )
+    call T_IO % Start ( )
+
     call Show ( 'Reading output', CONSOLE % INFO_1 )
     
     call Show ( iImage, 'iImage', CONSOLE % INFO_1 )
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
-
 
     associate ( GI => DM % GridImageStream )
     
@@ -589,8 +599,10 @@ contains
 
     call GI % Close ( )
 
-    end associate !-- CS
+    end associate !-- GI
     
+    call T_IO % Stop ( )
+
   end subroutine Read
 
 
