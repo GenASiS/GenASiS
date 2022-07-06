@@ -16,8 +16,8 @@ module ConservationLawEvolution_Template
       FinishCycle, &
       RestartFrom
     integer ( KDI ), private :: &
-      iTimerComputation, &
-      iTimerTimeStep
+      iTimerComputation = 0, &
+      iTimerTimeStep = 0
     real ( KDR ) :: &
       CourantFactor, &
       StartTime, &
@@ -147,18 +147,12 @@ contains
     
     type ( MeasuredValueForm ) :: &
       RestartTime
+    type ( TimerForm ), pointer :: &
+      T
       
-    call PROGRAM_HEADER % AddTimer &
-           ( 'Computational', &
-             CLE % iTimerComputation, Level = 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeTimeStep', &
-             CLE % iTimerTimeStep, Level = 2 )
-             
     associate &
       ( DM  => CLE % DistributedMesh, &
-        CLS => CLE % ConservationLawStep, &
-        T => PROGRAM_HEADER % Timer ( CLE % iTimerComputation ) )
+        CLS => CLE % ConservationLawStep )
 
     CLE % Time = CLE % StartTime
     
@@ -190,7 +184,9 @@ contains
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
     
     call Show ( 'Evolving a Fluid', CONSOLE % INFO_1 )
-    
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( CLE % iTimerComputation, 'Computation', Level = 1 )
     call T % Start ( )
 
     do while ( CLE % Time < CLE % FinishTime &
@@ -253,12 +249,15 @@ contains
       Eigenspeed
     type ( CollectiveOperation_R_Form ) :: &
       CO
+    type ( TimerForm ), pointer :: &
+      T_TS
       
     associate &
       ( DM => CLE % DistributedMesh, &
-        CF => CLE % ConservedFields, &
-        T_TS    => PROGRAM_HEADER % Timer ( CLE % iTimerTimeStep ) )
+        CF => CLE % ConservedFields )
     
+    T_TS  =>  PROGRAM_HEADER % Timer &
+                ( CLE % iTimerTimeStep, 'ComputeTimeStep', Level = 2 )
     call T_TS % Start ( )
     
     RampFactor &

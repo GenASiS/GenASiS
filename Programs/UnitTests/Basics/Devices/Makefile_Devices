@@ -5,7 +5,8 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: \
   AllocateDevice_Command_Test AssociateHost_Command_Test \
   DeallocateDevice_Command_Test DisassociateHost_Command_Test \
-  UpdateDevice_Command_Test AllocateHost_Command_Test
+  UpdateDevice_Command_Test AllocateHost_Command_Test \
+  DeviceAddress_Function_Test
 
 AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
 	$(LINK) $(FLAGS) \
