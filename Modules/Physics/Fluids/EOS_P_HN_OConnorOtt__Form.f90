@@ -480,6 +480,8 @@ contains
     UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
     
     call Search ( E % iaFluidOutput, iSolve, iSelected )
+    
+!call Show ( '>>> 3.2.1' )
 
     call FindTemperatureKernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
@@ -487,8 +489,10 @@ contains
              E % iaSelected ( iSelected ), ShiftOption = E % EnergyShift, &
              LogScaleOption = .true., UseDeviceOption = UseDevice )
     
+!call Show ( '>>> 3.2.2' )
     call E % ComputeFromTemperature ( Fluid, iaFluidInput )
     
+!call Show ( '>>> 3.2.3' )
   end subroutine ComputeFromEnergy
     
   

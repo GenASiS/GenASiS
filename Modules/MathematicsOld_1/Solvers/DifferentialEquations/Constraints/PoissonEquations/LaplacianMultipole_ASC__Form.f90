@@ -409,10 +409,10 @@ contains
 
     class ( LaplacianMultipole_ASC_Form ), intent ( in ) :: &
       LM
-    real ( KDR ), dimension ( -oTheta + 1 : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       Theta, &  !-- PolarAngle
       dTheta_L, dTheta_R
-    real ( KDR ), dimension ( -oPhi + 1 : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       Phi, &    !-- AzimuthalAngle
       dPhi_L, dPhi_R
     integer ( KDI ), intent ( in ) :: &
@@ -441,11 +441,11 @@ contains
 
     if ( nTheta > 1 ) then
       do iTheta  =  1, nTheta
-        Th_I  =  Theta ( iTheta )  -  dTheta_L ( iTheta )
-        Th_O  =  Theta ( iTheta )  +  dTheta_R ( iTheta )
+        Th_I  =  Theta ( oTheta + iTheta )  -  dTheta_L ( oTheta + iTheta )
+        Th_O  =  Theta ( oTheta + iTheta )  +  dTheta_R ( oTheta + iTheta )
         if ( nPhi > 1 ) then
           do iPhi  =  1, nPhi
-            dPh  =  dPhi_L ( iPhi )  +  dPhi_R ( iPhi )
+            dPh  =  dPhi_L ( oPhi + iPhi )  +  dPhi_R ( oPhi + iPhi )
             dSA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
           end do !-- iPhi
         else !-- axisymmetry
@@ -461,11 +461,14 @@ contains
       do iL  =  iM, L
         if ( nTheta > 1 ) then
           do iTheta  =  1, nTheta
-            P  =  LM % AssociatedLegendre ( cos ( Theta ( iTheta ) ), iL, iM )
+            P  =  LM % AssociatedLegendre &
+                         ( cos ( Theta ( oTheta + iTheta ) ), iL, iM )
             if ( nPhi > 1 ) then
               do iPhi  =  1, nPhi
-                AF ( iTheta, iPhi, iA     )  =  P * cos ( iM * Phi ( iPhi ) )
-                AF ( iTheta, iPhi, iA + 1 )  =  P * sin ( iM * Phi ( iPhi ) )
+                AF ( iTheta, iPhi, iA     )  &
+                  =  P * cos ( iM * Phi ( oPhi + iPhi ) )
+                AF ( iTheta, iPhi, iA + 1 )  &
+                  =  P * sin ( iM * Phi ( oPhi + iPhi ) )
               end do !-- iPhi
             else !-- axisymmetry
               AF ( iTheta, 1, iA     )  =  P
@@ -487,7 +490,7 @@ contains
   subroutine ComputeRadialFunctions &
                ( R, dR_L, dR_R, L, M, nR, oR, dR33, CF, RF_R, RF_I )
 
-    real ( KDR ), dimension ( -oR + 1 : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       R, &
       dR_L, dR_R
     integer ( KDI ), intent ( in ) :: &
@@ -510,9 +513,9 @@ contains
       R_I, R_O
 
     do iR  =  1, nR
-      R_C  =  R ( iR )
-      R_I  =  R ( iR )  -  dR_L ( iR )
-      R_O  =  R ( iR )  +  dR_R ( iR )
+      R_C  =  R ( oR + iR )
+      R_I  =  R ( oR + iR )  -  dR_L ( oR + iR )
+      R_O  =  R ( oR + iR )  +  dR_R ( oR + iR )
       dR33 ( iR, 1 )  =  ( R_O ** 3  -  R_I ** 3 )  /  3.0_KDR
         CF ( iR, 1 )  =  ( R_C - R_I ) / ( R_O - R_I )
     end do !-- nRC
@@ -521,10 +524,10 @@ contains
     do iM  =  0, M
       do iL  =  iM, L
         do iR  =  1, nR
-          RF_R ( iR, iA     )  =  R ( iR ) ** iL
-          RF_R ( iR, iA + 1 )  =  R ( iR ) ** iL
-          RF_I ( iR, iA     )  =  R ( iR ) ** ( - ( iL + 1 ) )
-          RF_I ( iR, iA + 1 )  =  R ( iR ) ** ( - ( iL + 1 ) ) 
+          RF_R ( iR, iA     )  =  R ( oR + iR ) ** iL
+          RF_R ( iR, iA + 1 )  =  R ( oR + iR ) ** iL
+          RF_I ( iR, iA     )  =  R ( oR + iR ) ** ( - ( iL + 1 ) )
+          RF_I ( iR, iA + 1 )  =  R ( oR + iR ) ** ( - ( iL + 1 ) ) 
         end do !-- iR
         iA  =  iA + 2 !-- Cos, Sin
       end do !-- iL

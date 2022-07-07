@@ -62,7 +62,7 @@ contains
 
     call Show ( 'Initializing an ImposedAdvection_VL' )
     
-    DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
+    DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1
     call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
     PinnedMemory        =  DeviceMemory    

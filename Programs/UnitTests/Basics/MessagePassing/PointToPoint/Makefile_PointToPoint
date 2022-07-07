@@ -1,5 +1,8 @@
 PATH_GENASIS = ../../../../../..
 
+HDF5_DIR=
+SILO_DIR=
+
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
@@ -19,7 +22,7 @@ MessageIncomingOutgoing_Forms_Test: Specifiers.a Devices.a \
           Message_I__Form.o Message_BI__Form.o \
 	  Message_Template.o \
           MessagePassingBasics.a Display.a DataManagement.a Devices.a \
-          Specifiers.a
+          Specifiers.a $(LIBRARIES)
 
 MessageIncomingOutgoing_1D__Forms_Test: Specifiers.a Devices.a \
   DataManagement.a Display.a MessagePassingBasics.a \

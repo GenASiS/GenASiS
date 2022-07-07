@@ -6,6 +6,37 @@
 #include <cuda_runtime_api.h>
 #endif
 
+int SetDevice ( int iDevice )
+  {
+  #ifdef ENABLE_OMP_OFFLOAD
+  cudaError_t Status;
+  
+  Status = cudaSetDevice ( iDevice );
+  if ( Status == cudaSuccess )
+    return 0;
+  else
+    return -1;
+  #else
+  return -1;
+  #endif
+  }
+
+int GetDevice ( int * iDevice )
+  {
+  #ifdef ENABLE_OMP_OFFLOAD
+  cudaError_t Status;
+  
+  Status = cudaGetDevice ( iDevice );
+  if ( Status == cudaSuccess )
+    return 0;
+  else
+    return -1;
+  #else
+  return -1;
+  #endif
+  }
+
+
 void * AllocateHostDouble_Device ( int nValues )
   {
   void * Host;

@@ -62,7 +62,7 @@ contains
     if ( present ( NameOption ) ) &
       U % Name  =  NameOption
 
-    U % DeviceMemory  =  OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1
+    U % DeviceMemory  =  OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1
     call PROGRAM_HEADER % GetParameter ( U % DeviceMemory, 'DeviceMemory' )
 
     U % PinnedMemory        =  U % DeviceMemory

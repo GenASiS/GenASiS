@@ -140,8 +140,8 @@ program GatherMeshBlocksMinMaxAve
              action = 'write' )
       
       WriteFormat = ''
-      write ( WriteFormat, fmt = '(a1,i4,a7)' ) &
-              '(', S % nVariables, 'E20.10)'
+      write ( WriteFormat, fmt = '(a1,i4,a9)' ) &
+              '(', S % nVariables, 'E20.10E3)'
       
       do iR = 1, size ( G_MMA, dim = 1 ) 
         write ( WriteUnit, fmt = WriteFormat, ioStat = Status ) G_MMA ( iR, : )

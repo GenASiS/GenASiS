@@ -272,6 +272,7 @@ contains
     call CLS % Update % AllocateDevice ( )
 
     end associate !-- nCells
+    
     end associate !-- DM
     
   end subroutine Initialize
@@ -349,12 +350,14 @@ contains
     call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
-    T_DT_H  =>  PROGRAM_HEADER % Timer &
+     T_DT_H  =>  PROGRAM_HEADER % Timer &
                   ( CLS % iTimerDataTransferHost, 'DataTransfer to Host', &
                     Level = 2 )
-    call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_H % Start ( )
+      call Primitive % UpdateHost ( ) 
+      call T_DT_H % Stop ( )
+    end if
 
     T_C  =>  PROGRAM_HEADER % Timer &
                ( CLS % iTimerCommunication, 'Communication', Level = 2 )
@@ -366,10 +369,11 @@ contains
     T_DT_D  =>  PROGRAM_HEADER % Timer &
                   ( CLS % iTimerDataTransferDevice, 'DataTransfer to Device', &
                     Level = 2 )
-    call T_DT_D % Start ( )
-    call Primitive % UpdateDevice ( )
-    call T_DT_D % Stop ( )
-    
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_D % Start ( )
+      call Primitive % UpdateDevice ( )
+      call T_DT_D % Stop ( )
+    end if
     
     !-- Substep 2
     
@@ -403,18 +407,22 @@ contains
     call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
-    call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_H % Start ( )
+      call Primitive % UpdateHost ( ) 
+      call T_DT_H % Stop ( )
+    end if
     
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-    call T_DT_D % Start ( )
-    call Primitive % UpdateDevice ( ) 
-    call T_DT_D % Stop ( )
+    if ( .not. DM % DevicesCommunicate ) then
+      call T_DT_D % Start ( )
+      call Primitive % UpdateDevice ( ) 
+      call T_DT_D % Stop ( )
+    end if
     
     end associate !-- DM, etc.
     end associate !-- CF

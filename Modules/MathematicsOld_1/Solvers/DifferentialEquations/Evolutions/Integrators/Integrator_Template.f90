@@ -332,9 +332,13 @@ contains
       end if
 
 !call I % Write ( )
-      if ( I % IsCheckpointTime ) &
+      if ( I % IsCheckpointTime &
+           .and. I % CheckpointCycleInterval == huge ( 1 ) ) &
         call I % AdministerCheckpoint ( )
-
+        
+      if ( mod ( I % iCycle, I % CheckpointCycleInterval ) == 0 ) &
+        call I % AdministerCheckpoint ( )
+      
     end do !-- Time < FinishTime 
 
     if ( associated ( Timer ) ) call Timer % Stop ( )   

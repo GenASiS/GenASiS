@@ -46,7 +46,7 @@ type ( GridImageStreamForm ), allocatable :: &
   allocate ( S )
   call S % Initialize ( A, GIS )
   
-  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
   PinnedMemory        =  DeviceMemory
