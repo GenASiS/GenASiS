@@ -15,8 +15,7 @@ module DistributedMesh_Form
       nProperCells = 0, &
       nGhostCells  = 0
     integer ( KDI ), private :: &
-      iTimer_IO
-    integer ( KDI ) :: &
+      iTimer_IO     = 0, &
       iTimerPacking = -1, &
       iTimerComm    = -1
     integer ( KDI ), dimension ( MAX_N_DIMENSIONS ) :: &
@@ -128,9 +127,6 @@ contains
     
     if ( present ( BoundaryConditionOption ) ) &
       DM % BoundaryCondition = BoundaryConditionOption
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
     DM % DevicesCommunicate &
       = ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 )
@@ -251,9 +247,10 @@ contains
         PHP   => DM % PortalHeaderPrevious, &
         PHN   => DM % PortalHeaderNext )
 
-    T_C => PROGRAM_HEADER % TimerPointer ( DM % iTimerComm ) 
-    T_P => PROGRAM_HEADER % TimerPointer ( DM % iTimerPacking )
-
+    T_C => PROGRAM_HEADER % Timer &
+             ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
+    T_P => PROGRAM_HEADER % Timer &
+             ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
     !-- Post Receives
     
     call Show ( 'Post Receives', CONSOLE % INFO_7 )
@@ -292,7 +289,7 @@ contains
       if ( associated ( T_P ) ) call T_P % Stop ( )
 
       if ( associated ( T_C ) ) call T_C % Start ( )
-      call DM % OutgoingPrevious % Send ( iD )
+    
       if ( associated ( T_C ) ) call T_C % Stop ( )
 
     end do !-- iD
@@ -364,8 +361,10 @@ contains
 
     associate ( S_1D  => DM % Storage )
     
-    T_C => PROGRAM_HEADER % TimerPointer ( DM % iTimerComm ) 
-    T_P => PROGRAM_HEADER % TimerPointer ( DM % iTimerPacking )
+    T_C => PROGRAM_HEADER % Timer &
+             ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
+    T_P => PROGRAM_HEADER % Timer &
+             ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
 
     !-- Receive from Next
 
@@ -469,8 +468,12 @@ contains
       Edge
     character ( LDF ) :: &
       OutputDirectory
+    type ( TimerForm ), pointer :: &
+      T_IO
 
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    T_IO  =>  PROGRAM_HEADER % Timer &
+                ( DM % iTimer_IO, 'InputOutput', Level = 1 )
+    call T_IO % Start ( )
 
     !-- Output
     OutputDirectory = '../Output/'
@@ -542,7 +545,7 @@ contains
 
     end associate !-- GIS, CS
     
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
+    call T_IO % Stop ( )
 
   end subroutine SetImage
   
@@ -558,8 +561,13 @@ contains
       
     integer ( KDI ) :: &
       iS
+    type ( TimerForm ), pointer :: &
+      T_IO
           
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    T_IO  =>  PROGRAM_HEADER % Timer &
+                ( DM % iTimer_IO, 'InputOutput', Level = 1 )
+    call T_IO % Start ( )
+
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
 
@@ -586,9 +594,9 @@ contains
 
     end associate !-- GIS
     
-
     call Show ( DM % GridImageStream % Number, 'iImage', CONSOLE % INFO_1 )
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
+
+    call T_IO % Stop ( )
     
   end subroutine Write
 
@@ -604,12 +612,16 @@ contains
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption
       
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    type ( TimerForm ), pointer :: &
+      T_IO
+
+    T_IO  =>  PROGRAM_HEADER % Timer &
+                ( DM % iTimer_IO, 'InputOutput', Level = 1 )
+    call T_IO % Start ( )
+
     call Show ( 'Reading output', CONSOLE % INFO_1 )
     
     call Show ( iImage, 'iImage', CONSOLE % INFO_1 )
-    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
-
 
     associate ( GI => DM % GridImageStream )
     
@@ -628,8 +640,10 @@ contains
 
     call GI % Close ( )
 
-    end associate !-- CS
+    end associate !-- GI
     
+    call T_IO % Stop ( )
+
   end subroutine Read
 
 

@@ -178,16 +178,18 @@ contains
       iTimerComputation
     type ( StorageForm ), dimension ( 1 ) :: &
       SP
+    type ( TimerForm ), pointer :: &
+      T_C
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'Computational', iTimerComputation, Level = 1 )
+    iTimerComputation  =  0
+    T_C  =>  PROGRAM_HEADER % Timer &
+               ( iTimerComputation, 'Computational', Level = 1 )
 
     call Show ( 'Evolving particles', CONSOLE % INFO_1 )
 
     associate &
       ( DP => PD % DistributedParticles, &
-        MP => PD % DistributedParticles % MyParticles, &
-        T => PROGRAM_HEADER % Timer ( iTimerComputation ) )
+        MP => PD % DistributedParticles % MyParticles )
 
     PD % Time = 0.0_KDR
     call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_2 )
@@ -203,7 +205,7 @@ contains
            ( TimeOption = PD % Time / PD % TimeUnit, &
              CycleNumberOption = PD % iCycle )
 
-    call T % Start ( ) 
+    call T_C % Start ( ) 
 
     do iC = 1, PD % nCycles
 
@@ -222,7 +224,7 @@ contains
 
       if ( mod ( iC, PD % WriteCycleInterval ) == 0 ) then
 
-        call T % Stop ( )
+        call T_C % Stop ( )
 
         call DP % Write &
                ( TimeOption = PD % Time / PD % TimeUnit, &
@@ -231,13 +233,13 @@ contains
         call Show ( PD % iCycle, 'iCycle', CONSOLE % INFO_1 )
         call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_1 )
 
-        call T % Start ( )
+        call T_C % Start ( )
         
       end if
 
     end do
 
-    call T % Stop ( )
+    call T_C % Stop ( )
     
     call WriteTimeSeries ( PD )
 
@@ -286,7 +288,7 @@ contains
 
     associate ( TS => PD % TimeSeries )
     call TS % Initialize ( GIS ) 
-    call TS % SetGrid  &
+    call TS % SetGridWrite &
            ( Directory = 'TimeSeries', &
              NodeCoordinate = PD % TimeValue, &
              nProperCells = size ( PD % TimeValue ), oValue = 0, &

@@ -127,7 +127,7 @@ program AllocateHost_Command_Test
   StartTime = OMP_GET_WTIME ( )
   call UpdateDevice ( Pi_Value_2D, d_Pi_Value_2D )
   !$OMP barrier
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinned memory Data Transfer'
   print*, 'Host-to-Device Time (s)        :', TotalTime
   print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -151,7 +151,7 @@ program AllocateHost_Command_Test
   end do
   !$OMP end parallel do
   !$OMP barrier
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinnned memory Data Transfer Loop'
   print*, 'Host-to-Device Time (s)        :', TotalTime
   print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -161,7 +161,7 @@ program AllocateHost_Command_Test
   StartTime = OMP_GET_WTIME ( )
   call UpdateHost ( d_Pi_Value_2D, Pi_Value_2D )
   !$OMP barrier
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinned memory Data Transfer'
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -171,7 +171,7 @@ program AllocateHost_Command_Test
   StartTime = OMP_GET_WTIME ( )
   call UpdateHost ( d_Pa_Value_2D, Pa_Value_2D )
   !$OMP barrier
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pageable memory Data Transfer'
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
@@ -185,7 +185,7 @@ program AllocateHost_Command_Test
   end do
   !$OMP end parallel do
   !$OMP barrier
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  TotalTime = max ( OMP_GET_WTIME ( ) - StartTime, epsilon ( 1.0_KDR ) )
   print*, 'Pinned memory Data Transfer Loop'
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
