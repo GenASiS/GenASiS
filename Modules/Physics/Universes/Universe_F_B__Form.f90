@@ -79,6 +79,7 @@ contains
     call U % Universe_H_Form % Initialize ( NameOption = Name )
 
     allocate ( U % Units_F ( 1 ) )
+    call U % Units_F ( 1 ) % Initialize ( )
 
     call U % AllocateIntegrator &
            ( )

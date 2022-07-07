@@ -146,6 +146,7 @@ contains
       U % Dimensionless  =  DimensionlessOption
 
     allocate ( U % Units_F ( 1 ) )
+    call U % Units_F ( 1 ) % Initialize ( )
 
     call U % AllocateIntegrator &
            ( )
