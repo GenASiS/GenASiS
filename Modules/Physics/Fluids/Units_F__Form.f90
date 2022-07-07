@@ -13,7 +13,9 @@ module Units_F__Form
       Time, &
       Length, &
       SqrtDet_M  !-- SquareRoot_Determinant_Metric
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+!-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
+!    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Coordinate_PS, &  !-- Coordinate_PositionSpace
       Coordinate_MS     !-- Coordinate_MomentumSpace
     !-- Local
@@ -23,7 +25,9 @@ module Units_F__Form
       MassDensity, &
       EnergyDensity, &
       Temperature
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+!-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
+!    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Velocity_U, &
       MomentumDensity_D
     !-- Global
@@ -38,6 +42,8 @@ module Units_F__Form
       Initialize
     procedure, public, pass :: &
       Show => Show_U
+    final :: &
+      Finalize
   end type Units_F_Form
 
 contains
@@ -50,6 +56,11 @@ contains
     character ( * ), intent ( in ), optional :: &
       TypeOption, &
       CoordinateSystemOption
+
+    allocate ( U % Coordinate_PS ( 3 ) )
+    allocate ( U % Coordinate_MS ( 3 ) )
+    allocate ( U % Velocity_U ( 3 ) )
+    allocate ( U % MomentumDensity_D ( 3 ) )
 
     if ( present ( TypeOption ) ) then
       select case ( trim ( TypeOption ) )
@@ -174,6 +185,23 @@ contains
     call Show ( U % AngularMomentum, 'AngularMomentum', IgnorabilityOption )
 
   end subroutine Show_U
+
+
+  impure elemental subroutine Finalize ( U )
+
+    type ( Units_F_Form ), intent ( inout ) :: &
+      U
+
+    if ( allocated ( U % MomentumDensity_D ) ) &
+      deallocate ( U % MomentumDensity_D )
+    if ( allocated ( U % Velocity_U ) ) &
+      deallocate ( U % Velocity_U )
+    if ( allocated ( U % Coordinate_MS ) ) &
+      deallocate ( U % Coordinate_MS )
+    if ( allocated ( U % Coordinate_PS ) ) &
+      deallocate ( U % Coordinate_PS )
+
+  end subroutine Finalize
 
 
 end module Units_F__Form
