@@ -196,6 +196,7 @@ contains
         call Show ( 'NEWTON_UA', 'GravitationType', CONSOLE % ERROR )
         call Show ( 'Universe_F_B__Form', 'module', CONSOLE % ERROR )
         call Show ( 'InitializeGravitation', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
       end if
 
       allocate ( Gravitation_N_UA_Form  ::  I % Geometry_X )
