@@ -47,7 +47,7 @@ program Reconstruction_Form_Test
   call A % Initialize &
          ( CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
   PinnedMemory        =  DeviceMemory

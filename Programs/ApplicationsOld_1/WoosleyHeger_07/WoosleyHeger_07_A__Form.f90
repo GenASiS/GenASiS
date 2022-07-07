@@ -64,7 +64,7 @@ contains
     GeometryType = 'NEWTONIAN'
     call PROGRAM_HEADER % GetParameter ( GeometryType, 'GeometryType' )
     
-    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
+    UseDevice = ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 )
     call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
 
     call WH % Initialize &

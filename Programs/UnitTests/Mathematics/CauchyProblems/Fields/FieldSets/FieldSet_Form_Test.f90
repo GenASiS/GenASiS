@@ -43,7 +43,7 @@ program FieldSet_Form_Test
 
   call VectorIndices ( 1 ) % Initialize ( [ 2, 3, 4 ] )
 
-  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
   PinnedMemory        =  DeviceMemory

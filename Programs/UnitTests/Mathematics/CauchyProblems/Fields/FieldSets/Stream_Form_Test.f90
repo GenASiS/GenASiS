@@ -53,13 +53,13 @@ program Stream_Form_Test
 
   call VectorIndices ( 1 ) % Initialize ( [ 2, 3, 4 ] )
 
-  DeviceMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
 
-  PinnedMemory  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1 
+  PinnedMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1 
   call PROGRAM_HEADER % GetParameter ( PinnedMemory, 'PinnedMemory' )
 
-  DevicesCommunicate  =  OffloadEnabled ( )  .and.  GetNumberOfDevices ( ) >= 1
+  DevicesCommunicate  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1
   call PROGRAM_HEADER % GetParameter &
          ( DevicesCommunicate, 'DevicesCommunicate' )
 
