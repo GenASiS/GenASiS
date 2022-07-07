@@ -275,7 +275,7 @@ contains
     
     end associate !-- DM
     
-~  end subroutine Initialize
+  end subroutine Initialize
 
 
   subroutine Solve ( CLS, TimeStep )
@@ -350,20 +350,14 @@ contains
     call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
-<<<<<<< HEAD
+     T_DT_H  =>  PROGRAM_HEADER % Timer &
+                  ( CLS % iTimerDataTransferHost, 'DataTransfer to Host', &
+                    Level = 2 )
     if ( .not. DM % DevicesCommunicate ) then
       call T_DT_H % Start ( )
       call Primitive % UpdateHost ( ) 
       call T_DT_H % Stop ( )
     end if
-=======
-    T_DT_H  =>  PROGRAM_HEADER % Timer &
-                  ( CLS % iTimerDataTransferHost, 'DataTransfer to Host', &
-                    Level = 2 )
-    call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
->>>>>>> Mathematics_2
 
     T_C  =>  PROGRAM_HEADER % Timer &
                ( CLS % iTimerCommunication, 'Communication', Level = 2 )
@@ -372,21 +366,14 @@ contains
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-<<<<<<< HEAD
+    T_DT_D  =>  PROGRAM_HEADER % Timer &
+                  ( CLS % iTimerDataTransferDevice, 'DataTransfer to Device', &
+                    Level = 2 )
     if ( .not. DM % DevicesCommunicate ) then
       call T_DT_D % Start ( )
       call Primitive % UpdateDevice ( )
       call T_DT_D % Stop ( )
     end if
-=======
-    T_DT_D  =>  PROGRAM_HEADER % Timer &
-                  ( CLS % iTimerDataTransferDevice, 'DataTransfer to Device', &
-                    Level = 2 )
-    call T_DT_D % Start ( )
-    call Primitive % UpdateDevice ( )
-    call T_DT_D % Stop ( )
-    
->>>>>>> Mathematics_2
     
     !-- Substep 2
     
