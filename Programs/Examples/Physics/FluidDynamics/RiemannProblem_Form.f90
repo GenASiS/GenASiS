@@ -74,7 +74,7 @@ contains
     class ( RiemannProblemForm ), intent ( in ) :: &
       U
 
-    call U % Universe_F_B_Form % Show ( )
+    call U % Universe_F_B_Form % ShowParameters ( )
 
     call Show ( U % Density_L,      'Density_L' )
     call Show ( U % Pressure_L,     'Pressure_L' )

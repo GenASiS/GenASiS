@@ -11,20 +11,25 @@ module FishboneMoncrief_Form
       AngularMomentumParameter, &
       RadiusInner, &
       RadiusOuter, &
-      SpecificAngularMomentum
+      SpecificAngularMomentum, &
+      AdiabaticIndex, &
+      DensityMax, &
+      AtmosphereParameter
   contains
     procedure, private, pass :: &
       Initialize_H
-    procedure, public, pass :: &
-      Show => Show_U
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
   end type FishboneMoncriefForm
 
     private :: &
       InitializeUniverse, &
       SetInitial
 
+      private :: &
+        SetFluid
 
 contains
 
@@ -51,37 +56,44 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine Show_U ( U )
-
-    class ( FishboneMoncriefForm ), intent ( in ) :: &
-      U
-
-    call U % Universe_H_Form % Show ( )
-
-    call Show ( U % CentralMass, &
-                UNIT % SOLAR_MASS, &
-                'M' )
-    call Show ( U % AngularMomentumParameter, &
-                'Kappa' )
-    call Show ( U % RadiusInner, &
-                UNIT % KILOMETER,  &
-                'R_In' )
-    call Show ( U % RadiusOuter, &
-                UNIT % KILOMETER,  &
-                'R_Out' )
-    call Show ( U % SpecificAngularMomentum, &
-                UNIT % KILOMETER * UNIT % SPEED_OF_LIGHT, &
-                'L' )
-
-  end subroutine Show_U
-
-
   impure elemental subroutine Finalize ( FM )
     
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( FishboneMoncriefForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_F_CE_Form % ShowParameters ( )
+
+    call Show ( U % CentralMass, &
+                UNIT % SOLAR_MASS, &
+                'CentralMass' )
+    call Show ( U % AngularMomentumParameter, &
+                'AngularMomentumParameter' )
+    call Show ( U % RadiusInner, &
+                UNIT % KILOMETER,  &
+                'RadiusInner' )
+    call Show ( U % RadiusOuter, &
+                UNIT % KILOMETER,  &
+                'RadiusOuter' )
+    call Show ( U % SpecificAngularMomentum, &
+                UNIT % KILOMETER * UNIT % SPEED_OF_LIGHT, &
+                'SpecificAngularMomentum' )
+    call Show ( U % AdiabaticIndex, &
+                'AdiabaticIndex' )
+    call Show ( U % DensityMax, &
+                UNIT % MASS_DENSITY_CGS, &
+                'DensityMax' )
+    call Show ( U % AtmosphereParameter, &
+                'AtmosphereParameter' )
+
+  end subroutine ShowParameters
 
 
   subroutine InitializeUniverse ( FM, Name )
@@ -155,7 +167,147 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
+    select type ( FM  =>  I % System )
+      class is ( FishboneMoncriefForm )
+    select type ( I => FM % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_I_Form )
+
+    associate &
+      ( Gamma   =>  FM % AdiabaticIndex, &
+        RhoMax  =>  FM % DensityMax, &
+        AP      =>  FM % AtmosphereParameter )
+
+    Gamma   =  1.4_KDR
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+    AP      =  1.0e-6_KDR
+    call PROGRAM_HEADER % GetParameter ( Gamma,  'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( RhoMax, 'DensityMax' )
+    call PROGRAM_HEADER % GetParameter ( AP,     'AtmosphereParameter' )
+
+    call F % SetAdiabaticIndex &
+           ( Gamma )
+!    call F % SetFiducialParameters &
+!           ( FiducialBaryonDensity = Rho_I, &
+!             FiducialPressure = P_I )
+
+    call SetFluid ( FM, F )
+
+    if ( allocated ( FM % SA_Fluid ) ) then
+      select type ( F_SA  =>  FM % SA_Fluid % FieldSet_SA )
+      class is ( Fluid_P_I_Form )
+        call F_SA % SetAdiabaticIndex &
+               ( Gamma )
+!        call F_SA % SetFiducialParameters &
+!               ( FiducialBaryonDensity = Rho_I, &
+!                 FiducialPressure = P_I )
+      end select !-- F_SA
+    end if
+
+    if ( allocated ( FM % AA_Fluid ) ) then
+      select type ( F_AA  =>  FM % AA_Fluid % FieldSet_AA )
+      class is ( Fluid_P_I_Form )
+        call F_AA % SetAdiabaticIndex &
+               ( Gamma )
+!        call F_AA % SetFiducialParameters &
+!               ( FiducialBaryonDensity = Rho_I, &
+!                 FiducialPressure = P_I )
+      end select !-- F_AA
+    end if
+
+    end associate !-- Gamma, etc.
+    end select !-- F
+    end select !-- I
+    end select !-- FM
+
   end subroutine SetInitial
+
+
+  subroutine SetFluid ( FM, F )
+
+    class ( FishboneMoncriefForm ), intent ( inout ), target :: &
+      FM
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+
+    real ( KDR ) :: &
+      EnthalpyMax, &
+      PolytropicParameter, &
+      GC, &
+      c, &
+      amu
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Enthalpy
+
+    associate &
+      ( Kappa   =>  FM % AngularMomentumParameter, &
+        M       =>  FM % CentralMass, &
+        R_In    =>  FM % RadiusInner, &
+        Gamma   =>  FM % AdiabaticIndex, &
+        RhoMax  =>  FM % DensityMax, &
+        AP      =>  FM % AtmosphereParameter, &
+        W_Max   =>  EnthalpyMax, &
+        K       =>  PolytropicParameter )
+
+     GC  =  CONSTANT % GRAVITATIONAL
+      c  =  CONSTANT % SPEED_OF_LIGHT
+    amu  =  CONSTANT % ATOMIC_MASS_UNIT
+
+    W_Max = GC * M / ( c ** 2  *  R_In )  &
+            *  ( 0.5_KDR * ( Kappa  +  1.0_KDR / Kappa )  -  1.0_KDR )
+
+    K  =  ( Gamma - 1.0_KDR ) / Gamma  &
+          *  W_Max  /  RhoMax ** ( Gamma - 1.0_KDR )
+
+    associate &
+      ( G  =>  F % Geometry )
+    associate &
+      ( FV  =>  F % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
+
+    allocate ( Enthalpy ( size ( FV, dim = 1 ) ) )
+
+    associate &
+      (     W => Enthalpy, &
+            N => FV ( :, F % BARYON_DENSITY_C ), &
+          V_1 => FV ( :, F % VELOCITY_U_1 ), &
+          V_2 => FV ( :, F % VELOCITY_U_2 ), &
+          V_3 => FV ( :, F % VELOCITY_U_3 ), &
+            E => FV ( :, F % ENERGY_DENSITY_C ), &
+            R => GV ( :, G % CENTER_U_1 ), &
+        Theta => GV ( :, G % CENTER_U_2 ) )
+
+    W  =  max ( 0.0_KDR, &
+                GC * M / ( c ** 2  *  R_In )  &
+                * ( R_In / R  -  1.0_KDR  +  0.5_KDR * Kappa &
+                    -  0.5_KDR * Kappa  *  R_In ** 2  &
+                       /  ( R * sin ( Theta ) ) ** 2 ) )
+
+    N  =  ( ( Gamma - 1.0_KDR ) / ( Gamma * K ) * W ) &
+          ** ( 1.0_KDR / ( Gamma - 1.0_KDR ) )
+
+    V_1  =  0.0_KDR
+    V_2  =  0.0_KDR
+
+    where ( N  >  0.0_KDR )
+      V_3  =  sqrt ( Kappa * GC * M * R_In )  /  ( R * sin ( Theta ) ) ** 2
+    elsewhere
+      N    =    AP  *  RhoMax  *  ( R / R_In ) ** ( - 1.5_KDR )
+      V_1  =  - sqrt ( 2.0_KDR * GC * M / R )
+      V_3  =    0.0_KDR
+    end where
+
+    E  =  K  *  N ** Gamma  /  ( Gamma - 1.0_KDR )
+
+    N  =  N / amu
+
+    end associate !-- W, etc.
+    end associate !-- FV, etc.
+    end associate !-- G
+    end associate !-- Kappa, etc.
+
+  end subroutine SetFluid
 
 
 end module FishboneMoncrief_Form
