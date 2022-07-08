@@ -181,7 +181,7 @@ contains
                ( U % GravityFactor, 'GravityFactor' )
       else
         allocate ( I % dT_Label ( 1 ) )
-        I % dT_Label ( 1 )  =  'Fluid advection'
+        I % dT_Label ( 1 )  =  'FluidAdvection'
       end if
     end if
 
