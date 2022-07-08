@@ -251,6 +251,7 @@ contains
              ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
     T_P => PROGRAM_HEADER % Timer &
              ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
+    
     !-- Post Receives
     
     call Show ( 'Post Receives', CONSOLE % INFO_7 )
@@ -289,7 +290,7 @@ contains
       if ( associated ( T_P ) ) call T_P % Stop ( )
 
       if ( associated ( T_C ) ) call T_C % Start ( )
-    
+      call DM % OutgoingPrevious % Send ( iD )
       if ( associated ( T_C ) ) call T_C % Stop ( )
 
     end do !-- iD
