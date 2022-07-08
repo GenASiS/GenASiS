@@ -14,10 +14,11 @@ module DistributedMesh_Form
       nDimensions  = 0, &
       nProperCells = 0, &
       nGhostCells  = 0
-    integer ( KDI ), private :: &
-      iTimer_IO     = 0, &
+    integer ( KDI ) :: &
       iTimerPacking = -1, &
       iTimerComm    = -1
+    integer ( KDI ), private :: &
+      iTimer_IO     = 0
     integer ( KDI ), dimension ( MAX_N_DIMENSIONS ) :: &
       iaBrick, &
       iaFirst, &
@@ -246,12 +247,16 @@ contains
       ( S_1D  => DM % Storage, &
         PHP   => DM % PortalHeaderPrevious, &
         PHN   => DM % PortalHeaderNext )
-
-    T_C => PROGRAM_HEADER % Timer &
-             ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
-    T_P => PROGRAM_HEADER % Timer &
-             ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
     
+    T_C => null ( )
+    T_P => null ( )
+    if ( DM % iTimerComm > 0 ) then
+      T_C => PROGRAM_HEADER % Timer &
+               ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
+      T_P => PROGRAM_HEADER % Timer &
+               ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
+    end if  
+      
     !-- Post Receives
     
     call Show ( 'Post Receives', CONSOLE % INFO_7 )
@@ -362,10 +367,15 @@ contains
 
     associate ( S_1D  => DM % Storage )
     
-    T_C => PROGRAM_HEADER % Timer &
-             ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
-    T_P => PROGRAM_HEADER % Timer &
-             ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
+    T_C => null ( )
+    T_P => null ( )
+    
+    if ( DM % iTimerComm > 0 ) then
+      T_C => PROGRAM_HEADER % Timer &
+               ( DM % iTimerComm, 'Send/Recv', Level = 3 ) 
+      T_P => PROGRAM_HEADER % Timer &
+               ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
+    end if
 
     !-- Receive from Next
 

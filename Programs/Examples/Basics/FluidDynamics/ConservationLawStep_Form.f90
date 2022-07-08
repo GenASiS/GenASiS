@@ -56,6 +56,8 @@ module ConservationLawStep_Form
       ComputeReconstruction
     procedure, private, pass :: &
       ComputeFluxes
+    procedure, private, pass :: &
+      PrepareTimers
   end type ConservationLawStepForm
   
     private :: &
@@ -304,8 +306,10 @@ contains
         Primitive   => CLS % Primitive, &
         Update      => CLS % Update, &
         iaC  => CF % iaConserved )
-
-    call Show ( 'Preparing Step', CONSOLE % INFO_4 )    
+    
+    call CLS % PrepareTimers ( )
+    
+    call Show ( 'Preparing Step', CONSOLE % INFO_4 )
     
     T_RK  =>  PROGRAM_HEADER % Timer &
                 ( CLS % iTimerRKStep, 'RK Step', Level = 2 )
@@ -680,6 +684,63 @@ contains
     end associate !-- CF
 
   end subroutine ComputeFluxes
+  
+  
+  subroutine PrepareTimers ( CLS )
+
+    class ( ConservationLawStepForm ), intent ( inout ) :: &
+      CLS
+      
+    type ( TimerForm ), pointer :: &
+      T
+      
+    associate ( DM => CLS % ConservedFields % DistributedMesh )
+    
+    !-- Force Timers creation in certain order
+    
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerCommunication, 'Communication', Level = 2 )
+    
+    if ( CONSOLE % Verbosity >= CONSOLE % INFO_3 ) then
+      T => PROGRAM_HEADER % Timer &
+             ( DM % iTimerPacking, 'Pack/Unpack', Level = 3 )
+      T => PROGRAM_HEADER % Timer &
+             ( DM % iTimerComm, 'Send/Recv', Level = 3 )
+    end if
+    
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerRKStep, 'RK Step', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerUpdate, 'Update', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerDifference, 'Difference', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerReconstruction, 'Reconstruction', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerRiemannSolverInput, 'RiemannSolverInput', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerRawFluxes, 'RawFluxes', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerFluxes, 'Fluxes', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerPrimitive, 'ComputePrimitive', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerConserved, 'ComputeConserved', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerAuxiliary, 'ComputeAuxiliary', Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerBoundaryCondition, 'ApplyBoundaryConditions', &
+              Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerDataTransferDevice, 'DataTransfer to Device', &
+             Level = 2 )
+    T => PROGRAM_HEADER % Timer &
+           ( CLS % iTimerDataTransferHost, 'DataTransfer to Host', &
+             Level = 2 )
+    
+    end associate !-- DM
+      
+  end subroutine PrepareTimers
 
 
 end module ConservationLawStep_Form
