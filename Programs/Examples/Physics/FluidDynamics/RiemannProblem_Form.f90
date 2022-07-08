@@ -20,10 +20,10 @@ module RiemannProblem_Form
   contains
     procedure, private, pass :: &
       Initialize_H
-    procedure, public, pass :: &
-      Show => Show_U
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
   end type RiemannProblemForm
 
     private :: &
@@ -61,12 +61,20 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine Show_U ( U )
+  subroutine Finalize ( RP )
+
+    type ( RiemannProblemForm ), intent ( inout ) :: &
+      RP
+
+  end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
 
     class ( RiemannProblemForm ), intent ( in ) :: &
       U
 
-    call U % Universe_H_Form % Show ( )
+    call U % Universe_F_B_Form % Show ( )
 
     call Show ( U % Density_L,      'Density_L' )
     call Show ( U % Pressure_L,     'Pressure_L' )
@@ -84,15 +92,7 @@ contains
     call Show ( U % SinPhi,         'SinPhi' )
     call Show ( U % CosPhi,         'CosPhi' )
 
-  end subroutine Show_U
-
-
-  subroutine Finalize ( RP )
-
-    type ( RiemannProblemForm ), intent ( inout ) :: &
-      RP
-
-  end subroutine Finalize
+  end subroutine ShowParameters
 
 
   subroutine InitializeUniverse ( RP, Name )
