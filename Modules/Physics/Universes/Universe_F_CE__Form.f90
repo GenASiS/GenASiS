@@ -91,7 +91,7 @@ contains
     associate &
       ( F  =>  I % CurrentSet_X )
     call F % SetBoundaryConditionsFace &
-           ( [ 'OUTFLOW', 'OUTFLOW' ], iC = 1, iD = 1 )
+           ( [ 'OUTFLOW', 'INFLOW ' ], iC = 1, iD = 1 )
     call F % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
     call F % SetBoundaryConditionsFace &

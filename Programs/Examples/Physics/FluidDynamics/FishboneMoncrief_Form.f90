@@ -146,16 +146,6 @@ contains
 
     end associate !-- M, etc.
 
-    !-- Modify from default OUTFLOW to INFLOW outer radial boundary condition
-    select type ( I  =>  FM % Integrator )
-      class is ( Integrator_CS_Form )
-    associate &
-      ( F  =>  I % CurrentSet_X )
-    call F % SetBoundaryConditionsFace &
-           ( [ 'REFLECTING', 'INFLOW    ' ], iC = 1, iD = 1 )
-    end associate !-- F
-    end select !-- I
-
     FM % Integrator % SetInitial    =>  SetInitial
     FM % Integrator % System        =>  FM
 
@@ -193,6 +183,7 @@ contains
 !             FiducialPressure = P_I )
 
     call SetFluid ( FM, F )
+    call F % SetBaryonDensityMin ( )
 
     if ( allocated ( FM % SA_Fluid ) ) then
       select type ( F_SA  =>  FM % SA_Fluid % FieldSet_SA )
