@@ -146,6 +146,7 @@ contains
       U % Dimensionless  =  DimensionlessOption
 
     allocate ( U % Units_F ( 1 ) )
+    call U % Units_F ( 1 ) % Initialize ( )
 
     call U % AllocateIntegrator &
            ( )
@@ -156,7 +157,8 @@ contains
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
     call U % InitializeGravitation &
-           ( GravitationType )
+           ( GravitationType, &
+             CentralMassOption = CentralMassOption )
     call U % InitializeFluid &
            ( FluidType )
     call U % SetBoundaryConditions &
@@ -179,7 +181,7 @@ contains
                ( U % GravityFactor, 'GravityFactor' )
       else
         allocate ( I % dT_Label ( 1 ) )
-        I % dT_Label ( 1 )  =  'Fluid advection'
+        I % dT_Label ( 1 )  =  'FluidAdvection'
       end if
     end if
 
@@ -327,12 +329,14 @@ contains
   end subroutine InitializePositionSpace
 
 
-  subroutine InitializeGravitation ( U, GravitationType )
+  subroutine InitializeGravitation ( U, GravitationType, CentralMassOption )
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
     character ( * ), intent ( in ) :: &
       GravitationType
+    real ( KDR ), intent ( in ), optional :: &
+      CentralMassOption
 
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaAverage
@@ -379,6 +383,67 @@ contains
         allocate ( Gravitation_G_Form :: SA % FieldSet_SA )
         select type ( G_SA  =>  SA % FieldSet_SA )
           type is ( Gravitation_G_Form )
+        call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
+        call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
+        end select !-- G_SA
+        end associate !-- SA, etc.
+      end if !-- allocated PositionSpace_SA
+
+      end select !-- G
+
+    case ( 'NEWTON_CM' )
+
+      if ( U % Dimensionless ) then
+        GravitationalConstant  =  1.0_KDR
+      else
+        GravitationalConstant  =  CONSTANT % GRAVITATIONAL
+      end if
+
+      if ( .not. present ( CentralMassOption ) ) then
+        call Show ( 'CentralMassOption not present', CONSOLE % ERROR )
+        call Show ( 'NEWTON_CM', 'GravitationType', CONSOLE % ERROR )
+        call Show ( 'Universe_F_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeGravitation', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+
+      allocate ( Gravitation_N_CM_Form  ::  I % Geometry_X )
+      select type ( G  =>  I % Geometry_X )
+        class is ( Gravitation_N_CM_Form )
+      call G % Initialize &
+             ( I % X, GravitationalConstant, &
+               Mass = CentralMassOption, &
+               DeviceMemoryOption = U % DeviceMemory, &
+               PinnedMemoryOption = U % PinnedMemory, &
+               DevicesCommunicateOption = U % DevicesCommunicate )
+
+      allocate &
+        ( iaAverage, source = [ G % POTENTIAL, G % POTENTIAL_GRADIENT_D ] )
+
+      !-- Azimuthal average
+      if ( allocated ( U % PositionSpace_AA ) ) then
+        allocate ( U % AA_Gravitation )
+        associate &
+          ( AA     =>  U % AA_Gravitation, &
+             A_AA  =>  U % PositionSpace_AA )
+        allocate ( Gravitation_N_H_Form :: AA % FieldSet_AA )
+        select type ( G_AA  =>  AA % FieldSet_AA )
+          type is ( Gravitation_N_H_Form )
+        call G_AA % Initialize ( A_AA, NameOption = trim ( G % Name ) // '_AA' )
+        call AA % Initialize ( G, G, A_AA, iaAverageOption = iaAverage )
+        end select !-- G_AA
+        end associate !-- AA, etc.
+      end if !-- allocated PositionSpace_AA
+
+      !-- Spherical average
+      if ( allocated ( U % PositionSpace_SA ) ) then
+        allocate ( U % SA_Gravitation )
+        associate &
+          ( SA     =>  U % SA_Gravitation, &
+             A_SA  =>  U % PositionSpace_SA )
+        allocate ( Gravitation_N_H_Form :: SA % FieldSet_SA )
+        select type ( G_SA  =>  SA % FieldSet_SA )
+          type is ( Gravitation_N_H_Form )
         call G_SA % Initialize ( A_SA, NameOption = trim ( G % Name ) // '_SA' )
         call SA % Initialize ( G, G, A_SA, iaAverageOption = iaAverage )
         end select !-- G_SA

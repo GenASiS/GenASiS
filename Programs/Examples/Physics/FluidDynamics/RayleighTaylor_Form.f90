@@ -14,10 +14,10 @@ module RayleighTaylor_Form
   contains
     procedure, private, pass :: &
       Initialize_H
-    procedure, public, pass :: &
-      Show => Show_U
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
   end type RayleighTaylorForm
 
     private :: &
@@ -57,12 +57,20 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine Show_U ( U )
+  subroutine Finalize ( RT )
+
+    type ( RayleighTaylorForm ), intent ( inout ) :: &
+      RT
+
+  end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
 
     class ( RayleighTaylorForm ), intent ( in ) :: &
       U
 
-    call U % Universe_H_Form % Show ( )
+    call U % Universe_F_B_Form % ShowParameters ( )
 
     call Show ( U % Acceleration,   'Acceleration' )
     call Show ( U % DensityAbove,   'DensityAbove' )
@@ -70,15 +78,7 @@ contains
     call Show ( U % PressureBase,   'PressureBase' )
     call Show ( U % AdiabaticIndex, 'AdiabaticIndex' )
 
-  end subroutine Show_U
-
-
-  subroutine Finalize ( RT )
-
-    type ( RayleighTaylorForm ), intent ( inout ) :: &
-      RT
-
-  end subroutine Finalize
+  end subroutine ShowParameters
 
 
   subroutine InitializeUniverse ( RT, Name )
@@ -150,9 +150,6 @@ contains
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-
-    ! real ( KDR ), dimension ( 3 ) :: &
-    !   Normal
 
     select type ( RT  =>  I % System )
       class is ( RayleighTaylorForm )

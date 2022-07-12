@@ -87,7 +87,7 @@ contains
       IgnorabilityOption
 
     if ( G % Type  ==  '' ) &
-      G % Type  =  'a Gravitation_N_UA'
+      G % Type  =  'a Gravitation_N_CM'
 
     call G % Gravitation_N_H_Form % Initialize &
            ( A, FieldOption, VectorOption, NameOption, &

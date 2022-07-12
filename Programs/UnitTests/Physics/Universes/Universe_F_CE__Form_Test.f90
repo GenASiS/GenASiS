@@ -22,8 +22,9 @@ program Universe_F_CE__Form_Test
   allocate ( U )
   call U % Initialize &
          ( FluidType = 'DUST', &
-           GravitationType = 'GALILEO', &
-           DimensionlessOption = .true. )
+           GravitationType = 'NEWTON_CM', &
+           DimensionlessOption = .true., &
+           CentralMassOption = 1.0_KDR )
   call U % Show ( )
 
   deallocate ( U )

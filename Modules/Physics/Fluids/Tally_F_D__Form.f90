@@ -389,6 +389,8 @@ contains
     select type ( G )
     type is ( Gravitation_N_UA_Form )
       Factor  =  1.0_KDR  !-- external potential
+    type is ( Gravitation_N_CM_Form )
+      Factor  =  1.0_KDR  !-- external potential
     type is ( Gravitation_N_SG_Form )
       Factor  =  0.5_KDR  !-- self-gravity
     class default 

@@ -278,10 +278,6 @@ contains
       class is ( Integrator_CS_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_I_Form )
-    select type ( A  =>  F % Atlas )
-      class is ( Atlas_SCG_Form )
-    associate &
-      ( C  =>  A % Chart_GS )
 
     call PrepareInterpolation ( YL )
 
@@ -350,8 +346,6 @@ contains
 
     end associate !-- Gamma, etc.
 
-    end associate !-- C
-    end select !-- A
     end select !-- F
     end select !-- I
     end select !-- YL

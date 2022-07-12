@@ -91,7 +91,7 @@ contains
     associate &
       ( F  =>  I % CurrentSet_X )
     call F % SetBoundaryConditionsFace &
-           ( [ 'OUTFLOW', 'OUTFLOW' ], iC = 1, iD = 1 )
+           ( [ 'OUTFLOW', 'INFLOW ' ], iC = 1, iD = 1 )
     call F % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
     call F % SetBoundaryConditionsFace &
@@ -148,10 +148,13 @@ contains
 
       RadiusMax       =  1.0e3_KDR  *  UNIT % KILOMETER
       RadiusExcision  =   40.0_KDR  *  UNIT % KILOMETER
+      RadialRatio     =    1.0_KDR
       if ( present ( RadiusMaxOption ) ) &
         RadiusMax = RadiusMaxOption
       if ( present ( RadiusExcisionOption ) ) &
         RadiusExcision = RadiusExcisionOption
+      if ( present ( RadialRatioOption ) ) &
+        RadialRatio  =  RadialRatioOption
 
       call PS % Initialize &
              ( RadiusMax = RadiusMax, &
