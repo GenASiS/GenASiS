@@ -178,21 +178,17 @@ contains
 
     call F % SetAdiabaticIndex &
            ( Gamma )
-!    call F % SetFiducialParameters &
-!           ( FiducialBaryonDensity = Rho_I, &
-!             FiducialPressure = P_I )
 
     call SetFluid ( FM, F )
-    call F % SetBaryonDensityMin ( )
 
     if ( allocated ( FM % SA_Fluid ) ) then
       select type ( F_SA  =>  FM % SA_Fluid % FieldSet_SA )
       class is ( Fluid_P_I_Form )
         call F_SA % SetAdiabaticIndex &
                ( Gamma )
-!        call F_SA % SetFiducialParameters &
-!               ( FiducialBaryonDensity = Rho_I, &
-!                 FiducialPressure = P_I )
+        call F_SA % SetFiducialParameters &
+               ( FiducialBaryonDensity = F % FiducialBaryonDensity, &
+                 FiducialPressure = F % FiducialPressure )
       end select !-- F_SA
     end if
 
@@ -201,9 +197,9 @@ contains
       class is ( Fluid_P_I_Form )
         call F_AA % SetAdiabaticIndex &
                ( Gamma )
-!        call F_AA % SetFiducialParameters &
-!               ( FiducialBaryonDensity = Rho_I, &
-!                 FiducialPressure = P_I )
+        call F_AA % SetFiducialParameters &
+               ( FiducialBaryonDensity = F % FiducialBaryonDensity, &
+                 FiducialPressure = F % FiducialPressure )
       end select !-- F_AA
     end if
 
@@ -225,6 +221,7 @@ contains
     real ( KDR ) :: &
       EnthalpyMax, &
       PolytropicParameter, &
+      EnergyDensityMin, &
       GC, &
       c, &
       amu
@@ -239,7 +236,8 @@ contains
         RhoMax  =>  FM % DensityMax, &
         AP      =>  FM % AtmosphereParameter, &
         W_Max   =>  EnthalpyMax, &
-        K       =>  PolytropicParameter )
+        K       =>  PolytropicParameter, &
+        E_Min   =>  EnergyDensityMin )
 
      GC  =  CONSTANT % GRAVITATIONAL
       c  =  CONSTANT % SPEED_OF_LIGHT
@@ -269,6 +267,25 @@ contains
             R => GV ( :, G % CENTER_U_1 ), &
         Theta => GV ( :, G % CENTER_U_2 ) )
 
+    !-- Set atmosphere to determine fluid min parameters
+
+    E_Min  =  1.0e-20_KDR  *  UNIT % ENERGY_DENSITY_NUCLEAR
+    call PROGRAM_HEADER % GetParameter ( E_Min, 'EnergyDensityMin' )
+
+    N  =  AP  *  RhoMax / amu  *  ( R / R_In ) ** ( - 1.5_KDR )
+    E  =  E_Min
+
+    call F % SetBaryonDensityMin ( )
+    call F % SetEnergyDensityMin ( )
+    call F % SetFiducialParameters &
+           ( FiducialBaryonDensity = AP * RhoMax / amu, &
+             FiducialPressure = E_Min * ( Gamma - 1.0_KDR ) )
+
+    N  =  0.0_KDR
+    E  =  0.0_KDR
+
+    !-- Set disk
+
     W  =  max ( 0.0_KDR, &
                 GC * M / ( c ** 2  *  R_In )  &
                 * ( R_In / R  -  1.0_KDR  +  0.5_KDR * Kappa &
@@ -281,15 +298,17 @@ contains
     V_1  =  0.0_KDR
     V_2  =  0.0_KDR
 
-    where ( N  >  0.0_KDR )
+    !-- Reset atmosphere
+
+    where ( N  >  amu  *  F % BaryonDensityMin )
       V_3  =  sqrt ( Kappa * GC * M * R_In )  /  ( R * sin ( Theta ) ) ** 2
+      E    =  K  *  N ** Gamma  /  ( Gamma - 1.0_KDR )
     elsewhere
       N    =    AP  *  RhoMax  *  ( R / R_In ) ** ( - 1.5_KDR )
       V_1  =  - sqrt ( 2.0_KDR * GC * M / R )
       V_3  =    0.0_KDR
+      E    =    E_Min
     end where
-
-    E  =  K  *  N ** Gamma  /  ( Gamma - 1.0_KDR )
 
     N  =  N / amu
 

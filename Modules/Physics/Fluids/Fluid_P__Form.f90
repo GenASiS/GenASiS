@@ -37,8 +37,12 @@ module Fluid_P__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
-    procedure, public, pass :: &
-      SetEnergyDensityMin
+    procedure, private, pass :: &
+      SetEnergyDensityMinValue
+    procedure, private, pass :: &
+      SetEnergyDensityMinFind
+    generic, public :: &
+      SetEnergyDensityMin => SetEnergyDensityMinValue, SetEnergyDensityMinFind
     procedure, public, pass :: &
       SetTemperatureMin
     procedure, public, pass :: &
@@ -303,7 +307,7 @@ contains
   end subroutine InitializeAllocate_F
 
 
-  subroutine SetEnergyDensityMin ( F, EnergyDensityMin )
+  subroutine SetEnergyDensityMinValue ( F, EnergyDensityMin )
 
     class ( Fluid_P_Form ), intent ( inout ) :: &
       F
@@ -318,7 +322,47 @@ contains
                 F % Unit ( F % ENERGY_DENSITY_C, 1 ), 'EnergyDensityMin', &
                 F % IGNORABILITY + 1 )
 
-  end subroutine SetEnergyDensityMin
+  end subroutine SetEnergyDensityMinValue
+
+
+  subroutine SetEnergyDensityMinFind ( F )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+ 
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS, &
+        FV  =>  F % Storage_GS % Value )
+
+    call CO % Initialize &
+           ( C % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+
+    associate &
+      ( My_E_Min => CO % Outgoing % Value ( 1 ), &
+           E_Min => CO % Incoming % Value ( 1 ) )
+ 
+    My_E_Min  =  minval ( FV ( :, F % ENERGY_DENSITY_C ) )
+
+    call CO % Reduce ( REDUCTION % MIN )
+
+    F % EnergyDensityMin  =  E_Min
+
+    call Show ( 'Setting EnergyDensityMin of a Fluid', F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % EnergyDensityMin, &
+                F % Unit ( F % ENERGY_DENSITY_C, 1 ), 'EnergyDensityMin', &
+                F % IGNORABILITY + 1 )
+
+    end associate !-- My_E_Min, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine SetEnergyDensityMinFind
 
 
   subroutine SetTemperatureMin ( F, TemperatureMin )
