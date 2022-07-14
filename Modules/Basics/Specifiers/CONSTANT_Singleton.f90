@@ -16,29 +16,29 @@ module CONSTANT_Singleton
       !-- Mathematical
       PI  =  acos ( -1.0_KDR ), &
       !-- Physical SI
-      !   http://pdg.lbl.gov/2018/reviews/rpp2018-rev-phys-constants.pdf
+      !   https://pdg.lbl.gov/2022/reviews/rpp2022-rev-phys-constants.pdf
       SPEED_OF_LIGHT_SI     =  2.99792458e+8_KDR, &
-      PLANCK_REDUCED_SI     =  1.054571800e-34_KDR, &
-      ELECTRON_CHARGE_SI    =  1.6021766208e-19_KDR, &
-      ELECTRON_MASS_SI      =  9.10938356e-31_KDR, &
-      PROTON_MASS_SI        =  1.672621898e-27_KDR, &
-      ATOMIC_MASS_UNIT_SI   =  1.660539040e-27_KDR, &
-      PERMEABILITY_SI       =  4.0e-7_KDR * PI, & 
-      GRAVITATIONAL_SI      =  6.67408e-11_KDR, &
-      AVOGADRO_SI           =  6.022140857e23_KDR, &
-      BOLTZMANN_SI          =  1.38064852e-23_KDR, &
-      FERMI_HBAR_C_3_GEV_2  =  1.1663787e-5_KDR, &
-      SIN_2_WEINBERG        =  0.23122, &
+      PLANCK_REDUCED_SI     =  1.054571817e-34_KDR, &
+      ELECTRON_CHARGE_SI    =  1.602176634e-19_KDR, &
+      ELECTRON_MASS_SI      =  9.1093837015e-31_KDR, &
+      PROTON_MASS_SI        =  1.67262192369e-27_KDR, &
+      ATOMIC_MASS_UNIT_SI   =  1.66053906660e-27_KDR, &
+      PERMEABILITY_SI       =  4.0e-7_KDR * PI  *  1.00000000055_KDR, & 
+      GRAVITATIONAL_SI      =  6.67430e-11_KDR, &
+      AVOGADRO_SI           =  6.02214076e23_KDR, &
+      BOLTZMANN_SI          =  1.380649e-23_KDR, &
+      FERMI_HBAR_C_3_GEV_2  =  1.1663788e-5_KDR, &
+      SIN_2_WEINBERG        =  0.23121, &
       !-- Astrophysical SI
-      !   http://pdg.lbl.gov/2018/reviews
-      !          /rpp2018-rev-astrophysical-constants.pdf
+      !   https://pdg.lbl.gov/2022/reviews
+      !           /rpp2022-rev-astrophysical-constants.pdf
       ASTRONOMICAL_UNIT_SI  =  1.49597870700e+11_KDR, &
       PARSEC_SI             =  3.08567758149e+16_KDR, &
-      SOLAR_MASS_SI         =  1.98848e+30_KDR, &
+      SOLAR_MASS_SI         =  1.98841e+30_KDR, &
       !-- Particles (that are not in the PDG Physical Constants)  
-      !   http://www-pdg.lbl.gov/2018/tables/rpp2018-tab-baryons-N.pdf
-      NEUTRON_MASS_AMU        =   1.0086649159_KDR, &
-      NEUTRON_AXIAL_COUPLING  =  -1.2724_KDR, &
+      !   https://pdg.lbl.gov/2022/listings/rpp2022-list-n.pdf
+      NEUTRON_MASS_AMU        =   1.00866491595_KDR, &
+      NEUTRON_AXIAL_COUPLING  =  -1.2754_KDR, &
       !-- GenASiS Fundamental
       SPEED_OF_LIGHT  =  1.0_KDR, &
       PLANCK_REDUCED  =  1.0_KDR, &    
