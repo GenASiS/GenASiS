@@ -26,7 +26,7 @@ module ConservationLawEvolution_Template
       Time, &
       WriteTime, &
       TimeStep
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     character ( LDF ) :: &
       Type = ''
@@ -145,7 +145,7 @@ contains
     class ( ConservationLawEvolutionTemplate ), intent ( inout ) :: &
       CLE
     
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       RestartTime
     type ( TimerForm ), pointer :: &
       T

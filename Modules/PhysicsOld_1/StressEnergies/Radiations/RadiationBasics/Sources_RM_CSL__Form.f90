@@ -11,7 +11,7 @@ module Sources_RM_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: Sources_RM_CSL_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit, &
       EnergyUnit
     class ( Field_CSL_Template ), pointer :: &
@@ -40,7 +40,7 @@ contains
       NameShort
     logical ( KDL ), intent ( in ) :: &
       UsePinnedMemory
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit, &
       EnergyUnit
     integer ( KDI ), intent ( in ) :: &

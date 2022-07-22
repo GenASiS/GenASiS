@@ -12,7 +12,7 @@ program Stream_Form_Test
     nGhostExchanges
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
-  type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+  type ( QuantityForm ), dimension ( :, : ), allocatable :: &
     FieldUnit
   logical ( KDL ) :: &
     DeviceMemory, &
@@ -259,7 +259,7 @@ contains
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       F_3D
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       F_Unit
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       nGL  !-- nGhostLayers

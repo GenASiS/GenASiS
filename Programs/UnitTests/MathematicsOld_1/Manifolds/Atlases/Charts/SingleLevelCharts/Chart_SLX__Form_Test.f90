@@ -42,7 +42,7 @@ contains
 
     real ( KDR ), dimension ( 3 ) :: &
       Scale
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       G_3D

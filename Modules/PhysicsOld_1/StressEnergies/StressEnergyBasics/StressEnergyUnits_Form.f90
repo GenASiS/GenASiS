@@ -7,25 +7,25 @@ module StressEnergyUnits_Form
 
   type, public :: StressEnergyUnitsForm
     !-- Phase space 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Time, &
       Length
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       Coordinate_PS, &
       Coordinate_MS
     !-- Local
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       BaryonMass, &
       NumberDensity, &
       MassDensity, &
       EnergyDensity, &
       Temperature
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       Velocity_U, &
       MomentumDensity_U, &
       MomentumDensity_D
     !-- Global
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Number, &
       Energy, &
       Momentum, &

@@ -18,10 +18,10 @@ program FindParameter_Command_Test
   real ( KDR ), dimension ( 10 ) :: &
     Real_1D, &
     RealUnit_1D
-  type ( MeasuredValueForm ) :: &
-    MeasuredValue_0D
-  type ( MeasuredValueForm ), dimension ( 10 ) :: &
-    MeasuredValue_1D
+  type ( QuantityForm ) :: &
+    Quantity_0D
+  type ( QuantityForm ), dimension ( 10 ) :: &
+    Quantity_1D
   logical ( KDL ) :: &
     Logical_0D
   logical ( KDL ), dimension ( 10 ) :: &
@@ -57,7 +57,7 @@ program FindParameter_Command_Test
   Buffer ( 2 ) = 'ScalarInteger=10'
   Buffer ( 3 ) = 'ScalarReal=10.1'
   Buffer ( 4 ) = 'ScalarRealUnit=10.0~KILOMETER'
-  Buffer ( 5 ) = 'ScalarMeasuredValue=20.0~KILOMETER'
+  Buffer ( 5 ) = 'ScalarQuantity=20.0~KILOMETER'
   Buffer ( 6 ) = 'ScalarLogical=True'
   Buffer ( 7 ) = 'ScalarString=Hello World'
   Buffer ( 8 ) = 'ArrayInteger=10,20,30'
@@ -65,7 +65,7 @@ program FindParameter_Command_Test
   Buffer ( 10 )  &
     = 'ArrayRealUnit=10.5~SECOND,20.5,30.5~MILLISECOND,40.5,50.5~MILLISECOND'
   Buffer ( 11 )  &
-    = 'ArrayMeasuredValue=10.5~SECOND,20.5,30.5~MILLISECOND,40.5,' &
+    = 'ArrayQuantity=10.5~SECOND,20.5,30.5~MILLISECOND,40.5,' &
       // '50.5~MILLISECOND'
   Buffer ( 12 ) = 'ArrayLogical=T,F,False,True,True,F'
   Buffer ( 13 ) = 'ArrayString=Lorem, ipsum, dolor, sit, amet'
@@ -74,7 +74,7 @@ program FindParameter_Command_Test
   call FindParameter ( Real_0D, Buffer, 'TestBuffer', 'ScalarReal' )
   call FindParameter ( RealUnit_0D, Buffer, 'TestBuffer', 'ScalarRealUnit' )
   call FindParameter &
-         ( MeasuredValue_0D, Buffer, 'TestBuffer', 'ScalarMeasuredValue' )
+         ( Quantity_0D, Buffer, 'TestBuffer', 'ScalarQuantity' )
   call FindParameter ( Logical_0D, Buffer, 'Test Buffer', 'ScalarLogical' )
   call FindParameter ( Character_0D, Buffer, 'Test Buffer', 'ScalarString' )
 
@@ -82,7 +82,7 @@ program FindParameter_Command_Test
   call FindParameter ( Real_1D, Buffer, 'TestBuffer', 'ArrayReal' )
   call FindParameter ( RealUnit_1D, Buffer, 'TestBuffer', 'ArrayRealUnit' )
   call FindParameter &
-         ( MeasuredValue_1D, Buffer, 'TestBuffer', 'ArrayMeasuredValue' )
+         ( Quantity_1D, Buffer, 'TestBuffer', 'ArrayQuantity' )
   call FindParameter ( Logical_1D, Buffer, 'Test Buffer', 'ArrayLogical' )
   call FindParameter ( Character_1D, Buffer, 'Test Buffer', 'ArrayString' )
 

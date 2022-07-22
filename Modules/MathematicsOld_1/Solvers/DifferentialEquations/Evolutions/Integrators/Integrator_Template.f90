@@ -137,7 +137,7 @@ module Integrator_Template
         I
       integer ( KDI ), intent ( in ) :: &
         ReadFrom
-      type ( MeasuredValueForm ), intent ( out ) :: &
+      type ( QuantityForm ), intent ( out ) :: &
         Time
       integer ( KDI ), intent ( out ) :: &
         CycleNumber
@@ -213,7 +213,7 @@ module Integrator_Template
         I
       integer ( KDI ), intent ( in ) :: &
         RestartFrom
-      type ( MeasuredValueForm ), intent ( out ) :: &
+      type ( QuantityForm ), intent ( out ) :: &
         RestartTime
     end subroutine RI
 
@@ -238,7 +238,7 @@ contains
       U
     character ( * ), intent ( in )  :: &
       Name
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption
@@ -480,7 +480,7 @@ contains
 
     integer ( KDI ) :: &
       RestartFrom
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       RestartTime
 
     I % Start    =  .true.
@@ -712,7 +712,7 @@ contains
       I
     integer ( KDI ), intent ( in ) :: &
       ReadFrom
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       Time
     integer ( KDI ), intent ( out ) :: &
       CycleNumber
@@ -969,7 +969,7 @@ contains
       I
     integer ( KDI ), intent ( in ) :: &
       RestartFrom
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       RestartTime
 
     integer ( KDI ) :: &

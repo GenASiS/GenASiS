@@ -27,13 +27,13 @@ Join_Command.o: \
   $(KIND_BIG_Singleton).o \
   Join_Command.f90 
 
-MeasuredValue_Form.o: \
+Quantity_Form.o: \
   KIND_DEFAULT_Singleton.o \
   $(KIND_BIG_Singleton).o \
   LEN_DEFAULT_Singleton.o \
   Split_Command.o \
   Join_Command.o \
-  MeasuredValue_Form.f90
+  Quantity_Form.f90
 
 CONSTANT_Singleton.o: \
   KIND_DEFAULT_Singleton.o \
@@ -42,7 +42,7 @@ CONSTANT_Singleton.o: \
 UNIT_Singleton.o: \
   KIND_DEFAULT_Singleton.o \
   $(KIND_BIG_Singleton).o \
-  MeasuredValue_Form.o \
+  Quantity_Form.o \
   CONSTANT_Singleton.o \
   UNIT_Singleton.f90
 
@@ -54,7 +54,7 @@ Specifiers.o: \
   LEN_DEFAULT_Singleton.o \
   Split_Command.o \
   Join_Command.o \
-  MeasuredValue_Form.o \
+  Quantity_Form.o \
   CONSTANT_Singleton.o \
   UNIT_Singleton.o \
   Specifiers.f90

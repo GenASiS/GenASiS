@@ -12,7 +12,7 @@ module LatticeDynamics_Template
       integer ( KDI ) :: &
         nEquilibrateCycles, &
         TargetTemperatureInterval
-      type ( MeasuredValueForm ) :: &
+      type ( QuantityForm ) :: &
         EnergyUnit
     type ( StorageForm ) :: &
       Correlation
@@ -41,7 +41,7 @@ contains
 
     class ( LatticeDynamicsTemplate ), intent ( inout ) :: &
       LD
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       EnergyUnit, &
       TimeUnit
 

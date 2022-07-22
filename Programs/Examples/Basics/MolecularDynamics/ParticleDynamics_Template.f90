@@ -19,7 +19,7 @@ module ParticleDynamics_Template
       TimeScaleMin
     real ( KDR ), dimension ( : ), allocatable :: &
       TimeValue
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     real ( KDR ), dimension ( : ), allocatable :: &
       PotentialValue, &
@@ -118,7 +118,7 @@ contains
 
     class ( ParticleDynamicsTemplate ), intent ( inout ) :: &
       PD
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       TimeUnit
 
     character ( LDL ) :: &

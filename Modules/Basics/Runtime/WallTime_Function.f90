@@ -21,7 +21,7 @@ contains
 
   function WallTime_MPI ( ) result ( WT )
     
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       WT
     
     call WT % Initialize ( 's', MPI_WTIME ( ) )

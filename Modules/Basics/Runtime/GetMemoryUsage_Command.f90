@@ -31,14 +31,14 @@ contains
                  Min_HWM_Option, Mean_HWM_Option, Max_RSS_Option, &
                  Min_RSS_Option, Mean_RSS_Option )
     
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       HWM, &
       RSS
     integer ( KDI ), intent ( in ) :: &
       Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       C_Option
-    type ( MeasuredValueForm ), intent ( out ), optional :: &
+    type ( QuantityForm ), intent ( out ), optional :: &
       Max_HWM_Option, &
       Min_HWM_Option, &
       Mean_HWM_Option, &

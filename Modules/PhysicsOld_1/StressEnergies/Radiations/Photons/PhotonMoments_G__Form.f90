@@ -78,14 +78,14 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption, &
       PinnedOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
 
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       VariableUnit
 
     call InitializeBasics &
@@ -294,12 +294,12 @@ contains
       PM
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+    type ( QuantityForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
-    type ( MeasuredValueForm ), dimension ( : ), optional, intent ( in ) :: &
+    type ( QuantityForm ), dimension ( : ), optional, intent ( in ) :: &
       VariableUnitOption
 
     integer ( KDI ) :: &
@@ -353,7 +353,7 @@ contains
 
   subroutine SetUnits ( VariableUnit, PM, Units )
 
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( PhotonMoments_G_Form ), intent ( in ) :: &
       PM

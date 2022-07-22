@@ -11,7 +11,7 @@ module ProtoCurrentSources_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: ProtoCurrentSources_CSL_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     class ( Field_CSL_Template ), pointer :: &
       ProtoCurrent_CSL => null ( )
@@ -37,7 +37,7 @@ contains
       ProtoCurrent_CSL
     character ( * ), intent ( in ) :: &
       NameShort
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     integer ( KDI ), intent ( in ) :: &
       nValues

@@ -34,7 +34,7 @@ program Fluid_P_HN__Form_Test
     Path
   type ( TimerForm ) :: &
     Timer
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+  type ( QuantityForm ), dimension ( 3 ) :: &
     CoordinateUnit
   type ( TableStreamForm ) :: &
     TS  

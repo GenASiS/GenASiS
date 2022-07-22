@@ -10,7 +10,7 @@ module ProtoCurrentSources_ASC__Form
   private
 
   type, public, extends ( Field_ASC_Template ) :: ProtoCurrentSources_ASC_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     class ( Field_ASC_Template ), pointer :: &
       ProtoCurrent_ASC => null ( )
@@ -36,7 +36,7 @@ contains
       ProtoCurrent_ASC
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeUnitOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption

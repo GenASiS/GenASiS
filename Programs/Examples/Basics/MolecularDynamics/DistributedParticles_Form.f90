@@ -38,7 +38,7 @@ module DistributedParticles_Form
       CorrelationBinEdge, &
       MyPairCount, &
       PairCount
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       LengthUnit, &
       MassUnit
     real ( KDR ), dimension ( :, : ), allocatable :: &
@@ -102,7 +102,7 @@ contains
       ParticleMass
     integer ( KDI ), intent ( in ) :: &
       nParticles
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       TimeUnitOption
 
@@ -372,7 +372,7 @@ contains
 
     class ( DistributedParticlesForm ), intent ( inout ) :: &
       DP
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption

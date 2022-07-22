@@ -28,7 +28,7 @@ module FieldSet_Form
       DevicesCommunicate
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
-    type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+    type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       Unit
     character ( LDL ) :: &
       Type = '', &
@@ -122,7 +122,7 @@ contains
       PinnedMemoryOption, &
       DevicesCommunicateOption, &
       AssociateFieldsOption
-    type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption

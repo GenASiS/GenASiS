@@ -19,10 +19,10 @@ module RadiationMoments_CSL__Form
   type, public, extends ( Field_CSL_Template ) :: RadiationMoments_CSL_Form
     real ( KDR ) :: &
       LimiterParameter
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
@@ -77,11 +77,11 @@ contains
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
     real ( KDR ), intent ( in ) :: &

@@ -41,7 +41,7 @@ subroutine TestGeometry ( Name, nDimensions )
   integer ( KDI ) :: &
     i, &
     nValues = 4
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+  type ( QuantityForm ), dimension ( 3 ) :: &
     CoordinateUnit
   character ( LDL ) :: &
     CoordinateSystem

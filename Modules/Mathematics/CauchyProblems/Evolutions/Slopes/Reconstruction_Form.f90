@@ -135,7 +135,7 @@ contains
       iC, &  !-- iChart
       iS, &  !-- iSelected
       iF     !-- iField
-    type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+    type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       Unit
     character ( LDL ), dimension ( : ), allocatable :: &
       Field

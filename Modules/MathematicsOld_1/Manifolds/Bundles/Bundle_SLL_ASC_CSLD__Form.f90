@@ -134,7 +134,7 @@ contains
       CoordinateSystemOption
     logical ( KDL ), intent ( in ), optional :: &
       UsePinnedMemoryOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
@@ -365,7 +365,7 @@ contains
       iStream
     logical ( KDL ), intent ( in ), optional :: &
       AllFibersOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption

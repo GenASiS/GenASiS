@@ -91,9 +91,9 @@ contains
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -109,7 +109,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption, &
       PinnedOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
       optional :: &
@@ -117,7 +117,7 @@ contains
 
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       VariableUnit
 
     call InitializeBasics &
@@ -468,12 +468,12 @@ contains
       F
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+    type ( QuantityForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
-    type ( MeasuredValueForm ), dimension ( : ), optional, intent ( in ) :: &
+    type ( QuantityForm ), dimension ( : ), optional, intent ( in ) :: &
       VariableUnitOption
 
     integer ( KDI ) :: &
@@ -528,11 +528,11 @@ contains
     
   subroutine SetUnits ( VariableUnit, F, MassDensityUnit, EnergyDensityUnit )
 
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( Fluid_P_P_Form ), intent ( in ) :: &
       F
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit
 

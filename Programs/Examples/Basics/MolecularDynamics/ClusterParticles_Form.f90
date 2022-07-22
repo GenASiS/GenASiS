@@ -49,7 +49,7 @@ contains
       C
     procedure ( PES_Interface ), pointer, intent ( in ) :: &
       PotentialEnergyScale
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeUnitOption
 
     integer ( KDI ) :: &
@@ -61,7 +61,7 @@ contains
       SofteningLengthFactor, &
       BoxLength, &
       ParticleMass
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       LengthUnit
 
     nParticles = 256

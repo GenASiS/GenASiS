@@ -93,7 +93,7 @@ contains
       TallyVariable
     logical ( KDL ) :: &
       AllocateSources
-    type ( MeasuredValueForm ), dimension ( 5 ) :: &
+    type ( QuantityForm ), dimension ( 5 ) :: &
       TallyUnit
 
     call RMA % SetType ( )

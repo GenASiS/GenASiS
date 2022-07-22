@@ -6,7 +6,7 @@ all: \
   KIND_DEFAULT_Singleton_Test KIND_BIG_Singleton_Test \
   KIND_SMALL_Singleton_Test KIND_TINY_Singleton_Test \
   LEN_DEFAULT_Singleton_Test SplitJoin_Command_Test \
-  MeasuredValue_Form_Test CONSTANT_Singleton_Test UNIT_Singleton_Test
+  Quantity_Form_Test CONSTANT_Singleton_Test UNIT_Singleton_Test
 
 KIND_DEFAULT_Singleton_Test: KIND_DEFAULT_Singleton_Test.o
 	$(LINK) $(FLAGS) \
@@ -44,9 +44,9 @@ SplitJoin_Command_Test: SplitJoin_Command_Test.o
           LEN_DEFAULT_Singleton.o KIND_DEFAULT_Singleton.o \
           $(KIND_BIG_Singleton).o
 
-MeasuredValue_Form_Test: MeasuredValue_Form_Test.o
-	$(LINK) $(FLAGS) -o MeasuredValue_Form_Test_$(MACHINE) \
-          MeasuredValue_Form_Test.o MeasuredValue_Form.o \
+Quantity_Form_Test: Quantity_Form_Test.o
+	$(LINK) $(FLAGS) -o Quantity_Form_Test_$(MACHINE) \
+          Quantity_Form_Test.o Quantity_Form.o \
           Join_Command.o Split_Command.o \
           LEN_DEFAULT_Singleton.o KIND_DEFAULT_Singleton.o \
           $(KIND_BIG_Singleton).o
@@ -61,7 +61,7 @@ UNIT_Singleton_Test: UNIT_Singleton_Test.o
 	$(LINK) $(FLAGS) \
           -o UNIT_Singleton_Test_$(MACHINE) \
           UNIT_Singleton_Test.o UNIT_Singleton.o CONSTANT_Singleton.o \
-          MeasuredValue_Form.o Join_Command.o Split_Command.o \
+          Quantity_Form.o Join_Command.o Split_Command.o \
           LEN_DEFAULT_Singleton.o KIND_DEFAULT_Singleton.o \
           $(KIND_BIG_Singleton).o
 
@@ -75,7 +75,7 @@ clobber: clean
 	rm -f KIND_TINY_Singleton_Test_*
 	rm -f LEN_DEFAULT_Singleton_Test_*
 	rm -f SplitJoin_Command_Test_*
-	rm -f MeasuredValue_Form_Test_*
+	rm -f Quantity_Form_Test_*
 	rm -f CONSTANT_Singleton_Test_*
 	rm -f UNIT_Singleton_Test_*
 	rm -f Unit_Form_Test_*
@@ -110,11 +110,11 @@ SplitJoin_Command_Test.o: \
   Join_Command.o \
   SplitJoin_Command_Test.f90
 
-MeasuredValue_Form_Test.o: \
+Quantity_Form_Test.o: \
   KIND_DEFAULT_Singleton.o \
   $(KIND_BIG_Singleton).o \
-  MeasuredValue_Form.o \
-  MeasuredValue_Form_Test.f90
+  Quantity_Form.o \
+  Quantity_Form_Test.f90
 
 CONSTANT_Singleton_Test.o: \
   CONSTANT_Singleton.o \
@@ -122,6 +122,6 @@ CONSTANT_Singleton_Test.o: \
 
 UNIT_Singleton_Test.o: \
   $(KIND_BIG_Singleton).o \
-  MeasuredValue_Form.o \
+  Quantity_Form.o \
   UNIT_Singleton.o \
   UNIT_Singleton_Test.f90

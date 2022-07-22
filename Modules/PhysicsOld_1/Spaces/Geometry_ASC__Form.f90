@@ -19,7 +19,7 @@ module Geometry_ASC__Form
       GravitationalConstant, &
       UniformAcceleration, &
       CentralMass
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       CentralMassUnit
     character ( LDL ) :: &
       GravitySolverType = ''
@@ -136,7 +136,7 @@ contains
       GravitySolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UsePinnedMemoryOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       CentralMassUnitOption
     real ( KDR ), intent ( in ), optional :: &
       GravitationalConstantOption, &

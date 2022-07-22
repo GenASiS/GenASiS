@@ -57,14 +57,14 @@ contains
       dR
     real ( KDR ), dimension ( 3 ) :: &
       Ratio
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
       EnergyDensityUnit, &
       MassUnit, &
       EnergyUnit, &
       MomentumUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit, &
       VelocityUnit, &
       MomentumDensity_U_Unit, &

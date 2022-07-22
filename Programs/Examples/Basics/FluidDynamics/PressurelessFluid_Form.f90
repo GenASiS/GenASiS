@@ -177,14 +177,14 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
 
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       VariableUnit
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
@@ -518,18 +518,18 @@ contains
       PF
     logical ( KDL ), intent ( in ), optional :: &
       UnitsOnlyOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       DensityUnitOption
 
     integer ( KDI ) :: &
       iD  !-- iDimension
     type ( Integer_1D_Form ), dimension ( 1 ) :: &
       VectorIndices
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       DensityUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       VelocityUnit
     logical ( KDL ) :: &
       UnitsOnly
@@ -595,7 +595,7 @@ contains
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Vector, &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+    type ( QuantityForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
     !-- FIXME: intent(out) here caused ICE with Intel Compiler 15
@@ -610,7 +610,7 @@ contains
       VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       VectorIndicesOption

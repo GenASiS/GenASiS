@@ -191,14 +191,14 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
 
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       VariableUnit
 
     call InitializeBasics &
@@ -521,9 +521,9 @@ contains
       PF
     logical ( KDL ), intent ( in ), optional :: &
       UnitsOnlyOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       DensityUnitOption, &
       EnergyUnitOption
 
@@ -533,10 +533,10 @@ contains
       VectorIndices
     real ( KDR ) :: &
       Gamma
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       DensityUnit, &
       EnergyUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       VelocityUnit
     logical ( KDL ) :: &
       UnitsOnly
@@ -603,12 +603,12 @@ contains
       PF
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+    type ( QuantityForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
-    type ( MeasuredValueForm ), dimension ( : ), optional, intent ( in ) :: &
+    type ( QuantityForm ), dimension ( : ), optional, intent ( in ) :: &
       VariableUnitOption
 
     integer ( KDI ) :: &

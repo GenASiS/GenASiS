@@ -16,14 +16,14 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         nEnergyValues = 0
       real ( KDR ), dimension ( : ), allocatable :: &
         Energy
-      type ( MeasuredValueForm ) :: &
+      type ( QuantityForm ) :: &
         EnergyDensityUnit, &
         EnergyUnit, &
         TemperatureUnit, &
         MomentumUnit, &
         AngularMomentumUnit, &
         TimeUnit
-      type ( MeasuredValueForm ), dimension ( 3 ) :: &
+      type ( QuantityForm ), dimension ( 3 ) :: &
         Velocity_U_Unit, &
         MomentumDensity_U_Unit, &
         MomentumDensity_D_Unit
@@ -72,11 +72,11 @@ contains
       RadiationType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
       MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
       TemperatureUnitOption, &
       EnergyUnitOption, &
@@ -305,7 +305,7 @@ contains
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iE     !-- iEnergy
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       EnergyUnit
     character ( 1 + 2 ) :: &
       EnergyNumber

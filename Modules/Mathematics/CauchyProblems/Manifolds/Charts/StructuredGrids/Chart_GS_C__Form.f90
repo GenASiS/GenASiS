@@ -50,7 +50,7 @@ contains
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption

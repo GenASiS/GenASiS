@@ -39,7 +39,7 @@ contains
 
     class ( PlaneWaveAdvectionTemplate ), intent ( inout ) :: &
       PWA
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       DensityUnit
 
     integer ( KDI ) :: &
@@ -50,7 +50,7 @@ contains
       Period
     real ( KDR ), dimension ( 3 ) :: &
       Wavenumber
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       VelocityUnit
 
     call PWA % Initialize ( PROGRAM_HEADER % Communicator )

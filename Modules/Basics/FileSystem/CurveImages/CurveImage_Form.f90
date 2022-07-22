@@ -53,7 +53,7 @@ contains
       oValue
     character ( * ), intent ( in ), optional :: &
       CoordinateLabelOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       CoordinateUnitOption
 
     CI % oValue       = oValue
@@ -104,7 +104,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nProperCells, &
       oValue
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       CoordinateUnitOption
     character ( * ), intent ( in ), optional :: &
       CoordinateLabelOption
@@ -164,7 +164,7 @@ contains
   
     class ( CurveImageForm ), intent ( inout ) :: &
       GI
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -485,7 +485,7 @@ contains
       GI
     logical ( KDL ), intent ( in ), optional :: &
       StorageOnlyOption
-    type ( MeasuredValueForm ), intent ( out ), optional :: &
+    type ( QuantityForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption

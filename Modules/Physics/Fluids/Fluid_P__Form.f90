@@ -158,7 +158,7 @@ contains
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
@@ -182,7 +182,7 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaBalanced
-    type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+    type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
     character ( LDL ), dimension ( : ), allocatable :: &
       Field

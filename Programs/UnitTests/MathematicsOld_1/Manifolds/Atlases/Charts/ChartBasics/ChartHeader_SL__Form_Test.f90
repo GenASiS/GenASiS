@@ -34,7 +34,7 @@ contains
 
     real ( KDR ), dimension ( 3 ) :: &
       Scale
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit
     logical ( KDL ), dimension ( 3 ) :: &
       IsPeriodic

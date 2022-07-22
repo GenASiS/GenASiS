@@ -75,7 +75,7 @@ contains
       PinnedMemoryOption, &
       DevicesCommunicateOption, &
       AssociateFieldsOption
-    type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption

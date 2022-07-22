@@ -83,7 +83,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       AllocateTallyOption, &
       UsePinnedMemoryOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       TallyUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption

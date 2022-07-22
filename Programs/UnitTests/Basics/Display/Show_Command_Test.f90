@@ -16,7 +16,7 @@ program Show_Command_Test
     Error
   character ( 5 ) :: &
     Encoding
-  type ( MeasuredValueForm ) :: &
+  type ( QuantityForm ) :: &
     Length
   real ( KDR ), dimension ( 5 ), target :: &
     A

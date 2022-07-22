@@ -94,7 +94,7 @@ contains
       MinCoordinate, &
       MaxCoordinate, &
       Ratio
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
       EnergyDensityUnit, &
@@ -102,7 +102,7 @@ contains
       EnergyUnit, &
       MomentumUnit, &
       AngularMomentumUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit, &
       VelocityUnit
     character ( LDL ) :: &

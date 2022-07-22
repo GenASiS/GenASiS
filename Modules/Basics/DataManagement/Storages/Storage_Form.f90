@@ -41,7 +41,7 @@ module Storage_Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Unit
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
@@ -105,7 +105,7 @@ contains
       ValueShape
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       VectorIndicesOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VectorOption, &
@@ -158,7 +158,7 @@ contains
 !      Value
 !    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
 !      VectorIndicesOption
-!    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+!    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
 !      UnitOption
 !    character ( * ), dimension ( : ), intent ( in ), optional :: &
 !      VectorOption, &
@@ -573,7 +573,7 @@ contains
       S
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VectorOption, &

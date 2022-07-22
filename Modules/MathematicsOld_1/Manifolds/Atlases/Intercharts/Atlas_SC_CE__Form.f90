@@ -81,7 +81,7 @@ contains
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
@@ -114,7 +114,7 @@ contains
       A
     logical ( KDL ), intent ( in ), optional :: &
       UseCustomBoundaryInnerOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &

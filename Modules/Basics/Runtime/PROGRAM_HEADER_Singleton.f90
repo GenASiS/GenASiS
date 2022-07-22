@@ -47,7 +47,7 @@ module PROGRAM_HEADER_Singleton
     procedure, private, nopass :: &
       GetParameter_0D_Real
     procedure, private, nopass :: &
-      GetParameter_0D_MeasuredValue
+      GetParameter_0D_Quantity
     procedure, private, nopass :: &
       GetParameter_0D_Logical
     procedure, private, nopass :: &
@@ -57,7 +57,7 @@ module PROGRAM_HEADER_Singleton
     procedure, private, nopass :: &
       GetParameter_1D_Real
     procedure, private, nopass :: &
-      GetParameter_1D_MeasuredValue
+      GetParameter_1D_Quantity
     procedure, private, nopass :: &
       GetParameter_1D_Logical
     procedure, private, nopass :: &
@@ -65,10 +65,10 @@ module PROGRAM_HEADER_Singleton
     generic :: &
       GetParameter &
         => GetParameter_0D_Integer, GetParameter_0D_Real, &
-           GetParameter_0D_MeasuredValue, GetParameter_0D_Logical, &
+           GetParameter_0D_Quantity, GetParameter_0D_Logical, &
            GetParameter_0D_Character, &
            GetParameter_1D_Integer, GetParameter_1D_Real, &
-           GetParameter_1D_MeasuredValue, GetParameter_1D_Logical, &
+           GetParameter_1D_Quantity, GetParameter_1D_Logical, &
            GetParameter_1D_Character
     procedure, public, nopass :: &
       Timer
@@ -284,7 +284,7 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     type ( ParameterStreamForm ), intent ( in ), target, optional :: &
       ParameterStreamOption
@@ -333,15 +333,15 @@ contains
   end subroutine GetParameter_0D_Real
 
 
-  subroutine GetParameter_0D_MeasuredValue &
+  subroutine GetParameter_0D_Quantity &
                ( Value, Name, InputUnitOption, ParameterStreamOption, &
                  IgnorabilityOption, ConvertOption, SuccessOption )
 
-    type ( MeasuredValueForm ), intent ( inout ) :: &
+    type ( QuantityForm ), intent ( inout ) :: &
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     type ( ParameterStreamForm ), intent ( in ), target, optional :: &
       ParameterStreamOption
@@ -389,7 +389,7 @@ contains
 
     nullify ( PS )
 
-  end subroutine GetParameter_0D_MeasuredValue
+  end subroutine GetParameter_0D_Quantity
 
 
   subroutine GetParameter_0D_Logical &
@@ -561,7 +561,7 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
       nValuesOption
@@ -612,15 +612,15 @@ contains
   end subroutine GetParameter_1D_Real
 
 
-  subroutine GetParameter_1D_MeasuredValue &
+  subroutine GetParameter_1D_Quantity &
                ( Value, Name, InputUnitOption, nValuesOption, &
                  ParameterStreamOption, IgnorabilityOption, SuccessOption )
 
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
       nValuesOption
@@ -668,7 +668,7 @@ contains
 
     nullify ( PS )
 
-  end subroutine GetParameter_1D_MeasuredValue
+  end subroutine GetParameter_1D_Quantity
 
 
   subroutine GetParameter_1D_Logical &

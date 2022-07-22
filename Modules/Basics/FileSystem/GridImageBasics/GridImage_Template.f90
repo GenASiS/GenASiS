@@ -28,7 +28,7 @@ module GridImage_Template
       NodeCoordinate_3
     character ( LDL ), dimension ( 3 ) :: &
       CoordinateLabel = [ 'X', 'Y', 'Z' ]
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit
     type ( StorageForm ), dimension ( : ), allocatable :: &
       Storage
@@ -61,7 +61,7 @@ module GridImage_Template
   !      GI
   !    character ( * ), intent ( in ) :: &
   !      Name
-  !    type ( MeasuredValueForm ), intent ( in ), optional :: &
+  !    type ( QuantityForm ), intent ( in ), optional :: &
   !      TimeOption
   !    integer ( KDI ), intent ( in ), optional :: &
   !      CycleNumberOption
@@ -78,7 +78,7 @@ module GridImage_Template
   !      GI
   !    character ( * ), intent ( in ) :: &
   !      Name
-  !    type ( MeasuredValueForm ), intent ( in ), optional :: &
+  !    type ( QuantityForm ), intent ( in ), optional :: &
   !      TimeOption
   !    integer ( KDI ), intent ( in ), optional :: &
   !      CycleNumberOption

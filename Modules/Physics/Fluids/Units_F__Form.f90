@@ -9,17 +9,17 @@ module Units_F__Form
 
   type, public :: Units_F_Form
     !-- Phase space 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Time, &
       Length, &
       SqrtDet_M  !-- SquareRoot_Determinant_Metric
 !-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
 !    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Coordinate_PS, &  !-- Coordinate_PositionSpace
       Coordinate_MS     !-- Coordinate_MomentumSpace
     !-- Local
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       BaryonMass, &
       NumberDensity, &
       MassDensity, &
@@ -27,11 +27,11 @@ module Units_F__Form
       Temperature
 !-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
 !    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Velocity_U, &
       MomentumDensity_D
     !-- Global
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Number, &
       Mass, &
       Energy, &

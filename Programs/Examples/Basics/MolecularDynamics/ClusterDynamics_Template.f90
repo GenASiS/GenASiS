@@ -9,7 +9,7 @@ module ClusterDynamics_Template
 
   type, public, extends ( ParticleDynamicsTemplate ), abstract :: &
     ClusterDynamicsTemplate
-      type ( MeasuredValueForm ) :: &
+      type ( QuantityForm ) :: &
         EnergyUnit
   contains
     procedure, private, pass :: &
@@ -43,7 +43,7 @@ contains
 
     class ( ClusterDynamicsTemplate ), intent ( inout ) :: &
       CD
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       EnergyUnit, &
       TimeUnit
     procedure ( PES_Interface ), pointer, intent ( in ) :: &

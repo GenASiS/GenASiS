@@ -34,11 +34,11 @@ contains
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       EnergyDensityUnit
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
@@ -51,7 +51,7 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption

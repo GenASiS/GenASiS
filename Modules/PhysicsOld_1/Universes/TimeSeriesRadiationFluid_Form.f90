@@ -48,7 +48,7 @@ contains
     integer ( KDI ) :: &
       iS, &  !-- iSelected
       nVariables
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Unit
     logical ( KDL ) :: &
       TotalEnergyFound

@@ -62,7 +62,7 @@ contains
       T
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       MassUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &

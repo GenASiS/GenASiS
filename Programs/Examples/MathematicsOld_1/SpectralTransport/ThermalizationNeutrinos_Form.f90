@@ -53,16 +53,16 @@ contains
       nPositionCells      
     real ( KDR ) :: &
       MaxRadius
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit_PS
 
     integer ( KDI ) :: &
       nEnergyCells
     real ( KDR ), dimension ( 3 ) :: &
       Scale
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       EnergyDensityUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       CoordinateUnit
     character ( LDL ), dimension ( 3 ) :: &
       Spacing

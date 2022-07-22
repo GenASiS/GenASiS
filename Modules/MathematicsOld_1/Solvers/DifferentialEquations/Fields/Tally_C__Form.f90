@@ -24,7 +24,7 @@ module Tally_C__Form
       Value
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Unit
     class ( AtlasHeaderForm ), pointer :: &
       Atlas => null ( )
@@ -83,7 +83,7 @@ contains
       A
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
 
     integer ( KDI ) :: &

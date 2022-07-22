@@ -45,7 +45,7 @@ contains
       SRM
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       TimeUnit, &
       EnergyUnit   
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -56,7 +56,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption, &
       PinnedOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
       optional :: &
@@ -64,7 +64,7 @@ contains
 
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       VariableUnit
     character ( LDF ) :: &
       Name
@@ -114,7 +114,7 @@ contains
       Vector
     character ( LDF ), intent ( out ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+    type ( QuantityForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
     !-- FIXME: intent(out) here caused ICE with Intel Compiler 15
@@ -129,7 +129,7 @@ contains
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       VectorIndicesOption
@@ -235,13 +235,13 @@ contains
 
   subroutine SetUnits ( VariableUnit, SRM, RM, TimeUnit, EnergyUnit )
 
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( Sources_RM_Form ), intent ( in ) :: &
       SRM
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       TimeUnit, &
       EnergyUnit
 

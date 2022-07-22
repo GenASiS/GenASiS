@@ -32,7 +32,7 @@ module ParameterStream_Form
     procedure, private, pass :: &
       Read_0D_Real
     procedure, private, pass :: &
-      Read_0D_MeasuredValue
+      Read_0D_Quantity
     procedure, private, pass :: &
       Read_0D_Logical
     procedure, private, pass :: &
@@ -42,16 +42,16 @@ module ParameterStream_Form
     procedure, private, pass :: &
       Read_1D_Real
     procedure, private, pass :: &
-      Read_1D_MeasuredValue
+      Read_1D_Quantity
     procedure, private, pass :: &
       Read_1D_Logical
     procedure, private, pass :: &
       Read_1D_Character
     generic :: &
       Read &
-        => Read_0D_Integer, Read_0D_Real, Read_0D_MeasuredValue, &
+        => Read_0D_Integer, Read_0D_Real, Read_0D_Quantity, &
            Read_0D_Logical, Read_0D_Character, &
-           Read_1D_Integer, Read_1D_Real, Read_1D_MeasuredValue, &
+           Read_1D_Integer, Read_1D_Real, Read_1D_Quantity, &
            Read_1D_Logical, Read_1D_Character
     final :: &
       Finalize
@@ -170,7 +170,7 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
@@ -184,17 +184,17 @@ contains
   end subroutine Read_0D_Real
 
 
-  subroutine Read_0D_MeasuredValue &
+  subroutine Read_0D_Quantity &
                ( PS, Value, Name, InputUnitOption, IgnorabilityOption, &
                  ConvertOption, SuccessOption )
 
     class ( ParameterStreamForm ), intent ( inout ) :: &
       PS
-    type ( MeasuredValueForm ), intent ( inout ) :: &
+    type ( QuantityForm ), intent ( inout ) :: &
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
@@ -207,7 +207,7 @@ contains
            ( Value, PS % Buffer, PS % Filename, Name, InputUnitOption, &
              IgnorabilityOption, ConvertOption, SuccessOption )
 
-  end subroutine Read_0D_MeasuredValue
+  end subroutine Read_0D_Quantity
 
 
   subroutine Read_0D_Logical &
@@ -286,7 +286,7 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), &
       optional :: &
         InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
@@ -303,17 +303,17 @@ contains
   end subroutine Read_1D_Real
 
 
-  subroutine Read_1D_MeasuredValue &
+  subroutine Read_1D_Quantity &
                ( PS, Value, Name, InputUnitOption, nValuesOption, &
                  IgnorabilityOption, SuccessOption )
 
     class ( ParameterStreamForm ), intent ( inout ) :: &
       PS
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), &
       optional :: &
         InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
@@ -327,7 +327,7 @@ contains
            ( Value, PS % Buffer, PS % Filename, Name, InputUnitOption, &
              nValuesOption, IgnorabilityOption, SuccessOption )
 
-  end subroutine Read_1D_MeasuredValue
+  end subroutine Read_1D_Quantity
 
 
   subroutine Read_1D_Logical &

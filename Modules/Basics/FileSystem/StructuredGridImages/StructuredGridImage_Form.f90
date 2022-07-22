@@ -101,7 +101,7 @@ contains
       nGhostCells
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
 
     integer ( KDI ) :: &
@@ -186,7 +186,7 @@ contains
       nProperCells, &
       nGhostCells, &
       oValue
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       CoordinateLabelOption
@@ -403,7 +403,7 @@ contains
   
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       GI
-    type ( MeasuredValueForm ), intent ( in ) , optional :: &
+    type ( QuantityForm ), intent ( in ) , optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -434,7 +434,7 @@ contains
       GI
     logical ( KDL ), intent ( in ), optional :: &
       StorageOnlyOption
-    type ( MeasuredValueForm ), intent ( out ), optional :: &
+    type ( QuantityForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption
@@ -544,7 +544,7 @@ contains
     
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       SGI
-    type ( MeasuredValueForm ), intent ( in ) , optional :: &
+    type ( QuantityForm ), intent ( in ) , optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -743,7 +743,7 @@ contains
 
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       SGI
-    type ( MeasuredValueForm ), intent ( in ) , optional :: &
+    type ( QuantityForm ), intent ( in ) , optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption

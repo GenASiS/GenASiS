@@ -10,7 +10,7 @@ module Sources_F_ASC__Form
   private
 
   type, public, extends ( Field_ASC_Template ) :: Sources_F_ASC_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     class ( Field_ASC_Template ), pointer :: &
       Fluid_ASC => null ( )
@@ -38,7 +38,7 @@ contains
       NameShortOption
     logical ( KDL ), intent ( in ), optional :: &
       UsePinnedMemoryOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption

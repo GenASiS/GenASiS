@@ -23,12 +23,12 @@ program ParameterStream_Form_Test
     RealUnitArray_1, &
     RealUnitArray_2, &
     RealUnitArray_3
-  type ( MeasuredValueForm ) :: &
-    MeasuredValue
-  type ( MeasuredValueForm ), dimension ( 10 ) :: &
-    MeasuredValueArray_1, &
-    MeasuredValueArray_2, &
-    MeasuredValueArray_3
+  type ( QuantityForm ) :: &
+    Quantity
+  type ( QuantityForm ), dimension ( 10 ) :: &
+    QuantityArray_1, &
+    QuantityArray_2, &
+    QuantityArray_3
   logical ( KDL ) :: &
     Logical
   logical ( KDL ), dimension ( 10 ) :: & 
@@ -71,10 +71,10 @@ program ParameterStream_Form_Test
   call PS % Read ( RealUnitArray_2, 'RealUnitArray_2' )
   call PS % Read ( RealUnitArray_3, 'RealUnitArray_3' )
   
-  call PS % Read ( MeasuredValue, 'MeasuredValue' )
-  call PS % Read ( MeasuredValueArray_1, 'MeasuredValueArray_1' )
-  call PS % Read ( MeasuredValueArray_2, 'MeasuredValueArray_2' )
-  call PS % Read ( MeasuredValueArray_3, 'MeasuredValueArray_3' )
+  call PS % Read ( Quantity, 'Quantity' )
+  call PS % Read ( QuantityArray_1, 'QuantityArray_1' )
+  call PS % Read ( QuantityArray_2, 'QuantityArray_2' )
+  call PS % Read ( QuantityArray_3, 'QuantityArray_3' )
   
   call PS % Read ( Logical, 'Logical' )
   call PS % Read ( LogicalArray_1, 'LogicalArray_1' )

@@ -15,7 +15,7 @@ module Chart_H__Form
     integer ( KDI ) :: &
       IGNORABILITY, &
       nDimensions
-    type ( MeasuredValueForm ), dimension ( MAX_DIMENSIONS ) :: &
+    type ( QuantityForm ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateUnit
     logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
       Periodic = .false.
@@ -67,7 +67,7 @@ contains
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption, &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption, &
@@ -222,7 +222,7 @@ contains
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
 
     associate ( nD => C % nDimensions )

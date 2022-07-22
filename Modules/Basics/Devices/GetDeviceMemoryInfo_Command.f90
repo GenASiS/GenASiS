@@ -15,7 +15,7 @@ contains
 
   subroutine GetDeviceMemoryInfo ( Total, Used, Free, ErrorOption )
   
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       Total, &
       Used, &
       Free

@@ -51,7 +51,7 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iSelected
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName

@@ -70,7 +70,7 @@ contains
     integer ( KDI ) :: &
       iT, &  !-- iTimer
       nTimes
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName
@@ -229,7 +229,7 @@ contains
 
     integer ( KDI ) :: &
       iT  !-- iTimer
-    type ( MeasuredValueForm )  :: &
+    type ( QuantityForm )  :: &
       Memory_HWM, &
       Memory_Max_HWM, &
       Memory_Min_HWM, &

@@ -70,7 +70,7 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
     nCells = 24, &
     nGhostLayers = 2, &
     nEqual = 8
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+  type ( QuantityForm ), dimension ( 3 ) :: &
     CoordinateUnit
   type ( AtlasHeaderForm ) :: &
     A

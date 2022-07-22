@@ -72,7 +72,7 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       ParticleEnergyUnit
     character ( LDL ) :: &
       NameShort

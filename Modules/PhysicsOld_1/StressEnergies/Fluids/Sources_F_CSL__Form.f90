@@ -11,7 +11,7 @@ module Sources_F_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: Sources_F_CSL_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     class ( Field_CSL_Template ), pointer :: &
       Fluid_CSL => null ( )
@@ -39,7 +39,7 @@ contains
       NameShort
     logical ( KDL ), intent ( in ) :: &
       UsePinnedMemory
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     integer ( KDI ), intent ( in ) :: &
       nValues

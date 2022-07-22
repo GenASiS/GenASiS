@@ -34,7 +34,7 @@ contains
     class ( GravitationalDynamicsForm ), intent ( inout ) :: &
       GD
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       EnergyUnit, &
       TimeUnit
     procedure ( PES_Interface ), pointer :: &

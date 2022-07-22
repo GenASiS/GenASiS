@@ -11,7 +11,7 @@ module Sources_RM_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: Sources_RM_CSL_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     class ( Field_CSL_Template ), pointer :: &
       RadiationMoments_CSL => null ( )
@@ -37,7 +37,7 @@ contains
       RadiationMoments_CSL
     character ( * ), intent ( in ) :: &
       NameShort
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TimeUnit
     integer ( KDI ), intent ( in ) :: &
       nValues

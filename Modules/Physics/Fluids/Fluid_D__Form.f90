@@ -166,7 +166,7 @@ contains
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
@@ -195,7 +195,7 @@ contains
       iaBalanced
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
-    type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+    type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
     character ( LDL ) :: &
       Name

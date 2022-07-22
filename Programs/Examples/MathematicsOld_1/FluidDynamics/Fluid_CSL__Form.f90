@@ -18,11 +18,11 @@ module Fluid_CSL__Form
   type, public, extends ( Field_CSL_Template ) :: Fluid_CSL_Form
     real ( KDR ) :: &
       LimiterParameter
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       VelocityUnit
     logical ( KDL ) :: &
       UseLimiter
@@ -74,9 +74,9 @@ contains
     logical ( KDL ), intent ( in ) :: &
       UseLimiter, &
       UsePinnedMemory
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit

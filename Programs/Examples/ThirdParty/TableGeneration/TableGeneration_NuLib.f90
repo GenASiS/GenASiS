@@ -70,7 +70,7 @@ subroutine SetEnergyGrid ( MS )
 
   integer ( KDI ) :: &
     nEnergyCells
-  type ( MeasuredValueForm ), dimension ( 1 ) :: &
+  type ( QuantityForm ), dimension ( 1 ) :: &
     CoordinateUnit
   character ( LDL ) :: &
     EnergyGrid
@@ -115,7 +115,7 @@ subroutine SetEnergyGridNuLib &
     MS
   character ( LDL ), dimension ( 1 ), intent ( in ) :: &
     CoordinateLabel
-  type ( MeasuredValueForm ), dimension ( 1 ), intent ( in ) :: &
+  type ( QuantityForm ), dimension ( 1 ), intent ( in ) :: &
     CoordinateUnit
   integer ( KDI ), intent ( in ) :: &
     nEnergyCells
@@ -203,7 +203,7 @@ subroutine SetEnergyGridGeometric &
     MS
   character ( LDL ), dimension ( 1 ), intent ( in ) :: &
     CoordinateLabel
-  type ( MeasuredValueForm ), dimension ( 1 ), intent ( in ) :: &
+  type ( QuantityForm ), dimension ( 1 ), intent ( in ) :: &
     CoordinateUnit
   integer ( KDI ), intent ( in ) :: &
     nEnergyCells
@@ -249,7 +249,7 @@ subroutine SetEnergyGridCompactified &
     MS
   character ( LDL ), dimension ( 1 ), intent ( in ) :: &
     CoordinateLabel
-  type ( MeasuredValueForm ), dimension ( 1 ), intent ( in ) :: &
+  type ( QuantityForm ), dimension ( 1 ), intent ( in ) :: &
     CoordinateUnit
   integer ( KDI ), intent ( in ) :: &
     nEnergyCells

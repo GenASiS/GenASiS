@@ -23,7 +23,7 @@ module LatticeParticles_Form
       TargetTemperature
     real ( KDR ), dimension ( :, : ), allocatable :: &
       InitialPosition
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       TemperatureUnit
   contains
     procedure, private, pass :: &
@@ -52,7 +52,7 @@ contains
       LP
     type ( CommunicatorForm ), intent ( in ), target :: &
       C
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeUnitOption
 
     integer ( KDI ) :: &
@@ -62,7 +62,7 @@ contains
     real ( KDR ) :: &
       BoxLength, &
       ParticleMass
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       NumberDensityUnit, &
       LengthUnit
     character ( LDL ) :: &

@@ -360,7 +360,7 @@ contains
       I
     integer ( KDI ), intent ( in ) :: &
       RestartFrom
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       T_Restart
     
     call SetInitial ( I )

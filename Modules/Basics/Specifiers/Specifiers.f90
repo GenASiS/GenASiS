@@ -7,7 +7,7 @@ module Specifiers
   use LEN_DEFAULT_Singleton
   use Split_Command
   use Join_Command
-  use MeasuredValue_Form
+  use Quantity_Form
   use CONSTANT_Singleton
   use UNIT_Singleton
 

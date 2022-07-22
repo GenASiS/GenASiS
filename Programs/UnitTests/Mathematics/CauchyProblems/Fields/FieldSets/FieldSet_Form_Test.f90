@@ -12,7 +12,7 @@ program FieldSet_Form_Test
     nGhostExchanges
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
-  type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+  type ( QuantityForm ), dimension ( :, : ), allocatable :: &
     FieldUnit
   logical ( KDL ) :: &
     DeviceMemory, &

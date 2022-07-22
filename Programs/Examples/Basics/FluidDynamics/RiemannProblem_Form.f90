@@ -39,7 +39,7 @@ contains
       DP_1, DP_2, DP_3, &  !-- DiscontinuityPoint_1, etc.
       Normal, &
       UnitNormal
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       DensityUnit, &
       EnergyUnit, &
       SpeedUnit

@@ -23,7 +23,7 @@ module Tally_CS__Form
       Value
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Unit
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
@@ -86,7 +86,7 @@ contains
       iaBalanced
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
 
     integer ( KDI ) :: &

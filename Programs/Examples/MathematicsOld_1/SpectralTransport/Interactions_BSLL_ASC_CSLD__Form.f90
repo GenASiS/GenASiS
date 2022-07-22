@@ -11,7 +11,7 @@ module Interactions_BSLL_ASC_CSLD__Form
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ) :: &
     Interactions_BSLL_ASC_CSLD_Form
-      type ( MeasuredValueForm ) :: &
+      type ( QuantityForm ) :: &
         LengthUnit, &
         EnergyDensityUnit
       character ( LDF ) :: &
@@ -44,7 +44,7 @@ contains
       InteractionsType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       EnergyDensityUnitOption
 

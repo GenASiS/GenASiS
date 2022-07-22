@@ -37,7 +37,7 @@ contains
 
     class ( Interactions_MWV_3_G_Form ), intent ( inout ) :: &
       I
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -49,7 +49,7 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
 
     if ( I % Type == '' ) &

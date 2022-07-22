@@ -56,7 +56,7 @@ module GridImageSilo_Template
       import GridImageSiloTemplate
       class ( GridImageSiloTemplate ), intent ( inout ) :: &
         GI
-      type ( MeasuredValueForm ), intent ( in ), optional :: &
+      type ( QuantityForm ), intent ( in ), optional :: &
         TimeOption
       integer ( KDI ), intent ( in ), optional :: &
         CycleNumberOption
@@ -70,7 +70,7 @@ module GridImageSilo_Template
         GI
       logical ( KDL ), intent ( in ), optional :: &
         StorageOnlyOption
-      type ( MeasuredValueForm ), intent ( out ), optional :: &
+      type ( QuantityForm ), intent ( out ), optional :: &
         TimeOption
       integer ( KDI ), intent ( out ), optional :: &
         CycleNumberOption
@@ -114,7 +114,7 @@ contains
   
     class ( GridImageSiloTemplate ), intent ( inout ) :: &
       GI
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -188,7 +188,7 @@ contains
       GI
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -269,7 +269,7 @@ contains
       GI
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -399,7 +399,7 @@ contains
   
     class ( GridImageSiloTemplate ), intent ( inout ) :: &
       GI
-    type ( MeasuredValueForm ), intent ( out ), optional :: &
+    type ( QuantityForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption

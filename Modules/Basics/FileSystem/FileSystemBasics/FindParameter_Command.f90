@@ -17,12 +17,12 @@ module FindParameter_Command
   interface FindParameter
     module procedure FindParameterInteger_0D
     module procedure FindParameterReal_0D
-    module procedure FindParameterMeasuredValue_0D
+    module procedure FindParameterQuantity_0D
     module procedure FindParameterLogical_0D
     module procedure FindParameterCharacter_0D
     module procedure FindParameterInteger_1D
     module procedure FindParameterReal_1D
-    module procedure FindParameterMeasuredValue_1D
+    module procedure FindParameterQuantity_1D
     module procedure FindParameterLogical_1D
     module procedure FindParameterCharacter_1D
   end interface FindParameter
@@ -92,7 +92,7 @@ contains
     character ( * ), intent ( in ) :: &
       Source, &
       Name
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
@@ -108,7 +108,7 @@ contains
       Label
     real ( KDR ) :: &
       Scratch
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       InputUnit
 
     Ignorability = CONSOLE % INFO_3
@@ -150,18 +150,18 @@ contains
   end subroutine FindParameterReal_0D
 
 
-  subroutine FindParameterMeasuredValue_0D &
+  subroutine FindParameterQuantity_0D &
                ( Value, Buffer, Source, Name, InputUnitOption, &
                  IgnorabilityOption, ConvertOption, SuccessOption )
 
-    type ( MeasuredValueForm ), intent ( inout ) :: &
+    type ( QuantityForm ), intent ( inout ) :: &
       Value
     character ( * ), dimension ( : ), intent ( in ) :: &
       Buffer
     character ( * ), intent ( in ) :: &
       Source, &
       Name
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
@@ -178,9 +178,9 @@ contains
       Success
     character ( LDF ) :: &
       Label
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Scratch
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       InputUnit
 
     Ignorability = CONSOLE % INFO_3
@@ -228,7 +228,7 @@ contains
       call Show ( Source, 'Source', Ignorability )
     end if
 
-  end subroutine FindParameterMeasuredValue_0D
+  end subroutine FindParameterQuantity_0D
 
 
   subroutine FindParameterLogical_0D &
@@ -409,7 +409,7 @@ contains
     character ( * ), intent ( in ) :: &
       Source, &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), &
       optional :: &
         InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
@@ -429,7 +429,7 @@ contains
       Label
     real ( KDR ), dimension ( size ( Value ) ) :: &
       Scratch
-    type ( MeasuredValueForm ), dimension ( size ( Value ) ) :: &
+    type ( QuantityForm ), dimension ( size ( Value ) ) :: &
       InputUnit
 
     Ignorability = CONSOLE % INFO_3
@@ -478,18 +478,18 @@ contains
   end subroutine FindParameterReal_1D
 
 
-  subroutine FindParameterMeasuredValue_1D &
+  subroutine FindParameterQuantity_1D &
                ( Value, Buffer, Source, Name, InputUnitOption, &
                  nValuesOption, IgnorabilityOption, SuccessOption )
 
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       Value
     character ( * ), dimension ( : ), intent ( in ) :: &
       Buffer
     character ( * ), intent ( in ) :: &
       Source, &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), &
       optional :: &
         InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
@@ -507,9 +507,9 @@ contains
       Success
     character ( LDF ) :: &
       Label
-    type ( MeasuredValueForm ), dimension ( size ( Value ) ) :: &
+    type ( QuantityForm ), dimension ( size ( Value ) ) :: &
       Scratch
-    type ( MeasuredValueForm ), dimension ( size ( Value ) ) :: &
+    type ( QuantityForm ), dimension ( size ( Value ) ) :: &
       InputUnit
 
     Ignorability = CONSOLE % INFO_3
@@ -555,7 +555,7 @@ contains
       call Show ( Source, 'Source', Ignorability )
     end if
 
-  end subroutine FindParameterMeasuredValue_1D
+  end subroutine FindParameterQuantity_1D
 
 
   subroutine FindParameterLogical_1D &

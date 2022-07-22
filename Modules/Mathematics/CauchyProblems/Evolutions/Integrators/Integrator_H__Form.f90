@@ -43,7 +43,7 @@ module Integrator_H__Form
       T_CheckpointInterval = 0.0_KDR, &
       T_Checkpoint         = 0.0_KDR, & 
       T                    = 0.0_KDR
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), allocatable :: &
       dT_Candidate
@@ -165,7 +165,7 @@ module Integrator_H__Form
         I
       integer ( KDI ), intent ( in ) :: &
         RestartFrom
-      type ( MeasuredValueForm ), intent ( out ) :: &
+      type ( QuantityForm ), intent ( out ) :: &
         T_Restart
     end subroutine RI
 
@@ -206,7 +206,7 @@ module Integrator_H__Form
         I
       integer ( KDI ), intent ( in ) :: &
         ReadFrom
-      type ( MeasuredValueForm ), intent ( out ) :: &
+      type ( QuantityForm ), intent ( out ) :: &
         T
     end subroutine R
 
@@ -272,7 +272,7 @@ contains
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       Unit_T_Option
     real ( KDR ), intent ( in ), optional :: &
       T_FinishOption
@@ -618,7 +618,7 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       T_Restart
 
     if ( .not. associated ( I % SetInitial ) ) then
@@ -921,7 +921,7 @@ contains
       I
     integer ( KDI ), intent ( in ) :: &
       RestartFrom
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       T_Restart
 
     call I % Read ( RestartFrom, T_Restart )
@@ -1083,7 +1083,7 @@ contains
       I
     integer ( KDI ), intent ( in ) :: &
       ReadFrom
-    type ( MeasuredValueForm ), intent ( out ) :: &
+    type ( QuantityForm ), intent ( out ) :: &
       T
 
     ! if ( allocated ( I % MomentumSpace ) ) then

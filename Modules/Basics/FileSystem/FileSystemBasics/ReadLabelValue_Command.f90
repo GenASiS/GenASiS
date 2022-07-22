@@ -15,12 +15,12 @@ module ReadLabelValue_Command
   interface ReadLabelValue
     module procedure ReadLabelValueInteger_0D
     module procedure ReadLabelValueReal_0D
-    module procedure ReadLabelValueMeasuredValue_0D
+    module procedure ReadLabelValueQuantity_0D
     module procedure ReadLabelValueLogical_0D
     module procedure ReadLabelValueCharacter_0D
     module procedure ReadLabelValueInteger_1D
     module procedure ReadLabelValueReal_1D
-    module procedure ReadLabelValueMeasuredValue_1D
+    module procedure ReadLabelValueQuantity_1D
     module procedure ReadLabelValueLogical_1D
     module procedure ReadLabelValueCharacter_1D
   end interface ReadLabelValue
@@ -86,7 +86,7 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Buffer
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     logical ( KDL ), intent ( out ), optional :: &
       SuccessOption
@@ -95,7 +95,7 @@ contains
       ValueMarker, &
       UnitMarker, &
       Status
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       InputUnit
     logical ( KDL ) :: & 
       IsValid
@@ -138,16 +138,16 @@ contains
   end subroutine ReadLabelValueReal_0D
 
   
-  subroutine ReadLabelValueMeasuredValue_0D &
+  subroutine ReadLabelValueQuantity_0D &
                ( Label, Value, Buffer, InputUnitOption, SuccessOption )
     
     character ( * ), intent ( inout ) :: &
       Label
-    type ( MeasuredValueForm ), intent ( inout ) :: &
+    type ( QuantityForm ), intent ( inout ) :: &
       Value
     character ( * ), intent ( in ) :: &
       Buffer
-    type ( MeasuredValueForm ), intent ( inout ), optional :: &
+    type ( QuantityForm ), intent ( inout ), optional :: &
       InputUnitOption
     logical ( KDL ), intent ( out ), optional :: &
       SuccessOption
@@ -156,7 +156,7 @@ contains
       ValueMarker, &
       UnitMarker, &
       Status
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       InputUnit
     logical ( KDL ) :: & 
       IsValid
@@ -196,7 +196,7 @@ contains
     
     if ( present ( SuccessOption ) ) SuccessOption = .true.
      
-  end subroutine ReadLabelValueMeasuredValue_0D
+  end subroutine ReadLabelValueQuantity_0D
 
   
   subroutine ReadLabelValueLogical_0D ( Label, Value, Buffer, SuccessOption )
@@ -387,7 +387,7 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Buffer
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), optional :: &
       InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
       nValuesOption
@@ -402,7 +402,7 @@ contains
       ValueMarker, &
       UnitMarker, &
       Status
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       InputUnit
     logical ( KDL ) :: & 
       IsValid, &
@@ -490,17 +490,17 @@ contains
   end subroutine ReadLabelValueReal_1D
 
 
-  subroutine ReadLabelValueMeasuredValue_1D &
+  subroutine ReadLabelValueQuantity_1D &
                ( Label, Value, Buffer, InputUnitOption, nValuesOption, &
                  SuccessOption )
 
     character ( * ), intent ( inout ) :: &
       Label
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       Value
     character ( * ), intent ( in ) :: &
       Buffer
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ), &
       optional :: &
         InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
@@ -516,7 +516,7 @@ contains
       ValueMarker, &
       UnitMarker, &
       Status
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       InputUnit
     logical ( KDL ) :: & 
       IsValid, &
@@ -602,7 +602,7 @@ contains
     
     if ( present ( SuccessOption ) ) SuccessOption = Success
      
-  end subroutine ReadLabelValueMeasuredValue_1D
+  end subroutine ReadLabelValueQuantity_1D
 
 
   subroutine ReadLabelValueLogical_1D &

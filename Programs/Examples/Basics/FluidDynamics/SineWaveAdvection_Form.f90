@@ -7,7 +7,7 @@ module SineWaveAdvection_Form
   private
 
   type, public, extends ( PlaneWaveAdvectionTemplate ) :: SineWaveAdvectionForm
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Offset, &
       Amplitude
   contains
@@ -29,7 +29,7 @@ contains
     class ( SineWaveAdvectionForm ), intent ( inout ) :: &
       SWA
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       OffsetUnit, &
       AmplitudeUnit
 

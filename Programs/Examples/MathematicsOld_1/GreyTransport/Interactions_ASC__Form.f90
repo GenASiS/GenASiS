@@ -10,7 +10,7 @@ module Interactions_ASC__Form
   private
 
   type, public, extends ( Field_ASC_Template ) :: Interactions_ASC_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -49,7 +49,7 @@ contains
       InteractionsType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       EnergyDensityUnitOption, &
       TemperatureUnitOption

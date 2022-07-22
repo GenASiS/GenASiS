@@ -31,7 +31,7 @@ contains
     class ( LennardJonesDynamicsForm ), intent ( inout ) :: &
       LJD
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       EnergyUnit, &
       LengthUnit, &
       TimeUnit

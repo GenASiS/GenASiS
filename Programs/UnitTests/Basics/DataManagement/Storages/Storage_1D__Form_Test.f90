@@ -15,7 +15,7 @@ program Storage_1D__Form_Test
           'Variable_5', 'Variable_6'  ], &
     UnitString &
       = [ 'Unit_1', 'Unit_2', 'Unit_3', 'Unit_4', 'Unit_5', 'Unit_6'  ]
-  type ( MeasuredValueForm ), dimension ( 6 ) :: &
+  type ( QuantityForm ), dimension ( 6 ) :: &
     VariableUnit
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices

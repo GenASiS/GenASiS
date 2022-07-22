@@ -15,7 +15,7 @@ module Interactions_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: Interactions_CSL_Form
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -49,7 +49,7 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       InteractionsType
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
       TemperatureUnit

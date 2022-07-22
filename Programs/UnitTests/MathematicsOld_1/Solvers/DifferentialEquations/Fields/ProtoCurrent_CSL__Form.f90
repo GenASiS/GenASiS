@@ -10,7 +10,7 @@ module ProtoCurrent_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: ProtoCurrent_CSL_Form
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       Velocity_U_Unit    
     class ( ProtoCurrentSources_CSL_Form ), pointer :: &
       Sources_CSL => null ( )

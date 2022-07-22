@@ -79,7 +79,7 @@ module Interactions_Template
         NameOption
       logical ( KDL ), intent ( in ), optional :: &
         ClearOption
-      type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
         UnitOption
     end subroutine IAI
 
@@ -130,10 +130,10 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
 
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       VariableUnit
     character ( LDF ) :: &
       Name 
@@ -232,14 +232,14 @@ contains
       Variable
     character ( LDF ), intent ( out ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+    type ( QuantityForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
 
     if ( I % Type == '' ) &
@@ -302,7 +302,7 @@ contains
 
   subroutine SetUnits ( VariableUnit, I, Units )
 
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( InteractionsTemplate ), intent ( in ) :: &
       I

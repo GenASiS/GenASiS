@@ -8,7 +8,7 @@ program Gravitation_G__Form_Test
 
   implicit none
 
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+  type ( QuantityForm ), dimension ( 3 ) :: &
     CoordinateUnit
   type ( GridImageStreamForm ), allocatable :: &
     GIS

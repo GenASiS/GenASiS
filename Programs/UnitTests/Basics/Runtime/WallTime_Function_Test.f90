@@ -9,7 +9,7 @@ program WallTime_Function_Test
 
   integer ( KDI ) :: &
     i
-  type ( MeasuredValueForm ) :: &
+  type ( QuantityForm ) :: &
     WallTimeStart, &
     WallTimeFinish, &
     WallTimeFinish2

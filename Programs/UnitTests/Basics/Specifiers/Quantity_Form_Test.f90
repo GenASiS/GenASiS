@@ -1,9 +1,9 @@
-program MeasuredValue_Form_Test
+program Quantity_Form_Test
 
   use ISO_FORTRAN_ENV
   use KIND_DEFAULT_Singleton
   use KIND_BIG_Singleton
-  use MeasuredValue_Form
+  use Quantity_Form
 
   implicit none
 
@@ -11,7 +11,7 @@ program MeasuredValue_Form_Test
     A
   character ( 5 ) :: &
     Encoding
-  type ( MeasuredValueForm ) :: &
+  type ( QuantityForm ) :: &
     Length_1, &
     Length_2, &
     Time_1
@@ -330,4 +330,4 @@ program MeasuredValue_Form_Test
   print *, '100  <=  Length_1 =', 100_KDI <= Length_1
   print *
 
-end program MeasuredValue_Form_Test
+end program Quantity_Form_Test

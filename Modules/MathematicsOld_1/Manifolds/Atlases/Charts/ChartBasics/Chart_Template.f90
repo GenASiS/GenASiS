@@ -26,7 +26,7 @@ module Chart_Template
       Center, &
       WidthLeft, &
       WidthRight
-    type ( MeasuredValueForm ), dimension ( : ), pointer :: &
+    type ( QuantityForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
       IsDistributed, &
@@ -114,7 +114,7 @@ contains
       CoordinateSystemOption
     logical ( KDL ), intent ( in ), optional :: &
       IsDistributedOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
@@ -598,7 +598,7 @@ contains
                ( CoordinateUnit, MinCoordinate, MaxCoordinate, MinWidth, &
                  nCells, Ratio )
 
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       CoordinateUnit
     real ( KDR ), intent ( in ) :: &
       MinCoordinate, &

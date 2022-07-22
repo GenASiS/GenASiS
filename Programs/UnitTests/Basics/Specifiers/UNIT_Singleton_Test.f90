@@ -2,7 +2,7 @@ program UNIT_Singleton_Test
 
   use ISO_FORTRAN_ENV
   use KIND_BIG_Singleton
-  use MeasuredValue_Form
+  use Quantity_Form
   use UNIT_Singleton
   
   implicit none

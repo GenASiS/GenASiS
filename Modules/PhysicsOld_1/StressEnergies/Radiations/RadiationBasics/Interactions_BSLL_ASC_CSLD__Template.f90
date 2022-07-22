@@ -70,7 +70,7 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       ParticleEnergyUnit
     character ( LDL ) :: &
       NameShort

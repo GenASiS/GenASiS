@@ -31,7 +31,7 @@ module Measures_F_CC__Form
       ElectronFraction_C
     real ( KDR ), dimension ( N_MEASURES_MAX ) :: &
       Value
-    type ( MeasuredValueForm ), dimension ( N_MEASURES_MAX ) :: &
+    type ( QuantityForm ), dimension ( N_MEASURES_MAX ) :: &
       Unit
     character ( LDL ), dimension ( N_MEASURES_MAX ) :: &
       Name

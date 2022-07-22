@@ -49,7 +49,7 @@ contains
       GIS
     character ( * ), dimension ( : ), intent ( in ) :: &
       dT_Label
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    type ( QuantityForm ), intent ( in ) :: &
       Unit_T
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
       dT_Candidate
@@ -63,7 +63,7 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iSelected
-    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName

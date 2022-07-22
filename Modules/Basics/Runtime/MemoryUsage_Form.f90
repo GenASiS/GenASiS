@@ -10,17 +10,17 @@ module MemoryUsage_Form
   private
   
   type, public :: MemoryUsageForm
-    type ( MeasuredValueForm )  :: &
+    type ( QuantityForm )  :: &
       HighWaterMark, &
       HighWaterMarkMax, &
       HighWaterMarkMin, &
       HighWaterMarkMean
-    type ( MeasuredValueForm )  :: &
+    type ( QuantityForm )  :: &
       ResidentSetSize, &
       ResidentSetSizeMax, &
       ResidentSetSizeMin, &
       ResidentSetSizeMean
-    type ( MeasuredValueForm )  :: &
+    type ( QuantityForm )  :: &
       DeviceMemoryTotal, &
       DeviceMemoryFree, &
       DeviceMemoryUsed

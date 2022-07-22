@@ -92,7 +92,7 @@ contains
       DeviceMemoryOption, &
       PinnedMemoryOption, &
       DevicesCommunicateOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       Unit_T_Option
     real ( KDR ), intent ( in ), optional :: &
       T_FinishOption

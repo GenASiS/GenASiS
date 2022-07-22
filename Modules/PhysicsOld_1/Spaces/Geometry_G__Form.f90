@@ -36,7 +36,7 @@ contains
       G
     character ( * ), intent ( in ) :: &
       CoordinateSystem
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ) :: &
       CoordinateUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -48,7 +48,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption, &
       PinnedOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption

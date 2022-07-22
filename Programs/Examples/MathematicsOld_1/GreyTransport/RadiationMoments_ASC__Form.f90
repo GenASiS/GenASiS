@@ -21,10 +21,10 @@ module RadiationMoments_ASC__Form
       SuppressWrite
     real ( KDR ) :: &
       LimiterParameter
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
@@ -96,11 +96,11 @@ contains
       AllocateSourcesOption, &
       SuppressWriteOption, &
       SuppressWriteSourcesOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
       MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
       TemperatureUnitOption, &
       EnergyUnitOption, &

@@ -21,11 +21,11 @@ module Fluid_ASC__Form
   type, public, extends ( Current_ASC_Template ) :: Fluid_ASC_Form
     real ( KDR ) :: &
       LimiterParameter
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       VelocityUnit
     logical ( KDL ) :: &
       UseLimiter
@@ -88,9 +88,9 @@ contains
       UseLimiterOption, &
       UsePinnedMemoryOption, &
       AllocateSourcesOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       MassDensityUnitOption, &
       EnergyDensityUnitOption, &
       TemperatureUnitOption, &

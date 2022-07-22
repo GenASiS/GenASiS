@@ -12,9 +12,9 @@ program ProtoCurrent_Form_Test
   integer ( KDI ) :: &
     iF, &  !-- iField, &
     iV     !-- iVector
-  type ( MeasuredValueForm ) :: &
+  type ( QuantityForm ) :: &
     LengthUnit
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+  type ( QuantityForm ), dimension ( 3 ) :: &
     VelocityUnit
   type ( Sources_C_Form ), allocatable :: &
     PCS

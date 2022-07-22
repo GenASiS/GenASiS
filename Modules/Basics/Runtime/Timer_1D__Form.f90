@@ -124,7 +124,7 @@ contains
     real ( KDR ) :: &
       ExecutionTime, &
       MaxMinusMeanFraction
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       MaxMinusMean
     logical ( KDL ) :: &
       Running

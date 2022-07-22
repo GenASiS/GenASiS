@@ -47,7 +47,7 @@ contains
       U
     character ( * ), intent ( in )  :: &
       Name
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &

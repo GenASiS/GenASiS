@@ -98,7 +98,7 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    type ( QuantityForm ), dimension ( 3 ) :: &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
 

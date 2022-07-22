@@ -72,7 +72,7 @@ contains
       RadiusMin
     integer ( KDI ), intent ( in ) :: &
       iChart
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &

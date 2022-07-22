@@ -256,7 +256,7 @@ contains
       S
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -367,7 +367,7 @@ contains
       S
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
-    type ( MeasuredValueForm ), intent ( out ), optional :: &
+    type ( QuantityForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption

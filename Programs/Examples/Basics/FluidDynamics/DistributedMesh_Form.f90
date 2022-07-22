@@ -38,7 +38,7 @@ module DistributedMesh_Form
       DevicesCommunicate = .true.
     type ( Real_1D_Form ), dimension ( MAX_N_DIMENSIONS ) :: &
       Edge
-    type ( MeasuredValueForm ), dimension ( MAX_N_DIMENSIONS ) :: &
+    type ( QuantityForm ), dimension ( MAX_N_DIMENSIONS ) :: &
       CoordinateUnit
     character ( LDL ) :: &
       BoundaryCondition = 'PERIODIC'
@@ -565,7 +565,7 @@ contains
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
@@ -618,7 +618,7 @@ contains
       DM
     integer ( KDI ), intent ( in ) :: &
       iImage
-    type ( MeasuredValueForm ), intent ( out ), optional :: &
+    type ( QuantityForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
       CycleNumberOption

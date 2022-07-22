@@ -17,7 +17,7 @@ program GetMemoryUsage_Command_Test
   double precision, target :: &
     HWM_kB, &
     RSS_kB
-  type ( MeasuredValueForm ) :: &
+  type ( QuantityForm ) :: &
     HighWaterMark, &
     AcrossProcessesMinHighWaterMark, &
     AcrossProcessesMaxHighWaterMark, &

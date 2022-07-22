@@ -27,13 +27,13 @@ contains
       P
     integer ( KDI ), intent ( in ) :: &
       nParticles
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
+    type ( QuantityForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       TimeUnitOption
 
     type ( Integer_1D_Form ), dimension ( 1 ) :: &
       VectorIndices
-    type ( MeasuredValueForm ), dimension ( 9 ) :: &
+    type ( QuantityForm ), dimension ( 9 ) :: &
       VariableUnit
 
     call VectorIndices ( 1 ) % Initialize ( P % VELOCITY )

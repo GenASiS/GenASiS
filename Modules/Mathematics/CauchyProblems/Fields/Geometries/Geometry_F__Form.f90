@@ -216,7 +216,7 @@ contains
       PinnedMemoryOption, &
       DevicesCommunicateOption, &
       AssociateFieldsOption
-    type ( MeasuredValueForm ), dimension ( :, : ), intent ( in ), optional :: &
+    type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
@@ -226,7 +226,7 @@ contains
 
     integer ( KDI ) :: &
       nFields
-    type ( MeasuredValueForm ), dimension ( :, : ), allocatable :: &
+    type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       Unit
     character ( LDL ) :: &
       Name
@@ -499,7 +499,7 @@ contains
   
   subroutine SetUnits ( FieldUnit, G, A )
 
-    type ( MeasuredValueForm ), dimension ( :, : ), intent ( inout ) :: &
+    type ( QuantityForm ), dimension ( :, : ), intent ( inout ) :: &
       FieldUnit
     class ( Geometry_F_Form ), intent ( in ) :: &
       G

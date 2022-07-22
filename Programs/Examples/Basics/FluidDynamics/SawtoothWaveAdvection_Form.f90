@@ -7,7 +7,7 @@ module SawtoothWaveAdvection_Form
   private
 
   type, public, extends ( PlaneWaveAdvectionTemplate ) :: SawtoothWaveAdvectionForm
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       Offset, &
       Amplitude
   contains
@@ -29,7 +29,7 @@ contains
     class ( SawtoothWaveAdvectionForm ), intent ( inout ) :: &
       SWA
 
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       OffsetUnit, &
       AmplitudeUnit
 

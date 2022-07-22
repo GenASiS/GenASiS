@@ -31,7 +31,7 @@ module RiemannProblem_Form
       SinPhi, CosPhi
     real ( KDR ), dimension ( 3 ) :: &
       DP_1, DP_2, DP_3  !-- DiscontinuityPoint_1, etc.
-    type ( MeasuredValueForm ), private :: &
+    type ( QuantityForm ), private :: &
       DensityUnit, &
       EnergyUnit, &
       SpeedUnit

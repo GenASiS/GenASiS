@@ -12,7 +12,7 @@ module Timer_Form
       iStart = 0, &
       Level, &
       Handle = -1
-    type ( MeasuredValueForm ) :: &
+    type ( QuantityForm ) :: &
       StartTime, &
       StopTime, &
       TimeInterval, &
