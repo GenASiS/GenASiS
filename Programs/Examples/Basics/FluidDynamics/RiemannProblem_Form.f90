@@ -59,7 +59,9 @@ contains
     type is ( PolytropicFluidForm )
 
     call PF % Initialize ( DM, NameOption = 'PolytropicFluid' )
-    call PF % AllocateDevice ( )
+    
+    if ( RP % UseDevice ) &
+      call PF % AllocateDevice ( )
     
     call Primitive % Initialize ( PF, iaSelectedOption = PF % iaPrimitive )
     call DM % SetGhostExchange ( Primitive )

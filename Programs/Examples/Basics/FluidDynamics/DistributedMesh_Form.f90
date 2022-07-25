@@ -108,12 +108,14 @@ module DistributedMesh_Form
 contains
 
 
-  subroutine Initialize ( DM, C, BoundaryConditionOption )
+  subroutine Initialize ( DM, C, UseDevice, BoundaryConditionOption )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
     type ( CommunicatorForm ), intent ( in ), target :: &
       C
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     character ( * ), intent ( in ), optional :: &
       BoundaryConditionOption
 
@@ -129,10 +131,11 @@ contains
     if ( present ( BoundaryConditionOption ) ) &
       DM % BoundaryCondition = BoundaryConditionOption
     
-    DM % DevicesCommunicate &
-      = ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 )
+    DM % DevicesCommunicate = .true.
     call PROGRAM_HEADER % GetParameter &
            ( DM % DevicesCommunicate, 'DevicesCommunicate' )
+    
+    DM % DevicesCommunicate = ( DM % DevicesCommunicate .and. UseDevice )
            
     call ShowParameters ( DM )
     

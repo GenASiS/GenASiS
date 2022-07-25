@@ -31,7 +31,8 @@ module ConservationLawEvolution_Template
     character ( LDF ) :: &
       Type = ''
     logical ( KDL ) :: &
-      NoWrite = .false.
+      NoWrite = .false., &
+      UseDevice = .true.
     type ( DistributedMeshForm ) :: &
       DistributedMesh
     class ( ConservedFieldsTemplate ), allocatable :: &
@@ -57,7 +58,8 @@ module ConservationLawEvolution_Template
   
     module subroutine ComputeTimeStepKernel &
                  ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                   CellWidth, nDimensions, oV, TimeStepLocal )
+                   CellWidth, nDimensions, oV, TimeStepLocal, &
+                   UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -70,6 +72,8 @@ module ConservationLawEvolution_Template
         oV
       real ( KDR ), intent ( out ) :: &
         TimeStepLocal
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeTimeStepKernel
 
   end interface 
@@ -88,8 +92,17 @@ contains
 
     call Show ( 'Initializing ' // trim ( CLE % Type ), CONSOLE % INFO_1 )
 
+    CLE % UseDevice = .true.
+    call PROGRAM_HEADER % GetParameter ( CLE % UseDevice, 'UseDevice' )
+    
+    CLE % UseDevice &
+      = ( OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1 &
+          .and. CLE % UseDevice )
+    
+    call Show ( CLE % UseDevice, 'UseDevice', CONSOLE % INFO_2 )
+    
     associate ( DM => CLE % DistributedMesh )
-    call DM % Initialize ( C, BoundaryConditionOption )
+    call DM % Initialize ( C, CLE % UseDevice, BoundaryConditionOption )
 
     CLE % iCycle = 0
     CLE % nRampCycles = 100

@@ -72,7 +72,7 @@ module ConservationLawStep_Form
     interface
     
       module subroutine ComputeDifferencesKernel &
-                   ( V, oV, iD, dV_Left, dV_Right )
+                   ( V, oV, iD, dV_Left, dV_Right, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -82,10 +82,13 @@ module ConservationLawStep_Form
           iD
         real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
           dV_Left, dV_Right
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeDifferencesKernel
 
       module subroutine ComputeReconstructionKernel &
-                   ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer )
+                   ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer, &
+                     UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -95,11 +98,13 @@ module ConservationLawStep_Form
           Theta
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           V_Inner, V_Outer
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeReconstructionKernel
 
       module subroutine ComputeFluxesKernel &
                    ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
-                     F_I, F_O )
+                     F_I, F_O, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -112,9 +117,12 @@ module ConservationLawStep_Form
           iD
         real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
           F_I, F_O
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeFluxesKernel
 
-      module subroutine ComputeUpdateKernel ( dU, F_I, F_O, V, A, dT )
+      module subroutine ComputeUpdateKernel &
+                   ( dU, F_I, F_O, V, A, dT, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -125,19 +133,23 @@ module ConservationLawStep_Form
           V, &
           A, &
           dT
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeUpdateKernel
       
-      module subroutine AddUpdateKernel ( O, U, C )
+      module subroutine AddUpdateKernel ( O, U, C, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           O, &
           U
         real ( KDR ), dimension ( : ), intent ( out ) :: &
-          C 
+          C
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine AddUpdateKernel
       
-      module subroutine CombineUpdatesKernel ( C, O, U )
+      module subroutine CombineUpdatesKernel ( C, O, U, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -145,6 +157,8 @@ module ConservationLawStep_Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           O, &
           U
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine CombineUpdatesKernel
       
     end interface
@@ -172,7 +186,8 @@ contains
     !-- Old
     
     call CLS % Old % Initialize ( [ nCells, CF % N_CONSERVED ] )
-    call CLS % Old % AllocateDevice ( )
+    if ( CF % AllocatedDevice ) &
+      call CLS % Old % AllocateDevice ( )
     
     !-- Primitive, an overlay storage
     call CLS % Primitive % Initialize &
@@ -190,11 +205,15 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaPrimitive ( iV ) ), &
                      iV = 1, CF % N_PRIMITIVE ) ] )
-
-    call CLS % DifferenceLeft  % AllocateDevice ( )
-    call CLS % DifferenceRight % AllocateDevice ( )
-    call Clear ( CLS % DifferenceLeft % Value, UseDeviceOption = .true. )
-    call Clear ( CLS % DifferenceRight % Value, UseDeviceOption = .true. )
+    
+    if ( CF % AllocatedDevice ) then
+      call CLS % DifferenceLeft  % AllocateDevice ( )
+      call CLS % DifferenceRight % AllocateDevice ( )
+    end if
+    call Clear ( CLS % DifferenceLeft % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
+    call Clear ( CLS % DifferenceRight % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
 
     !-- Reconstruction
 
@@ -209,10 +228,14 @@ contains
            ( [ nCells, CF % nVariables ], NameOption = 'ReconstructionOuter', &
              VariableOption = CF % Variable )
     
-    call CLS % ReconstructionInner % AllocateDevice ( )
-    call CLS % ReconstructionOuter % AllocateDevice ( )
-    call Clear ( CLS % ReconstructionInner % Value, UseDeviceOption = .true. ) 
-    call Clear ( CLS % ReconstructionOuter % Value, UseDeviceOption = .true. ) 
+    if ( CF % AllocatedDevice ) then
+      call CLS % ReconstructionInner % AllocateDevice ( )
+      call CLS % ReconstructionOuter % AllocateDevice ( )
+    end if 
+    call Clear ( CLS % ReconstructionInner % Value, &
+                 UseDeviceOption = CF % AllocatedDevice ) 
+    call Clear ( CLS % ReconstructionOuter % Value, &
+                 UseDeviceOption = CF % AllocatedDevice ) 
 
     !-- Riemann solver
 
@@ -229,10 +252,14 @@ contains
                = [ 'AlphaPlus                      ', &
                    'AlphaMinus                     ' ] )
     
-    call CLS % ModifiedSpeedsInner % AllocateDevice ( )
-    call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
-    call Clear ( CLS % ModifiedSpeedsInner % Value, UseDeviceOption = .true. )
-    call Clear ( CLS % ModifiedSpeedsOuter % Value, UseDeviceOption = .true. )
+    if ( CF % AllocatedDevice ) then
+      call CLS % ModifiedSpeedsInner % AllocateDevice ( )
+      call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
+    end if
+    call Clear ( CLS % ModifiedSpeedsInner % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
+    call Clear ( CLS % ModifiedSpeedsOuter % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
 
     call CLS % RawFluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'RawFluxInner', &
@@ -244,10 +271,14 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaConserved ( iV ) ), &
                      iV = 1, CF % N_CONSERVED ) ] )
-    call CLS % RawFluxInner % AllocateDevice ( )
-    call CLS % RawFluxOuter % AllocateDevice ( )
-    call Clear ( CLS % RawFluxInner % Value, UseDeviceOption = .true. )
-    call Clear ( CLS % RawFluxOuter % Value, UseDeviceOption = .true. )
+    if ( CF % AllocatedDevice ) then
+      call CLS % RawFluxInner % AllocateDevice ( )
+      call CLS % RawFluxOuter % AllocateDevice ( )
+    end if
+    call Clear ( CLS % RawFluxInner % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
+    call Clear ( CLS % RawFluxOuter % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
 
     call CLS % FluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'FluxInner', &
@@ -259,10 +290,14 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaConserved ( iV ) ), &
                      iV = 1, CF % N_CONSERVED ) ] )
-    call CLS % FluxInner % AllocateDevice ( )
-    call CLS % FluxOuter % AllocateDevice ( )
-    call Clear ( CLS % FluxInner % Value, UseDeviceOption = .true. )
-    call Clear ( CLS % FluxOuter % Value, UseDeviceOption = .true. )
+    if ( CF % AllocatedDevice ) then
+      call CLS % FluxInner % AllocateDevice ( )
+      call CLS % FluxOuter % AllocateDevice ( )
+    end if
+    call Clear ( CLS % FluxInner % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
+    call Clear ( CLS % FluxOuter % Value, &
+                 UseDeviceOption = CF % AllocatedDevice )
     
     !-- Update
 
@@ -271,7 +306,8 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaConserved ( iV ) ), &
                      iV = 1, CF % N_CONSERVED ) ] )
-    call CLS % Update % AllocateDevice ( )
+    if ( CF % AllocatedDevice ) &
+      call CLS % Update % AllocateDevice ( )
 
     end associate !-- nCells
     
@@ -315,8 +351,8 @@ contains
                 ( CLS % iTimerRKStep, 'RK Step', Level = 2 )
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
-      call Copy ( Current % Value ( :, iaC ( iV ) ), &
-                  Old % Value ( :, iV ), UseDeviceOption = .true. )
+      call Copy ( Current % Value ( :, iaC ( iV ) ), Old % Value ( :, iV ), &
+                  UseDeviceOption = Current % AllocatedDevice )
     end do
     call T_RK % Stop ( )
     
@@ -335,7 +371,8 @@ contains
     !    = Old % Value ( :, iV ) + Update % Value ( :, iV )
       call AddUpdateKernel &
              ( Old % Value ( :, iV ), Update % Value ( :, iV ), &
-               Current % Value ( :, iaC ( iV ) ) )
+               Current % Value ( :, iaC ( iV ) ), &
+               UseDeviceOption = Current % AllocatedDevice )
     end do
     
     call T_RK % Stop ( )
@@ -397,7 +434,8 @@ contains
       !                + Current % Value ( :, iaC ( iV ) ) )
       call CombineUpdatesKernel &
              ( Current % Value ( :, iaC ( iV ) ), &
-               Old % Value ( :, iV ), Update % Value ( :, iV ) )
+               Old % Value ( :, iV ), Update % Value ( :, iV ), &
+               UseDeviceOption = Current % AllocatedDevice )
     end do
     call T_RK % Stop ( )
     
@@ -452,7 +490,7 @@ contains
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
 
-    call Clear ( CLS % Update % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % Update % Value, UseDeviceOption = CF % AllocatedDevice )
     
     do iD = 1, DM % nDimensions
 
@@ -470,7 +508,8 @@ contains
                ( CLS % Update % Value ( :, iV ), &
                  CLS % FluxInner % Value ( :, iV ), &
                  CLS % FluxOuter % Value ( :, iV ), DM % CellVolume, &
-                 DM % CellArea ( iD ), TimeStep )
+                 DM % CellArea ( iD ), TimeStep, &
+                 UseDeviceOption = CF % AllocatedDevice )
       end do
       call T_U % Stop ( )
 
@@ -526,7 +565,8 @@ contains
              ( CLS % DifferenceRight % Value ( :, iP ), dV_Right )
       call T_D % Start ( )
       call ComputeDifferencesKernel &
-             ( V, DM % nGhostLayers ( iD ), iD, dV_Left, dV_Right )
+             ( V, DM % nGhostLayers ( iD ), iD, dV_Left, dV_Right, &
+               UseDeviceOption = CF % AllocatedDevice )
       call T_D % Stop ( )
     end do
     
@@ -563,7 +603,8 @@ contains
                CLS % DifferenceRight % Value ( :, iP ), &
                CLS % LimiterParameter, &
                CLS % ReconstructionInner % Value ( :, iaP ( iP ) ), &
-               CLS % ReconstructionOuter % Value ( :, iaP ( iP ) ) )
+               CLS % ReconstructionOuter % Value ( :, iaP ( iP ) ), &
+               UseDeviceOption = CF % AllocatedDevice )
       call T_R % Stop ( )
     end do
 
@@ -675,7 +716,8 @@ contains
       call T_F % Start ( )
       call ComputeFluxesKernel &
              ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, &
-               DM % nGhostLayers ( iDimension ), iDimension, F_I, F_O )
+               DM % nGhostLayers ( iDimension ), iDimension, F_I, F_O, &
+               UseDeviceOption = CF % AllocatedDevice )
       call T_F % Stop ( )
     end do
     

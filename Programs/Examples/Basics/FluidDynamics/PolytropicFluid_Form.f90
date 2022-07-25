@@ -229,7 +229,8 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
     
-    call CF % PressurelessFluidForm % ComputeConserved ( Value, UseDeviceOption )
+    call CF % PressurelessFluidForm &
+            % ComputeConserved ( Value, UseDeviceOption )
 
     call ComputeConservedKernel &
       ( Value ( :, CF % CONSERVED_ENERGY ), &
@@ -259,7 +260,8 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
     
-    call CF % PressurelessFluidForm % ComputePrimitive ( Value, UseDeviceOption )
+    call CF % PressurelessFluidForm &
+            % ComputePrimitive ( Value, UseDeviceOption )
 
     call ComputePrimitiveKernel &
            ( Value ( :, CF % INTERNAL_ENERGY ), &
