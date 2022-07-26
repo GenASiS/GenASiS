@@ -29,7 +29,13 @@ contains
       Address
     
     Address = AllocateHostDouble ( Shape ( 1 ) )
-    call c_f_pointer ( Address, Value, Shape )
+    
+    if ( c_associated ( Address ) ) then
+      call c_f_pointer ( Address, Value, Shape )
+    else
+      allocate ( Value ( Shape ( 1 ) ) )
+    end if
+    
   
   end subroutine AllocateHost_KDR_1D
 
@@ -45,7 +51,13 @@ contains
       Address
     
     Address = AllocateHostDouble ( product ( Shape ) )
-    call c_f_pointer ( Address, Value, Shape )
+
+    if ( c_associated ( Address ) ) then
+      call c_f_pointer ( Address, Value, Shape )
+    else
+      allocate ( Value ( Shape ( 1 ), Shape ( 2 ) ) )
+    end if
+
   
   end subroutine AllocateHost_KDR_2D
 
