@@ -400,7 +400,7 @@ contains
       do iV = 1, nV
         C ( iV ) = O ( iV ) + U ( iV )
       end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
+      !$OMP end parallel do simd
     end if
       
   end procedure AddUpdateKernel

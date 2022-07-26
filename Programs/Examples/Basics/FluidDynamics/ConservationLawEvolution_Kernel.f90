@@ -64,7 +64,7 @@ contains
           end do
         end do
       end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end parallel do
     end if
     
     TimeStepLocal = minval ( CellWidth ( 1 : nDimensions ) ) / MaxSpeed
