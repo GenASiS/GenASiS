@@ -1,6 +1,6 @@
 program Chart_GS_CE__Form_Test
 
-  !-- Chart_GridStructured_CentralCore_Form_Test
+  !-- Chart_GridStructured_CentralExcision_Form_Test
 
   use Basics
   use StructuredGrids

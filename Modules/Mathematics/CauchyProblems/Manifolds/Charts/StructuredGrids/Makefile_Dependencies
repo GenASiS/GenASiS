@@ -12,6 +12,11 @@ Chart_GS__Form.o: \
   Chart_H__Form.o \
   Chart_GS__Form.f90
 
+Chart_GS_SC__Form.o: \
+  Basics.o \
+  Chart_GS_C__Form.o \
+  Chart_GS_SC__Form.f90
+
 Chart_GS_C__Form.o: \
   Basics.o \
   Chart_GS__Form.o \
@@ -20,7 +25,7 @@ Chart_GS_C__Form.o: \
 Chart_GS_CE__Form.o: \
   Basics.o \
   Chart_GS_C__Form.o \
-  Chart_GS_CC__Form.f90
+  Chart_GS_CE__Form.f90
 
 Chart_GS_CC__Form.o: \
   Basics.o \
@@ -31,6 +36,7 @@ StructuredGrids.o: \
   Connectivity_Form.o \
   Chart_H__Form.o \
   Chart_GS__Form.o \
+  Chart_GS_SC__Form.o \
   Chart_GS_C__Form.o \
   Chart_GS_CE__Form.o \
   Chart_GS_CC__Form.o \
