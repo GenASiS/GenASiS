@@ -41,8 +41,8 @@ contains
     iaS ( iD ) = -1
 
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -59,8 +59,8 @@ contains
       end do !-- kV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
+      !$OMP parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -84,8 +84,8 @@ contains
     iaS ( iD ) = +1
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -102,8 +102,8 @@ contains
       end do !-- kV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
+      !$OMP parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -153,8 +153,8 @@ contains
     !V_Outer = V + 0.5_KDR * dV
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( dV )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( dV )
       do iV = 1, size ( V )
         dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
                + sign ( 0.5_KDR, dV_Right ( iV ) ) ) &
@@ -166,8 +166,8 @@ contains
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( dV )
+      !$OMP parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( dV )
       do iV = 1, size ( V )
         dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
                + sign ( 0.5_KDR, dV_Right ( iV ) ) ) &
@@ -222,8 +222,8 @@ contains
     iaS ( iD ) = -1
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -248,8 +248,8 @@ contains
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
+      !$OMP parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -287,8 +287,8 @@ contains
     iaS ( iD ) = +1
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -313,8 +313,8 @@ contains
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
+      !$OMP parallel do simd collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -355,15 +355,15 @@ contains
       UseDevice = UseDeviceOption
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, size ( dU )
         dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST )
+      !$OMP parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, size ( dU )
         dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
       end do
@@ -388,15 +388,15 @@ contains
     nV = size ( O )
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         C ( iV ) = O ( iV ) + U ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST )
+      !$OMP parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         C ( iV ) = O ( iV ) + U ( iV )
       end do
@@ -421,15 +421,15 @@ contains
     nV = size ( O )
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     else
-      !$OMP  parallel do simd &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST )
+      !$OMP parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
       end do

@@ -36,9 +36,9 @@ contains
     MaxSpeed = - huge ( 1.0_KDR )
     
     if ( UseDevice ) then
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) &
-      !$OMP& reduction ( max : MaxSpeed ) MAP_MAXSPEED
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) &
+      !$OMP reduction ( max : MaxSpeed ) MAP_MAXSPEED
       do kV = lV ( 3 ) , uV ( 3 )
         do jV = lV ( 2 ), uV ( 2 )    
           do iV = lV ( 1 ), uV ( 1 )
@@ -49,11 +49,11 @@ contains
           end do
         end do
       end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
-      !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV, kV ) &
-      !$OMP& reduction ( max : MaxSpeed )
+      !$OMP parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV, kV ) &
+      !$OMP reduction ( max : MaxSpeed )
       do kV = lV ( 3 ) , uV ( 3 )
         do jV = lV ( 2 ), uV ( 2 )    
           do iV = lV ( 1 ), uV ( 1 )
@@ -64,7 +64,7 @@ contains
           end do
         end do
       end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     end if
     
     TimeStepLocal = minval ( CellWidth ( 1 : nDimensions ) ) / MaxSpeed
