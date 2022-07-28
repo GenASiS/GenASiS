@@ -96,9 +96,9 @@ contains
     
     !-- Three points define the plane of discontinuity
 
-    DP_1 = [ 0.5_KDR, 0.0_KDR, 0.0_KDR ]
-    DP_2 = [ 0.0_KDR, 0.5_KDR, 0.0_KDR ]
-    DP_3 = [ 0.0_KDR, 0.0_KDR, 0.5_KDR ]
+    DP_1 = [ 0.500001_KDR, 0.0_KDR, 0.0_KDR ]
+    DP_2 = [ 0.0_KDR, 0.500001_KDR, 0.0_KDR ]
+    DP_3 = [ 0.0_KDR, 0.0_KDR, 0.500001_KDR ]
 
     if ( DM % nDimensions < 3 ) DP_3 ( 3 ) = 0.1 * sqrt ( huge ( 1.0_KDR ) )
     if ( DM % nDimensions < 2 ) DP_2 ( 2 ) = 0.1 * sqrt ( huge ( 1.0_KDR ) )
