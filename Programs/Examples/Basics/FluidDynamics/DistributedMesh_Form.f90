@@ -584,7 +584,6 @@ contains
 
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
-
     associate ( GIS => DM % GridImageStream )
     
     call GIS % Open ( GIS % ACCESS_CREATE )

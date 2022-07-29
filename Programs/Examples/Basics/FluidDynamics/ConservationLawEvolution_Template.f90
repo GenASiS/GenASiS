@@ -297,7 +297,7 @@ contains
     call ComputeTimeStepKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, DM % CellWidth, &
              DM % nDimensions, DM % nGhostLayers ( 1 ), &
-             CO % Outgoing % Value ( 1 ) )
+             CO % Outgoing % Value ( 1 ), UseDeviceOption = CLE % UseDevice )
     call CO % Reduce ( REDUCTION % MIN )
 
     CLE % TimeStep &
