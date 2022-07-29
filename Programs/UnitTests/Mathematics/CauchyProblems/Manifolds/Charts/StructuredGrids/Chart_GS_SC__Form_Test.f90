@@ -16,10 +16,9 @@ program Chart_GS_SC__Form_Test
   call CONSOLE % SetVerbosity ( 'INFO_2' )
 
   allocate ( C )
-  ! call C % Initialize &
-  !        ( RadiusMax = 10.0_KDR, &
-  !          RadiusExcision = 0.45_KDR, &
-  !          CommunicatorOption = PROGRAM_HEADER % Communicator )
+  call C % Initialize &
+         ( RadiusMax = 10.0_KDR, &
+           CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   call C % Show ( )
 

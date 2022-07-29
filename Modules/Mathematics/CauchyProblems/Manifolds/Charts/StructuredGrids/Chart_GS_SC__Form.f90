@@ -29,15 +29,14 @@ contains
 
 
   subroutine Initialize_GS_SC &
-               ( C, RadiusMax, nDimensions, CommunicatorOption, NameOption, &
-                 CoordinateUnitOption, nGhostLayersOption, nCellsRadiusOption )
+               ( C, RadiusMax, CommunicatorOption, NameOption, &
+                 CoordinateUnitOption, nGhostLayersOption, nDimensionsOption, &
+                 nCellsRadiusOption )
 
     class ( Chart_GS_SC_Form ), intent ( inout ) :: &
       C
     real ( KDR ), intent ( in ) :: &
       RadiusMax
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
@@ -47,6 +46,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
+      nDimensionsOption, &
       nCellsRadiusOption
 
     if ( C % Type  ==  '' ) &
@@ -58,6 +58,11 @@ contains
     if ( present ( nCellsRadiusOption ) ) &
       C % nCellsRadius = nCellsRadiusOption
     call PROGRAM_HEADER % GetParameter ( C % nCellsRadius, 'nCellsRadius' )
+
+    call C % SetDimensionality ( nDimensionsOption = nDimensionsOption )
+
+call Show ( C % nDimensions, '>>> nDimensions' )
+call PROGRAM_HEADER % Abort ( )
 
     ! select case ( Atlas % nDimensions )
     ! case ( 1 )  !-- Spherical coordinates
