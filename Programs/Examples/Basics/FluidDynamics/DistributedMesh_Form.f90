@@ -564,7 +564,7 @@ contains
   end subroutine SetImage
   
   
-  subroutine Write ( DM, TimeOption, CycleNumberOption )
+  subroutine Write ( DM, TimeOption, CycleNumberOption, InitialOption )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
@@ -572,11 +572,19 @@ contains
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
+    logical ( KDL ), intent ( in ), optional :: &
+      InitialOption
       
     integer ( KDI ) :: &
       iS
+    logical ( KDL ) :: &
+      Initial
     type ( TimerForm ), pointer :: &
       T_IO
+      
+    Initial = .false.
+    if ( present ( InitialOption ) ) &
+      Initial = InitialOption
           
     T_IO  =>  PROGRAM_HEADER % Timer &
                 ( DM % iTimer_IO, 'InputOutput', Level = 1 )
@@ -584,22 +592,25 @@ contains
 
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
-
     associate ( GIS => DM % GridImageStream )
     
     call GIS % Open ( GIS % ACCESS_CREATE )
 
     select case ( DM % nDimensions )
     case ( 1 ) 
-      do iS = 1, size ( DM % CurveImage % Storage )
-        call DM % CurveImage % Storage ( iS ) % UpdateHost ( )
-      end do
+      if ( .not. Initial ) then
+        do iS = 1, size ( DM % CurveImage % Storage )
+          call DM % CurveImage % Storage ( iS ) % UpdateHost ( )
+        end do
+      end if
       call DM % CurveImage % Write &
              ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
     case default
-      do iS = 1, size ( DM % GridImage % Storage )
-        call DM % GridImage % Storage ( iS ) % UpdateHost ( )
-      end do
+      if ( .not. Initial ) then
+        do iS = 1, size ( DM % GridImage % Storage )
+          call DM % GridImage % Storage ( iS ) % UpdateHost ( )
+        end do
+      end if
       call DM % GridImage % Write &
              ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
     end select
