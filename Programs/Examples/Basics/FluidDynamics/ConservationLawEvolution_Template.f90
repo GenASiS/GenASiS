@@ -173,7 +173,7 @@ contains
     if ( .not. CLE % NoWrite ) &
       call DM % Write &
              ( TimeOption = CLE % Time / CLE % TimeUnit, &
-               CycleNumberOption = CLE % iCycle )
+               CycleNumberOption = CLE % iCycle, InitialOption = .true. )
     
     !-- Restart 
     if ( CLE % RestartFrom >= 0 ) then
