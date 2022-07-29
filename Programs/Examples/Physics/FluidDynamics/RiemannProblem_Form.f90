@@ -170,9 +170,9 @@ contains
 
     !-- Three points define the plane of discontinuity
 
-    RP % DP_1  =  [ 0.5_KDR, 0.0_KDR, 0.0_KDR ]
-    RP % DP_2  =  [ 0.0_KDR, 0.5_KDR, 0.0_KDR ]
-    RP % DP_3  =  [ 0.0_KDR, 0.0_KDR, 0.5_KDR ]
+    RP % DP_1  =  [ 0.500001_KDR, 0.0_KDR, 0.0_KDR ]
+    RP % DP_2  =  [ 0.0_KDR, 0.500001_KDR, 0.0_KDR ]
+    RP % DP_3  =  [ 0.0_KDR, 0.0_KDR, 0.500001_KDR ]
 
     if ( C % nDimensions  <  3 )  &
       RP % DP_3 ( 3 )  =  0.1 * sqrt ( huge ( 1.0_KDR ) )
