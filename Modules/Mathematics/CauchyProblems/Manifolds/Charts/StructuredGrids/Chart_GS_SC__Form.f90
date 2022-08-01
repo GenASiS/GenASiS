@@ -30,8 +30,8 @@ contains
 
   subroutine Initialize_GS_SC &
                ( C, RadiusMax, CommunicatorOption, NameOption, &
-                 CoordinateUnitOption, nGhostLayersOption, nDimensionsOption, &
-                 nCellsRadiusOption )
+                 CoordinateUnitOption, nGhostLayersOption, nCellsRadiusOption, &
+                 nDimensionsOption )
 
     class ( Chart_GS_SC_Form ), intent ( inout ) :: &
       C
@@ -46,8 +46,8 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
-      nDimensionsOption, &
-      nCellsRadiusOption
+      nCellsRadiusOption, &
+      nDimensionsOption
 
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
