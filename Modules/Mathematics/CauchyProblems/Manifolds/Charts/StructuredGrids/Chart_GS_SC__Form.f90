@@ -18,8 +18,8 @@ module Chart_GS_SC__Form
       Initialize_GS_SC
     generic, public :: &
       Initialize => Initialize_GS_SC
-!    procedure, private, pass :: &
-!      Show_C
+    procedure, private, pass :: &
+      Show_C
     final :: &
       Finalize
   end type Chart_GS_SC_Form
@@ -49,6 +49,14 @@ contains
       nDimensionsOption, &
       nCellsRadiusOption
 
+    integer ( KDI ), dimension ( 3 ) :: &
+      nCells
+    real ( KDR ), dimension ( 3 ) :: &
+      MinCoordinate, &
+      MaxCoordinate
+    character ( LDL ) :: &
+      CoordinateSystem
+
     if ( C % Type  ==  '' ) &
       C % Type  =  'a Chart_GS_SC'
 
@@ -61,40 +69,63 @@ contains
 
     call C % SetDimensionality ( nDimensionsOption = nDimensionsOption )
 
-call Show ( C % nDimensions, '>>> nDimensions' )
-call PROGRAM_HEADER % Abort ( )
+    select case ( C % nDimensions )
+    case ( 1 )  !-- Spherical coordinates
 
-    ! select case ( Atlas % nDimensions )
-    ! case ( 1 )  !-- Spherical coordinates
+      CoordinateSystem  =  'SPHERICAL' 
 
-    !   CoordinateSystem = 'SPHERICAL' 
+      MinCoordinate = [ 0.0_KDR,   0.0_KDR, 0.0_KDR ]
+      MaxCoordinate = [ C % RadiusMax, 0.0_KDR, 0.0_KDR ]
 
-    !   MinCoordinate = [ 0.0_KDR,   0.0_KDR, 0.0_KDR ]
-    !   MaxCoordinate = [ C % RadiusMax, 0.0_KDR, 0.0_KDR ]
+      nCells = [ C % nCellsRadius, 1, 1 ]
 
-    !   nCells = [ C % nCellsRadius, 1, 1 ]
+    case ( 2 )  !-- Cylindrical coordinates
 
-    ! case ( 2 )  !-- Cylindrical coordinates
+      CoordinateSystem  =  'CYLINDRICAL' 
 
-    !   CoordinateSystem = 'CYLINDRICAL' 
+      MinCoordinate = [ 0.0_KDR,       - C % RadiusMax, 0.0_KDR ]
+      MaxCoordinate = [ C % RadiusMax, + C % RadiusMax, 0.0_KDR ]
 
-    !   MinCoordinate = [ 0.0_KDR,       - C % RadiusMax, 0.0_KDR ]
-    !   MaxCoordinate = [ C % RadiusMax, + C % RadiusMax, 0.0_KDR ]
+      nCells = [ C % nCellsRadius, 2 * C % nCellsRadius, 1 ]
 
-    !   nCells = [ C % nCellsRadius, 2 * C % nCellsRadius, 1 ]
-
-    ! case ( 3 )  !-- Rectangular coordinates
+    case ( 3 )  !-- Rectangular coordinates
  
-    !   CoordinateSystem = 'RECTANGULAR' 
+      CoordinateSystem  =  'RECTANGULAR' 
 
-    !   MinCoordinate  =  - C % RadiusMax
-    !   MaxCoordinate  =  + C % RadiusMax
+      MinCoordinate  =  - C % RadiusMax
+      MaxCoordinate  =  + C % RadiusMax
 
-    !   nCells  =  2 * C % nCellsRadius
+      nCells  =  2 * C % nCellsRadius
       
-    ! end select !-- nDimensions
+    end select  !-- nDimensions
+
+    call C % Chart_GS_Form % Initialize &
+           ( CommunicatorOption = CommunicatorOption, &
+             CoordinateSystemOption = CoordinateSystem, &
+             NameOption = NameOption, &
+             CoordinateUnitOption = CoordinateUnitOption, &
+             MinCoordinateOption = MinCoordinate, &
+             MaxCoordinateOption = MaxCoordinate, &
+             nCellsOption = nCells, &
+             nGhostLayersOption = nGhostLayersOption, &
+             nDimensionsOption = nDimensionsOption )
 
   end subroutine Initialize_GS_SC
+
+
+  subroutine Show_C ( C )
+
+    class ( Chart_GS_SC_Form ), intent ( in ) :: &
+      C
+
+    call C % Chart_GS_Form % Show ( )
+
+    call Show ( 'Chart_GS_SC Proper Parameters' )
+    call Show ( C % nCellsRadius, 'nCellsRadius', C % IGNORABILITY )
+    call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &
+                'RadiusMax', C % IGNORABILITY )
+
+  end subroutine Show_C
 
 
   impure elemental subroutine Finalize ( C )
