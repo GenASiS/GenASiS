@@ -8,6 +8,14 @@ FFLAGS = $(FORTRAN_$(PURPOSE))
 CFLAGS = $(CC_$(PURPOSE))
 FLAGS  = $(DEFINES)
 
+OS := $(shell uname -s)
+ifeq ($(OS), Linux)
+  FIND_EXEC = -executable
+endif
+ifeq ($(OS), Darwin)
+  FIND_EXEC = -perm +111
+endif
+
 INCLUDE = \
   $(INCLUDE_SILO) $(INCLUDE_HDF5) $(INCLUDE_PETSC) $(INCLUDE_FFTW) \
   $(INCLUDE_DEVICE) $(INCLUDE_PREPROCESSOR)
