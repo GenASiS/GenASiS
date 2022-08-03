@@ -198,11 +198,31 @@ contains
 
 
   module procedure ComputeRawFluxesKernel
-
-    F_D   = D   * V_Dim
-    F_S_1 = S_1 * V_Dim
-    F_S_2 = S_2 * V_Dim
-    F_S_3 = S_3 * V_Dim
+  
+    integer ( KDI ) :: &
+      iV
+  
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, size ( F_D )
+        F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
+        F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV ) 
+        F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV ) 
+        F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV ) 
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
+    else
+      !$OMP parallel do simd &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, size ( F_D )
+        F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
+        F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV ) 
+        F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV ) 
+        F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV ) 
+      end do
+      !$OMP end parallel do simd
+    end if
 
   end procedure ComputeRawFluxesKernel
 

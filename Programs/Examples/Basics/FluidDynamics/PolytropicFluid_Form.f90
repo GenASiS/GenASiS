@@ -151,18 +151,13 @@ module PolytropicFluid_Form
       end subroutine ApplyBoundaryConditionsReflecting
 
       module subroutine ComputeRawFluxesKernel &
-                   ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, S_1, S_2, S_3, &
-                     G, P, V_Dim, UseDevice )
+                   ( F_S_Dim, F_G, G, P, V_Dim, UseDevice )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          F_D, &
-          F_S_1, F_S_2, F_S_3, &
           F_S_Dim, &
           F_G
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          D, &
-          S_1, S_2, S_3, &
           G, &
           P, &
           V_Dim
@@ -479,17 +474,11 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    !call CF % PressurelessFluidForm % ComputeRawFluxes &
-    !       ( RawFlux, Value, iDimension, D_RawFlux, D_Value ) 
+    call CF % PressurelessFluidForm % ComputeRawFluxes &
+           ( RawFlux, Value, iDimension, UseDeviceOption = UseDeviceOption ) 
 
     call Search &
            ( CF % iaConserved, CF % CONSERVED_DENSITY, iDensity )
-    call Search &
-           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 1 ), iMomentum ( 1 ) )
-    call Search &
-           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 2 ), iMomentum ( 2 ) )
-    call Search &
-           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 3 ), iMomentum ( 3 ) )
     call Search &
            ( CF % iaConserved, CF % CONSERVED_ENERGY, iEnergy )
     call Search &
@@ -497,20 +486,11 @@ contains
              iMomentumDim )
     
     call ComputeRawFluxesKernel &
-           ( RawFlux ( :, iDensity ), &
-             RawFlux ( :, iMomentum ( 1 ) ), &
-             RawFlux ( :, iMomentum ( 2 ) ), &
-             RawFlux ( :, iMomentum ( 3 ) ), &
-             RawFlux ( :, iMomentumDim ), &
+           ( RawFlux ( :, iMomentumDim ), &
              RawFlux ( :, iEnergy ), &
-             Value ( :, CF % CONSERVED_DENSITY ), &
-             Value ( :, CF % MOMENTUM_DENSITY ( 1 ) ), &
-             Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
-             Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ), &
              Value ( :, CF % CONSERVED_ENERGY ), &
              Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % VELOCITY ( iDimension ) ), &
-             UseDevice )
+             Value ( :, CF % VELOCITY ( iDimension ) ), UseDevice )
                
   end subroutine ComputeRawFluxes
   
