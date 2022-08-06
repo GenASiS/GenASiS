@@ -4,7 +4,7 @@ FORTRAN_COMPILE      = mpifort -c -qpreprocess
 FORTRAN_FIXEDFORM    = -qfixed
 FORTRAN_BOUND_CHECK  = -qcheck=bounds
 FORTRAN_DEBUG        = -g -qsigtrap #-Wall
-FORTRAN_OPTIMIZE     = -O2
+FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = -O2 -g -qdbgfmt=dwarf4
 
 CC_COMPILE           = mpicc -c
