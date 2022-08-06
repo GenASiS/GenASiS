@@ -255,8 +255,19 @@ contains
 
   module procedure ComputeRawFluxesKernel
 
+    integer :: &
+      Delta_1, Delta_2, Delta_3
     integer ( KDI ) :: &
       iV
+      
+    Delta_1  =  int (    real ( 1 + iDim  -  abs ( 1 - iDim ) )  &
+                      /  real ( 1 + iDim  +  abs ( 1 - iDim ) ) )
+
+    Delta_2  =  int (    real ( 2 + iDim  -  abs ( 2 - iDim ) )  &
+                      /  real ( 2 + iDim  +  abs ( 2 - iDim ) ) )
+
+    Delta_3  =  int (    real ( 3 + iDim  -  abs ( 3 - iDim ) )  &
+                      /  real ( 3 + iDim  +  abs ( 3 - iDim ) ) )
       
     !F_D   = D   * V_Dim
     !F_S_1 = S_1 * V_Dim
@@ -269,7 +280,10 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do simd &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, size ( P )
-        F_S_Dim ( iV ) = F_S_Dim ( iV ) + P ( iV ) 
+        F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
+        F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV )  +  Delta_1 * P ( iV ) 
+        F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV )  +  Delta_2 * P ( iV ) 
+        F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV )  +  Delta_3 * P ( iV ) 
         F_G ( iV )     = ( G ( iV ) + P ( iV ) ) * V_Dim ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
@@ -278,7 +292,10 @@ contains
       !$OMP parallel do simd &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, size ( P )
-        F_S_Dim ( iV ) = F_S_Dim ( iV ) + P ( iV ) 
+        F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
+        F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV )  +  Delta_1 * P ( iV ) 
+        F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV )  +  Delta_2 * P ( iV ) 
+        F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV )  +  Delta_3 * P ( iV ) 
         F_G ( iV )     = ( G ( iV ) + P ( iV ) ) * V_Dim ( iV )
       end do
       !$OMP end parallel do simd
