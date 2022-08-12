@@ -15,6 +15,12 @@
 #define OMP_TARGET_DISTRIBUTE_SCHEDULE dist_schedule ( auto )
 #endif
 
+#if (Cray_CCE)
+#define OMP_SCHEDULE_TARGET auto
+#define OMP_SCHEDULE_HOST runtime
+#define OMP_TARGET_DISTRIBUTE_SCHEDULE 
+#endif
+
 #else
 #define OMP_TARGET_DIRECTIVE
 #define OMP_SCHEDULE_TARGET runtime

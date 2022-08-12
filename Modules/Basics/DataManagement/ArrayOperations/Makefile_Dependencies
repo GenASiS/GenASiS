@@ -23,6 +23,7 @@ Add_Command.o: \
 
 MultiplyAdd_Command.o: \
   Specifiers.o \
+  Devices.o \
   MultiplyAdd_Command.f90
 
 ArrayOperations.o: \

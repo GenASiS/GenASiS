@@ -8,6 +8,7 @@ module MultiplyAdd_Command
 
   use iso_c_binding
   use Specifiers
+  use Devices
   
   public :: &
     MultiplyAdd, &
@@ -92,7 +93,7 @@ contains
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
-
+      
     nV = size ( A )
     
     if ( UseDevice ) then
@@ -278,6 +279,7 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       nV
     logical ( KDL ) :: &
+      OD, &
       UseDevice
       
     UseDevice = .false.
@@ -285,10 +287,15 @@ contains
       UseDevice = UseDeviceOption
 
     nV  =  shape ( A )
-
+    
+    !-- FIXME: workaround for CCE-14.0.2 failure to correctly detect presence
+    !          of these variable in TARGET without the next two lines
+    OD = OnDevice ( A )
+    OD = OnDevice ( B )
+    
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) 
       do kV  =  1,  nV ( 3 )
         do jV  =  1,  nV ( 2 )
           do iV  =  1,  nV ( 1 )

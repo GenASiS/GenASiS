@@ -231,7 +231,7 @@ contains
     UseDevice  =  R_3D_A % AllocatedDevice
     if ( present ( UseDeviceOption ) ) &
       UseDevice  =  UseDeviceOption
-
+      
     associate &
       ( A  =>  R_3D_A % Value, &
         B  =>  R_3D_B % Value )
@@ -239,7 +239,7 @@ contains
     call MultiplyAdd ( A, B, C, UseDeviceOption = UseDevice )
 
     end associate !-- A, etc.
-        
+    
   end subroutine MultiplyAddInPlace_R_3D
 
 
