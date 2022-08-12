@@ -1,5 +1,9 @@
 PATH_GENASIS = ../../../../../..
 
+#-- Do not link to HDF5 or Lapack
+HDF5_DIR = 
+LAPACK_DIR = 
+
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
@@ -12,48 +16,48 @@ Integer_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
 	$(LINK) $(FLAGS) \
           -o Integer_1D__Form_Test_$(MACHINE) \
           Integer_1D__Form_Test.o Integer_1D__Form.o \
-          ArrayOperations.a Specifiers.a Devices.a 
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
 Integer_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   Integer_2D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_2D__Form_Test_$(MACHINE) \
           Integer_2D__Form_Test.o Integer_2D__Form.o \
-          ArrayOperations.a Specifiers.a Devices.a 
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
 Integer_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   Integer_3D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_3D__Form_Test_$(MACHINE) \
           Integer_3D__Form_Test.o Integer_3D__Form.o \
-          ArrayOperations.a Specifiers.a Devices.a 
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
 Real_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   Real_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_1D__Form_Test_$(MACHINE) \
           Real_1D__Form_Test.o Real_1D__Form.o \
-          ArrayOperations.a Specifiers.a Devices.a 
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
 Real_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   Real_2D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_2D__Form_Test_$(MACHINE) \
           Real_2D__Form_Test.o Real_2D__Form.o \
-          ArrayOperations.a Specifiers.a Devices.a 
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
 Real_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   Real_3D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_3D__Form_Test_$(MACHINE) \
           Real_3D__Form_Test.o Real_3D__Form.o \
-          ArrayOperations.a Specifiers.a Devices.a 
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
 Character_1D__Form_Test: Specifiers.a Character_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Character_1D__Form_Test_$(MACHINE) \
           Character_1D__Form_Test.o Character_1D__Form.o \
-          Specifiers.a 
+          Specifiers.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
