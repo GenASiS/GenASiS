@@ -74,8 +74,8 @@ contains
 
     if ( UseDevice ) then
     
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) 
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) 
       do kV = 1, nB ( 3 )
         do jV = 1, nB ( 2 )
           do iV = 1, nB ( 1 )
@@ -92,8 +92,8 @@ contains
     
     else
 
-      !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV, kV ) 
+      !$OMP parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV, kV ) 
       do kV = 1, nB ( 3 )
         do jV = 1, nB ( 2 )
           do iV = 1, nB ( 1 )
