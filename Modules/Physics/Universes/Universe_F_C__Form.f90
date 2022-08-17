@@ -188,7 +188,6 @@ contains
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
-!             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
     !-- AzimuthalAverage Stream
