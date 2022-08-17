@@ -1,5 +1,9 @@
 PATH_GENASIS = ../../../../..
 
+#-- Do not link to HDF5 or Lapack
+HDF5_DIR = 
+LAPACK_DIR = 
+
 all: HomogeneousSpheroid #KuzminPlummer Satoh Logarithmic TwoPowerDensity CondensedSphere
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -47,7 +51,7 @@ clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f HomogeneousSpheroid_*
+	find . -type f $(FIND_EXEC) -name 'rm -f HomogeneousSpheroid_*' -exec rm -f '{}' \;
 	rm -f KuzminPlummerDisk_*
 	rm -f SatohDisk_*
 	rm -f LogarithmicPotential_*

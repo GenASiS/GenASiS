@@ -1,5 +1,10 @@
 PATH_GENASIS = ../../../../..
 
+#-- Do not link to HDF5 or Lapack
+HDF5_DIR = 
+LAPACK_DIR = 
+
+
 all: RectangularContraction_VLC RectangularExpansion_VLC \
   SphericalContraction_VLC SphericalExpansion_VLC
 
@@ -40,10 +45,10 @@ clean:
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f RectangularContraction_VLC_*
-	rm -f RectangularExpansion_VLC_*
-	rm -f SphericalContraction_VLC_*
-	rm -f SphericalExpansion_VLC_*
+	find . -type f $(FIND_EXEC) -name 'RectangularContraction_VLC_*' -exec rm -f '{}' \;
+	find . -type f $(FIND_EXEC) -name 'RectangularExpansion_VLC_*' -exec rm -f '{}' \;
+	find . -type f $(FIND_EXEC) -name 'SphericalContraction_VLC_*' -exec rm -f '{}' \;
+	find . -type f $(FIND_EXEC) -name 'SphericalExpansion_VLC_*' -exec rm -f '{}' \;
 
 CurrentSet_VLC__Form.o: \
   Basics.o \
