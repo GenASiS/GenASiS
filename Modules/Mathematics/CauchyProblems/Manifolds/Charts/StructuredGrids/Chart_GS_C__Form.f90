@@ -130,6 +130,7 @@ contains
              SpacingOption = Spacing, &
              CoordinateSystemOption = CoordinateSystem, &
              NameOption = NameOption, &
+             EvenDecompositionOption = [ .false., .true., .true. ], &
              CoordinateUnitOption = CoordinateUnitOption, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &

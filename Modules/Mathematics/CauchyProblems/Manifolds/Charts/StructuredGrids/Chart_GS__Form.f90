@@ -26,17 +26,19 @@ module Chart_GS__Form
       iaBrick, &
       nBricks, &
       nCellsBrick
+    type ( Integer_1D_Form ), dimension ( MAX_DIMENSIONS ) :: &
+      nCellsBrickDimension 
     real ( KDR ), dimension ( MAX_DIMENSIONS ) :: &
       MinCoordinate, &
       MaxCoordinate, &
       Ratio, &
       Scale
-    logical ( KDL ) :: &
-      Distributed
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
       Edge, &
       Width, &
       Center
+    logical ( KDL ) :: &
+      Distributed
     logical ( KDL ), dimension ( : ), allocatable :: &
       ProperCell
     character ( LDL ), dimension ( MAX_DIMENSIONS ) :: &
@@ -94,11 +96,12 @@ contains
 
   subroutine Initialize_GS &
                ( C, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
-                 CoordinateSystemOption, NameOption, CoordinateUnitOption, &
-                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, nBricksOption, &
-                 nBricksCompatibleOption, IgnorabilityOption, &
-                 nDimensionsOption, nEqualOption, iDimensionalityOption )
+                 CoordinateSystemOption, NameOption, EvenDecompositionOption, &
+                 CoordinateUnitOption, MinCoordinateOption, &
+                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
+                 nGhostLayersOption, nBricksOption, nBricksCompatibleOption, &
+                 IgnorabilityOption, nDimensionsOption, nEqualOption, &
+                 iDimensionalityOption )
 
     class ( Chart_GS_Form ), intent ( inout ) :: &
       C
@@ -110,6 +113,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption, &
       NameOption
+    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+      EvenDecompositionOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -147,7 +152,8 @@ contains
            ( C, nCellsOption, nGhostLayersOption )
 
     call SetDecomposition &
-           ( C, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
+           ( C, CommunicatorOption, EvenDecompositionOption, nBricksOption, &
+             nBricksCompatibleOption )
 
     do iD = 1, C % nDimensions
       call ComputeCoordinateData ( C, iD )
@@ -311,6 +317,15 @@ contains
                 C % IGNORABILITY + 1 )
     call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', &
                 C % IGNORABILITY )
+    
+    call Show ( 'nCellsBrickDimension', C % IGNORABILITY + 2 )
+    do iD = 1, nD
+      call Show ( iD, 'iDimension', C % IGNORABILITY + 2 )
+      call Show ( C % nCellsBrickDimension ( iD ) % Value, 'Value', &
+                  C % IGNORABILITY + 2 )
+      call Show ( sum ( C % nCellsBrickDimension ( iD ) % Value ), 'Total', &
+                  C % IGNORABILITY + 2 )
+    end do
 
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY + 1 )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY + 1 )
@@ -511,29 +526,39 @@ contains
 
 
   subroutine SetDecomposition &
-                ( C, CommunicatorOption, nBricksOption, &
-                  nBricksCompatibleOption )
+                ( C, CommunicatorOption, EvenDecompositionOption, &
+                  nBricksOption, nBricksCompatibleOption )
                
     class ( Chart_GS_Form ), intent ( inout ) :: &
       C
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+      EvenDecompositionOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nBricksOption, &
       nBricksCompatibleOption
-
+      
     integer ( KDI ) :: &
       iD, &  !-- iDimension
       SizeRoot
     integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
       nBricksCompatible
-
+    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
+      EvenDecomposition
+    type ( CollectiveOperation_I_Form ), allocatable :: &
+      CO
+    
     if ( present ( CommunicatorOption ) ) then
       C % Distributed   =   .true.
       C % Communicator  =>  CommunicatorOption
     else
       C % Distributed  =  .false.
     end if !-- present Communicator 
+
+    EvenDecomposition = .true.
+    if ( present ( EvenDecompositionOption ) ) &
+      EvenDecomposition = EvenDecompositionOption
 
     if ( C % Distributed ) then
 
@@ -552,7 +577,7 @@ contains
         nBricksCompatible  =  nBricksCompatibleOption 
       call PROGRAM_HEADER % GetParameter &
              ( nBricksCompatible ( : nD ), 'nBricksCompatible' )
-
+             
       if ( any ( nBricksCompatible /= C % nBricks ) ) then
         call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
         call Show ( C % nBricks, 'nBricks', CONSOLE % INFO_1 )
@@ -572,6 +597,8 @@ contains
       end if
 
       do iD = 1, nD
+        if ( .not. EvenDecomposition ( iD ) ) &
+           cycle 
         if ( mod ( C % nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
           call Show ( 'nBricksCompatible in each dimension must divide ' &
                       // 'evenly into nCells in each dimension', &
@@ -593,6 +620,28 @@ contains
         = C % nCells / C % nBricks
       C % iaBrick &
         = BrickIndex ( C % nBricks, C % nCells, C % Communicator % Rank )
+      
+      do iD = 1, nD
+        if ( EvenDecomposition ( iD ) ) &
+          cycle
+        if ( C % iaBrick ( iD ) &
+               <= mod ( C % nCells ( iD ), C % nBricks ( iD ) ) ) &
+        then
+          C % nCellsBrick ( iD ) = C % nCellsBrick ( iD ) + 1
+        end if
+      end do
+      
+      do iD = 1, nD 
+        allocate ( CO ) 
+        call CO % Initialize &
+               ( C % Communicator, [ 1 ], [ C % nBricks ( iD ) ] )
+        call C % nCellsBrickDimension ( iD ) % Initialize &
+               ( C % nBricks ( iD ) )
+        CO % Outgoing % Value = C % nCellsBrick ( iD )
+        call CO % Gather ( )
+        C % nCellsBrickDimension ( iD ) % Value = CO % Incoming % Value
+        deallocate ( CO )
+      end do
 
       end associate !-- nD
 
