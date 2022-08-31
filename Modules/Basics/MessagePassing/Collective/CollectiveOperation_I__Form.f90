@@ -29,6 +29,8 @@ module CollectiveOperation_I__Form
     procedure, public, pass :: &
       Gather
     procedure, public, pass :: &
+      Gather_V
+    procedure, public, pass :: &
       AllToAll
     procedure, public, pass :: &
       Reduce
@@ -132,6 +134,56 @@ contains
     end associate
 
   end subroutine Gather
+  
+  
+  subroutine Gather_V ( CO )
+  
+    class ( CollectiveOperation_I_Form ), intent ( inout ) :: &
+      CO
+      
+    integer :: &
+      PlainInteger
+    integer ( KDI ) :: &
+      iD, &  !-- iDisplacment
+      PlainValueSize, &
+      ThisValueSize, &
+      SizeRatio, &
+      SendCount
+    integer ( KDI ), dimension ( CO % Communicator % Size ) :: &
+      RecvCount, &
+      RecvDisplacement
+
+    associate &
+      ( OV => CO % Outgoing % Value ( : ), &
+        IV => CO % Incoming % Value ( : ) )
+
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
+    inquire ( iolength = PlainValueSize ) PlainInteger
+    SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
+    SendCount = size ( OV ) * SizeRatio
+    RecvCount = CO % nIncoming * SizeRatio
+    
+    RecvDisplacement ( 1 ) = 0
+    do iD = 2, CO % Communicator % Size
+      RecvDisplacement ( iD ) &
+        =  RecvDisplacement ( iD - 1 ) + RecvCount ( iD - 1 )
+    end do
+    
+    if ( CO % Root /= UNSET ) then
+      call MPI_GATHERV &
+             ( OV, SendCount, MPI_INTEGER, &
+               IV, RecvCount, RecvDisplacement, MPI_REAL, &
+               CO % Root, CO % Communicator % Handle, CO % Error)  
+    else
+      call MPI_ALLGATHERV &
+             ( OV, SendCount, MPI_INTEGER, &
+               IV, RecvCount, RecvDisplacement, MPI_REAL, &
+               CO % Communicator % Handle, CO % Error)  
+    end if
+    
+    end associate
+
+  end subroutine Gather_V
 
 
   subroutine AllToAll ( CO )

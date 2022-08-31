@@ -34,7 +34,7 @@ program CollectiveOperation_Form_Test
   allocate ( C )
   call C % Initialize ( )
   call CONSOLE % Initialize ( C % Rank )
-  call CONSOLE % SetDisplayRank ( 0 )
+  call CONSOLE % SetDisplayRank ( 3 )
   
 !  nOutgoing = 120
   nOutgoing = 8
@@ -122,6 +122,81 @@ program CollectiveOperation_Form_Test
     = ( acos ( - 1.0_KDR ) * ( C % Rank + 1 ) * [ ( iV, iV = 1, nOutgoing ) ] )
              
   call CO_R % Gather ( )
+
+  call Show ( CO_R % Incoming % Value, 'IncomingValue_1D Real' )
+
+  deallocate ( CO_R ) 
+  
+  
+  !-- Gather_V Integer
+  
+  call Show ( 'Gather_V Integer' )
+
+  allocate ( CO_I ) 
+  call CO_I % Initialize &
+         ( C, nOutgoing = [ nOutgoing * ( C % Rank + 1 ) ], &
+              nIncoming = [ ( nOutgoing * iV, iV = 1, C % Size ) ], &
+           RootOption = CONSOLE % DisplayRank )
+  
+  CO_I % Outgoing % Value = ( C % Rank + 1 )
+          
+  call CO_I % Gather_V ( )
+
+  call Show ( CO_I % Incoming % Value, 'IncomingValue_1D Integer' )
+
+  deallocate ( CO_I ) 
+  
+  
+  !-- AllGather_V Real
+  
+  call Show ( 'AllGather_V Integer' )
+
+  allocate ( CO_I ) 
+  call CO_I % Initialize &
+         ( C, nOutgoing = [ nOutgoing * ( C % Rank + 1 ) ], &
+              nIncoming = [ ( nOutgoing * iV, iV = 1, C % Size ) ] )
+  
+  CO_I % Outgoing % Value = ( C % Rank + 1 ) 
+          
+  call CO_I % Gather_V ( )
+
+  call Show ( CO_I % Incoming % Value, 'IncomingValue_1D Integer' )
+
+  deallocate ( CO_I ) 
+  
+
+
+  !-- Gather_V Real
+  
+  call Show ( 'Gather_V Real' )
+
+  allocate ( CO_R ) 
+  call CO_R % Initialize &
+         ( C, nOutgoing = [ nOutgoing * ( C % Rank + 1 ) ], &
+              nIncoming = [ ( nOutgoing * iV, iV = 1, C % Size ) ], &
+           RootOption = CONSOLE % DisplayRank )
+  
+  CO_R % Outgoing % Value = ( C % Rank + 1 ) * 1.0_KDR 
+          
+  call CO_R % Gather_V ( )
+
+  call Show ( CO_R % Incoming % Value, 'IncomingValue_1D Real' )
+
+  deallocate ( CO_R ) 
+  
+  
+  !-- AllGather_V Real
+  
+  call Show ( 'AllGather_V Real' )
+
+  allocate ( CO_R ) 
+  call CO_R % Initialize &
+         ( C, nOutgoing = [ nOutgoing * ( C % Rank + 1 ) ], &
+              nIncoming = [ ( nOutgoing * iV, iV = 1, C % Size ) ] )
+  
+  CO_R % Outgoing % Value = ( C % Rank + 1 ) * 1.0_KDR 
+          
+  call CO_R % Gather_V ( )
 
   call Show ( CO_R % Incoming % Value, 'IncomingValue_1D Real' )
 
