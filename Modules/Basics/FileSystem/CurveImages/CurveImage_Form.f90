@@ -16,6 +16,8 @@ module CurveImage_Form
   include 'silo_f9x.inc'
   
   type, public, extends ( GridImageSiloTemplate ) :: CurveImageForm
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      nProperCellsBrick
   contains
     procedure, private, pass :: &
       SetGridWriteUnigrid
@@ -39,8 +41,8 @@ contains
 
     
   subroutine SetGridWriteUnigrid &
-               ( CI, Directory, Edge, nProperCells, oValue, &
-                 CoordinateLabelOption, CoordinateUnitOption )
+               ( CI, Directory, Edge, nProperCellsBrick, nProperCells, &
+                 oValue, CoordinateLabelOption, CoordinateUnitOption )
                  
     class ( CurveImageForm ), intent ( inout ) :: &
       CI
@@ -48,6 +50,8 @@ contains
       Directory
     type ( Real_1D_Form ), intent ( in ) :: &
       Edge
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nProperCellsBrick
     integer ( KDI ), intent ( in ) :: &
       nProperCells, &
       oValue
@@ -55,9 +59,11 @@ contains
       CoordinateLabelOption
     type ( QuantityForm ), intent ( in ), optional :: &
       CoordinateUnitOption
-
+    
+    allocate ( CI % nProperCellsBrick, source = nProperCellsBrick )
+    
     CI % oValue       = oValue
-    CI % nTotalCells  = nProperCells
+    CI % nTotalCells  = nProperCells 
     CI % nGhostCells  = 0
     CI % lDirectory   = len_trim ( Directory )
     
@@ -205,19 +211,15 @@ contains
 
       call CO_Coordinate % Initialize &
              ( GI % Stream % Communicator, nOutgoing = [ GI % nTotalCells ], &
-               nIncoming &
-                 = [ GI % Stream % Communicator % Size * GI % nTotalCells ], &
-               RootOption = 0 )
+               nIncoming = GI % nProperCellsBrick, RootOption = 0 )
 
       CO_Coordinate % Outgoing % Value = GI % NodeCoordinate_1
       
-      call CO_Coordinate % Gather ( )
+      call CO_Coordinate % Gather_V ( )
 
       call CO_Variable % Initialize &
              ( GI % Stream % Communicator, nOutgoing = [ GI % nTotalCells ], & 
-               nIncoming &
-                 = [ GI % Stream % Communicator % Size * GI % nTotalCells ], &
-               RootOption = 0 )
+               nIncoming = GI % nProperCellsBrick, RootOption = 0 )
       
       if ( GI % Stream % IsWritable ( CheckMultiMeshOption = .true. ) ) then
         allocate ( Coordinate_MM ( size ( CO_Coordinate % Incoming % Value ) ) )
@@ -272,7 +274,7 @@ contains
           CO_Variable % Outgoing % Value &
             = S % Value &
                 ( GI % oValue + 1 : GI % oValue + GI % nTotalCells, iVrbl )
-          call CO_Variable % Gather ( )
+          call CO_Variable % Gather_V ( )
 
           call Show ( trim ( S % Variable ( iVrbl ) ), 'Variable', &
                       CONSOLE % INFO_6 )

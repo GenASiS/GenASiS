@@ -27,7 +27,7 @@ module Chart_GS__Form
       nBricks, &
       nCellsBrick
     type ( Integer_1D_Form ), dimension ( MAX_DIMENSIONS ) :: &
-      nCellsBrickDimension 
+      nCellsBrickGlobal 
     real ( KDR ), dimension ( MAX_DIMENSIONS ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -318,12 +318,12 @@ contains
     call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', &
                 C % IGNORABILITY )
     
-    call Show ( 'nCellsBrickDimension', C % IGNORABILITY + 2 )
+    call Show ( 'nCellsBrickGlobal', C % IGNORABILITY + 2 )
     do iD = 1, nD
       call Show ( iD, 'iDimension', C % IGNORABILITY + 2 )
-      call Show ( C % nCellsBrickDimension ( iD ) % Value, 'Value', &
+      call Show ( C % nCellsBrickGlobal ( iD ) % Value, 'Value', &
                   C % IGNORABILITY + 2 )
-      call Show ( sum ( C % nCellsBrickDimension ( iD ) % Value ), 'Total', &
+      call Show ( sum ( C % nCellsBrickGlobal ( iD ) % Value ), 'Total', &
                   C % IGNORABILITY + 2 )
     end do
 
@@ -541,13 +541,19 @@ contains
       
     integer ( KDI ) :: &
       iD, &  !-- iDimension
+      iP, &
       SizeRoot
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaP    !-- iaProcess
     integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
       nBricksCompatible
     logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
       EvenDecomposition
+    type ( CommunicatorForm ), allocatable :: &
+      C_iD
     type ( CollectiveOperation_I_Form ), allocatable :: &
-      CO
+      CO_G, &    !-- CO_Gather
+      CO_B       !-- CO_Broadcast
     
     if ( present ( CommunicatorOption ) ) then
       C % Distributed   =   .true.
@@ -559,6 +565,9 @@ contains
     EvenDecomposition = .true.
     if ( present ( EvenDecompositionOption ) ) &
       EvenDecomposition = EvenDecompositionOption
+      
+    call PROGRAM_HEADER % GetParameter &
+           ( EvenDecomposition, 'EvenDecomposition' )
 
     if ( C % Distributed ) then
 
@@ -631,18 +640,44 @@ contains
         end if
       end do
       
+      associate ( nB => C % nBricks )
       do iD = 1, nD 
-        allocate ( CO ) 
-        call CO % Initialize &
-               ( C % Communicator, [ 1 ], [ C % nBricks ( iD ) ] )
-        call C % nCellsBrickDimension ( iD ) % Initialize &
-               ( C % nBricks ( iD ) )
-        CO % Outgoing % Value = C % nCellsBrick ( iD )
-        call CO % Gather ( )
-        C % nCellsBrickDimension ( iD ) % Value = CO % Incoming % Value
-        deallocate ( CO )
+        allocate ( C_iD, CO_G, CO_B )
+        allocate ( iaP ( nB ( iD ) ) )
+        
+        select case ( iD ) 
+        case ( 1 )
+          iaP = [ ( iP, iP = 0, nB ( 1 ) - 1 ) ]
+        case ( 2 )
+          iaP = [ ( iP, iP = 0, nB ( 1 ) * ( nB ( 2 ) - 1 ), nB ( 1 ) ) ]
+        case ( 3 )
+          iaP = [ ( iP, iP = 0, nB ( 1 ) * nB ( 2 ) * ( nB ( 3 ) - 1 ), &
+                             nB ( 1 ) * nB ( 2 ) ) ]
+        end select
+        
+        call C_iD % Initialize ( C % Communicator, iaP )
+        
+        call C % nCellsBrickGlobal ( iD ) % Initialize ( nB ( iD ) )
+        
+        if ( any ( C % Communicator % Rank == iaP ) ) then
+          call CO_G % Initialize &
+                 ( C_iD, [ 1 ], [ nB ( iD ) ], RootOption = 0 )
+          CO_G % Outgoing % Value = C % nCellsBrick ( iD )
+          call CO_G % Gather ( )
+          C % nCellsBrickGlobal ( iD ) % Value = CO_G % Incoming % Value
+        end if
+        
+        call CO_B % Initialize &
+               ( C % Communicator, [ nB ( iD ) ], [ nB ( iD ) ], &
+                 RootOption = 0 )
+        CO_B % Outgoing % Value = C % nCellsBrickGlobal ( iD ) % Value
+        call CO_B % Broadcast ( )
+        C % nCellsBrickGlobal ( iD ) % Value = CO_B % Incoming % Value
+        
+        deallocate ( iaP, CO_B, CO_G, C_iD )
       end do
-
+      end associate   !-- nB
+      
       end associate !-- nD
 
       call SetPortals ( C )
@@ -693,8 +728,8 @@ contains
     end associate !-- nB
 
   end function BrickIndex
-
-
+  
+  
   subroutine SetPortals ( C )
 
     class ( Chart_GS_Form ), intent ( inout ) :: &

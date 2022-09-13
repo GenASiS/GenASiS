@@ -324,7 +324,8 @@ contains
       case ( 1 ) 
         associate ( CI => S % CurveImage ( iC ) )
         call CI % SetGridWrite &
-               ( Directory, Edge ( 1 ), nCellsProper, &
+               ( Directory, Edge ( 1 ), C % nCellsBrickGlobal ( 1 ) % Value, &
+                 nCellsProper, &
                  oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                  CoordinateLabelOption = C % CoordinateLabel ( 1 ), &
                  CoordinateUnitOption = C % CoordinateUnit ( 1 ) )
