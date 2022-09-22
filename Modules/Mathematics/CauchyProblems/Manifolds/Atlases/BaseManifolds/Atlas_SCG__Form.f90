@@ -30,9 +30,8 @@ contains
                  CoordinateSystemOption, NameOption, EvenDecompositionOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
                  MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nBricksOption, nBricksCompatibleOption, &
-                 IgnorabilityOption, nDimensionsOption, nEqualOption, &
-                 iDimensionalityOption )
+                 nGhostLayersOption, nBricksOption, IgnorabilityOption, &
+                 nDimensionsOption, nEqualOption, iDimensionalityOption )
 
     class ( Atlas_SCG_Form ), intent ( inout ), target :: &
       A
@@ -56,8 +55,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
       nGhostLayersOption, &
-      nBricksOption, &
-      nBricksCompatibleOption
+      nBricksOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption, &
       nDimensionsOption, &
@@ -95,9 +93,8 @@ contains
                CoordinateSystemOption, NameOption, EvenDecompositionOption, &
                CoordinateUnitOption, MinCoordinateOption, &
                MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-               nGhostLayersOption, nBricksOption, nBricksCompatibleOption, &
-               IgnorabilityOption, nDimensionsOption, nEqualOption, &
-               iDimensionalityOption )
+               nGhostLayersOption, nBricksOption, IgnorabilityOption, &
+               nDimensionsOption, nEqualOption, iDimensionalityOption )
 
       end select !--  C
 
