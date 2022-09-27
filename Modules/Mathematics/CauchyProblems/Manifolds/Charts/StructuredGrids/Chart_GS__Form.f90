@@ -593,15 +593,30 @@ contains
         call Show ( 'SetDecomposition', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if
-
+      
       C % nCellsBrick &
         = C % nCells / C % nBricks
       C % iaBrick &
         = BrickIndex ( C % nBricks, C % nCells, C % Communicator % Rank )
       
       do iD = 1, nD
-        if ( EvenDecomposition ( iD ) ) &
+        if ( EvenDecomposition ( iD ) ) then
+          if ( mod ( C % nCells ( iD ), C % nBricks ( iD ) ) /= 0 ) then
+            call Show ( 'The number of bricks does not evenly divide ' &
+                        // 'the number of cells', CONSOLE % ERROR )
+            call Show ( iD, 'iDimension', CONSOLE % ERROR )
+            call Show ( EvenDecomposition ( iD ), 'EvenDecomposition', &
+                        CONSOLE % ERROR )
+            call Show ( C % nBricks ( iD ), 'nBricks', CONSOLE % ERROR )
+            call Show ( C % nCells ( iD ), 'nCells', CONSOLE % ERROR )
+            call Show ( 'Chart_GS__Form', 'module', CONSOLE % ERROR )
+            call Show ( 'SetDecomposition', 'subroutine', CONSOLE % ERROR )
+            call PROGRAM_HEADER % Abort ( )
+          end if
           cycle
+        end if
+        
+        !-- Add extra cells with uneven decomposition
         if ( C % iaBrick ( iD ) &
                <= mod ( C % nCells ( iD ), C % nBricks ( iD ) ) ) &
         then
