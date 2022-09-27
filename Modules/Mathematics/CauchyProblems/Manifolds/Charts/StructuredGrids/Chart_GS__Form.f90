@@ -26,7 +26,7 @@ module Chart_GS__Form
       iaBrick, &
       nBricks, &
       nCellsBrick
-    type ( Integer_1D_Form ), dimension ( MAX_DIMENSIONS ) :: &
+    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       nCellsBrickGlobal 
     real ( KDR ), dimension ( MAX_DIMENSIONS ) :: &
       MinCoordinate, &
@@ -433,6 +433,9 @@ contains
       deallocate ( C % Width )
     if ( allocated ( C % Edge ) ) &
       deallocate ( C % Edge )
+      
+    if ( allocated ( C % nCellsBrickGlobal ) ) & 
+      deallocate ( C % nCellsBrickGlobal )
 
   end subroutine Finalize
 
@@ -563,6 +566,9 @@ contains
       
     call PROGRAM_HEADER % GetParameter &
            ( EvenDecomposition, 'EvenDecomposition' )
+           
+    if ( .not. allocated ( C % nCellsBrickGlobal ) ) &
+      allocate ( C % nCellsBrickGlobal ( MAX_DIMENSIONS ) )
 
     if ( C % Distributed ) then
 
