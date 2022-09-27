@@ -60,7 +60,8 @@ contains
     type ( QuantityForm ), intent ( in ), optional :: &
       CoordinateUnitOption
     
-    allocate ( CI % nProperCellsBrick, source = nProperCellsBrick )
+    if ( .not. allocated ( CI % nProperCellsBrick ) ) &
+      allocate ( CI % nProperCellsBrick, source = nProperCellsBrick )
     
     CI % oValue       = oValue
     CI % nTotalCells  = nProperCells 
