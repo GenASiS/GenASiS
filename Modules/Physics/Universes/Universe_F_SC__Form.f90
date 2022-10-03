@@ -32,6 +32,8 @@ module Universe_F_SC__Form
     procedure, public, pass :: &
       InitializeFluid
     procedure, public, pass :: &
+      SetBoundaryConditions
+    procedure, public, pass :: &
       InitializeStep
   end type Universe_F_SC_Form
 
@@ -212,7 +214,7 @@ contains
         call TC % Initialize ( G, U % Units_F ( 1 ) )
         end select !-- TC
 
-        !-- ( Initialize the Fluid)
+        !-- ( Initialize the Fluid )
         call F % Initialize ( G, U % Units_F )
 
         !-- ... but TallyBoundary needs F % Initialize already called.
@@ -242,6 +244,51 @@ contains
     end select !-- I
 
   end subroutine InitializeFluid
+
+
+  subroutine SetBoundaryConditions ( U )
+
+    class ( Universe_F_SC_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    select type ( PS  =>  I % X )
+      class is ( Atlas_SCG_SC_Form )
+
+    select case ( PS % Chart_GS_SC % nDimensions )
+    case ( 1 )  !-- spherical coordinates
+
+      call F % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
+
+    case ( 2 )  !-- cylindrical coordinates
+
+      call F % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'OUTFLOW', 'OUTFLOW' ], iC = 1, iD = 2 )
+
+    case ( 3 )  !-- rectangular coordinates
+
+      call F % SetBoundaryConditionsFace &
+             ( [ 'OUTFLOW', 'OUTFLOW' ], iC = 1, iD = 1 )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'OUTFLOW', 'OUTFLOW' ], iC = 1, iD = 2 )
+      call F % SetBoundaryConditionsFace &
+             ( [ 'OUTFLOW', 'OUTFLOW' ], iC = 1, iD = 3 )
+
+    end select !-- nDimensions
+
+    end select !-- PS
+    end associate !-- F
+
+    end select !-- I
+
+  end subroutine SetBoundaryConditions
 
 
   subroutine InitializeStep ( U )
