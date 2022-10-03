@@ -28,6 +28,8 @@ module Universe_F_SC__Form
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
+      InitializeGravitation
+    procedure, public, pass :: &
       InitializeFluid
     procedure, public, pass :: &
       InitializeStep
@@ -74,7 +76,9 @@ contains
            ( )
     call U % InitializePositionSpace &
            ( RadiusMax, &
-             nCellsRadiusOption = nCellsRadiusOption )
+           nCellsRadiusOption = nCellsRadiusOption )
+    call U % InitializeGravitation &
+           ( )
     call U % InitializeFluid &
            ( FluidType )
     call U % InitializeStep &
@@ -145,6 +149,28 @@ contains
     end associate !-- I 
 
   end subroutine InitializePositionSpace
+
+
+  subroutine InitializeGravitation ( U )
+
+    class ( Universe_F_SC_Form ), intent ( inout ) :: &
+      U
+
+    associate ( I  =>  U % Integrator )
+
+    allocate ( Gravitation_G_Form  ::  I % Geometry_X )
+    select type ( G  =>  I % Geometry_X )
+      class is ( Gravitation_G_Form )
+    call G % Initialize &
+           ( I % X, &
+             DeviceMemoryOption = U % DeviceMemory, &
+             PinnedMemoryOption = U % PinnedMemory, &
+             DevicesCommunicateOption = U % DevicesCommunicate )
+    end select !-- G
+
+    end associate !-- I
+
+  end subroutine InitializeGravitation
 
 
   subroutine InitializeFluid ( U, FluidType )

@@ -44,7 +44,6 @@ clean: clean_ThirdParty
 clobber: clean
 	rm -f Universe_F_B__Form_Test_*
 	rm -f FluidSymmetricCurvilinear_Form_Test_*
-	rm -f FluidCentralExcision_Form_Test_*
 	rm -f Universe_F_CE__Form_Test_*
 	rm -f Universe_F_CC__Form_Test_*
 
