@@ -2,8 +2,9 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Universe_F_B__Form_Test Universe_F_CE__Form_Test Universe_F_CC__Form_Test \
-  #FluidSymmetricCurvilinear_Form_Test FluidCentralExcision_Form_Test
+all: Universe_F_B__Form_Test Universe_F_SC__Form_Test \
+  Universe_F_CE__Form_Test Universe_F_CC__Form_Test \
+
 
 Universe_F_B__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
   Fluids.a Universes.a Universe_F_B__Form_Test.o
@@ -13,13 +14,12 @@ Universe_F_B__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
           Fluids.a Gravitations.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
-FluidSymmetricCurvilinear_Form_Test: ThirdParty.a Basics.a Mathematics.a \
-  Spaces.a StressEnergies.a FluidSymmetricCurvilinear_Form_Test.o
+Universe_F_SC__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
+  Fluids.a Universes.a Universe_F_SC__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o FluidSymmetricCurvilinear_Form_Test_$(MACHINE) \
-          FluidSymmetricCurvilinear_Form_Test.o \
-          FluidSymmetricCurvilinear_Form.o ApplyGravity_F__Command.o \
-          StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
+          -o Universe_F_SC__Form_Test_$(MACHINE) \
+          Universe_F_SC__Form_Test.o Universes.a \
+          Fluids.a Gravitations.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
 Universe_F_CE__Form_Test: ThirdParty.a Basics.a Mathematics.a Gravitations.a \
@@ -43,7 +43,7 @@ clean: clean_ThirdParty
 
 clobber: clean
 	rm -f Universe_F_B__Form_Test_*
-	rm -f FluidSymmetricCurvilinear_Form_Test_*
+	rm -f Universe_F_SC__Form_Test_*
 	rm -f Universe_F_CE__Form_Test_*
 	rm -f Universe_F_CC__Form_Test_*
 
@@ -64,10 +64,10 @@ FluidSymmetricCurvilinear_Form_Test.o: \
   FluidSymmetricCurvilinear_Form.o \
   FluidSymmetricCurvilinear_Form_Test.f90
 
-FluidCentralExcision_Form_Test.o: \
+Universe_F_CE__Form_Test.o: \
   Basics.o \
-  FluidCentralExcision_Form.o \
-  FluidCentralExcision_Form_Test.f90
+  Universe_F_CE__Form.o \
+  Universe_F_CE__Form_Test.f90
 
 Universe_F_CC__Form_Test.o: \
   Basics.o \

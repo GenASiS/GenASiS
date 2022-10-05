@@ -3,8 +3,6 @@ program Universe_F_CE__Form_Test
   !-- Universe_Fluid_CentralExcision__Form_Test
 
   use Basics
-  use Mathematics
-  use Fluids
   use Universe_F_CE__Form
 
   implicit none
