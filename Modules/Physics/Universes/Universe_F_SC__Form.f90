@@ -83,6 +83,8 @@ contains
            ( )
     call U % InitializeFluid &
            ( FluidType )
+    call U % SetBoundaryConditions &
+           ( )
     call U % InitializeStep &
            ( )
 

@@ -1,8 +1,8 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder LinMestelShu \
-  RiemannProblem RayleighTaylor FishboneMoncrief YahilLattimer #SedovTaylor \
-  SASI
+  RiemannProblem RayleighTaylor SedovTaylor FishboneMoncrief YahilLattimer \
+  #SASI
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
