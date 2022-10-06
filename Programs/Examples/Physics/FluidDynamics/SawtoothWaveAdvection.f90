@@ -1,7 +1,6 @@
 program SawtoothWaveAdvection
 
   use GenASiS
-  use PlaneWave_Form
   use SawtoothWave_Form
 
   implicit none

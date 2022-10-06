@@ -141,7 +141,7 @@ contains
 
     select type ( C  =>  A % Chart ( 1 ) % Element )
     class is ( Chart_GS_CC_Form )
-      A % Chart_GS_C  =>  C
+      A % Chart_GS_C   =>  C
       A % Chart_GS_CC  =>  C
     end select !-- C
       

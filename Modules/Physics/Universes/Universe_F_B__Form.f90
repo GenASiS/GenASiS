@@ -45,7 +45,6 @@ contains
                ( U, FluidType, GravitationType, NameOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  UniformAccelerationOption, nCellsOption, nWriteOption )
-!                 CourantFactorOption, 
 
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
@@ -60,7 +59,6 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       UniformAccelerationOption
-!       CourantFactorOption, &
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -106,7 +104,6 @@ contains
     call I % Initialize &
            ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
-!             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
     end select !-- I
@@ -303,7 +300,7 @@ contains
         call TC % Initialize ( G, U % Units_F ( 1 ) )
         end select !-- TC
 
-        !-- ( Initialize the Fluid)
+        !-- ( Initialize the Fluid )
         call F % Initialize ( G, U % Units_F )
 
         !-- ... but TallyBoundary needs F % Initialize already called.
@@ -425,9 +422,6 @@ contains
     end if  !-- DivergenceParts
 
     call S % Initialize ( F )
-!     if ( present ( GravitySolverTypeOption ) ) &   
-!       S % ComputeConstraints % Pointer => ComputeGravity
-!       S % ApplySources % Pointer => ApplyGravity_F
 
     end select !-- S
 

@@ -30,6 +30,8 @@ module Chart_H__Form
   contains
     procedure, public, pass :: &
       Initialize_H
+    procedure, public, pass :: &
+      SetDimensionality
     procedure, private, pass :: &
       Show_C
     generic, public :: &
@@ -48,7 +50,6 @@ module Chart_H__Form
   end type ChartElement
 
     private :: &
-      SetDimensionality, &
       SetCoordinateSystem
 
 
@@ -100,6 +101,60 @@ contains
     end associate !-- Cy
 
   end subroutine Initialize_H
+
+
+  subroutine SetDimensionality ( C, nDimensionsOption, iDimensionalityOption )
+
+    class ( Chart_H_Form ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ), optional :: &
+      nDimensionsOption, &
+      iDimensionalityOption
+
+    integer ( KDI ) :: &
+      iDimensionality
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Dimensionality
+
+    if ( present ( nDimensionsOption ) ) then
+      C % nDimensions = nDimensionsOption
+      call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
+      return
+    end if
+
+    !-- Allow for specification of base manifold and bundle 
+    !   dimensionalities; take the first element here, the dimensionality
+    !   of the base manifold
+    call Split ( PROGRAM_HEADER % Dimensionality, '_', Dimensionality )
+
+    iDimensionality = 1
+    if ( present ( iDimensionalityOption ) ) &
+      iDimensionality = iDimensionalityOption
+
+    if ( iDimensionality > size ( Dimensionality ) ) then
+      call Show ( 'Too few dimensionalities specified', CONSOLE % ERROR )
+      call Show ( 'Chart_H__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetDimensionality', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    select case ( trim ( Dimensionality ( iDimensionality ) ) )
+    case ( '1D' )
+      C % nDimensions = 1
+    case ( '2D' )
+      C % nDimensions = 2
+    case ( '3D' )
+      C % nDimensions = 3
+    case default
+      call Show ( 'PROGRAM_HEADER % Dimensionality not recognized', &
+                  CONSOLE % WARNING )
+      call Show ( 'Chart_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'SetDimensionality', 'subroutine', CONSOLE % WARNING )
+      call Show ( 'Defaulting to 3D', CONSOLE % WARNING )
+      C % nDimensions = 3
+    end select !-- Dimensionality
+
+  end subroutine SetDimensionality
 
 
   subroutine Show_C ( C )
@@ -156,60 +211,6 @@ contains
       deallocate ( CE % Element )
 
   end subroutine Finalize_E
-
-
-  subroutine SetDimensionality ( C, nDimensionsOption, iDimensionalityOption )
-
-    class ( Chart_H_Form ), intent ( inout ) :: &
-      C
-    integer ( KDI ), intent ( in ), optional :: &
-      nDimensionsOption, &
-      iDimensionalityOption
-
-    integer ( KDI ) :: &
-      iDimensionality
-    character ( LDL ), dimension ( : ), allocatable :: &
-      Dimensionality
-
-    if ( present ( nDimensionsOption ) ) then
-      C % nDimensions = nDimensionsOption
-      call Show ( C % nDimensions, 'nDimensions', C % IGNORABILITY )
-      return
-    end if
-
-    !-- Allow for specification of base manifold and bundle 
-    !   dimensionalities; take the first element here, the dimensionality
-    !   of the base manifold
-    call Split ( PROGRAM_HEADER % Dimensionality, '_', Dimensionality )
-
-    iDimensionality = 1
-    if ( present ( iDimensionalityOption ) ) &
-      iDimensionality = iDimensionalityOption
-
-    if ( iDimensionality > size ( Dimensionality ) ) then
-      call Show ( 'Too few dimensionalities specified', CONSOLE % ERROR )
-      call Show ( 'Chart_H__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SetDimensionality', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
-    select case ( trim ( Dimensionality ( iDimensionality ) ) )
-    case ( '1D' )
-      C % nDimensions = 1
-    case ( '2D' )
-      C % nDimensions = 2
-    case ( '3D' )
-      C % nDimensions = 3
-    case default
-      call Show ( 'PROGRAM_HEADER % Dimensionality not recognized', &
-                  CONSOLE % WARNING )
-      call Show ( 'Chart_H__Form', 'module', CONSOLE % WARNING )
-      call Show ( 'SetDimensionality', 'subroutine', CONSOLE % WARNING )
-      call Show ( 'Defaulting to 3D', CONSOLE % WARNING )
-      C % nDimensions = 3
-    end select !-- Dimensionality
-
-  end subroutine SetDimensionality
 
 
   subroutine SetCoordinateSystem &
