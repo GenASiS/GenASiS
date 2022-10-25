@@ -34,22 +34,15 @@ module FishboneMoncrief_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( FishboneMoncriefForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type == '' ) &
       U % Type = 'a FishboneMoncrief'
-
-    Name  =  'FishboneMoncrief'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
 
@@ -138,7 +131,7 @@ contains
     call FM % Initialize &
            ( FluidType = 'IDEAL', &
              GravitationType = 'NEWTON_CM', &
-             NameOption = Name, &
+             Name = Name, &
              FinishTimeOption = T_Finish, &
              RadiusMaxOption = R_Out, &
              RadiusExcisionOption = R_Min, &

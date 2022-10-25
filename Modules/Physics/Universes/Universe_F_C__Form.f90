@@ -102,7 +102,7 @@ contains
 
 
   subroutine Initialize_F_C &
-               ( U, FluidType, GravitationType, NameOption, &
+               ( U, FluidType, GravitationType, Name, &
                  DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
                  GravityFactorOption, CentralMassOption, nCellsPolarOption, &
@@ -112,9 +112,8 @@ contains
       U
     character ( * ), intent ( in )  :: &
       FluidType, &
-      GravitationType
-    character ( * ), intent ( in ), optional :: &
-      NameOption
+      GravitationType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
@@ -129,17 +128,10 @@ contains
       nCellsPolarOption, &
       nWriteOption
 
-    character ( LDL ) :: &
-      Name
-
     if ( U % Type == '' ) &
       U % Type = 'a Universe_F_C'
 
-    Name  =  'Universe'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
-
-    call U % Universe_H_Form % Initialize ( NameOption = Name )
+    call U % Universe_H_Form % Initialize ( Name )
 
     U % Dimensionless  =  .false.
     if ( present ( DimensionlessOption ) ) &

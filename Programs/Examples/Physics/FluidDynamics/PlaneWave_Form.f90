@@ -48,22 +48,15 @@ module PlaneWave_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( PlaneWaveForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional  :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a PlaneWave'
-
-    Name  =  'PlaneWave'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
@@ -178,7 +171,7 @@ contains
     call PW % Initialize &
            ( FluidType = 'DUST', &
              GravitationType = 'GALILEO', &
-             NameOption = Name, &
+             Name = Name, &
              nCellsOption = [ 128, 128, 128 ] )
 
     select type ( I  =>  PW % Integrator )

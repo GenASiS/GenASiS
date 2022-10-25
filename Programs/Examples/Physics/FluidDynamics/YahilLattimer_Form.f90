@@ -69,22 +69,15 @@ module YahilLattimer_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( YahilLattimerForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type == '' ) &
       U % Type = 'a YahilLattimer'
-
-    Name  =  'YahilLattimer'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
@@ -230,7 +223,7 @@ contains
     call YL % Initialize &
            ( FluidType = 'IDEAL', &
              GravitationType = 'NEWTON_SG', &
-             NameOption = Name, &
+             Name = Name, &
              nCellsPolarOption = 128 )
 
     YL % Integrator % SetInitial    =>  SetInitial

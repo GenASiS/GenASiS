@@ -30,7 +30,7 @@ contains
 
 
   subroutine Initialize_F_CE &
-               ( U, FluidType, GravitationType, NameOption, &
+               ( U, FluidType, GravitationType, Name, &
                  DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusExcisionOption, RadialRatioOption, CentralMassOption, &
                  nCellsPolarOption, nWriteOption )
@@ -39,9 +39,8 @@ contains
       U
     character ( * ), intent ( in )  :: &
       FluidType, &
-      GravitationType
-    character ( * ), intent ( in ), optional :: &
-      NameOption
+      GravitationType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
@@ -58,8 +57,7 @@ contains
       U % Type = 'a Universe_F_CE'
 
     call U % Initialize_F_C &
-           ( FluidType, GravitationType, &
-             NameOption = NameOption, &
+           ( FluidType, GravitationType, Name, &
              DimensionlessOption = DimensionlessOption, &
              FinishTimeOption = FinishTimeOption, &
              RadiusMaxOption = RadiusMaxOption, &

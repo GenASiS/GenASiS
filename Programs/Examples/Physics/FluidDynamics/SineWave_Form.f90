@@ -25,12 +25,12 @@ module SineWave_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( SineWaveForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional :: &
-      NameOption
+    character ( * ), intent ( in ) :: &
+      Name
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a SineWave'
@@ -40,7 +40,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( U % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( U % Amplitude, 'Amplitude' )
 
-    call U % PlaneWaveForm % Initialize ( NameOption = 'SineWave' )
+    call U % PlaneWaveForm % Initialize ( Name = 'SineWave' )
 
     U % Integrator % System  =>  U
 

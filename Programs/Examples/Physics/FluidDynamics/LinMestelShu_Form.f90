@@ -62,22 +62,15 @@ module LinMestelShu_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( LinMestelShuForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional  :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a LinMestelShu'
-
-    Name  =  'LinMestelShu'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
@@ -209,7 +202,7 @@ contains
     call LMS % Initialize &
            ( FluidType = 'DUST', &
              GravitationType = 'NEWTON_SG', &
-             NameOption = Name, &
+             Name = Name, &
              DimensionlessOption = .true., &
              RadiusMaxOption = RadiusMax, &
              RadiusCoreOption = RadiusCore, &

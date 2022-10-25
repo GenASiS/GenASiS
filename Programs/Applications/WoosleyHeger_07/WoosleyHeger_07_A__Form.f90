@@ -29,22 +29,15 @@ module WoosleyHeger_07_A__Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( WoosleyHeger_07_A_Form ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type == '' ) &
       U % Type = 'a WoosleyHeger_07_A'
-
-    Name  =  'WoosleyHeger_07_A'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
@@ -80,7 +73,7 @@ contains
     call WH % Initialize &
            ( FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &
-             NameOption = Name, &
+             Name = Name, &
              FinishTimeOption = FinishTime, &
              nCellsPolarOption = 128, &
              nWriteOption = 30 )

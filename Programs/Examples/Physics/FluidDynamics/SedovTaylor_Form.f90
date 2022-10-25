@@ -38,22 +38,15 @@ module SedovTaylor_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( SedovTaylorForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional  :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a SedovTaylor'
-
-    Name  =  'SedovTaylor'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
 
@@ -105,7 +98,7 @@ contains
     call ST % Initialize &
            ( FluidType = 'IDEAL', &
              RadiusMax = RadiusMax, &
-             NameOption = Name, &
+             Name = Name, &
              FinishTimeOption = FinishTime, &
              nCellsRadiusOption = 64 )
 

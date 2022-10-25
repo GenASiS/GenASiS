@@ -21,6 +21,7 @@ program Universe_F_CE__Form_Test
   call U % Initialize &
          ( FluidType = 'DUST', &
            GravitationType = 'NEWTON_CM', &
+           Name = 'Universe', &
            DimensionlessOption = .true., &
            CentralMassOption = 1.0_KDR )
   call U % Show ( )

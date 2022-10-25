@@ -17,7 +17,8 @@ program Universe_F_B__Form_Test
   allocate ( U )
   call U % Initialize &
          ( FluidType = 'DUST', &
-           GravitationType = 'GALILEO' )
+           GravitationType = 'GALILEO', &
+           Name = 'Universe' )
   call U % Show ( )
   deallocate ( U )
 

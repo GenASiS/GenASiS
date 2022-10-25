@@ -42,34 +42,26 @@ contains
 
 
   subroutine Initialize_F_SC &
-               ( U, FluidType, RadiusMax, NameOption, FinishTimeOption, &
+               ( U, FluidType, Name, RadiusMax, FinishTimeOption, &
                  nCellsRadiusOption, nWriteOption )
 
     class ( Universe_F_SC_Form ), intent ( inout ) :: &
       U
     character ( * ), intent ( in )  :: &
-      FluidType
+      FluidType, &
+      Name
     real ( KDR ), intent ( in ) :: &
       RadiusMax
-    character ( * ), intent ( in ), optional :: &
-      NameOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsRadiusOption, &
       nWriteOption
 
-    character ( LDL ) :: &
-      Name
-
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_F_SC'
 
-    Name  =  'Universe_F_SC'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
-
-    call U % Universe_H_Form % Initialize ( NameOption = Name )
+    call U % Universe_H_Form % Initialize ( Name )
 
     allocate ( U % Units_F ( 1 ) )
     call U % Units_F ( 1 ) % Initialize ( )

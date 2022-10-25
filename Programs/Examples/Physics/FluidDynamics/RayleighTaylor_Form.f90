@@ -35,22 +35,15 @@ module RayleighTaylor_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( RayleighTaylorForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional  :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a RayleighTaylor'
-
-    Name  =  'RayleighTaylor'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
 
@@ -112,7 +105,7 @@ contains
     call RT % Initialize &
            ( FluidType = 'IDEAL', &
              GravitationType = 'NEWTON_UA', &
-             NameOption = Name, &
+             Name = Name, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
              FinishTimeOption = 8.5_KDR, &

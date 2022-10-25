@@ -42,7 +42,7 @@ contains
 
 
   subroutine Initialize_F_B &
-               ( U, FluidType, GravitationType, NameOption, &
+               ( U, FluidType, GravitationType, Name, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  UniformAccelerationOption, nCellsOption, nWriteOption )
 
@@ -50,9 +50,8 @@ contains
       U
     character ( * ), intent ( in )  :: &
       FluidType, &
-      GravitationType
-    character ( * ), intent ( in ), optional :: &
-      NameOption
+      GravitationType, &
+      Name
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -64,17 +63,10 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    character ( LDL ) :: &
-      Name
-
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_F_B'
 
-    Name  =  'Universe_F_B'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
-
-    call U % Universe_H_Form % Initialize ( NameOption = Name )
+    call U % Universe_H_Form % Initialize ( Name )
 
     allocate ( U % Units_F ( 1 ) )
     call U % Units_F ( 1 ) % Initialize ( )

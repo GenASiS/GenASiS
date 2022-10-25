@@ -39,22 +39,15 @@ module RiemannProblem_Form
 contains
 
 
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( RiemannProblemForm ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional  :: &
-      NameOption
-
-    character ( LDL ) :: &
+    character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a RiemannProblem'
-
-    Name  =  'RiemannProblem'
-    if ( present ( NameOption ) ) &
-      Name  =  NameOption
 
     call InitializeUniverse ( U, Name )
 
@@ -108,7 +101,7 @@ contains
     call RP % Initialize &
            ( FluidType = 'IDEAL', &
              GravitationType = 'GALILEO', &
-             NameOption = Name, &
+             Name = Name, &
              nCellsOption = [ 128, 128, 128 ] )
 
     select type ( I  =>  RP % Integrator )

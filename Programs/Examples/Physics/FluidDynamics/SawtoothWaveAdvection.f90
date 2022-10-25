@@ -13,7 +13,7 @@ program SawtoothWaveAdvection
          ( 'SawtoothWaveAdvection', DimensionalityOption = '2D' )
 
   allocate ( SW )
-  call SW % Initialize ( )
+  call SW % Initialize ( Name = PROGRAM_HEADER % Name )
   call SW % Evolve ( )
   call SW % ComputeError ( )
   deallocate ( SW )

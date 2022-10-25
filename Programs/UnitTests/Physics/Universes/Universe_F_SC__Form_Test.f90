@@ -17,6 +17,7 @@ program Universe_F_SC__Form_Test
   allocate ( U )
   call U % Initialize &
          ( FluidType = 'IDEAL', &
+           Name = 'Universe', &
            RadiusMax = 10.0_KDR )
   call U % Show ( )
   deallocate ( U )

@@ -23,6 +23,7 @@ program Universe_F_CC__Form_Test
   call U % Initialize &
          ( FluidType = 'DUST', &
            GravitationType = 'NEWTON_SG', &
+           Name = 'Universe', &
            DimensionlessOption = .true. )
   call U % Show ( )
 

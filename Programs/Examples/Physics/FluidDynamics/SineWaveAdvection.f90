@@ -13,7 +13,7 @@ program SineWaveAdvection
          ( 'SineWaveAdvection', DimensionalityOption = '2D' )
 
   allocate ( SW )
-  call SW % Initialize ( )
+  call SW % Initialize ( PROGRAM_HEADER % Name )
   call SW % Evolve ( )
   call SW % ComputeError ( )
   deallocate ( SW )

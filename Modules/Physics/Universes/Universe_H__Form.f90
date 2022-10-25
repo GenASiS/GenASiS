@@ -46,21 +46,19 @@ module Universe_H__Form
 contains
 
  
-  subroutine Initialize_H ( U, NameOption )
+  subroutine Initialize_H ( U, Name )
 
     class ( Universe_H_Form ), intent ( inout ), target :: &
       U
-    character ( * ), intent ( in ), optional :: &
-      NameOption
+    character ( * ), intent ( in ) :: &
+      Name
 
     U % IGNORABILITY = CONSOLE % INFO_1
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe' 
 
-    U % Name  =  'Universe'
-    if ( present ( NameOption ) ) &
-      U % Name  =  NameOption
+    U % Name  =  Name
 
     U % DeviceMemory  =  OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1
     call PROGRAM_HEADER % GetParameter ( U % DeviceMemory, 'DeviceMemory' )
