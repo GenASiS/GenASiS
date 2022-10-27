@@ -1,12 +1,12 @@
-module SawtoothWave_Form
+module SawtoothWaveAdvection_Form
 
   use GenASiS
-  use PlaneWave_Form
+  use PlaneWaveAdvection_Form
 
   implicit none
   private
 
-  type, public, extends ( PlaneWaveForm ) :: SawtoothWaveForm
+  type, public, extends ( PlaneWaveAdvectionForm ) :: SawtoothWaveAdvectionForm
     real ( KDR ) :: &
       Offset, &
       Amplitude
@@ -19,7 +19,7 @@ module SawtoothWave_Form
       Waveform
     final :: &
       Finalize
-  end type SawtoothWaveForm
+  end type SawtoothWaveAdvectionForm
 
 
 contains
@@ -27,20 +27,20 @@ contains
 
   subroutine Initialize_H ( U, Name )
 
-    class ( SawtoothWaveForm ), intent ( inout ), target :: &
+    class ( SawtoothWaveAdvectionForm ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
-      U % Type  =  'a SawtoothWave'
+      U % Type  =  'a SawtoothWaveAdvection'
 
     U % Offset     =  2.0_KDR
     U % Amplitude  =  1.0_KDR
     call PROGRAM_HEADER % GetParameter ( U % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( U % Amplitude, 'Amplitude' )
 
-    call U % PlaneWaveForm % Initialize ( Name = 'SawtoothWave' )
+    call U % PlaneWaveAdvectionForm % Initialize ( Name = 'SawtoothWaveAdvection' )
     
     U % Integrator % System  =>  U
 
@@ -49,10 +49,10 @@ contains
 
   subroutine Show_U ( U )
 
-    class ( SawtoothWaveForm ), intent ( in ) :: &
+    class ( SawtoothWaveAdvectionForm ), intent ( in ) :: &
       U
 
-    call U % PlaneWaveForm % Show ( )
+    call U % PlaneWaveAdvectionForm % Show ( )
 
     call Show ( U % Offset,    'Offset' )
     call Show ( U % Amplitude, 'Amplitude' )
@@ -60,20 +60,20 @@ contains
   end subroutine Show_U
 
 
-  impure elemental subroutine Finalize ( SW )
+  impure elemental subroutine Finalize ( SWA )
     
-    type ( SawtoothWaveForm ), intent ( inout ) :: &
-      SW
+    type ( SawtoothWaveAdvectionForm ), intent ( inout ) :: &
+      SWA
 
   end subroutine Finalize
 
 
-  function Waveform ( PW, X ) result ( W )
+  function Waveform ( PWA, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
 
-    class ( SawtoothWaveForm ), intent ( in ) :: &
-      PW
+    class ( SawtoothWaveAdvectionForm ), intent ( in ) :: &
+      PWA
     real ( KDR ), intent ( in ) :: &
       X
     real ( KDR ) :: &
@@ -83,8 +83,8 @@ contains
       Pi
 
     associate &
-      ( O => PW % Offset, &
-        A => PW % Amplitude )
+      ( O => PWA % Offset, &
+        A => PWA % Amplitude )
 
     Pi  =  CONSTANT % PI
 
@@ -95,4 +95,4 @@ contains
   end function Waveform
 
 
-end module SawtoothWave_Form
+end module SawtoothWaveAdvection_Form

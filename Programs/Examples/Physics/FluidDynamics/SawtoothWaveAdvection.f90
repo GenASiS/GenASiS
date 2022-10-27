@@ -1,22 +1,22 @@
 program SawtoothWaveAdvection
 
   use GenASiS
-  use SawtoothWave_Form
+  use SawtoothWaveAdvection_Form
 
   implicit none
 
-  type ( SawtoothWaveForm ), allocatable :: &
-    SW
+  type ( SawtoothWaveAdvectionForm ), allocatable :: &
+    SWA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'SawtoothWaveAdvection', DimensionalityOption = '2D' )
 
-  allocate ( SW )
-  call SW % Initialize ( Name = PROGRAM_HEADER % Name )
-  call SW % Evolve ( )
-  call SW % ComputeError ( )
-  deallocate ( SW )
+  allocate ( SWA )
+  call SWA % Initialize ( PROGRAM_HEADER % Name )
+  call SWA % Evolve ( )
+  call SWA % ComputeError ( )
+  deallocate ( SWA )
 
   deallocate ( PROGRAM_HEADER )
 

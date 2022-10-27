@@ -1,12 +1,12 @@
-module SineWave_Form
+module SineWaveAdvection_Form
 
   use GenASiS
-  use PlaneWave_Form
+  use PlaneWaveAdvection_Form
 
   implicit none
   private
 
-  type, public, extends ( PlaneWaveForm ) :: SineWaveForm
+  type, public, extends ( PlaneWaveAdvectionForm ) :: SineWaveAdvectionForm
     real ( KDR ) :: &
       Offset, &
       Amplitude
@@ -19,7 +19,7 @@ module SineWave_Form
       Finalize
     procedure, private, pass :: &
       Waveform
-  end type SineWaveForm
+  end type SineWaveAdvectionForm
 
 
 contains
@@ -27,20 +27,20 @@ contains
 
   subroutine Initialize_H ( U, Name )
 
-    class ( SineWaveForm ), intent ( inout ), target :: &
+    class ( SineWaveAdvectionForm ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
-      U % Type  =  'a SineWave'
+      U % Type  =  'a SineWaveAdvection'
 
     U % Offset     =  2.0_KDR
     U % Amplitude  =  1.0_KDR
     call PROGRAM_HEADER % GetParameter ( U % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( U % Amplitude, 'Amplitude' )
 
-    call U % PlaneWaveForm % Initialize ( Name = 'SineWave' )
+    call U % PlaneWaveAdvectionForm % Initialize ( Name = 'SineWaveAdvection' )
 
     U % Integrator % System  =>  U
 
@@ -49,10 +49,10 @@ contains
 
   subroutine Show_U ( U )
 
-    class ( SineWaveForm ), intent ( in ) :: &
+    class ( SineWaveAdvectionForm ), intent ( in ) :: &
       U
 
-    call U % PlaneWaveForm % Show ( )
+    call U % PlaneWaveAdvectionForm % Show ( )
 
     call Show ( U % Offset,    'Offset' )
     call Show ( U % Amplitude, 'Amplitude' )
@@ -60,20 +60,20 @@ contains
   end subroutine Show_U
 
 
-  impure elemental subroutine Finalize ( SW )
+  impure elemental subroutine Finalize ( SWA )
     
-    type ( SineWaveForm ), intent ( inout ) :: &
-      SW
+    type ( SineWaveAdvectionForm ), intent ( inout ) :: &
+      SWA
 
   end subroutine Finalize
 
 
-  function Waveform ( PW, X ) result ( W )
+  function Waveform ( PWA, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
 
-    class ( SineWaveForm ), intent ( in ) :: &
-      PW
+    class ( SineWaveAdvectionForm ), intent ( in ) :: &
+      PWA
     real ( KDR ), intent ( in ) :: &
       X
     real ( KDR ) :: &
@@ -83,8 +83,8 @@ contains
       TwoPi
 
     associate &
-      ( O => PW % Offset, &
-        A => PW % Amplitude )
+      ( O => PWA % Offset, &
+        A => PWA % Amplitude )
 
     TwoPi  =  2.0_KDR * CONSTANT % PI
 
@@ -95,4 +95,4 @@ contains
   end function Waveform
 
 
-end module SineWave_Form
+end module SineWaveAdvection_Form

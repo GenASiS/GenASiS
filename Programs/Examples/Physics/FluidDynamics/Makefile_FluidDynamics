@@ -9,13 +9,15 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 SineWaveAdvection: ThirdParty.a GenASiS.a SineWaveAdvection.o
 	$(LINK) $(FLAGS) \
            -o SineWaveAdvection_$(MACHINE) \
-           SineWaveAdvection.o SineWave_Form.o PlaneWave_Form.o \
+           SineWaveAdvection.o SineWaveAdvection_Form.o \
+           PlaneWaveAdvection_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 SawtoothWaveAdvection: ThirdParty.a GenASiS.a SawtoothWaveAdvection.o
 	$(LINK) $(FLAGS) \
           -o SawtoothWaveAdvection_$(MACHINE) \
-          SawtoothWaveAdvection.o SawtoothWave_Form.o PlaneWave_Form.o \
+          SawtoothWaveAdvection.o SawtoothWaveAdvection_Form.o \
+          PlaneWaveAdvection_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
@@ -83,28 +85,28 @@ clobber: clean
 	rm -f YahilLattimer_*
 	rm -f SASI_*
 
-PlaneWave_Form.o: \
+PlaneWaveAdvection_Form.o: \
   GenASiS.o \
-  PlaneWave_Form.f90
+  PlaneWaveAdvection_Form.f90
 
-SineWave_Form.o: \
+SineWaveAdvection_Form.o: \
   GenASiS.o \
-  PlaneWave_Form.o \
-  SineWave_Form.f90
+  PlaneWaveAdvection_Form.o \
+  SineWaveAdvection_Form.f90
 
 SineWaveAdvection.o: \
   GenASiS.o \
-  SineWave_Form.o \
+  SineWaveAdvection_Form.o \
   SineWaveAdvection.f90
 
-SawtoothWave_Form.o: \
+SawtoothWaveAdvection_Form.o: \
   Basics.o \
-  PlaneWave_Form.o \
-  SawtoothWave_Form.f90
+  PlaneWaveAdvection_Form.o \
+  SawtoothWaveAdvection_Form.f90
 
 SawtoothWaveAdvection.o: \
   Basics.o \
-  SawtoothWave_Form.o \
+  SawtoothWaveAdvection_Form.o \
   SawtoothWaveAdvection.f90
 
 OppenheimerSnyder_Form.o: \

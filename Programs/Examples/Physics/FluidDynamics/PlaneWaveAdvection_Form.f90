@@ -1,13 +1,13 @@
 #include "Preprocessor"
 
-module PlaneWave_Form
+module PlaneWaveAdvection_Form
 
   use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( Universe_F_B_Form ) :: PlaneWaveForm
+  type, public, extends ( Universe_F_B_Form ) :: PlaneWaveAdvectionForm
     integer ( KDI ) :: &
       nPeriods
     integer ( KDI ), dimension ( 3 ) :: &
@@ -31,7 +31,7 @@ module PlaneWave_Form
       Finalize
     procedure, private, pass :: &
       Waveform
-  end type PlaneWaveForm
+  end type PlaneWaveAdvectionForm
 
     private :: &
       InitializeUniverse, &
@@ -50,13 +50,13 @@ contains
 
   subroutine Initialize_H ( U, Name )
 
-    class ( PlaneWaveForm ), intent ( inout ), target :: &
+    class ( PlaneWaveAdvectionForm ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ) :: &
       Name
 
     if ( U % Type  ==  '' ) &
-      U % Type  =  'a PlaneWave'
+      U % Type  =  'a PlaneWaveAdvection'
 
     call InitializeUniverse ( U, Name )
     call InitializeDiagnostics ( U )
@@ -66,7 +66,7 @@ contains
 
   subroutine Show_U ( U )
 
-    class ( PlaneWaveForm ), intent ( in ) :: &
+    class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
       U
 
     call U % Universe_H_Form % Show ( )
@@ -78,22 +78,22 @@ contains
   end subroutine Show_U
 
 
-  subroutine ComputeError ( PW )
+  subroutine ComputeError ( PWA )
 
-    class ( PlaneWaveForm ), intent ( in ) :: &
-      PW
+    class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
+      PWA
 
     real ( KDR ) :: &
       L1
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    select type ( A  =>  PW % Reference % Atlas )
+    select type ( A  =>  PWA % Reference % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
       ( C    =>  A % Chart_GS, &
-        F_R  =>  PW % Reference, &
-        F_D  =>  PW % Difference )
+        F_R  =>  PWA % Reference, &
+        F_D  =>  PWA % Difference )
     associate &
       ( FV_R  =>  F_R % Storage_GS % Value, &
         FV_D  =>  F_D % Storage_GS % Value )
@@ -126,25 +126,25 @@ contains
   end subroutine ComputeError
 
 
-  impure elemental subroutine Finalize ( PW )
+  impure elemental subroutine Finalize ( PWA )
 
-    type ( PlaneWaveForm ), intent ( inout ) :: &
-      PW
+    type ( PlaneWaveAdvectionForm ), intent ( inout ) :: &
+      PWA
 
-    if ( allocated ( PW % Difference ) ) &
-      deallocate ( PW % Difference )
-    if ( allocated ( PW % Reference ) ) &
-      deallocate ( PW % Reference )
+    if ( allocated ( PWA % Difference ) ) &
+      deallocate ( PWA % Difference )
+    if ( allocated ( PWA % Reference ) ) &
+      deallocate ( PWA % Reference )
 
   end subroutine Finalize
 
 
-  function Waveform ( PW, X ) result ( W )
+  function Waveform ( PWA, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
 
-    class ( PlaneWaveForm ), intent ( in ) :: &
-      PW
+    class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
+      PWA
     real ( KDR ), intent ( in ) :: &
       X
     real ( KDR ) :: &
@@ -152,29 +152,29 @@ contains
     
     W = huge ( 1.0_KDR ) 
     call Show ( 'Waveform should be overridden', CONSOLE % WARNING )
-    call Show ( 'PlaneWave_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'PlaneWaveAdvection_Form', 'module', CONSOLE % WARNING )
     call Show ( 'Waveform', 'function', CONSOLE % WARNING )
 
   end function Waveform
 
 
-  subroutine InitializeUniverse ( PW, Name )
+  subroutine InitializeUniverse ( PWA, Name )
 
-    class ( PlaneWaveForm ), intent ( inout ) :: &
-      PW
+    class ( PlaneWaveAdvectionForm ), intent ( inout ) :: &
+      PWA
     character ( * ), intent ( in )  :: &
       Name
 
     integer ( KDI ) :: &
       iD
 
-    call PW % Initialize &
+    call PWA % Initialize &
            ( FluidType = 'DUST', &
              GravitationType = 'GALILEO', &
              Name = Name, &
              nCellsOption = [ 128, 128, 128 ] )
 
-    select type ( I  =>  PW % Integrator )
+    select type ( I  =>  PWA % Integrator )
       class is ( Integrator_CS_Form )
     associate &
       ( F  =>  I % CurrentSet_X )
@@ -185,28 +185,28 @@ contains
     end associate !-- F
     end select !-- I
              
-    PW % Integrator % SetInitial    =>  SetInitial
-    PW % Integrator % SetReference  =>  SetReference
+    PWA % Integrator % SetInitial    =>  SetInitial
+    PWA % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
 
 
-  subroutine InitializeDiagnostics ( PW )
+  subroutine InitializeDiagnostics ( PWA )
 
-    class ( PlaneWaveForm ), intent ( inout ) :: &
-      PW
+    class ( PlaneWaveAdvectionForm ), intent ( inout ) :: &
+      PWA
 
     allocate &
-      ( PW % Reference, &
-        PW % Difference )
+      ( PWA % Reference, &
+        PWA % Difference )
     associate &
-      ( F_R  =>  PW % Reference, &
-        F_D  =>  PW % Difference, &
-        G    =>  PW % Integrator % Geometry_X, &
-        S    =>  PW % Integrator % Checkpoint_X )
+      ( F_R  =>  PWA % Reference, &
+        F_D  =>  PWA % Difference, &
+        G    =>  PWA % Integrator % Geometry_X, &
+        S    =>  PWA % Integrator % Checkpoint_X )
 
-    call F_R % Initialize ( G, PW % Units_F, NameOption = 'Reference' )
-    call F_D % Initialize ( G, PW % Units_F, NameOption = 'Difference' )
+    call F_R % Initialize ( G, PWA % Units_F, NameOption = 'Reference' )
+    call F_D % Initialize ( G, PWA % Units_F, NameOption = 'Difference' )
     call F_R % SetStream ( S )
     call F_D % SetStream ( S )
 
@@ -220,8 +220,8 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    select type ( PW  =>  I % System )
-      class is ( PlaneWaveForm )
+    select type ( PWA  =>  I % System )
+      class is ( PlaneWaveAdvectionForm )
     select type ( I )
       class is ( Integrator_CS_Form )
     select type ( F  =>  I % CurrentSet_X )
@@ -231,32 +231,32 @@ contains
     associate &
       ( C  =>  A % Chart_GS )
 
-    PW % nWavelengths = 0
-    PW % nWavelengths ( 1  :  C % nDimensions )  =  1
-    call PROGRAM_HEADER % GetParameter ( PW % nWavelengths, 'nWavelengths' )
+    PWA % nWavelengths = 0
+    PWA % nWavelengths ( 1  :  C % nDimensions )  =  1
+    call PROGRAM_HEADER % GetParameter ( PWA % nWavelengths, 'nWavelengths' )
 
     associate ( BoxSize  =>  C % MaxCoordinate  -  C % MinCoordinate )
     where ( BoxSize  >  0.0_KDR )
-      PW % Wavenumber  =  PW % nWavelengths / BoxSize
+      PWA % Wavenumber  =  PWA % nWavelengths / BoxSize
     elsewhere
-      PW % Wavenumber  =  0.0_KDR
+      PWA % Wavenumber  =  0.0_KDR
     end where
 
-    PW % Speed  =  1.0_KDR
-    call PROGRAM_HEADER % GetParameter ( PW % Speed, 'Speed' )
+    PWA % Speed  =  1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( PWA % Speed, 'Speed' )
 
     associate &
-      ( K      =>  PW % Wavenumber, &
-        Abs_K  =>  sqrt ( dot_product ( PW % Wavenumber, PW % Wavenumber ) ), &
-        V      =>  PW % Speed )
-    PW % Period  =  1.0_KDR / ( Abs_K * V )
+      ( K      =>  PWA % Wavenumber, &
+        Abs_K  =>  sqrt ( dot_product ( PWA % Wavenumber, PWA % Wavenumber ) ), &
+        V      =>  PWA % Speed )
+    PWA % Period  =  1.0_KDR / ( Abs_K * V )
 
-    PW % nPeriods  =  1
-    call PROGRAM_HEADER % GetParameter ( PW % nPeriods, 'nPeriods' )
+    PWA % nPeriods  =  1
+    call PROGRAM_HEADER % GetParameter ( PWA % nPeriods, 'nPeriods' )
 
-    I % T_Finish  =  PW % nPeriods  *  PW % Period
+    I % T_Finish  =  PWA % nPeriods  *  PWA % Period
 
-    call SetFluid ( PW, F )
+    call SetFluid ( PWA, F )
 
     end associate !-- K, etc.
     end associate !-- BoxSize
@@ -264,7 +264,7 @@ contains
     end select !-- A
     end select !-- F
     end select !-- I
-    end select !-- PW
+    end select !-- PWA
 
   end subroutine SetInitial
 
@@ -274,32 +274,32 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    select type ( PW  =>  I % System )
-      class is ( PlaneWaveForm )
-    select type ( I  =>  PW % Integrator )
+    select type ( PWA  =>  I % System )
+      class is ( PlaneWaveAdvectionForm )
+    select type ( I  =>  PWA % Integrator )
       class is ( Integrator_CS_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_D_Form )
     associate &
-      ( F_R  =>  PW % Reference, &
-        F_D  =>  PW % Difference )
+      ( F_R  =>  PWA % Reference, &
+        F_D  =>  PWA % Difference )
 
-    call SetFluid ( PW, F_R )
+    call SetFluid ( PWA, F_R )
 
     call F_D % MultiplyAdd ( F, F_R, -1.0_KDR )
 
     end associate !-- F_R, etc.
     end select !-- F
     end select !-- I
-    end select !-- PW
+    end select !-- PWA
 
   end subroutine SetReference
 
 
-  subroutine SetFluid ( PW, F )
+  subroutine SetFluid ( PWA, F )
 
-    class ( PlaneWaveForm ), intent ( inout ) :: &
-      PW
+    class ( PlaneWaveAdvectionForm ), intent ( inout ) :: &
+      PWA
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
 
@@ -317,14 +317,14 @@ contains
              VX = FV ( :, F % VELOCITY_U_1 ), &
              VY = FV ( :, F % VELOCITY_U_2 ), &
              VZ = FV ( :, F % VELOCITY_U_3 ), &
-             PW = PW, &
+             PWA = PWA, &
              ProperCell = C % ProperCell, &
              X = GV ( :, G % CENTER_U_1 ), &
              Y = GV ( :, G % CENTER_U_2 ), &
              Z = GV ( :, G % CENTER_U_3 ), &
-             K = PW % Wavenumber, &
-             V = PW % Speed, &
-             T = PW % Integrator % T )
+             K = PWA % Wavenumber, &
+             V = PWA % Speed, &
+             T = PWA % Integrator % T )
 
     end associate !-- FV, etc.
     end associate !-- C, etc.
@@ -334,13 +334,13 @@ contains
 
 
   subroutine SetFluidKernel &
-               ( N, VX, VY, VZ, PW, ProperCell, X, Y, Z, K, V, T )
+               ( N, VX, VY, VZ, PWA, ProperCell, X, Y, Z, K, V, T )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       N, &
       VX, VY, VZ
-    class ( PlaneWaveForm ), intent ( in ) :: &
-      PW
+    class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
+      PWA
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -372,7 +372,7 @@ contains
       VY ( iV )  =  V  *  K ( 2 )  /  Abs_K
       VZ ( iV )  =  V  *  K ( 3 )  /  Abs_K
 
-      N ( iV )  =  PW % Waveform &
+      N ( iV )  =  PWA % Waveform &
                      (    K ( 1 )  *  ( X ( iV )  -  VX ( iV )  *  T ) &
                        +  K ( 2 )  *  ( Y ( iV )  -  VY ( iV )  *  T ) &
                        +  K ( 3 )  *  ( Z ( iV )  -  VZ ( iV )  *  T ) )
@@ -383,4 +383,4 @@ contains
   end subroutine SetFluidKernel
 
 
-end module PlaneWave_Form
+end module PlaneWaveAdvection_Form

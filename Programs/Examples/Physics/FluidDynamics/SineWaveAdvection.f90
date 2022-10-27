@@ -1,22 +1,22 @@
 program SineWaveAdvection
 
   use GenASiS
-  use SineWave_Form
+  use SineWaveAdvection_Form
 
   implicit none
 
-  type ( SineWaveForm ), allocatable :: &
-    SW
+  type ( SineWaveAdvectionForm ), allocatable :: &
+    SWA
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'SineWaveAdvection', DimensionalityOption = '2D' )
 
-  allocate ( SW )
-  call SW % Initialize ( PROGRAM_HEADER % Name )
-  call SW % Evolve ( )
-  call SW % ComputeError ( )
-  deallocate ( SW )
+  allocate ( SWA )
+  call SWA % Initialize ( PROGRAM_HEADER % Name )
+  call SWA % Evolve ( )
+  call SWA % ComputeError ( )
+  deallocate ( SWA )
 
   deallocate ( PROGRAM_HEADER )
 
