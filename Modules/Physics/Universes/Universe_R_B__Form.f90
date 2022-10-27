@@ -10,6 +10,8 @@ module Universe_R_B__Form
   private
 
   type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
+    character ( LDL ) :: &
+      MomentsType = ''
   contains
     procedure, private, pass :: &
       Initialize_R_B
@@ -17,6 +19,8 @@ module Universe_R_B__Form
       Initialize => Initialize_R_B
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
   end type Universe_R_B_Form
 
 
@@ -40,6 +44,8 @@ contains
 
     call U % Universe_H_Form % Initialize ( Name )
 
+    U % MomentsType  =  MomentsType
+
   end subroutine Initialize_R_B
 
 
@@ -52,6 +58,18 @@ contains
 !      deallocate ( U % Units_F )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( Universe_R_B_Form ), intent ( in ) :: &
+      U
+
+    call U % Universe_F_B_Form % ShowParameters ( )
+
+    call Show ( U % MomentsType, 'MomentsType', U % IGNORABILITY )
+
+  end subroutine ShowParameters
 
 
 end module Universe_R_B__Form
