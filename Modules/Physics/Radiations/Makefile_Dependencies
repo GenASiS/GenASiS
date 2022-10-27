@@ -1,0 +1,10 @@
+Units_R__Form.o: \
+  Basics.o \
+  Units_R__Form.f90
+
+Radiations.o: \
+  Units_R__Form.o \
+  Radiations.f90
+
+Radiations.a: $(RADIATIONS)
+	ar r Radiations.a $(RADIATIONS)

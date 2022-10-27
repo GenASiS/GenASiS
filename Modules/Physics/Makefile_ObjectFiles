@@ -1,9 +1,11 @@
 include $(PATH_UNIVERSES)/Makefile_ObjectFiles
+include $(PATH_RADIATIONS)/Makefile_ObjectFiles
 include $(PATH_FLUIDS)/Makefile_ObjectFiles
 include $(PATH_GRAVITATIONS)/Makefile_ObjectFiles
 
 PHYSICS = \
   Physics.o \
   $(UNIVERSES) \
+  $(RADIATIONS) \
   $(FLUIDS) \
   $(GRAVITATIONS)

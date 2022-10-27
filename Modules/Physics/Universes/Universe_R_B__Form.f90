@@ -4,6 +4,8 @@ module Universe_R_B__Form
 
   use Basics
   use Mathematics
+  use Fluids
+  use Radiations
   use Universe_F_B__Form
 
   implicit none
@@ -12,6 +14,8 @@ module Universe_R_B__Form
   type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
     character ( LDL ) :: &
       MomentsType = ''
+    type ( Units_R_Form ), dimension ( : ), allocatable :: &
+      Units_R
   contains
     procedure, private, pass :: &
       Initialize_R_B
@@ -46,6 +50,9 @@ contains
 
     U % MomentsType  =  MomentsType
 
+    allocate ( U % Units_R ( 1 ) )
+    call U % Units_R ( 1 ) % Initialize ( )
+
   end subroutine Initialize_R_B
 
 
@@ -54,8 +61,8 @@ contains
     type ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
-!    if ( allocated ( U % Units_F ) ) &
-!      deallocate ( U % Units_F )
+    if ( allocated ( U % Units_R ) ) &
+      deallocate ( U % Units_R )
 
   end subroutine Finalize
 
