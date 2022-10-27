@@ -4,12 +4,12 @@ module Universe_R_B__Form
 
   use Basics
   use Mathematics
-  use Universe_H__Form
+  use Universe_F_B__Form
 
   implicit none
   private
 
-  type, public, extends ( Universe_H_Form ) :: Universe_R_B_Form
+  type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
   contains
     procedure, private, pass :: &
       Initialize_R_B

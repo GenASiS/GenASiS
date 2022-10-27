@@ -11,14 +11,35 @@ module SineWaveStreaming_Form
       Offset, &
       Amplitude
   contains
-!    procedure, private, pass :: &
-!      Initialize_PWS
+    procedure, private, pass :: &
+      Initialize_PWS
     final :: &
       Finalize
   end type SineWaveStreamingForm
  
 
 contains
+
+
+  subroutine Initialize_PWS ( PWS, MomentsType, Name )
+
+    class ( SineWaveStreamingForm ), intent ( inout ), target :: &
+      PWS
+    character ( * ), intent ( in )  :: &
+      MomentsType, &
+      Name
+
+    if ( PWS % Type  ==  '' ) &
+      PWS % Type  =  'a SineWaveStreaming'
+
+    PWS % Offset    = 2.0_KDR
+    PWS % Amplitude = 1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( PWS % Offset, 'Offset' )
+    call PROGRAM_HEADER % GetParameter ( PWS % Amplitude, 'Amplitude' )
+
+    call PWS % PlaneWaveStreamingForm % Initialize ( MomentsType, Name )
+
+  end subroutine Initialize_PWS
 
 
   impure elemental subroutine Finalize ( SWS )
