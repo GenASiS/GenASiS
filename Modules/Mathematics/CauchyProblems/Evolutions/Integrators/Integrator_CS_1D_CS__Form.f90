@@ -14,7 +14,7 @@ module Integrator_CS_1D_CS__Form
 
   type, public, extends ( Integrator_CS_Form ) :: Integrator_CS_1D_CS_Form
     integer ( KDI ) :: &
-      N_CURRENTS_1D = 0
+      N_CURRENT_SETS_1D = 0
   end type Integrator_CS_1D_CS_Form
 
 end module Integrator_CS_1D_CS__Form

@@ -57,6 +57,9 @@ contains
     allocate ( U % Units_R ( 1 ) )
     call U % Units_R ( 1 ) % Initialize ( )
 
+    call U % AllocateIntegrator &
+           ( RadiationName )
+
   end subroutine Initialize_R_B
 
 
@@ -97,20 +100,20 @@ contains
     select type ( I => U % Integrator )
     class is ( Integrator_CS_1D_CS_Form )
 
-      I % N_CURRENTS_1D  =  size ( RadiationName )
+      I % N_CURRENT_SETS_1D  =  size ( RadiationName )
       allocate ( I % dT_Label &
-                   ( 1  +  I % N_CURRENTS_1D  +  I % N_CURRENTS_1D ) )
+                   ( 1  +  I % N_CURRENT_SETS_1D  +  I % N_CURRENT_SETS_1D ) )
 
       I % dT_Label ( 1 )  &
         =  'FluidAdvection'
 
-      do iCS = 1, I % N_CURRENTS_1D
+      do iCS = 1, I % N_CURRENT_SETS_1D
         I % dT_Label ( 1 + iCS )  &
           =  trim ( RadiationName ( iCS ) ) // 'Streaming'
       end do !-- iCS
 
-      do iCS = 1, I % N_CURRENTS_1D
-        I % dT_Label ( I % N_CURRENTS_1D  +  1  +  iCS )  &
+      do iCS = 1, I % N_CURRENT_SETS_1D
+        I % dT_Label ( I % N_CURRENT_SETS_1D  +  1  +  iCS )  &
           =  trim ( RadiationName ( iCS ) ) // 'Interactions'
       end do !-- iCS
 
@@ -118,9 +121,9 @@ contains
 
     ! select type ( I => U % Integrator )
     ! class is ( Integrator_C_1D_PS_C_PS_Form )
-    !   allocate ( I % Current_ASC_1D ( I % N_CURRENTS_1D ) )
+    !   allocate ( I % Current_ASC_1D ( I % N_CURRENT_SETS_1D ) )
     ! class is ( Integrator_C_1D_MS_C_PS_Form )
-    !   allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENTS_1D ) )
+    !   allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENT_SETS_1D ) )
     ! end select !-- I
 
   end subroutine AllocateIntegrator_R_B
