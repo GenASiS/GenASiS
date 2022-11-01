@@ -21,12 +21,12 @@ module SineWaveStreaming_Form
 contains
 
 
-  subroutine Initialize_PWS ( PWS, MomentsType, Name )
+  subroutine Initialize_PWS ( PWS, FormalismType, Name )
 
     class ( SineWaveStreamingForm ), intent ( inout ), target :: &
       PWS
     character ( * ), intent ( in )  :: &
-      MomentsType, &
+      FormalismType, &
       Name
 
     if ( PWS % Type  ==  '' ) &
@@ -37,7 +37,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( PWS % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( PWS % Amplitude, 'Amplitude' )
 
-    call PWS % PlaneWaveStreamingForm % Initialize ( MomentsType, Name )
+    call PWS % PlaneWaveStreamingForm % Initialize ( FormalismType, Name )
 
   end subroutine Initialize_PWS
 

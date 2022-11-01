@@ -24,21 +24,21 @@ module PlaneWaveStreaming_Form
 contains
 
 
-  subroutine Initialize_PWS ( PWS, MomentsType, Name )
+  subroutine Initialize_PWS ( PWS, FormalismType, Name )
 
     class ( PlaneWaveStreamingForm ), intent ( inout ), target :: &
       PWS
     character ( * ), intent ( in )  :: &
-      MomentsType, &
+      FormalismType, &
       Name
 
     if ( PWS % Type  ==  '' ) &
       PWS % Type  =  'a PlaneWaveStreaming'
 
-    call InitializeUniverse ( PWS, MomentsType, Name )
+    call InitializeUniverse ( PWS, FormalismType, Name )
 
-    ! call InitializeRadiationBox ( PWS, MomentsType, Name )
-    ! call InitializeDiagnostics ( PWS, MomentsType )
+    ! call InitializeRadiationBox ( PWS, FormalismType, Name )
+    ! call InitializeDiagnostics ( PWS, FormalismType )
     ! call SetProblem ( PWS )
  
   end subroutine Initialize_PWS
@@ -57,12 +57,12 @@ contains
   end subroutine Finalize
 
 
-  subroutine InitializeUniverse ( PWS, MomentsType, Name )
+  subroutine InitializeUniverse ( PWS, FormalismType, Name )
 
     class ( PlaneWaveStreamingForm ), intent ( inout ) :: &
       PWS
     character ( * ), intent ( in )  :: &
-      MomentsType, &
+      FormalismType, &
       Name
 
 !    integer ( KDI ) :: &
@@ -71,7 +71,7 @@ contains
     call PWS % Initialize &
            ( RadiationName = [ 'Radiation' ], &
              RadiationType = [ 'GENERIC' ], &
-             MomentsType = MomentsType, &
+             FormalismType = FormalismType, &
              Name = Name )
              ! EnergySpacingOption = 'COMPACTIFIED', &
              ! ApplyInteractionsOption = .false., &

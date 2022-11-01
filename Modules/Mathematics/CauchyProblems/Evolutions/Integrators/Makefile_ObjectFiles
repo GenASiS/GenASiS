@@ -1,5 +1,8 @@
 INTEGRATORS = \
   Integrators.o \
+  Integrator_CS_1D_CB_CS__Form.o \
+  Integrator_CS_1D_BM_CS__Form.o \
+  Integrator_CS_1D_CS__Form.o \
   Integrator_CS__Kernel.o \
   Integrator_CS__Form.o \
   Integrator_H__Form.o \
