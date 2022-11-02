@@ -150,7 +150,7 @@ contains
       call Show ( 'Do not use nBricks command line option', CONSOLE % ERROR )
       call Show ( 'Chart_GS_C__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Initialize_GS_C', 'module', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Communicator % Synchronize ( )
+      call C % Communicator % Synchronize ( )
       call PROGRAM_HEADER % Abort ( )
     end if
 
@@ -166,7 +166,7 @@ contains
     !   call Show ( C % nCells ( 2 ), 'nCells ( 2 )', CONSOLE % ERROR )
     !   call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
     !   call Show ( 'Chart_SLD_C__Template', 'module', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Communicator % Synchronize ( )
+    !   call C % Communicator % Synchronize ( )
     !   call PROGRAM_HEADER % Abort ( )
     ! end if
       
