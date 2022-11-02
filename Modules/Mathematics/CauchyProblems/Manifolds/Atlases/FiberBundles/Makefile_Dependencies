@@ -1,4 +1,10 @@
+Bundle_H__Form.o: \
+  Basics.o \
+  BaseManifolds.o \
+  Bundle_H__Form.f90
+
 FiberBundles.o: \
+  Bundle_H__Form.o \
   FiberBundles.f90
 
 FiberBundles.a: $(FIBER_BUNDLES)

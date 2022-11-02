@@ -1,2 +1,3 @@
 FIBER_BUNDLES = \
-  FiberBundles.o
+  FiberBundles.o \
+  Bundle_H__Form.o
