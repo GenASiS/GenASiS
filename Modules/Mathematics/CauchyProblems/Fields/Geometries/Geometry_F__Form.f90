@@ -607,7 +607,12 @@ contains
     iaF  =  1  -  C % nGhostLayers ( iD ) 
     if ( C % Distributed ) then
       iaL  =  C % nCellsBrick ( iD )  +  C % nGhostLayers ( iD )
-       oC  =  ( C % iaBrick ( iD )  -  1 )  *  C % nCellsBrick ( iD )
+      if ( C % iaBrick ( iD ) == 1 ) then
+        oC  = 0
+      else
+        oC  =  sum ( C % nCellsBrickGlobal ( iD ) &
+                       % Value ( 1 : C % iaBrick ( iD )  -  1 ) )
+      end if
     else
       iaL  =  C % nCells ( iD )  +  C % nGhostLayers ( iD )
        oC  =  0

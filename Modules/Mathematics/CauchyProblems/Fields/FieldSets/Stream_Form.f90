@@ -509,10 +509,15 @@ contains
 
       associate &
         ( nCB  =>  C % nCellsBrick ( iD ), &
+          nCBG =>  C % nCellsBrickGlobal ( iD ) % Value, &
           nGL  =>  C % nGhostLayers ( iD ), &
           iaB  =>  C % iaBrick ( iD ) )
-
-      oE  =  ( iaB - 1 ) * nCB  -  nGL
+      
+      if ( C % iaBrick ( iD ) == 1 ) then    
+        oE  = 0 - nGL
+      else
+        oE  =  sum ( nCBG ( 1 : iaB  -  1 ) ) - nGL
+      end if
       nE  =  nCB  +  2 * nGL  +  1
 
       call Edge ( iD ) % Initialize ( nE )
