@@ -1,5 +1,7 @@
+include $(PATH_FIBER_BUNDLES)/Makefile_ObjectFiles
 include $(PATH_BASE_MANIFOLDS)/Makefile_ObjectFiles
 
 ATLASES = \
   Atlases.o \
+  $(FIBER_BUNDLES) \
   $(BASE_MANIFOLDS)

@@ -1,6 +1,6 @@
 module Atlases
 
   use BaseManifolds
-!  use FiberBundles
+  use FiberBundles
 
 end module Atlases

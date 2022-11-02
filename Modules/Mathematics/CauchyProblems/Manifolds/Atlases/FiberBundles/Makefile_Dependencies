@@ -1,0 +1,5 @@
+FiberBundles.o: \
+  FiberBundles.f90
+
+FiberBundles.a: $(FIBER_BUNDLES)
+	ar r FiberBundles.a $(FIBER_BUNDLES)

@@ -1,7 +1,9 @@
 include $(PATH_BASE_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIBER_BUNDLES)/Makefile_Dependencies
 
 Atlases.o: \
   BaseManifolds.o \
+  FiberBundles.o \
   Atlases.f90
 
 Atlases.a: $(ATLASES)

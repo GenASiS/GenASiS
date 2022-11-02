@@ -1,0 +1,22 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Bundle_ASCG_ASCG__Form_Test
+
+Bundle_ASCG_ASCG__Form_Test: Basics.a Charts.a BaseManifolds.a FiberBundles.a
+
+clean:
+	rm -f *.o *.a *.mod *.smod *.ld
+
+clobber: clean
+	rm -f Atlas_H__Form_Test_*
+	rm -f Atlas_SCG__Form_Test_*
+	rm -f Atlas_SCG_SC__Form_Test_*
+	rm -f Atlas_SCG_CE__Form_Test_*
+	rm -f Atlas_SCG_CC__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_CHARTS)/Makefile_Dependencies
+include $(PATH_BASE_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_FIBER_BUNDLES)/Makefile_Dependencies
