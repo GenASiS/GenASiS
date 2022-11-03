@@ -37,7 +37,7 @@ contains
 
     class ( Bundle_H_Form ), intent ( inout ) :: &
       B
-    class ( Atlas_H_Form ), intent ( inout ), target :: &
+    class ( Atlas_H_Form ), intent ( in ), target :: &
       Base
     character ( * ), intent ( in ), optional :: &
       NameOption

@@ -3,8 +3,16 @@ Bundle_H__Form.o: \
   BaseManifolds.o \
   Bundle_H__Form.f90
 
+Bundle_ASCG_ASCG__Form.o: \
+  Basics.o \
+  Charts.o \
+  BaseManifolds.o \
+  Bundle_H__Form.o \
+  Bundle_ASCG_ASCG__Form.f90
+
 FiberBundles.o: \
   Bundle_H__Form.o \
+  Bundle_ASCG_ASCG__Form.o \
   FiberBundles.f90
 
 FiberBundles.a: $(FIBER_BUNDLES)
