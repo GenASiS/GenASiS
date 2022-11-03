@@ -282,6 +282,9 @@ contains
       L
     class ( FieldSetForm ), intent ( inout ) :: &
       Source
+    
+    integer ( KDI ) :: &
+      oR
 
     select type ( A  =>  L % Geometry % Atlas )
       class is ( Atlas_SCG_Form )
@@ -318,12 +321,19 @@ contains
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
+      if ( C % iaBrick ( 1 ) == 1 ) then
+        oR = 0
+      else
+        oR =  sum ( C % nCellsBrickGlobal ( 1 ) &
+                      % Value ( 1 : C % iaBrick ( 1 )  -  1 ) )
+      end if
+                               
       call ComputeAngularMomentsLocal_CGS_S_Kernel &
              ( L % MyAngularMoment_3D, L % Source_4D, L % AngularFunction_3D, &
                L % dSolidAngle_2D, C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, L % nAngularMoments, &
-               oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
-               UseDeviceOption = L % DeviceMemory )
+               oR = oR, UseDeviceOption = L % DeviceMemory )
+               !oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
