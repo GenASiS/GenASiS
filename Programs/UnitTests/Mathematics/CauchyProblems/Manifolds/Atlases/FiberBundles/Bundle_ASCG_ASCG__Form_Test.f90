@@ -11,11 +11,11 @@ program Bundle_ASCG_ASCG__Form_Test
 
   
   integer ( KDI ) :: &
-    iPF, &  !-- iProcessFiber
+    iCB, &  !-- iCopyBase
     iR, &   !-- iRank
     nProcesses, &
     nProcessesBase, &
-    nProcessesFiber
+    nCopiesBase  !-- for parallelization of solution on base manifold
   integer ( KDI ), dimension ( : ), allocatable :: &
     Rank
   real ( KDR ) :: &
@@ -35,32 +35,32 @@ program Bundle_ASCG_ASCG__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( 'Bundle_ASCG_ASCG__Form_Test', DimensionalityOption = '2D_1D' )
 
-  Communicator     =>  PROGRAM_HEADER % Communicator
-  nProcesses       =   Communicator % Size
-  nProcessesFiber  =   1
+  Communicator  =>  PROGRAM_HEADER % Communicator
+  nProcesses    =   Communicator % Size
+  nCopiesBase   =   1
 
-  call PROGRAM_HEADER % GetParameter ( nProcessesFiber, 'nProcessesFiber' )
-  nProcessesBase  =  nProcesses / nProcessesFiber
+  call PROGRAM_HEADER % GetParameter ( nCopiesBase, 'nCopiesBase' )
+  nProcessesBase  =  nProcesses / nCopiesBase
 
-  if ( nProcessesBase * nProcessesFiber  /=  nProcesses ) then
-    call Show ( 'nProcessesBase * nProcessesFiber must equal nProcesses', &
+  if ( nProcessesBase * nCopiesBase  /=  nProcesses ) then
+    call Show ( 'nProcessesBase * nCopiesBase must equal nProcesses', &
                 CONSOLE % ERROR )
-    call Show ( nProcesses,      'nProcesses',      CONSOLE % ERROR )
-    call Show ( nProcessesBase,  'nProcessesBase',  CONSOLE % ERROR )
-    call Show ( nProcessesFiber, 'nProcessesFiber', CONSOLE % ERROR )
+    call Show ( nProcesses,     'nProcesses',      CONSOLE % ERROR )
+    call Show ( nProcessesBase, 'nProcessesBase',  CONSOLE % ERROR )
+    call Show ( nCopiesBase,    'nCopiesBase', CONSOLE % ERROR )
     call PROGRAM_HEADER % Abort ( )
   end if
 
-  call Show ( nProcesses,      'nProcesses'      )
-  call Show ( nProcessesBase,  'nProcessesBase'  )
-  call Show ( nProcessesFiber, 'nProcessesFiber' )
+  call Show ( nProcesses,     'nProcesses'      )
+  call Show ( nProcessesBase, 'nProcessesBase'  )
+  call Show ( nCopiesBase,    'nCopiesBase' )
 
-  do iPF  =  1, nProcessesFiber
+  do iCB  =  1, nCopiesBase
     allocate ( Rank, &
-!               source =  [ ( iR, iR = iPF - 1, nProcesses - 1, &
-!                                      nProcessesFiber ) ] )
-               source =  [ ( iR, iR = ( iPF - 1 ) * nProcessesBase, &
-                                      iPF * nProcessesBase  -  1 ) ] )
+!               source =  [ ( iR, iR = iCB - 1, nProcesses - 1, &
+!                                      nCopiesBase ) ] )
+               source =  [ ( iR, iR = ( iCB - 1 ) * nProcessesBase, &
+                                      iCB * nProcessesBase  -  1 ) ] )
     if ( any ( Communicator % Rank  ==  Rank ) ) then
       allocate ( CommunicatorBase )
       allocate ( Base )
@@ -72,7 +72,7 @@ program Bundle_ASCG_ASCG__Form_Test
                iDimensionalityOption = 1 )
     end if
     deallocate ( Rank )
-  end do !--iPF
+  end do !--iCB
 
   !-- Bundle
 

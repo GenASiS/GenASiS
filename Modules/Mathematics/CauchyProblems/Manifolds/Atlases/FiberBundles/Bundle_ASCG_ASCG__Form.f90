@@ -12,13 +12,13 @@ module Bundle_ASCG_ASCG__Form
 
   type, public, extends ( Bundle_H_Form ) :: Bundle_ASCG_ASCG_Form
     integer ( KDI ) :: &
-      nFibers         = 0, &
-      nSections       = 0, &
-      nProcesses      = 0, &
-      nProcessesBase  = 0, &
-      nProcessesFiber = 0, &
-      nMyFibers       = 0, &
-      nMySections     = 0
+      nFibers        = 0, &
+      nSections      = 0, &
+      nProcesses     = 0, &
+      nProcessesBase = 0, &
+      nCopiesBase    = 0, &
+      nMyFibers      = 0, &
+      nMySections    = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       nFibersGlobal, &
       nSectionsGlobal
@@ -77,7 +77,7 @@ contains
       nDimensionsOption
 
     integer ( KDI ) :: &
-      iPF, &  !-- iProcessFiber
+      iCB, &  !-- iCopyBase
       iP, &   !-- iProcess
       oP      !-- oProcess
 
@@ -128,9 +128,11 @@ contains
     end select !-- AF
 
     !-- Distribution of Sections and Fibers
-    !   ( Solution on the base manifold is distributed, and there are
-    !     nProcessesFiber copies of this distributed base manifold. )
-    !   ( Solution on a fiber is not distributed, however. )
+    !   ( The base manifold is distributed, and there are nCopiesBase copies 
+    !     of this distributed base manifold, in order to perform base manifold 
+    !     operations in parallel for separate groups of fiber cells. )
+    !   ( The fiber is not distributed; a fiber operation for a given
+    !     base manifold cell is performed locally. )
 
     if ( associated ( B % Chart_GS_Base % Communicator % Parent ) ) then
       B % Communicator  =>  B % Chart_GS_Base % Communicator % Parent
@@ -143,18 +145,18 @@ contains
         CB   =>  B % Chart_GS_Base % Communicator, &
         nP   =>  B % nProcesses, &
         nPB  =>  B % nProcessesBase, &
-        nPF  =>  B % nProcessesFiber, &
+        nCB  =>  B % nCopiesBase, &
         nF   =>  B % nFibers, &
         nS   =>  B % nSections )
 
     nP   =  C  % Size
     nPB  =  CB % Size
-    nPF  =  nP  /  nPB
-    if ( nPB * nPF  /=  C % Size ) then
+    nCB  =  nP  /  nPB
+    if ( nPB * nCB  /=  nP ) then
       call Show ( 'Size of the base manifold communicator must evenly ' // &
                   'divide the size of its parent communicator', &
                   CONSOLE % ERROR )
-      call Show ( CB % Size,          'Base communicator size', &
+      call Show ( CB % Size, 'Base communicator size', &
                   CONSOLE % ERROR )
       call Show ( C % Size, 'Parent communicator size', &
                   CONSOLE % ERROR )
@@ -172,11 +174,11 @@ contains
 
     allocate ( B % nSectionsGlobal ( 0 : nP - 1 ) )
     associate ( nSG  => B % nSectionsGlobal ) 
-    nSG  =  nS  /  nPF
+    nSG  =  nS  /  nCB
     !-- WARNING: Assumes Base ranks are contiguous in the parent
     oP  =  0
-    do iPF  =  0,  mod ( nS, nPF )  -  1
-      oP  =  oP  +  iPF * nPB
+    do iCB  =  0,  mod ( nS, nCB )  -  1
+      oP  =  oP  +  iCB * nPB
       nSG ( oP : oP + nPB - 1 )  =  nSG ( oP : oP + nPB - 1 )  +  1 
     end do !-- iP
     B % nMySections  =  nSG ( C % Rank )
@@ -198,7 +200,7 @@ contains
     call Show ( B % nSections,       'nSections',       B % IGNORABILITY )
     call Show ( B % nProcesses,      'nProcesses',      B % IGNORABILITY )
     call Show ( B % nProcessesBase,  'nProcessesBase',  B % IGNORABILITY )
-    call Show ( B % nProcessesFiber, 'nProcessesFiber', B % IGNORABILITY )
+    call Show ( B % nCopiesBase,     'nCopiesBase', B % IGNORABILITY )
     call Show ( B % nMyFibers,       'nMyFibers',       B % IGNORABILITY )
     call Show ( B % nMySections,     'nMySections',     B % IGNORABILITY )
     call Show ( B % nFibersGlobal,   'nFibersGlobal',   B % IGNORABILITY + 2 )
