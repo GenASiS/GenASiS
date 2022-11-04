@@ -310,17 +310,8 @@ contains
     call Show ( C % nGhostLayers ( : nD ), 'nGhostLayers', C % IGNORABILITY )
 
     call Show ( C % Distributed, 'Distributed', C % IGNORABILITY )
-    if ( C % Distributed ) then
-      call Show ( C % Communicator % Name,  'Communicator', &
-                  C % IGNORABILITY )
-      call Show ( C % Communicator % Size,  'Size', &
-                  C % IGNORABILITY )
-      call Show ( C % Communicator % Rank,  'Rank', &
-                  C % IGNORABILITY )
-      if ( associated ( C % Communicator % Parent ) ) &
-        call Show ( C % Communicator % Parent % Name, 'Parent', &
-                    C % IGNORABILITY )
-    end if
+    if ( C % Distributed ) &
+      call C % Communicator % Show ( C % IGNORABILITY )
     call Show ( C % nBricks ( : nD ),     'nBricks', &
                 C % IGNORABILITY )
     call Show ( C % iaBrick ( : nD ),     'iaBrick',      &

@@ -33,6 +33,10 @@ module Communicator_Form
       InitializeSubcommunicator
     generic :: &
       Initialize => InitializeWorld, InitializeSubcommunicator
+    procedure, private, pass :: &
+      Show_C
+    generic, public :: &
+      Show => Show_C
     procedure, public, pass :: & 
       Synchronize
     procedure, public, pass :: &
@@ -122,6 +126,7 @@ contains
     call Show ( C % Parent % Rank, 'Parent rank', CONSOLE % INFO_2 )
     call Show ( C % Name, 'Name', CONSOLE % INFO_2 )
     call Show ( size ( Ranks ), 'Size', CONSOLE % INFO_2 )
+    call Show ( Ranks, 'Ranks', CONSOLE % INFO_2 )
 
     if ( C % Handle /= MPI_COMM_NULL ) then
 
@@ -142,6 +147,29 @@ contains
   end subroutine InitializeSubcommunicator
   
   
+  subroutine Show_C ( C, IgnorabilityOption )
+
+    class ( CommunicatorForm ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    integer ( KDI ) :: &
+      Ignorability
+
+    Ignorability  =  CONSOLE % INFO_1
+    if ( present ( IgnorabilityOption ) ) &
+      Ignorability  =  IgnorabilityOption
+
+    call Show ( C % Name, 'Communicator', Ignorability )
+    call Show ( C % Size, 'Size',         Ignorability )
+    call Show ( C % Rank, 'Rank',         Ignorability )
+    if ( associated ( C % Parent ) ) &
+      call Show ( C % Parent % Name, 'Parent', Ignorability )    
+
+  end subroutine Show_C
+
+
   subroutine Synchronize ( C )
 
     class ( CommunicatorForm ), intent ( inout ) :: &
