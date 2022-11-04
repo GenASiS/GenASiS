@@ -12,11 +12,18 @@ module Bundle_ASCG_ASCG__Form
 
   type, public, extends ( Bundle_H_Form ) :: Bundle_ASCG_ASCG_Form
     integer ( KDI ) :: &
-      nBaseValues    = 0, &
-      nFibers        = 0, &
-      nSections      = 0
+      nFibers         = 0, &
+      nSections       = 0, &
+      nProcesses      = 0, &
+      nProcessesBase  = 0, &
+      nProcessesFiber = 0, &
+      nMyFibers       = 0, &
+      nMySections     = 0
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      nFibersGlobal, &
+      nSectionsGlobal
     type ( CommunicatorForm ), pointer :: &
-      Communicator => null ( )  !-- distribute Fibers
+      Communicator => null ( )
     class ( Chart_GS_Form ), pointer :: &
       Chart_GS_Base  => null ( ), &
       Chart_GS_Fiber => null ( )
@@ -39,18 +46,16 @@ contains
 
 
   subroutine Initialize_ASCG_ASCG &
-               ( B, Base, CommunicatorOption, SpacingOption, &
-                 CoordinateLabelOption, CoordinateSystemOption, NameOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nBricksOption, nDimensionsOption )
+               ( B, Base, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, NameOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, nBricksOption, &
+                 nDimensionsOption )
 
     class ( Bundle_ASCG_ASCG_Form ), intent ( inout ), target :: &
       B
     class ( Atlas_SCG_Form ), intent ( in ), target :: &
       Base
-    class ( CommunicatorForm ), intent ( in ), target, optional :: &
-      CommunicatorOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       SpacingOption, &
       CoordinateLabelOption
@@ -71,6 +76,11 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption
 
+    integer ( KDI ) :: &
+      iPF, &  !-- iProcessFiber
+      iP, &   !-- iProcess
+      oP      !-- oProcess
+
     if ( B % Type  ==  '' ) &
       B % Type  =  'a Bundle_ASCG_ASCG'
 
@@ -83,8 +93,7 @@ contains
     B % Chart_GS_Base   =>  Base % Chart_GS
 
     associate ( CB  =>  B % Chart_GS_Base )
-    B % nBaseValues  =  CB % nCellsLocal
-    B % nFibers      =  CB % nCellsProper
+    B % nFibers  =  product ( CB % nCells )
     end associate !-- CB
 
     !-- Fibers
@@ -113,14 +122,67 @@ contains
     B % Chart_GS_Fiber   =>  AF % Chart_GS
 
     associate ( CF  =>  B % Chart_GS_Fiber )
-    B % nSections  =  CF % nCellsLocal
+    B % nSections  =  CF % nCellsProper
     end associate !-- CF
 
-    if ( present ( CommunicatorOption ) ) then
-      B % Communicator  =>  CommunicatorOption
+    end select !-- AF
+
+    !-- Distribution of Sections and Fibers
+    !   ( Solution on the base manifold is distributed, and there are
+    !     nProcessesFiber copies of this distributed base manifold. )
+    !   ( Solution on a fiber is not distributed, however. )
+
+    if ( associated ( B % Chart_GS_Base % Communicator % Parent ) ) then
+      B % Communicator  =>  B % Chart_GS_Base % Communicator % Parent
+    else
+      B % Communicator  =>  B % Chart_GS_Base % Communicator
     end if
 
-    end select !-- AF
+    associate &
+      ( C    =>  B % Communicator, &
+        CB   =>  B % Chart_GS_Base % Communicator, &
+        nP   =>  B % nProcesses, &
+        nPB  =>  B % nProcessesBase, &
+        nPF  =>  B % nProcessesFiber, &
+        nF   =>  B % nFibers, &
+        nS   =>  B % nSections )
+
+    nP   =  C  % Size
+    nPB  =  CB % Size
+    nPF  =  nP  /  nPB
+    if ( nPB * nPF  /=  C % Size ) then
+      call Show ( 'Size of the base manifold communicator must evenly ' // &
+                  'divide the size of its parent communicator', &
+                  CONSOLE % ERROR )
+      call Show ( CB % Size,          'Base communicator size', &
+                  CONSOLE % ERROR )
+      call Show ( C % Size, 'Parent communicator size', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    allocate ( B % nFibersGlobal ( 0 : nP - 1 ) )
+    associate ( nFG  => B % nFibersGlobal ) 
+    nFG  =  nF  /  nP
+    do iP  =  0,  mod ( nF, nP )  -  1
+      nFG ( iP )  =  nFG ( iP )  +  1 
+    end do !-- iP
+    B % nMyFibers  =  nFG ( C % Rank )
+    end associate !-- nSG
+
+    allocate ( B % nSectionsGlobal ( 0 : nP - 1 ) )
+    associate ( nSG  => B % nSectionsGlobal ) 
+    nSG  =  nS  /  nPF
+    !-- WARNING: Assumes Base ranks are contiguous in the parent
+    oP  =  0
+    do iPF  =  0,  mod ( nS, nPF )  -  1
+      oP  =  oP  +  iPF * nPB
+      nSG ( oP : oP + nPB - 1 )  =  nSG ( oP : oP + nPB - 1 )  +  1 
+    end do !-- iP
+    B % nMySections  =  nSG ( C % Rank )
+    end associate !-- nSG
+
+    end associate !-- C, etc.
 
   end subroutine Initialize_ASCG_ASCG
 
@@ -132,12 +194,15 @@ contains
 
     call B % Bundle_H_Form % Show ( )
 
-    call Show ( B % nBaseValues, 'nBaseValues', B % IGNORABILITY )
-    call Show ( B % nFibers, 'nFibers', B % IGNORABILITY )
-    call Show ( B % nSections, 'nSections', B % IGNORABILITY )
-
-    if ( associated ( B % Communicator ) ) &
-      call B % Communicator % Show ( B % IGNORABILITY )
+    call Show ( B % nFibers,         'nFibers',         B % IGNORABILITY )
+    call Show ( B % nSections,       'nSections',       B % IGNORABILITY )
+    call Show ( B % nProcesses,      'nProcesses',      B % IGNORABILITY )
+    call Show ( B % nProcessesBase,  'nProcessesBase',  B % IGNORABILITY )
+    call Show ( B % nProcessesFiber, 'nProcessesFiber', B % IGNORABILITY )
+    call Show ( B % nMyFibers,       'nMyFibers',       B % IGNORABILITY )
+    call Show ( B % nMySections,     'nMySections',     B % IGNORABILITY )
+    call Show ( B % nFibersGlobal,   'nFibersGlobal',   B % IGNORABILITY + 2 )
+    call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
 
   end subroutine Show_B
 
@@ -147,11 +212,14 @@ contains
     type ( Bundle_ASCG_ASCG_Form ), intent ( inout ) :: &
       B
     
-    nullify ( B % Chart_GS_Fiber )
-    nullify ( B % Chart_GS_Base )
     nullify ( B % Atlas_SCG_Fiber )
     nullify ( B % Atlas_SCG_Base )
+    nullify ( B % Chart_GS_Fiber )
+    nullify ( B % Chart_GS_Base )
     nullify ( B % Communicator )
+
+    if ( allocated ( B % nSectionsGlobal ) ) &
+      deallocate ( B % nSectionsGlobal )
 
   end subroutine Finalize
 

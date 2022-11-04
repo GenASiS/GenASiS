@@ -34,7 +34,6 @@ program Bundle_ASCG_ASCG__Form_Test
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'Bundle_ASCG_ASCG__Form_Test', DimensionalityOption = '2D_1D' )
-  call CONSOLE % SetVerbosity ( 'INFO_2' )
 
   Communicator     =>  PROGRAM_HEADER % Communicator
   nProcesses       =   Communicator % Size
@@ -56,8 +55,6 @@ program Bundle_ASCG_ASCG__Form_Test
   call Show ( nProcessesBase,  'nProcessesBase'  )
   call Show ( nProcessesFiber, 'nProcessesFiber' )
 
-  !-- nProcessesFiber copies of Base
-
   do iPF  =  1, nProcessesFiber
     allocate ( Rank, &
 !               source =  [ ( iR, iR = iPF - 1, nProcesses - 1, &
@@ -77,30 +74,30 @@ program Bundle_ASCG_ASCG__Form_Test
     deallocate ( Rank )
   end do !--iPF
 
-  ! !-- Bundle
+  !-- Bundle
 
-  !      MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
-  !      MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
-  ! MinWidthEnergy  =    0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+       MinEnergy  =    0.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+       MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+  MinWidthEnergy  =    0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
 
-  ! allocate ( Bundle )
-  ! call Bundle % Initialize &
-  !        ( Base, &
-  !          SpacingOption = [ 'GEOMETRIC' ], &
-  !          CoordinateLabelOption = [ 'E' ], &
-  !          CoordinateSystemOption = 'SPHERICAL', &
-  !          NameOption = 'Fiber', &
-  !          CoordinateUnitOption = [ UNIT % MEGA_ELECTRON_VOLT ], &
-  !          MinCoordinateOption = [ MinEnergy ], &
-  !          MaxCoordinateOption = [ MaxEnergy ], &
-  !          ScaleOption = [ MinWidthEnergy ], &
-  !          nCellsOption = [ 16 ], &
-  !          nGhostLayersOption = [ 0 ] )
+  allocate ( Bundle )
+  call Bundle % Initialize &
+         ( Base, &
+           SpacingOption = [ 'GEOMETRIC' ], &
+           CoordinateLabelOption = [ 'E' ], &
+           CoordinateSystemOption = 'SPHERICAL', &
+           NameOption = 'Fiber', &
+           CoordinateUnitOption = [ UNIT % MEGA_ELECTRON_VOLT ], &
+           MinCoordinateOption = [ MinEnergy ], &
+           MaxCoordinateOption = [ MaxEnergy ], &
+           ScaleOption = [ MinWidthEnergy ], &
+           nCellsOption = [ 16 ], &
+           nGhostLayersOption = [ 0 ] )
 
   call Base % Show ( )
-  ! call Bundle % Show ( )
+  call Bundle % Show ( )
 
-  ! deallocate ( Bundle )
+  deallocate ( Bundle )
   deallocate ( Base )
   deallocate ( CommunicatorBase )
   deallocate ( PROGRAM_HEADER )
