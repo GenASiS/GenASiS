@@ -152,7 +152,6 @@ contains
     call SetDecomposition &
            ( C, CommunicatorOption, EvenDecompositionOption, nBricksOption )
              
-
     do iD = 1, C % nDimensions
       call ComputeCoordinateData ( C, iD )
     end do !-- iD
@@ -316,14 +315,16 @@ contains
     call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', &
                 C % IGNORABILITY )
     
-    call Show ( 'nCellsBrickGlobal', C % IGNORABILITY + 2 )
-    do iD = 1, nD
-      call Show ( iD, 'iDimension', C % IGNORABILITY + 2 )
-      call Show ( C % nCellsBrickGlobal ( iD ) % Value, 'Value', &
-                  C % IGNORABILITY + 2 )
-      call Show ( sum ( C % nCellsBrickGlobal ( iD ) % Value ), 'Total', &
-                  C % IGNORABILITY + 2 )
-    end do
+    if ( C % Distributed ) then
+      call Show ( 'nCellsBrickGlobal', C % IGNORABILITY + 2 )
+      do iD = 1, nD
+        call Show ( iD, 'iDimension', C % IGNORABILITY + 2 )
+        call Show ( C % nCellsBrickGlobal ( iD ) % Value, 'Value', &
+                    C % IGNORABILITY + 2 )
+        call Show ( sum ( C % nCellsBrickGlobal ( iD ) % Value ), 'Total', &
+                    C % IGNORABILITY + 2 )
+      end do
+    end if
 
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY + 1 )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY + 1 )
@@ -547,6 +548,8 @@ contains
       iaP    !-- iaProcess
     logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
       EvenDecomposition
+    character ( 1 ) :: &
+      DimensionNumber
     type ( CommunicatorForm ), allocatable :: &
       C_iD
     type ( CollectiveOperation_I_Form ), allocatable :: &
@@ -639,7 +642,10 @@ contains
                              nB ( 1 ) * nB ( 2 ) ) ]
         end select
         
-        call C_iD % Initialize ( C % Communicator, iaP )
+        write ( DimensionNumber, fmt = '(i1.1)' ) iD
+        call C_iD % Initialize &
+               ( C % Communicator, iaP, &
+                 NameOption = 'nCellsBrickGlobal_iD_' // DimensionNumber )
         
         call C % nCellsBrickGlobal ( iD ) % Initialize ( nB ( iD ) )
         
@@ -659,7 +665,7 @@ contains
         C % nCellsBrickGlobal ( iD ) % Value = CO_B % Incoming % Value
         
         deallocate ( iaP, CO_B, CO_G, C_iD )
-      end do
+      end do !-- iD
       end associate   !-- nB
       
       end associate !-- nD
