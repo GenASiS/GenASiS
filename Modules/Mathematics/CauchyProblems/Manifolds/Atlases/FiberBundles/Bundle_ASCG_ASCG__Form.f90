@@ -164,15 +164,15 @@ contains
     call Show ( B % nMyFibers,     'nMyFibers',     B % IGNORABILITY )
     call Show ( B % nFibersGlobal, 'nFibersGlobal', B % IGNORABILITY + 2 )
     call Show ( B % iaBrickFirst,  'iaBrickFirst',  B % IGNORABILITY + 2 )
-    call Show ( B % iaBrickLast,   'iaBrickFirst',  B % IGNORABILITY + 2 )
+    call Show ( B % iaBrickLast,   'iaBrickLast',   B % IGNORABILITY + 2 )
     call Show ( B % iaCellFirst,   'iaCellFirst',   B % IGNORABILITY + 2 )
-    call Show ( B % iaCellLast,    'iaCellFirst',   B % IGNORABILITY + 2 )
+    call Show ( B % iaCellLast,    'iaCellLast',    B % IGNORABILITY + 2 )
 
     call Show ( B % nSections,       'nSections',       B % IGNORABILITY )
     call Show ( B % nMySections,     'nMySections',     B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
     call Show ( B % iaBinFirst,      'iaBinFirst',      B % IGNORABILITY + 2 )
-    call Show ( B % iaBinLast,       'iaBinFirst',      B % IGNORABILITY + 2 )
+    call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY + 2 )
 
   end subroutine Show_B
 
@@ -224,7 +224,11 @@ contains
       iC, jC, kC, &  !-- iBrick, etc.
       iCB, &         !-- iCopyBase
       iP, &          !-- iProcess
-      oP             !-- oProcess
+      iF, &          !-- iFiber
+      oP, &          !-- oProcess
+      nC_1, nC_2, nC_3
+    logical ( KDL ) :: &
+      NextProcess
 
     !--  The base manifold is distributed, and there are nCopiesBase copies 
     !      of this distributed base manifold, in order to perform base manifold 
@@ -276,28 +280,60 @@ contains
     allocate ( B % iaBrickLast  ( MAX_DIMENSIONS ) )
     allocate ( B % iaCellFirst  ( MAX_DIMENSIONS ) )
     allocate ( B % iaCellLast   ( MAX_DIMENSIONS ) )
-!     associate &
-!       ( MyRank  =>  B % % Communicator % Rank, &
-!             nB  =>  B % Chart_GS_Base % nBricks, &
-!           nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal )
-!     do kB  =  1,  nB ( 3 )
-!       do jB  =  1,  nB ( 2 )
-!         do iB  =  1,  nB ( 1 )
-!           associate &
-!             ( nC_1  =>  nCBG ( 1 ) % Value ( iP ), &
-!               nC_2  =>  nCBG ( 1 ) % Value ( iP ), &
-!               nC_3  =>  nCBG ( 1 ) % Value ( iP ) )
-!           do kB  =  1,  nB ( 3 )
-!             do jB  =  1,  nB ( 2 )
-!               do iB  =  1,  nB ( 1 )
-!               end do !-- iB
-!             end do !-- jB
-!           end do !-- kB
-!           end associate !-- nC_1, etc.
-!         end do !-- iB
-!       end do !-- jB
-!     end do !-- kB
-!    end associate !-- MyRank, etc.
+    B % iaBrickFirst  =  0
+    B % iaBrickLast   =  0
+    B % iaCellFirst   =  0
+    B % iaCellLast    =  0
+    associate &
+      ( MyRank  =>  B % Communicator % Rank, &
+           nFG  =>  B % nFibersGlobal, &
+            nD  =>  B % Chart_GS_Base % nDimensions, &
+            nB  =>  B % Chart_GS_Base % nBricks, &
+          nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal )
+    iP  =  0
+    iF  =  0
+    if ( MyRank  == 0 ) then
+      NextProcess  =  .true.
+    else
+      NextProcess  =  .false.
+    end if
+    do kB  =  1,  nB ( 3 )
+      do jB  =  1,  nB ( 2 )
+        do iB  =  1,  nB ( 1 )
+          nC_1  =  nCBG ( 1 ) % Value ( iB )
+          nC_2  =  1
+          nC_3  =  1
+          if ( nD  >  1 ) &
+            nC_2  =  nCBG ( 2 ) % Value ( jB )   
+          if ( nD  >  2 ) &
+            nC_3  =  nCBG ( 3 ) % Value ( kB )   
+          do kC  =  1,  nC_3
+            do jC  =  1,  nC_2
+              do iC  =  1,  nC_1
+                iF  =  iF  +  1
+                if ( NextProcess ) then
+                  if ( iP  ==  MyRank ) then
+                     B % iaBrickFirst  =  [ iB, jB, kB ]
+                     B % iaCellFirst   =  [ iC, jC, kC ]
+                  end if
+                  NextProcess  =  .false.
+                end if
+                if ( iF  ==  nFG ( iP ) ) then
+                  if ( iP  ==  MyRank ) then
+                    B % iaBrickLast  =  [ iB, jB, kB ]
+                    B % iaCellLast   =  [ iC, jC, kC ]
+                  end if
+                  iP  =  iP  +  1
+                  iF  =  0
+                  NextProcess  =  .true.
+                end if
+              end do !-- iB
+            end do !-- jB
+          end do !-- kB
+        end do !-- iB
+      end do !-- jB
+    end do !-- kB
+    end associate !-- MyRank, etc.
 
     !-- My Sections
 
@@ -315,6 +351,8 @@ contains
 
     allocate ( B % iaBinFirst ( MAX_DIMENSIONS ) )
     allocate ( B % iaBinLast  ( MAX_DIMENSIONS ) )
+    B % iaBinFirst  =  0
+    B % iaBinLast   =  0
 
     end associate !-- C, etc.
 
