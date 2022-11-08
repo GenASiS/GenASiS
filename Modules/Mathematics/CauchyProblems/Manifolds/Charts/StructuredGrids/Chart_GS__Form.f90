@@ -768,12 +768,12 @@ contains
 
     allocate ( Process ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
 
-    iP = 0
-    do kB = 1, nB ( 3 )
-      do jB = 1, nB ( 2 )
-        do iB = 1, nB ( 1 )
-          Process ( iB, jB, kB ) = iP
-          iP = iP + 1
+    iP  =  0
+    do kB  =  1,  nB ( 3 )
+      do jB  =  1,  nB ( 2 )
+        do iB  =  1,  nB ( 1 )
+          Process ( iB, jB, kB )  =  iP
+          iP  =  iP  +  1
         end do !-- iB
       end do !-- jB
     end do !-- kB
@@ -786,11 +786,11 @@ contains
     allocate ( Source_R_L ( nD ) )
     allocate ( Target_L_R ( nD ) )
     allocate ( Target_R_L ( nD ) )
-    nCellsFace =  0
-    Source_L_R = -1
-    Source_R_L = -1
-    Target_L_R = -1
-    Target_R_L = -1
+    nCellsFace  =   0
+    Source_L_R  =  -1
+    Source_R_L  =  -1
+    Target_L_R  =  -1
+    Target_R_L  =  -1
     
     do iD = 1, nD
 

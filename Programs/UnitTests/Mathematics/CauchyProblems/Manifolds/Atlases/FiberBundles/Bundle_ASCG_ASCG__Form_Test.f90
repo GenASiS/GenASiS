@@ -15,7 +15,7 @@ program Bundle_ASCG_ASCG__Form_Test
     iR, &   !-- iRank
     nProcesses, &
     nProcessesBase, &
-    nCopiesBase  !-- for parallelization of solution on base manifold
+    nCopiesBase  !-- for parallelization of operation on base manifold
   integer ( KDI ), dimension ( : ), allocatable :: &
     Rank
   real ( KDR ) :: &
@@ -41,15 +41,6 @@ program Bundle_ASCG_ASCG__Form_Test
 
   call PROGRAM_HEADER % GetParameter ( nCopiesBase, 'nCopiesBase' )
   nProcessesBase  =  nProcesses / nCopiesBase
-
-  if ( nProcessesBase * nCopiesBase  /=  nProcesses ) then
-    call Show ( 'nProcessesBase * nCopiesBase must equal nProcesses', &
-                CONSOLE % ERROR )
-    call Show ( nProcesses,     'nProcesses',      CONSOLE % ERROR )
-    call Show ( nProcessesBase, 'nProcessesBase',  CONSOLE % ERROR )
-    call Show ( nCopiesBase,    'nCopiesBase', CONSOLE % ERROR )
-    call PROGRAM_HEADER % Abort ( )
-  end if
 
   call Show ( nProcesses,     'nProcesses'      )
   call Show ( nProcessesBase, 'nProcessesBase'  )
