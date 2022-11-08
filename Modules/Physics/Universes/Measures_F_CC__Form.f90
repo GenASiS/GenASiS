@@ -134,7 +134,7 @@ contains
       M
 
     integer ( KDI ) :: &
-      iP, &  !-- iProcess
+      iB, &  !-- iBrick
       iR, &  !-- iRadius
       iC, &  !-- iCell
       iM, &  !-- iMeasure
@@ -165,7 +165,8 @@ contains
       ( nGL   =>  C_SA % nGhostLayers ( 1 ), &
         nC    =>  C_SA % nCells ( 1 ), &
         nCB   =>  C_SA % nCellsBrick ( 1 ), &
-        nP    =>  C_SA % Communicator % Size, &
+        nCBG  =>  C_SA % nCellsBrickGlobal ( 1 ), &
+        nB    =>  C_SA % nBricks ( 1 ), &
          R_P  =>  G_SA_V ( :, G_SA % CENTER_U_1 ), &
         dV_P  =>  G_SA_V ( :, G_SA % VOLUME ), &
          N_P  =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
@@ -196,7 +197,7 @@ contains
       allocate ( CO )
       call CO % Initialize &
              ( C_SA % Communicator, &
-               nOutgoing = [ nF * nCB ], nIncoming = [ nF * nC ] )
+               nOutgoing = [ nF * nCB ], nIncoming = nF * nCBG % Value )
     end if
 
     Outgoing_2D ( 1 : nCB, 1 : nF )  =>  CO % Outgoing % Value
@@ -211,7 +212,7 @@ contains
     if ( associated ( Y_P ) ) &
       Outgoing_2D ( 1 : nCB, 7 )  =  Y_P ( nGL + 1 : nGL + nCB )
 
-    call CO % Gather ( )
+    call CO % Gather_V ( )
 
     if ( .not. allocated ( R ) ) &
       allocate ( R ( nC ), dV ( nC ), N ( nC ), V ( nC ) )
@@ -221,22 +222,29 @@ contains
       allocate ( S ( nC ) )
     if ( associated ( Y_P ) .and. .not. allocated ( Y ) ) &
       allocate ( Y ( nC ) )
-    do iP  =  0,  nP - 1
-      oC  =  iP * nCB
+    
+    do iB  =  1,  nB
+      if ( iB == 1 ) then
+        oC = 0
+      else
+        oC  = oC + nCBG % Value ( iB - 1 )
+      end if
       oI  =  oC * nF
-      Incoming_2D ( 1 : nCB, 1 : nF )  &
-        =>  CO % Incoming % Value ( oI + 1 : oI + nCB * nF ) 
-       R ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 1 )
-      dV ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 2 )
-       N ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 3 )
-       V ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 4 )
+      associate ( nCBG_V => nCBG % Value ( iB ) )
+      Incoming_2D ( 1 : nCBG_V, 1 : nF )  &
+        =>  CO % Incoming % Value ( oI + 1 : oI + nCBG_V * nF )
+       R ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 1 )
+      dV ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 2 )
+       N ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 3 )
+       V ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 4 )
       if ( allocated ( T ) ) &
-        T ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 5 )
+        T ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 5 )
       if ( allocated ( S ) ) &
-        S ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 6 )
+        S ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 6 )
       if ( allocated ( Y ) ) &
-        Y ( oC + 1 : oC + nCB )  =  Incoming_2D ( 1 : nCB, 7 )
-    end do !-- iP
+        Y ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 7 )
+      end associate   !-- nCBG_V
+    end do !-- iB
 
     associate &
       (  UF        =>  M % Units_F, &

@@ -36,6 +36,8 @@ module CollectiveOperation_R__Form
     procedure, public, pass :: &
       Gather
     procedure, public, pass :: &
+      Gather_V
+    procedure, public, pass :: &
       AllToAll
     procedure, public, pass :: &
       AllToAll_V
@@ -125,7 +127,7 @@ contains
       SendCount
     real ( KDR ), dimension ( : ), pointer :: &
       OV, &
-      iV
+      IV
       
     nOutgoing = size ( CO % Outgoing % Value )
     nIncoming = size ( CO % Incoming % Value )
@@ -175,7 +177,7 @@ contains
       SendCount
     real ( KDR ), dimension ( : ), pointer :: &
       OV, &
-      iV
+      IV
 
     nOutgoing = size ( CO % Outgoing % Value )
     nIncoming = size ( CO % Incoming % Value )
@@ -215,6 +217,73 @@ contains
   end subroutine Gather
 
 
+  subroutine Gather_V ( CO )
+  
+    class ( CollectiveOperation_R_Form ), intent ( inout ) :: &
+      CO
+      
+    real :: &
+      PlainReal
+    integer ( KDI ) :: &
+      iD, &  !-- iDisplacment
+      nOutgoing, &
+      nIncoming, &
+      PlainValueSize, &
+      ThisValueSize, &
+      SizeRatio, &
+      SendCount
+    integer ( KDI ), dimension ( CO % Communicator % Size ) :: &
+      RecvCount, &
+      RecvDisplacement
+    real ( KDR ), dimension ( : ), pointer :: &
+      OV, &
+      IV
+
+    nOutgoing = size ( CO % Outgoing % Value )
+    nIncoming = size ( CO % Incoming % Value )
+        
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
+    inquire ( iolength = PlainValueSize ) PlainReal
+    SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
+    SendCount = nOutgoing * SizeRatio
+    RecvCount = CO % nIncoming * SizeRatio
+    
+    RecvDisplacement ( 1 ) = 0
+    do iD = 2, CO % Communicator % Size
+      RecvDisplacement ( iD ) &
+        =  RecvDisplacement ( iD - 1 ) + RecvCount ( iD - 1 )
+    end do
+    
+    if ( CO % Outgoing % AllocatedDevice ) then
+      call c_f_pointer ( CO % Outgoing % D_Value, OV, [ nOutgoing ] )
+    else
+      OV => CO % Outgoing % Value
+    end if
+    
+    if ( CO % Incoming % AllocatedDevice ) then
+      call c_f_pointer ( CO % Incoming % D_Value, IV, [ nIncoming ] )
+    else
+      IV => CO % Incoming % Value
+    end if
+    
+    if ( CO % Root /= UNSET ) then
+      call MPI_GATHERV &
+             ( OV, SendCount, MPI_REAL, &
+               IV, RecvCount, RecvDisplacement, MPI_REAL, &
+               CO % Root, CO % Communicator % Handle, CO % Error)  
+    else
+      call MPI_ALLGATHERV &
+             ( OV, SendCount, MPI_REAL, &
+               IV, RecvCount, RecvDisplacement, MPI_REAL, &
+               CO % Communicator % Handle, CO % Error)  
+    end if
+
+    nullify ( IV )
+    nullify ( OV )
+    
+  end subroutine Gather_V
+
+
   subroutine AllToAll ( CO )
   
     class ( CollectiveOperation_R_Form ), intent ( inout ) :: &
@@ -231,7 +300,7 @@ contains
       SendCount
     real ( KDR ), dimension ( : ), pointer :: &
       OV, &
-      iV
+      IV
 
     nOutgoing = size ( CO % Outgoing % Value )
     nIncoming = size ( CO % Incoming % Value )
@@ -283,7 +352,7 @@ contains
       SendDisplacement, ReceiveDisplacement
     real ( KDR ), dimension ( : ), pointer :: &
       OV, &
-      iV
+      IV
 
     nOutgoing = size ( CO % Outgoing % Value )
     nIncoming = size ( CO % Incoming % Value )
@@ -346,7 +415,7 @@ contains
       MPI_Datatype
     real ( KDR ), dimension ( : ), pointer :: &
       OV, &
-      iV
+      IV
     
     nOutgoing = size ( CO % Outgoing % Value )
     nIncoming = size ( CO % Incoming % Value )

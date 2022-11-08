@@ -124,6 +124,9 @@ contains
       P
     class ( FieldSetForm ), intent ( inout ) :: &
       Solution
+      
+    integer ( KDI ) :: &
+      oR
 
     call Show ( 'Combining Moments Local', P % IGNORABILITY + 5 )
 
@@ -165,6 +168,12 @@ contains
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
+      if ( C % iaBrick ( 1 ) == 1 ) then
+        oR = 0
+      else
+        oR =  sum ( C % nCellsBrickGlobal ( 1 ) &
+                      % Value ( 1 : C % iaBrick ( 1 )  -  1 ) )
+      end if
       call CombineMoments_CGS_S_Kernel &
              ( P % Solution_4D, L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
                L % AngularFunction_3D, L % RadialFunctions_R % Value, &
@@ -172,8 +181,8 @@ contains
                L % DeltaFactor % Value ( :, 1 ), &
                C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, L % nAngularMoments, &
-               oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
-               UseDeviceOption = L % DeviceMemory )
+               oR = oR, UseDeviceOption = L % DeviceMemory )
+               !oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )

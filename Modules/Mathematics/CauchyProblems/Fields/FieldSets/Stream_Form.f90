@@ -324,7 +324,8 @@ contains
       case ( 1 ) 
         associate ( CI => S % CurveImage ( iC ) )
         call CI % SetGridWrite &
-               ( Directory, Edge ( 1 ), nCellsProper, &
+               ( Directory, Edge ( 1 ), C % nCellsBrickGlobal ( 1 ) % Value, &
+                 nCellsProper, &
                  oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                  CoordinateLabelOption = C % CoordinateLabel ( 1 ), &
                  CoordinateUnitOption = C % CoordinateUnit ( 1 ) )
@@ -508,10 +509,15 @@ contains
 
       associate &
         ( nCB  =>  C % nCellsBrick ( iD ), &
+          nCBG =>  C % nCellsBrickGlobal ( iD ) % Value, &
           nGL  =>  C % nGhostLayers ( iD ), &
           iaB  =>  C % iaBrick ( iD ) )
-
-      oE  =  ( iaB - 1 ) * nCB  -  nGL
+      
+      if ( C % iaBrick ( iD ) == 1 ) then    
+        oE  = 0 - nGL
+      else
+        oE  =  sum ( nCBG ( 1 : iaB  -  1 ) ) - nGL
+      end if
       nE  =  nCB  +  2 * nGL  +  1
 
       call Edge ( iD ) % Initialize ( nE )

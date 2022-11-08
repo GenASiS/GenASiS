@@ -26,17 +26,19 @@ module Chart_GS__Form
       iaBrick, &
       nBricks, &
       nCellsBrick
+    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
+      nCellsBrickGlobal 
     real ( KDR ), dimension ( MAX_DIMENSIONS ) :: &
       MinCoordinate, &
       MaxCoordinate, &
       Ratio, &
       Scale
-    logical ( KDL ) :: &
-      Distributed
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
       Edge, &
       Width, &
       Center
+    logical ( KDL ) :: &
+      Distributed
     logical ( KDL ), dimension ( : ), allocatable :: &
       ProperCell
     character ( LDL ), dimension ( MAX_DIMENSIONS ) :: &
@@ -94,10 +96,10 @@ contains
 
   subroutine Initialize_GS &
                ( C, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
-                 CoordinateSystemOption, NameOption, CoordinateUnitOption, &
-                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, nBricksOption, &
-                 nBricksCompatibleOption, IgnorabilityOption, &
+                 CoordinateSystemOption, NameOption, EvenDecompositionOption, &
+                 CoordinateUnitOption, MinCoordinateOption, &
+                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
+                 nGhostLayersOption, nBricksOption, IgnorabilityOption, &
                  nDimensionsOption, nEqualOption, iDimensionalityOption )
 
     class ( Chart_GS_Form ), intent ( inout ) :: &
@@ -110,6 +112,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption, &
       NameOption
+    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+      EvenDecompositionOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -120,8 +124,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
       nGhostLayersOption, &
-      nBricksOption, &
-      nBricksCompatibleOption
+      nBricksOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption, &
       nDimensionsOption, &
@@ -147,7 +150,8 @@ contains
            ( C, nCellsOption, nGhostLayersOption )
 
     call SetDecomposition &
-           ( C, CommunicatorOption, nBricksOption, nBricksCompatibleOption )
+           ( C, CommunicatorOption, EvenDecompositionOption, nBricksOption )
+             
 
     do iD = 1, C % nDimensions
       call ComputeCoordinateData ( C, iD )
@@ -311,6 +315,15 @@ contains
                 C % IGNORABILITY + 1 )
     call Show ( C % nCellsBrick ( : nD ), 'nCellsBrick', &
                 C % IGNORABILITY )
+    
+    call Show ( 'nCellsBrickGlobal', C % IGNORABILITY + 2 )
+    do iD = 1, nD
+      call Show ( iD, 'iDimension', C % IGNORABILITY + 2 )
+      call Show ( C % nCellsBrickGlobal ( iD ) % Value, 'Value', &
+                  C % IGNORABILITY + 2 )
+      call Show ( sum ( C % nCellsBrickGlobal ( iD ) % Value ), 'Total', &
+                  C % IGNORABILITY + 2 )
+    end do
 
     call Show ( C % iaFirst ( : nD ), 'iaFirst', C % IGNORABILITY + 1 )
     call Show ( C % iaLast  ( : nD ), 'iaLast',  C % IGNORABILITY + 1 )
@@ -420,6 +433,9 @@ contains
       deallocate ( C % Width )
     if ( allocated ( C % Edge ) ) &
       deallocate ( C % Edge )
+      
+    if ( allocated ( C % nCellsBrickGlobal ) ) & 
+      deallocate ( C % nCellsBrickGlobal )
 
   end subroutine Finalize
 
@@ -511,29 +527,48 @@ contains
 
 
   subroutine SetDecomposition &
-                ( C, CommunicatorOption, nBricksOption, &
-                  nBricksCompatibleOption )
+                ( C, CommunicatorOption, EvenDecompositionOption, &
+                  nBricksOption )
                
     class ( Chart_GS_Form ), intent ( inout ) :: &
       C
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+      EvenDecompositionOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      nBricksOption, &
-      nBricksCompatibleOption
-
+      nBricksOption
+      
     integer ( KDI ) :: &
       iD, &  !-- iDimension
+      iP, &
       SizeRoot
-    integer ( KDI ), dimension ( MAX_DIMENSIONS ) :: &
-      nBricksCompatible
-
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaP    !-- iaProcess
+    logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
+      EvenDecomposition
+    type ( CommunicatorForm ), allocatable :: &
+      C_iD
+    type ( CollectiveOperation_I_Form ), allocatable :: &
+      CO_G, &    !-- CO_Gather
+      CO_B       !-- CO_Broadcast
+    
     if ( present ( CommunicatorOption ) ) then
       C % Distributed   =   .true.
       C % Communicator  =>  CommunicatorOption
     else
       C % Distributed  =  .false.
     end if !-- present Communicator 
+
+    EvenDecomposition = .true.
+    if ( present ( EvenDecompositionOption ) ) &
+      EvenDecomposition = EvenDecompositionOption
+      
+    call PROGRAM_HEADER % GetParameter &
+           ( EvenDecomposition, 'EvenDecomposition' )
+           
+    if ( .not. allocated ( C % nCellsBrickGlobal ) ) &
+      allocate ( C % nCellsBrickGlobal ( MAX_DIMENSIONS ) )
 
     if ( C % Distributed ) then
 
@@ -547,18 +582,6 @@ contains
         C % nBricks  =  nBricksOption 
       call PROGRAM_HEADER % GetParameter ( C % nBricks ( : nD ), 'nBricks' )
     
-      nBricksCompatible = C % nBricks
-      if ( present ( nBricksCompatibleOption ) ) &
-        nBricksCompatible  =  nBricksCompatibleOption 
-      call PROGRAM_HEADER % GetParameter &
-             ( nBricksCompatible ( : nD ), 'nBricksCompatible' )
-
-      if ( any ( nBricksCompatible /= C % nBricks ) ) then
-        call Show ( 'nBricksCompatible /= nBricks', CONSOLE % INFO_1 )
-        call Show ( C % nBricks, 'nBricks', CONSOLE % INFO_1 )
-        call Show ( nBricksCompatible, 'nBricksCompatible', CONSOLE % INFO_1 )
-      end if
-
       if ( product ( C % nBricks ) /= C % Communicator % Size ) then
         call Show ( 'The total number of bricks must equal ' &
                     // 'the number of MPI processes', CONSOLE % ERROR )
@@ -570,30 +593,75 @@ contains
         call Show ( 'SetDecomposition', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if
-
-      do iD = 1, nD
-        if ( mod ( C % nCells ( iD ), nBricksCompatible ( iD ) ) /= 0 ) then
-          call Show ( 'nBricksCompatible in each dimension must divide ' &
-                      // 'evenly into nCells in each dimension', &
-                      CONSOLE % WARNING )
-          call Show ( iD, 'iDimension', CONSOLE % WARNING )
-          call Show ( nBricksCompatible ( iD ), 'nBricksCompatible', &
-                      CONSOLE % WARNING )
-          call Show ( C % nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
-          C % nCells ( iD ) &
-            =  ( C % nCells ( iD ) / nBricksCompatible ( iD ) ) &
-               *  nBricksCompatible ( iD )
-          call Show ( C % nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
-          call Show ( 'SetDecomposition', 'subroutine', CONSOLE % WARNING )
-          call Show ( 'Chart_GS__Form', 'module', CONSOLE % WARNING )
-        end if
-      end do  !-- iD
-    
+      
       C % nCellsBrick &
         = C % nCells / C % nBricks
       C % iaBrick &
         = BrickIndex ( C % nBricks, C % nCells, C % Communicator % Rank )
-
+      
+      do iD = 1, nD
+        if ( EvenDecomposition ( iD ) ) then
+          if ( mod ( C % nCells ( iD ), C % nBricks ( iD ) ) /= 0 ) then
+            call Show ( 'The number of bricks does not evenly divide ' &
+                        // 'the number of cells', CONSOLE % ERROR )
+            call Show ( iD, 'iDimension', CONSOLE % ERROR )
+            call Show ( EvenDecomposition ( iD ), 'EvenDecomposition', &
+                        CONSOLE % ERROR )
+            call Show ( C % nBricks ( iD ), 'nBricks', CONSOLE % ERROR )
+            call Show ( C % nCells ( iD ), 'nCells', CONSOLE % ERROR )
+            call Show ( 'Chart_GS__Form', 'module', CONSOLE % ERROR )
+            call Show ( 'SetDecomposition', 'subroutine', CONSOLE % ERROR )
+            call PROGRAM_HEADER % Abort ( )
+          end if
+          cycle
+        end if
+        
+        !-- Add extra cells with uneven decomposition
+        if ( C % iaBrick ( iD ) &
+               <= mod ( C % nCells ( iD ), C % nBricks ( iD ) ) ) &
+        then
+          C % nCellsBrick ( iD ) = C % nCellsBrick ( iD ) + 1
+        end if
+      end do
+      
+      associate ( nB => C % nBricks )
+      do iD = 1, nD 
+        allocate ( C_iD, CO_G, CO_B )
+        allocate ( iaP ( nB ( iD ) ) )
+        
+        select case ( iD ) 
+        case ( 1 )
+          iaP = [ ( iP, iP = 0, nB ( 1 ) - 1 ) ]
+        case ( 2 )
+          iaP = [ ( iP, iP = 0, nB ( 1 ) * ( nB ( 2 ) - 1 ), nB ( 1 ) ) ]
+        case ( 3 )
+          iaP = [ ( iP, iP = 0, nB ( 1 ) * nB ( 2 ) * ( nB ( 3 ) - 1 ), &
+                             nB ( 1 ) * nB ( 2 ) ) ]
+        end select
+        
+        call C_iD % Initialize ( C % Communicator, iaP )
+        
+        call C % nCellsBrickGlobal ( iD ) % Initialize ( nB ( iD ) )
+        
+        if ( any ( C % Communicator % Rank == iaP ) ) then
+          call CO_G % Initialize &
+                 ( C_iD, [ 1 ], [ nB ( iD ) ], RootOption = 0 )
+          CO_G % Outgoing % Value = C % nCellsBrick ( iD )
+          call CO_G % Gather ( )
+          C % nCellsBrickGlobal ( iD ) % Value = CO_G % Incoming % Value
+        end if
+        
+        call CO_B % Initialize &
+               ( C % Communicator, [ nB ( iD ) ], [ nB ( iD ) ], &
+                 RootOption = 0 )
+        CO_B % Outgoing % Value = C % nCellsBrickGlobal ( iD ) % Value
+        call CO_B % Broadcast ( )
+        C % nCellsBrickGlobal ( iD ) % Value = CO_B % Incoming % Value
+        
+        deallocate ( iaP, CO_B, CO_G, C_iD )
+      end do
+      end associate   !-- nB
+      
       end associate !-- nD
 
       call SetPortals ( C )
@@ -644,8 +712,8 @@ contains
     end associate !-- nB
 
   end function BrickIndex
-
-
+  
+  
   subroutine SetPortals ( C )
 
     class ( Chart_GS_Form ), intent ( inout ) :: &
