@@ -225,10 +225,12 @@ contains
       iCB, &         !-- iCopyBase
       iP, &          !-- iProcess
       iF, &          !-- iFiber
+      iS, &          !-- iSection
       oP, &          !-- oProcess
       nC_1, nC_2, nC_3
     logical ( KDL ) :: &
-      NextProcess
+      NextProcess, &
+      NextCopyBase
 
     !--  The base manifold is distributed, and there are nCopiesBase copies 
     !      of this distributed base manifold, in order to perform base manifold 
@@ -285,7 +287,7 @@ contains
     B % iaCellFirst   =  0
     B % iaCellLast    =  0
     associate &
-      ( MyRank  =>  B % Communicator % Rank, &
+      ( MyRank  =>  C % Rank, &
            nFG  =>  B % nFibersGlobal, &
             nD  =>  B % Chart_GS_Base % nDimensions, &
             nB  =>  B % Chart_GS_Base % nBricks, &
@@ -353,6 +355,39 @@ contains
     allocate ( B % iaBinLast  ( MAX_DIMENSIONS ) )
     B % iaBinFirst  =  0
     B % iaBinLast   =  0
+    associate &
+      ( MyCopyBase  =>  C % Rank  /  nPB  +  1, &
+               nSG  =>  B % nSectionsGlobal, &
+                nC  =>  B % Chart_GS_Fiber % nCells )
+    iCB  =  1
+    iS   =  0
+    if ( MyCopyBase  == 1 ) then
+      NextCopyBase  =  .true.
+    else
+      NextCopyBase  =  .false.
+    end if
+    do kC  =  1,  nC ( 3 )
+      do jC  =  1,  nC ( 2 )
+        do iC  =  1,  nC ( 1 )
+          iS  =  iS  +  1
+          if ( NextCopyBase ) then
+            if ( iCB  ==  MyCopyBase ) then
+              B % iaBinFirst   =  [ iC, jC, kC ]
+            end if
+            NextCopyBase  =  .false.
+          end if
+          if ( iS  ==  nSG ( iCB ) ) then
+            if ( iCB  ==  MyCopyBase ) then
+              B % iaBinLast   =  [ iC, jC, kC ]
+            end if
+            iCB  =  iCB  +  1
+            iS  =  0
+            NextCopyBase  =  .true.
+          end if
+        end do !-- iB
+      end do !-- jB
+    end do !-- kB
+    end associate !-- MyCopyBrick, etc.
 
     end associate !-- C, etc.
 
