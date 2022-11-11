@@ -11,34 +11,51 @@ module Bundle_ASCG_ASCG__Form
   private
 
   type, public, extends ( Bundle_H_Form ) :: Bundle_ASCG_ASCG_Form
+    !-- Base manifold ( Distributed on each of several copies )
+    class ( Atlas_SCG_Form ), pointer :: &
+      Atlas_SCG_Base  => null ( )
+    class ( Chart_GS_Form ), pointer :: &
+      Chart_GS_Base  => null ( )
+    !-- Typical fiber ( Local )
+    class ( Atlas_SCG_Form ), pointer :: &
+      Atlas_SCG_Fiber => null ( )
+    class ( Chart_GS_Form ), pointer :: &
+      Chart_GS_Fiber => null ( )
+    !-- Members for transposes between:
+    !     * Fiber-centric storage ( for operations on fibers ), and 
+    !     * Section-centric storage ( for operations on a copy of the 
+    !                                 base manifold )
+    type ( CommunicatorForm ), pointer :: &
+      Communicator => null ( )
+    type ( PortalHeaderForm ), allocatable :: &
+      Portal_F_S, &  !-- Fiber-centric to Section-centric
+      Portal_S_F     !-- Section-centric to Fiber-centric
+    !-- Metadata for Fiber to Section decomposition
     integer ( KDI ) :: &
       nProcesses, &
       nCopiesBase, &
       nProcessesBase
+    !-- Metadata for distribution of operations on a fiber for different 
+    !   base manifold cells
+    !-- ( An operation on a fiber for a given base manifold cell is itself 
+    !     local. )
     integer ( KDI ) :: &
       nFibers, &
       nMyFibers
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaBrickFirst, iaBrickLast, &
+      iaCellFirst, iaCellLast, &
+      nFibersGlobal
+    !-- Metadata for distribution of position space operations for different 
+    !   fiber bins
+    !-- ( A position space operation for a given fiber bin is itself 
+    !     distributed on a particular copy of the base manifold. )
     integer ( KDI ) :: &
       nSections, &
       nMySections
     integer ( KDI ), dimension ( : ), allocatable :: &
-      nFibersGlobal, &
-      iaBrickFirst, iaBrickLast, &
-      iaCellFirst, iaCellLast
-    integer ( KDI ), dimension ( : ), allocatable :: &
-      nSectionsGlobal, &
-      iaBinFirst, iaBinLast
-    type ( CommunicatorForm ), pointer :: &
-      Communicator => null ( )
-    type ( PortalHeaderForm ), allocatable :: &
-      Portal_F_S, &
-      Portal_S_F
-    class ( Chart_GS_Form ), pointer :: &
-      Chart_GS_Base  => null ( ), &
-      Chart_GS_Fiber => null ( )
-    class ( Atlas_SCG_Form ), pointer :: &
-      Atlas_SCG_Base  => null ( ), &
-      Atlas_SCG_Fiber => null ( )
+      iaBinFirst, iaBinLast, &
+      nSectionsGlobal
   contains
     procedure, private, pass :: &
       Initialize_ASCG_ASCG
@@ -135,7 +152,7 @@ contains
     B % Chart_GS_Fiber   =>  AF % Chart_GS
 
     associate ( CF  =>  B % Chart_GS_Fiber )
-    B % nSections  =  CF % nCellsProper
+    B % nSections  =  product ( CF % nCells )
     end associate !-- CF
 
     end select !-- AF
@@ -162,17 +179,17 @@ contains
 
     call Show ( B % nFibers,       'nFibers',       B % IGNORABILITY )
     call Show ( B % nMyFibers,     'nMyFibers',     B % IGNORABILITY )
+    call Show ( B % iaBrickFirst,  'iaBrickFirst',  B % IGNORABILITY )
+    call Show ( B % iaBrickLast,   'iaBrickLast',   B % IGNORABILITY )
+    call Show ( B % iaCellFirst,   'iaCellFirst',   B % IGNORABILITY )
+    call Show ( B % iaCellLast,    'iaCellLast',    B % IGNORABILITY )
     call Show ( B % nFibersGlobal, 'nFibersGlobal', B % IGNORABILITY + 2 )
-    call Show ( B % iaBrickFirst,  'iaBrickFirst',  B % IGNORABILITY + 2 )
-    call Show ( B % iaBrickLast,   'iaBrickLast',   B % IGNORABILITY + 2 )
-    call Show ( B % iaCellFirst,   'iaCellFirst',   B % IGNORABILITY + 2 )
-    call Show ( B % iaCellLast,    'iaCellLast',    B % IGNORABILITY + 2 )
 
     call Show ( B % nSections,       'nSections',       B % IGNORABILITY )
     call Show ( B % nMySections,     'nMySections',     B % IGNORABILITY )
+    call Show ( B % iaBinFirst,      'iaBinFirst',      B % IGNORABILITY )
+    call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
-    call Show ( B % iaBinFirst,      'iaBinFirst',      B % IGNORABILITY + 2 )
-    call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY + 2 )
 
   end subroutine Show_B
 
@@ -226,7 +243,6 @@ contains
       iP, &          !-- iProcess
       iF, &          !-- iFiber
       iS, &          !-- iSection
-      oP, &          !-- oProcess
       nC_1, nC_2, nC_3
     logical ( KDL ) :: &
       NextProcess, &
@@ -270,13 +286,19 @@ contains
     !-- My Fibers
 
     allocate ( B % nFibersGlobal ( 0 : nP - 1 ) )
-    associate ( nFG  => B % nFibersGlobal ) 
+
+    associate &
+      ( MyRank  =>  C % Rank, &
+           nFG  =>  B % nFibersGlobal, &
+            nD  =>  B % Chart_GS_Base % nDimensions, &
+            nB  =>  B % Chart_GS_Base % nBricks, &
+          nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal )
+
     nFG  =  nF  /  nP
     do iP  =  0,  mod ( nF, nP )  -  1
       nFG ( iP )  =  nFG ( iP )  +  1 
     end do !-- iP
-    B % nMyFibers  =  nFG ( C % Rank )
-    end associate !-- nSG
+    B % nMyFibers  =  nFG ( MyRank )
 
     allocate ( B % iaBrickFirst ( MAX_DIMENSIONS ) )
     allocate ( B % iaBrickLast  ( MAX_DIMENSIONS ) )
@@ -286,12 +308,6 @@ contains
     B % iaBrickLast   =  0
     B % iaCellFirst   =  0
     B % iaCellLast    =  0
-    associate &
-      ( MyRank  =>  C % Rank, &
-           nFG  =>  B % nFibersGlobal, &
-            nD  =>  B % Chart_GS_Base % nDimensions, &
-            nB  =>  B % Chart_GS_Base % nBricks, &
-          nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal )
     iP  =  0
     iF  =  0
     if ( MyRank  == 0 ) then
@@ -335,30 +351,30 @@ contains
         end do !-- iB
       end do !-- jB
     end do !-- kB
+
     end associate !-- MyRank, etc.
 
     !-- My Sections
 
-    allocate ( B % nSectionsGlobal ( 0 : nP - 1 ) )
-    associate ( nSG  => B % nSectionsGlobal ) 
+    allocate ( B % nSectionsGlobal ( nCB ) )
+
+    !-- WARNING: MyCopyBase assumes Base ranks are contiguous in the parent
+    associate &
+      ( MyCopyBase  =>  C % Rank  /  nPB  +  1, &
+               nSG  =>  B % nSectionsGlobal, &
+                nC  =>  B % Chart_GS_Fiber % nCells )
+
     nSG  =  nS  /  nCB
     !-- WARNING: Assumes Base ranks are contiguous in the parent
-    oP  =  0
-    do iCB  =  0,  mod ( nS, nCB )  -  1
-      oP  =  oP  +  iCB * nPB
-      nSG ( oP : oP + nPB - 1 )  =  nSG ( oP : oP + nPB - 1 )  +  1 
+    do iCB  =  1,  mod ( nS, nCB )
+      nSG ( iCB )  =  nSG ( iCB )  +  1 
     end do !-- iP
-    B % nMySections  =  nSG ( C % Rank )
-    end associate !-- nSG
+    B % nMySections  =  nSG ( MyCopyBase )
 
     allocate ( B % iaBinFirst ( MAX_DIMENSIONS ) )
     allocate ( B % iaBinLast  ( MAX_DIMENSIONS ) )
     B % iaBinFirst  =  0
     B % iaBinLast   =  0
-    associate &
-      ( MyCopyBase  =>  C % Rank  /  nPB  +  1, &
-               nSG  =>  B % nSectionsGlobal, &
-                nC  =>  B % Chart_GS_Fiber % nCells )
     iCB  =  1
     iS   =  0
     if ( MyCopyBase  == 1 ) then
@@ -387,7 +403,8 @@ contains
         end do !-- iB
       end do !-- jB
     end do !-- kB
-    end associate !-- MyCopyBrick, etc.
+
+    end associate !-- MyCopyBase, etc.
 
     end associate !-- C, etc.
 

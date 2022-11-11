@@ -15,7 +15,9 @@ program Bundle_ASCG_ASCG__Form_Test
     iR, &   !-- iRank
     nProcesses, &
     nProcessesBase, &
-    nCopiesBase  !-- for parallelization of operation on base manifold
+    nCopiesBase, &  !-- for distribution of operations on the base manifold
+                    !   for different fiber bins
+    nFiberBins
   integer ( KDI ), dimension ( : ), allocatable :: &
     Rank
   real ( KDR ) :: &
@@ -34,6 +36,7 @@ program Bundle_ASCG_ASCG__Form_Test
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'Bundle_ASCG_ASCG__Form_Test', DimensionalityOption = '2D_1D' )
+  call CONSOLE % SetVerbosity ( 'INFO_3' )
 
   Communicator  =>  PROGRAM_HEADER % Communicator
   nProcesses    =   Communicator % Size
@@ -71,6 +74,9 @@ program Bundle_ASCG_ASCG__Form_Test
        MaxEnergy  =  100.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
   MinWidthEnergy  =    0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
 
+  nFiberBins  =  16
+  call PROGRAM_HEADER % GetParameter ( nFiberBins, 'nFiberBins' )
+
   allocate ( Bundle )
   call Bundle % Initialize &
          ( Base, &
@@ -82,7 +88,7 @@ program Bundle_ASCG_ASCG__Form_Test
            MinCoordinateOption = [ MinEnergy ], &
            MaxCoordinateOption = [ MaxEnergy ], &
            ScaleOption = [ MinWidthEnergy ], &
-           nCellsOption = [ 16 ], &
+           nCellsOption = [ nFiberBins ], &
            nGhostLayersOption = [ 0 ] )
 
   call Base % Show ( )
