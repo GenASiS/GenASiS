@@ -35,7 +35,7 @@ module Bundle_ASCG_ASCG__Form
       nProcesses, &
       nCopiesBase, &
       nProcessesBase
-    !-- Metadata for distribution of operations on a fiber for different 
+    !-- Metadata for distribution of fiber operations for different 
     !   base manifold cells
     !-- ( An operation on a fiber for a given base manifold cell is itself 
     !     local. )
@@ -52,7 +52,9 @@ module Bundle_ASCG_ASCG__Form
     !     distributed on a particular copy of the base manifold. )
     integer ( KDI ) :: &
       nSections, &
-      nMySections
+      nMySections, &
+      iCopyBase, &
+      iFiberFirst, iFiberLast
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBinFirst, iaBinLast, &
       nSectionsGlobal
@@ -187,6 +189,9 @@ contains
 
     call Show ( B % nSections,       'nSections',       B % IGNORABILITY )
     call Show ( B % nMySections,     'nMySections',     B % IGNORABILITY )
+    call Show ( B % iCopyBase,       'iCopyBase',       B % IGNORABILITY )
+    call Show ( B % iFiberFirst,     'iFiberFirst',     B % IGNORABILITY )
+    call Show ( B % iFiberLast,      'iFiberLast',      B % IGNORABILITY )
     call Show ( B % iaBinFirst,      'iaBinFirst',      B % IGNORABILITY )
     call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
@@ -237,13 +242,13 @@ contains
       B
     
     integer ( KDI ) :: &
-      iB, jB, kB, &  !-- iBrick, etc.
-      iC, jC, kC, &  !-- iBrick, etc.
-      iCB, &         !-- iCopyBase
-      iP, &          !-- iProcess
-      iF, &          !-- iFiber
-      iS, &          !-- iSection
-      nC_1, nC_2, nC_3
+      iB, jB, kB, &     !-- iBrick, etc.
+      iC, jC, kC, &     !-- iCell, etc.
+      iCB, &            !-- iCopyBase
+      iP, &             !-- iProcess
+      iF, &             !-- iFiber
+      iS, &             !-- iSection
+      nC_1, nC_2, nC_3  !-- nCells_1, etc.
     logical ( KDL ) :: &
       NextProcess, &
       NextCopyBase
@@ -345,9 +350,9 @@ contains
                   iF  =  0
                   NextProcess  =  .true.
                 end if
-              end do !-- iB
-            end do !-- jB
-          end do !-- kB
+              end do !-- iC
+            end do !-- jC
+          end do !-- kC
         end do !-- iB
       end do !-- jB
     end do !-- kB
@@ -359,8 +364,9 @@ contains
     allocate ( B % nSectionsGlobal ( nCB ) )
 
     !-- WARNING: MyCopyBase assumes Base ranks are contiguous in the parent
+    B % iCopyBase  =  C % Rank  /  nPB  +  1
     associate &
-      ( MyCopyBase  =>  C % Rank  /  nPB  +  1, &
+      ( MyCopyBase  =>  B % iCopyBase, &
                nSG  =>  B % nSectionsGlobal, &
                 nC  =>  B % Chart_GS_Fiber % nCells )
 
@@ -400,18 +406,48 @@ contains
             iS  =  0
             NextCopyBase  =  .true.
           end if
-        end do !-- iB
-      end do !-- jB
-    end do !-- kB
+        end do !-- iC
+      end do !-- jC
+    end do !-- kC
 
     end associate !-- MyCopyBase, etc.
 
+    associate &
+      (     nD  =>  B % Chart_GS_Base % nDimensions, &
+            nB  =>  B % Chart_GS_Base % nBricks, &
+           iaB  =>  B % Chart_GS_Base % iaBrick, &
+          nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal )
+    iF  =  0
+    do kB  =  1,  nB ( 3 )
+      do jB  =  1,  nB ( 2 )
+        do iB  =  1,  nB ( 1 )
+          nC_1  =  nCBG ( 1 ) % Value ( iB )
+          nC_2  =  1
+          nC_3  =  1
+          if ( nD  >  1 ) &
+            nC_2  =  nCBG ( 2 ) % Value ( jB )   
+          if ( nD  >  2 ) &
+            nC_3  =  nCBG ( 3 ) % Value ( kB )
+          if ( all ( [ iB, jB, kB ]  ==  iaB ) ) then
+            B % iFiberFirst  =  iF  +  1
+            B % iFiberLast   =  iF  +  nC_1 * nC_2 * nC_3 
+          end if
+          iF  =  iF  +  nC_1 * nC_2 * nC_3
+        end do !-- iB
+      end do !-- jB
+    end do !-- kB
+    end associate !-- nD, etc.
+
     end associate !-- C, etc.
+
+    call SetPortals ( B )
 
   end subroutine SetDecomposition
 
 
   subroutine SetPortals ( B )
+
+    !-- WARNING: Assumes Base ranks are contiguous in the parent
 
     type ( Bundle_ASCG_ASCG_Form ), intent ( inout ) :: &
       B
@@ -419,45 +455,111 @@ contains
     integer ( KDI ) :: &
       iP, &          !-- iProcess
       iB, jB, kB, &  !-- iBrick, etc.
-      iCB            !-- iCopyBase
+      iCB, &         !-- iCopyBase
+      oF, &          !-- oFiber
+      nProcessesExchange_F, &
+      nProcessesExchange_S
     integer ( KDI ), dimension ( : ), allocatable :: &
       Source_F_S, &
       Source_S_F, &
       Target_F_S, &
       Target_S_F
     integer ( KDI ), dimension ( :, :, :, : ), allocatable :: &
-      Process
+      Process_S
+
+    !-- Fiber-centric perspective
 
     associate &
-      ( nB   =>  B % Chart_GS_Base % nBricks, &
-        nCB  =>  B % nCopiesBase, &
-        nP   =>  B % Communicator % Size ) 
+      (   nP  =>  B % nProcesses, &
+         nCB  =>  B % nCopiesBase, &
+          nB  =>  B % Chart_GS_Base % nBricks, &
+        iaBF  =>  B % iaBrickFirst, &
+        iaBL  =>  B % iaBrickLast, &
+        nPEF  =>  nProcessesExchange_F )
 
-    allocate ( Process ( nB ( 1 ), nB ( 2 ), nB ( 3 ), nCB ) )
+    nPEF  =  0
+    do kB  =  iaBF ( 3 ),  iaBL ( 3 )
+      do jB  =  iaBF ( 2 ),  iaBL ( 2 )
+        do iB  =  iaBF ( 1 ),  iaBL ( 1 )
+          nPEF  =  nPEF  +  nCB
+        end do !-- iB
+      end do !-- jB
+    end do !-- kB
 
+    allocate ( Process_S ( nB ( 1 ), nB ( 2 ), nB ( 3 ), nCB ) )
     iP  =  0
     do iCB  =  1,  nCB
       do kB  =  1,  nB ( 3 )
         do jB  =  1,  nB ( 2 )
           do iB  =  1,  nB ( 1 )
-            Process ( iB, jB, kB, iCB )  =  iP
+            Process_S ( iB, jB, kB, iCB )  =  iP
             iP  =  iP  +  1
           end do !-- iB
         end do !-- jB
       end do !-- kB
     end do !-- iCB
 
+    allocate ( Source_S_F ( nProcessesExchange_F ) )
+    allocate ( Target_F_S ( nProcessesExchange_F ) )
+    associate &
+      ( iaBF  =>  B % iaBrickFirst, &
+        iaBL  =>  B % iaBrickLast )
+    iP  =  1
+    do iCB  =  1,  nCB
+      do kB  =  iaBF ( 3 ),  iaBL ( 3 )
+        do jB  =  iaBF ( 2 ),  iaBL ( 2 )
+          do iB  =  iaBF ( 1 ),  iaBL ( 1 )
+            Source_S_F ( iP )  =  Process_S ( iB, jB, kB, iCB )
+            Target_F_S ( iP )  =  Process_S ( iB, jB, kB, iCB )
+            iP  =  iP  +  1
+          end do !-- iB
+        end do !-- jB
+      end do !-- kB
+    end do !-- iCB
+    end associate !-- iaBF, etc.
+call Show ( Source_S_F, '>>> Source_S_F' )
+call Show ( Target_F_S, '>>> Target_F_S' )
 
-    allocate ( Source_F_S ( nP ) )
-    allocate ( Source_S_F ( nP ) )
-    allocate ( Target_F_S ( nP ) )
-    allocate ( Target_S_F ( nP ) )
-    Source_F_S  =  -1
-    Source_S_F  =  -1
-    Target_F_S  =  -1
-    Target_S_F  =  -1
+    end associate !-- nP, etc.
 
-    end associate !-- nB, etc.
+    !-- Section-centric perspective
+
+    associate &
+      (   nP  =>  B % nProcesses, &
+         nFG  =>  B % nFibersGlobal, &
+         iFF  =>  B % iFiberFirst, &
+         iFL  =>  B % iFiberLast, &
+        nPES  =>  nProcessesExchange_S )
+
+    oF    =  0
+    nPES  =  0
+    do iP  =  0,  nP - 1
+      if ( ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iP ) )  &
+           .or.  ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iP ) ) ) &
+      then
+        nPES  =  nPES  +  1
+      end if
+      oF  =  oF  +  nFG ( iP )
+    end do !-- iP
+
+    allocate ( Source_F_S ( nProcessesExchange_S ) )
+    allocate ( Target_S_F ( nProcessesExchange_S ) )
+    oF    =  0
+    nPES  =  0
+    do iP  =  0,  nP - 1
+      if ( ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iP ) )  &
+           .or.  ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iP ) ) ) &
+      then
+        nPES  =  nPES  +  1
+        Source_F_S ( nPES )  =  iP
+        Target_S_F ( nPES )  =  iP
+      end if
+      oF  =  oF  +  nFG ( iP )
+    end do !-- iP
+call Show ( Source_F_S, '>>> Source_F_S' )
+call Show ( Target_S_F, '>>> Target_S_F' )
+
+    end associate !-- nP, etc.
 
   end subroutine SetPortals
 
