@@ -454,6 +454,7 @@ contains
     
     integer ( KDI ) :: &
       iP, &          !-- iProcess
+      iPF, iPL, &    !-- iProcessFirst, iProcessLast
       iB, jB, kB, &  !-- iBrick, etc.
       iCB, &         !-- iCopyBase
       oF, &          !-- oFiber
@@ -499,8 +500,8 @@ contains
       end do !-- kB
     end do !-- iCB
 
-    allocate ( Source_S_F ( nProcessesExchange_F ) )
-    allocate ( Target_F_S ( nProcessesExchange_F ) )
+    allocate ( Source_S_F ( nPEF ) )
+    allocate ( Target_F_S ( nPEF ) )
     associate &
       ( iaBF  =>  B % iaBrickFirst, &
         iaBL  =>  B % iaBrickLast )
@@ -517,8 +518,6 @@ contains
       end do !-- kB
     end do !-- iCB
     end associate !-- iaBF, etc.
-call Show ( Source_S_F, '>>> Source_S_F' )
-call Show ( Target_F_S, '>>> Target_F_S' )
 
     end associate !-- nP, etc.
 
@@ -532,34 +531,34 @@ call Show ( Target_F_S, '>>> Target_F_S' )
         nPES  =>  nProcessesExchange_S )
 
     oF    =  0
-    nPES  =  0
     do iP  =  0,  nP - 1
-      if ( ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iP ) )  &
-           .or.  ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iP ) ) ) &
-      then
-        nPES  =  nPES  +  1
-      end if
+      if ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iP ) ) &
+        iPF  =  iP
+      if ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iP ) ) &
+        iPL  =  iP
       oF  =  oF  +  nFG ( iP )
     end do !-- iP
+    nPES  =  iPL - iPF + 1
 
-    allocate ( Source_F_S ( nProcessesExchange_S ) )
-    allocate ( Target_S_F ( nProcessesExchange_S ) )
-    oF    =  0
-    nPES  =  0
-    do iP  =  0,  nP - 1
-      if ( ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iP ) )  &
-           .or.  ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iP ) ) ) &
-      then
-        nPES  =  nPES  +  1
-        Source_F_S ( nPES )  =  iP
-        Target_S_F ( nPES )  =  iP
-      end if
-      oF  =  oF  +  nFG ( iP )
-    end do !-- iP
-call Show ( Source_F_S, '>>> Source_F_S' )
-call Show ( Target_S_F, '>>> Target_S_F' )
+    allocate ( Source_F_S ( nPES ) )
+    allocate ( Target_S_F ( nPES ) )
+    Source_F_S  =  [ ( iP, iP = iPF, iPL ) ]
+    Target_S_F  =  [ ( iP, iP = iPF, iPL ) ]
 
     end associate !-- nP, etc.
+
+    !-- Initialize portals
+
+    associate &
+      ( nMF  =>  B % nMyFibers, &
+        nSG  =>  B % nSectionsGlobal )
+call Show ( Source_F_S, '>>> Source_F_S' )
+call Show ( Target_F_S, '>>> Target_F_S' )
+call Show ( nMF * nSG, '>>> nChunksTo_F_S' )
+call Show ( Source_S_F, '>>> Source_S_F' )
+call Show ( nMF * nSG, '>>> nChunksFrom_S_F' )
+call Show ( Target_S_F, '>>> Target_S_F' )
+    end associate !-- nMF, etc.
 
   end subroutine SetPortals
 
