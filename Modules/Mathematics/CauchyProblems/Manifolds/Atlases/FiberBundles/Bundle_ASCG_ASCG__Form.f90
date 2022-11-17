@@ -470,6 +470,8 @@ contains
       nChunksFrom_S_F, nChunksTo_S_F
     integer ( KDI ), dimension ( :, :, :, : ), allocatable :: &
       Process_S
+    logical ( KDL ) :: &
+      MyFibers
 
     !-- Fiber-centric perspective
 
@@ -537,11 +539,11 @@ contains
            nCT  =>  nChunksTo_F_S )
     nCF  =  0
     nCT  =  0
-    iPS  =  0
+    iPS  =  1
     do iCB  =  1,  nCB
-      iPS  =  iPS  +  1
       iPF  =  0
       iF   =  0
+      MyFibers  =  .false.
       do kB  =  1,  nB ( 3 )
         do jB  =  1,  nB ( 2 )
           do iB  =  1,  nB ( 1 )
@@ -551,24 +553,30 @@ contains
             if ( nD  >  1 ) &
               nC_2  =  nCBG ( 2 ) % Value ( jB )   
             if ( nD  >  2 ) &
-              nC_3  =  nCBG ( 3 ) % Value ( kB )   
+              nC_3  =  nCBG ( 3 ) % Value ( kB )
             do kC  =  1,  nC_3
               do jC  =  1,  nC_2
                 do iC  =  1,  nC_1
                   iF  =  iF  +  1
                   if ( iPF  ==  MyRank ) then
+                    MyFibers  =  .true.
                     nCF ( iPS )  =  nCF ( iPS )  +  1
                     nCT ( iPS )  =  nCT ( iPS )  +  1
                   end if
                   if ( iF  ==  nFG ( iPF ) ) then
+                    if ( MyFibers ) then
+                      MyFibers  =  .false.
+                      iPS  =  iPS  +  1
+                    end if
                     iPF  =  iPF  +  1
                     iF   =  0
                   end if
                 end do !-- iC
               end do !-- jC
             end do !-- kC
-            if ( iPF  ==  MyRank ) &
+            if ( MyFibers ) then
               iPS  =  iPS  +  1
+            end if
           end do !-- iB
         end do !-- jB
       end do !-- kB
