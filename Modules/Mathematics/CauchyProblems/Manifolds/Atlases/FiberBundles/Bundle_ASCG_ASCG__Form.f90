@@ -453,18 +453,21 @@ contains
       B
     
     integer ( KDI ) :: &
-      iP, &          !-- iProcess
-      iPF, iPL, &    !-- iProcessFirst, iProcessLast
+      iPS, iPF, &    !-- iProcessSection, iProcessFiber
+      iPFF, iPFL, &  !-- iProcessFiberFirst, iProcessFiberLast
       iB, jB, kB, &  !-- iBrick, etc.
+      iC, jC, kC, &  !-- iCell, etc.
       iCB, &         !-- iCopyBase
+      iF, &          !-- iFiber
       oF, &          !-- oFiber
+      nC_1, nC_2, nC_3, &  !-- nCells_1, etc.
       nProcessesExchange_F, &
       nProcessesExchange_S
     integer ( KDI ), dimension ( : ), allocatable :: &
-      Source_F_S, &
-      Source_S_F, &
-      Target_F_S, &
-      Target_S_F
+      Source_F_S, Target_F_S, &
+      nChunksFrom_F_S, nChunksTo_F_S, &
+      Source_S_F, Target_S_F, &
+      nChunksFrom_S_F, nChunksTo_S_F
     integer ( KDI ), dimension ( :, :, :, : ), allocatable :: &
       Process_S
 
@@ -476,6 +479,8 @@ contains
           nB  =>  B % Chart_GS_Base % nBricks, &
         iaBF  =>  B % iaBrickFirst, &
         iaBL  =>  B % iaBrickLast, &
+         nMF  =>  B % nMyFibers, &
+         nSG  =>  B % nSectionsGlobal, &
         nPEF  =>  nProcessesExchange_F )
 
     nPEF  =  0
@@ -488,13 +493,13 @@ contains
     end do !-- kB
 
     allocate ( Process_S ( nB ( 1 ), nB ( 2 ), nB ( 3 ), nCB ) )
-    iP  =  0
+    iPS  =  0
     do iCB  =  1,  nCB
       do kB  =  1,  nB ( 3 )
         do jB  =  1,  nB ( 2 )
           do iB  =  1,  nB ( 1 )
-            Process_S ( iB, jB, kB, iCB )  =  iP
-            iP  =  iP  +  1
+            Process_S ( iB, jB, kB, iCB )  =  iPS
+            iPS  =  iPS  +  1
           end do !-- iB
         end do !-- jB
       end do !-- kB
@@ -505,60 +510,179 @@ contains
     associate &
       ( iaBF  =>  B % iaBrickFirst, &
         iaBL  =>  B % iaBrickLast )
-    iP  =  1
+    iPS  =  1
     do iCB  =  1,  nCB
       do kB  =  iaBF ( 3 ),  iaBL ( 3 )
         do jB  =  iaBF ( 2 ),  iaBL ( 2 )
           do iB  =  iaBF ( 1 ),  iaBL ( 1 )
-            Source_S_F ( iP )  =  Process_S ( iB, jB, kB, iCB )
-            Target_F_S ( iP )  =  Process_S ( iB, jB, kB, iCB )
-            iP  =  iP  +  1
+            Source_S_F ( iPS )  =  Process_S ( iB, jB, kB, iCB )
+            Target_F_S ( iPS )  =  Process_S ( iB, jB, kB, iCB )
+            iPS  =  iPS  +  1
           end do !-- iB
         end do !-- jB
       end do !-- kB
     end do !-- iCB
     end associate !-- iaBF, etc.
 
+    allocate ( nChunksFrom_S_F ( nPEF ) )
+    allocate ( nChunksTo_F_S ( nPEF ) )
+
+    associate &
+      ( MyRank  =>  B % Communicator % Rank, &
+            nD  =>  B % Chart_GS_Base % nDimensions, &
+            nB  =>  B % Chart_GS_Base % nBricks, &
+          nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal, &
+           nFG  =>  B % nFibersGlobal, &
+           nCF  =>  nChunksFrom_S_F, &
+           nCT  =>  nChunksTo_F_S )
+    nCF  =  0
+    nCT  =  0
+    iPS  =  0
+    do iCB  =  1,  nCB
+      iPS  =  iPS  +  1
+      iPF  =  0
+      iF   =  0
+      do kB  =  1,  nB ( 3 )
+        do jB  =  1,  nB ( 2 )
+          do iB  =  1,  nB ( 1 )
+            nC_1  =  nCBG ( 1 ) % Value ( iB )
+            nC_2  =  1
+            nC_3  =  1
+            if ( nD  >  1 ) &
+              nC_2  =  nCBG ( 2 ) % Value ( jB )   
+            if ( nD  >  2 ) &
+              nC_3  =  nCBG ( 3 ) % Value ( kB )   
+            do kC  =  1,  nC_3
+              do jC  =  1,  nC_2
+                do iC  =  1,  nC_1
+                  iF  =  iF  +  1
+                  if ( iPF  ==  MyRank ) then
+                    nCF ( iPS )  =  nCF ( iPS )  +  1
+                    nCT ( iPS )  =  nCT ( iPS )  +  1
+                  end if
+                  if ( iF  ==  nFG ( iPF ) ) then
+                    iPF  =  iPF  +  1
+                    iF   =  0
+                  end if
+                end do !-- iC
+              end do !-- jC
+            end do !-- kC
+            if ( iPF  ==  MyRank ) &
+              iPS  =  iPS  +  1
+          end do !-- iB
+        end do !-- jB
+      end do !-- kB
+    end do !-- iCB
+    end associate !-- nD, etc.
+
+    associate &
+      ( nPB  =>  B % nProcessesBase, &
+          S  =>  Source_S_F, &
+          T  =>  Target_F_S, &
+        nCF  =>  nChunksFrom_S_F, &
+        nCT  =>  nChunksTo_F_S )
+    do iPS  =  1,  nPEF
+
+      iCB  =  S ( iPS )  /  nPB  +  1
+      nCF ( iPS )  =  nCF ( iPS )  *  nSG ( iCB )
+
+      iCB  =  T ( iPS )  /  nPB  +  1 
+      nCT ( iPS )  =  nCT ( iPS )  *  nSG ( iCB )
+
+    end do !-- iPS
+
+    end associate !-- nPB, etc.
+
     end associate !-- nP, etc.
 
     !-- Section-centric perspective
 
     associate &
-      (   nP  =>  B % nProcesses, &
-         nFG  =>  B % nFibersGlobal, &
-         iFF  =>  B % iFiberFirst, &
-         iFL  =>  B % iFiberLast, &
-        nPES  =>  nProcessesExchange_S )
+      ( MyRank  =>  B % Communicator % Rank, &
+           nCB  =>  B % nCopiesBase, &
+            nP  =>  B % nProcesses, &
+            nD  =>  B % Chart_GS_Base % nDimensions, &
+            nB  =>  B % Chart_GS_Base % nBricks, &
+          nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal, &
+           iFF  =>  B % iFiberFirst, &
+           iFL  =>  B % iFiberLast, &
+           nMS  =>  B % nMySections, &
+           nFG  =>  B % nFibersGlobal, &
+          nPES  =>  nProcessesExchange_S )
 
     oF    =  0
-    do iP  =  0,  nP - 1
-      if ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iP ) ) &
-        iPF  =  iP
-      if ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iP ) ) &
-        iPL  =  iP
-      oF  =  oF  +  nFG ( iP )
+    do iPF  =  0,  nP - 1
+      if ( iFF  >  oF  .and.  iFF  <=  oF  +  nFG ( iPF ) ) &
+        iPFF  =  iPF
+      if ( iFL  >  oF  .and.  iFL <=  oF  +  nFG ( iPF ) ) &
+        iPFL  =  iPF
+      oF  =  oF  +  nFG ( iPF )
     end do !-- iP
-    nPES  =  iPL - iPF + 1
+    nPES  =  iPFL - iPFF + 1
 
     allocate ( Source_F_S ( nPES ) )
     allocate ( Target_S_F ( nPES ) )
-    Source_F_S  =  [ ( iP, iP = iPF, iPL ) ]
-    Target_S_F  =  [ ( iP, iP = iPF, iPL ) ]
+    Source_F_S  =  [ ( iPF, iPF = iPFF, iPFL ) ]
+    Target_S_F  =  [ ( iPF, iPF = iPFF, iPFL ) ]
+
+    allocate ( nChunksFrom_F_S ( nPES ) )
+    allocate ( nChunksTo_S_F ( nPES ) )
+    associate &
+       ( nCF  =>  nChunksFrom_F_S, &
+         nCT  =>  nChunksTo_S_F )
+    nCF  =  0
+    nCT  =  0
+    iPS  =  1
+    do iCB  =  1,  nCB    
+      iPF  =  0
+      iF   =  0
+      do kB  =  1,  nB ( 3 )
+        do jB  =  1,  nB ( 2 )
+          do iB  =  1,  nB ( 1 )
+            nC_1  =  nCBG ( 1 ) % Value ( iB )
+            nC_2  =  1
+            nC_3  =  1
+            if ( nD  >  1 ) &
+              nC_2  =  nCBG ( 2 ) % Value ( jB )   
+            if ( nD  >  2 ) &
+              nC_3  =  nCBG ( 3 ) % Value ( kB )   
+            do kC  =  1,  nC_3
+              do jC  =  1,  nC_2
+                do iC  =  1,  nC_1
+                  iF  =  iF  +  1
+                  if ( Process_S ( iB, jB, kB, iCB )  ==  MyRank ) then
+                    nCF ( iPS )  =  nCF ( iPS )  +  1
+                    nCT ( iPS )  =  nCT ( iPS )  +  1
+                  end if
+                  if ( iF  ==  nFG ( iPF ) ) then
+                    iPF  =  iPF  +  1
+                    iF   =  0
+                    if ( Process_S ( iB, jB, kB, iCB )  ==  MyRank ) &
+                      iPS  =  iPS  +  1
+                  end if
+                end do !-- iC
+              end do !-- jC
+            end do !-- kC
+          end do !-- iB
+        end do !-- jB
+      end do !-- kB
+    end do !-- iCB
+    nCF  =  nCF  *  nMS
+    nCT  =  nCT  *  nMS
+    end associate !-- nCF, etc.
 
     end associate !-- nP, etc.
 
     !-- Initialize portals
 
-    associate &
-      ( nMF  =>  B % nMyFibers, &
-        nSG  =>  B % nSectionsGlobal )
 call Show ( Source_F_S, '>>> Source_F_S' )
+call Show ( nChunksFrom_F_S, '>>> nChunksFrom_F_S' )
 call Show ( Target_F_S, '>>> Target_F_S' )
-call Show ( nMF * nSG, '>>> nChunksTo_F_S' )
+call Show ( nChunksTo_F_S, '>>> nChunksTo_F_S' )
 call Show ( Source_S_F, '>>> Source_S_F' )
-call Show ( nMF * nSG, '>>> nChunksFrom_S_F' )
+call Show ( nChunksFrom_S_F, '>>> nChunksFrom_S_F' )
 call Show ( Target_S_F, '>>> Target_S_F' )
-    end associate !-- nMF, etc.
+call Show ( nChunksTo_S_F, '>>> nChunksTo_S_F' )
 
   end subroutine SetPortals
 
