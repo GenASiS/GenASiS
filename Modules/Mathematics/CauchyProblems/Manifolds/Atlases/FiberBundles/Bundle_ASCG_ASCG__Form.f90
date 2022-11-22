@@ -46,6 +46,10 @@ module Bundle_ASCG_ASCG__Form
       iaBrickFirst, iaBrickLast, &
       iaCellFirst, iaCellLast, &
       nFibersGlobal
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iFiberExchangeFirst, iFiberExchangeLast
+    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
+      iaBinExchangeFirst, iaBinExchangeLast
     !-- Metadata for distribution of position space operations for different 
     !   fiber bins
     !-- ( A position space operation for a given fiber bin is itself 
@@ -58,6 +62,9 @@ module Bundle_ASCG_ASCG__Form
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBinFirst, iaBinLast, &
       nSectionsGlobal
+    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
+      iaBrickExchangeFirst, iaBrickExchangeLast, &
+      iaCellExchangeFirst, iaCellExchangeLast
   contains
     procedure, private, pass :: &
       Initialize_ASCG_ASCG
@@ -196,6 +203,10 @@ contains
     call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
 
+    call Show ( B % iFiberExchangeFirst, 'iFiberExchangeFirst', &
+                B % IGNORABILITY + 2 )
+    call Show ( B % iFiberExchangeLast, 'iFiberExchangeLast', &
+                B % IGNORABILITY + 2 )
     call B % Portal_F_S % Show ( 'Portal_F_S', B % IGNORABILITY + 2 )
     call B % Portal_S_F % Show ( 'Portal_S_F', B % IGNORABILITY + 2 )
 
@@ -531,6 +542,8 @@ contains
 
     allocate ( nChunksFrom_S_F ( nPEF ) )
     allocate ( nChunksTo_F_S ( nPEF ) )
+    allocate ( B % iFiberExchangeFirst ( nPEF ) )
+    allocate ( B % iFiberExchangeLast ( nPEF ) )
 
     associate &
       ( MyRank  =>  B % Communicator % Rank, &
@@ -538,11 +551,15 @@ contains
             nB  =>  B % Chart_GS_Base % nBricks, &
           nCBG  =>  B % Chart_GS_Base % nCellsBrickGlobal, &
            nFG  =>  B % nFibersGlobal, &
+          iFEF  =>  B % iFiberExchangeFirst, &
+          iFEL  =>  B % iFiberExchangeLast, &
            nCF  =>  nChunksFrom_S_F, &
            nCT  =>  nChunksTo_F_S )
     nCF  =  0
     nCT  =  0
     iPS  =  1
+    iFEF  =  huge ( 1_KDI )
+    iFEL  =  0
     do iCB  =  1,  nCB
       iPF  =  0
       iF   =  0
@@ -563,13 +580,15 @@ contains
                   iF  =  iF  +  1
                   if ( iPF  ==  MyRank ) then
                     MyFibers  =  .true.
-                    nCF ( iPS )  =  nCF ( iPS )  +  1
-                    nCT ( iPS )  =  nCT ( iPS )  +  1
+                    iFEF ( iPS )  =  min ( iFEF ( iPS ), iF )
+                    nCF  ( iPS )  =  nCF ( iPS )  +  1
+                    nCT  ( iPS )  =  nCT ( iPS )  +  1
                   end if
                   if ( iF  ==  nFG ( iPF ) ) then
                     if ( MyFibers ) then
                       MyFibers  =  .false.
-                      iPS  =  iPS  +  1
+                      iFEL ( iPS )  =  iF
+                      iPS  =  iPS  +  1  !-- increment for next Base Copy
                     end if
                     iPF  =  iPF  +  1
                     iF   =  0
@@ -578,6 +597,7 @@ contains
               end do !-- jC
             end do !-- kC
             if ( MyFibers ) then
+              iFEL ( iPS )  =  iF
               iPS  =  iPS  +  1
             end if
           end do !-- iB
