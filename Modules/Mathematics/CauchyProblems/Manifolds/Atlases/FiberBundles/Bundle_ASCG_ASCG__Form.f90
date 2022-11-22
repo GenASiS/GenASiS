@@ -178,6 +178,9 @@ contains
     class ( Bundle_ASCG_ASCG_Form ), intent ( in ) :: &
       B
 
+    integer ( KDI ) :: &
+      iPE  !-- iProcessExchange
+
     call B % Bundle_H_Form % Show ( )
 
     call Show ( 'Bundle_ASCG_ASCG Proper Parameters' )
@@ -186,6 +189,7 @@ contains
     call Show ( B % nCopiesBase,    'nCopiesBase',     B % IGNORABILITY )
     call Show ( B % nProcessesBase, 'nProcessesBase',  B % IGNORABILITY )
 
+    call Show ( 'Fiber-centric storage parameters' )
     call Show ( B % nFibers,       'nFibers',       B % IGNORABILITY )
     call Show ( B % nMyFibers,     'nMyFibers',     B % IGNORABILITY )
     call Show ( B % iaBrickFirst,  'iaBrickFirst',  B % IGNORABILITY )
@@ -193,7 +197,19 @@ contains
     call Show ( B % iaCellFirst,   'iaCellFirst',   B % IGNORABILITY )
     call Show ( B % iaCellLast,    'iaCellLast',    B % IGNORABILITY )
     call Show ( B % nFibersGlobal, 'nFibersGlobal', B % IGNORABILITY + 2 )
+    call Show ( B % iFiberExchangeFirst, 'iFiberExchangeFirst', &
+                B % IGNORABILITY + 2 )
+    call Show ( B % iFiberExchangeLast, 'iFiberExchangeLast', &
+                B % IGNORABILITY + 2 )
+    do iPE  =  1, size ( B % iaBinExchangeFirst )
+      call Show ( iPE, 'iProcessExchange', B % IGNORABILITY + 2 )
+      call Show ( B % iaBinExchangeFirst ( iPE ) % Value, &
+                  'iaBinExchangeFirst', B % IGNORABILITY + 2 )
+      call Show ( B % iaBinExchangeLast ( iPE ) % Value, &
+                  'iaBinExchangeLast', B % IGNORABILITY + 2 )
+    end do
 
+    call Show ( 'Section-centric storage parameters' )
     call Show ( B % nSections,       'nSections',       B % IGNORABILITY )
     call Show ( B % nMySections,     'nMySections',     B % IGNORABILITY )
     call Show ( B % iCopyBase,       'iCopyBase',       B % IGNORABILITY )
@@ -203,10 +219,6 @@ contains
     call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
 
-    call Show ( B % iFiberExchangeFirst, 'iFiberExchangeFirst', &
-                B % IGNORABILITY + 2 )
-    call Show ( B % iFiberExchangeLast, 'iFiberExchangeLast', &
-                B % IGNORABILITY + 2 )
     call B % Portal_F_S % Show ( 'Portal_F_S', B % IGNORABILITY + 2 )
     call B % Portal_S_F % Show ( 'Portal_S_F', B % IGNORABILITY + 2 )
 
@@ -408,13 +420,13 @@ contains
           iS  =  iS  +  1
           if ( NextCopyBase ) then
             if ( iCB  ==  MyCopyBase ) then
-              B % iaBinFirst   =  [ iC, jC, kC ]
+              B % iaBinFirst  =  [ iC, jC, kC ]
             end if
             NextCopyBase  =  .false.
           end if
           if ( iS  ==  nSG ( iCB ) ) then
             if ( iCB  ==  MyCopyBase ) then
-              B % iaBinLast   =  [ iC, jC, kC ]
+              B % iaBinLast  =  [ iC, jC, kC ]
             end if
             iCB  =  iCB  +  1
             iS  =  0
@@ -473,7 +485,9 @@ contains
       iC, jC, kC, &  !-- iCell, etc.
       iCB, &         !-- iCopyBase
       iF, &          !-- iFiber
+      iS, &          !-- iSection
       oF, &          !-- oFiber
+      oPS, &         !-- iProcessSection
       nC_1, nC_2, nC_3, &  !-- nCells_1, etc.
       nProcessesExchange_F, &
       nProcessesExchange_S
@@ -623,6 +637,37 @@ contains
     end do !-- iPS
 
     end associate !-- nPB, etc.
+
+    allocate ( B % iaBinExchangeFirst ( nPEF ) )
+    allocate ( B % iaBinExchangeLast  ( nPEF ) )
+    associate &
+      ( iaBEF  =>  B % iaBinExchangeFirst, &
+        iaBEL  =>  B % iaBinExchangeLast, &
+        nC     =>  B % Chart_GS_Fiber % nCells )
+    iS   =  0
+    iCB  =  1
+    oPS  =  ( iCB - 1 )  *  nPEF / nCB 
+    do kC  =  1,  nC ( 3 )
+      do jC  =  1,  nC ( 2 )
+        do iC  =  1,  nC ( 1 )
+          iS  =  iS  +  1
+          if ( iS  ==  1 ) then
+            do iPS  =  oPS + 1,  oPS + nPEF / nCB
+              call iaBEF ( iPS ) % Initialize ( [ iC, jC, kC ] )
+            end do !-- iPS
+          end if
+          if ( iS  ==  nSG ( iCB ) ) then
+            iS  =  0
+            do iPS  =  oPS  +  1,  oPS  +  nPEF / nCB
+              call iaBEL ( iPS ) % Initialize ( [ iC, jC, kC ] )
+            end do !-- iPS
+            iCB  =  iCB  +  1
+            oPS  =  ( iCB - 1 )  *  nPEF / nCB 
+          end if
+        end do !-- iC
+      end do !-- jC
+    end do !-- kC
+    end associate !-- iaBEF, etc.
 
     end associate !-- nP, etc.
 
