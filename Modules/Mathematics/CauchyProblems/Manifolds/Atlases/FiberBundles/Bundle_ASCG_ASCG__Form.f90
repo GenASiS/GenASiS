@@ -196,6 +196,9 @@ contains
     call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
 
+    call B % Portal_F_S % Show ( 'Portal_F_S', B % IGNORABILITY + 2 )
+    call B % Portal_S_F % Show ( 'Portal_S_F', B % IGNORABILITY + 2 )
+
   end subroutine Show_B
 
 
@@ -683,14 +686,26 @@ contains
 
     !-- Initialize portals
 
-call Show ( Source_F_S, '>>> Source_F_S' )
-call Show ( nChunksFrom_F_S, '>>> nChunksFrom_F_S' )
-call Show ( Target_F_S, '>>> Target_F_S' )
-call Show ( nChunksTo_F_S, '>>> nChunksTo_F_S' )
-call Show ( Source_S_F, '>>> Source_S_F' )
-call Show ( nChunksFrom_S_F, '>>> nChunksFrom_S_F' )
-call Show ( Target_S_F, '>>> Target_S_F' )
-call Show ( nChunksTo_S_F, '>>> nChunksTo_S_F' )
+! call Show ( Source_F_S, '>>> Source_F_S' )
+! call Show ( nChunksFrom_F_S, '>>> nChunksFrom_F_S' )
+! call Show ( Target_F_S, '>>> Target_F_S' )
+! call Show ( nChunksTo_F_S, '>>> nChunksTo_F_S' )
+! call Show ( Source_S_F, '>>> Source_S_F' )
+! call Show ( nChunksFrom_S_F, '>>> nChunksFrom_S_F' )
+! call Show ( Target_S_F, '>>> Target_S_F' )
+! call Show ( nChunksTo_S_F, '>>> nChunksTo_S_F' )
+
+    allocate ( B % Portal_F_S )
+    associate ( P => B % Portal_F_S )
+    call P % Initialize &
+           ( Source_F_S, Target_F_S, nChunksFrom_F_S, nChunksTo_F_S )
+    end associate !-- P
+
+    allocate ( B % Portal_S_F )
+    associate ( P => B % Portal_S_F )
+    call P % Initialize &
+           ( Source_S_F, Target_S_F, nChunksFrom_S_F, nChunksTo_S_F )
+    end associate !-- P
 
   end subroutine SetPortals
 
