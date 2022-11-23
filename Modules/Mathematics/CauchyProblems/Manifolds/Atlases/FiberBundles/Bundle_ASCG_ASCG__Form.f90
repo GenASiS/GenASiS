@@ -236,24 +236,27 @@ contains
     type ( Bundle_ASCG_ASCG_Form ), intent ( inout ) :: &
       B
     
-    nullify ( B % Atlas_SCG_Fiber )
-    nullify ( B % Atlas_SCG_Base )
-    nullify ( B % Chart_GS_Fiber )
-    nullify ( B % Chart_GS_Base )
-    nullify ( B % Communicator )
-
-    if ( allocated ( B % Portal_S_F ) ) &
-      deallocate ( B % Portal_S_F )
-    if ( allocated ( B % Portal_F_S ) ) &
-      deallocate ( B % Portal_F_S )
-
+    if ( allocated ( B % iaCellExchangeLast ) ) &
+      deallocate ( B % iaCellExchangeLast )
+    if ( allocated ( B % iaCellExchangeFirst ) ) &
+      deallocate ( B % iaCellExchangeFirst )
+    if ( allocated ( B % nSectionsGlobal ) ) &
+      deallocate ( B % nSectionsGlobal )
     if ( allocated ( B % iaBinLast ) ) &
       deallocate ( B % iaBinLast )
     if ( allocated ( B % iaBinFirst ) ) &
       deallocate ( B % iaBinFirst )
-    if ( allocated ( B % nSectionsGlobal ) ) &
-      deallocate ( B % nSectionsGlobal )
 
+    if ( allocated ( B % iaBinExchangeLast ) ) &
+      deallocate ( B % iaBinExchangeLast )
+    if ( allocated ( B % iaBinExchangeFirst ) ) &
+      deallocate ( B % iaBinExchangeFirst )
+    if ( allocated ( B % iFiberExchangeLast ) ) &
+      deallocate ( B % iFiberExchangeLast )
+    if ( allocated ( B % iFiberExchangeFirst ) ) &
+      deallocate ( B % iFiberExchangeFirst )
+    if ( allocated ( B % nFibersGlobal ) ) &
+      deallocate ( B % nFibersGlobal )
     if ( allocated ( B % iaCellLast ) ) &
       deallocate ( B % iaCellLast )
     if ( allocated ( B % iaCellFirst ) ) &
@@ -262,8 +265,17 @@ contains
       deallocate ( B % iaBrickLast )
     if ( allocated ( B % iaBrickFirst ) ) &
       deallocate ( B % iaBrickFirst )
-    if ( allocated ( B % nFibersGlobal ) ) &
-      deallocate ( B % nFibersGlobal )
+
+    if ( allocated ( B % Portal_S_F ) ) &
+      deallocate ( B % Portal_S_F )
+    if ( allocated ( B % Portal_F_S ) ) &
+      deallocate ( B % Portal_F_S )
+    nullify ( B % Communicator )
+
+    nullify ( B % Chart_GS_Fiber )
+    nullify ( B % Atlas_SCG_Fiber )
+    nullify ( B % Chart_GS_Base )
+    nullify ( B % Atlas_SCG_Base )
 
   end subroutine Finalize
 
