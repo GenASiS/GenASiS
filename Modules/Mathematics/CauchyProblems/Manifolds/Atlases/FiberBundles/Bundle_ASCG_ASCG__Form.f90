@@ -63,7 +63,6 @@ module Bundle_ASCG_ASCG__Form
       iaBinFirst, iaBinLast, &
       nSectionsGlobal
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
-      iaBrickExchangeFirst, iaBrickExchangeLast, &
       iaCellExchangeFirst, iaCellExchangeLast
   contains
     procedure, private, pass :: &
@@ -218,6 +217,13 @@ contains
     call Show ( B % iaBinFirst,      'iaBinFirst',      B % IGNORABILITY )
     call Show ( B % iaBinLast,       'iaBinLast',       B % IGNORABILITY )
     call Show ( B % nSectionsGlobal, 'nSectionsGlobal', B % IGNORABILITY + 2 )
+    do iPE  =  1, size ( B % iaCellExchangeFirst )
+      call Show ( iPE, 'iProcessExchange', B % IGNORABILITY + 2 )
+      call Show ( B % iaCellExchangeFirst ( iPE ) % Value, &
+                  'iaCellExchangeFirst', B % IGNORABILITY + 2 )
+      call Show ( B % iaCellExchangeLast ( iPE ) % Value, &
+                  'iaCellExchangeLast', B % IGNORABILITY + 2 )
+    end do
 
     call B % Portal_F_S % Show ( 'Portal_F_S', B % IGNORABILITY + 2 )
     call B % Portal_S_F % Show ( 'Portal_S_F', B % IGNORABILITY + 2 )
@@ -701,11 +707,15 @@ contains
     Source_F_S  =  [ ( iPF, iPF = iPFF, iPFL ) ]
     Target_S_F  =  [ ( iPF, iPF = iPFF, iPFL ) ]
 
+    allocate ( B % iaCellExchangeFirst ( nPES ) )
+    allocate ( B % iaCellExchangeLast ( nPES ) )
     allocate ( nChunksFrom_F_S ( nPES ) )
     allocate ( nChunksTo_S_F ( nPES ) )
     associate &
-       ( nCF  =>  nChunksFrom_F_S, &
-         nCT  =>  nChunksTo_S_F )
+       ( iaCEF  =>  B % iaCellExchangeFirst, &
+         iaCEL  =>  B % iaCellExchangeLast, &
+          nCF   =>  nChunksFrom_F_S, &
+          nCT   =>  nChunksTo_S_F )
     nCF  =  0
     nCT  =  0
     iPS  =  1
@@ -727,14 +737,25 @@ contains
                 do iC  =  1,  nC_1
                   iF  =  iF  +  1
                   if ( Process_S ( iB, jB, kB, iCB )  ==  MyRank ) then
+                    if ( iF  ==  1  &
+                         .or.  all ( [ iC, jC, kC ]  ==  [ 1, 1, 1 ] ) ) &
+                    then
+                      call iaCEF ( iPS ) % Initialize ( [ iC, jC, kC ] )
+                    end if
                     nCF ( iPS )  =  nCF ( iPS )  +  1
                     nCT ( iPS )  =  nCT ( iPS )  +  1
                   end if
-                  if ( iF  ==  nFG ( iPF ) ) then
-                    iPF  =  iPF  +  1
-                    iF   =  0
-                    if ( Process_S ( iB, jB, kB, iCB )  ==  MyRank ) &
+                  if ( iF  ==  nFG ( iPF )  &
+                       .or.  all ( [ iC, jC, kC ] == [ nC_1, nC_2, nC_3 ] ) ) &
+                  then
+                    if ( iF  ==  nFG ( iPF ) ) then
+                      iPF  =  iPF  +  1
+                      iF   =  0
+                    end if
+                    if ( Process_S ( iB, jB, kB, iCB )  ==  MyRank ) then
+                      call iaCEL ( iPS ) % Initialize ( [ iC, jC, kC ] )
                       iPS  =  iPS  +  1
+                    end if
                   end if
                 end do !-- iC
               end do !-- jC
