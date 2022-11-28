@@ -1,4 +1,4 @@
-program Stream_Form_Test
+program Stream_BM__Form_Test
 
   use Basics
   use Manifolds
@@ -26,14 +26,14 @@ program Stream_Form_Test
     FS,     FS_R, &
     FS_234, FS_234_R, &
     FS_5,   FS_5_R
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S, &
     S_234, &
     S_5
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'StreamForm_Test', DimensionalityOption = '2D' )
+         ( 'Stream_BM_Form_Test', DimensionalityOption = '2D' )
 
   allocate ( GIS )
   call GIS % Initialize &
@@ -151,7 +151,7 @@ contains
 
   subroutine TestReadWrite ( S, FS, FS_R )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS, &
@@ -310,7 +310,7 @@ contains
 
   subroutine WriteStream ( S )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
 
     type ( TimerForm ), pointer :: &
@@ -330,7 +330,7 @@ contains
 
   subroutine ReadStream ( S, FS )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS
@@ -435,4 +435,4 @@ contains
   end subroutine CompareFieldSets
 
 
-end program Stream_Form_Test
+end program Stream_BM__Form_Test

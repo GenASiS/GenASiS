@@ -21,17 +21,17 @@ FieldSet_BM__Form.o: \
   Boundaries_Form.o \
   FieldSet_BM__Form.f90
 
-Stream_Form.o: \
+Stream_BM__Form.o: \
   Basics.o \
   Manifolds.o \
   FieldSet_BM__Form.o \
-  Stream_Form.f90
+  Stream_BM__Form.f90
 
 FieldSets.o: \
   GhostExchange_Form.o \
   Boundaries_Form.o \
   FieldSet_BM__Form.o \
-  Stream_Form.o \
+  Stream_BM__Form.o \
   FieldSets.f90
 
 FieldSets.a: $(FIELD_SETS)

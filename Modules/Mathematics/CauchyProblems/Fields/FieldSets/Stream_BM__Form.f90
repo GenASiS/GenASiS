@@ -1,4 +1,4 @@
-module Stream_Form
+module Stream_BM__Form
 
   use Basics
   use Manifolds
@@ -11,7 +11,7 @@ module Stream_Form
       MAX_DIMENSIONS = 3, &
       MAX_FIELD_SETS = 96
 
-  type, public :: StreamForm
+  type, public :: Stream_BM_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nFieldSets   = 0
@@ -49,7 +49,7 @@ module Stream_Form
       Read
     final :: &
       Finalize
-  end type StreamForm
+  end type Stream_BM_Form
 
    private :: &
      SetEdgeValues
@@ -60,7 +60,7 @@ contains
 
   subroutine Initialize ( S, A, GIS, NameOption, VerboseOption )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
@@ -122,7 +122,7 @@ contains
 
   subroutine AddFieldSet ( S, FS, NameOption, iaSelectedOption )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS
@@ -188,7 +188,7 @@ contains
 
   subroutine Show_S ( S )
 
-    class ( StreamForm ), intent ( in ) :: &
+    class ( Stream_BM_Form ), intent ( in ) :: &
       S
 
     integer ( KDI ) :: &
@@ -218,7 +218,7 @@ contains
 
   function TimerWrite ( S, Level ) result ( T )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       Level
@@ -235,7 +235,7 @@ contains
 
   function TimerRead ( S, Level ) result ( T )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       Level
@@ -252,7 +252,7 @@ contains
 
   subroutine Write ( S, DirectoryOption, TimeOption, CycleNumberOption )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
@@ -351,7 +351,7 @@ contains
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Stream_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Stream_BM__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Write', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- C
@@ -364,7 +364,7 @@ contains
 
   subroutine Read ( S, DirectoryOption, TimeOption, CycleNumberOption )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
@@ -456,7 +456,7 @@ contains
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Stream_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Stream_BM__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Read', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- C
@@ -469,7 +469,7 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( StreamForm ), intent ( inout ) :: &
+    type ( Stream_BM_Form ), intent ( inout ) :: &
       S
 
     if ( allocated ( S % FieldSet ) ) &
@@ -529,7 +529,7 @@ contains
 
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Stream_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Stream_BM__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetEdgeValues', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -537,4 +537,4 @@ contains
   end subroutine SetEdgeValues
 
 
-end module Stream_Form
+end module Stream_BM__Form
