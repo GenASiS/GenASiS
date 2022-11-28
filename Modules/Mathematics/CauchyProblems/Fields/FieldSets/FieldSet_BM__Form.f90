@@ -1,4 +1,4 @@
-module FieldSet_Form
+module FieldSet_BM__Form
 
   use Basics
   use Algebra
@@ -9,7 +9,7 @@ module FieldSet_Form
   implicit none
   private
 
-  type, public :: FieldSetForm
+  type, public :: FieldSet_BM_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nFields      = 0, &
@@ -46,7 +46,7 @@ module FieldSet_Form
       Boundaries
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       Primary => null ( )
   contains
     procedure, private, pass :: &
@@ -87,15 +87,15 @@ module FieldSet_Form
       UpdateHost => UpdateHost_FS
     final :: &
       Finalize
-  end type FieldSetForm
+  end type FieldSet_BM_Form
 
-  type, public :: FieldSetElement
-    class ( FieldSetForm ), allocatable :: &
+  type, public :: FieldSet_BM_Element
+    class ( FieldSet_BM_Form ), allocatable :: &
       Element
   contains
     final :: &
       Finalize_E
-  end type FieldSetElement
+  end type FieldSet_BM_Element
 
 
 contains
@@ -108,7 +108,7 @@ contains
                  UnitOption, VectorIndicesOption, nFieldsOption, &
                  IgnorabilityOption )
 
-    class ( FieldSetForm ), intent ( inout ), target :: &
+    class ( FieldSet_BM_Form ), intent ( inout ), target :: &
       FS
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
@@ -264,7 +264,7 @@ contains
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'FieldSet_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FieldSet_BM__Form', 'module', CONSOLE % ERROR )
         call Show ( 'InitializeAllocate_FS', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- C
@@ -277,7 +277,7 @@ contains
       FS % nBoundaries  =  FS % Boundaries ( 1 ) % nBoundaries
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'FieldSet_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'FieldSet_BM__Form', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeAllocate_FS', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
@@ -294,9 +294,9 @@ contains
   subroutine InitializeClone &
                ( FS_T, FS_S, iaSelected, NameOption, IgnorabilityOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_T  !-- FS_Target
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS_S  !-- FS_Source
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaSelected
@@ -384,7 +384,7 @@ contains
                ( FS, BoundaryCondition, iC, iD, BoundaryOption, &
                  iBoundaryOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     character ( * ), dimension ( 2 ), intent ( in ) :: &
       BoundaryCondition  !-- [ Inner, Outer ]
@@ -417,7 +417,7 @@ contains
                ( FS, BoundaryCondition, iC, iD, BoundaryOption, &
                  iBoundaryOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     character ( * ), dimension ( 4 ), intent ( in ) :: &
       BoundaryCondition  !-- [ InnerInner, OuterInner, InnerOuter, OuterOuter ]
@@ -441,7 +441,7 @@ contains
 
   subroutine Show_FS ( FS )
 
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -502,7 +502,7 @@ contains
 
   function TimerGhost ( FS, Level ) result ( T )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     integer ( KDI ), intent ( in ) :: &
       Level
@@ -519,7 +519,7 @@ contains
 
   subroutine Clear_FS ( FS, UseDeviceOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     logical ( KDL ), intent ( in ), optional :: &
       UseDeviceOption
@@ -550,9 +550,9 @@ contains
 
   subroutine Copy_FS ( FS_T, FS_S, UseDeviceOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_S
     logical ( KDL ), intent ( in ), optional :: &
        UseDeviceOption
@@ -587,9 +587,9 @@ contains
 
   subroutine MultiplyAdd_FS ( FS_D, FS_A, FS_B, C, UseDeviceOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_D
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_A, &
       FS_B
     real ( KDR ), intent ( in ) :: &
@@ -631,9 +631,9 @@ contains
 
   subroutine MultiplyAddInPlace_FS ( FS_A, FS_B, C, UseDeviceOption )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_A
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_B
     real ( KDR ), intent ( in ) :: &
       C
@@ -671,7 +671,7 @@ contains
 
   subroutine ExchangeGhostData ( FS, T_Option )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -687,7 +687,7 @@ contains
 
   subroutine StartGhostExchange ( FS, T_Option )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -736,7 +736,7 @@ contains
 
   subroutine FinishGhostExchange ( FS, T_Option )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -787,7 +787,7 @@ contains
 
   subroutine ApplyBoundaryConditions ( FS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -807,7 +807,7 @@ contains
 
   subroutine UpdateDevice_FS ( FS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -822,7 +822,7 @@ contains
 
   subroutine UpdateHost_FS ( FS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -837,7 +837,7 @@ contains
 
   impure elemental subroutine Finalize ( FS )
 
-    type ( FieldSetForm ), intent ( inout ) :: &
+    type ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
 
     nullify ( FS % Primary )
@@ -869,7 +869,7 @@ contains
 
   impure elemental subroutine Finalize_E ( FSE )
     
-    type ( FieldSetElement ), intent ( inout ) :: &
+    type ( FieldSet_BM_Element ), intent ( inout ) :: &
       FSE
 
     if ( allocated ( FSE % Element ) ) &
@@ -878,4 +878,4 @@ contains
   end subroutine Finalize_E
 
 
-end module FieldSet_Form
+end module FieldSet_BM__Form

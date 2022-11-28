@@ -22,7 +22,7 @@ program Stream_Form_Test
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     FS,     FS_R, &
     FS_234, FS_234_R, &
     FS_5,   FS_5_R
@@ -153,7 +153,7 @@ contains
 
     class ( StreamForm ), intent ( inout ) :: &
       S
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS, &
       FS_R
 
@@ -171,7 +171,7 @@ contains
 
   subroutine SetFieldSet ( FS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -332,7 +332,7 @@ contains
 
     class ( StreamForm ), intent ( inout ) :: &
       S
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -379,7 +379,7 @@ contains
 
   subroutine CompareFieldSets ( FS, FS_R )
 
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS, &
       FS_R
 

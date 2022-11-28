@@ -2,7 +2,7 @@ module Stream_Form
 
   use Basics
   use Manifolds
-  use FieldSet_Form
+  use FieldSet_BM__Form
 
   implicit none
   private
@@ -30,7 +30,7 @@ module Stream_Form
       GridImage
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
-    type ( FieldSetElement ), dimension ( : ), allocatable :: &
+    type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
       FieldSet
   contains
     procedure, public, pass :: &
@@ -124,7 +124,7 @@ contains
 
     class ( StreamForm ), intent ( inout ) :: &
       S
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS
     character ( * ), intent ( in ), optional :: &
       NameOption

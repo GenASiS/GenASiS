@@ -1,4 +1,4 @@
-program FieldSet_Form_Test
+program FieldSet_BM__Form_Test
 
   use Basics
   use Manifolds
@@ -20,14 +20,14 @@ program FieldSet_Form_Test
     DevicesCommunicate
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     FS, &
     FS_234, &
     FS_5
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'FieldSet_Form_Test', DimensionalityOption = '2D' )
+         ( 'FieldSet_BM__Form_Test', DimensionalityOption = '2D' )
 
   allocate ( A )
   call A % Initialize &
@@ -102,7 +102,7 @@ contains
 
   subroutine SetFieldSet ( FS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
 
     integer ( KDI ) :: &
@@ -233,4 +233,4 @@ contains
   end subroutine ShowField
 
 
-end program FieldSet_Form_Test
+end program FieldSet_BM__Form_Test
