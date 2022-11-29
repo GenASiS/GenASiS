@@ -9,6 +9,8 @@ module GhostExchange_Form
   type, public :: GhostExchangeForm
     integer ( KDI ) :: &
       IGNORABILITY = 0
+    type ( CommunicatorForm ), allocatable :: &
+      Communicator
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
       IncomingFace_L_R, &
       IncomingFace_R_L, &
@@ -93,29 +95,29 @@ contains
 
       !-- Start faces
       call StartFace_CGS &
-             ( GE % IncomingFace_L_R, GE % OutgoingFace_L_R, &
+             ( GE, GE % IncomingFace_L_R, GE % OutgoingFace_L_R, &
                C, C % PortalFace_L_R, S, DevicesCommunicate, &
                TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R )
       call StartFace_CGS &
-             ( GE % IncomingFace_R_L, GE % OutgoingFace_R_L, &
+             ( GE, GE % IncomingFace_R_L, GE % OutgoingFace_R_L, &
                C, C % PortalFace_R_L, S, DevicesCommunicate, &
                TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L )
 
       !-- Start edges
       call StartEdge_CGS &
-             ( GE % IncomingEdge_LL_RR, GE % OutgoingEdge_LL_RR, &
+             ( GE, GE % IncomingEdge_LL_RR, GE % OutgoingEdge_LL_RR, &
                C, C % PortalEdge_LL_RR, S, DevicesCommunicate, &
                TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR )
       call StartEdge_CGS &
-             ( GE % IncomingEdge_RR_LL, GE % OutgoingEdge_RR_LL, &
+             ( GE, GE % IncomingEdge_RR_LL, GE % OutgoingEdge_RR_LL, &
                C, C % PortalEdge_RR_LL, S, DevicesCommunicate, &
                TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL )
       call StartEdge_CGS &
-             ( GE % IncomingEdge_LR_RL, GE % OutgoingEdge_LR_RL, &
+             ( GE, GE % IncomingEdge_LR_RL, GE % OutgoingEdge_LR_RL, &
                C, C % PortalEdge_LR_RL, S, DevicesCommunicate, &
                TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL )
       call StartEdge_CGS &
-             ( GE % IncomingEdge_RL_LR, GE % OutgoingEdge_RL_LR, &
+             ( GE, GE % IncomingEdge_RL_LR, GE % OutgoingEdge_RL_LR, &
                C, C % PortalEdge_RL_LR, S, DevicesCommunicate, &
                TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR )
 
@@ -211,13 +213,18 @@ contains
     if ( allocated ( GE % IncomingFace_L_R ) ) &
       deallocate ( GE % IncomingFace_L_R )
 
+    if ( allocated ( GE % Communicator ) ) &
+      deallocate ( GE % Communicator )
+
   end subroutine Finalize
 
 
   subroutine StartFace_CGS &
-               ( IncomingFace, OutgoingFace, C, PH, S, DevicesCommunicate, &
+               ( GE, IncomingFace, OutgoingFace, C, PH, S, DevicesCommunicate, &
                  TagReceive, TagSend )
 
+    class ( GhostExchangeForm ), intent ( inout ) :: &
+      GE
     type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingFace
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
@@ -240,13 +247,18 @@ contains
       oSend, &
       nSend
 
+    !-- Allocate on first use
+
+    if ( .not. allocated ( GE % Communicator ) ) then
+      allocate ( GE % Communicator )
+      call GE % Communicator % Initialize ( C % Communicator )
+    end if
+
     associate &
-      ( Communicator  =>  C % Communicator, &
+      ( Communicator  =>  GE % Communicator, &
         nCB  =>  C % nCellsBrick, &
         nGL  =>  C % nGhostLayers, &
         nD   =>  C % nDimensions )
-
-    !-- Allocate on first use
 
     if ( .not. allocated ( IncomingFace ) &
          .and. .not. allocated ( OutgoingFace ) ) then
@@ -386,9 +398,11 @@ contains
 
 
   subroutine StartEdge_CGS &
-               ( IncomingEdge, OutgoingEdge, C, PH, S, DevicesCommunicate, &
+               ( GE, IncomingEdge, OutgoingEdge, C, PH, S, DevicesCommunicate, &
                  TagReceive, TagSend )
 
+    class ( GhostExchangeForm ), intent ( inout ) :: &
+      GE
     type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingEdge
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
@@ -414,8 +428,15 @@ contains
     logical ( KDL ), dimension ( 3 ) :: &
       DimensionMask
 
+    !-- Allocate on first use
+    
+    if ( .not. allocated ( GE % Communicator ) ) then
+      allocate ( GE % Communicator )
+      call GE % Communicator % Initialize ( C % Communicator )
+    end if
+
     associate &
-      ( Communicator  =>  C % Communicator, &
+      ( Communicator  =>  GE % Communicator, &
         nCB  =>  C % nCellsBrick, &
         nGL  =>  C % nGhostLayers, &
         nD   =>  C % nDimensions )
@@ -429,8 +450,6 @@ contains
       DimensionMask = [ .true., .true., .true. ]
     end select !-- nD
 
-    !-- Allocate on First use
-    
     if ( .not. allocated ( IncomingEdge ) &
          .and. .not. allocated ( OutgoingEdge ) ) then
     

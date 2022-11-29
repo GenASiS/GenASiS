@@ -25,14 +25,17 @@ module Communicator_Form
     character ( LDF ) :: &
       Name
     type ( CommunicatorForm ), pointer :: &
-      Parent => null ( )
+      Parent => null ( ), &
+      Source => null ( )
   contains
     procedure, private, pass :: &
       InitializeWorld
     procedure, private, pass :: &
       InitializeSubcommunicator
+    procedure, private, pass :: &
+      InitializeClone
     generic :: &
-      Initialize => InitializeWorld, InitializeSubcommunicator
+      Initialize => InitializeWorld, InitializeSubcommunicator, InitializeClone
     procedure, private, pass :: &
       Show_C
     generic, public :: &
@@ -147,6 +150,41 @@ contains
   end subroutine InitializeSubcommunicator
   
   
+  subroutine InitializeClone ( C, Source, NameOption )
+  
+    class ( CommunicatorForm ), intent ( inout ) :: &
+      C
+    type ( CommunicatorForm ), intent ( in ), target :: &
+      Source
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+
+    !-- Duplicate an existing communicator
+
+    call MPI_COMM_DUP ( Source % Handle, C % Handle, C % Error )
+
+    C % Size  =  Source % Size
+    C % Rank  =  Source % Rank
+
+    allocate ( C % RankIndex, source = Source % RankIndex )
+
+    C % Initialized = .true.
+
+    C % Name  =  Source % Name
+    if ( present ( NameOption ) ) &
+      C % Name  =  NameOption
+
+    C % Source  =>  Source
+
+    call Show ( 'Cloning a Communicator', CONSOLE % INFO_2 )
+    call Show ( C % Source % Name, 'Source name', CONSOLE % INFO_2 )
+    call Show ( C % Source % Rank, 'Source rank', CONSOLE % INFO_2 )
+    call Show ( C % Name, 'Name', CONSOLE % INFO_2 )
+    call Show ( C % Initialized, 'Initialized', CONSOLE % INFO_2 )
+
+  end subroutine InitializeClone
+
+
   subroutine Show_C ( C, IgnorabilityOption )
 
     class ( CommunicatorForm ), intent ( in ) :: &
@@ -216,6 +254,7 @@ contains
       call Show ( 'Finalizing a Communicator', CONSOLE % INFO_2 )
       call Show ( C % Name, 'Name', CONSOLE % INFO_2 )
       nullify ( C % Parent )
+      nullify ( C % Source )
       if ( allocated ( C % RankIndex ) ) deallocate ( C % RankIndex )
       if ( C % Handle /= MPI_COMM_NULL ) &
         call MPI_COMM_FREE ( C % Handle, Error )
