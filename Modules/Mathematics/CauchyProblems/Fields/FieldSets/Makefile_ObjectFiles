@@ -1,5 +1,6 @@
 FIELD_SETS = \
   FieldSets.o \
+  BundleTranspose_Form.o \
   Stream_BM__Form.o \
   FieldSet_BM__Form.o \
   Boundaries_Kernel.o \

@@ -27,11 +27,17 @@ Stream_BM__Form.o: \
   FieldSet_BM__Form.o \
   Stream_BM__Form.f90
 
+BundleTranspose_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  BundleTranspose_Form.f90
+
 FieldSets.o: \
   GhostExchange_Form.o \
   Boundaries_Form.o \
   FieldSet_BM__Form.o \
   Stream_BM__Form.o \
+  BundleTranspose_Form.o \
   FieldSets.f90
 
 FieldSets.a: $(FIELD_SETS)
