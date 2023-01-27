@@ -22,8 +22,8 @@ module BundleTranspose_Form
       Initialize
     procedure, public, pass :: &
       StartTranspose_F_S
-    ! procedure, public, pass :: &
-    !   FinishTranspose_F_S
+    procedure, public, pass :: &
+      FinishTranspose_F_S
     ! procedure, public, pass :: &
     !   StartTranspose_S_F
     ! procedure, public, pass :: &
@@ -33,16 +33,16 @@ module BundleTranspose_Form
   end type BundleTransposeForm
 
     private :: &
-      Start_F_S_ASCG_ASCG
+       Start_F_S_ASCG_ASCG, &
+      Finish_F_S_ASCG_ASCG
 
       private :: &
-        LoadMessage_F_S_ASCG_ASCG
+         LoadMessage_F_S_ASCG_ASCG, &
+        StoreMessage_F_S_ASCG_ASCG
 
     integer ( KDI ), private, parameter :: &
-      TAG_RECEIVE_F_S  = 999, &
-      TAG_RECEIVE_S_F  = 998, &
-      TAG_SEND_F_S     = TAG_RECEIVE_F_S, &
-      TAG_SEND_S_F     = TAG_RECEIVE_S_F
+      TAG_F_S  = 999, &
+      TAG_S_F  = 998
 
 
 contains
@@ -91,6 +91,40 @@ contains
   end subroutine StartTranspose_F_S
 
 
+  subroutine FinishTranspose_F_S ( BT, S_S, B, S_F, DevicesCommunicate )
+
+    class ( BundleTransposeForm ), intent ( inout ) :: &
+      BT
+    class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+      S_S     !-- Storage_Section
+    class ( Bundle_H_Form ), intent ( in ) :: &
+      B
+    class ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S_F  !-- Storage_Fiber
+    logical ( KDL ), intent ( in ) :: &
+      DevicesCommunicate
+
+    call Show ( 'Finishing bundle transpose (fiber to section)', &
+                BT % IGNORABILITY )
+    call Show ( S_F % Name, 'FieldSet_Fiber', BT % IGNORABILITY )
+    call Show ( S_S % Name, 'FieldSet_Section', BT % IGNORABILITY )
+
+    select type ( B )
+    class is ( Bundle_ASCG_ASCG_Form )
+
+      call Finish_F_S_ASCG_ASCG &
+             ( BT, S_S, B, B % Portal_F_S, DevicesCommunicate )
+
+    class default
+      call Show ( 'Bundle type not recognized', CONSOLE % ERROR )
+      call Show ( 'BundleTransposeForm', 'module', CONSOLE % ERROR )
+      call Show ( 'FinishTranspose_F_S', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select  !-- B
+
+  end subroutine FinishTranspose_F_S
+
+
   impure elemental subroutine Finalize ( BT )
 
     type ( BundleTransposeForm ), intent ( inout ) :: &
@@ -112,8 +146,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine Start_F_S_ASCG_ASCG &
-               ( BT, B, PH, S_F, DevicesCommunicate )
+  subroutine Start_F_S_ASCG_ASCG ( BT, B, PH, S_F, DevicesCommunicate )
 
     class ( BundleTransposeForm ), intent ( inout ) :: &
       BT
@@ -150,12 +183,12 @@ contains
 
       call BT % Incoming_F_S % Initialize &
              ( Communicator, &
-               spread ( TAG_RECEIVE_F_S, dim = 1, ncopies = PH % nSources ), &
+               spread ( TAG_F_S, dim = 1, ncopies = PH % nSources ), &
                PH % Source, &
                nCellsSectionsFrom * nFields )
       call BT % Outgoing_F_S % Initialize &
              ( Communicator, &
-               spread ( TAG_SEND_F_S, dim = 1, ncopies = PH % nTargets ), &
+               spread ( TAG_F_S, dim = 1, ncopies = PH % nTargets ), &
                PH % Target, &
                nFibersBinsTo * nFields )
     
@@ -189,6 +222,49 @@ contains
   end subroutine Start_F_S_ASCG_ASCG
 
 
+  subroutine Finish_F_S_ASCG_ASCG &
+               ( BT, S_S, B, PH, DevicesCommunicate )
+
+    class ( BundleTransposeForm ), intent ( inout ) :: &
+      BT
+    class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+      S_S  !-- Storage_Section
+    class ( Bundle_ASCG_ASCG_Form ), intent ( in ) :: &
+      B
+    type ( PortalHeaderForm ), intent ( in ) :: &
+      PH
+    logical ( KDL ), intent ( in ) :: &
+      DevicesCommunicate
+
+    integer ( KDI ) :: &
+      iS  !-- iSource
+    logical ( KDL ) :: &
+      AllFinished
+
+    associate ( nCellsSectionsFrom  =>  PH % nChunksFrom )
+        
+    !-- Wait for Receives
+
+    do 
+
+      call BT % Incoming_F_S % Wait ( AllFinished, iS )
+      
+      if ( AllFinished ) exit
+
+      call StoreMessage_F_S_ASCG_ASCG &
+             ( S_S, B, BT % Incoming_F_S % Message ( iS ), DevicesCommunicate, &
+               nCellsSectionsFrom ( iS ), iS )
+
+    end do
+
+    !-- Wait for Sends
+    call BT % Outgoing_F_S % Wait ( )
+
+    end associate !-- nCellsSectionsFrom
+
+  end subroutine Finish_F_S_ASCG_ASCG
+
+
   subroutine LoadMessage_F_S_ASCG_ASCG &
                ( B, S_F, OutgoingMessage, DevicesCommunicate, nFibersBins, iT )
 
@@ -209,8 +285,8 @@ contains
       iFbr, &        !-- iFiber
       iB, jB, kB, &  !-- iBin, etc.
       nBins, &
-      oV, &          !-- oValue
-      iV             !-- iValue
+      iBin, &
+      oV             !-- oValue
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       FV  !-- FieldValue
 
@@ -229,37 +305,113 @@ contains
       call C % SetFieldPointer ( S_F ( iFld ) % Value, FV )
       nBins  =  nFibersBins  /  ( iFbrL - iFbrF + 1 )
 
+      oV  =  ( iFld - 1 ) * nFibersBins
+
       !-- FIXME: parallelize over fibers, private oV and iV
       do iFbr  =  iFbrF,  iFbrL
 
-        oV  =  ( iFbr - 1 ) * nBins 
-        iV  =  0
+          oV  =  oV  +  ( iFbr - 1 ) * nBins 
+        iBin  =  0
 
-        kBin: do kB  =  1,  nB ( 3 )
+        kLoop: do kB  =  1,  nB ( 3 )
           if ( kB  <  iaBF ( 3 ) ) &
-            cycle kBin
+            cycle kLoop
 
-          jBin: do jB  =  1,  nB ( 2 )
+          jLoop: do jB  =  1,  nB ( 2 )
             if ( kB  ==  iaBF ( 3 ) .and. jB  <  iaBF ( 2 ) ) &
-              cycle jBin
+              cycle jLoop
 
-            iBin: do iB  =  1,  nB ( 1 )
+            iLoop: do iB  =  1,  nB ( 1 )
               if ( kB  ==  iaBF ( 3 ) .and. jB  ==  iaBF ( 2 )  &
                    .and. iB  <  iaBF ( 1 ) ) &
-                cycle iBin
+                cycle iLoop
 
-              iV  =  iV  +  1
-              OMV ( oV + iV )  =  FV ( iB, jB, kB, iFbr ) 
+              iBin  =  iBin  +  1
+              OMV ( oV + iBin )  =  FV ( iB, jB, kB, iFbr ) 
 
-            end do iBin !-- iB
-          end do jBin !-- jB
-        end do kBin !-- kB
+            end do iLoop !-- iB
+          end do jLoop !-- jB
+        end do kLoop !-- kB
       end do !-- iFbr
     end do !-- iFld
 
     end associate !-- nFlds, etc.
 
   end subroutine LoadMessage_F_S_ASCG_ASCG
+
+
+  subroutine StoreMessage_F_S_ASCG_ASCG &
+               ( S_S, B, IncomingMessage, DevicesCommunicate, &
+                 nCellsSectionsFrom, iS )
+
+    class ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S_S  !-- Storage_Section
+    class ( Bundle_ASCG_ASCG_Form ), intent ( in ) :: &
+      B
+    type ( MessageIncoming_R_Form ), intent ( in ) :: &
+      IncomingMessage
+    logical ( KDL ), intent ( in ) :: &
+      DevicesCommunicate
+    integer ( KDI ) :: &
+      nCellsSectionsFrom, &
+      iS  !-- iSource
+
+    integer ( KDI ) :: &
+      iSctn, &       !-- iSection
+      iFld, &        !-- iField
+      iC, jC, kC, &  !-- iCell, etc.
+      iCell, &
+      oV             !-- oValue
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+      FV  !-- FieldValue
+
+    associate &
+      ( nSctns  =>  size ( S_S ), &
+         nFlds  =>  S_S ( 1 ) % nVariables, &
+           nCB  =>  B % Chart_GS_Base % nCellsBrick, &
+          iaCF  =>  B % iaCellExchangeFirst ( iS ) % Value, &
+          iaCL  =>  B % iaCellExchangeLast ( iS ) % Value, &
+           IMV  =>  IncomingMessage % Value, &
+             C  =>  B % Chart_GS_Base )
+
+    do iSctn  =  1,  nSctns
+
+      call C % SetFieldPointer ( S_S ( iSctn ) % Value, FV )
+
+      do iFld  =  1, nFlds
+
+        iCell  =  0
+
+        kLoop: do kC  =  1,  nCB ( 3 )
+          if ( kC  <  iaCF ( 3 ) ) &
+            cycle kLoop
+
+          jLoop: do jC  =  1,  nCB ( 2 )
+            if ( kC  ==  iaCF ( 3 ) .and.  jC  <  iaCF ( 2 ) ) &
+              cycle jLoop
+
+            iLoop: do iC  =  1,  nCB ( 1 )
+              if ( kC  ==  iaCF ( 3 ) .and. jC  ==  iaCF ( 2 )  &
+                   .and. iC  <  iaCF ( 1 ) ) &
+                cycle iLoop
+
+            iCell  =  iCell  +  1
+               oV  =  ( iFld - 1 )  *  nCellsSectionsFrom  &
+                      +  ( iCell - 1 )  *  nSctns
+
+            FV ( iC, jC, kC, iFld )  =  IMV ( oV  +  iSctn ) 
+
+            end do iLoop !-- iC
+          end do jLoop !-- jC
+        end do kLoop !-- kC
+
+      end do !-- iFld
+
+    end do !-- iSctn
+
+    end associate !-- nSctns, etc.
+
+  end subroutine StoreMessage_F_S_ASCG_ASCG
 
 
 end module BundleTranspose_Form
