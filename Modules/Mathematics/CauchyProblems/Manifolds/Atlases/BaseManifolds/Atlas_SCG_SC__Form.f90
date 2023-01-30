@@ -80,7 +80,7 @@ contains
                  CoordinateUnitOption, nGhostLayersOption, nCellsRadiusOption, &
                  nDimensionsOption )
 
-    class ( Atlas_SCG_SC_Form ), intent ( inout ) :: &
+    class ( Atlas_SCG_SC_Form ), intent ( inout ), target :: &
       A
     real ( KDR ), intent ( in ) :: &
       RadiusMax
