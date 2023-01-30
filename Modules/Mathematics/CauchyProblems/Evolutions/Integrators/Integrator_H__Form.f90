@@ -37,14 +37,16 @@ module Integrator_H__Form
       iTimer_CC  = 0, &   !-- ComputeCycle
       iTimer_PC  = 0, &   !-- PrepareCycle
       iTimer_CTN = 0      !-- Compute_T_New
-    real ( KDR ) :: &
-      T_Start              = 0.0_KDR, &
-      T_Finish             = 1.0_KDR, &
-      T_CheckpointInterval = 0.0_KDR, &
-      T_Checkpoint         = 0.0_KDR, & 
-      T                    = 0.0_KDR
+    real ( KDR ) :: &   !-- Physical 
+      T_Start               = 0.0_KDR, &
+      T_Finish              = 1.0_KDR, &
+      T_CheckpointInterval  = 0.0_KDR, &
+      T_Checkpoint          = 0.0_KDR, & 
+      T                     = 0.0_KDR
     type ( QuantityForm ) :: &
       Unit_T
+    real ( KDR ) :: &   
+      T_CheckpointWallInterval = 7200.0_KDR   !-- Assume second
     real ( KDR ), dimension ( : ), allocatable :: &
       dT_Candidate
     logical ( KDL ) :: &
@@ -380,13 +382,16 @@ contains
     call PROGRAM_HEADER % GetParameter ( I %   nWrite,   'nWrite' )
     call PROGRAM_HEADER % GetParameter ( I %  NoWrite,  'NoWrite' )
     call PROGRAM_HEADER % GetParameter ( I % AllWrite, 'AllWrite' )
-
+    
     I % CheckpointDisplayInterval  =  100
     I % T_CheckpointExact  =  .false.
     call PROGRAM_HEADER % GetParameter &
            ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval' )
     call PROGRAM_HEADER % GetParameter &
            ( I % T_CheckpointExact, 'T_CheckpointExact' )
+           
+    call PROGRAM_HEADER % GetParameter &
+           ( I % T_CheckpointWallInterval, 'T_CheckpointWallInterval' )
 
     OutputDirectory = '../Output/'
     call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
@@ -416,13 +421,20 @@ contains
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-
+    
+    integer ( KDI ) :: &
+      iT_WC = 0   !-- iTimer_WallCheckpoint
     real ( KDR ) :: &
       dT_Ratio
+    type ( QuantityForm ) :: &
+      MyInterval_WC
     type ( TimerForm ), pointer :: &
       T_E, &
       T_AC, &
-      T_CC
+      T_CC, &
+      T_WC
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
 
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
@@ -437,6 +449,15 @@ contains
                  Name = trim ( I % Name ) // '_Evltn', &
                  Level = 1 )
     call T_E % Start ( )
+    
+    T_WC =>  PROGRAM_HEADER % Timer &
+               ( Handle = iT_WC, &
+                 Name = 'WallCheckpoint', Level = 1 )
+    call T_WC % Start ( )
+    
+    call CO % Initialize &
+           ( PROGRAM_HEADER % Communicator, &
+             nOutgoing = [ 1 ], nIncoming = [ 1 ] )
 
     do while ( I % T  <  I % T_Finish .and. I % iCycle  <  I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -470,6 +491,17 @@ contains
         call I % Write ( )
       end if
 
+      if ( mod ( I % iCycle, 100 ) == 0 .and. .not. I % CheckpointDue ) then
+        MyInterval_WC = Walltime ( )  -  T_WC % StartTime
+        CO % Outgoing % Value ( 1 ) = MyInterval_WC % Number
+        call CO % Reduce ( REDUCTION % MAX )
+        if ( CO % Incoming % Value ( 1 ) > I % T_CheckpointWallInterval ) then
+          call T_WC % Stop ( )
+          call I % AdministerCheckpoint ( )
+          call T_WC % Start ( )
+        end if
+      end if
+
       if ( I % CheckpointDue ) then
         T_AC  =>  PROGRAM_HEADER % Timer &
                     ( Handle = I % iTimer_AC, &
@@ -479,7 +511,7 @@ contains
         call I % AdministerCheckpoint ( T_Option = T_AC )
         call T_AC % Stop ( )
       end if
-
+      
     end do !-- T  <  T_Finish
 
     call T_E % Stop ( )   
