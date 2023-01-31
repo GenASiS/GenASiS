@@ -634,7 +634,9 @@ contains
                 I % IGNORABILITY )
     call Show ( I % T_CheckpointExact, 'T_CheckpointExact', &
                 I % IGNORABILITY )
-
+    call Show ( I % T_CheckpointWallInterval, 'T_CheckpointWallInterval', &
+                I % IGNORABILITY )
+    
     call Show ( I % GridImageStream % Name, 'GridImageStream', &
                 I % IGNORABILITY )
 
