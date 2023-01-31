@@ -307,7 +307,7 @@ contains
 
       oV  =  ( iFld - 1 ) * nFibersBins
 
-      !-- FIXME: parallelize over fibers, private oV and iV
+      !-- FIXME: parallelize over fibers, private oV, iBin, iB, jB, kB 
       do iFbr  =  iFbrF,  iFbrL
 
           oV  =  oV  +  ( iFbr - 1 ) * nBins 
@@ -360,8 +360,10 @@ contains
       iSctn, &       !-- iSection
       iFld, &        !-- iField
       iC, jC, kC, &  !-- iCell, etc.
-      iCell, &
-      oV             !-- oValue
+      iCll, &        !-- iCell
+      iMyCll, &      !-- iMyCell
+      oV, &          !-- oValue
+      nCellsFrom
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       FV  !-- FieldValue
 
@@ -374,37 +376,45 @@ contains
            IMV  =>  IncomingMessage % Value, &
              C  =>  B % Chart_GS_Base )
 
+    nCellsFrom  =  nCellsSectionsFrom  /  nSctns
+
     do iSctn  =  1,  nSctns
 
       call C % SetFieldPointer ( S_S ( iSctn ) % Value, FV )
 
+      !-- FIXME: parallelize over cells, private iMyCll, iC, jC, kC, oV
       do iFld  =  1, nFlds
+        do iCll  =  1, nCellsFrom
 
-        iCell  =  0
+          iMyCll  =  0
+ 
+          kLoop: do kC  =  1,  nCB ( 3 )
+            if ( kC  <  iaCF ( 3 ) ) &
+              cycle kLoop
 
-        kLoop: do kC  =  1,  nCB ( 3 )
-          if ( kC  <  iaCF ( 3 ) ) &
-            cycle kLoop
+            jLoop: do jC  =  1,  nCB ( 2 )
+              if ( kC  ==  iaCF ( 3 ) .and.  jC  <  iaCF ( 2 ) ) &
+                cycle jLoop
 
-          jLoop: do jC  =  1,  nCB ( 2 )
-            if ( kC  ==  iaCF ( 3 ) .and.  jC  <  iaCF ( 2 ) ) &
-              cycle jLoop
+              iLoop: do iC  =  1,  nCB ( 1 )
+                if ( kC  ==  iaCF ( 3 ) .and. jC  ==  iaCF ( 2 )  &
+                     .and. iC  <  iaCF ( 1 ) ) &
+                  cycle iLoop
 
-            iLoop: do iC  =  1,  nCB ( 1 )
-              if ( kC  ==  iaCF ( 3 ) .and. jC  ==  iaCF ( 2 )  &
-                   .and. iC  <  iaCF ( 1 ) ) &
-                cycle iLoop
+                iMyCll =  iMyCll  +  1
+                if ( iMyCll  /=  iCll ) &
+                  cycle iLoop
 
-            iCell  =  iCell  +  1
-               oV  =  ( iFld - 1 )  *  nCellsSectionsFrom  &
-                      +  ( iCell - 1 )  *  nSctns
+                oV  =  ( iFld - 1 )  *  nCellsSectionsFrom  &
+                       +  ( iMyCll - 1 )  *  nSctns
 
-            FV ( iC, jC, kC, iFld )  =  IMV ( oV  +  iSctn ) 
+                FV ( iC, jC, kC, iFld )  =  IMV ( oV  +  iSctn ) 
 
-            end do iLoop !-- iC
-          end do jLoop !-- jC
-        end do kLoop !-- kC
+              end do iLoop !-- iC
+            end do jLoop !-- jC
+          end do kLoop !-- kC
 
+        end do !-- iCll
       end do !-- iFld
 
     end do !-- iSctn
