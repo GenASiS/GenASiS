@@ -492,17 +492,28 @@ contains
       end if
 
       if ( mod ( I % iCycle, 100 ) == 0 .and. .not. I % CheckpointDue ) then
+        !-- T_WC % StartTime is reset by I % AdministerCheckpoint ( )
         MyInterval_WC = Walltime ( )  -  T_WC % StartTime
         CO % Outgoing % Value ( 1 ) = MyInterval_WC % Number
         call CO % Reduce ( REDUCTION % MAX )
+        call Show ( CO % Incoming % Value ( 1 ), 'Wall checkpoint interval', &
+                    I % IGNORABILITY + 1 )
         if ( CO % Incoming % Value ( 1 ) > I % T_CheckpointWallInterval ) then
-          call T_WC % Stop ( )
-          call I % AdministerCheckpoint ( )
-          call T_WC % Start ( )
+          call Show ( 'Checkpoint wall interval reached', &
+                      I % IGNORABILITY )
+          T_AC  =>  PROGRAM_HEADER % Timer &
+                      ( Handle = I % iTimer_AC, &
+                        Name = trim ( I % Name ) // '_Chckpnt', &
+                        Level = T_E % Level + 1 )
+          call T_AC % Start ( )
+          call I % AdministerCheckpoint ( T_Option = T_AC )
+          call T_AC % Stop ( )
         end if
       end if
 
       if ( I % CheckpointDue ) then
+        call Show ( 'Checkpoint physical interval reached', &
+                     I % IGNORABILITY )
         T_AC  =>  PROGRAM_HEADER % Timer &
                     ( Handle = I % iTimer_AC, &
                       Name = trim ( I % Name ) // '_Chckpnt', &
