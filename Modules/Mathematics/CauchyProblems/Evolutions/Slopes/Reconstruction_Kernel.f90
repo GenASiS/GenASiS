@@ -329,6 +329,7 @@ contains
       x2AM, x2AC, x2AP,  & 
         fI,   fO,        &  !-- F_Inner, F_Outer
         xI,   xO,   xE,  &  !-- X_Inner, X_Outer, X_Extremum
+       xIM,   xC,  xOP,  &
          d,              &  !-- Determinant / Denominator
         c0,   c1,   c2,  &  !-- Parabola coefficients,
       c2_S,   SqrtTiny      !-- c2_Safe
@@ -360,7 +361,8 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do simd collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
-      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, xE ) &
+      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
+      !$OMP private ( xI, xO, xE, xIM, xC, xOP ) &
       !$OMP private ( c0, c1, c2, c2_S, d ) &
       !$OMP firstprivate ( SqrtTiny )
       do iS  =  1,  size ( iaSlctd )
@@ -389,36 +391,45 @@ contains
               xI  =  X ( iV, jV, kV )  -  0.5 * dX ( iV, jV, kV )
               xO  =  X ( iV, jV, kV )  +  0.5 * dX ( iV, jV, kV )
 
+              xC  =  X ( iV, jV, kV )
+
+              xIM  =  X ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )  &
+                      -  0.5 * dX ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              xOP  =  X ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  &
+                      +  0.5 * dX ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
 !call Show ( iV, '>>> iV' )
 !call Show ( [ fM, fC, fP ], '>>> fM, fC, fP' )
               !-- Local extremum of cell average values? 
               !   Then reconstruction is constant.
-              if ( ( fC - fM ) * ( fP - fC )  <  0.0_KDR ) then
+              if ( ( fC - fM ) * ( fP - fC )  <=  0.0_KDR ) then
 !call Show ( '>>> Local extremum' )
 
-                c2  =  0.0_KDR
-                c1  =  0.0_KDR
-                c0  =  fC
+                fI  =  fC
+                fO  =  fC
 
               else  !-- Parabolic reconstruction
+                 
+                !-- Fortran expressions from Mathematica notebook 
+                !   "FORNAX reconstruction 5.nb"
 
                 !-- First parabola
 
-                d  =    ( x2AM - x2AP ) * xAC  &
-                      + ( x2AP - x2AC ) * xAM  &
-                      + ( x2AC - x2AM ) * xAP
+                d  =     x2AP * ( -xAC + xAM ) &
+                      +  x2AM * (  xAC - xAP ) &
+                      +  x2AC * ( -xAM + xAP )
 
-                c0  =  (   fP * ( x2AM * xAC  -  x2AC * xAM )  &
-                         + fM * ( x2AC * xAP  -  x2AP * xAC )  &
-                         + fC * ( x2AP * xAM  -  x2AM * xAP ) )  /  d
+                c0  =  (    fP * (   x2AM * xAC   -  x2AC * xAM ) &
+                         +  fM * ( -(x2AP * xAC)  +  x2AC * xAP ) &
+                         +  fC * (   x2AP * xAM   -  x2AM * xAP ) )  /  d
 
-                c1  =  (   fP * ( x2AC - x2AM )  &
-                         + fC * ( x2AM - x2AP )  &
-                         + fM * ( x2AP - x2AC ) )  /  d
+                c1  =  (    fP * (  x2AC - x2AM ) &
+                         +  fC * (  x2AM - x2AP ) & 
+                         +  fM * ( -x2AC + x2AP ) )  /  d
 
-                c2  =  (   fP * ( xAM - xAC )  &
-                         + fM * ( xAC - xAP )  &
-                         + fC * ( xAP - xAM ) )  /  d
+                c2  =  (    fP * ( -xAC + xAM ) &
+                         +  fM * (  xAC - xAP ) &
+                         +  fC * ( -xAM + xAP ) )  /  d
 
                 c2_S  =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
                   xE  =  - c1 / ( 2.0 * c2_S )
@@ -426,38 +437,38 @@ contains
                 fI  =  c0  +  c1 * xI  +  c2 * xI**2
                 fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
-                !-- Overshoot at inner face?
-                !   New inner parabola, revise fI
-                if ( xE  >  xAM  .and.  xE  <=  xAC ) then
-!call Show ( '>>> Overshoot inner' )
+                !-- Extremum near inner face?
+                !   New inner parabola, flat slope at inner face, revise fI
+                if ( xE  >  xIM  .and.  xE  <=  xC ) then
+!call Show ( '>>> Extremum near inner face' )
 !call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
 
-                   d  =  ( x2AC - x2AM )  +  2.0 * ( xAM - xAC ) * xAM
+                   d  =  -x2AC + x2AM  +  2 * ( xAC - xAM ) * xIM
 
-                  c0  =  (    ( fM * x2AC  -  fC * x2AM )  &
-                           +  2.0 * ( fC * xAM  -  fM * xAC ) * xAM )  /  d
+                  c0  =  (    fM * ( -x2AC  +  2 * xAC * xIM ) &
+                           +  fC * (  x2AM  -  2 * xAM * xIM ) )  /  d
 
-                  c1  =  -2.0 * ( fC - fM ) * xAM  /  d
+                  c1  =  2 * ( fC - fM ) * xIM  /  d
 
-                  c2  =  ( fC - fM )  /  d
+                  c2  =  ( -fC + fM )  /  d
 
                   fI  =  c0  +  c1 * xI  +  c2 * xI**2
 
 !call Show ( '>>> Revised fI' )
 !call Show ( [ fM, fI, fC ], '>>> fM, fI, fC' )
 
-                !-- Overshoot at outer face?
-                !   New outer parabola, revise fO
-                else if ( xE  >  xAC  .and.  xE  <  xAP ) then
-!call Show ( '>>> Overshoot outer' )
+                !-- Extremum outer face?
+                !   New outer parabola, flat slope at outer face, revise fO
+                else if ( xE  >  xC  .and.  xE  <  xOP ) then
+!call Show ( '>>> Extremum near outer face' )
 !call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
 
-                   d  =  ( x2AC - x2AP )  +  2.0 * ( xAP - xAC ) * xAP
+                   d  =  x2AC - x2AP  +  2 * ( -xAC + xAP ) * xOP
   
-                  c0  =  (    ( fP * x2AC  -  fC * x2AP )  &
-                           +  2.0 * ( fC * xAP  -  fP * xAC ) * xAP )  /  d
+                  c0  =  (    fP * (  x2AC  -  2 * xAC * xOP ) &
+                           +  fC * ( -x2AP  +  2 * xAP * xOP ) )  /  d
 
-                  c1  =  -2.0 * ( fC - fP ) * xAP  /  d
+                  c1  =  -2 * ( fC - fP ) * xOP  /  d
 
                   c2  =  ( fC - fP )  /  d
 
@@ -470,65 +481,71 @@ contains
 
                 !-- Second parabola
 
-                d  =  ( xI - xO ) * ( x2AC  +  xI * xO  -  xAC * ( xI + xO ) )
+                d  =   ( xI - xO ) * ( x2AC  +  xI * xO  -  xAC * ( xI + xO ) )
 
-                c0  =  (    fO * xI * ( x2AC  -  xAC * xI )  &
-                         +  fC * xI * xO * ( xI  -  xO )  &
-                         +  fI * xO * ( xAC * xO  -  x2AC ) )  /  d
+                c0  =  (    fO * xI * (  x2AC - xAC * xI ) &
+                         +  fC * xI * ( xI - xO ) * xO &
+                         +  fI * xO * ( -x2AC + xAC * xO ) )  /  d
 
-                c1  =  (    fO * ( xI**2  -  x2AC )  &
-                         +  fI * (  x2AC  -  xO**2 )  &
-                         +  fC * ( xO**2  -  xI**2 ) )  /  d
+                c1  =  (    fO * ( -x2AC  +  xI**2 ) &
+                         +  fI * (  x2AC  -  xO**2 ) &
+                         +  fC * ( -xI**2 +  xO**2 ) )  /  d
 
-                c2  =  (    fO * ( xAC -  xI )  &
-                         +  fC * (  xI -  xO )  &
-                         +  fI * (  xO - xAC ) )  /  d
+                c2  =  (    fO * (  xAC - xI ) &
+                         +  fC * (  xI  - xO ) &
+                         +  fI * ( -xAC + xO ) )  /  d
 
                 c2_S  =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
                   xE  =  - c1 / ( 2.0 * c2_S )
 
-                fI  =  c0  +  c1 * xI  +  c2 * xI**2
-                fO  =  c0  +  c1 * xO  +  c2 * xO**2
+                !   Need c1, c2 to check for extremum
+
+                ! !-- Not necessary to reset, just a consistency check
+                ! fI  =  c0  +  c1 * xI  +  c2 * xI**2
+                ! fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
                 !-- Extremum near inner face?
-                !   New parabola, flat slope at inner face
-                if ( xE  >  xI  .and.  xE  <=  xAC ) then
+                !   New parabola, flat slope at inner face, revise fO
+                if ( xE  >  xI  .and.  xE  <=  xC ) then
 !call Show ( '>>> Extremum near inner face' )
 !call Show ( [ fI, fC, fO ], '>>> fI, fC, fO' )
 
-                  d  =  x2AC  -  2.0 * xAC * xI  +  xI**2
+                  d  =  x2AC + xI * ( -2 * xAC  +  xI )
 
-                  c0  =  ( fI * x2AC  -  2.0 * fI * xAC * xI  +  fC * xI**2 ) &
+                  c0  =  ( fC * xI**2  +  fI * ( x2AC  -  2 * xAC * xI ) ) &
                          /  d
 
-                  c1  =  -2.0 * ( fC - fI ) * xI  /  d
+                  c1  = -2 * ( fC - fI ) * xI  /  d
 
                   c2  =  ( fC - fI )  /  d
 
+                  fO  =  c0  +  c1 * xO  +  c2 * xO**2
+
                 !-- Extremum near outer face?
-                !   New parabola, flat slope at outer face
-                else if ( xE  >  xAC  .and.  xE  <  xO ) then
+                !   New parabola, flat slope at outer face, revise fI
+                else if ( xE  >  xC  .and.  xE  <  xO ) then
 !call Show ( '>>> Extremum near outer face' )
 !call Show ( [ fI, fC, fO ], '>>> fI, fC, fO' )
 
-                  d  =  x2AC  -  2.0 * xAC * xO  +  xO**2
+                  d  =  x2AC + xO * ( -2 * xAC  +  xO )
 
-                  c0  =  ( fO * x2AC  -  2.0 * fO *xAC * xO  +  fC * xO**2 ) &
+                  c0  =  ( fC * xO**2  +  fO * ( x2AC  -  2 * xAC * xO ) ) &
                          /  d
 
-                  c1  =  -2.0 * ( fC - fO ) * xO  /  d
+                  c1  =  -2 * ( fC - fO ) * xO  /  d
 
                   c2  =  ( fC - fO )  /  d
+
+                  fI  =  c0  +  c1 * xI  +  c2 * xI**2
 
                 end if  !-- Second parabola extremum
 
               end if  !-- Local extremum
 
               F_IR ( iV, jV, kV, iF_R )  &
-                =  c0  +  c1 * xI  +  c2 * xI**2
-
+                =  fI
               F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
-                =  c0  +  c1 * xO  +  c2 * xO**2
+                =  fO
 
 !call Show ( '>>> Final values' )
 !call Show ( [ fM, F_IR ( iV, jV, kV, iS ), fC, &
@@ -539,13 +556,14 @@ contains
         end do !-- kV
       end do !-- iS
       !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
-    
+
     else !-- use host
               
       !$OMP parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP private ( iF, iF_R, iaVP, iaVM, fM, fC, fP, fI, fO ) &
-      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP, xI, xO, xE ) &
+      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
+      !$OMP private ( xI, xO, xE, xIM, xC, xOP ) &
       !$OMP private ( c0, c1, c2, c2_S, d ) &
       !$OMP firstprivate ( SqrtTiny )
       do iS  =  1,  size ( iaSlctd )
@@ -574,36 +592,45 @@ contains
               xI  =  X ( iV, jV, kV )  -  0.5 * dX ( iV, jV, kV )
               xO  =  X ( iV, jV, kV )  +  0.5 * dX ( iV, jV, kV )
 
+              xC  =  X ( iV, jV, kV )
+
+              xIM  =  X ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )  &
+                      -  0.5 * dX ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              xOP  =  X ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  &
+                      +  0.5 * dX ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
 !call Show ( iV, '>>> iV' )
 !call Show ( [ fM, fC, fP ], '>>> fM, fC, fP' )
               !-- Local extremum of cell average values? 
               !   Then reconstruction is constant.
-              if ( ( fC - fM ) * ( fP - fC )  <  0.0_KDR ) then
+              if ( ( fC - fM ) * ( fP - fC )  <=  0.0_KDR ) then
 !call Show ( '>>> Local extremum' )
 
-                c2  =  0.0_KDR
-                c1  =  0.0_KDR
-                c0  =  fC
+                fI  =  fC
+                fO  =  fC
 
               else  !-- Parabolic reconstruction
+                 
+                !-- Fortran expressions from Mathematica notebook 
+                !   "FORNAX reconstruction 5.nb"
 
                 !-- First parabola
 
-                d  =    ( x2AM - x2AP ) * xAC  &
-                      + ( x2AP - x2AC ) * xAM  &
-                      + ( x2AC - x2AM ) * xAP
+                d  =     x2AP * ( -xAC + xAM ) &
+                      +  x2AM * (  xAC - xAP ) &
+                      +  x2AC * ( -xAM + xAP )
 
-                c0  =  (   fP * ( x2AM * xAC  -  x2AC * xAM )  &
-                         + fM * ( x2AC * xAP  -  x2AP * xAC )  &
-                         + fC * ( x2AP * xAM  -  x2AM * xAP ) )  /  d
+                c0  =  (    fP * (   x2AM * xAC   -  x2AC * xAM ) &
+                         +  fM * ( -(x2AP * xAC)  +  x2AC * xAP ) &
+                         +  fC * (   x2AP * xAM   -  x2AM * xAP ) )  /  d
 
-                c1  =  (   fP * ( x2AC - x2AM )  &
-                         + fC * ( x2AM - x2AP )  &
-                         + fM * ( x2AP - x2AC ) )  /  d
+                c1  =  (    fP * (  x2AC - x2AM ) &
+                         +  fC * (  x2AM - x2AP ) & 
+                         +  fM * ( -x2AC + x2AP ) )  /  d
 
-                c2  =  (   fP * ( xAM - xAC )  &
-                         + fM * ( xAC - xAP )  &
-                         + fC * ( xAP - xAM ) )  /  d
+                c2  =  (    fP * ( -xAC + xAM ) &
+                         +  fM * (  xAC - xAP ) &
+                         +  fC * ( -xAM + xAP ) )  /  d
 
                 c2_S  =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
                   xE  =  - c1 / ( 2.0 * c2_S )
@@ -611,38 +638,38 @@ contains
                 fI  =  c0  +  c1 * xI  +  c2 * xI**2
                 fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
-                !-- Overshoot at inner face?
-                !   New inner parabola, revise fI
-                if ( xE  >  xAM  .and.  xE  <=  xAC ) then
-!call Show ( '>>> Overshoot inner' )
+                !-- Extremum near inner face?
+                !   New inner parabola, flat slope at inner face, revise fI
+                if ( xE  >  xIM  .and.  xE  <=  xC ) then
+!call Show ( '>>> Extremum near inner face' )
 !call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
 
-                   d  =  ( x2AC - x2AM )  +  2.0 * ( xAM - xAC ) * xAM
+                   d  =  -x2AC + x2AM  +  2 * ( xAC - xAM ) * xIM
 
-                  c0  =  (    ( fM * x2AC  -  fC * x2AM )  &
-                           +  2.0 * ( fC * xAM  -  fM * xAC ) * xAM )  /  d
+                  c0  =  (    fM * ( -x2AC  +  2 * xAC * xIM ) &
+                           +  fC * (  x2AM  -  2 * xAM * xIM ) )  /  d
 
-                  c1  =  -2.0 * ( fC - fM ) * xAM  /  d
+                  c1  =  2 * ( fC - fM ) * xIM  /  d
 
-                  c2  =  ( fC - fM )  /  d
+                  c2  =  ( -fC + fM )  /  d
 
                   fI  =  c0  +  c1 * xI  +  c2 * xI**2
 
 !call Show ( '>>> Revised fI' )
 !call Show ( [ fM, fI, fC ], '>>> fM, fI, fC' )
 
-                !-- Overshoot at outer face?
-                !   New outer parabola, revise fO
-                else if ( xE  >  xAC  .and.  xE  <  xAP ) then
-!call Show ( '>>> Overshoot outer' )
+                !-- Extremum outer face?
+                !   New outer parabola, flat slope at outer face, revise fO
+                else if ( xE  >  xC  .and.  xE  <  xOP ) then
+!call Show ( '>>> Extremum near outer face' )
 !call Show ( [ fM, fI, fC, fO, fP ], '>>> fM, fI, fC, fO, fP' )
 
-                   d  =  ( x2AC - x2AP )  +  2.0 * ( xAP - xAC ) * xAP
+                   d  =  x2AC - x2AP  +  2 * ( -xAC + xAP ) * xOP
   
-                  c0  =  (    ( fP * x2AC  -  fC * x2AP )  &
-                           +  2.0 * ( fC * xAP  -  fP * xAC ) * xAP )  /  d
+                  c0  =  (    fP * (  x2AC  -  2 * xAC * xOP ) &
+                           +  fC * ( -x2AP  +  2 * xAP * xOP ) )  /  d
 
-                  c1  =  -2.0 * ( fC - fP ) * xAP  /  d
+                  c1  =  -2 * ( fC - fP ) * xOP  /  d
 
                   c2  =  ( fC - fP )  /  d
 
@@ -655,65 +682,71 @@ contains
 
                 !-- Second parabola
 
-                d  =  ( xI - xO ) * ( x2AC  +  xI * xO  -  xAC * ( xI + xO ) )
+                d  =   ( xI - xO ) * ( x2AC  +  xI * xO  -  xAC * ( xI + xO ) )
 
-                c0  =  (    fO * xI * ( x2AC  -  xAC * xI )  &
-                         +  fC * xI * xO * ( xI  -  xO )  &
-                         +  fI * xO * ( xAC * xO  -  x2AC ) )  /  d
+                c0  =  (    fO * xI * (  x2AC - xAC * xI ) &
+                         +  fC * xI * ( xI - xO ) * xO &
+                         +  fI * xO * ( -x2AC + xAC * xO ) )  /  d
 
-                c1  =  (    fO * ( xI**2  -  x2AC )  &
-                         +  fI * (  x2AC  -  xO**2 )  &
-                         +  fC * ( xO**2  -  xI**2 ) )  /  d
+                c1  =  (    fO * ( -x2AC  +  xI**2 ) &
+                         +  fI * (  x2AC  -  xO**2 ) &
+                         +  fC * ( -xI**2 +  xO**2 ) )  /  d
 
-                c2  =  (    fO * ( xAC -  xI )  &
-                         +  fC * (  xI -  xO )  &
-                         +  fI * (  xO - xAC ) )  /  d
+                c2  =  (    fO * (  xAC - xI ) &
+                         +  fC * (  xI  - xO ) &
+                         +  fI * ( -xAC + xO ) )  /  d
 
                 c2_S  =  sign ( max ( abs ( c2 ), SqrtTiny ), c2 )
                   xE  =  - c1 / ( 2.0 * c2_S )
 
-                fI  =  c0  +  c1 * xI  +  c2 * xI**2
-                fO  =  c0  +  c1 * xO  +  c2 * xO**2
+                !   Need c1, c2 to check for extremum
+
+                ! !-- Not necessary to reset, just a consistency check
+                ! fI  =  c0  +  c1 * xI  +  c2 * xI**2
+                ! fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
                 !-- Extremum near inner face?
-                !   New parabola, flat slope at inner face
-                if ( xE  >  xI  .and.  xE  <=  xAC ) then
+                !   New parabola, flat slope at inner face, revise fO
+                if ( xE  >  xI  .and.  xE  <=  xC ) then
 !call Show ( '>>> Extremum near inner face' )
 !call Show ( [ fI, fC, fO ], '>>> fI, fC, fO' )
 
-                  d  =  x2AC  -  2.0 * xAC * xI  +  xI**2
+                  d  =  x2AC + xI * ( -2 * xAC  +  xI )
 
-                  c0  =  ( fI * x2AC  -  2.0 * fI * xAC * xI  +  fC * xI**2 ) &
+                  c0  =  ( fC * xI**2  +  fI * ( x2AC  -  2 * xAC * xI ) ) &
                          /  d
 
-                  c1  =  -2.0 * ( fC - fI ) * xI  /  d
+                  c1  = -2 * ( fC - fI ) * xI  /  d
 
                   c2  =  ( fC - fI )  /  d
 
+                  fO  =  c0  +  c1 * xO  +  c2 * xO**2
+
                 !-- Extremum near outer face?
-                !   New parabola, flat slope at outer face
-                else if ( xE  >  xAC  .and.  xE  <  xO ) then
+                !   New parabola, flat slope at outer face, revise fI
+                else if ( xE  >  xC  .and.  xE  <  xO ) then
 !call Show ( '>>> Extremum near outer face' )
 !call Show ( [ fI, fC, fO ], '>>> fI, fC, fO' )
 
-                  d  =  x2AC  -  2.0 * xAC * xO  +  xO**2
+                  d  =  x2AC + xO * ( -2 * xAC  +  xO )
 
-                  c0  =  ( fO * x2AC  -  2.0 * fO *xAC * xO  +  fC * xO**2 ) &
+                  c0  =  ( fC * xO**2  +  fO * ( x2AC  -  2 * xAC * xO ) ) &
                          /  d
 
-                  c1  =  -2.0 * ( fC - fO ) * xO  /  d
+                  c1  =  -2 * ( fC - fO ) * xO  /  d
 
                   c2  =  ( fC - fO )  /  d
+
+                  fI  =  c0  +  c1 * xI  +  c2 * xI**2
 
                 end if  !-- Second parabola extremum
 
               end if  !-- Local extremum
 
               F_IR ( iV, jV, kV, iF_R )  &
-                =  c0  +  c1 * xI  +  c2 * xI**2
-
+                =  fI
               F_IL ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF_R )  &
-                =  c0  +  c1 * xO  +  c2 * xO**2
+                =  fO
 
 !call Show ( '>>> Final values' )
 !call Show ( [ fM, F_IR ( iV, jV, kV, iS ), fC, &
