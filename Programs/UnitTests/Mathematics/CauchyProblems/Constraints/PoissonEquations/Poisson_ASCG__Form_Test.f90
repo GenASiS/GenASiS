@@ -138,6 +138,8 @@ contains
            ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
     call Solution % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
+    call Solution % SetBoundaryConditionsFace &
+           ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 3 )
     
     allocate ( Reference )
     call Reference % Initialize &
@@ -189,7 +191,7 @@ contains
       call PA % Solve ( Solution, Source, T_Option = T_P )
     end do !-- iS
     call T_P % Stop ( )
-
+    
     call ComputeError ( Difference, Solution, Reference )
 
     call Gradient % Compute ( iD = 1 )
@@ -234,6 +236,7 @@ contains
 
     call CO % Initialize &
            ( C % Communicator, [ 2 * nEquations ], [ 2 * nEquations ] )
+    
     CO % Outgoing % Value ( 1 )  &
       =  sum ( abs ( DV ( :, 1 ) ), mask = C % ProperCell )
     CO % Outgoing % Value ( 2 )  &
@@ -246,6 +249,7 @@ contains
       =  sum ( abs ( RV ( :, 2 ) ), mask = C % ProperCell )
     CO % Outgoing % Value ( 6 )  &
       =  sum ( abs ( RV ( :, 3 ) ), mask = C % ProperCell )
+    
     call CO % Reduce ( REDUCTION % SUM )
 
     associate &
