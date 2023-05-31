@@ -115,6 +115,7 @@ contains
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', P % IGNORABILITY )
     call Show ( P % Name, 'Name', P % IGNORABILITY )
     call Show ( P % SolverType, 'SolverType', P % IGNORABILITY )
+    call Show ( P % Coarsen, 'Coarsen', P % IGNORABILITY )
 
     if ( allocated ( P % Laplacian_M ) ) &
       call P % Laplacian_M % Show ( )
