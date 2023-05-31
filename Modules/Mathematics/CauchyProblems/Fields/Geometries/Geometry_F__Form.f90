@@ -351,6 +351,7 @@ contains
              IgnorabilityOption = IgnorabilityOption )
 
     call FS % Compute ( )
+    call FS % UpdateDevice ( )
 
   end subroutine InitializeAllocate_FS
 

@@ -235,10 +235,6 @@ contains
     class ( Integrator_CS_Form ), intent ( inout ) :: &
       I
 
-    associate ( G  =>  I % Geometry_X )
-    call G % UpdateDevice ( )
-    end associate !-- G
-
     if ( .not. allocated ( I % CurrentSet_X ) ) &
       return
 
