@@ -8,6 +8,10 @@ program Gravitation_N_SG__Form_Test
 
   implicit none
 
+  logical ( KDL ) :: &
+    DeviceMemory, &
+    PinnedMemory, &
+    DevicesCommunicate
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
@@ -34,9 +38,23 @@ program Gravitation_N_SG__Form_Test
 
   allocate ( S )
   call S % Initialize ( A, GIS )
+  
+  DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1
+  call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+  PinnedMemory        =  DeviceMemory
+  DevicesCommunicate  =  DeviceMemory
+  call PROGRAM_HEADER % GetParameter &
+         ( PinnedMemory, 'PinnedMemory' )
+  call PROGRAM_HEADER % GetParameter &
+         ( DevicesCommunicate, 'DevicesCommunicate' )
 
   allocate ( G )
-  call G % Initialize ( A, GravitationalConstant = 1.0_KDR )
+  call G % Initialize &
+         ( A, GravitationalConstant = 1.0_KDR, &
+           DeviceMemoryOption = DeviceMemory, &
+           PinnedMemoryOption = PinnedMemory, &
+           DevicesCommunicateOption = DevicesCommunicate )
   call G % SetStream ( S )
   call S % AddFieldSet ( G % Source )
 
@@ -117,11 +135,13 @@ contains
       call T_G % Start ( )
       call G % Solve ( Fluid, iBaryonMass = 1, iBaryonDensity = 2 )
       call T_G % Stop ( )
-
+      
+      call G % Solution % Storage_GS % UpdateHost ( G % POTENTIAL )
+      
       call Show ( Radius ( iHS ), 'Radius', nLeadingLinesOption = 2 )
       call Show ( Density ( iHS ), 'Density' )
       call ComputeError ( Difference, G % Solution, Reference )
-
+      
       T_W  =>  S % TimerWrite ( Level = 1 )
       call T_W % Start ( )
       call GIS % Open ( GIS % ACCESS_CREATE )

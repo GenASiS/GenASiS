@@ -8,6 +8,10 @@ program Gravitation_N_CM__Form_Test
 
   implicit none
 
+  logical ( KDL ) :: &
+    DeviceMemory, &
+    PinnedMemory, &
+    DevicesCommunicate
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_CE_Form ), allocatable :: &
@@ -40,9 +44,23 @@ program Gravitation_N_CM__Form_Test
 
   allocate ( F )
   call F % Initialize ( A )
+  
+  DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1
+  call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+  PinnedMemory        =  DeviceMemory
+  DevicesCommunicate  =  DeviceMemory
+  call PROGRAM_HEADER % GetParameter &
+         ( PinnedMemory, 'PinnedMemory' )
+  call PROGRAM_HEADER % GetParameter &
+         ( DevicesCommunicate, 'DevicesCommunicate' )
 
   allocate ( G )
-  call G % Initialize ( A, GravitationalConstant = 1.0_KDR, Mass = 1.0_KDR )
+  call G % Initialize &
+         ( A, GravitationalConstant = 1.0_KDR, Mass = 1.0_KDR, &
+           DeviceMemoryOption = DeviceMemory, &
+           PinnedMemoryOption = PinnedMemory, &
+           DevicesCommunicateOption = DevicesCommunicate )
   call G % SetStream ( S )
 
   call A % Show ( )
