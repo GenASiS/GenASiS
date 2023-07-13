@@ -15,7 +15,9 @@ module HomogeneousSpheroid_Form
       Source, &
       Solution, &
       Reference, &
-      Difference
+      Difference, &
+      RelativeError_1, &
+      RelativeError_2
     type ( StreamForm ), allocatable :: &
       Stream
     type ( Geometry_F_Form ), allocatable :: &
@@ -51,6 +53,10 @@ contains
   integer ( KDI ) :: &
     nEquations, &
     MaxDegree
+  logical ( KDL ) :: &
+    DeviceMemory, &   
+    PinnedMemory, &   
+    DevicesCommunicate
   real ( KDR ) :: &
     Density
   real ( KDR ), dimension ( : ), allocatable :: &
@@ -77,10 +83,33 @@ contains
     allocate ( HS % Stream )
     associate ( S  =>  HS % Stream )
     call S % Initialize ( A, GIS )
+    
+    DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1
+    call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+    PinnedMemory        =  DeviceMemory  
+    DevicesCommunicate  =  DeviceMemory
+    call PROGRAM_HEADER % GetParameter &
+           ( PinnedMemory, 'PinnedMemory' )
+    call PROGRAM_HEADER % GetParameter &
+           ( DevicesCommunicate, 'DevicesCommunicate' )
+
+    DeviceMemory  =  OffloadEnabled ( )  .and.  NumberOfDevices ( ) >= 1
+    call PROGRAM_HEADER % GetParameter ( DeviceMemory, 'DeviceMemory' )
+
+    PinnedMemory        =  DeviceMemory  
+    DevicesCommunicate  =  DeviceMemory
+    call PROGRAM_HEADER % GetParameter &
+           ( PinnedMemory, 'PinnedMemory' )
+    call PROGRAM_HEADER % GetParameter &
+           ( DevicesCommunicate, 'DevicesCommunicate' )
 
     allocate ( HS % Geometry )
     associate ( G  =>  HS % Geometry )
-    call G % Initialize ( A )
+    call G % Initialize ( A, &
+                          DeviceMemoryOption = DeviceMemory, &
+                          PinnedMemoryOption = PinnedMemory, &
+                          DevicesCommunicateOption = DevicesCommunicate )
     call G % SetStream ( S )
 
     nEquations = 3
@@ -132,11 +161,27 @@ contains
              FieldOption = Field, &
              NameOption = 'Difference', &
              nFieldsOption = nEquations )
+    
+    allocate ( HS % RelativeError_1 )
+    call HS % RelativeError_1 % Initialize &
+           ( A, &
+             FieldOption = Field, &
+             NameOption = 'RelativeError_1', &
+             nFieldsOption = nEquations )
+
+    allocate ( HS % RelativeError_2 )
+    call HS % RelativeError_2 % Initialize &
+           ( A, &
+             FieldOption = Field, &
+             NameOption = 'RelativeError_2', &
+             nFieldsOption = nEquations )
 
     call S % AddFieldSet ( HS % Source )
     call S % AddFieldSet ( HS % Solution )
     call S % AddFieldSet ( HS % Reference )
     call S % AddFieldSet ( HS % Difference )
+    call S % AddFieldSet ( HS % RelativeError_1 )
+    call S % AddFieldSet ( HS % RelativeError_2 )
 
     allocate ( HS % GradSolution )
     associate ( GS  =>  HS % GradSolution )
@@ -161,6 +206,7 @@ contains
     Eccentricity  =  sqrt ( 1.0_KDR &
                             - [ 0.7_KDR ** 2, 0.2_KDR ** 2, 0.2_KDR ** 2 ] )
     call PROGRAM_HEADER % GetParameter ( Eccentricity, 'Eccentricity' )
+    
     call Show ( Eccentricity, 'Eccentricity' )
 
     Density  =  1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  )
@@ -192,7 +238,9 @@ contains
     call P % Solve ( HS % Solution, HS % Source )
     end associate !-- P
 
-    call ComputeError ( HS % Difference, HS % Solution, HS % Reference )
+    call ComputeError &
+           ( HS % RelativeError_1, HS % RelativeError_2, HS % Difference, &
+             HS % Solution, HS % Reference )
 
     associate ( nD  =>  HS % Atlas % Chart ( 1 ) % Element % nDimensions )
     do iD  =  1, nD
@@ -226,6 +274,10 @@ contains
       deallocate ( HS % Geometry )
     if ( allocated ( HS % Stream ) ) &
       deallocate ( HS % Stream )
+    if ( allocated ( HS % RelativeError_2 ) ) &
+      deallocate ( HS % RelativeError_2 )
+    if ( allocated ( HS % RelativeError_1 ) ) &
+      deallocate ( HS % RelativeError_1 )
     if ( allocated ( HS % Difference ) ) &
       deallocate ( HS % Difference )
     if ( allocated ( HS % Reference ) ) &
@@ -461,7 +513,8 @@ contains
 
     !-- Reference
 
-    e  =  sqrt ( 1.0_KDR  -  min ( ( a_3 / a_1 ), ( a_1 / a_3 ) )  ** 2 )
+    e  =  max ( 1.0e-5_KDR, &
+                sqrt ( 1.0_KDR  -  min ( ( a_3 / a_1 ), ( a_1 / a_3 ) ) ** 2 ) )
 
     if ( a_3 < a_1 ) then
       C_I = 2 * sqrt ( 1.0_KDR - e ** 2 ) / e * asin ( e )
@@ -533,9 +586,13 @@ contains
   end subroutine SetHomogeneousSpheroidKernel
 
 
-  subroutine ComputeError ( Difference, Solution, Reference )
+  subroutine ComputeError &
+               ( RelativeError_1, RelativeError_2, Difference, Solution, &
+                 Reference )
 
     class ( FieldSetForm ), intent ( inout ) :: &
+      RelativeError_1, &
+      RelativeError_2, &
       Difference, &         
       Solution, &
       Reference
@@ -558,7 +615,9 @@ contains
     associate &
       ( C   =>  A % Chart_GS, &
         RV  =>  Reference % Storage_GS % Value, &
-        DV  =>  Difference % Storage_GS % Value )
+        DV  =>  Difference % Storage_GS % Value, &
+        REV_1 =>  RelativeError_1 % Storage_GS % Value, &
+        REV_2 =>  RelativeError_2 % Storage_GS % Value )
 
     call CO % Initialize &
            ( C % Communicator, [ 2 * nEquations ], [ 2 * nEquations ] )
@@ -587,7 +646,13 @@ contains
     L1_1  =  Norm_D_1 / Norm_R_1
     L1_2  =  Norm_D_2 / Norm_R_2
     L1_3  =  Norm_D_3 / Norm_R_3
-
+    
+    REV_1 ( :, 1 ) = abs ( DV ( :, 1 ) ) / Norm_R_1
+    REV_1 ( :, 2 ) = abs ( DV ( :, 2 ) ) / Norm_R_2
+    REV_1 ( :, 3 ) = abs ( DV ( :, 3 ) ) / Norm_R_3
+    
+    REV_2 = abs ( DV / RV )
+    
     end associate !-- Norm_D_1, etc.
 
     call Show ( L1_1, '*** L1_1 error', nLeadingLinesOption = 2, &
