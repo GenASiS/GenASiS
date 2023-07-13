@@ -169,6 +169,9 @@ contains
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
 
     Density  =  1.0_KDR  /  RadiusDensity ** 3
+    
+    call Show ( RadiusDensity, 'RadiusDensity' )
+    call Show ( Density, 'Density' )
 
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
