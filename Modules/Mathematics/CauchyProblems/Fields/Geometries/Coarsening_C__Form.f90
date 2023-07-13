@@ -1,7 +1,8 @@
 module Coarsening_C__Form
 
   !-- Coarsening_Central_Form
-
+  
+  use iso_c_binding
   use Basics
   use Manifolds
   use FieldSets
@@ -24,6 +25,10 @@ module Coarsening_C__Form
     integer ( KDI ), dimension ( :, : ), allocatable :: &
       iTheta, &
       iPhi
+    type ( c_ptr ), private :: &
+      D_iRadius, &
+      D_iTheta, &
+      D_iPhi
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
   contains
@@ -140,8 +145,21 @@ contains
                iRad = C % iRadius, &
                nBC  = C % nBlocksCoarsen )
 
-      if ( C % DeviceMemory ) &
+      if ( C % DeviceMemory ) then
         call C % UpdateDevice ( )
+        
+        call AllocateDevice ( C % iRadius, C % D_iRadius )
+        call AllocateDevice ( C % iTheta, C % D_iTheta )
+        call AllocateDevice ( C % iPhi, C % D_iPhi )
+        
+        call AssociateHost ( C % D_iRadius, C % iRadius )
+        call AssociateHost ( C % D_iTheta, C % iTheta )
+        call AssociateHost ( C % D_iPhi, C % iPhi )
+        
+        call UpdateDevice ( C % iRadius, C % D_iRadius )
+        call UpdateDevice ( C % iTheta, C % D_iTheta )
+        call UpdateDevice ( C % iPhi, C % D_iPhi )
+      end if
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
