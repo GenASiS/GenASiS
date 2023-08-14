@@ -16,10 +16,11 @@ module LinMestelShu_Form
       SemiMajor, &
       SemiMinor, &
       DensityFactor, &
-      RadiusFactor_OS, &   !-- OppenheimerSnyder
-      TimeScale_OS, &      !-- OppenheimerSnyder
       Density_OS, &        !-- OppenheimerSnyder, initial
       Radius_OS, &         !-- OppenheimerSnyder, initial
+      RadiusFactor_OS, &   !-- OppenheimerSnyder
+      TimeScale_OS, &      !-- OppenheimerSnyder
+      TimeFinal_OS, &      !-- OppenheimerSnyder
       AtmosphereParameter
     type ( DifferentialEquationForm ), allocatable :: &
       DifferentialEquation
@@ -162,10 +163,11 @@ contains
     call Show ( U % SemiMajor, 'SemiMajor' )
     call Show ( U % SemiMinor, 'SemiMinor' )
     call Show ( U % DensityFactor, 'DensityFactor' )
-    call Show ( U % RadiusFactor_OS, 'RadiusFactor_OS' )
-    call Show ( Pi / 2  *  U % TimeScale_OS, 'CollapseTime_OS' )
     call Show ( U % Density_OS, 'Density_OS' )
     call Show ( U % Radius_OS, 'Radius_OS' )
+    call Show ( U % RadiusFactor_OS, 'RadiusFactor_OS' )
+    call Show ( Pi / 2  *  U % TimeScale_OS, 'TimeSingularity_OS' )
+    call Show ( U % TimeFinal_OS, 'TimeFinal_OS' )
     call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
 
   end subroutine ShowParameters
@@ -251,8 +253,7 @@ contains
 
     real ( KDR ) :: &
       Pi, &
-      Eta_OS, &
-      T_Finish_OS
+      Eta_OS
 
     select type ( LMS  =>  I % System )
       class is ( LinMestelShuForm )
@@ -272,10 +273,11 @@ contains
           R_0    =>  LMS % SemiMajor, &
           Z_0    =>  LMS % SemiMinor, &
          DF      =>  LMS % DensityFactor, &
-         RF_OS   =>  LMS % RadiusFactor_OS, &
-        Tau_OS   =>  LMS % TimeScale_OS, &
           D_OS   =>  LMS % Density_OS, &
           R_OS   =>  LMS % Radius_OS, &
+         RF_OS   =>  LMS % RadiusFactor_OS, &
+        Tau_OS   =>  LMS % TimeScale_OS, &
+         TF_OS   =>  LMS % TimeFinal_OS, &
          AP      =>  LMS % AtmosphereParameter, &
           R_Max  =>  C % MaxCoordinate ( 1 ) )
 
@@ -292,14 +294,13 @@ contains
     call PROGRAM_HEADER % GetParameter (  AP, 'AtmosphereParameter' )
 
       D_OS  =  D_0
-    Tau_OS  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
       R_OS  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
      RF_OS  =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
+    Tau_OS  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
     Eta_OS  =  acos ( 2.0 * RF_OS  -  1.0 )
+     TF_OS  =  0.5 * Tau_OS * ( Eta_OS  +  sin ( Eta_OS ) )
 
-    T_Finish_OS  =  0.5 * Tau_OS * ( Eta_OS  +  sin ( Eta_OS ) )
-
-    call SetFinishTime ( LMS, T_Finish_OS )
+    call SetFinishTime ( LMS, TF_OS )
 
     if ( R_0  >  R_Max  ) then
       call Show ( 'SemiMajor axis too large', CONSOLE % ERROR )
@@ -354,6 +355,68 @@ contains
   end subroutine SetReference
 
 
+  ! subroutine ComputeSlope_LMS ( LMS, X, Y, dYdX )
+
+  !   class ( * ), intent ( in ) :: &
+  !     LMS
+  !   real ( KDR ), intent ( in ) :: &
+  !     X
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     Y
+  !   real ( KDR ), dimension ( : ), intent ( out ) :: &
+  !     dYdX
+
+  !   real ( KDR ) :: &
+  !     SqrtTiny, &
+  !     TwoPi, &
+  !     E, &
+  !     A, &
+  !     C
+    
+  !   SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+  !   TwoPi     =  2.0_KDR  *  CONSTANT % PI
+
+  !   select type ( LMS )
+  !     class is ( LinMestelShuForm )
+  !   associate &
+  !     ( E_0  =>  LMS % Eccentricity, &
+  !       D_0  =>  LMS % DensityInitial )
+
+  !   E  =  max ( sqrt ( max ( 1.0_KDR &
+  !                            -  ( Y ( 3 )  /  Y ( 1 ) ) ** 2  &
+  !                               *  ( 1.0_KDR  -  E_0 ** 2 ),  &
+  !                            SqrtTiny ) ), &
+  !               SqrtTiny )
+
+  !   A  =  TwoPi  *  sqrt ( ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) )  &
+  !         /  max ( E ** 3, SqrtTiny )  &
+  !         *  ( asin ( E )  &
+  !              -  E  *  sqrt ( ( 1.0_KDR - max ( E ** 2, SqrtTiny ) ) ) )
+
+  !   C  =  2.0_KDR  *  TwoPi  /  max ( E ** 2, SqrtTiny )  &
+  !         *  ( 1.0_KDR  -  sqrt ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) &
+  !                          *  asin ( E )  /  E )
+
+  !   dYdX ( 1 ) = Y ( 2 )
+  !   dYdX ( 3 ) = Y ( 4 )
+
+  !   if ( ( Y ( 1 )  *  Y ( 3 ) )  >  0.0_KDR ) then
+  !     dYdX ( 2 )  =  - D_0  *  A  &
+  !                      /  max ( ( Y ( 1 )  *  Y ( 3 ) ), SqrtTiny )
+  !   else
+  !     dYdX ( 2 )  =  - D_0  *  A  &
+  !                      /  min ( ( Y ( 1 ) * Y ( 3 ) ), - SqrtTiny )
+  !   end if
+
+  !   dYdX ( 4 )  =  - D_0  *  C &
+  !                    /  max ( ( Y ( 1 ) ** 2 ), SqrtTiny )
+
+  !   end associate !-- E_0 
+  !   end select !-- LMS
+
+  ! end subroutine ComputeSlope_LMS
+
+
   subroutine ComputeSlope_LMS ( LMS, X, Y, dYdX )
 
     class ( * ), intent ( in ) :: &
@@ -367,13 +430,13 @@ contains
 
     real ( KDR ) :: &
       SqrtTiny, &
-      TwoPi, &
+      Pi, &
       E, &
       A, &
       C
     
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-    TwoPi     =  2.0_KDR  *  CONSTANT % PI
+    Pi  =  CONSTANT % PI
 
     select type ( LMS )
       class is ( LinMestelShuForm )
@@ -381,34 +444,38 @@ contains
       ( E_0  =>  LMS % Eccentricity, &
         D_0  =>  LMS % DensityInitial )
 
-    E  =  max ( sqrt ( max ( 1.0_KDR &
-                             -  ( Y ( 3 )  /  Y ( 1 ) ) ** 2  &
-                                *  ( 1.0_KDR  -  E_0 ** 2 ),  &
-                             SqrtTiny ) ), &
-                SqrtTiny )
+    E  =  sqrt ( 1.0_KDR &
+                 -  ( Y ( 3 )  /  Y ( 1 ) ) ** 2  &
+                      *  ( 1.0_KDR  -  E_0**2 ) )
 
-    A  =  TwoPi  *  sqrt ( ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) )  &
-          /  max ( E ** 3, SqrtTiny )  &
-          *  ( asin ( E )  &
-               -  E  *  sqrt ( ( 1.0_KDR - max ( E ** 2, SqrtTiny ) ) ) )
+    if ( E > 1.0e-2_KDR ) then
 
-    C  =  2.0_KDR  *  TwoPi  /  max ( E ** 2, SqrtTiny )  &
-          *  ( 1.0_KDR  -  sqrt ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) &
-                           *  asin ( E )  /  E )
+      A  =  2 * Pi  *  sqrt ( 1.0_KDR  -  E**2 )  &
+            /  E**3  &
+            *  ( asin ( E )  &
+                 -  E  *  sqrt ( 1.0_KDR - E**2 ) )
+
+      C  =  4 * Pi  /  E**2  &
+            *  ( 1.0_KDR  -  sqrt ( 1.0_KDR  -  E**2 ) &
+                             *  asin ( E )  /  E )
+      
+    else
+
+      A  =  4 * Pi / 3  -  14 * Pi * E**2 / 15  &
+            -  13 * Pi * E**4 / 70  -  19 * Pi * E**6 / 252  &
+            -  125 * Pi * E**8 / 3168
+
+      C  =  4 * Pi / 3  +  8 * Pi * E**6 / 15  &
+            +  32 * Pi * E**4 / 105  +  64 * Pi * E**6 / 315 &
+            +  512 * Pi * E**8 / 3465
+
+    end if
 
     dYdX ( 1 ) = Y ( 2 )
     dYdX ( 3 ) = Y ( 4 )
 
-    if ( ( Y ( 1 )  *  Y ( 3 ) )  >  0.0_KDR ) then
-      dYdX ( 2 )  =  - D_0  *  A  &
-                       /  max ( ( Y ( 1 )  *  Y ( 3 ) ), SqrtTiny )
-    else
-      dYdX ( 2 )  =  - D_0  *  A  &
-                       /  min ( ( Y ( 1 ) * Y ( 3 ) ), - SqrtTiny )
-    end if
-
-    dYdX ( 4 )  =  - D_0  *  C &
-                     /  max ( ( Y ( 1 ) ** 2 ), SqrtTiny )
+    dYdX ( 2 )  =  - D_0  *  A  /  ( Y ( 1 )  *  Y ( 3 ) )
+    dYdX ( 4 )  =  - D_0  *  C  /  Y ( 1 ) ** 2
 
     end associate !-- E_0 
     end select !-- LMS
@@ -429,9 +496,19 @@ contains
     call R % Initialize ( LMS )
     R % Zero  =>  Zero_T
 
-    call R % Solve ( [ 0.95_KDR  *  T_Finish_OS,  &
-                       1.01_KDR  *  T_Finish_OS ], &
+    call Show ( 'Solving for T_Finish' )
+    call R % Solve ( [ 0.9_KDR  *  T_Finish_OS,  &
+                       1.05_KDR  *  T_Finish_OS ], &
                      LMS % Integrator % T_Finish )
+    if ( R % Success ) then
+      call Show ( 'Solve for T_Finish succeeded' )
+      call Show ( R % nIterations, 'nIterations' )
+      call Show ( R % Accuracy, 'Accuracy' )
+      call Show ( R % RequestedAccuracy, 'RequestedAccuracy' )
+    else
+      call Show ( 'Solve for T_Finish failed', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
   end subroutine SetFinishTime
 
