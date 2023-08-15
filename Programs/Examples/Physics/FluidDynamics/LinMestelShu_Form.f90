@@ -16,12 +16,15 @@ module LinMestelShu_Form
       SemiMajor, &
       SemiMinor, &
       DensityFactor, &
-      Density_OS, &        !-- OppenheimerSnyder, initial
-      Radius_OS, &         !-- OppenheimerSnyder, initial
-      RadiusFactor_OS, &   !-- OppenheimerSnyder
-      TimeScale_OS, &      !-- OppenheimerSnyder
-      TimeFinal_OS, &      !-- OppenheimerSnyder
-      AtmosphereParameter
+      Density_OS, &          !-- OppenheimerSnyder, initial
+      Radius_OS, &           !-- OppenheimerSnyder, initial
+      RadiusFactor_OS, &     !-- OppenheimerSnyder
+      TimeScale_OS, &        !-- OppenheimerSnyder
+      TimeSingularity_OS, &  !-- OppenheimerSnyder
+      TimeFinal_OS, &        !-- OppenheimerSnyder
+      AtmosphereParameter, &
+      GuessFactor_1, &       
+      GuessFactor_2
     type ( DifferentialEquationForm ), allocatable :: &
       DifferentialEquation
     type ( Fluid_D_Form ), allocatable :: &
@@ -166,7 +169,7 @@ contains
     call Show ( U % Density_OS, 'Density_OS' )
     call Show ( U % Radius_OS, 'Radius_OS' )
     call Show ( U % RadiusFactor_OS, 'RadiusFactor_OS' )
-    call Show ( Pi / 2  *  U % TimeScale_OS, 'TimeSingularity_OS' )
+    call Show ( U % TimeSingularity_OS, 'TimeSingularity_OS' )
     call Show ( U % TimeFinal_OS, 'TimeFinal_OS' )
     call Show ( U % AtmosphereParameter, 'AtmosphereParameter' )
 
@@ -277,6 +280,7 @@ contains
           R_OS   =>  LMS % Radius_OS, &
          RF_OS   =>  LMS % RadiusFactor_OS, &
         Tau_OS   =>  LMS % TimeScale_OS, &
+         TS_OS   =>  LMS % TimeSingularity_OS, &
          TF_OS   =>  LMS % TimeFinal_OS, &
          AP      =>  LMS % AtmosphereParameter, &
           R_Max  =>  C % MaxCoordinate ( 1 ) )
@@ -285,7 +289,7 @@ contains
       M     =  1.0_KDR
       D_0   =  1.0e-3_KDR
       E_0   =  0.6_KDR
-     DF     =  1.0e1_KDR
+     DF     =  1.0e2_KDR
      AP     =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
     call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
@@ -296,8 +300,9 @@ contains
       D_OS  =  D_0
       R_OS  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
      RF_OS  =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
-    Tau_OS  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
     Eta_OS  =  acos ( 2.0 * RF_OS  -  1.0 )
+    Tau_OS  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
+     TS_OS  =  Pi / 2  *  Tau_OS
      TF_OS  =  0.5 * Tau_OS * ( Eta_OS  +  sin ( Eta_OS ) )
 
     call SetFinishTime ( LMS, TF_OS )
@@ -493,22 +498,30 @@ contains
     type ( RootForm ) :: &
       R
 
-    call R % Initialize ( LMS )
+    call R % Initialize ( LMS, VerbosityOption = CONSOLE % INFO_1 )
     R % Zero  =>  Zero_T
 
+    associate &
+      ( GF_1  =>  LMS % GuessFactor_1, &
+        GF_2  =>  LMS % GuessFactor_2 )
+
+    GF_1  =  0.99
+    GF_2  =  1.01
+    call PROGRAM_HEADER % GetParameter ( GF_1, 'GuessFactor_1' )
+    call PROGRAM_HEADER % GetParameter ( GF_2, 'GuessFactor_2' )
+
     call Show ( 'Solving for T_Finish' )
-    call R % Solve ( [ 0.9_KDR  *  T_Finish_OS,  &
-                       1.05_KDR  *  T_Finish_OS ], &
+    call R % Solve ( GF_1 * T_Finish_OS,  &
+                     GF_2 * T_Finish_OS, &
                      LMS % Integrator % T_Finish )
     if ( R % Success ) then
       call Show ( 'Solve for T_Finish succeeded' )
-      call Show ( R % nIterations, 'nIterations' )
-      call Show ( R % Accuracy, 'Accuracy' )
-      call Show ( R % RequestedAccuracy, 'RequestedAccuracy' )
     else
       call Show ( 'Solve for T_Finish failed', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
+
+    end associate !-- GF_1, etc.
 
   end subroutine SetFinishTime
 
@@ -631,7 +644,22 @@ contains
     Y ( 3 )  =  1.0_KDR
     Y ( 4 )  =  0.0_KDR
 
+    call Show ( 'Integrating spheroid collapse' )
     call DE % Integrate ( X_Start, X_Finish, H_Start )
+    call Show ( Y ( 1 ), 'SemiMajor factor' )
+    call Show ( Y ( 3 ), 'SemiMinor factor' )
+    if ( Y ( 3 )  <  0.0_KDR ) then
+      call Show ( 'Negative SemiMinor factor', CONSOLE % ERROR )
+      call Show ( 'Integration time too long', CONSOLE % ERROR )
+      call Show ( T, 'T_Finish', CONSOLE % ERROR )
+      call Show ( LMS % TimeFinal_OS, 'T_Finish_OS', CONSOLE % ERROR )
+      call Show ( T / LMS % TimeFinal_OS, 'GuessFactor', CONSOLE % ERROR )
+      call Show ( LMS % GuessFactor_1, 'GuessFactor_1', CONSOLE % ERROR )
+      call Show ( LMS % GuessFactor_2, 'GuessFactor_2', CONSOLE % ERROR )
+      call Show ( 'Try different GuessFactor_1 and GuessFactor_2', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     F  =  DF  -  1.0_KDR  /  ( Y ( 1 ) ** 2  *  Y ( 3 ) )
 

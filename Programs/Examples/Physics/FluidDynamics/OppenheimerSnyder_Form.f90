@@ -272,10 +272,10 @@ contains
     call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
     call PROGRAM_HEADER % GetParameter (  AP, 'AtmosphereParameter' )
 
-    Tau    =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
       R_0  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
      RF    =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
     Eta    =  acos ( 2.0 * RF  -  1.0 )
+    Tau    =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
 
     I % T_Finish  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
 

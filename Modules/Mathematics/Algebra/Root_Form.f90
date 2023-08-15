@@ -73,7 +73,7 @@ contains
       MaxIterationsOption, &
       VerbosityOption
       
-    R % IGNORABILITY  =  CONSOLE % INFO_3 
+    R % IGNORABILITY  =  CONSOLE % INFO_4 
     if ( present ( VerbosityOption ) ) &
       R % IGNORABILITY  =  VerbosityOption 
     
@@ -111,13 +111,17 @@ contains
     R % nIterations = 0
       
     X_0 = Guess_1
-    X_1 = Guess_2
-    
     Y_0 = R % Zero ( R % Parameters, X_0 )
+    call Show ( X_0, 'Guess_0', R % IGNORABILITY )
+    call Show ( Y_0, 'Zero_0', R % IGNORABILITY )
+
+    X_1 = Guess_2    
     Y_1 = R % Zero ( R % Parameters, X_1 )
-    
+
     do iIteration = 1, R % MaxIterations
       
+      call Show ( iIteration, 'Root iteratation', R % IGNORABILITY )
+
       R % nIterations = iIteration
       
       R % AbsolutePrecision = abs ( Y_1 )
@@ -127,6 +131,11 @@ contains
       R % AbsolutePrecision  =  abs ( X_1 - X_0 )
       R % RelativePrecision  =  abs ( ( X_1 - X_0 ) )  &
                                 /  max ( abs ( X_1 ), tiny ( 0.0_KDR ) )
+
+      call Show ( X_1, 'Guess', R % IGNORABILITY )
+      call Show ( Y_1, 'Zero', R % IGNORABILITY )
+      call Show ( R % AbsolutePrecision, 'AbsolutePrecision', R % IGNORABILITY )
+      call Show ( R % RelativePrecision, 'RelativePrecision', R % IGNORABILITY )
 
       if ( R % Accuracy  <=  R % RequestedAccuracy &
            .or. R % AbsolutePrecision  <=  R % RequestedAccuracy   &
@@ -148,6 +157,9 @@ contains
       Y_1 = R % Zero ( R % Parameters, X_1 )
       
     end do
+
+    if ( .not. R % Success ) &
+      call Show ( 'MaxIterations reached', CONSOLE % WARNING )
     
   end subroutine SolveSecant
   
