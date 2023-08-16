@@ -360,68 +360,6 @@ contains
   end subroutine SetReference
 
 
-  ! subroutine ComputeSlope_LMS ( LMS, X, Y, dYdX )
-
-  !   class ( * ), intent ( in ) :: &
-  !     LMS
-  !   real ( KDR ), intent ( in ) :: &
-  !     X
-  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
-  !     Y
-  !   real ( KDR ), dimension ( : ), intent ( out ) :: &
-  !     dYdX
-
-  !   real ( KDR ) :: &
-  !     SqrtTiny, &
-  !     TwoPi, &
-  !     E, &
-  !     A, &
-  !     C
-    
-  !   SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-  !   TwoPi     =  2.0_KDR  *  CONSTANT % PI
-
-  !   select type ( LMS )
-  !     class is ( LinMestelShuForm )
-  !   associate &
-  !     ( E_0  =>  LMS % Eccentricity, &
-  !       D_0  =>  LMS % DensityInitial )
-
-  !   E  =  max ( sqrt ( max ( 1.0_KDR &
-  !                            -  ( Y ( 3 )  /  Y ( 1 ) ) ** 2  &
-  !                               *  ( 1.0_KDR  -  E_0 ** 2 ),  &
-  !                            SqrtTiny ) ), &
-  !               SqrtTiny )
-
-  !   A  =  TwoPi  *  sqrt ( ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) )  &
-  !         /  max ( E ** 3, SqrtTiny )  &
-  !         *  ( asin ( E )  &
-  !              -  E  *  sqrt ( ( 1.0_KDR - max ( E ** 2, SqrtTiny ) ) ) )
-
-  !   C  =  2.0_KDR  *  TwoPi  /  max ( E ** 2, SqrtTiny )  &
-  !         *  ( 1.0_KDR  -  sqrt ( 1.0_KDR  -  max ( E ** 2, SqrtTiny ) ) &
-  !                          *  asin ( E )  /  E )
-
-  !   dYdX ( 1 ) = Y ( 2 )
-  !   dYdX ( 3 ) = Y ( 4 )
-
-  !   if ( ( Y ( 1 )  *  Y ( 3 ) )  >  0.0_KDR ) then
-  !     dYdX ( 2 )  =  - D_0  *  A  &
-  !                      /  max ( ( Y ( 1 )  *  Y ( 3 ) ), SqrtTiny )
-  !   else
-  !     dYdX ( 2 )  =  - D_0  *  A  &
-  !                      /  min ( ( Y ( 1 ) * Y ( 3 ) ), - SqrtTiny )
-  !   end if
-
-  !   dYdX ( 4 )  =  - D_0  *  C &
-  !                    /  max ( ( Y ( 1 ) ** 2 ), SqrtTiny )
-
-  !   end associate !-- E_0 
-  !   end select !-- LMS
-
-  ! end subroutine ComputeSlope_LMS
-
-
   subroutine ComputeSlope_LMS ( LMS, X, Y, dYdX )
 
     class ( * ), intent ( in ) :: &
