@@ -165,11 +165,14 @@ contains
     type ( Real_1D_Form ), intent ( inout ) :: &
       A
 
+    if ( A % AllocatedDevice ) then
+      call DisassociateHost ( A % Value ) 
+      call DeallocateDevice ( A % D_Value )
+    end if
+
     if ( allocated ( A % Value ) ) &
       deallocate ( A % Value )
     
-    if ( A % AllocatedDevice ) &
-      call DeallocateDevice ( A % D_Value )
 
   end subroutine Finalize_R_1D
   

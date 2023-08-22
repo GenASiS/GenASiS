@@ -2,16 +2,24 @@
 !   arrays to form ragged arrays.
 
 module Integer_2D__Form
-
+  
+  use iso_c_binding
   use Specifiers
+  use Devices
   use ArrayOperations
 
   implicit none
   private
 
   type, public :: Integer_2D_Form
+    type ( c_ptr ), private :: &
+      D_Value = c_null_ptr
+    integer ( KDI ) :: &
+      ErrorDevice
     integer ( KDI ), dimension ( :, : ), allocatable :: &
       Value
+    logical ( KDL ) :: &
+      AllocatedDevice = .false.
   contains
     procedure, private, pass :: &
       Initialize_I_2D
@@ -22,6 +30,12 @@ module Integer_2D__Form
     generic :: &
       Initialize &
         => Initialize_I_2D, Initialize_I_2D_FromValue, Initialize_I_2D_Copy
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_I_2D
+    procedure, public, pass :: &
+      UpdateDevice => UpdateDevice_I_2D
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_I_2D
     final :: &
       Finalize_I_2D
   end type Integer_2D_Form
@@ -88,7 +102,7 @@ contains
     
     class ( Integer_2D_Form ), intent ( inout ) :: &
       A
-    type (  Integer_2D_Form ), intent ( in ) :: &
+    type ( Integer_2D_Form ), intent ( in ) :: &
       B
     integer ( KDI ), intent ( in ), optional :: &
       iaLowerBoundOption
@@ -100,16 +114,67 @@ contains
     if ( present ( iaLowerBoundOption ) ) iaLB = iaLowerBoundOption
 
     call A % Initialize_I_2D_FromValue ( B % Value, iaLowerBoundOption = iaLB )
+    
+    if ( B % AllocatedDevice ) then
+      call A % AllocateDevice ( )
+      call Copy ( B % Value, A % Value, UseDeviceOption = B % AllocatedDevice )
+    end if
   
   end subroutine Initialize_I_2D_Copy 
   
   
-  elemental subroutine Finalize_I_2D ( A )
+  impure elemental subroutine AllocateDevice_I_2D ( A )
+  
+    class ( Integer_2D_Form ), intent ( inout ) :: &
+      A
+    
+    call AllocateDevice ( size ( A % Value ), A % D_Value )
+    A % AllocatedDevice = .true.
+    call AssociateHost ( A % D_Value, A % Value )
+  
+  end subroutine AllocateDevice_I_2D 
+  
+  
+  impure elemental subroutine UpdateDevice_I_2D ( A )
+  
+    class ( Integer_2D_Form ), intent ( inout ) :: &
+      A
+       
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateDevice &
+           ( A % Value, A % D_Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateDevice_I_2D
+  
+  
+  impure elemental subroutine UpdateHost_I_2D ( A )
+  
+    class ( Integer_2D_Form ), intent ( inout ) :: &
+      A
+       
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateHost &
+           ( A % D_Value, A % Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateHost_I_2D
+  
+  
+  impure elemental subroutine Finalize_I_2D ( A )
 
     type ( Integer_2D_Form ), intent ( inout ) :: &
       A
 
-    if ( allocated ( A % Value ) ) deallocate ( A % Value )
+    if ( A % AllocatedDevice ) then
+      call DisassociateHost ( A % Value ) 
+      call DeallocateDevice ( A % D_Value )
+    end if
+
+    if ( allocated ( A % Value ) ) &
+      deallocate ( A % Value )
 
   end subroutine Finalize_I_2D
   

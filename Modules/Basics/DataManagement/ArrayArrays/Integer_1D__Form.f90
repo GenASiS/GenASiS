@@ -3,6 +3,7 @@
 
 module Integer_1D__Form
 
+  use iso_c_binding
   use Specifiers
   use ArrayOperations
 
@@ -10,8 +11,14 @@ module Integer_1D__Form
   private
 
   type, public :: Integer_1D_Form
+    type ( c_ptr ), private :: &
+      D_Value = c_null_ptr
+    integer (KDI ) :: &
+      ErrorDevice
     integer ( KDI ), dimension ( : ), allocatable :: &
       Value
+    logical ( KDL ) :: &
+      AllocatedDevice = .false.
   contains
     procedure, private, pass :: &
       Initialize_I_1D
@@ -22,6 +29,12 @@ module Integer_1D__Form
     generic :: &
       Initialize &
         => Initialize_I_1D, Initialize_I_1D_FromValue, Initialize_I_1D_Copy
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_I_1D
+    procedure, public, pass :: &
+      UpdateDevice => UpdateDevice_I_1D
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_I_1D
     final :: &
       Finalize_I_1D
   end type Integer_1D_Form
@@ -97,16 +110,67 @@ contains
     if ( present ( iLowerBoundOption ) ) iLB = iLowerBoundOption
 
     call A % Initialize_I_1D_FromValue ( B % Value, iLowerBoundOption = iLB )
+
+    if ( B % AllocatedDevice ) then
+      call A % AllocateDevice ( )
+      call Copy ( B % Value, A % Value, UseDeviceOption = B % AllocatedDevice )
+    end if
   
   end subroutine Initialize_I_1D_Copy 
+
+
+  impure elemental subroutine AllocateDevice_I_1D ( A )
+  
+    class ( Integer_1D_Form ), intent ( inout ) :: &
+      A
+       
+    call AllocateDevice ( size ( A % Value ), A % D_Value )
+    A % AllocatedDevice = .true.
+    call AssociateHost ( A % D_Value, A % Value )
+  
+  end subroutine AllocateDevice_I_1D
   
   
-  elemental subroutine Finalize_I_1D ( A )
+  impure elemental subroutine UpdateDevice_I_1D ( A )
+  
+    class ( Integer_1D_Form ), intent ( inout ) :: &
+      A
+       
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateDevice &
+           ( A % Value, A % D_Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateDevice_I_1D
+  
+  
+  impure elemental subroutine UpdateHost_I_1D ( A )
+  
+    class ( Integer_1D_Form ), intent ( inout ) :: &
+      A
+       
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateHost &
+           ( A % D_Value, A % Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateHost_I_1D
+  
+  
+  impure elemental subroutine Finalize_I_1D ( A )
 
     type ( Integer_1D_Form ), intent ( inout ) :: &
       A
 
-    if ( allocated ( A % Value ) ) deallocate ( A % Value )
+    if ( A % AllocatedDevice ) then
+      call DisassociateHost ( A % Value ) 
+      call DeallocateDevice ( A % D_Value )
+    end if
+
+    if ( allocated ( A % Value ) ) &
+      deallocate ( A % Value )
 
   end subroutine Finalize_I_1D
   
