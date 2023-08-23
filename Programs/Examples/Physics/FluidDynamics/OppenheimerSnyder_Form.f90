@@ -177,11 +177,26 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+    real ( KDR ) :: &
+      RadiusMax, &
+      RadiusCore, &
+      RadialRatio
+ 
+    RadiusMax    =  10.0_KDR
+    RadiusCore   =  0.25_KDR
+    RadialRatio  =  3.68_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusMax' )
+    call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
+    call PROGRAM_HEADER % GetParameter ( RadialRatio, 'RadialRatio' )
+
     call OS % Initialize &
            ( FluidType = 'DUST', &
              GravitationType = 'NEWTON_SG', &
              NameOption = Name, &
              DimensionlessOption = .true., &
+             RadiusMaxOption = RadiusMax, &
+             RadiusCoreOption = RadiusCore, &
+             RadialRatioOption = RadialRatio, &
              GravityFactorOption = 0.01_KDR, &
              nCellsPolarOption = 128 )
 
@@ -248,9 +263,9 @@ contains
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_D_Form )
     select type ( A  =>  F % Atlas )
-      class is ( Atlas_SCG_Form )
-    associate &
-      ( C  =>  A % Chart_GS )
+      class is ( Atlas_SCG_CC_Form )
+    select type ( C  =>  A % Chart_GS )
+      class is ( Chart_GS_CC_Form )
 
     associate &
       (     M  =>  OS % Mass, &
@@ -291,7 +306,7 @@ contains
 
     end associate !-- R_Max, etc.
 
-    end associate !-- C
+    end select !-- C
     end select !-- A
     end select !-- F
     end select !-- I

@@ -194,11 +194,26 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+    real ( KDR ) :: &
+      RadiusMax, &
+      RadiusCore, &
+      RadialRatio
+ 
+    RadiusMax    =  10.0_KDR
+    RadiusCore   =  0.25_KDR
+    RadialRatio  =  3.68_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusMax' )
+    call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
+    call PROGRAM_HEADER % GetParameter ( RadialRatio, 'RadialRatio' )
+
     call LMS % Initialize &
            ( FluidType = 'DUST', &
              GravitationType = 'NEWTON_SG', &
              NameOption = Name, &
              DimensionlessOption = .true., &
+             RadiusMaxOption = RadiusMax, &
+             RadiusCoreOption = RadiusCore, &
+             RadialRatioOption = RadialRatio, &
              GravityFactorOption = 0.01_KDR, &
              nCellsPolarOption = 128 )
 
@@ -265,9 +280,9 @@ contains
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_D_Form )
     select type ( A  =>  F % Atlas )
-      class is ( Atlas_SCG_Form )
-    associate &
-      ( C  =>  A % Chart_GS )
+      class is ( Atlas_SCG_CC_Form )
+    select type ( C  =>  A % Chart_GS )
+      class is ( Chart_GS_CC_Form )
 
     associate &
       (   M      =>  LMS % Mass, &
@@ -307,24 +322,26 @@ contains
 
     call SetFinishTime ( LMS, TF_OS )
 
-    if ( R_0  >  R_Max  ) then
-      call Show ( 'SemiMajor axis too large', CONSOLE % ERROR )
-      call Show ( R_0, 'SemiMajor', CONSOLE % ERROR )
-      call Show ( R_Max, 'RadiusMax', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
     !-- Demand that the spheroid have the same volume as a sphere
     !   (OS = OppenheimerSnyder case) with the same mass and density
     R_0  =  R_OS  *  ( 1.0_KDR  -  E_0 ** 2 ) ** ( - 1.0_KDR / 6.0_KDR )
     Z_0  =  R_0  *  sqrt ( 1.0_KDR  -  E_0 ** 2 )
+
+    if ( R_0  >  R_Max  ) then
+      call Show ( 'SemiMajor axis too large', CONSOLE % ERROR )
+      call Show ( R_0, 'SemiMajor', CONSOLE % ERROR )
+      call Show ( R_Max, 'RadiusMax', CONSOLE % ERROR )
+      call Show ( 'Increase RadialRatio', CONSOLE % ERROR )
+      call Show ( C % RadialRatio, 'RadialRatio', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     call SetFluid ( LMS, F )
     call F % SetBaryonDensityMin ( )
 
     end associate !-- e0, etc.
 
-    end associate !-- C
+    end select !-- C
     end select !-- A
     end select !-- F
     end select !-- I
