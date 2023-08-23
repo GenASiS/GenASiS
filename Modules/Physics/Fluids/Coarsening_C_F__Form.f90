@@ -11,7 +11,7 @@ module Coarsening_C_F__Form
 
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
-      nRadiusZero, &
+      nRadialZero, &
       nPolarZero!, &
 !      nBlocksThreshold
     real ( KDR ) :: &
@@ -113,25 +113,25 @@ contains
 
     select type ( C_GS_C  =>  A % Chart_GS_C )
     class is ( Chart_GS_CE_Form )
-      C % nRadiusZero  =  0
-      C % nPolarZero   =  1
+      C % nRadialZero  =  0
+      C % nPolarZero   =  0  !-- previously 1
 !      C % nBlocksThreshold  =  8
       C % RadiusZero  =  0.0_KDR
       call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )
       call PROGRAM_HEADER % GetParameter &
-             ( C % nRadiusZero, 'nRadiusZero' )    
+             ( C % nRadialZero, 'nRadialZero' )    
       call PROGRAM_HEADER % GetParameter &
              ( C % nPolarZero, 'nPolarZero' )    
 !      call PROGRAM_HEADER % GetParameter &
 !             ( C % nBlocksThreshold, 'nBlocksThreshold' )    
     class is ( Chart_GS_CC_Form )
-      C % nRadiusZero  =  1
-      C % nPolarZero   =  1
+      C % nRadialZero  =  0  !-- previously 1
+      C % nPolarZero   =  0  !-- previously 1
 !      C % nBlocksThreshold  =  8
-      C % RadiusZero  =  C_GS_C % RadiusCore  /  10.0_KDR    
+      C % RadiusZero  =  0.0_KDR  !-- or C_GS_C % RadiusCore  /  10.0_KDR    
       call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )
       call PROGRAM_HEADER % GetParameter &
-             ( C % nRadiusZero, 'nRadiusZero' )    
+             ( C % nRadialZero, 'nRadialZero' )    
       call PROGRAM_HEADER % GetParameter &
              ( C % nPolarZero, 'nPolarZero' )    
 !      call PROGRAM_HEADER % GetParameter &
@@ -155,7 +155,7 @@ contains
 
     call FS % Coarsening_C_Form % Show ( )
 
-    call Show ( FS % nRadiusZero, 'nRadiusZero' )
+    call Show ( FS % nRadialZero, 'nRadialZero' )
     call Show ( FS % nPolarZero, 'nPolarZero' )
 !    call Show ( FS % nBlocksThreshold, 'nBlocksThreshold' )
     
@@ -215,7 +215,7 @@ contains
              nC   = C_GS_C % nCells, &
              oC   = C_GS_C % nGhostLayers, &
              iaB  = C_GS_C % iaBrick, &
-             nRZ  = C % nRadiusZero, &
+             nRZ  = C % nRadialZero, &
              nPZ  = C % nPolarZero, &
              iS_2 = iMomentum_2, &
              iS_3 = iMomentum_3, &
