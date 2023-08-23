@@ -209,16 +209,20 @@ contains
 
       RadiusMax   =  10.0_KDR
       RadiusCore  =  10.0_KDR / 8.0_KDR
+      RadialRatio =  2.45_KDR
       if ( present ( RadiusMaxOption ) ) &
         RadiusMax  =  RadiusMaxOption
       if ( present ( RadiusCoreOption ) ) &
         RadiusCore  =  RadiusCoreOption
+      if ( present ( RadialRatioOption ) ) &
+        RadialRatio  =  RadialRatioOption
 
       call PS % Initialize &
              ( RadiusMax = RadiusMax, &
                RadiusCore = RadiusCore, &
                CommunicatorOption = PROGRAM_HEADER % Communicator, &
                NameOption = 'PositionSpace', &
+               RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
     else
