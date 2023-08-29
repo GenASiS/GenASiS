@@ -142,6 +142,7 @@ contains
                RadiusExcision = RadiusExcision, &
                CommunicatorOption = PROGRAM_HEADER % Communicator, &
                NameOption = 'PositionSpace', &
+               DeviceMemoryOption = U % DeviceMemory, &
                nCellsPolarOption = nCellsPolarOption )
 
     else
@@ -161,6 +162,7 @@ contains
                RadiusExcision = RadiusExcision, &
                CommunicatorOption = PROGRAM_HEADER % Communicator, &
                NameOption = 'PositionSpace', &
+               DeviceMemoryOption = U % DeviceMemory, &
                CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )

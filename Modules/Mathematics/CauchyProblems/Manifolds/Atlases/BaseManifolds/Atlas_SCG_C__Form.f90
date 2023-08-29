@@ -26,10 +26,11 @@ contains
   subroutine Initialize_SCG &
                ( A, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, NameOption, EvenDecompositionOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nBricksOption, IgnorabilityOption, &
-                 nDimensionsOption, nEqualOption, iDimensionalityOption )
+                 DeviceMemoryOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nBricksOption, IgnorabilityOption, nDimensionsOption, &
+                 nEqualOption, iDimensionalityOption )
 
     class ( Atlas_SCG_C_Form ), intent ( inout ), target :: &
       A
@@ -43,6 +44,8 @@ contains
       NameOption
     logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
       EvenDecompositionOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &

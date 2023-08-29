@@ -97,10 +97,11 @@ contains
   subroutine Initialize_GS &
                ( C, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, NameOption, EvenDecompositionOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nBricksOption, IgnorabilityOption, &
-                 nDimensionsOption, nEqualOption, iDimensionalityOption )
+                 DeviceMemoryOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nBricksOption, IgnorabilityOption, nDimensionsOption, &
+                 nEqualOption, iDimensionalityOption )
 
     class ( Chart_GS_Form ), intent ( inout ) :: &
       C
@@ -114,6 +115,8 @@ contains
       NameOption
     logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
       EvenDecompositionOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -139,7 +142,7 @@ contains
 
     call C % Initialize_H &
            ( CoordinateLabelOption, CoordinateSystemOption, NameOption, &
-             CoordinateUnitOption, IgnorabilityOption, &
+             DeviceMemoryOption, CoordinateUnitOption, IgnorabilityOption, &
              nDimensionsOption, iDimensionalityOption )
 
     call SetCoordinateMetadata &

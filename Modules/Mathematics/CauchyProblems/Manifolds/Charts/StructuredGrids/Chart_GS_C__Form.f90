@@ -35,9 +35,9 @@ contains
 
   subroutine Initialize_GS_C &
                ( C, RadiusMin, RadiusMax, RadiusScale, RadialRatio, &
-                 CommunicatorOption, NameOption, CoordinateUnitOption, &
-                 nGhostLayersOption, nCellsPolarOption, nEqualOption, &
-                 nDimensionsOption )
+                 CommunicatorOption, NameOption, DeviceMemoryOption, &
+                 CoordinateUnitOption, nGhostLayersOption, &
+                 nCellsPolarOption, nEqualOption, nDimensionsOption )
 
     class ( Chart_GS_C_Form ), intent ( inout ) :: &
       C
@@ -50,6 +50,8 @@ contains
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -131,6 +133,7 @@ contains
              CoordinateSystemOption = CoordinateSystem, &
              NameOption = NameOption, &
              EvenDecompositionOption = [ .false., .true., .true. ], &
+             DeviceMemoryOption = DeviceMemoryOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
