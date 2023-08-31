@@ -46,6 +46,7 @@ module Copy_Command
 !     module procedure CopyComplex_2D_Section
 !     module procedure CopyComplex_3D_Section
 !     module procedure Copy_Character_C_String
+    module procedure CopyLogical_1D
   end interface Copy
 
   interface CopyCollapse
@@ -891,6 +892,45 @@ contains
     !$OMP end parallel do
 
   end subroutine CopyCollapseReal_3D_Offset
+  
+  
+  subroutine CopyLogical_1D ( A, B, UseDeviceOption )
 
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      A
+    logical ( KDL ), dimension ( : ), intent ( out ) :: &
+      B
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+
+    nV = size ( A )
+    
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption 
+
+    if ( UseDevice ) then 
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        B ( iV ) = A ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        B ( iV ) = A ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+
+  end subroutine CopyLogical_1D
+  
 
 end module Copy_Command

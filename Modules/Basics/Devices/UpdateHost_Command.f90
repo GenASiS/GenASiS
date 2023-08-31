@@ -16,6 +16,7 @@ module UpdateHost_Command
     module procedure UpdateHost_KDR_1D
     module procedure UpdateHost_KDR_2D
     module procedure UpdateHost_KDR_3D
+    module procedure UpdateHost_KDL
   end interface UpdateHost
   
 contains
@@ -106,6 +107,30 @@ contains
       ErrorOption = Error
   
   end subroutine UpdateHost_KDR_3D
+  
+  
+  subroutine UpdateHost_KDL ( Device, Value, ErrorOption )
+  
+    type ( c_ptr ), intent ( in ) :: &
+      Device
+    logical ( KDL ), dimension ( .. ), intent ( in ), target :: &
+      Value
+    integer ( KDI ), intent ( out ), optional :: &
+      ErrorOption
+      
+    integer ( KDI ) :: &
+      Error
+    integer ( KBI ) :: &
+      Address
+    character ( LDB ) :: &
+      Buffer
+      
+    Error = OMP_TARGET_MEMCPY &
+              ( c_loc ( Value ), Device, c_sizeof ( Value ), &
+                0_c_size_t, 0_c_size_t, OMP_GET_INITIAL_DEVICE ( ), &
+                OMP_GET_DEFAULT_DEVICE ( ) )
+    
+  end subroutine UpdateHost_KDL
 
-
+  
 end module UpdateHost_Command

@@ -15,6 +15,7 @@ module DisassociateHost_Command
     module procedure DisassociateHost_KDR_1D
     module procedure DisassociateHost_KDR_2D
     module procedure DisassociateHost_KDR_3D
+    module procedure DisassociateHost_KDL
   end interface DisassociateHost
   
 contains
@@ -91,6 +92,25 @@ contains
       ErrorOption = Error
 
   end subroutine DisassociateHost_KDR_3D
-
+  
+  
+  subroutine DisassociateHost_KDL ( Value, ErrorOption )
+    
+    logical ( KDI ), dimension ( .. ), intent ( in ), target :: &
+      Value
+      
+    integer ( KDI ), intent ( out ), optional :: &
+      ErrorOption
+    
+    integer ( c_int ) :: &
+      Error
+    
+    Error = DisassociateTarget ( c_loc ( Value ) )
+    
+    if ( present ( ErrorOption ) ) &
+      ErrorOption = Error
+  
+  end subroutine DisassociateHost_KDL
+  
 
 end module DisassociateHost_Command
