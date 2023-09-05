@@ -39,8 +39,10 @@ module Chart_GS__Form
       Center
     logical ( KDL ) :: &
       Distributed
-    logical ( KDL ), dimension ( : ), allocatable :: &
-      ProperCell
+    logical ( KDL ), dimension ( : ), pointer :: &
+      ProperCell => null ( )
+    type ( Logical_1D_Form ), allocatable, private :: &
+      ProperCellStorage 
     character ( LDL ), dimension ( MAX_DIMENSIONS ) :: &
       Spacing
     type ( CommunicatorForm ), pointer :: &
@@ -413,6 +415,7 @@ contains
     type ( Chart_GS_Form ), intent ( inout ) :: &
       C
 
+    call Show ( 'FINALIZING CHARTS' )    
     nullify ( C % Communicator )
 
     if ( allocated ( C % PortalEdge_RL_LR ) ) &
@@ -427,10 +430,12 @@ contains
       deallocate ( C % PortalFace_R_L )
     if ( allocated ( C % PortalFace_L_R ) ) &
       deallocate ( C % PortalFace_L_R )
-
-    if ( allocated ( C % ProperCell ) ) &
-      deallocate ( C % ProperCell )
-
+      
+    if ( associated ( C % ProperCell ) ) &
+      nullify ( C % ProperCell )
+    if ( allocated ( C % ProperCellStorage ) ) &
+      deallocate ( C % ProperCellStorage )
+    
     if ( allocated ( C % Center ) ) &
       deallocate ( C % Center )
     if ( allocated ( C % Width ) ) &
@@ -440,6 +445,8 @@ contains
       
     if ( allocated ( C % nCellsBrickGlobal ) ) & 
       deallocate ( C % nCellsBrickGlobal )
+    
+    call Show ( 'DONE FINALIZING CHARTS' )
 
   end subroutine Finalize
 
@@ -982,10 +989,12 @@ contains
       iV
     logical ( KDL ), dimension ( :, :, : ), pointer :: &
       PC
-
-    allocate ( C % ProperCell ( C % nCellsLocal ) )
-    call Clear ( C % ProperCell )
-
+    
+    allocate ( C % ProperCellStorage )
+    call C % ProperCellStorage % Initialize &
+           ( C % nCellsLocal, ClearOption = .true. )
+    C % ProperCell => C % ProperCellStorage % Value
+    
     associate &
       ( iaF  =>  C % iaFirst, &
         iaL  =>  C % iaLast, &
@@ -1013,6 +1022,11 @@ contains
     end associate !-- iaF, etc.
 
     nullify ( PC )
+    
+    if ( C % DeviceMemory ) then
+      call C % ProperCellStorage % AllocateDevice ( )
+      call C % ProperCellStorage % UpdateDevice ( )
+    end if
 
   end subroutine SetProperCells
 
