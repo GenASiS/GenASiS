@@ -12,8 +12,7 @@ module Coarsening_C_F__Form
   type, public, extends ( Coarsening_C_Form ) :: Coarsening_C_F_Form
     integer ( KDI ) :: &
       nRadialZero, &
-      nPolarZero!, &
-!      nBlocksThreshold
+      nPolarZero
     real ( KDR ) :: &
       RadiusZero = 0.0_KDR
     class ( Fluid_D_Form ), pointer :: &
@@ -92,7 +91,9 @@ module Coarsening_C_F__Form
 contains
 
 
-  subroutine Initialize_C_F ( C, F, G )
+  subroutine Initialize_C_F &
+               ( C, F, G, RadiusZeroOption, nRadialZeroOption, &
+                 nPolarZeroOption )
 
     class ( Coarsening_C_F_Form ), intent ( inout ) :: &
       C
@@ -100,6 +101,11 @@ contains
       F
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
+    real ( KDR ), intent ( in ), optional :: &
+      RadiusZeroOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nRadialZeroOption, &
+      nPolarZeroOption
 
     if ( C % Type == '' ) &
       C % Type  =  'a Coarsening_C_F' 
@@ -114,28 +120,30 @@ contains
     select type ( C_GS_C  =>  A % Chart_GS_C )
     class is ( Chart_GS_CE_Form )
       C % nRadialZero  =  0
-      C % nPolarZero   =  0  !-- previously 1
-!      C % nBlocksThreshold  =  8
+      C % nPolarZero   =  1
+      if ( present ( nPolarZeroOption ) ) &
+        C % nPolarZero = nPolarZeroOption
       C % RadiusZero  =  0.0_KDR
       call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )
       call PROGRAM_HEADER % GetParameter &
              ( C % nRadialZero, 'nRadialZero' )    
       call PROGRAM_HEADER % GetParameter &
              ( C % nPolarZero, 'nPolarZero' )    
-!      call PROGRAM_HEADER % GetParameter &
-!             ( C % nBlocksThreshold, 'nBlocksThreshold' )    
     class is ( Chart_GS_CC_Form )
-      C % nRadialZero  =  0  !-- previously 1
-      C % nPolarZero   =  0  !-- previously 1
-!      C % nBlocksThreshold  =  8
-      C % RadiusZero  =  0.0_KDR  !-- or C_GS_C % RadiusCore  /  10.0_KDR    
+      C % nRadialZero  =  1
+      C % nPolarZero   =  1
+      if ( present ( nRadialZeroOption ) ) &
+        C % nRadialZero = nRadialZeroOption
+      if ( present ( nPolarZeroOption ) ) &
+        C % nPolarZero = nPolarZeroOption
+      C % RadiusZero  =  C_GS_C % RadiusCore  /  10.0_KDR
+      if ( present ( RadiusZeroOption ) ) &
+        C % RadiusZero  =  RadiusZeroOption
       call PROGRAM_HEADER % GetParameter ( C % RadiusZero, 'RadiusZero' )
       call PROGRAM_HEADER % GetParameter &
              ( C % nRadialZero, 'nRadialZero' )    
       call PROGRAM_HEADER % GetParameter &
              ( C % nPolarZero, 'nPolarZero' )    
-!      call PROGRAM_HEADER % GetParameter &
-!             ( C % nBlocksThreshold, 'nBlocksThreshold' )    
     end select !-- C_GS_C
 
     class default
@@ -157,7 +165,6 @@ contains
 
     call Show ( FS % nRadialZero, 'nRadialZero' )
     call Show ( FS % nPolarZero, 'nPolarZero' )
-!    call Show ( FS % nBlocksThreshold, 'nBlocksThreshold' )
     
     select type ( A  =>  FS % Atlas )
       class is ( Atlas_SCG_C_Form )

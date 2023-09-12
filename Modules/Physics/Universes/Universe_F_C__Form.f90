@@ -861,7 +861,7 @@ contains
 
     if ( DivergenceParts ) then
       select type ( F )
-      class is ( Fluid_D_Form )
+      type is ( Fluid_D_Form )
         allocate ( S % DivergencePart ( 1 ) )
         associate ( DP_1D  =>  S % DivergencePart )
           allocate ( DivergencePart_F_D_V_Form :: DP_1D ( 1 ) % Element )
@@ -869,7 +869,7 @@ contains
             call DP % Initialize ( F )
           end associate !-- DP
         end associate !-- DP_1D
-      class is ( Fluid_P_I_Form )
+      type is ( Fluid_P_I_Form )
         allocate ( S % DivergencePart ( 2 ) )
         associate ( DP_1D  =>  S % DivergencePart )
           allocate ( DivergencePart_F_P_V_Form :: DP_1D ( 1 ) % Element )
@@ -881,7 +881,7 @@ contains
             call DP % Initialize ( F )
           end associate !-- DP
         end associate !-- DP_1D
-      class is ( Fluid_P_HN_Form )
+      type is ( Fluid_P_HN_Form )
         allocate ( S % DivergencePart ( 2 ) )
         associate ( DP_1D  =>  S % DivergencePart )
           allocate ( DivergencePart_F_P_HN_V_Form :: DP_1D ( 1 ) % Element )
@@ -901,12 +901,12 @@ contains
       end select !-- F
     else  !-- DivergenceTotal
       select type ( F )
-      class is ( Fluid_D_Form )
+      type is ( Fluid_D_Form )
         allocate ( DivergencePart_F_D_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( F )
         end associate !-- DT
-      class is ( Fluid_P_I_Form )
+      type is ( Fluid_P_I_Form )
 
         allocate ( DivergencePart_F_P_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
@@ -923,7 +923,7 @@ contains
           end associate !-- RS
         end if
         
-      class is ( Fluid_P_HN_Form )
+      type is ( Fluid_P_HN_Form )
 
         allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
@@ -956,7 +956,14 @@ contains
     if ( U % Coarsen ) then
       allocate ( U % Coarsening )
       associate ( C  =>  U % Coarsening )
-      call C % Initialize ( F, G )
+      select type ( F )
+        type is ( Fluid_D_Form )
+          call C % Initialize &
+                 ( F, G, RadiusZeroOption = 0.0_KDR, nRadialZeroOption = 0, &
+                   nPolarZeroOption = 0 )
+        class default
+          call C % Initialize ( F, G )
+      end select !-- F
       call S % SetCoarsening ( C )
       end associate !-- C
     end if
