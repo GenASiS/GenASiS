@@ -17,7 +17,7 @@ program Poisson_ASCG__Form_Test
     DeviceMemory, &
     PinnedMemory, &
     DevicesCommunicate
-type ( GridImageStreamForm ), allocatable :: &
+  type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
@@ -40,7 +40,8 @@ type ( GridImageStreamForm ), allocatable :: &
   allocate ( A )
   call A % Initialize &
          ( RadiusMax = 10.0_KDR, &
-           RadiusCore = 10.0_KDR / 8.0_KDR, &
+           RadiusCore = 0.25_KDR, &
+           RadialRatioOption = 3.68_KDR, &
            CommunicatorOption = PROGRAM_HEADER % Communicator )
 
   allocate ( S )
