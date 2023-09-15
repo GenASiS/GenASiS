@@ -96,9 +96,14 @@ contains
       iE, &  !-- iEquation
       iS, &  !-- iSolve
       nSolve
+    real ( KDR ) :: &
+      Pi, &
+      Mass, &
+      DensityMid, &
+      RadiusMid
     real ( KDR ), dimension ( nEquations ) :: &
-      RadiusDensity, &
-      Density
+      Density, &
+      Radius
     character ( LDL ), dimension ( nEquations ) :: &
       Field
     type ( FieldSetForm ), allocatable :: &
@@ -166,12 +171,18 @@ contains
     call S % AddFieldSet ( Gradient )
     call S % Show ( )
 
-    RadiusDensity  =  C % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ]
-    call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
+    Pi          =  CONSTANT % PI
+    Mass        =  1.0_KDR
+    DensityMid  =  1.0e-3_KDR
+    RadiusMid   =  ( 3.0 * Mass / ( 4.0 * Pi * DensityMid ) ) &
+                   ** ( 1.0_KDR / 3.0_KDR )
 
-    Density  =  1.0_KDR  /  RadiusDensity ** 3
+    Radius  =  RadiusMid * [ 1.5_KDR, 1.0_KDR, 0.5_KDR ]
+    call PROGRAM_HEADER % GetParameter ( Radius, 'Radius' )
+
+    Density  =  3.0 * Mass / ( 4.0  *  Pi  *  Radius ** 3 )
     
-    call Show ( RadiusDensity, 'RadiusDensity' )
+    call Show ( Radius, 'Radius' )
     call Show ( Density, 'Density' )
 
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
@@ -179,7 +190,7 @@ contains
     do iE  =  1, nEquations
       call SetHomogeneousSphere &
              ( Source, Reference, G, &
-               Density ( iE ), RadiusDensity ( iE ), iField = iE )
+               Density ( iE ), Radius ( iE ), iField = iE )
     end do !-- iE
     
     call Source % UpdateDevice ( )
@@ -288,7 +299,7 @@ contains
 
   subroutine SetHomogeneousSphere &
                ( Source, Reference, Geometry, &
-                 Density, RadiusDensity, iField )
+                 Density, Radius, iField )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       Source, &
@@ -297,7 +308,7 @@ contains
       Geometry
     real ( KDR ), intent ( in ) :: &
       Density, &
-      RadiusDensity
+      Radius
     integer ( KDI ), intent ( in ) :: &
       iField
 
@@ -315,11 +326,11 @@ contains
     associate &
       ( SV  =>  Source % Storage_GS % Value )
     associate &
-      ( D  =>  SV ( :, iField ), &
+      ( S  =>  SV ( :, iField ), &
         FourPi  =>  4.0_KDR  *  CONSTANT % PI )
 
-    call SetDensityKernel ( R_E, R_W, RadiusDensity, Density, D )
-    D  =  FourPi  *  D
+    call SetDensityKernel ( R_E, R_W, Radius, Density, S )
+    S  =  FourPi  *  S
 
     end associate !-- D
     end associate !-- SV
@@ -329,16 +340,14 @@ contains
     associate &
       ( RV  =>  Reference % Storage_GS % Value )
     associate &
-      ( Phi  =>  RV ( :, iField ), &
-        FourPi   =>  4.0_KDR  *  CONSTANT % PI )
+      ( Phi     =>  RV ( :, iField ), &
+        TwoPi   =>  2.0_KDR  *  CONSTANT % PI, &
+        FourPi  =>  4.0_KDR  *  CONSTANT % PI )
 
-    where ( R_C  <  RadiusDensity )
-      Phi  =  1.0_KDR / 6.0_KDR  *  FourPi  *  Density  *  R_C ** 2  &
-              -  1.0_KDR / 2.0_KDR  *  FourPi  *  Density  &
-                                    *  RadiusDensity ** 2
+    where ( R_C  <  Radius )
+      Phi  =  - TwoPi * Density * ( Radius ** 2  -  R_C ** 2 / 3.0 )
     elsewhere
-      Phi  =  - 1.0_KDR / 3.0_KDR  *  FourPi  *  Density  &
-                                   *  RadiusDensity ** 3  /  R_C
+      Phi  =  - FourPi  *  Density  *  Radius ** 3  /  ( 3.0 * R_C )
     end where
 
     end associate !-- Phi, etc.
