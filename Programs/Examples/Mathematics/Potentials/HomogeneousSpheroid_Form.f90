@@ -58,10 +58,14 @@ contains
     PinnedMemory, &   
     DevicesCommunicate
   real ( KDR ) :: &
-    Density
+    Pi, &
+    Mass, &
+    Density, &
+    Radius
   real ( KDR ), dimension ( : ), allocatable :: &
+    Eccentricity, &
     SemiMajor, &
-    Eccentricity
+    SemiMinor
   character ( LDL ), dimension ( : ), allocatable :: &
     Field
 
@@ -80,6 +84,7 @@ contains
              RadiusCore = 0.25_KDR, &
              RadialRatioOption = 3.68_KDR, &
              CommunicatorOption = PROGRAM_HEADER % Communicator )
+    associate ( C  =>  A % Chart_GS )
 
     allocate ( HS % Stream )
     associate ( S  =>  HS % Stream )
@@ -113,7 +118,7 @@ contains
                           DevicesCommunicateOption = DevicesCommunicate )
     call G % SetStream ( S )
 
-    nEquations = 3
+    nEquations = 4
 
     MaxDegree = 12
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
@@ -123,9 +128,10 @@ contains
     call P % Initialize ( G, 'MULTIPOLE', MaxDegree, nEquations )
 
     allocate ( Field ( nEquations ) )
-    Field  =  [ 'OblateSpheroid_1', &
+    Field  =  [ 'Sphere          ', &
+                'OblateSpheroid_1', &
                 'OblateSpheroid_2', &
-                'ProlateSpheroid ' ]
+                'OblateSpheroid_3' ]
 
     allocate ( HS % Source )
     call HS % Source % Initialize &
@@ -196,31 +202,54 @@ contains
 
     call Show ( 'Spheroid Parameters' )
 
-    associate ( C  =>  A % Chart_GS )
-    allocate ( SemiMajor ( nEquations ) )
-    SemiMajor  =  C % MaxCoordinate ( 1 ) / 2
-    call PROGRAM_HEADER % GetParameter ( SemiMajor, 'SemiMajor' )
-    call Show ( SemiMajor, 'SemiMajor' )
-    end associate !-- C
+    associate &
+      ( M  =>  Mass, &
+        D  =>  Density, &
+        R  =>  Radius )
+
+    Pi  =  CONSTANT % PI
+    M   =  1.0_KDR
+    D   =  1.0e-3_KDR
+    R   =  ( 3.0 * M / ( 4.0 * Pi * D ) ) ** ( 1.0_KDR / 3.0_KDR )
 
     allocate ( Eccentricity ( nEquations ) )
-    Eccentricity  =  sqrt ( 1.0_KDR &
-                            - [ 0.7_KDR ** 2, 0.2_KDR ** 2, 0.2_KDR ** 2 ] )
-    call PROGRAM_HEADER % GetParameter ( Eccentricity, 'Eccentricity' )
+    allocate ( SemiMajor ( nEquations ) )
+    allocate ( SemiMinor ( nEquations ) )
+    associate &
+      ( E      =>  Eccentricity, &
+        A_1    =>  SemiMajor, &
+        A_3    =>  SemiMinor, &
+        R_Max  =>  C % MaxCoordinate ( 1 ) )
+
+    E  =  [ 0.0_KDR, 0.3_KDR, 0.6_KDR, 0.9_KDR ]
     
-    call Show ( Eccentricity, 'Eccentricity' )
+    !-- Demand that the spheroid have the same volume as a sphere with the 
+    !   same mass and density
+    A_1  =  R    *  ( 1.0_KDR  -  E ** 2 ) ** ( - 1.0_KDR / 6.0_KDR )
+    A_3  =  A_1  *  sqrt ( 1.0_KDR  -  E ** 2 )
 
-    Density  =  1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  )
-    call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
-    call Show ( Density, 'Density' )
+    call Show ( D, 'Density' )
+    call Show ( E, 'Eccentricity' )
+    call Show ( A_1, 'SemiMajor' )
+    call Show ( A_3, 'SemiMinor' )
 
-    call HS % SetHomogeneousSpheroids &
-           ( SemiMajor, Eccentricity, Density, nEquations )
+    if ( any ( A_1  >  R_Max ) ) then
+      call Show ( 'SemiMajor axis too large', CONSOLE % ERROR )
+      call Show ( A_1, 'SemiMajor', CONSOLE % ERROR )
+      call Show ( R_Max, 'RadiusMax', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    call HS % SetHomogeneousSpheroids ( A_1, A_3, E, D, nEquations )
+
+    end associate !-- E, etc. 
+    end associate !-- M, etc.
 
     end associate !-- GS
     end associate !-- P
     end associate !-- G
     end associate !-- S
+    end associate !-- C
     end associate !-- A
     end associate !-- GIS
 
@@ -298,12 +327,13 @@ contains
 
 
   subroutine SetHomogeneousSpheroids &
-               ( HS, SemiMajor, Eccentricity, Density, nEquations )
+               ( HS, SemiMajor, SemiMinor, Eccentricity, Density, nEquations )
 
     class ( HomogeneousSpheroidForm ), intent ( inout ) :: &
       HS
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       SemiMajor, &
+      SemiMinor, &
       Eccentricity
     real ( KDR ), intent ( in ) :: &
       Density
@@ -312,22 +342,11 @@ contains
 
     integer ( KDI ) :: &
       iE !-- iEquation
-    real ( KDR ) :: &
-      ProlateMajor
-    real ( KDR ), dimension ( nEquations ) :: &
-      SemiMinor
-
-    SemiMinor  =  sqrt ( 1.0_KDR - Eccentricity ** 2 ) * SemiMajor
-
-    !-- Prolate Spheroid 
-    ProlateMajor              =  SemiMajor ( nEquations )
-    SemiMajor ( nEquations )  =  SemiMinor ( nEquations )
-    SemiMinor ( nEquations )  =  ProlateMajor
 
     do iE  =  1, nEquations
       call SetHomogeneousSpheroidKernel &
              ( HS % Source, HS % Reference, HS % Geometry, &
-               Density, SemiMajor ( iE), SemiMinor ( iE ), iE )
+               Density, SemiMajor ( iE ), SemiMinor ( iE ), iE )
     end do
 
     call HS % Source % UpdateDevice ( )
@@ -336,8 +355,7 @@ contains
 
 
   subroutine SetHomogeneousSpheroidKernel &
-               ( Source, Reference, G, Density, a_1, a_3, &
-                 iField )
+               ( Source, Reference, G, Density, a_1, a_3, iField )
 
     class ( FieldSetForm ), intent ( inout ) :: &
       Source, &
@@ -362,9 +380,6 @@ contains
       e, &
       a_1_sq, &
       a_3_sq, &
-      C_I, &
-      C_A, &
-      C_B, &
       rho_sq_II, &
       rho_sq_IO, &
       rho_sq_OI, &
@@ -389,7 +404,12 @@ contains
       rho_sq, & !-- X^2 + Y^2 
       Z_sq, &
       l, &
-      C_I_vec
+      a_1_p_sq, &
+      a_3_p_sq, &
+      e_p, &
+      C_I_p, &
+      C_A_p, &
+      C_B_p
 
         Pi  =  CONSTANT % PI
     FourPi  =  4.0_KDR * Pi
@@ -487,10 +507,16 @@ contains
         Theta  =>  GV ( :, G % CENTER_U ( 2 ) ) )
 
     allocate &
-      ( rho_sq  ( size ( R ) ) , &
-        Z_sq    ( size ( R ) ), &
-        l       ( size ( R ) ), &
-        C_I_vec ( size ( R ) ) )
+      ( rho_sq   ( size ( R ) ) , &
+        Z_sq     ( size ( R ) ), &
+        l        ( size ( R ) ), &
+        C_I_vec  ( size ( R ) ), &
+        a_1_p_sq ( size ( R ) ), &
+        a_3_p_sq ( size ( R ) ), &
+        e_p      ( size ( R ) ), &
+        C_I_p    ( size ( R ) ), &
+        C_A_p    ( size ( R ) ), &
+        C_B_p    ( size ( R ) ))
          
     rho_sq  =  ( R * sin ( Theta ) ) ** 2
       Z_sq  =  ( R * cos ( Theta ) ) ** 2
@@ -514,72 +540,58 @@ contains
 
     !-- Reference
 
-    e  =  max ( 1.0e-5_KDR, &
-                sqrt ( 1.0_KDR  -  min ( ( a_3 / a_1 ), ( a_1 / a_3 ) ) ** 2 ) )
+    l = 0.0_KDR
 
-    if ( a_3 < a_1 ) then
-      C_I = 2 * sqrt ( 1.0_KDR - e ** 2 ) / e * asin ( e )
-      C_A = sqrt ( 1.0_KDR - e ** 2 ) / e ** 3 * asin ( e ) &
-            - ( 1.0_KDR - e ** 2 ) / e ** 2
-      C_B = 2.0_KDR / e ** 2 &
-            - 2 * sqrt ( 1.0_KDR - e ** 2 ) / e ** 3 * asin ( e )
-    else
-      C_I  = 1.0_KDR / e * log ( ( 1 + e ) / ( 1 - e ) )
-      C_A = 1.0_KDR / e ** 2 &
-            - ( 1.0_KDR - e ** 2 ) / ( 2 * e ** 3 ) &
-                * log ( ( 1 + e ) / ( 1 - e ) )
-      C_B = ( 1.0_KDR - e ** 2 ) / e ** 3  * log ( ( 1 + e ) / ( 1 - e ) ) &
-            - 2 * ( 1.0_KDR - e ** 2 ) / e ** 2
-    end if
+    where ( rho_sq / a_1_sq + Z_sq / a_3_sq > 1.0_KDR )
+      l = 0.5_KDR * ( ( rho_sq + Z_sq - a_1_sq - a_3_sq ) &
+            + sqrt ( ( a_1_sq + a_3_sq - Z_sq - rho_sq ) ** 2 &
+                     - 4.0_KDR * ( a_1_sq * a_3_sq - rho_sq * a_3_sq &
+                                   - Z_sq * a_1_sq ) ) )
+    end where
+
+    where ( l < 0.0_KDR )
+      l = 0.5_KDR * ( ( rho_sq + Z_sq - a_1_sq - a_3_sq ) &
+          - sqrt ( ( a_1_sq + a_3_sq - Z_sq - rho_sq ) ** 2 &
+                   - 4.0_KDR * ( a_1_sq * a_3_sq - rho_sq * a_3_sq &
+                                 - Z_sq * a_1_sq ) ) )
+    end where
+
+    a_1_p_sq  =  a_1_sq  +  l
+    a_3_p_sq  =  a_3_sq  +  l
+
+    e_p  =  sqrt ( 1.0_KDR  -  a_3_p_sq / a_1_p_sq )
+
+    where ( e_p > 1.0e-2_KDR )
+
+      C_I_p  =  2 * sqrt ( 1.0_KDR - e_p ** 2 ) / e_p * asin ( e_p )
+
+      C_A_p  =  sqrt ( 1.0_KDR - e_p ** 2 ) / e_p ** 3 * asin ( e_p ) &
+                - ( 1.0_KDR - e_p ** 2 ) / e_p ** 2
+
+      C_B_p  =  2.0_KDR / e_p ** 2 &
+                - 2 * sqrt ( 1.0_KDR - e_p ** 2 ) / e_p ** 3 * asin ( e_p )
+
+    elsewhere
+
+      C_I_p  =  2.0_KDR  -  2 * e_p**2 / 3  -   4 * e_p**4 / 15  &
+              -  16 * e_p**6 / 105  -  32 * e_p**8 / 315
+
+      C_A_p  =  2.0_KDR / 3.0_KDR  -  2 * e_p**2  / 15  -  8 * e_p**4 / 105  &
+              -  16 * e_p**6 / 315  -  128 * e_p**8 / 3465
+
+      C_B_p  =  2.0_KDR / 3.0_KDR  +  4 * e_p**2 / 15  +  16 * e_p**4 / 105  &
+              +  32 * e_p**6 / 315  +  256 * e_p**8 / 3465
+
+    end where
 
     associate &
       ( RV  =>  Reference % Storage_GS % Value )
     associate &
       ( Phi  =>  RV ( :, iField ) )
 
-    where ( rho_sq / a_1_sq + Z_sq / a_3_sq <= 1.0_KDR )
-      Phi  =   - Density * Pi &
-                 * ( C_I * a_1_sq  - C_A * rho_sq - C_B * Z_sq )
-    end where
-
-    l = 0.0_KDR
-
-    where ( rho_sq / a_1_sq + Z_sq / a_3_sq > 1.0_KDR )
-      l = 0.5_KDR * ( ( rho_sq + Z_sq - a_1_sq - a_3 **2  ) &
-            + sqrt ( ( a_1_sq + a_3_sq - Z_sq - rho_sq) ** 2 &
-                     - 4.0_KDR * ( a_1_sq * a_3_sq - rho_sq * a_3_sq &
-                                   - Z_sq * a_1_sq ) ) )
-    end where
-
-    where ( l < 0.0_KDR )
-      l = 0.5_KDR * ( ( rho_sq + Z_sq - a_1_sq - a_3 **2  ) &
-          - sqrt ( ( a_1_sq + a_3_sq - Z_sq - rho_sq) ** 2 &
-                   - 4.0_KDR * ( a_1_sq * a_3_sq - rho_sq * a_3_sq &
-                                 - Z_sq * a_1_sq ) ) )
-    end where
-
-    if ( a_3 < a_1 ) then
-      C_I_vec = Pi / sqrt ( a_1_sq - a_3_sq ) &
-            - 2.0_KDR / sqrt ( a_1_sq - a_3_sq ) &
-            * atan ( sqrt ( ( a_3_sq + l ) / ( a_1_sq - a_3_sq ) ) )
-    else
-      C_I_vec = -1.0_KDR / sqrt ( a_3_sq - a_1_sq ) &
-                * log ( ( sqrt ( a_3_sq + l ) &
-                           - sqrt ( a_3_sq - a_1_sq ) ) ** 2 &
-                             / ( a_1_sq + l ) )
-    end if
-
-    where (  rho_sq / a_1_sq + Z_sq / a_3_sq > 1.0_KDR )
-      Phi  = - Density * Pi * a_1_sq * a_3 &
-               * ( ( 1.0_KDR + rho_sq / ( 2 * ( a_3_sq - a_1_sq ) ) &
-                   - Z_sq / ( a_3_sq - a_1_sq ) ) * C_I_vec &
-             - rho_sq * sqrt ( a_3_sq + l ) &
-               / ( ( a_3_sq - a_1_sq ) * ( a_1_sq + l ) ) &
-             - Z_sq * ( 2.0_KDR &
-                        / ( ( a_1_sq + l ) * sqrt ( a_3_sq + l ) ) &
-                        - 2.0_KDR  * sqrt ( a_3_sq + l ) &
-                          / ( ( a_3_sq - a_1_sq ) * ( a_1_sq + l ) ) ))
-    end where
+    Phi  =  - Pi * Density  &
+              * a_1_sq * sqrt ( a_3_sq ) / ( a_1_p_sq * sqrt ( a_3_p_sq ) )  &
+              * ( C_I_p * a_1_p_sq  - C_A_p * rho_sq - C_B_p * Z_sq )
 
     end associate !-- Phi
     end associate !-- RV
@@ -603,7 +615,8 @@ contains
     real ( KDR ) :: &
       L1_1, &
       L1_2, &
-      L1_3
+      L1_3, &
+      L1_4
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
@@ -629,28 +642,36 @@ contains
     CO % Outgoing % Value ( 3 )  &
       =  sum ( abs ( DV ( :, 3 ) ), mask = C % ProperCell )
     CO % Outgoing % Value ( 4 )  &
-      =  sum ( abs ( RV ( :, 1 ) ), mask = C % ProperCell )
+      =  sum ( abs ( DV ( :, 4 ) ), mask = C % ProperCell )
     CO % Outgoing % Value ( 5 )  &
-      =  sum ( abs ( RV ( :, 2 ) ), mask = C % ProperCell )
+      =  sum ( abs ( RV ( :, 1 ) ), mask = C % ProperCell )
     CO % Outgoing % Value ( 6 )  &
+      =  sum ( abs ( RV ( :, 2 ) ), mask = C % ProperCell )
+    CO % Outgoing % Value ( 7 )  &
       =  sum ( abs ( RV ( :, 3 ) ), mask = C % ProperCell )
+    CO % Outgoing % Value ( 8 )  &
+      =  sum ( abs ( RV ( :, 4 ) ), mask = C % ProperCell )
     call CO % Reduce ( REDUCTION % SUM )
 
     associate &
       ( Norm_D_1  =>  CO % Incoming % Value ( 1 ), &
         Norm_D_2  =>  CO % Incoming % Value ( 2 ), &
         Norm_D_3  =>  CO % Incoming % Value ( 3 ), &
-        Norm_R_1  =>  CO % Incoming % Value ( 4 ), &
-        Norm_R_2  =>  CO % Incoming % Value ( 5 ), &
-        Norm_R_3  =>  CO % Incoming % Value ( 6 ) )
+        Norm_D_4  =>  CO % Incoming % Value ( 4 ), &
+        Norm_R_1  =>  CO % Incoming % Value ( 5 ), &
+        Norm_R_2  =>  CO % Incoming % Value ( 6 ), &
+        Norm_R_3  =>  CO % Incoming % Value ( 7 ), &
+        Norm_R_4  =>  CO % Incoming % Value ( 8 ) )
 
     L1_1  =  Norm_D_1 / Norm_R_1
     L1_2  =  Norm_D_2 / Norm_R_2
     L1_3  =  Norm_D_3 / Norm_R_3
+    L1_4  =  Norm_D_4 / Norm_R_4
     
     REV_1 ( :, 1 ) = abs ( DV ( :, 1 ) ) / Norm_R_1
     REV_1 ( :, 2 ) = abs ( DV ( :, 2 ) ) / Norm_R_2
     REV_1 ( :, 3 ) = abs ( DV ( :, 3 ) ) / Norm_R_3
+    REV_1 ( :, 4 ) = abs ( DV ( :, 4 ) ) / Norm_R_4
     
     REV_2 = abs ( DV / RV )
     
@@ -661,6 +682,8 @@ contains
     call Show ( L1_2, '*** L1_2 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
     call Show ( L1_3, '*** L1_3 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_4, '*** L1_4 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
     ! Difference % Value = abs ( Difference % Value / Reference % Value )
