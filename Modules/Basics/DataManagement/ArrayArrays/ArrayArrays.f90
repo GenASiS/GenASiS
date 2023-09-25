@@ -8,6 +8,7 @@ module ArrayArrays
   use Real_3D__Form
   use Real_3D_2D__Form
   use Complex_3D__Form
+  use Logical_1D__Form
   use Character_1D__Form
 
 end module ArrayArrays

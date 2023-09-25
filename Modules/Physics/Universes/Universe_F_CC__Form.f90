@@ -222,6 +222,7 @@ contains
                RadiusCore = RadiusCore, &
                CommunicatorOption = PROGRAM_HEADER % Communicator, &
                NameOption = 'PositionSpace', &
+               DeviceMemoryOption = U % DeviceMemory, &
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
@@ -242,6 +243,7 @@ contains
                RadiusCore = RadiusCore, &
                CommunicatorOption = PROGRAM_HEADER % Communicator, &
                NameOption = 'PositionSpace', &
+               DeviceMemoryOption = U % DeviceMemory, &
                CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )

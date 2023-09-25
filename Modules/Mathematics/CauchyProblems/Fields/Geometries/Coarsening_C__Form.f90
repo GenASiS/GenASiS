@@ -1,7 +1,8 @@
 module Coarsening_C__Form
 
   !-- Coarsening_Central_Form
-
+  
+  use iso_c_binding
   use Basics
   use Manifolds
   use FieldSets
@@ -19,11 +20,20 @@ module Coarsening_C__Form
       BLOCK_LABEL          = 0  !-- Random label for visualization
     integer ( KDI ) :: &
       nBlocksCoarsen
-    integer ( KDI ), dimension ( : ), allocatable :: &
+    type ( Integer_1D_Form ), allocatable :: &
       iRadius
-    integer ( KDI ), dimension ( :, : ), allocatable :: &
+    !integer ( KDI ), dimension ( : ), allocatable :: &
+    !  iRadius
+    type ( Integer_2D_Form ), allocatable :: &
       iTheta, &
       iPhi
+    !integer ( KDI ), dimension ( :, : ), allocatable :: &
+    !  iTheta, &
+    !  iPhi
+    !type ( c_ptr ), private :: &
+    !  D_iRadius, &
+    !  D_iTheta, &
+    !  D_iPhi
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
   contains
@@ -114,6 +124,10 @@ contains
              nFieldsOption = 5 )
 
     C % Geometry  =>  G
+    
+    allocate ( C % iRadius ) 
+    allocate ( C % iTheta )
+    allocate ( C % iPhi )
 
     select type ( A  =>  G % Atlas )
     class is ( Atlas_SCG_C_Form )
@@ -127,21 +141,30 @@ contains
                R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
                Th = G % Storage_GS % Value ( :, G % CENTER_U_2 ), &
                CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ) )
-
+      
       call SetBlocks &
-             (  BP  = C % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
-                BA  = C % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
-                BL  = C % Storage_GS % Value ( :, C % BLOCK_LABEL ), &
-                C   = A % Chart_GS_C, &
-                CP  = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
-                CA  = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
-               iTh  = C % iTheta, &
-               iPh  = C % iPhi, &
-               iRad = C % iRadius, &
-               nBC  = C % nBlocksCoarsen )
-
-      if ( C % DeviceMemory ) &
+             ( iTheta   = C % iTheta, &
+               iPhi     = C % iPhi, &
+               iRadius  = C % iRadius, &
+               BP = C % Storage_GS % Value ( :, C % N_BLOCKS_POLAR ), &
+               BA = C % Storage_GS % Value ( :, C % N_BLOCKS_AZIMUTHAL ), &
+               BL = C % Storage_GS % Value ( :, C % BLOCK_LABEL ), &
+               C  = A % Chart_GS_C, &
+               CP = C % Storage_GS % Value ( :, C % COARSENING_POLAR ), &
+               CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ), &
+               nBC = C % nBlocksCoarsen )
+      
+      if ( C % DeviceMemory ) then
         call C % UpdateDevice ( )
+        
+        call C % iRadius % AllocateDevice ( )
+        call C %  iTheta % AllocateDevice ( )
+        call C %    iPhi % AllocateDevice ( )
+        
+        call C % iRadius % UpdateDevice ( )
+        call C %  iTheta % UpdateDevice ( )
+        call C %    iPhi % UpdateDevice ( )
+      end if
 
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
@@ -184,9 +207,9 @@ contains
        
     call ComputeKernel &
            ( FS_4D, dV_3D, &
-             iTh = C % iTheta, &
-             iPh = C % iPhi, &
-             iR  = C % iRadius, &
+             iTh = C % iTheta % Value, &
+             iPh = C % iPhi % Value, &
+             iR  = C % iRadius % Value, &
              iaS = FS % iaSelected, &
              oC  = C_GS_C % nGhostLayers, &
              nBC = C % nBlocksCoarsen, &
@@ -213,7 +236,7 @@ contains
       C
 
     nullify ( C % Geometry )
-
+    
     if ( allocated ( C % iPhi ) ) &
       deallocate ( C % iPhi )
     if ( allocated ( C % iTheta ) ) &
@@ -288,8 +311,13 @@ contains
   end subroutine SetCoarseningAzimuthal
 
 
-  subroutine SetBlocks ( BP, BA, BL, C, CP, CA, iTh, iPh, iRad, nBC )
+  subroutine SetBlocks ( iTheta, iPhi, iRadius, BP, BA, BL, C, CP, CA, nBC )
 
+    type ( Integer_2D_Form ), intent ( inout ), allocatable :: &
+      iTheta, &
+      iPhi
+    type ( Integer_1D_Form ), intent ( inout ), allocatable :: &
+      iRadius
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       BP, &  !-- nBlocksPolar
       BA, &  !-- nBlocksAzimuthal
@@ -299,17 +327,12 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       CP, &  !-- CoarsenPolar
       CA     !-- CoarsenAzimuthal
-    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
-      iTh, &
-      iPh
-    integer ( KDI ), dimension ( : ), intent ( out ), allocatable :: &
-      iRad
     integer ( KDI ), intent ( out ) :: &
       nBC  !-- nBlocksCoarsen
 
     integer ( KDI ) :: &
       iR, &            !-- iRadius
-      iTheta, &
+      jTheta, &
       iTh_1, iTh_2, &  !-- iTheta_1, iTheta_2
       iPh_1, iPh_2, &  !-- iPhi_1, iPhi_2
       iBC, &           !-- iBlockCoarsen
@@ -338,7 +361,7 @@ contains
     call C % SetFieldPointer ( BP, BP_3D )
     call C % SetFieldPointer ( BA, BA_3D )
     call C % SetFieldPointer ( BL, BL_3D )
-
+    
     associate &
       ( nR   =>  C % nCellsBrick ( 1 ), &
         nTh  =>  C % nCellsBrick ( 2 ), &  !-- nCellsBrick ( 2 ) == nCells ( 2 )
@@ -369,9 +392,14 @@ contains
 
       !-- Set block extents
 
-      allocate ( iRad ( nBC ) )
-      allocate ( iTh ( 2, nBC ) )
-      allocate ( iPh ( 2, nBC ) )
+      call iRadius % Initialize ( nBC )
+      call  iTheta % Initialize ( [ 2, nBC ] )
+      call    iPhi % Initialize ( [ 2, nBC ] )
+      
+      associate &
+        ( iRad  => iRadius % Value, & 
+           iTh  => iTheta % Value, &
+           iPh  => iPhi % Value )
 
       iBC  =  0
       do iR  =  1,  nR
@@ -412,6 +440,8 @@ contains
 
         end if
       end do !-- iR
+      
+      end associate   !-- iRad, iTh, iPh
 
     case ( 3 )
 
@@ -420,14 +450,14 @@ contains
         nCP ( iR )  =  CP_3D ( iR, 1, 1 )  +  0.5_KDR
         nBP ( iR )  =  0
         if ( nCP ( iR )  <=  32 ) then
-          do iTheta  =  1,  nTh,  nCP ( iR )
+          do jTheta  =  1,  nTh,  nCP ( iR )
             CA_Max  &
-              =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+              =  maxval ( CA_3D ( iR, jTheta : jTheta + nCP ( iR ) - 1, 1 ) ) &
                  +  0.5_KDR
             CA_Max  =  min ( CA_Max, nPh )
             if ( CA_Max  >  1 ) &
               nBP ( iR )  =  nBP ( iR )  +  1
-          end do !-- iTheta
+          end do !-- jTheta
         else  !-- average over full polar range
           CA_Max  =  maxval ( CA_3D ( iR, 1 : nTh, 1 ) )  +  0.5_KDR
           CA_Max  =  min ( CA_Max, nPh )
@@ -442,9 +472,9 @@ contains
         call nBA ( iR ) % Initialize ( nBP ( iR ) )
         iBP  =  0
         if ( nBP ( iR )  >  1 ) then
-          do iTheta  =  1,  nTh,  nCP ( iR )
+          do jTheta  =  1,  nTh,  nCP ( iR )
             CA_Max  &
-              =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+              =  maxval ( CA_3D ( iR, jTheta : jTheta + nCP ( iR ) - 1, 1 ) ) &
                  +  0.5_KDR
             CA_Max  =  min ( CA_Max, nPh )
             if ( CA_Max  >  1 ) then
@@ -457,7 +487,7 @@ contains
                 nBA ( iR ) % Value ( iBP )  =  1
               end if !-- CA_Max <= 2 * 32
             end if !-- CA_Max > 1
-          end do !-- iTheta
+          end do !-- jTheta
         else if ( nBP ( iR )  ==  1 ) then  !-- average over full polar range
           CA_Max  =  maxval ( CA_3D ( iR, 1 : nTh, 1 ) )  +  0.5_KDR
           CA_Max  =  min ( CA_Max, nPh )
@@ -481,18 +511,23 @@ contains
       end do !-- iR
 
       !-- Set block extents
+      
+      call iRadius % Initialize ( nBC, ClearOption = .true. )
+      call  iTheta % Initialize ( [ 2, nBC ], ClearOption = .true. )
+      call    iPhi % Initialize ( [ 2, nBC ], ClearOption = .true. )
 
-      allocate ( iRad ( nBC ) )
-      allocate ( iTh ( 2, nBC ) )
-      allocate ( iPh ( 2, nBC ) )
+      associate &
+        ( iRad  => iRadius % Value, & 
+           iTh  => iTheta % Value, &
+           iPh  => iPhi % Value )
 
       iBC  =  0
       do iR  =  1, nR
         iBP  =  0
         if ( nBP ( iR )  >  1 ) then
-          do iTheta  =  1,  nTh,  nCP ( iR )
+          do jTheta  =  1,  nTh,  nCP ( iR )
             CA_Max  &
-              =  maxval ( CA_3D ( iR, iTheta : iTheta + nCP ( iR ) - 1, 1 ) ) &
+              =  maxval ( CA_3D ( iR, jTheta : jTheta + nCP ( iR ) - 1, 1 ) ) &
                  +  0.5_KDR
             CA_Max  =  min ( CA_Max, nPh )
             if ( CA_Max  >  1 ) then
@@ -504,7 +539,7 @@ contains
 
                   iRad ( iBC )  =  iR
 
-                  oTh  =  iTheta - 1
+                  oTh  =  jTheta - 1
                   iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
 
                   oPh  =  ( iBA - 1 )  *  nCA ( iR ) % Value ( iBP )
@@ -528,7 +563,7 @@ contains
 
                   iRad ( iBC )  =  iR
 
-                  oTh  =  iTheta - 1
+                  oTh  =  jTheta - 1
                   iTh ( 1 : 2, iBC )  =  [ oTh  +  1, oTh  +  nCP ( iR ) ]
 
                   iPh ( 1 : 2, iBC )  =  [ 1, nPh ]
@@ -545,7 +580,7 @@ contains
 
               end if
             end if
-          end do !-- iTheta
+          end do !-- jTheta
         else if ( nBP ( iR )  ==  1 ) then  !-- average over full polar range
           CA_Max  =  maxval ( CA_3D ( iR, 1 : nTh, 1 ) )  +  0.5_KDR
           CA_Max  =  min ( CA_Max, nPh )
@@ -599,9 +634,16 @@ contains
           end if
         end if !-- nBP ( iR )  >  1
       end do !-- iR
+      
+      end associate   !-- iRad, iTh, iPh
 
     end select !-- nDimensions
 
+    associate &
+      ( iRad  => iRadius % Value, & 
+         iTh  =>  iTheta % Value, &
+         iPh  =>    iPhi % Value )
+    
     do iBC  =  1, nBC
 
       iR     =  iRad ( iBC )
@@ -614,6 +656,8 @@ contains
       BL_3D ( iR, iTh_1 : iTh_2, iPh_1 : iPh_2 )  =  RandomLabel
 
     end do !-- iBC
+    
+    end associate !-- iRad, iTh, iPh
 
     end associate !-- nR, etc.
 

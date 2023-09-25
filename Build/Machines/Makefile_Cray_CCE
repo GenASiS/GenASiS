@@ -1,7 +1,7 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with Cray Compiling Environment (CCE)
 # If PrgEnv-cray is not the default, use "module swap" to PrgEnv-cray
 
-FORTRAN_COMPILE      = ftn -c -eF
+FORTRAN_COMPILE      = ftn -c -eF -M878
 FORTRAN_FIXEDFORM    = -ffixed
 FORTRAN_BOUND_CHECK  = #-R bcp #-- FIXME: bound checking causes issue with
                                #          OpenMP. Reported to Cray.

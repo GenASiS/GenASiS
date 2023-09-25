@@ -309,7 +309,8 @@ contains
         class is ( Atlas_SCG_Form )
       call A_X % Initialize &
              ( CommunicatorOption = I % Communicator, &
-               NameOption = 'X' )
+               NameOption = 'X', &
+               DeviceMemoryOption = DeviceMemoryOption )
       end select !-- A_X
     end if
 

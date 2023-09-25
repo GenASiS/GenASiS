@@ -30,7 +30,8 @@ contains
 
   subroutine Initialize_GS_SC &
                ( C, RadiusMax, CommunicatorOption, NameOption, &
-                 CoordinateUnitOption, nGhostLayersOption, nCellsRadiusOption, &
+                 DeviceMemoryOption, CoordinateUnitOption, &
+                 nGhostLayersOption, nCellsRadiusOption, &
                  nDimensionsOption )
 
     class ( Chart_GS_SC_Form ), intent ( inout ) :: &
@@ -41,6 +42,8 @@ contains
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -103,6 +106,7 @@ contains
            ( CommunicatorOption = CommunicatorOption, &
              CoordinateSystemOption = CoordinateSystem, &
              NameOption = NameOption, &
+             DeviceMemoryOption = DeviceMemoryOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &

@@ -9,7 +9,7 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: \
   Integer_1D__Form_Test Integer_2D__Form_Test Integer_3D__Form_Test \
   Real_1D__Form_Test Real_2D__Form_Test Real_3D__Form_Test \
-  Character_1D__Form_Test
+  Logical_1D__Form_Test Character_1D__Form_Test
 
 Integer_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   Integer_1D__Form_Test.o
@@ -53,6 +53,14 @@ Real_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
           Real_3D__Form_Test.o Real_3D__Form.o \
           ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
 
+Logical_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Logical_1D__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Logical_1D__Form_Test_$(MACHINE) \
+          Logical_1D__Form_Test.o Logical_1D__Form.o \
+          ArrayOperations.a Specifiers.a Devices.a $(LIBRARIES)
+
+
 Character_1D__Form_Test: Specifiers.a Character_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Character_1D__Form_Test_$(MACHINE) \
@@ -69,6 +77,7 @@ clobber: clean
 	rm -f Real_1D__Form_Test_*
 	rm -f Real_2D__Form_Test_*
 	rm -f Real_3D__Form_Test_*
+	rm -f Logical_1D__Form_Test_*
 	rm -f Character_1D__Form_Test_*
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
@@ -105,6 +114,12 @@ Real_3D__Form_Test.o: \
   Specifiers.o \
   Real_3D__Form.o \
   Real_3D__Form_Test.f90
+
+Logical_1D__Form_Test.o: \
+  Specifiers.o \
+  ArrayOperations.o \
+  Logical_1D__Form.o \
+  Logical_1D__Form_Test.f90
 
 Character_1D__Form_Test.o: \
   Specifiers.o \

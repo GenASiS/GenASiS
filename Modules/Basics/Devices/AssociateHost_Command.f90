@@ -1,6 +1,7 @@
 module AssociateHost_Command
   
   use iso_c_binding
+  use omp_lib
   use Specifiers
   use Device_C
   
@@ -12,6 +13,7 @@ module AssociateHost_Command
   
   interface AssociateHost
     module procedure AssociateHost_KDI_1D
+    module procedure AssociateHost_KDI_2D
     module procedure AssociateHost_KDR_1D
     module procedure AssociateHost_KDR_2D
     module procedure AssociateHost_KDR_3D
@@ -49,6 +51,38 @@ contains
       ErrorOption = Error
   
   end subroutine AssociateHost_KDI_1D
+  
+  
+  subroutine AssociateHost_KDI_2D &
+               ( Device, Value, oValueOption, ErrorOption )
+    
+    type ( c_ptr ), intent ( in ) :: &
+      Device
+    integer ( KDI ), dimension ( :, : ), intent ( in ), target :: &
+      Value
+    integer ( KDI ), intent ( in ), optional :: &
+      oValueOption
+    integer ( KDI ), intent ( out ), optional :: &
+      ErrorOption
+    
+    integer ( c_int ) :: &
+      Error
+    integer ( c_size_t ) :: &
+      Offset
+    
+    Offset = 0
+    if ( present ( oValueOption ) ) then
+      Offset = oValueOption * c_sizeof ( 1_KDI ) 
+    end if
+    
+    Error = OMP_TARGET_ASSOCIATE_PTR &
+              ( c_loc ( Value ), Device, c_sizeof ( Value ), Offset, &
+                OMP_GET_DEFAULT_DEVICE ( ) )
+      
+    if ( present ( ErrorOption ) ) &
+      ErrorOption = Error
+  
+  end subroutine AssociateHost_KDI_2D
 
 
   subroutine AssociateHost_KDR_1D &

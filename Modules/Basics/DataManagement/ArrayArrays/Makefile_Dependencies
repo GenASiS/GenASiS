@@ -1,10 +1,12 @@
 Integer_1D__Form.o: \
   Specifiers.o \
+  Devices.o \
   ArrayOperations.o \
   Integer_1D__Form.f90
 
 Integer_2D__Form.o: \
   Specifiers.o \
+  Devices.o \
   ArrayOperations.o \
   Integer_2D__Form.f90
 
@@ -40,6 +42,12 @@ Complex_3D__Form.o: \
   ArrayOperations.o \
   Complex_3D__Form.f90
 
+Logical_1D__Form.o: \
+  Specifiers.o \
+  Devices.o \
+  ArrayOperations.o \
+  Logical_1D__Form.f90
+
 Character_1D__Form.o: \
   Specifiers.o \
   Character_1D__Form.f90
@@ -53,6 +61,7 @@ ArrayArrays.o: \
   Real_3D__Form.o \
   Real_3D_2D__Form.o \
   Complex_3D__Form.o \
+  Logical_1D__Form.o \
   Character_1D__Form.o \
   ArrayArrays.f90
 

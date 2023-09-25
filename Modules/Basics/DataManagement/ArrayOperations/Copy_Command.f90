@@ -18,7 +18,7 @@ module Copy_Command
 
   interface Copy
     module procedure CopyInteger_1D
-    ! module procedure CopyInteger_2D
+    module procedure CopyInteger_2D
     ! module procedure CopyInteger_3D
     ! module procedure CopyInteger_1D_Section
     ! module procedure CopyInteger_2D_Section
@@ -46,6 +46,7 @@ module Copy_Command
 !     module procedure CopyComplex_2D_Section
 !     module procedure CopyComplex_3D_Section
 !     module procedure Copy_Character_C_String
+    module procedure CopyLogical_1D
   end interface Copy
 
   interface CopyCollapse
@@ -56,32 +57,65 @@ module Copy_Command
 contains
 
 
-  subroutine CopyInteger_1D ( A, B )
+  subroutine CopyInteger_1D ( A, B, UseDeviceOption )
 
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       A
     integer ( KDI ), dimension ( : ), intent ( out ) :: &
       B
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
-    !$OMP parallel workshare
-    B = A
-    !$OMP end parallel workshare
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+
+    nV = size ( A )
+    
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption 
+
+    if ( UseDevice ) then 
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        B ( iV ) = A ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        B ( iV ) = A ( iV )
+      end do
+      !$OMP end parallel do
+    end if
 
   end subroutine CopyInteger_1D
   
   
-  ! subroutine CopyInteger_2D ( A, B )
+  subroutine CopyInteger_2D ( A, B, UseDeviceOption )
 
-  !   integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
-  !     A
-  !   integer ( KDI ), dimension ( :, : ), intent ( out ) :: &
-  !     B
+    integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
+      A
+    integer ( KDI ), dimension ( :, : ), intent ( out ) :: &
+      B
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
-  !   !$OMP parallel workshare
-  !   B = A
-  !   !$OMP end parallel workshare
+    integer ( KDI ) :: &
+      iV, &
+      nV
 
-  ! end subroutine CopyInteger_2D
+    nV = size ( A, dim = 2 )
+
+    do iV = 1, nV
+      call Copy ( A ( :, iV ), B ( :, iV ), UseDeviceOption )
+    end do
+
+  end subroutine CopyInteger_2D
   
   
   ! subroutine CopyInteger_3D ( A, B )
@@ -858,6 +892,45 @@ contains
     !$OMP end parallel do
 
   end subroutine CopyCollapseReal_3D_Offset
+  
+  
+  subroutine CopyLogical_1D ( A, B, UseDeviceOption )
 
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      A
+    logical ( KDL ), dimension ( : ), intent ( out ) :: &
+      B
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+
+    nV = size ( A )
+    
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption 
+
+    if ( UseDevice ) then 
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        B ( iV ) = A ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        B ( iV ) = A ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+
+  end subroutine CopyLogical_1D
+  
 
 end module Copy_Command

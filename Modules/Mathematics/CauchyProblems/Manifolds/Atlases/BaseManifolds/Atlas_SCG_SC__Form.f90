@@ -30,10 +30,11 @@ contains
   subroutine Initialize_SCG &
                ( A, CommunicatorOption, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, NameOption, EvenDecompositionOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nBricksOption, IgnorabilityOption, &
-                 nDimensionsOption, nEqualOption, iDimensionalityOption )
+                 DeviceMemoryOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nBricksOption, IgnorabilityOption, nDimensionsOption, &
+                 nEqualOption, iDimensionalityOption )
 
     class ( Atlas_SCG_SC_Form ), intent ( inout ), target :: &
       A
@@ -47,6 +48,8 @@ contains
       NameOption
     logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
       EvenDecompositionOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -77,8 +80,8 @@ contains
 
   subroutine Initialize_SCG_SC &
                ( A, RadiusMax, CommunicatorOption, NameOption, &
-                 CoordinateUnitOption, nGhostLayersOption, nCellsRadiusOption, &
-                 nDimensionsOption )
+                 DeviceMemoryOption, CoordinateUnitOption, &
+                 nGhostLayersOption, nCellsRadiusOption, nDimensionsOption )
 
     class ( Atlas_SCG_SC_Form ), intent ( inout ), target :: &
       A
@@ -88,6 +91,8 @@ contains
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -113,6 +118,7 @@ contains
              ( RadiusMax, &
                CommunicatorOption = CommunicatorOption, &
                NameOption = NameOption, &
+               DeviceMemoryOption = DeviceMemoryOption, &
                CoordinateUnitOption = CoordinateUnitOption, &
                nGhostLayersOption = nGhostLayersOption, &
                nCellsRadiusOption = nCellsRadiusOption, &

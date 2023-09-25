@@ -28,8 +28,9 @@ contains
 
   subroutine Initialize_GS_CE &
                ( C, RadiusMax, RadiusExcision, CommunicatorOption, &
-                 NameOption, CoordinateUnitOption, RadialRatioOption, &
-                 nGhostLayersOption, nCellsPolarOption, nDimensionsOption )
+                 NameOption, DeviceMemoryOption, CoordinateUnitOption, &
+                 RadialRatioOption, nGhostLayersOption, nCellsPolarOption, &
+                 nDimensionsOption )
 
     class ( Chart_GS_CE_Form ), intent ( inout ) :: &
       C
@@ -40,6 +41,8 @@ contains
       CommunicatorOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -70,6 +73,7 @@ contains
              RadialRatio = RadialRatio, &
              CommunicatorOption = CommunicatorOption, &
              NameOption = NameOption, &
+             DeviceMemoryOption = DeviceMemoryOption, &
              CoordinateUnitOption = CoordinateUnitOption, &
              nGhostLayersOption = nGhostLayersOption, &
              nCellsPolarOption = nCellsPolarOption, &

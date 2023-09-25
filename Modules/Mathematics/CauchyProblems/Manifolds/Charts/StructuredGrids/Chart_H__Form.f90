@@ -17,6 +17,8 @@ module Chart_H__Form
       nDimensions
     type ( QuantityForm ), dimension ( MAX_DIMENSIONS ) :: &
       CoordinateUnit
+    logical ( KDL ) :: &
+      DeviceMemory
     logical ( KDL ), dimension ( MAX_DIMENSIONS ) :: &
       Periodic = .false.
     character ( LDL ) :: &
@@ -57,9 +59,9 @@ contains
 
 
   subroutine Initialize_H &
-               ( C, CoordinateLabelOption, CoordinateSystemOption, NameOption, &
-                 CoordinateUnitOption, IgnorabilityOption, nDimensionsOption, &
-                 iDimensionalityOption )
+               ( C, CoordinateLabelOption, CoordinateSystemOption, &
+                 NameOption, DeviceMemoryOption, CoordinateUnitOption, &
+                 IgnorabilityOption, nDimensionsOption, iDimensionalityOption )
 
     class ( Chart_H_Form ), intent ( inout ) :: &
       C
@@ -68,6 +70,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption, &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: & 
+      DeviceMemoryOption
     type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -88,6 +92,10 @@ contains
 
     call Show ( 'Initializing ' // trim ( C % Type ), C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
+    
+    C % DeviceMemory = .false. 
+    if ( present ( DeviceMemoryOption ) ) &
+      C % DeviceMemory = DeviceMemoryOption
 
     call SetDimensionality &
            ( C, nDimensionsOption, iDimensionalityOption )

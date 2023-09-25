@@ -146,6 +146,7 @@ contains
            ( RadiusMax, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              NameOption = 'PositionSpace', &
+             DeviceMemoryOption = U % DeviceMemory, &
              CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
              nCellsRadiusOption = nCellsRadiusOption )
 

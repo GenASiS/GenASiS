@@ -177,13 +177,13 @@ int AssociateTargetLogical_OMP
   Offset  = sizeof ( _Bool ) * oValue;
   iDevice = omp_get_default_device();
   
-  
+  /*
   printf("Host   : %p\n", Host );
   printf("Device : %p\n", Device);
   printf("Size   : %d\n", Size);
   printf("Offset : %d\n", Offset);
   printf("Device : %d\n", iDevice);
-  
+  */
   
   retval = omp_target_associate_ptr ( Host, Device, Size, Offset, iDevice );
   #endif 
