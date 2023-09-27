@@ -122,7 +122,7 @@ contains
 
     class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
       
     integer ( KDI ) :: &
@@ -217,7 +217,7 @@ contains
 
     class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
 
     call Solution % ExchangeGhostData ( )
@@ -229,7 +229,7 @@ contains
 
     class ( Poisson_ASCG_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
 
 !    real ( KDR ), dimension ( :, :, : ), pointer :: &

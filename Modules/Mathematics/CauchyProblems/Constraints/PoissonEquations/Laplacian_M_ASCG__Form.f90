@@ -280,7 +280,7 @@ contains
 
     class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       L
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source
     
     integer ( KDI ) :: &

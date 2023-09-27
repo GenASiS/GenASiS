@@ -21,7 +21,7 @@ program Poisson_ASCG__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
   type ( Geometry_F_Form ), allocatable :: &
     G
@@ -106,7 +106,7 @@ contains
       Radius
     character ( LDL ), dimension ( nEquations ) :: &
       Field
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Source, &
       Solution, &
       Reference, &
@@ -225,7 +225,7 @@ contains
 
   subroutine ComputeError ( Difference, Solution, Reference )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Difference, &         
       Solution, &
       Reference
@@ -301,7 +301,7 @@ contains
                ( Source, Reference, Geometry, &
                  Density, Radius, iField )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source, &
       Reference
     class ( Geometry_F_Form ), intent ( in ) :: &

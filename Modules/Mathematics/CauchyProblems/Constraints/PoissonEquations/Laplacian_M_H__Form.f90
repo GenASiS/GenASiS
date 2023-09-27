@@ -215,7 +215,7 @@ contains
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -710,7 +710,7 @@ contains
 
     class ( Laplacian_M_H_Form ), intent ( inout ) :: &
       L
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )

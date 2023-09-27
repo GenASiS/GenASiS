@@ -144,9 +144,9 @@ contains
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -190,9 +190,9 @@ contains
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -240,7 +240,7 @@ contains
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -319,7 +319,7 @@ contains
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
@@ -334,7 +334,7 @@ contains
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )
@@ -349,7 +349,7 @@ contains
 
     class ( Poisson_H_Form ), intent ( inout ) :: &
       P
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Solution
 
     call Show ( 'Subroutine should be overidden', CONSOLE % ERROR )

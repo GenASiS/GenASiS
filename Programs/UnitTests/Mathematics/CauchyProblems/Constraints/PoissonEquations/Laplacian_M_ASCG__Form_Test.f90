@@ -20,7 +20,7 @@ program Laplacian_M_ASCG__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
   type ( Geometry_F_Form ), allocatable :: &
     G
@@ -155,7 +155,7 @@ contains
       AA
     type ( Geometry_F_Form ), allocatable :: &
       GA
-    type ( StreamForm ), allocatable :: &
+    type ( Stream_BM_Form ), allocatable :: &
       SA
 
     call Show ( 'Testing angular functions' )
@@ -233,7 +233,7 @@ contains
       Density
     character ( LDL ), dimension ( 1 ) :: &
       Field
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Source, &
       Reference
     type ( TimerForm ), pointer :: &
@@ -298,7 +298,7 @@ contains
                ( Source, Reference, Geometry, &
                  Density, RadiusDensity, iField )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source, &
       Reference
     class ( Geometry_F_Form ), intent ( in ) :: &
