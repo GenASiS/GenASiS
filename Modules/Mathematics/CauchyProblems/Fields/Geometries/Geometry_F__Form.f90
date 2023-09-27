@@ -13,7 +13,7 @@ module Geometry_F__Form
       N_FIELDS_F  = 25, &
       N_VECTORS_F =  0
 
-  type, public, extends ( FieldSetForm ) :: Geometry_F_Form
+  type, public, extends ( FieldSet_BM_Form ) :: Geometry_F_Form
     integer ( KDI ) :: &
       N_FIELDS_F = N_FIELDS_F, &
       N_VECTORS_F = N_VECTORS_F
@@ -336,7 +336,7 @@ contains
 
     !-- FieldSet
 
-    call FS % FieldSetForm % Initialize &
+    call FS % FieldSet_BM_Form % Initialize &
            ( A, &
              FieldOption = Field, &
              VectorOption = VectorOption, &
@@ -358,7 +358,7 @@ contains
 
   subroutine SetStream ( S, G, iaAdditionalOption )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
@@ -413,7 +413,7 @@ contains
 
     class ( Geometry_F_Form ), intent ( inout ) :: &
       G
-    type ( FieldSetForm ), intent ( inout ) :: &
+    type ( FieldSet_BM_Form ), intent ( inout ) :: &
       M_I
     integer ( KDI ), intent ( in ) :: &
       iC, &   !-- iChart

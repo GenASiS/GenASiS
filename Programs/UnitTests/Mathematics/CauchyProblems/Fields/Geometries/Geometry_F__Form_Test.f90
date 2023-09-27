@@ -13,7 +13,7 @@ program Geometry_F__Form_Test
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
   type ( Geometry_F_Form ), allocatable :: &
     G

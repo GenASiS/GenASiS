@@ -11,7 +11,7 @@ module Coarsening_C__Form
   implicit none
   private
 
-  type, public, extends ( FieldSetForm ) :: Coarsening_C_Form
+  type, public, extends ( FieldSet_BM_Form ) :: Coarsening_C_Form
     integer ( KDI ) :: &
       COARSENING_POLAR     = 0, &
       COARSENING_AZIMUTHAL = 0, &
@@ -109,7 +109,7 @@ contains
     C % N_BLOCKS_AZIMUTHAL   =  4
     C % BLOCK_LABEL          =  5
 
-    call C % FieldSetForm % Initialize &
+    call C % FieldSet_BM_Form % Initialize &
            ( G % Atlas, &
              FieldOption &
                = [ 'CoarseningPolar    ', &
@@ -178,7 +178,7 @@ contains
 
   subroutine Compute ( FS, C )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     class ( Coarsening_C_Form ), intent ( in ) :: &
       C

@@ -19,10 +19,10 @@ program Coarsening_C__Form_Test
     A_CE
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A_CC
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     F_CE, &
     F_CC
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S_CE, &
     S_CC
   type ( Geometry_F_Form ), allocatable :: &
@@ -94,13 +94,13 @@ program Coarsening_C__Form_Test
   call C_CE % Show ( )
   call C_CC % Show ( )
   call Show ( C_CE % nBlocksCoarsen, 'CE nBlocksCoarsen' )
-  call Show ( C_CE % iRadius, 'CE iRadius' )
-  call Show ( C_CE % iTheta, 'CE iTheta' )
-  call Show ( C_CE % iPhi, 'CE iPhi' )
+  call Show ( C_CE % iRadius % Value, 'CE iRadius' )
+  call Show ( C_CE % iTheta % Value, 'CE iTheta' )
+  call Show ( C_CE % iPhi % Value, 'CE iPhi' )
   call Show ( C_CC % nBlocksCoarsen, 'CC nBlocksCoarsen' )
-  call Show ( C_CC % iRadius, 'CC iRadius' )
-  call Show ( C_CC % iTheta, 'CC iTheta' )
-  call Show ( C_CC % iPhi, 'CC iPhi' )
+  call Show ( C_CC % iRadius % Value, 'CC iRadius' )
+  call Show ( C_CC % iTheta % Value, 'CC iTheta' )
+  call Show ( C_CC % iPhi % Value, 'CC iPhi' )
 
   call S_CE % Show ( )
   call S_CC % Show ( )
