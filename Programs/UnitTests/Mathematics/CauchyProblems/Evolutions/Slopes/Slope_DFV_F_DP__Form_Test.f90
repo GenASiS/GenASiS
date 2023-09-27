@@ -15,7 +15,7 @@ program Slope_DFV_F_DP__Form_Test
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     Sm
   type ( Geometry_F_Form ), allocatable :: &
     G
@@ -179,7 +179,7 @@ contains
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
 
     integer ( KDI ) :: &

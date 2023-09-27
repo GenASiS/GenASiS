@@ -16,7 +16,7 @@ program RiemannSolver_HLL__Form_Test
     GIS_SD  !-- StageDimension
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S, &
     S_SD  !-- StageDimension
   type ( Geometry_F_Form ), allocatable :: &
@@ -231,18 +231,17 @@ contains
     call Show ( RS % Name, 'RiemannSolver' )
 
     call CONSOLE % SetVerbosity ( 'INFO_2' )
-    call RS % SetStream ( S_SD, nS = 1 )  !-- nStages = 1
     call CONSOLE % SetVerbosity ( 'INFO_1' )
 
-    call RS % Prepare ( iC = 1, iD = 1, iS_Option = 1 )
-    call RS % Compute ( DP, iC = 1, iD = 1, iS_Option = 1 )
+    call RS % Prepare ( iC = 1, iD = 1 )
+    call RS % Compute ( DP, iC = 1, iD = 1 )
     if ( nD  >  1 ) then
-      call RS % Prepare ( iC = 1, iD = 2, iS_Option = 1 )
-      call RS % Compute ( DP, iC = 1, iD = 2, iS_Option = 1 )
+      call RS % Prepare ( iC = 1, iD = 2 )
+      call RS % Compute ( DP, iC = 1, iD = 2 )
     end if
     if ( nD  >  2 ) then
-      call RS % Prepare ( iC = 1, iD = 3, iS_Option = 1 )
-      call RS % Compute ( DP, iC = 1, iD = 3, iS_Option = 1 )
+      call RS % Prepare ( iC = 1, iD = 3 )
+      call RS % Compute ( DP, iC = 1, iD = 3 )
     end if
 
     call GIS_SD % Open ( GIS_SD % ACCESS_CREATE )

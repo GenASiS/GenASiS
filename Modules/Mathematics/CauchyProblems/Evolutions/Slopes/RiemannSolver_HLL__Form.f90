@@ -12,7 +12,7 @@ module RiemannSolver_HLL__Form
     integer ( KDI ), private, parameter :: &
       N_SOLVER_SPEEDS_HLL  =  2
 
-  type, public, extends ( FieldSetForm ) :: RiemannSolver_HLL_Form
+  type, public, extends ( FieldSet_BM_Form ) :: RiemannSolver_HLL_Form
     integer ( KDI ) :: &
       N_SOLVER_SPEEDS_HLL = N_SOLVER_SPEEDS_HLL
     integer ( KDI ) :: &
@@ -29,7 +29,7 @@ module RiemannSolver_HLL__Form
       iTimer_K_HLL = 0     !-- Kernel_HLL
     character ( LDL ) :: &
       ReconstructedSet = ''
-    class ( FieldSetForm ), allocatable :: &
+    class ( FieldSet_BM_Form ), allocatable :: &
       PrimitiveSet, &
       CurrentSet_IL, CurrentSet_IR, &
       FluxSet, &
@@ -305,7 +305,7 @@ contains
           
     !-- FieldSet
 
-    call RS % FieldSetForm % Initialize &
+    call RS % FieldSet_BM_Form % Initialize &
            ( CS % Atlas, &
              FieldOption = Field, &
              NameOption = Name, &
@@ -325,7 +325,7 @@ contains
     class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       FS
 
-    call FS % FieldSetForm % Show ( )
+    call FS % FieldSet_BM_Form % Show ( )
     call Show ( FS % ReconstructedSet, 'ReconstructedSet', FS % IGNORABILITY )
 
     select case ( trim ( FS % ReconstructedSet ) )

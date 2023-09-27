@@ -14,7 +14,7 @@ module Slope_DFV_C_F__Form
     integer ( KDI ) :: &
       iTimer_S = 0, &  !-- Stresses
       iTimer_K = 0     !-- Kernel
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Stress_UD
     class ( DivergencePart_CS_Form ), pointer :: &
       DivergencePart => null ( )

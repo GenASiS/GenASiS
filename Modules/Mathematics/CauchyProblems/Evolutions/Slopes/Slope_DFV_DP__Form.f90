@@ -15,7 +15,7 @@ module Slope_DFV_DP__Form
   type, public, extends ( Slope_H_Form ) :: Slope_DFV_DP_Form
     logical ( KDL ) :: &
       StreamFluxes
-    type ( FieldSetElement ), dimension ( : ), allocatable :: &
+    type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
       FluxSetDimension, &
       FluxSet_IL_Dimension, &
       FluxSet_IR_Dimension, &
@@ -188,7 +188,7 @@ contains
 
     class ( Slope_DFV_DP_Form ), intent ( inout ) :: &
       S
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
 
     integer ( KDI ) :: &

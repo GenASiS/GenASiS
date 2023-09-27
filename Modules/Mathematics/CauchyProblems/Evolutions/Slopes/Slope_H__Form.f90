@@ -12,7 +12,7 @@ module Slope_H__Form
     integer, private, parameter :: &
       MAX_COMPONENTS = 16
 
-  type, public, extends ( FieldSetForm ) :: Slope_H_Form
+  type, public, extends ( FieldSet_BM_Form ) :: Slope_H_Form
     integer ( KDI ) :: &
       nComponents = 0
     integer ( KDI ) :: &
@@ -94,7 +94,7 @@ contains
     if ( FS % Type  ==  '' ) &
       FS % Type  =  'a Slope_H' 
     
-    call FS % FieldSetForm % Initialize &
+    call FS % FieldSet_BM_Form % Initialize &
            ( A, FieldOption, VectorOption, NameOption, &
              DeviceMemoryOption, PinnedMemoryOption, &
              DevicesCommunicateOption, AssociateFieldsOption, &
@@ -110,7 +110,7 @@ contains
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
 
     integer ( KDI ) :: &
@@ -138,7 +138,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call FS % FieldSetForm % Show ( )
+    call FS % FieldSet_BM_Form % Show ( )
 
     call Show ( FS % nComponents, 'nComponents', FS % IGNORABILITY ) 
     do iC  =  1, FS % nComponents

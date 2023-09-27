@@ -19,9 +19,9 @@ module Reconstruction_Form
       AllocatedOutput
     character ( LDL ) :: &
       Name
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       FieldSet  => null ( )
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       Output_IL => null ( ), &
       Output_IR => null ( )
     class ( Geometry_F_Form ), pointer :: &
@@ -126,7 +126,7 @@ contains
       R
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS
     integer ( KDI ), intent ( in ), optional :: &
       OrderOption
@@ -205,7 +205,7 @@ contains
       R
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS, &
       O_IL, O_IR
     integer ( KDI ), dimension ( : ), intent ( in ) :: &

@@ -22,12 +22,12 @@ program Reconstruction_Form_Test
     T
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     FS
-  type ( FieldSetForm ), dimension ( : ), allocatable :: &
+  type ( FieldSet_BM_Form ), dimension ( : ), allocatable :: &
     FS_I, &
      D_IL,  D_IR
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
   type ( Geometry_F_Form ), allocatable :: &
     G
@@ -102,12 +102,9 @@ program Reconstruction_Form_Test
   allocate ( R_1 )
   allocate ( R_2 )
   call CONSOLE % SetVerbosity ( 'INFO_2' )
-  call R_0 % Initialize &
-         ( G, FS, SuffixOption = 'Rcnstrctn_0', OrderOption = 0 )
-  call R_1 % Initialize &
-         ( G, FS, SuffixOption = 'Rcnstrctn_1', OrderOption = 1 )
-  call R_2 % Initialize &
-         ( G, FS, SuffixOption = 'Rcnstrctn_2', OrderOption = 2 )
+  call R_0 % Initialize ( G, FS, OrderOption = 0 )
+  call R_1 % Initialize ( G, FS, OrderOption = 1 )
+  call R_2 % Initialize ( G, FS, OrderOption = 2 )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
   !-- Get all Reconstruction timers initialized
   T  =>  R_0 % Timer ( Level = 1 )
@@ -161,7 +158,7 @@ contains
 
   subroutine SetWave ( FS, G, X_Option, Y_Option, Z_Option )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
@@ -240,7 +237,7 @@ contains
 
   subroutine SetReference ( FS_I, G, iD )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_I
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
@@ -272,11 +269,11 @@ contains
 
     class ( ReconstructionForm ), intent ( inout ) :: &
       R
-    type ( StreamForm ), intent ( inout ) :: &
+    type ( Stream_BM_Form ), intent ( inout ) :: &
       S
-    type ( FieldSetForm ), dimension ( : ), intent ( inout ) :: &
+    type ( FieldSet_BM_Form ), dimension ( : ), intent ( inout ) :: &
       D_IL, D_IR
-    type ( FieldSetForm ), dimension ( : ), intent ( in ) :: &
+    type ( FieldSet_BM_Form ), dimension ( : ), intent ( in ) :: &
       FS_I
 
     integer ( KDI ) :: &
@@ -339,7 +336,7 @@ contains
 
   subroutine CompareFieldSets ( FS, FS_R, iD )
 
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS, &
       FS_R
     integer ( KDI ), intent ( in ) :: &
