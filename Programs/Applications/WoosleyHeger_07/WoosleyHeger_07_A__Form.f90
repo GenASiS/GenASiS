@@ -9,7 +9,7 @@ module WoosleyHeger_07_A__Form
   private
 
   type, public, extends ( WoosleyHeger_07_Form ) :: WoosleyHeger_07_A_Form
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Pressure
     type ( GradientForm ), allocatable :: &
       GradientPressure
