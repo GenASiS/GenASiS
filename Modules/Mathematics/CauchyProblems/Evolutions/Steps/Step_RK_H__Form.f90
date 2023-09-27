@@ -36,7 +36,7 @@ module Step_RK_H__Form
     class ( Slope_H_Form ), allocatable :: &
       Slope, &
       SlopeSum
-    type ( FieldSetElement ), dimension ( : ), allocatable :: &
+    type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
       SlopeStage
     procedure ( SS ), pointer :: &
       SetSlope => null ( )
@@ -97,7 +97,7 @@ module Step_RK_H__Form
       implicit none
       class ( Step_RK_H_Form ), intent ( in ) :: &
         S
-      class ( FieldSetForm ), intent ( out ), allocatable :: &
+      class ( FieldSet_BM_Form ), intent ( out ), allocatable :: &
         K
       integer ( KDI ), intent ( in ) :: &
         iS
@@ -212,7 +212,7 @@ contains
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
 
     integer ( KDI ) :: &
@@ -600,7 +600,7 @@ contains
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
-    class ( FieldSetForm ), intent ( out ), allocatable :: &
+    class ( FieldSet_BM_Form ), intent ( out ), allocatable :: &
       K
     integer ( KDI ), intent ( in ) :: &
       iS

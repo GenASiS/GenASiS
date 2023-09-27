@@ -15,7 +15,7 @@ program Step_RK_H__Form_Test
     T
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     Sm
   type ( Step_RK_H_Form ), allocatable :: &
     S

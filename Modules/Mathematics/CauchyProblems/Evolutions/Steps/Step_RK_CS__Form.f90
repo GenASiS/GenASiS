@@ -17,7 +17,7 @@ module Step_RK_CS__Form
       iTimer_SC      = 0, &  !-- SolutionCopy
       iTimer_CFB     = 0, &  !-- ComputeFromBalanced
       iTimer_BC      = 0     !-- BoundaryCondition
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Balanced, &
       Intermediate, &
       Solution
@@ -192,7 +192,7 @@ contains
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
 
     call S % SetStream_H ( Sm )
@@ -489,7 +489,7 @@ contains
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
-    class ( FieldSetForm ), intent ( out ), allocatable :: &
+    class ( FieldSet_BM_Form ), intent ( out ), allocatable :: &
       K
     integer ( KDI ), intent ( in ) :: &
       iS
@@ -524,7 +524,7 @@ contains
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
-    type ( FieldSetForm ), intent ( in ) :: &
+    type ( FieldSet_BM_Form ), intent ( in ) :: &
       Y
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
