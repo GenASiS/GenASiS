@@ -52,6 +52,7 @@ include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include $(PATH_GRAVITATIONS)/Makefile_Dependencies
 include $(PATH_FLUIDS)/Makefile_Dependencies
+include $(PATH_RADIATIONS)/Makefile_Dependencies
 include $(PATH_UNIVERSES)/Makefile_Dependencies
 
 Universe_F_B__Form_Test.o: \

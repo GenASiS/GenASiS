@@ -94,7 +94,7 @@ contains
 
     class ( Atlas_H_Form ), pointer :: &
       A_SA
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       G_SA, &
       F_SA      
 

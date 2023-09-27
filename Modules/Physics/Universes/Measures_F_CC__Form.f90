@@ -37,7 +37,7 @@ module Measures_F_CC__Form
       Name
     class ( Atlas_H_Form ), pointer :: &
       Atlas_SA => null ( )
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       Geometry_SA => null ( ), &
       Fluid_SA    => null ( )
     class ( Units_F_Form ), pointer :: &
@@ -70,7 +70,7 @@ contains
 
     class ( Measures_F_CC_Form ), intent ( inout ) :: &
       M
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       F_SA, &
       G_SA
     class ( Atlas_H_Form ), intent ( in ), target :: &

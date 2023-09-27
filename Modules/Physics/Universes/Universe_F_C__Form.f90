@@ -22,7 +22,7 @@ module Universe_F_C__Form
     class ( Atlas_SCG_Form ), allocatable :: &
       PositionSpace_SA, &  !-- SphericalAverage
       PositionSpace_AA     !-- AzimuthalAverage
-    type ( StreamForm ), allocatable :: &
+    type ( Stream_BM_Form ), allocatable :: &
       Stream_SA, &
       Stream_AA
     type ( SphericalAverageForm ), allocatable :: &
