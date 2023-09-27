@@ -8,12 +8,12 @@ module Gradient_Form
   implicit none
   private
 
-  type, public, extends ( FieldSetForm ) :: GradientForm
-    class ( FieldSetForm ), pointer :: &
+  type, public, extends ( FieldSet_BM_Form ) :: GradientForm
+    class ( FieldSet_BM_Form ), pointer :: &
       FieldSet  => null ( )
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
-    type ( FieldSetForm ), dimension ( : ), allocatable :: &
+    type ( FieldSet_BM_Form ), dimension ( : ), allocatable :: &
       Dimension
   contains
     procedure, private, pass :: &
@@ -64,7 +64,7 @@ contains
       G
     class ( Geometry_F_Form ), intent ( in ), target :: &
       Gy
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS
     character ( * ), intent ( in ), optional :: &
       NameOption
@@ -100,7 +100,7 @@ contains
       Field ( iS )  =  FS % Field ( iF )
     end do !-- iS
 
-    call G % FieldSetForm % Initialize &
+    call G % FieldSet_BM_Form % Initialize &
            ( FS % Atlas, &
              FieldOption = Field, &
              NameOption = Name, &
@@ -116,7 +116,7 @@ contains
 
     class ( GradientForm ), intent ( inout ) :: &
       G
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
 
     integer ( KDI ) :: &
