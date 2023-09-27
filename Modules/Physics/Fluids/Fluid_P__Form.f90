@@ -459,11 +459,11 @@ contains
 
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       ES
     class ( Fluid_P_Form ), intent ( in ) :: &
       CS
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_CS
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaEigenspeeds

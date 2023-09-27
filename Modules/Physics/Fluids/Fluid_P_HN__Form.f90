@@ -497,7 +497,7 @@ contains
 
   subroutine SetStream ( S, CS )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       CS
@@ -626,7 +626,7 @@ contains
 
   subroutine ComputeFromPrimitive ( FS_CS, CS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_CS
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       CS

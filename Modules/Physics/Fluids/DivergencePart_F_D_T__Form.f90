@@ -94,11 +94,11 @@ contains
 
   subroutine ComputeFluxes ( FS_F, DP, FS_CS, iC, iD )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_F  !-- Fluxes
     class ( DivergencePart_F_D_T_Form ), intent ( in ) :: &
       DP
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_CS
     integer ( KDI ), intent ( in ) :: &
       iC, &  !-- iChart
@@ -148,7 +148,7 @@ contains
 
   subroutine ComputeStresses ( S_UD, DP, iC, iMomentum_1, iMomentum_2 )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       S_UD
     class ( DivergencePart_F_D_T_Form ), intent ( in ) :: &
       DP

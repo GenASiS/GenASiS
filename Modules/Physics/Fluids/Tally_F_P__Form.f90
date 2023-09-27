@@ -133,7 +133,7 @@ contains
 
     class ( Tally_F_P_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
 
     integer ( KDI ) :: &
@@ -177,7 +177,7 @@ contains
 
     class ( Tally_F_P_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C

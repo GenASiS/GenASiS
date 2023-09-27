@@ -436,7 +436,7 @@ contains
 
   subroutine SetStream ( S, CS )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( Fluid_D_Form ), intent ( in ) :: &
       CS
@@ -489,7 +489,7 @@ contains
 
   subroutine ComputeFromPrimitive ( FS_CS, CS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_CS
     class ( Fluid_D_Form ), intent ( in ) :: &
       CS
@@ -652,11 +652,11 @@ contains
 
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       ES
     class ( Fluid_D_Form ), intent ( in ) :: &
       CS
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_CS
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaEigenspeeds

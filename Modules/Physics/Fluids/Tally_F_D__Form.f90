@@ -172,7 +172,7 @@ contains
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
 
     select type ( G  =>  T % Geometry )
@@ -194,7 +194,7 @@ contains
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
@@ -220,7 +220,7 @@ contains
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
 
     integer ( KDI ) :: &
@@ -360,7 +360,7 @@ contains
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
 
     integer ( KDI ) :: &
@@ -422,7 +422,7 @@ contains
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C
@@ -621,7 +621,7 @@ contains
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C

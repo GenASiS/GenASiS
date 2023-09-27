@@ -13,7 +13,7 @@ program Fluid_D__Form_Test
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
   type ( Gravitation_G_Form ), allocatable :: &
     G

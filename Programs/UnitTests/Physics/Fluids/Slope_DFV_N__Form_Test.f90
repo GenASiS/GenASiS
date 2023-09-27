@@ -17,7 +17,7 @@ program Slope_DFV_N__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     Sm
   type ( Gravitation_N_SG_Form ), allocatable :: &
     G

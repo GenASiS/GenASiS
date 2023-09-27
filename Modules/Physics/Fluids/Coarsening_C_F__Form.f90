@@ -186,7 +186,7 @@ contains
 
   subroutine Compute ( FS, C )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS
     class ( Coarsening_C_F_Form ), intent ( in ) :: &
       C

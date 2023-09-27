@@ -24,7 +24,7 @@ module RiemannSolver_HLLC_P__Form
       iTimer_CStt   = 0, &  !-- CenterState
       iTimer_FC     = 0, &  !-- FluxCenter
       iTimer_K_HLLC = 0     !-- Kernel_HLLC
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Metric_I, &
       CurrentSet_ICL, CurrentSet_ICR
   contains
