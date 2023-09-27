@@ -13,7 +13,7 @@ module EigenspeedSet_F__Form
       N_FIELDS_F  = 2, &
       N_VECTORS_F = 0
 
-  type, public, extends ( FieldSetForm ) :: EigenspeedSet_F_Form
+  type, public, extends ( FieldSet_BM_Form ) :: EigenspeedSet_F_Form
     integer ( KDI ) :: &
       iTimer = 0
     integer ( KDI ) :: &
@@ -22,7 +22,7 @@ module EigenspeedSet_F__Form
     integer ( KDI ) :: &
       EIGENSPEED_FAST_PLUS_U  = 0, &
       EIGENSPEED_FAST_MINUS_U = 0
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       FieldSet_CS => null ( )
     class ( CurrentSetForm ), pointer :: &
       CurrentSet => null ( )
@@ -50,7 +50,7 @@ contains
       ES
     class ( CurrentSetForm ), intent ( in ), target :: &
       CS
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS_CS
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
@@ -101,7 +101,7 @@ contains
           
     !-- FieldSet
 
-    call ES % FieldSetForm % Initialize &
+    call ES % FieldSet_BM_Form % Initialize &
            ( CS % Atlas, &
              FieldOption = Field, &
              NameOption = Name, &

@@ -78,7 +78,7 @@ contains
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     class ( Geometry_F_Form ), intent ( in ), target :: &
       G
@@ -168,7 +168,7 @@ contains
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     logical ( KDL ), intent ( in ), optional :: &
       ReduceOption
@@ -214,7 +214,7 @@ contains
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BoundaryFluence  !-- boundary slab
@@ -348,7 +348,7 @@ contains
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
 
     integer ( KDI ) :: &
@@ -374,7 +374,7 @@ contains
 
     class ( Tally_CS_Form ), intent ( inout ) :: &
       T
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       CS
     class ( Chart_GS_Form ), intent ( in ) :: &
       C

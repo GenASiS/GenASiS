@@ -15,7 +15,7 @@ module CurrentSet_Form
       N_PRIMITIVE_CS = 0, &
       N_BALANCED_CS  = 0
 
-  type, public, extends ( FieldSetForm ) :: CurrentSetForm
+  type, public, extends ( FieldSet_BM_Form ) :: CurrentSetForm
     !-- Fields and vectors
     integer ( KDI ) :: &
       N_FIELDS_CS    = N_FIELDS_CS, &
@@ -269,7 +269,7 @@ contains
 
     !-- FieldSet
 
-    call CS % FieldSetForm % Initialize &
+    call CS % FieldSet_BM_Form % Initialize &
            ( G % Atlas, &
              FieldOption = Field, &
              VectorOption = Vector, &
@@ -328,7 +328,7 @@ contains
 
   subroutine SetStream ( S, CS )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
@@ -359,7 +359,7 @@ contains
     integer ( KDI ) :: &
       iFS
 
-    call FS % FieldSetForm % Show ( )
+    call FS % FieldSet_BM_Form % Show ( )
 
     call Show ( FS %  nPrimitive,  'nPrimitive', FS % IGNORABILITY )
     call Show ( FS % iaPrimitive, 'iaPrimitive', FS % IGNORABILITY )
@@ -382,7 +382,7 @@ contains
 
   subroutine ComputeFromPrimitive ( FS_CS, CS )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_CS
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
@@ -402,11 +402,11 @@ contains
 
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       ES
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS_CS
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaEigenspeeds

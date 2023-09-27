@@ -14,9 +14,9 @@ program DivergencePart_CS__Form_Test
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     FS_F  !-- FieldSet_Fluxes
   type ( Geometry_F_Form ), allocatable :: &
     G
@@ -166,9 +166,9 @@ contains
 
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       FS_F
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iD
