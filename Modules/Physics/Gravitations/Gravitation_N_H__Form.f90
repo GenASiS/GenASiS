@@ -175,7 +175,7 @@ contains
 
   subroutine SetStream ( S, G, iaAdditionalOption )
 
-    class ( StreamForm ), intent ( inout ) :: &
+    class ( Stream_BM_Form ), intent ( inout ) :: &
       S
     class ( Gravitation_N_H_Form ), intent ( in ) :: &
       G
@@ -210,7 +210,7 @@ contains
 
     class ( Gravitation_N_H_Form ), intent ( inout ) :: &
       G
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       F  !-- Fluid
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &

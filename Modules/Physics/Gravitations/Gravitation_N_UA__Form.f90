@@ -116,7 +116,7 @@ contains
 
     class ( Gravitation_N_UA_Form ), intent ( inout ) :: &
       G
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       F  !-- Fluid
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &

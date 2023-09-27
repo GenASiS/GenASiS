@@ -16,9 +16,9 @@ program Gravitation_N_CM__Form_Test
     GIS
   type ( Atlas_SCG_CE_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     F  !-- Dummy field
   type ( Gravitation_N_CM_Form ), allocatable :: &
     G

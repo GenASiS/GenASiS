@@ -15,10 +15,10 @@ module Gravitation_N_SG__Form
       iTimer_G = 0     !-- Gradient
     real ( KDR ) :: &
       GravitationalConstant
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Source, &
       Solution
-    type ( FieldSetForm ), dimension ( : ), allocatable :: &
+    type ( FieldSet_BM_Form ), dimension ( : ), allocatable :: &
       SolutionGradient
     type ( GradientForm ), allocatable :: &
       Gradient
@@ -212,7 +212,7 @@ contains
 
     class ( Gravitation_N_SG_Form ), intent ( inout ) :: &
       G
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       F  !-- Fluid
     integer ( KDI ), intent ( in ) :: &
       iBaryonMass, &

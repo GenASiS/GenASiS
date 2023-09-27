@@ -16,7 +16,7 @@ program Gravitation_N_SG__Form_Test
     GIS
   type ( Atlas_SCG_CC_Form ), allocatable :: &
     A
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S
   type ( Gravitation_N_SG_Form ), allocatable :: &
     G
@@ -80,7 +80,7 @@ contains
     real ( KDR ), dimension ( 3 ) :: &
       Radius, &
       Density
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Fluid, &
       Reference, &
       Difference
@@ -158,7 +158,7 @@ contains
 
   subroutine ComputeError ( Difference, Solution, Reference )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Difference, &         
       Solution, &
       Reference
@@ -209,7 +209,7 @@ contains
   subroutine SetHomogeneousSphere &
                ( Fluid, Reference, Geometry, Density, Radius )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Fluid, &
       Reference
     class ( Geometry_F_Form ), intent ( in ) :: &
