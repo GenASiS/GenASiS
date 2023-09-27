@@ -76,7 +76,8 @@ contains
     end if
     
     Error = OMP_TARGET_ASSOCIATE_PTR &
-              ( c_loc ( Value ), Device, c_sizeof ( Value ), Offset, &
+              ( c_loc ( Value ), Device, &
+                c_sizeof ( 1_KDI )  *  size ( Value ), Offset, &
                 OMP_GET_DEFAULT_DEVICE ( ) )
       
     if ( present ( ErrorOption ) ) &

@@ -45,7 +45,8 @@ contains
       Device
       
     Device = OMP_TARGET_ALLOC &
-               ( c_sizeof ( Value ), OMP_GET_DEFAULT_DEVICE ( ) )
+               ( c_sizeof ( 1_KDI )  *  size ( Value ), &
+                 OMP_GET_DEFAULT_DEVICE ( ) )
   
   end subroutine AllocateDevice_KDI_2D 
   
