@@ -11,14 +11,14 @@ module HomogeneousSpheroid_Form
       GridImageStream
     type ( Atlas_SCG_CC_Form ), allocatable :: &
       Atlas
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Source, &
       Solution, &
       Reference, &
       Difference, &
       RelativeError_1, &
       RelativeError_2
-    type ( StreamForm ), allocatable :: &
+    type ( Stream_BM_Form ), allocatable :: &
       Stream
     type ( Geometry_F_Form ), allocatable :: &
       Geometry
@@ -357,7 +357,7 @@ contains
   subroutine SetHomogeneousSpheroidKernel &
                ( Source, Reference, G, Density, a_1, a_3, iField )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       Source, &
       Reference
     class ( Geometry_F_Form ), intent ( in ) :: &
@@ -510,7 +510,6 @@ contains
       ( rho_sq   ( size ( R ) ) , &
         Z_sq     ( size ( R ) ), &
         l        ( size ( R ) ), &
-        C_I_vec  ( size ( R ) ), &
         a_1_p_sq ( size ( R ) ), &
         a_3_p_sq ( size ( R ) ), &
         e_p      ( size ( R ) ), &
@@ -603,7 +602,7 @@ contains
                ( RelativeError_1, RelativeError_2, Difference, Solution, &
                  Reference )
 
-    class ( FieldSetForm ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
       RelativeError_1, &
       RelativeError_2, &
       Difference, &         
