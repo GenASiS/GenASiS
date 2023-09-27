@@ -13,9 +13,9 @@ module AzimuthalAverage_Form
       nAverages
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaAverage
-    class ( FieldSetForm ), allocatable :: &
+    class ( FieldSet_BM_Form ), allocatable :: &
       FieldSet_AA
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       FieldSet => null ( )
   contains
     procedure, public, pass :: &
@@ -39,7 +39,7 @@ contains
       AA
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS
     class ( Atlas_SCG_Form ), intent ( in ) :: &
       A_AA

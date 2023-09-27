@@ -15,9 +15,9 @@ module SphericalAverage_Form
       iaAverage
     real ( KDR ), dimension ( :, : ), allocatable :: &
       dSolidAngle
-    class ( FieldSetForm ), allocatable :: &
+    class ( FieldSet_BM_Form ), allocatable :: &
       FieldSet_SA
-    class ( FieldSetForm ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       FieldSet => null ( )
   contains
     procedure, public, pass :: &
@@ -42,7 +42,7 @@ contains
       SA
     class ( Geometry_F_Form ), intent ( in ) :: &
       G
-    class ( FieldSetForm ), intent ( in ), target :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       FS
     class ( Atlas_SCG_Form ), intent ( in ) :: &
       A_SA

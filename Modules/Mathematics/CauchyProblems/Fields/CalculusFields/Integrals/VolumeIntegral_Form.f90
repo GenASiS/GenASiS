@@ -14,7 +14,7 @@ module VolumeIntegral_Form
       nIntegrals
     character ( LDL ) :: &
       Name
-    type ( FieldSetForm ), allocatable :: &
+    type ( FieldSet_BM_Form ), allocatable :: &
       Integrand
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )

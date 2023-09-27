@@ -16,9 +16,9 @@ program AzimuthalAverage_Form_Test
   type ( Geometry_F_Form ), allocatable :: &
     G, &
     G_AA
-  type ( FieldSetForm ), allocatable :: &
+  type ( FieldSet_BM_Form ), allocatable :: &
     FS
-  type ( StreamForm ), allocatable :: &
+  type ( Stream_BM_Form ), allocatable :: &
     S, &
     S_AA
   type ( AzimuthalAverageForm ), allocatable :: &
