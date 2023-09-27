@@ -67,7 +67,7 @@ module Integrator_H__Form
       GridImageStream
     class ( Atlas_H_Form ), allocatable :: &
       X
-    type ( StreamForm ), allocatable :: &
+    type ( Stream_BM_Form ), allocatable :: &
       Checkpoint_X
     class ( Geometry_F_Form ), allocatable :: &
       Geometry_X

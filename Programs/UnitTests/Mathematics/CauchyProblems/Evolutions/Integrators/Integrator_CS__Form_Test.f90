@@ -208,7 +208,7 @@ contains
 
   subroutine ComputeError ( FS, FS_R )
 
-    class ( FieldSetForm ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
       FS, &
       FS_R
 
