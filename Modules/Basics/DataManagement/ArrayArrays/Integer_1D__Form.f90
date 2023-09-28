@@ -123,6 +123,9 @@ contains
   
     class ( Integer_1D_Form ), intent ( inout ) :: &
       A
+      
+    if ( .not. allocated ( A % Value ) ) &
+      return
        
     call AllocateDevice ( size ( A % Value ), A % D_Value )
     A % AllocatedDevice = .true.
