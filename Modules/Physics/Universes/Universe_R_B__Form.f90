@@ -12,8 +12,12 @@ module Universe_R_B__Form
   private
 
   type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
+    integer ( KDI ) :: &
+      nRadiations = 0
     character ( LDL ) :: &
       FormalismType = ''
+    character ( LDL ), dimension ( : ), allocatable :: &
+      RadiationName
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
   contains
@@ -52,6 +56,11 @@ contains
 
     call U % Universe_H_Form % Initialize ( Name )
 
+    U % nRadiations  =  size ( RadiationName )
+
+    allocate ( U % RadiationName ( U % nRadiations ) )
+    U % RadiationName  =  RadiationName
+
     U % FormalismType  =  FormalismType
 
     allocate ( U % Units_R ( 1 ) )
@@ -70,6 +79,8 @@ contains
 
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
+    if ( allocated ( U % RadiationName ) ) &
+      deallocate ( U % RadiationName )
 
   end subroutine Finalize
 
@@ -136,6 +147,7 @@ contains
 
     call U % Universe_F_B_Form % ShowParameters ( )
 
+    call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
     call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
 
   end subroutine ShowParameters

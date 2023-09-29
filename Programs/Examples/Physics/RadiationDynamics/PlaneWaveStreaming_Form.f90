@@ -69,8 +69,8 @@ contains
 !      iD
 
     call PWS % Initialize &
-           ( RadiationName = [ 'Radiation' ], &
-             RadiationType = [ 'GENERIC' ], &
+           ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
+             RadiationType = [ 'GENERIC', 'GENERIC' ], &
              FormalismType = FormalismType, &
              Name = Name )
              ! EnergySpacingOption = 'COMPACTIFIED', &
