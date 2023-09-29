@@ -407,7 +407,6 @@ contains
       a_1_p_sq, &
       a_3_p_sq, &
       e_p, &
-      C_I_vec, &
       C_I_p, &
       C_A_p, &
       C_B_p
