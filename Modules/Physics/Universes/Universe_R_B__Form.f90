@@ -96,6 +96,10 @@ contains
     !          MinWidthEnergyOption = MinWidthEnergyOption, &
     !          EnergyScaleOption = EnergyScaleOption, &
     !          nCellsEnergyOption = nCellsEnergyOption )
+    call U % InitializeGravitation &
+           ( GravitationType = 'GALILEO' )
+    call U % InitializeFluid &
+           ( FluidType = 'IDEAL' )
 
   end subroutine Initialize_R_B
 
