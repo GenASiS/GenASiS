@@ -39,9 +39,7 @@ module Universe_F_C__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      AllocateIntegrator_F_C
-    generic, public :: &
-      AllocateIntegrator => AllocateIntegrator_F_C
+      AllocateIntegrator
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
@@ -272,7 +270,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine AllocateIntegrator_F_C ( U )
+  subroutine AllocateIntegrator ( U )
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
@@ -285,7 +283,7 @@ contains
       end associate !-- I
     end if
 
-  end subroutine AllocateIntegrator_F_C
+  end subroutine AllocateIntegrator
 
 
   subroutine InitializePositionSpace &

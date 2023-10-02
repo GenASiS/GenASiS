@@ -22,9 +22,7 @@ module Universe_F_B__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      AllocateIntegrator_F_B
-    generic, public :: &
-      AllocateIntegrator => AllocateIntegrator_F_B
+      AllocateIntegrator
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
@@ -115,14 +113,14 @@ contains
   end subroutine Finalize
 
 
-  subroutine AllocateIntegrator_F_B ( U )
+  subroutine AllocateIntegrator ( U )
 
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
 
     allocate ( Integrator_CS_Form :: U % Integrator )
 
-  end subroutine AllocateIntegrator_F_B
+  end subroutine AllocateIntegrator
 
 
   subroutine InitializePositionSpace &

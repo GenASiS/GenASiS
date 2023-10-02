@@ -28,9 +28,9 @@ module Universe_R_B__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      AllocateIntegrator_R_B
-    generic, public :: &
-      AllocateIntegrator => AllocateIntegrator_R_B
+      SetCommunicators
+    procedure, private, pass :: &
+      AllocateIntegrator
     procedure, public, pass :: &
       ShowParameters
   end type Universe_R_B_Form
@@ -66,8 +66,10 @@ contains
     allocate ( U % Units_R ( 1 ) )
     call U % Units_R ( 1 ) % Initialize ( )
 
+    call U % SetCommunicators &
+           ( )
     call U % AllocateIntegrator &
-           ( RadiationName )
+           ( )
 
   end subroutine Initialize_R_B
 
@@ -85,12 +87,18 @@ contains
   end subroutine Finalize
 
 
-  subroutine AllocateIntegrator_R_B ( U, RadiationName )
+  subroutine SetCommunicators ( U )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
-    character ( * ), dimension ( : ), intent ( in )  :: &
-      RadiationName
+
+  end subroutine SetCommunicators
+
+
+  subroutine AllocateIntegrator ( U )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
 
     integer ( KDI ) :: &
       iCS  !-- iCurrentSet
@@ -111,7 +119,7 @@ contains
     select type ( I => U % Integrator )
     class is ( Integrator_CS_1D_CS_Form )
 
-      I % N_CURRENT_SETS_1D  =  size ( RadiationName )
+      I % N_CURRENT_SETS_1D  =  size ( U % RadiationName )
       allocate ( I % dT_Label &
                    ( 1  +  I % N_CURRENT_SETS_1D  +  I % N_CURRENT_SETS_1D ) )
 
@@ -120,12 +128,12 @@ contains
 
       do iCS = 1, I % N_CURRENT_SETS_1D
         I % dT_Label ( 1 + iCS )  &
-          =  trim ( RadiationName ( iCS ) ) // 'Streaming'
+          =  trim ( U % RadiationName ( iCS ) ) // 'Streaming'
       end do !-- iCS
 
       do iCS = 1, I % N_CURRENT_SETS_1D
         I % dT_Label ( I % N_CURRENT_SETS_1D  +  1  +  iCS )  &
-          =  trim ( RadiationName ( iCS ) ) // 'Interactions'
+          =  trim ( U % RadiationName ( iCS ) ) // 'Interactions'
       end do !-- iCS
 
     end select !-- I
@@ -137,7 +145,7 @@ contains
     !   allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENT_SETS_1D ) )
     ! end select !-- I
 
-  end subroutine AllocateIntegrator_R_B
+  end subroutine AllocateIntegrator
 
 
   subroutine ShowParameters ( U )
