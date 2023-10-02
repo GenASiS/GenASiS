@@ -13,12 +13,12 @@ module Universe_R_B__Form
 
   type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
     integer ( KDI ) :: &
-      nRadiations = 0, &
-      iRadiation  = 0
+      nRadiations = 0
     character ( LDL ) :: &
       FormalismType = ''
     character ( LDL ), dimension ( : ), allocatable :: &
-      RadiationName
+      RadiationName, &
+      RadiationType
     type ( CommunicatorForm ), allocatable :: &
       Communicator_PS  !-- PositionSpace
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
@@ -71,7 +71,9 @@ contains
     U % nRadiations  =  size ( RadiationName )
 
     allocate ( U % RadiationName ( U % nRadiations ) )
+    allocate ( U % RadiationType ( U % nRadiations ) )
     U % RadiationName  =  RadiationName
+    U % RadiationType  =  RadiationType
 
     U % FormalismType  =  FormalismType
 
@@ -113,6 +115,8 @@ contains
       deallocate ( U % Units_R )
     if ( allocated ( U % Communicator_PS ) ) &
       deallocate ( U % Communicator_PS )
+    if ( allocated ( U % RadiationType ) ) &
+      deallocate ( U % RadiationType )
     if ( allocated ( U % RadiationName ) ) &
       deallocate ( U % RadiationName )
 
@@ -150,7 +154,6 @@ contains
                    source =  [ ( iP, iP = ( iR - 1 ) * nProcesses_R, &
                                             iR * nProcesses_R  -  1 ) ] )
         if ( any ( U % Communicator % Rank  ==  Rank ) ) then
-          U % iRadiation  =  iR
           allocate ( U % Communicator_PS )
           call U % Communicator_PS % Initialize &
                  ( U % Communicator, Rank, NameOption = 'Communicator_PS' )
@@ -261,8 +264,8 @@ contains
     call U % Universe_F_B_Form % ShowParameters ( )
 
     call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
+    call Show ( U % RadiationType, 'RadiationType', U % IGNORABILITY )
     call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
-    call Show ( U % iRadiation, 'iRadiation', U % IGNORABILITY )
 
   end subroutine ShowParameters
 
