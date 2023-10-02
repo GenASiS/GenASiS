@@ -144,6 +144,7 @@ contains
     class ( Universe_H_Form ), intent ( in ) :: &
       U
 
+    call U % Communicator % Show ( U % IGNORABILITY )
     call Show ( U % DeviceMemory, &
                 'DeviceMemory', U % IGNORABILITY ) 
     call Show ( U % PinnedMemory, &

@@ -13,11 +13,14 @@ module Universe_R_B__Form
 
   type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
     integer ( KDI ) :: &
-      nRadiations = 0
+      nRadiations = 0, &
+      iRadiation  = 0
     character ( LDL ) :: &
       FormalismType = ''
     character ( LDL ), dimension ( : ), allocatable :: &
       RadiationName
+    type ( CommunicatorForm ), allocatable :: &
+      Communicator_PS  !-- PositionSpace
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
   contains
@@ -28,7 +31,7 @@ module Universe_R_B__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      SetCommunicators
+      SetCommunicator
     procedure, private, pass :: &
       AllocateIntegrator
     procedure, public, pass :: &
@@ -66,7 +69,7 @@ contains
     allocate ( U % Units_R ( 1 ) )
     call U % Units_R ( 1 ) % Initialize ( )
 
-    call U % SetCommunicators &
+    call U % SetCommunicator &
            ( )
     call U % AllocateIntegrator &
            ( )
@@ -81,18 +84,62 @@ contains
 
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
+    if ( allocated ( U % Communicator_PS ) ) &
+      deallocate ( U % Communicator_PS )
     if ( allocated ( U % RadiationName ) ) &
       deallocate ( U % RadiationName )
 
   end subroutine Finalize
 
 
-  subroutine SetCommunicators ( U )
+  subroutine SetCommunicator ( U )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
-  end subroutine SetCommunicators
+    integer ( KDI ) :: &
+      iP, &  !-- iProcess
+      iR, &  !-- iRadiation
+      nProcesses, &
+      nProcesses_R
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      Rank
+
+    nProcesses  =  U % Communicator % Size
+    if ( mod ( nProcesses, U % nRadiations )  /=  0 ) then
+      call Show ( 'nRadiations must evenly divide nProcesses', CONSOLE % ERROR )
+      call Show ( nProcesses, 'nProcesses', CONSOLE % ERROR )
+      call Show ( U % nRadiations, 'nRadiations', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    select case ( trim ( U % FormalismType ) )
+    case ( 'GREY' )
+
+      nProcesses_R  =  nProcesses / U % nRadiations
+
+      do iR  =  1,  U % nRadiations
+        allocate ( Rank, &
+                   source =  [ ( iP, iP = ( iR - 1 ) * nProcesses_R, &
+                                            iR * nProcesses_R  -  1 ) ] )
+        if ( any ( U % Communicator % Rank  ==  Rank ) ) then
+          U % iRadiation  =  iR
+          allocate ( U % Communicator_PS )
+          call U % Communicator_PS % Initialize &
+                 ( U % Communicator, Rank, NameOption = 'Communicator_PS' )
+        end if
+        deallocate ( Rank )
+      end do !-- iR
+
+    case default
+      call Show ( 'FormalismType not recognized', CONSOLE % ERROR )
+      call Show ( U % FormalismType, 'FormalismType', CONSOLE % ERROR )
+      call Show ( 'Universe_R_B_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetCommunicator', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FormalismType
+
+  end subroutine SetCommunicator
 
 
   subroutine AllocateIntegrator ( U )
@@ -157,6 +204,8 @@ contains
 
     call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
     call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
+    call Show ( U % iRadiation, 'iRadiation', U % IGNORABILITY )
+    call U % Communicator_PS % Show ( U % IGNORABILITY ) 
 
   end subroutine ShowParameters
 
