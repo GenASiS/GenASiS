@@ -20,6 +20,8 @@ module Universe_H__Form
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
       dT_Label
+    type ( CommunicatorForm ), pointer :: &
+      Communicator => null ( )
     class ( Integrator_H_Form ), allocatable :: &
       Integrator
   contains
@@ -46,12 +48,14 @@ module Universe_H__Form
 contains
 
  
-  subroutine Initialize_H ( U, Name )
+  subroutine Initialize_H ( U, Name, CommunicatorOption )
 
     class ( Universe_H_Form ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ) :: &
       Name
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
 
     U % IGNORABILITY = CONSOLE % INFO_1
 
@@ -59,6 +63,12 @@ contains
       U % Type  =  'a Universe' 
 
     U % Name  =  Name
+
+    if ( present ( CommunicatorOption ) ) then
+      U % Communicator  =>  CommunicatorOption
+    else
+      U % Communicator  =>  PROGRAM_HEADER % Communicator
+    end if
 
     U % DeviceMemory  =  OffloadEnabled ( ) .and. NumberOfDevices ( ) >= 1
     call PROGRAM_HEADER % GetParameter ( U % DeviceMemory, 'DeviceMemory' )

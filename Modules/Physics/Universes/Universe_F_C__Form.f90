@@ -178,7 +178,8 @@ contains
     end if
 
     call I % Initialize &
-           ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
+           ( CommunicatorOption = U % Communicator, &
+             Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
@@ -288,11 +289,13 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( U, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
-                 RadialRatioOption, nCellsPolarOption )
+               ( U, CommunicatorOption, RadiusMaxOption, RadiusCoreOption, &
+                 RadiusExcisionOption, RadialRatioOption, nCellsPolarOption )
 
     class ( Universe_F_C_Form ), intent ( inout ) :: &
       U
+    type ( CommunicatorForm ), intent ( in ), optional :: &
+      CommunicatorOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
@@ -311,7 +314,8 @@ contains
     end if
 
     call U % InitializeAtlas &
-           ( RadiusMaxOption = RadiusMaxOption, &
+           ( CommunicatorOption = CommunicatorOption, &
+             RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadiusExcisionOption = RadiusExcisionOption, &
              RadialRatioOption = RadialRatioOption, &
@@ -970,22 +974,24 @@ contains
 
 
   subroutine InitializeAtlas &
-               ( U, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
-                 RadialRatioOption, nCellsPolarOption )
+               ( U, CommunicatorOption, RadiusMaxOption, RadiusCoreOption, &
+                 RadiusExcisionOption, RadialRatioOption, nCellsPolarOption )
 
-      class ( Universe_F_C_Form ), intent ( inout ) :: &
-        U
-      real ( KDR ), intent ( in ), optional :: &
-        RadiusMaxOption, &
-        RadiusCoreOption, &
-        RadiusExcisionOption, &
-        RadialRatioOption
-      integer ( KDI ), intent ( in ), optional :: &
-        nCellsPolarOption
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
+    real ( KDR ), intent ( in ), optional :: &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadiusExcisionOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption
 
-      call Show ( 'InitializeAtlas should be overridden', CONSOLE % WARNING )
-      call Show ( 'Universe_F_C__Form', 'module', CONSOLE % WARNING )
-      call Show ( 'InitializeAtlas', 'subroutine', CONSOLE % WARNING )
+    call Show ( 'InitializeAtlas should be overridden', CONSOLE % WARNING )
+    call Show ( 'Universe_F_C__Form', 'module', CONSOLE % WARNING )
+    call Show ( 'InitializeAtlas', 'subroutine', CONSOLE % WARNING )
 
   end subroutine InitializeAtlas
 

@@ -179,23 +179,33 @@ contains
 
 
   subroutine InitializeAtlas &
-               ( U, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
-                 RadialRatioOption, nCellsPolarOption )
+               ( U, CommunicatorOption, RadiusMaxOption, RadiusCoreOption, &
+                 RadiusExcisionOption, RadialRatioOption, nCellsPolarOption )
 
-      class ( Universe_F_CC_Form ), intent ( inout ) :: &
-        U
-      real ( KDR ), intent ( in ), optional :: &
-        RadiusMaxOption, &
-        RadiusCoreOption, &
-        RadiusExcisionOption, &
-        RadialRatioOption
-      integer ( KDI ), intent ( in ), optional :: &
-        nCellsPolarOption
+    class ( Universe_F_CC_Form ), intent ( inout ) :: &
+      U
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
+    real ( KDR ), intent ( in ), optional :: &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadiusExcisionOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption
 
     real ( KDR ) :: &
       RadiusMax, &
       RadiusCore, &
       RadialRatio
+    type ( CommunicatorForm ), pointer :: &
+      Communicator
+
+    if ( present ( CommunicatorOption ) ) then
+      Communicator  =>  CommunicatorOption
+    else
+      Communicator  =>  U % Communicator
+    end if
 
     associate ( I  =>  U % Integrator )
 
@@ -218,7 +228,7 @@ contains
       call PS % Initialize &
              ( RadiusMax = RadiusMax, &
                RadiusCore = RadiusCore, &
-               CommunicatorOption = PROGRAM_HEADER % Communicator, &
+               CommunicatorOption = Communicator, &
                NameOption = 'PositionSpace', &
                DeviceMemoryOption = U % DeviceMemory, &
                RadialRatioOption = RadialRatio, &

@@ -94,7 +94,8 @@ contains
     end if
 
     call I % Initialize &
-           ( Unit_T_Option = U % Units_F ( 1 ) % Time, &
+           ( CommunicatorOption = U % Communicator, &
+             Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
@@ -125,15 +126,27 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( U, MinCoordinateOption, MaxCoordinateOption, nCellsOption )
+               ( U, CommunicatorOption, MinCoordinateOption, &
+                 MaxCoordinateOption, nCellsOption )
 
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsOption
+
+    type ( CommunicatorForm ), pointer :: &
+      Communicator
+
+    if ( present ( CommunicatorOption ) ) then
+      Communicator  =>  CommunicatorOption
+    else
+      Communicator  =>  U % Communicator
+    end if
 
     associate ( I  =>  U % Integrator )
 
@@ -142,7 +155,7 @@ contains
       class is ( Atlas_SCG_Form )
 
     call PS % Initialize &
-           ( CommunicatorOption = PROGRAM_HEADER % Communicator, &
+           ( CommunicatorOption = Communicator, &
              NameOption = 'PositionSpace', &
              DeviceMemoryOption = U % DeviceMemory, &
              CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
