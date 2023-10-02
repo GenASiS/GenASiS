@@ -35,6 +35,8 @@ module Universe_R_B__Form
     procedure, private, pass :: &
       AllocateIntegrator
     procedure, public, pass :: &
+      InitializePositionSpace
+    procedure, public, pass :: &
       ShowParameters
   end type Universe_R_B_Form
 
@@ -43,7 +45,9 @@ contains
 
 
   subroutine Initialize_R_B &
-               ( U, RadiationName, RadiationType, FormalismType, Name )
+               ( U, RadiationName, RadiationType, FormalismType, Name, &
+                 MinCoordinateOption, MaxCoordinateOption, &
+                 nCellsPositionOption )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
@@ -53,6 +57,11 @@ contains
     character ( * ), intent ( in ) :: &
       FormalismType, &
       Name
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nCellsPositionOption
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_B'
@@ -66,6 +75,9 @@ contains
 
     U % FormalismType  =  FormalismType
 
+    allocate ( U % Units_F ( 1 ) )
+    call U % Units_F ( 1 ) % Initialize ( )
+
     allocate ( U % Units_R ( 1 ) )
     call U % Units_R ( 1 ) % Initialize ( )
 
@@ -73,6 +85,17 @@ contains
            ( )
     call U % AllocateIntegrator &
            ( )
+    call U % InitializePositionSpace &
+           ( MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             nCellsOption = nCellsPositionOption )
+    ! call RB % InitializeMomentumSpace &
+    !        ( EnergySpacingOption = EnergySpacingOption, &
+    !          MinEnergyOption = MinEnergyOption, &
+    !          MaxEnergyOption = MaxEnergyOption, &
+    !          MinWidthEnergyOption = MinWidthEnergyOption, &
+    !          EnergyScaleOption = EnergyScaleOption, &
+    !          nCellsEnergyOption = nCellsEnergyOption )
 
   end subroutine Initialize_R_B
 
@@ -195,6 +218,37 @@ contains
   end subroutine AllocateIntegrator
 
 
+  subroutine InitializePositionSpace &
+               ( U, CommunicatorOption, MinCoordinateOption, &
+                 MaxCoordinateOption, nCellsOption )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption
+    integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
+      nCellsOption
+
+    integer ( KDI ), dimension ( 3 ) :: &
+      nCellsPosition
+
+    nCellsPosition = [ 128, 128, 128 ]
+    if ( present ( nCellsOption ) ) &
+      nCellsPosition = nCellsOption
+    call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
+
+    call U % Universe_F_B_Form % InitializePositionSpace &
+           ( CommunicatorOption = U % Communicator_PS, &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             nCellsOption = nCellsPosition )
+
+  end subroutine InitializePositionSpace
+
+
   subroutine ShowParameters ( U )
 
     class ( Universe_R_B_Form ), intent ( in ) :: &
@@ -205,7 +259,6 @@ contains
     call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
     call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
     call Show ( U % iRadiation, 'iRadiation', U % IGNORABILITY )
-    call U % Communicator_PS % Show ( U % IGNORABILITY ) 
 
   end subroutine ShowParameters
 

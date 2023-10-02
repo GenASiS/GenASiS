@@ -14,7 +14,9 @@ program SineWaveStreaming_G
 
   allocate ( SWS )
   call SWS % Initialize ( 'GREY', PROGRAM_HEADER % Name )
+call Show ( 'SineWaveStreaming parameters' )
 call SWS % ShowParameters ( )
+call SWS % Integrator % X % Show ( )
   ! call SWS % Evolve ( )
   ! call SWS % ComputeError ( )
   deallocate ( SWS )

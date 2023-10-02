@@ -414,7 +414,6 @@ contains
     type ( Chart_GS_Form ), intent ( inout ) :: &
       C
 
-    call Show ( 'FINALIZING CHARTS' )    
     nullify ( C % Communicator )
 
     if ( allocated ( C % PortalEdge_RL_LR ) ) &
@@ -445,8 +444,6 @@ contains
     if ( allocated ( C % nCellsBrickGlobal ) ) & 
       deallocate ( C % nCellsBrickGlobal )
     
-    call Show ( 'DONE FINALIZING CHARTS' )
-
   end subroutine Finalize
 
 
