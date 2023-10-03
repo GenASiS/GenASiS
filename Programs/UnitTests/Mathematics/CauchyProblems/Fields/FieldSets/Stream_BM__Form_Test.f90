@@ -7,9 +7,18 @@ program Stream_BM__Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    iD, &  !-- iDimension
+    iD, &   !-- iDimension
     nFields, &
     nGhostExchanges
+  integer ( KDI ) :: &
+    iP, &    !-- iProcess
+    iBM, &   !-- iBaseManifold
+    iMyBaseManifold, &
+    nProcesses, &
+    nProcesses_BM, &  !-- BaseManifold
+    nBaseManifolds
+  integer ( KDI ), dimension ( : ), allocatable :: &
+    Rank
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
   type ( QuantityForm ), dimension ( :, : ), allocatable :: &
@@ -18,6 +27,10 @@ program Stream_BM__Form_Test
     DeviceMemory, &
     PinnedMemory, &
     DevicesCommunicate
+  character ( 4 + LDN ) :: &
+    Suffix
+  type ( CommunicatorForm ), allocatable :: &
+    Communicator_BM
   type ( GridImageStreamForm ), allocatable :: &
     GIS
   type ( Atlas_SCG_Form ), allocatable :: &
@@ -35,14 +48,44 @@ program Stream_BM__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( 'Stream_BM_Form_Test', DimensionalityOption = '2D' )
 
+  nBaseManifolds = 2
+  call PROGRAM_HEADER % GetParameter ( nBaseManifolds, 'nBaseManifolds' )
+
+  nProcesses  =  PROGRAM_HEADER % Communicator % Size
+  if ( mod ( nProcesses, nBaseManifolds )  /=  0 ) then
+    call Show ( 'nBaseManifolds must evenly divide nProcesses', &
+                CONSOLE % ERROR )
+    call Show ( nProcesses, 'nProcesses', CONSOLE % ERROR )
+    call Show ( nBaseManifolds, 'nBaseManifolds', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+  end if
+
+  nProcesses_BM  =  nProcesses / nBaseManifolds
+
+  do iBM  =  1,  nBaseManifolds
+    allocate ( Rank, &
+               source =  [ ( iP, iP = ( iBM - 1 ) * nProcesses_BM, &
+                                        iBM * nProcesses_BM  -  1 ) ] )
+    if ( any ( PROGRAM_HEADER % Communicator % Rank  ==  Rank ) ) then
+      iMyBaseManifold  =  iBM
+      allocate ( Communicator_BM )
+      call Communicator_BM % Initialize &
+             ( PROGRAM_HEADER % Communicator, Rank, &
+               NameOption = 'Communicator_BM' )
+    end if
+    deallocate ( Rank )
+  end do !-- iBM
+
+  write ( Suffix, fmt = '(a4,i7.7)' ) '_BM_', iMyBaseManifold
+
   allocate ( GIS )
   call GIS % Initialize &
-         ( PROGRAM_HEADER % Name, &
-           CommunicatorOption = PROGRAM_HEADER % Communicator )
+         ( trim ( PROGRAM_HEADER % Name ) // Suffix, &
+           CommunicatorOption = Communicator_BM )
 
   allocate ( A )
   call A % Initialize &
-         ( CommunicatorOption = PROGRAM_HEADER % Communicator )
+         ( CommunicatorOption = Communicator_BM )
 
   nFields  =  5
 
@@ -143,6 +186,7 @@ program Stream_BM__Form_Test
   deallocate ( FS_R )
   deallocate ( A )  
   deallocate ( GIS )
+  deallocate ( Communicator_BM )
   deallocate ( PROGRAM_HEADER )
 
 
@@ -210,9 +254,10 @@ contains
         do jC  =  1,  nCB ( 2 )
           do iC  =  1,  nCB ( 1 )
             F_3D ( iC, jC, kC )  &
-              =  iS  *  (    1.e0  *  ( oC ( 1 )  +  iC  -  1 )  &
-                          +  1.e2  *  ( oC ( 2 )  +  jC  -  1 )  &
-                          +  1.e4  *  ( oC ( 3 )  +  kC  -  1 ) )
+              =  iMyBaseManifold &
+                 *  iS  *  (    1.e0  *  ( oC ( 1 )  +  iC  -  1 )  &
+                             +  1.e2  *  ( oC ( 2 )  +  jC  -  1 )  &
+                             +  1.e4  *  ( oC ( 3 )  +  kC  -  1 ) )
           end do !-- iC
         end do !-- jC
       end do !-- kC
