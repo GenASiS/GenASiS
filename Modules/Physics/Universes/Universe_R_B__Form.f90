@@ -13,6 +13,7 @@ module Universe_R_B__Form
 
   type, public, extends ( Universe_F_B_Form ) :: Universe_R_B_Form
     integer ( KDI ) :: &
+      iRadiation  = 0, &
       nRadiations = 0
     character ( LDL ) :: &
       FormalismType = ''
@@ -130,9 +131,9 @@ contains
 
     integer ( KDI ) :: &
       iP, &  !-- iProcess
-      iR, &  !-- iRadiation
+      iPS, &  !-- iPositionSpace
       nProcesses, &
-      nProcesses_R
+      nProcesses_PS  !-- PositionSpace
     integer ( KDI ), dimension ( : ), allocatable :: &
       Rank
 
@@ -147,19 +148,20 @@ contains
     select case ( trim ( U % FormalismType ) )
     case ( 'GREY' )
 
-      nProcesses_R  =  nProcesses / U % nRadiations
+      nProcesses_PS  =  nProcesses / U % nRadiations
 
-      do iR  =  1,  U % nRadiations
+      do iPS  =  1,  U % nRadiations
         allocate ( Rank, &
-                   source =  [ ( iP, iP = ( iR - 1 ) * nProcesses_R, &
-                                            iR * nProcesses_R  -  1 ) ] )
+                   source =  [ ( iP, iP = ( iPS - 1 ) * nProcesses_PS, &
+                                            iPS * nProcesses_PS  -  1 ) ] )
         if ( any ( U % Communicator % Rank  ==  Rank ) ) then
+          U % iRadiation = iPS
           allocate ( U % Communicator_PS )
           call U % Communicator_PS % Initialize &
                  ( U % Communicator, Rank, NameOption = 'Communicator_PS' )
         end if
         deallocate ( Rank )
-      end do !-- iR
+      end do !-- iPS
 
     case default
       call Show ( 'FormalismType not recognized', CONSOLE % ERROR )
@@ -265,6 +267,7 @@ contains
 
     call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
     call Show ( U % RadiationType, 'RadiationType', U % IGNORABILITY )
+    call Show ( U % iRadiation,    'iRadiation   ', U % IGNORABILITY )
     call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
 
   end subroutine ShowParameters
