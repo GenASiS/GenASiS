@@ -44,7 +44,9 @@ module RadiationMoments_BM__Form
       FLUID_VELOCITY_U_2 = 0, &
       FLUID_VELOCITY_U_3 = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      FLUID_VELOCITY_U     = 0
+      FLUID_VELOCITY_U = 0
+    integer ( KDI ) :: &
+      iTimer_CFB = 0
   !   character ( LDL ) :: &
   !     RadiationType = '', &
   !     MomentsType = ''
@@ -61,8 +63,8 @@ module RadiationMoments_BM__Form
       SetStream
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeFromConservedCommon
+    procedure, public, pass :: &
+      ComputeFromBalanced
   !   procedure, public, pass ( C ) :: &
   !     ComputeRawFluxes
   !   procedure, public, pass ( C ) :: &
@@ -74,7 +76,8 @@ module RadiationMoments_BM__Form
   end type RadiationMoments_BM_Form
 
     private :: &
-      Compute_E_S_G_Kernel
+      Compute_E_S_G_Kernel, &
+      Compute_J_H_G_Kernel
 
   interface
 
@@ -97,6 +100,30 @@ module RadiationMoments_BM__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Compute_E_S_G_Kernel
+
+    module subroutine Compute_J_H_G_Kernel &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, & !RM, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 V_1, V_2, V_3, UseDeviceOption )
+      !-- Compute_ComovingEnergy_Momentum_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        J, &
+        H_1, H_2, H_3
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        E, &
+        S_1, S_2, S_3, &
+        FF, SF
+!      class ( RadiationMomentsForm ), intent ( in ) :: &
+!        RM
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M_DD_11, M_DD_22, M_DD_33, &
+        M_UU_11, M_UU_22, M_UU_33, &
+        V_1, V_2, V_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_J_H_G_Kernel
 
   end interface
 
@@ -427,6 +454,87 @@ contains
     end do !-- iC
 
   end subroutine ComputeFromPrimitive
+
+
+  subroutine ComputeFromBalanced ( CS, T_Option )
+
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      CS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iC
+    type ( TimerForm ), pointer :: &
+      T_K
+
+    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
+
+    if ( present ( T_Option ) ) then
+      T_K  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = CS % iTimer_CFB, &
+                   Name = trim ( T_Option % Name ) // '_Krnl', &
+                   Level = T_Option % Level + 1 )
+    else
+      T_K  =>  null ( )
+    end if
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        ( CSV  =>  CS % Storage ( iC ) % Value )
+      associate &
+        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
+          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+
+      select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  G % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ), &
+            M_UU_11  =>  GSV ( :, G % METRIC_F_UU_11 ), &
+            M_UU_22  =>  GSV ( :, G % METRIC_F_UU_22 ), &
+            M_UU_33  =>  GSV ( :, G % METRIC_F_UU_33 ) )
+
+        call Compute_J_H_G_Kernel &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, & !RM, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 V_1, V_2, V_3, UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- G
+
+      end associate !-- CSV, etc.
+      end associate !-- J, etc.
+
+    end do !-- iC
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+  end subroutine ComputeFromBalanced
 
 
   impure elemental subroutine Finalize ( RM )
