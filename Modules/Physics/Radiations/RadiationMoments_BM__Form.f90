@@ -4,6 +4,7 @@ module RadiationMoments_BM__Form
 
   use Basics
   use Mathematics
+  use Gravitations
   use Units_R__Form
 
   implicit none
@@ -394,6 +395,31 @@ contains
           V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
           V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
           V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+
+      select type ( G  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  G % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
+
+        call Compute_E_S_G_Kernel &
+               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, &
+                 M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, &
+                 UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- G
 
       end associate !-- J, etc.
       end associate !-- CSV, etc.

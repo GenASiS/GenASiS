@@ -5,6 +5,7 @@ Units_R__Form.o: \
 RadiationMoments_BM__Form.o: \
   Basics.o \
   Mathematics.o \
+  Gravitations.o \
   Units_R__Form.o \
   RadiationMoments_BM__Form.f90
 
