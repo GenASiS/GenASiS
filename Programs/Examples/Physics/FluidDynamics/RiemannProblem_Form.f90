@@ -39,12 +39,14 @@ module RiemannProblem_Form
 contains
 
 
-  subroutine Initialize_H ( U, Name )
+  subroutine Initialize_H ( U, Name, CommunicatorOption )
 
     class ( RiemannProblemForm ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ) :: &
       Name
+    type ( CommunicatorForm ), intent ( in ), target, optional :: &
+      CommunicatorOption
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a RiemannProblem'
