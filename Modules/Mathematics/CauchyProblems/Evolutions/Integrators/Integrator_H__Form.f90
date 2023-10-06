@@ -56,11 +56,12 @@ module Integrator_H__Form
       AllWrite, &
       T_CheckpointExact, &
       CheckpointDue
-    character ( LDL ), dimension ( : ), allocatable :: &
-      dT_Label
     character ( LDF ) :: &
       Type = '', &
-      Name = ''
+      Name = '', &
+      StreamSuffix = ''
+    character ( LDL ), dimension ( : ), allocatable :: &
+      dT_Label
     type ( CommunicatorForm ), pointer :: &
       Communicator => null ( )
     type ( GridImageStreamForm ), allocatable :: &
@@ -400,7 +401,7 @@ contains
     allocate ( I % GridImageStream )
     associate ( GIS => I % GridImageStream )
     call GIS % Initialize &
-           ( PROGRAM_HEADER % Name, &
+           ( trim ( PROGRAM_HEADER % Name ) // I % StreamSuffix, &
              CommunicatorOption = I % Communicator, &
              WorkingDirectoryOption = OutputDirectory )
     end associate !-- GIS
@@ -542,8 +543,7 @@ contains
     call Split ( I % Type, ' ', TypeWord )
     call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
-
-    call Show ( I % Communicator % Name, 'Communicator', I % IGNORABILITY )
+    call I % Communicator % Show ( I % IGNORABILITY )
 
     call I % ShowParameters ( )
     call I % ShowManifold ( )

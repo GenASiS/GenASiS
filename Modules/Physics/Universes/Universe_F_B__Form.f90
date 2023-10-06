@@ -31,6 +31,8 @@ module Universe_F_B__Form
       InitializeFluid
     procedure, public, pass :: &
       InitializeStep
+    procedure, public, pass :: &
+      InitializeIntegrator
    end type Universe_F_B_Form
 
     private :: &
@@ -82,22 +84,9 @@ contains
            ( FluidType )
     call U % InitializeStep &
            ( )
-
-    select type ( I  =>  U % Integrator )
-      class is ( Integrator_CS_Form )
-
-    if ( .not. allocated ( I % dT_Label ) ) then
-      allocate ( I % dT_Label ( 1 ) )
-      I % dT_Label ( 1 ) = 'FluidAdvection'
-    end if
-
-    call I % Initialize &
-           ( CommunicatorOption = U % Communicator, &
-             Unit_T_Option = U % Units_F ( 1 ) % Time, &
-             T_FinishOption = FinishTimeOption, &
+    call U % InitializeIntegrator &
+           ( FinishTimeOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
-
-    end select !-- I
 
   end subroutine Initialize_F_B
 
@@ -434,6 +423,34 @@ contains
     end select !-- I
 
   end subroutine InitializeStep
+
+
+  subroutine InitializeIntegrator ( U, FinishTimeOption, nWriteOption )
+
+    class ( Universe_F_B_Form ), intent ( inout ) :: &
+      U
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+
+    if ( .not. allocated ( I % dT_Label ) ) then
+      allocate ( I % dT_Label ( 1 ) )
+      I % dT_Label ( 1 ) = 'FluidAdvection'
+    end if
+
+    call I % Initialize &
+           ( CommunicatorOption = U % Communicator, &
+             Unit_T_Option = U % Units_F ( 1 ) % Time, &
+             T_FinishOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
+
+    end select !-- I
+
+  end subroutine InitializeIntegrator
 
 
   subroutine SetSlope_N ( S, K )

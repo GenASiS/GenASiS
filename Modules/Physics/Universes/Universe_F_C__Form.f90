@@ -50,6 +50,8 @@ module Universe_F_C__Form
       SetBoundaryConditions
     procedure, public, pass :: &
       InitializeStep
+    procedure, public, pass :: &
+      InitializeIntegrator
     procedure, private, pass :: &
       InitializeAtlas
     procedure, public, pass :: &
@@ -155,88 +157,11 @@ contains
            ( )
     call U % InitializeStep &
            ( )
-
-    select type ( I  =>  U % Integrator )
-      class is ( Integrator_CS_Form )
-
-    if ( .not. allocated ( I % dT_Label ) ) then
-      if ( any ( trim ( GravitationType ) == [ 'NEWTON_SG' ] ) ) then
-        allocate ( I % dT_Label ( 2 ) )
-        I % dT_Label ( 1 )  =  'FluidAdvection'
-        I % dT_Label ( 2 )  =  'GravitationAcceleration'
-        U % GravityFactor  =  0.7_KDR
-        if ( present ( GravityFactorOption ) ) &
-          U % GravityFactor  =  GravityFactorOption
-        call PROGRAM_HEADER % GetParameter &
-               ( U % GravityFactor, 'GravityFactor' )
-      else
-        allocate ( I % dT_Label ( 1 ) )
-        I % dT_Label ( 1 )  =  'FluidAdvection'
-      end if
-    end if
-
-    call I % Initialize &
-           ( CommunicatorOption = U % Communicator, &
-             Unit_T_Option = U % Units_F ( 1 ) % Time, &
-             T_FinishOption = FinishTimeOption, &
+    call U % InitializeIntegrator &
+           ( GravitationType, &
+             FinishTimeOption = FinishTimeOption, &
+             GravityFactorOption = GravityFactorOption, &
              nWriteOption = nWriteOption )
-
-    !-- AzimuthalAverage Stream
-
-    if ( allocated ( U % PositionSpace_AA ) ) then
-      allocate ( U % Stream_AA )
-      associate &
-        (   A_AA  =>  U % PositionSpace_AA, &
-            S_AA  =>  U % Stream_AA, &
-          GIS     =>  I % GridImageStream, &
-            S     =>  I % Checkpoint_X )
-
-      call S_AA % Initialize &
-             ( A_AA, GIS, NameOption = trim ( S % Name ) // '_AA' )
-
-      select type ( G_AA  =>  U % AA_Gravitation % FieldSet_AA )
-        class is ( Geometry_F_Form )
-      select type ( F_AA  =>  U % AA_Fluid % FieldSet_AA )
-        class is ( Fluid_D_Form )
-      call G_AA % SetStream ( S_AA )
-      call F_AA % SetStream ( S_AA )
-      end select !-- F_AA
-      end select !-- G_AA
-
-      end associate !-- A_AA, etc.
-    end if !-- allocated PositionSpace_AA
-
-    !-- SphericalAverage Stream
-
-    if ( allocated ( U % PositionSpace_SA ) ) then
-      allocate ( U % Stream_SA )
-      associate &
-        (   A_SA  =>  U % PositionSpace_SA, &
-            S_SA  =>  U % Stream_SA, &
-          GIS     =>  I % GridImageStream, &
-            S     =>  I % Checkpoint_X )
-
-      call S_SA % Initialize &
-             ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
-
-      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
-        class is ( Geometry_F_Form )
-      select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
-        class is ( Fluid_D_Form )
-      call G_SA % SetStream ( S_SA )
-      call F_SA % SetStream ( S_SA )
-      end select !-- F_SA
-      end select !-- G_SA
-
-      end associate !-- A_SA, etc.
-    end if !-- allocated PositionSpace_SA
-
-    !-- Integrator methods
-
-    I % Analyze  =>  Analyze_F_C
-    I % Write    =>  Write_F_C
-
-    end select !-- I
 
   end subroutine Initialize_F_C
 
@@ -969,6 +894,105 @@ contains
     end select    !-- I
 
   end subroutine InitializeStep
+
+
+  subroutine InitializeIntegrator &
+               ( U, GravitationType, FinishTimeOption, GravityFactorOption, &
+                 nWriteOption )
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+    character ( * ), intent ( in ) :: &
+      GravitationType
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption, &
+      GravityFactorOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+
+    if ( .not. allocated ( I % dT_Label ) ) then
+      if ( any ( trim ( GravitationType ) == [ 'NEWTON_SG' ] ) ) then
+        allocate ( I % dT_Label ( 2 ) )
+        I % dT_Label ( 1 )  =  'FluidAdvection'
+        I % dT_Label ( 2 )  =  'GravitationAcceleration'
+        U % GravityFactor  =  0.7_KDR
+        if ( present ( GravityFactorOption ) ) &
+          U % GravityFactor  =  GravityFactorOption
+        call PROGRAM_HEADER % GetParameter &
+               ( U % GravityFactor, 'GravityFactor' )
+      else
+        allocate ( I % dT_Label ( 1 ) )
+        I % dT_Label ( 1 )  =  'FluidAdvection'
+      end if
+    end if
+
+    call I % Initialize &
+           ( CommunicatorOption = U % Communicator, &
+             Unit_T_Option = U % Units_F ( 1 ) % Time, &
+             T_FinishOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
+
+    !-- AzimuthalAverage Stream
+
+    if ( allocated ( U % PositionSpace_AA ) ) then
+      allocate ( U % Stream_AA )
+      associate &
+        (   A_AA  =>  U % PositionSpace_AA, &
+            S_AA  =>  U % Stream_AA, &
+          GIS     =>  I % GridImageStream, &
+            S     =>  I % Checkpoint_X )
+
+      call S_AA % Initialize &
+             ( A_AA, GIS, NameOption = trim ( S % Name ) // '_AA' )
+
+      select type ( G_AA  =>  U % AA_Gravitation % FieldSet_AA )
+        class is ( Geometry_F_Form )
+      select type ( F_AA  =>  U % AA_Fluid % FieldSet_AA )
+        class is ( Fluid_D_Form )
+      call G_AA % SetStream ( S_AA )
+      call F_AA % SetStream ( S_AA )
+      end select !-- F_AA
+      end select !-- G_AA
+
+      end associate !-- A_AA, etc.
+    end if !-- allocated PositionSpace_AA
+
+    !-- SphericalAverage Stream
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      allocate ( U % Stream_SA )
+      associate &
+        (   A_SA  =>  U % PositionSpace_SA, &
+            S_SA  =>  U % Stream_SA, &
+          GIS     =>  I % GridImageStream, &
+            S     =>  I % Checkpoint_X )
+
+      call S_SA % Initialize &
+             ( A_SA, GIS, NameOption = trim ( S % Name ) // '_SA' )
+
+      select type ( G_SA  =>  U % SA_Gravitation % FieldSet_SA )
+        class is ( Geometry_F_Form )
+      select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+        class is ( Fluid_D_Form )
+      call G_SA % SetStream ( S_SA )
+      call F_SA % SetStream ( S_SA )
+      end select !-- F_SA
+      end select !-- G_SA
+
+      end associate !-- A_SA, etc.
+    end if !-- allocated PositionSpace_SA
+
+    !-- Integrator methods
+
+    I % Analyze  =>  Analyze_F_C
+    I % Write    =>  Write_F_C
+
+    end select !-- I
+
+  end subroutine InitializeIntegrator
 
 
   subroutine InitializeAtlas &

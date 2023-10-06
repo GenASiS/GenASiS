@@ -40,6 +40,8 @@ module Universe_R_B__Form
     procedure, public, pass :: &
       InitializeRadiation
     procedure, public, pass :: &
+      InitializeIntegrator
+    procedure, public, pass :: &
       ShowParameters
   end type Universe_R_B_Form
 
@@ -49,8 +51,8 @@ contains
 
   subroutine Initialize_R_B &
                ( U, RadiationName, RadiationType, FormalismType, Name, &
-                 MinCoordinateOption, MaxCoordinateOption, &
-                 nCellsPositionOption )
+                 MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
+                 nCellsPositionOption, nWriteOption )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
@@ -63,8 +65,12 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsPositionOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_B'
@@ -107,6 +113,9 @@ contains
            ( FluidType = 'IDEAL' )
     call U % InitializeRadiation &
            ( )
+    call U % InitializeIntegrator &
+           ( FinishTimeOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
 
   end subroutine Initialize_R_B
 
@@ -183,9 +192,6 @@ contains
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
-    integer ( KDI ) :: &
-      iCS  !-- iCurrentSet
-
     select case ( trim ( U % FormalismType ) )
     case ( 'GREY' )
       allocate ( Integrator_CS_1D_BM_CS_Form :: U % Integrator )
@@ -198,37 +204,6 @@ contains
       call Show ( 'AllocateIntegrator_R_B', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- FormalismType
-
-    select type ( I => U % Integrator )
-    class is ( Integrator_CS_1D_CS_Form )
-
-      I % iCurrentSet  =  U % iRadiation
-
-      I % N_CURRENT_SETS_1D  =  size ( U % RadiationName )
-      allocate ( I % dT_Label &
-                   ( 1  +  I % N_CURRENT_SETS_1D  +  I % N_CURRENT_SETS_1D ) )
-
-      I % dT_Label ( 1 )  &
-        =  'FluidAdvection'
-
-      do iCS = 1, I % N_CURRENT_SETS_1D
-        I % dT_Label ( 1 + iCS )  &
-          =  trim ( U % RadiationName ( iCS ) ) // 'Streaming'
-      end do !-- iCS
-
-      do iCS = 1, I % N_CURRENT_SETS_1D
-        I % dT_Label ( I % N_CURRENT_SETS_1D  +  1  +  iCS )  &
-          =  trim ( U % RadiationName ( iCS ) ) // 'Interactions'
-      end do !-- iCS
-
-    end select !-- I
-
-    ! select type ( I => U % Integrator )
-    ! class is ( Integrator_C_1D_PS_C_PS_Form )
-    !   allocate ( I % Current_ASC_1D ( I % N_CURRENT_SETS_1D ) )
-    ! class is ( Integrator_C_1D_MS_C_PS_Form )
-    !   allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENT_SETS_1D ) )
-    ! end select !-- I
 
   end subroutine AllocateIntegrator
 
@@ -302,6 +277,60 @@ contains
     end select !-- I
 
   end subroutine InitializeRadiation
+
+
+  subroutine InitializeIntegrator ( U, FinishTimeOption, nWriteOption )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
+
+    integer ( KDI ) :: &
+      iCS  !-- iCurrentSet
+
+    select type ( I => U % Integrator )
+    class is ( Integrator_CS_1D_CS_Form )
+
+    I % iCurrentSet  =  U % iRadiation
+
+    I % N_CURRENT_SETS_1D  =  size ( U % RadiationName )
+    allocate ( I % dT_Label &
+                 ( 1  +  I % N_CURRENT_SETS_1D  +  I % N_CURRENT_SETS_1D ) )
+
+    I % dT_Label ( 1 )  &
+      =  'FluidAdvection'
+
+    do iCS = 1, I % N_CURRENT_SETS_1D
+      I % dT_Label ( 1 + iCS )  &
+        =  trim ( U % RadiationName ( iCS ) ) // '_Streaming'
+    end do !-- iCS
+
+    do iCS = 1, I % N_CURRENT_SETS_1D
+      I % dT_Label ( I % N_CURRENT_SETS_1D  +  1  +  iCS )  &
+        =  trim ( U % RadiationName ( iCS ) ) // '_Interactions'
+    end do !-- iCS
+
+    I % StreamSuffix  =  '_' // trim ( U % RadiationName ( U % iRadiation ) )
+
+    call I % Initialize &
+           ( CommunicatorOption = U % Communicator_PS, &
+             Unit_T_Option = U % Units_F ( 1 ) % Time, &
+             T_FinishOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
+
+    end select !-- I
+
+    ! select type ( I => U % Integrator )
+    ! class is ( Integrator_C_1D_PS_C_PS_Form )
+    !   allocate ( I % Current_ASC_1D ( I % N_CURRENT_SETS_1D ) )
+    ! class is ( Integrator_C_1D_MS_C_PS_Form )
+    !   allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENT_SETS_1D ) )
+    ! end select !-- I
+
+  end subroutine InitializeIntegrator
 
 
   subroutine ShowParameters ( U )
