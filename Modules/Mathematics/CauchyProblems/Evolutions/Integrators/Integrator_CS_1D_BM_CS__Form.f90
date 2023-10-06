@@ -7,6 +7,7 @@ module Integrator_CS_1D_BM_CS__Form
   !-- Integrator_CurrentSet_1D_BaseManifold_CurrentSet__Form
 
   use Basics
+  use Fields
   use Integrator_CS_1D_CS__Form
 
   implicit none
@@ -14,6 +15,8 @@ module Integrator_CS_1D_BM_CS__Form
 
   type, public, extends ( Integrator_CS_1D_CS_Form ) :: &
     Integrator_CS_1D_BM_CS_Form
+      class ( CurrentSetForm ), allocatable :: &
+        CurrentSet_X_1D
   contains
     final :: &
       Finalize
@@ -27,6 +30,9 @@ contains
 
     type ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
       I
+
+    if ( allocated ( I % CurrentSet_X_1D ) ) &
+      deallocate ( I % CurrentSet_X_1D )
 
   end subroutine Finalize
 
