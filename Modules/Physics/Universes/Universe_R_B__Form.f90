@@ -38,6 +38,8 @@ module Universe_R_B__Form
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
+      InitializeRadiation
+    procedure, public, pass :: &
       ShowParameters
   end type Universe_R_B_Form
 
@@ -103,6 +105,8 @@ contains
            ( GravitationType = 'GALILEO' )
     call U % InitializeFluid &
            ( FluidType = 'IDEAL' )
+    call U % InitializeRadiation &
+           ( )
 
   end subroutine Initialize_R_B
 
@@ -198,6 +202,8 @@ contains
     select type ( I => U % Integrator )
     class is ( Integrator_CS_1D_CS_Form )
 
+      I % iCurrentSet  =  U % iRadiation
+
       I % N_CURRENT_SETS_1D  =  size ( U % RadiationName )
       allocate ( I % dT_Label &
                    ( 1  +  I % N_CURRENT_SETS_1D  +  I % N_CURRENT_SETS_1D ) )
@@ -256,6 +262,46 @@ contains
              nCellsOption = nCellsPosition )
 
   end subroutine InitializePositionSpace
+
+
+  subroutine InitializeRadiation ( U )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      associate &
+        ( G   =>  I % Geometry_X, &
+          iR  =>  U % iRadiation )
+
+      select case ( trim ( U % RadiationType ( iR ) ) )
+      case ( 'GENERIC' )
+
+        allocate ( RadiationMoments_BM_Form :: I % CurrentSet_X_1D )
+        select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( RadiationMoments_BM_Form )
+
+        call R % Initialize &
+               ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+
+        end select !-- R
+
+      case default
+        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+        call Show ( U % RadiationType ( iR ), 'RadiationType', &
+                    CONSOLE % ERROR )
+        call Show ( 'Universe_R_B__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- FluidType
+
+      end associate !-- G, etc.
+
+    end select !-- I
+
+  end subroutine InitializeRadiation
 
 
   subroutine ShowParameters ( U )
