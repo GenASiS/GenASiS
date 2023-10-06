@@ -24,12 +24,12 @@ module Integrator_CS__Form
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H      
+    final :: &
+      Finalize
     procedure, public, pass :: &   !-- 2
       ShowParameters
     procedure, public, pass :: &   !-- 2
       ShowFields
-    final :: &
-      Finalize
     procedure, private, pass :: &   !-- 2
       PrepareEvolution
     procedure, public, pass :: &   !-- 3
@@ -186,6 +186,19 @@ contains
   end subroutine Initialize_H
 
 
+  impure elemental subroutine Finalize ( I )
+
+    type ( Integrator_CS_Form ), intent ( inout ) :: &
+      I
+
+    if ( allocated ( I % EigenspeedSet_X ) ) &
+      deallocate ( I % EigenspeedSet_X )
+    if ( allocated ( I % CurrentSet_X ) ) &
+      deallocate ( I % CurrentSet_X )
+
+  end subroutine Finalize
+
+
   subroutine ShowParameters ( I )
 
     class ( Integrator_CS_Form ), intent ( in ) :: &
@@ -215,19 +228,6 @@ contains
     end do !-- iD
 
   end subroutine ShowFields
-
-
-  impure elemental subroutine Finalize ( I )
-
-    type ( Integrator_CS_Form ), intent ( inout ) :: &
-      I
-
-    if ( allocated ( I % EigenspeedSet_X ) ) &
-      deallocate ( I % EigenspeedSet_X )
-    if ( allocated ( I % CurrentSet_X ) ) &
-      deallocate ( I % CurrentSet_X )
-
-  end subroutine Finalize
 
 
   subroutine PrepareEvolution ( I )
