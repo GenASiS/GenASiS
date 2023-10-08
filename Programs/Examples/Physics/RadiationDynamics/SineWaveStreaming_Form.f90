@@ -15,6 +15,8 @@ module SineWaveStreaming_Form
       Initialize_PWS
     final :: &
       Finalize
+    procedure, private, pass :: &
+      Waveform
   end type SineWaveStreamingForm
  
 
@@ -48,6 +50,33 @@ contains
       SWS
 
   end subroutine Finalize
+
+
+  function Waveform ( PWA, X ) result ( W )
+
+    !-- Waveform with a full period in the range 0 < X < 1
+
+    class ( SineWaveStreamingForm ), intent ( in ) :: &
+      PWA
+    real ( KDR ), intent ( in ) :: &
+      X
+    real ( KDR ) :: &
+      W
+    
+    real ( KDR ) :: &
+      TwoPi
+
+    associate &
+      ( O => PWA % Offset, &
+        A => PWA % Amplitude )
+
+    TwoPi  =  2.0_KDR * CONSTANT % PI
+
+    W  =  O  +  A * sin ( TwoPi * X )
+
+    end associate !-- O, etc.
+
+  end function Waveform
 
 
 end module SineWaveStreaming_Form

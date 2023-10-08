@@ -15,6 +15,8 @@ module PlaneWaveStreaming_Form
       Initialize => Initialize_PWS
     final :: &
       Finalize
+    procedure, private, pass :: &
+      Waveform
   end type PlaneWaveStreamingForm
 
     private :: &
@@ -55,6 +57,25 @@ contains
     !   deallocate ( PW % Reference )
 
   end subroutine Finalize
+
+
+  function Waveform ( PWA, X ) result ( W )
+
+    !-- Waveform with a full period in the range 0 < X < 1
+
+    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
+      PWA
+    real ( KDR ), intent ( in ) :: &
+      X
+    real ( KDR ) :: &
+      W
+    
+    W = huge ( 1.0_KDR ) 
+    call Show ( 'Waveform should be overridden', CONSOLE % WARNING )
+    call Show ( 'PlaneWaveAdvection_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'Waveform', 'function', CONSOLE % WARNING )
+
+  end function Waveform
 
 
   subroutine InitializeUniverse ( PWS, FormalismType, Name )
