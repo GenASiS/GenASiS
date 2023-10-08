@@ -13,6 +13,8 @@ module SineWaveStreaming_Form
   contains
     procedure, private, pass :: &
       Initialize_PWS
+    procedure, public, pass :: &
+      Show => Show_U
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -42,6 +44,19 @@ contains
     call PWS % PlaneWaveStreamingForm % Initialize ( FormalismType, Name )
 
   end subroutine Initialize_PWS
+
+
+  subroutine Show_U ( U )
+
+    class ( SineWaveStreamingForm ), intent ( in ) :: &
+      U
+
+    call U % PlaneWaveStreamingForm % Show ( )
+
+    call Show ( U % Offset,    'Offset' )
+    call Show ( U % Amplitude, 'Amplitude' )
+
+  end subroutine Show_U
 
 
   impure elemental subroutine Finalize ( SWS )

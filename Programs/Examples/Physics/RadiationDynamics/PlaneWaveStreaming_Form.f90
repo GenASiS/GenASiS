@@ -8,11 +8,25 @@ module PlaneWaveStreaming_Form
   private
 
   type, public, extends ( Universe_R_B_Form ) :: PlaneWaveStreamingForm
+    integer ( KDI ) :: &
+      nPeriods
+    integer ( KDI ), dimension ( 3 ) :: &
+      nWavelengths
+    real ( KDR ) :: &
+      Speed, &
+      Period
+    real ( KDR ), dimension ( 3 ) :: &
+      Wavenumber
+!    type ( Fluid_D_Form ), allocatable :: &
+!      Reference, &
+!      Difference
   contains
     procedure, private, pass :: &
       Initialize_PWS
     generic, public :: &
       Initialize => Initialize_PWS
+    procedure, public, pass :: &
+      Show => Show_U
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -44,6 +58,21 @@ contains
     ! call SetProblem ( PWS )
  
   end subroutine Initialize_PWS
+
+
+  subroutine Show_U ( U )
+
+    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_H_Form % Show ( )
+
+    call Show ( 'PlaneWaveStreaming Parameters' )
+    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( U % nPeriods,     'nPeriods' )
+    call Show ( U % Period,       'Period' )
+
+  end subroutine Show_U
 
 
   impure elemental subroutine Finalize ( PWS )
