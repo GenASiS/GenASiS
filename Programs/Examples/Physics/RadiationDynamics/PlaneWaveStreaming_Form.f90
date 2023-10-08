@@ -35,6 +35,15 @@ module PlaneWaveStreaming_Form
 
     private :: &
       InitializeUniverse
+    !   InitializeDiagnostics, &
+    !   SetInitial, &
+    !   SetReference
+
+      private :: &
+        SetRadiation
+
+        private :: &
+          SetRadiationKernel
 
 
 contains
@@ -52,10 +61,7 @@ contains
       PWS % Type  =  'a PlaneWaveStreaming'
 
     call InitializeUniverse ( PWS, FormalismType, Name )
-
-    ! call InitializeRadiationBox ( PWS, FormalismType, Name )
     ! call InitializeDiagnostics ( PWS, FormalismType )
-    ! call SetProblem ( PWS )
  
   end subroutine Initialize_PWS
 
@@ -150,6 +156,97 @@ contains
     ! PW % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
+
+
+  subroutine SetRadiation ( PWS, R )
+
+    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
+      PWS
+    type ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      R  !-- RadiationSection
+
+    select type ( A  =>  R % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS, &
+        G  =>  R % Geometry )
+    associate &
+      ( RV  =>  R % Storage_GS % Value, &
+        GV  =>  G % Storage_GS % Value )
+
+    call SetRadiationKernel &
+           ( J  = RV ( :, R % ENERGY_DENSITY_C ), &
+             HX = RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
+             HY = RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
+             HZ = RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
+             PWS = PWS, &
+             ProperCell = C % ProperCell, &
+             X  = GV ( :, G % CENTER_U_1 ), &
+             Y  = GV ( :, G % CENTER_U_2 ), &
+             Z  = GV ( :, G % CENTER_U_3 ), &
+             K  = PWS % Wavenumber, &
+             V  = PWS % Speed, &
+             T  = PWS % Integrator % T )
+
+    end associate !-- RV, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine SetRadiation
+
+
+  subroutine SetRadiationKernel &
+               ( J, HX, HY, HZ, PWS, ProperCell, X, Y, Z, K, V, T )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J, &
+      HX, HY, HZ
+    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
+      PWS
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      ProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X, Y, Z
+    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+      K
+    real ( KDR ), intent ( in ) :: &
+      V, &
+      T
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nV
+    real ( KDR ) :: &
+      Abs_K, &
+      VX, VY, VZ
+
+    nV = size ( X )
+    
+    Abs_K  =  sqrt ( dot_product ( K, K ) )
+       VX  =  V * K ( 1 ) / Abs_K
+       VY  =  V * K ( 2 ) / Abs_K
+       VZ  =  V * K ( 3 ) / Abs_K
+
+    !$OMP parallel do &
+    !$OMP schedule ( OMP_SCHEDULE_HOST ) firstprivate ( Abs_K, VX, VY, VZ )
+    do iV = 1, nV
+
+      if ( .not. ProperCell ( iV ) ) &
+        cycle
+
+      J ( iV )  =  PWS % Waveform &
+                     (    K ( 1 ) * ( X ( iV )  -  VX * T ) &
+                       +  K ( 2 ) * ( Y ( iV )  -  VY * T ) &
+                       +  K ( 3 ) * ( Z ( iV )  -  VZ * T ) )
+
+      HX ( iV )  =  VX  *  J ( iV )
+      HY ( iV )  =  VY  *  J ( iV )
+      HZ ( iV )  =  VZ  *  J ( iV )
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine SetRadiationKernel
 
 
 end module PlaneWaveStreaming_Form
