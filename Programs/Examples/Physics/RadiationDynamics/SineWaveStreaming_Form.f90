@@ -43,6 +43,8 @@ contains
 
     call PWS % PlaneWaveStreamingForm % Initialize ( FormalismType, Name )
 
+    PWS % Integrator % System  =>  PWS
+
   end subroutine Initialize_PWS
 
 

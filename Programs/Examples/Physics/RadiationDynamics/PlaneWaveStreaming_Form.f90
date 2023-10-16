@@ -34,9 +34,9 @@ module PlaneWaveStreaming_Form
   end type PlaneWaveStreamingForm
 
     private :: &
-      InitializeUniverse
+      InitializeUniverse, &
     !   InitializeDiagnostics, &
-    !   SetInitial, &
+      SetInitial!, &
     !   SetReference
 
       private :: &
@@ -74,9 +74,11 @@ contains
     call U % Universe_H_Form % Show ( )
 
     call Show ( 'PlaneWaveStreaming Parameters' )
-    call Show ( U % nWavelengths, 'nWavelengths' )
     call Show ( U % nPeriods,     'nPeriods' )
+    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( U % Speed,        'Speed' )
     call Show ( U % Period,       'Period' )
+    call Show ( U % Wavenumber,   'Wavenumber' )
 
   end subroutine Show_U
 
@@ -152,10 +154,86 @@ contains
     ! end associate !-- F
     ! end select !-- I
              
-    ! PW % Integrator % SetInitial    =>  SetInitial
+    PWS % Integrator % SetInitial    =>  SetInitial
     ! PW % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
+
+
+  subroutine SetInitial ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      Direction
+
+    select type ( PWS  =>  I % System )
+      class is ( PlaneWaveStreamingForm )
+    select type ( I )
+      class is ( Integrator_CS_1D_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C  =>  A % Chart_GS )
+
+    Direction  =  ( -1 ) ** ( PWS % iRadiation  -  1 )
+
+    PWS % nWavelengths = 0
+    PWS % nWavelengths ( 1  :  C % nDimensions )  =  1
+    call PROGRAM_HEADER % GetParameter ( PWS % nWavelengths, 'nWavelengths' )
+
+    associate ( BoxSize  =>  C % MaxCoordinate  -  C % MinCoordinate )
+    where ( BoxSize  >  0.0_KDR )
+      PWS % Wavenumber  =  PWS % nWavelengths  /  BoxSize
+    elsewhere
+      PWS % Wavenumber  =  0.0_KDR
+    end where
+    end associate !-- BoxSize
+
+    PWS % Speed  =  1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( PWS % Speed, 'Speed' )
+    PWS % Speed  =  Direction  *  PWS % Speed
+
+    associate &
+      ( K      =>  PWS % Wavenumber, &
+        Abs_K  =>  sqrt ( dot_product &
+                            ( PWS % Wavenumber, PWS % Wavenumber ) ), &
+        V      =>  PWS % Speed )
+    PWS % Period  =  1.0_KDR / ( Abs_K * abs ( V ) )
+    end associate !-- K, etc.
+
+    PWS % nPeriods  =  1
+    call PROGRAM_HEADER % GetParameter ( PWS % nPeriods, 'nPeriods' )
+
+    I % T_Finish  =  PWS % nPeriods  *  PWS % Period
+
+    select type ( I )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( RadiationMoments_BM_Form )
+    
+      call SetRadiation ( PWS, R )
+
+      end select !-- R
+
+    class default
+      call Show ( 'Integrator type not recognized', CONSOLE % ERROR )
+      call Show ( 'PlaneWaveStreamingForm', 'module', CONSOLE % ERROR )
+      call Show ( 'SetInitial', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- I
+
+    end associate !-- C
+    end select !-- A
+    end select !-- F
+    end select !-- I
+    end select !-- PWS
+
+  end subroutine SetInitial
 
 
   subroutine SetRadiation ( PWS, R )

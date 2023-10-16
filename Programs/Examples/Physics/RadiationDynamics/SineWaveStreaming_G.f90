@@ -14,9 +14,10 @@ program SineWaveStreaming_G
 
   allocate ( SWS )
   call SWS % Initialize ( 'GREY', PROGRAM_HEADER % Name )
-call SWS % Show ( )
 select type ( I => SWS % Integrator )
 class is ( Integrator_CS_Form )
+  call I % SetInitial ( )
+  call SWS % Show ( )
   associate ( GIS => I % GridImageStream )
   associate ( S_X  =>  I % Checkpoint_X )
   call GIS % Open ( GIS % ACCESS_CREATE )

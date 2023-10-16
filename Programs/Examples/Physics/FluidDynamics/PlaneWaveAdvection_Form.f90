@@ -73,9 +73,12 @@ contains
 
     call U % Universe_H_Form % Show ( )
 
-    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( 'PlaneWaveAdvection Parameters' )
     call Show ( U % nPeriods,     'nPeriods' )
+    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( U % Speed,        'Speed' )
     call Show ( U % Period,       'Period' )
+    call Show ( U % Wavenumber,   'Wavenumber' )
 
   end subroutine Show_U
 
@@ -239,19 +242,22 @@ contains
 
     associate ( BoxSize  =>  C % MaxCoordinate  -  C % MinCoordinate )
     where ( BoxSize  >  0.0_KDR )
-      PWA % Wavenumber  =  PWA % nWavelengths / BoxSize
+      PWA % Wavenumber  =  PWA % nWavelengths  /  BoxSize
     elsewhere
       PWA % Wavenumber  =  0.0_KDR
     end where
+    end associate !-- BoxSize
 
     PWA % Speed  =  1.0_KDR
     call PROGRAM_HEADER % GetParameter ( PWA % Speed, 'Speed' )
 
     associate &
       ( K      =>  PWA % Wavenumber, &
-        Abs_K  =>  sqrt ( dot_product ( PWA % Wavenumber, PWA % Wavenumber ) ), &
+        Abs_K  =>  sqrt ( dot_product &
+                            ( PWA % Wavenumber, PWA % Wavenumber ) ), &
         V      =>  PWA % Speed )
     PWA % Period  =  1.0_KDR / ( Abs_K * V )
+    end associate !-- K, etc.
 
     PWA % nPeriods  =  1
     call PROGRAM_HEADER % GetParameter ( PWA % nPeriods, 'nPeriods' )
@@ -260,8 +266,6 @@ contains
 
     call SetFluid ( PWA, F )
 
-    end associate !-- K, etc.
-    end associate !-- BoxSize
     end associate !-- C
     end select !-- A
     end select !-- F
