@@ -101,19 +101,11 @@ contains
 
     integer ( KDI ) :: &
       iD
-    logical ( KDL ) :: &
-      InitializeStep
     character ( 1 ) :: &
       Dimension
 
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_CS'
-
-    InitializeStep  =  .false.
-    if ( .not. allocated ( I % Step_X ) ) then
-      allocate ( Step_RK_CS_Form :: I % Step_X )
-      InitializeStep  =  .true.
-    end if
 
     if ( .not. allocated ( I % dT_Label ) ) then
       allocate ( I % dT_Label ( 1 ) )
@@ -144,7 +136,8 @@ contains
 
     !-- Step, if necessary
 
-    if ( InitializeStep ) then
+    if ( .not. allocated ( I % Step_X ) ) then
+      allocate ( Step_RK_CS_Form :: I % Step_X )
       select type ( S  =>  I % Step_X )
         class is ( Step_RK_CS_Form )
       associate &
