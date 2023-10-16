@@ -362,16 +362,12 @@ contains
     I % FinishCycle = huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( I % FinishCycle, 'FinishCycle' )
 
-    !-- Step, if necessary (only for Integrator_H_Form test)
+    !-- Step check
 
     if ( .not. allocated ( I % Step_X ) ) then
       call Show ( 'Step_X not allocated', CONSOLE % WARNING )
       call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
-      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
-      allocate ( I % Step_X )
-      associate ( S  =>  I % Step_X )
-      call S % Initialize_H ( I % X )
-      end associate !-- S
+      call Show ( 'Initialize_H', 'subroutine', CONSOLE % WARNING )
     end if
 
     !-- Checkpointing
@@ -626,7 +622,8 @@ contains
     class ( Integrator_H_Form ), intent ( in ) :: &
       I
 
-    call I % Step_X % Show ( )
+    if ( allocated ( I % Step_X ) ) &
+      call I % Step_X % Show ( )
 
   end subroutine ShowSteps
 
@@ -916,16 +913,19 @@ contains
     call I % Compute_T_New ( T_New )
     call T_CTN % Stop ( )
 
-    associate (  S  =>  I % Step_X )
     associate ( dT  =>  T_New  -  I % T )    
 
     ! select type ( Chart => PS % Chart )
     ! class is ( Chart_SLD_Form )
 
-    T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
-    call T_S % Start ( )
-    call S % Compute ( I % T, dT, T_Option = T_S )
-    call T_S % Stop ( )
+    if ( allocated ( I % Step_X ) ) then
+      associate ( S  =>  I % Step_X )
+      T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
+      call T_S % Start ( )
+      call S % Compute ( I % T, dT, T_Option = T_S )
+      call T_S % Stop ( )
+      end associate !--  S
+    end if !-- allocated Step
 
     ! class default
     !   call Show ( 'Chart type not found', CONSOLE % ERROR )
@@ -948,7 +948,6 @@ contains
     end if
 
     end associate !-- dT
-    end associate !--  S
 
   end subroutine ComputeCycle
 
