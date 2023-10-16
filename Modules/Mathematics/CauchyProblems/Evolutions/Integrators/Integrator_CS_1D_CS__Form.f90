@@ -7,6 +7,7 @@ module Integrator_CS_1D_CS__Form
   !-- Integrator_CurrentSet_1D_CurrentSet__Form
 
   use Basics
+  use Steps
   use Integrator_CS__Form
 
   implicit none
@@ -16,6 +17,8 @@ module Integrator_CS_1D_CS__Form
     integer ( KDI ) :: &
       N_CURRENT_SETS_1D = 0, &
       iCurrentSet = 0
+    class ( Step_RK_H_Form ), allocatable :: &
+      Step_1D
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H      
@@ -52,14 +55,14 @@ contains
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_CS_1D_CS'
 
-    ! if ( .not. allocated ( I % Step_1D ) ) then
-    !   call Show ( 'Step_1D not allocated by an extension', &
-    !               CONSOLE % WARNING )
-    !   call Show ( 'Integrator_C_1D_C_PS__Template', 'module', &
-    !               CONSOLE % WARNING )
-    !   call Show ( 'InitializeTemplate_C_1D_C_PS', 'subroutine', &
-    !               CONSOLE % WARNING )
-    ! end if
+    if ( .not. allocated ( I % Step_1D ) ) then
+      call Show ( 'Step_1D not allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_CS_1D_CS__Form', 'module', &
+                  CONSOLE % WARNING )
+      call Show ( 'Initialize_H', 'subroutine', &
+                  CONSOLE % WARNING )
+    end if
 
     ! if ( .not. allocated ( I % TimeSeries ) ) then
     !   allocate ( TimeSeries_C_1D_C_Form :: I % TimeSeries )
@@ -86,6 +89,14 @@ contains
 
     type ( Integrator_CS_1D_CS_Form ), intent ( inout ) :: &
       I
+
+    ! nullify ( I % PrepareStep )
+    ! nullify ( I % PrepareStep_1D )
+    ! nullify ( I % SeriesChangeGrandTotal )
+    ! nullify ( I % iTime )
+
+    if ( allocated ( I % Step_1D ) ) &
+      deallocate ( I % Step_1D )
 
   end subroutine Finalize
 

@@ -32,6 +32,7 @@ Integrator_CS__Kernel.o: \
 
 Integrator_CS_1D_CS__Form.o: \
   Basics.o \
+  Steps.o \
   Integrator_CS__Form.o \
   Integrator_CS_1D_CS__Form.f90
 

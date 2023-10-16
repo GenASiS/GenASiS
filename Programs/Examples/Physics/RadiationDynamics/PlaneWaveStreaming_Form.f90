@@ -25,10 +25,10 @@ module PlaneWaveStreaming_Form
       Initialize_PWS
     generic, public :: &
       Initialize => Initialize_PWS
-    procedure, public, pass :: &
-      Show => Show_U
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
     procedure, private, pass :: &
       Waveform
   end type PlaneWaveStreamingForm
@@ -66,23 +66,6 @@ contains
   end subroutine Initialize_PWS
 
 
-  subroutine Show_U ( U )
-
-    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
-      U
-
-    call U % Universe_H_Form % Show ( )
-
-    call Show ( 'PlaneWaveStreaming Parameters' )
-    call Show ( U % nPeriods,     'nPeriods' )
-    call Show ( U % nWavelengths, 'nWavelengths' )
-    call Show ( U % Speed,        'Speed' )
-    call Show ( U % Period,       'Period' )
-    call Show ( U % Wavenumber,   'Wavenumber' )
-
-  end subroutine Show_U
-
-
   impure elemental subroutine Finalize ( PWS )
 
     type ( PlaneWaveStreamingForm ), intent ( inout ) :: &
@@ -94,6 +77,22 @@ contains
     !   deallocate ( PW % Reference )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_R_B_Form % ShowParameters ( )
+
+    call Show ( U % nPeriods,     'nPeriods' )
+    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( U % Speed,        'Speed' )
+    call Show ( U % Period,       'Period' )
+    call Show ( U % Wavenumber,   'Wavenumber' )
+
+  end subroutine ShowParameters
 
 
   function Waveform ( PWA, X ) result ( W )
@@ -130,11 +129,11 @@ contains
            ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
              RadiationType = [ 'GENERIC', 'GENERIC' ], &
              FormalismType = FormalismType, &
-             Name = Name )
+             Name = Name, &
+             ApplyInteractionsOption = .false., &
+             AdvectFluidOption = .false., &
+             nCellsPositionOption = [ 128, 128, 128 ] )
              ! EnergySpacingOption = 'COMPACTIFIED', &
-             ! ApplyInteractionsOption = .false., &
-             ! EvolveFluidOption = .false., &
-             ! nCellsPositionOption = [ 128, 128, 128 ], &
              ! nCellsEnergyOption = 4 )
 
 !    call PWS % Initialize &

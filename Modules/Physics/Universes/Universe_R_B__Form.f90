@@ -15,6 +15,10 @@ module Universe_R_B__Form
     integer ( KDI ) :: &
       iRadiation  = 0, &
       nRadiations = 0
+    logical ( KDL ) :: &
+      ApplyStreaming, &
+      ApplyInteractions, &
+      AdvectFluid
     character ( LDL ) :: &
       FormalismType = ''
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -40,6 +44,8 @@ module Universe_R_B__Form
     procedure, public, pass :: &
       InitializeRadiation
     procedure, public, pass :: &
+      InitializeSteps
+    procedure, public, pass :: &
       InitializeIntegrator
     procedure, public, pass :: &
       ShowParameters
@@ -51,8 +57,9 @@ contains
 
   subroutine Initialize_R_B &
                ( U, RadiationName, RadiationType, FormalismType, Name, &
-                 MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
-                 nCellsPositionOption, nWriteOption )
+                 ApplyStreamingOption, ApplyInteractionsOption, &
+                 AdvectFluidOption, MinCoordinateOption, MaxCoordinateOption, &
+                 FinishTimeOption, nCellsPositionOption, nWriteOption )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
@@ -62,6 +69,10 @@ contains
     character ( * ), intent ( in ) :: &
       FormalismType, &
       Name
+    logical ( KDL ), intent ( in ), optional :: &
+      ApplyStreamingOption, &
+      ApplyInteractionsOption, &
+      AdvectFluidOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -77,6 +88,8 @@ contains
 
     call U % Universe_H_Form % Initialize ( Name )
 
+    !-- Radiations
+
     U % nRadiations  =  size ( RadiationName )
 
     allocate ( U % RadiationName ( U % nRadiations ) )
@@ -86,11 +99,27 @@ contains
 
     U % FormalismType  =  FormalismType
 
+    !-- Operators
+
+    U % ApplyStreaming    = .true.
+    U % ApplyInteractions = .true.
+    U % AdvectFluid       = .true.
+    if ( present ( ApplyStreamingOption ) ) &
+      U % ApplyStreaming = ApplyStreamingOption
+    if ( present ( ApplyInteractionsOption ) ) &
+      U % ApplyInteractions = ApplyInteractionsOption
+    if ( present ( AdvectFluidOption ) ) &
+      U % AdvectFluid = AdvectFluidOption
+
+    !-- Units
+
     allocate ( U % Units_F ( 1 ) )
     call U % Units_F ( 1 ) % Initialize ( )
 
     allocate ( U % Units_R ( 1 ) )
     call U % Units_R ( 1 ) % Initialize ( )
+
+    !-- Initializations
 
     call U % SetCommunicator &
            ( )
@@ -112,6 +141,8 @@ contains
     call U % InitializeFluid &
            ( FluidType = 'IDEAL' )
     call U % InitializeRadiation &
+           ( )
+    call U % InitializeSteps &
            ( )
     call U % InitializeIntegrator &
            ( FinishTimeOption = FinishTimeOption, &
@@ -279,6 +310,14 @@ contains
   end subroutine InitializeRadiation
 
 
+  subroutine InitializeSteps ( U )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+
+  end subroutine InitializeSteps
+
+
   subroutine InitializeIntegrator ( U, FinishTimeOption, nWriteOption )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
@@ -340,10 +379,13 @@ contains
 
     call U % Universe_F_B_Form % ShowParameters ( )
 
-    call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
-    call Show ( U % RadiationType, 'RadiationType', U % IGNORABILITY )
-    call Show ( U % iRadiation,    'iRadiation   ', U % IGNORABILITY )
-    call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
+    call Show ( U % RadiationName,     'RadiationName',     U % IGNORABILITY )
+    call Show ( U % RadiationType,     'RadiationType',     U % IGNORABILITY )
+    call Show ( U % iRadiation,        'iRadiation',        U % IGNORABILITY )
+    call Show ( U % FormalismType,     'FormalismType',     U % IGNORABILITY )
+    call Show ( U % ApplyStreaming,    'ApplyStreaming',    U % IGNORABILITY )
+    call Show ( U % ApplyInteractions, 'ApplyInteractions', U % IGNORABILITY )
+    call Show ( U % AdvectFluid,       'AdvectFluid',       U % IGNORABILITY )
 
   end subroutine ShowParameters
 

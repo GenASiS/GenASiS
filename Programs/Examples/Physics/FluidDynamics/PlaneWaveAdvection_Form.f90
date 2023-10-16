@@ -132,7 +132,7 @@ contains
     class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
       U
 
-    call U % Universe_H_Form % ShowParameters ( )
+    call U % Universe_F_B_Form % ShowParameters ( )
 
     call Show ( U % nPeriods,     'nPeriods' )
     call Show ( U % nWavelengths, 'nWavelengths' )
