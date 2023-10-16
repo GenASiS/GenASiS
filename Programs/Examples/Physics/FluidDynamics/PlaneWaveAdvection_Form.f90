@@ -24,11 +24,11 @@ module PlaneWaveAdvection_Form
     procedure, private, pass :: &
       Initialize_H
     procedure, public, pass :: &
-      Show => Show_U
-    procedure, public, pass :: &
       ComputeError
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
     procedure, private, pass :: &
       Waveform
   end type PlaneWaveAdvectionForm
@@ -64,23 +64,6 @@ contains
     call InitializeDiagnostics ( U )
 
   end subroutine Initialize_H
-
-
-  subroutine Show_U ( U )
-
-    class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
-      U
-
-    call U % Universe_H_Form % Show ( )
-
-    call Show ( 'PlaneWaveAdvection Parameters' )
-    call Show ( U % nPeriods,     'nPeriods' )
-    call Show ( U % nWavelengths, 'nWavelengths' )
-    call Show ( U % Speed,        'Speed' )
-    call Show ( U % Period,       'Period' )
-    call Show ( U % Wavenumber,   'Wavenumber' )
-
-  end subroutine Show_U
 
 
   subroutine ComputeError ( PWA )
@@ -142,6 +125,22 @@ contains
       deallocate ( PWA % Reference )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( PlaneWaveAdvectionForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_H_Form % ShowParameters ( )
+
+    call Show ( U % nPeriods,     'nPeriods' )
+    call Show ( U % nWavelengths, 'nWavelengths' )
+    call Show ( U % Speed,        'Speed' )
+    call Show ( U % Period,       'Period' )
+    call Show ( U % Wavenumber,   'Wavenumber' )
+
+  end subroutine ShowParameters
 
 
   function Waveform ( PWA, X ) result ( W )

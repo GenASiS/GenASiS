@@ -13,12 +13,12 @@ module SawtoothWaveAdvection_Form
   contains
     procedure, private, pass :: &
       Initialize_H
-    procedure, public, pass :: &
-      Show => Show_U
-    procedure, private, pass :: &
-      Waveform
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
+    procedure, private, pass :: &
+      Waveform
   end type SawtoothWaveAdvectionForm
 
 
@@ -42,24 +42,12 @@ contains
     call PROGRAM_HEADER % GetParameter ( U % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( U % Amplitude, 'Amplitude' )
 
-    call U % PlaneWaveAdvectionForm % Initialize ( Name = 'SawtoothWaveAdvection' )
+    call U % PlaneWaveAdvectionForm % Initialize &
+           ( Name = 'SawtoothWaveAdvection' )
     
     U % Integrator % System  =>  U
 
   end subroutine Initialize_H
-
-
-  subroutine Show_U ( U )
-
-    class ( SawtoothWaveAdvectionForm ), intent ( in ) :: &
-      U
-
-    call U % PlaneWaveAdvectionForm % Show ( )
-
-    call Show ( U % Offset,    'Offset' )
-    call Show ( U % Amplitude, 'Amplitude' )
-
-  end subroutine Show_U
 
 
   impure elemental subroutine Finalize ( SWA )
@@ -68,6 +56,19 @@ contains
       SWA
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( SawtoothWaveAdvectionForm ), intent ( in ) :: &
+      U
+
+    call U % PlaneWaveAdvectionForm % ShowParameters ( )
+
+    call Show ( U % Offset,    'Offset' )
+    call Show ( U % Amplitude, 'Amplitude' )
+
+  end subroutine ShowParameters
 
 
   function Waveform ( PWA, X ) result ( W )

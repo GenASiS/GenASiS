@@ -13,10 +13,10 @@ module SineWaveAdvection_Form
   contains
     procedure, private, pass :: &
       Initialize_H
-    procedure, public, pass :: &
-      Show => Show_U
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
     procedure, private, pass :: &
       Waveform
   end type SineWaveAdvectionForm
@@ -49,25 +49,25 @@ contains
   end subroutine Initialize_H
 
 
-  subroutine Show_U ( U )
-
-    class ( SineWaveAdvectionForm ), intent ( in ) :: &
-      U
-
-    call U % PlaneWaveAdvectionForm % Show ( )
-
-    call Show ( U % Offset,    'Offset' )
-    call Show ( U % Amplitude, 'Amplitude' )
-
-  end subroutine Show_U
-
-
   impure elemental subroutine Finalize ( SWA )
     
     type ( SineWaveAdvectionForm ), intent ( inout ) :: &
       SWA
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( U )
+
+    class ( SineWaveAdvectionForm ), intent ( in ) :: &
+      U
+
+    call U % PlaneWaveAdvectionForm % ShowParameters ( )
+
+    call Show ( U % Offset,    'Offset' )
+    call Show ( U % Amplitude, 'Amplitude' )
+
+  end subroutine ShowParameters
 
 
   function Waveform ( PWA, X ) result ( W )
