@@ -122,8 +122,8 @@ contains
       FormalismType, &
       Name
 
-!    integer ( KDI ) :: &
-!      iD
+    integer ( KDI ) :: &
+      iD
 
     call PWS % Initialize &
            ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
@@ -136,22 +136,16 @@ contains
              ! EnergySpacingOption = 'COMPACTIFIED', &
              ! nCellsEnergyOption = 4 )
 
-!    call PWS % Initialize &
-!           ( FluidType = 'DUST', &
-!             GravitationType = 'GALILEO', &
-!             NameOption = Name, &
-!             nCellsOption = [ 128, 128, 128 ] )
-
-    ! select type ( I  =>  PW % Integrator )
-    !   class is ( Integrator_CS_Form )
-    ! associate &
-    !   ( F  =>  I % CurrentSet_X )
-    ! do iD  =  1, 3
-    !   call F % SetBoundaryConditionsFace &
-    !          ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
-    ! end do !-- iD
-    ! end associate !-- F
-    ! end select !-- I
+    select type ( I  =>  PWS % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    associate &
+      ( R  =>  I % CurrentSet_X_1D )
+    do iD  =  1, 3
+      call R % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
+    end do !-- iD
+    end associate !-- R
+    end select !-- I
              
     PWS % Integrator % SetInitial    =>  SetInitial
     ! PW % Integrator % SetReference  =>  SetReference
