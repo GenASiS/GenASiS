@@ -18,7 +18,7 @@ module Universe_R_B__Form
     logical ( KDL ) :: &
       ApplyStreaming, &
       ApplyInteractions, &
-      AdvectFluid
+      EvolveFluid
     character ( LDL ) :: &
       FormalismType = ''
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -58,7 +58,7 @@ contains
   subroutine Initialize_R_B &
                ( U, RadiationName, RadiationType, FormalismType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
-                 AdvectFluidOption, MinCoordinateOption, MaxCoordinateOption, &
+                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
                  FinishTimeOption, nCellsPositionOption, nWriteOption )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
@@ -72,7 +72,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
       ApplyInteractionsOption, &
-      AdvectFluidOption
+      EvolveFluidOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -103,13 +103,13 @@ contains
 
     U % ApplyStreaming    = .true.
     U % ApplyInteractions = .true.
-    U % AdvectFluid       = .true.
+    U % EvolveFluid       = .true.
     if ( present ( ApplyStreamingOption ) ) &
       U % ApplyStreaming = ApplyStreamingOption
     if ( present ( ApplyInteractionsOption ) ) &
       U % ApplyInteractions = ApplyInteractionsOption
-    if ( present ( AdvectFluidOption ) ) &
-      U % AdvectFluid = AdvectFluidOption
+    if ( present ( EvolveFluidOption ) ) &
+      U % EvolveFluid = EvolveFluidOption
 
     !-- Units
 
@@ -360,6 +360,9 @@ contains
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
+    if ( .not. U % EvolveFluid ) &
+      deallocate ( I % Step_X )
+
     end select !-- I
 
     ! select type ( I => U % Integrator )
@@ -385,7 +388,7 @@ contains
     call Show ( U % FormalismType,     'FormalismType',     U % IGNORABILITY )
     call Show ( U % ApplyStreaming,    'ApplyStreaming',    U % IGNORABILITY )
     call Show ( U % ApplyInteractions, 'ApplyInteractions', U % IGNORABILITY )
-    call Show ( U % AdvectFluid,       'AdvectFluid',       U % IGNORABILITY )
+    call Show ( U % EvolveFluid,       'EvolveFluid',       U % IGNORABILITY )
 
   end subroutine ShowParameters
 

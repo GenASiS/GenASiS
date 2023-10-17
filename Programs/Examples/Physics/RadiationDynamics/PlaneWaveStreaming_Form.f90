@@ -131,7 +131,7 @@ contains
              FormalismType = FormalismType, &
              Name = Name, &
              ApplyInteractionsOption = .false., &
-             AdvectFluidOption = .false., &
+             EvolveFluidOption = .false., &
              nCellsPositionOption = [ 128, 128, 128 ] )
              ! EnergySpacingOption = 'COMPACTIFIED', &
              ! nCellsEnergyOption = 4 )
