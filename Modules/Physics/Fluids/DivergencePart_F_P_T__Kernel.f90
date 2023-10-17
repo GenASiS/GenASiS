@@ -11,7 +11,7 @@ contains
 
   module procedure Compute_FS_G_Kernel
 
-    !-- Compute_FluxSet_Velocity_Galileo_Kernel
+    !-- Compute_FluxSet_Galileo_Kernel
 
     integer :: &
       Delta_1, Delta_2, Delta_3

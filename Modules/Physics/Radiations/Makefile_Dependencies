@@ -14,9 +14,22 @@ RadiationMoments_BM__Kernel.o: \
   RadiationMoments_BM__Form.o \
   RadiationMoments_BM__Kernel.f90
 
+DivergencePart_RM__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  RadiationMoments_BM__Form.o \
+  DivergencePart_RM__Form.f90
+
+DivergencePart_RM__Kernel.o: \
+  Basics.o \
+  DivergencePart_RM__Form.o \
+  DivergencePart_RM__Kernel.f90
+
 Radiations.o: \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
+  DivergencePart_RM__Form.o \
   Radiations.f90
 
 Radiations.a: $(RADIATIONS)
