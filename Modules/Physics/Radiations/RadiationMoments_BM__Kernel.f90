@@ -55,6 +55,16 @@ contains
 
         end if
 
+        !-- Moment factors ( Minerbo SF )
+
+        FF ( iV )  =  H  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+
+        SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                      +  2.0_KDR / 3.0_KDR &
+                         *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                              * ( 3.0_KDR  -  FF ( iV )  &
+                                  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
         !-- FIXME: Add velocity dependence
 
         E ( iV )  =  J ( iV )
@@ -128,7 +138,18 @@ contains
           H_2 ( iV )  =  M_UU_22 ( iV )  *  S_2 ( iV )
           H_3 ( iV )  =  M_UU_33 ( iV )  *  S_3 ( iV )          
 
+          !-- Moment factors ( Minerbo SF )
+
+          FF ( iV )  =  H  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+
+          SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                        +  2.0_KDR / 3.0_KDR &
+                           *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                                * ( 3.0_KDR  -  FF ( iV )  &
+                                    +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
         else
+
           J   ( iV )  =  0.0_KDR
           H_1 ( iV )  =  0.0_KDR
           H_2 ( iV )  =  0.0_KDR
@@ -139,13 +160,12 @@ contains
           S_3 ( iV )  =  0.0_KDR
           FF  ( iV )  =  0.0_KDR
           SF  ( iV )  =  0.0_KDR
+
+          cycle 
+
         end if
 
-        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
-                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-
-        if ( J ( iV ) < 0.0_KDR ) then
+        if ( J ( iV )  <  0.0_KDR ) then
 
           J   ( iV )  =  0.0_KDR
           H_1 ( iV )  =  0.0_KDR
@@ -155,12 +175,36 @@ contains
           S_1 ( iV )  =  0.0_KDR
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
+          FF  ( iV )  =  0.0_KDR
+          SF  ( iV )  =  0.0_KDR
 
-        else if ( H  >  J ( iV ) ) then
+          cycle
+
+        end if
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        
+        if ( H  >  J ( iV ) ) then
 
           H_1 ( iV )  =  ( H_1 ( iV )  /  H )  *  J ( iV )
           H_2 ( iV )  =  ( H_2 ( iV )  /  H )  *  J ( iV )
           H_3 ( iV )  =  ( H_3 ( iV )  /  H )  *  J ( iV )
+
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+          !-- Moment factors ( Minerbo SF )
+
+          FF ( iV )  =  H  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+
+          SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                        +  2.0_KDR / 3.0_KDR &
+                           *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                                * ( 3.0_KDR  -  FF ( iV )  &
+                                    +  3.0_KDR  *  FF ( iV ) ** 2 ) )
 
           !-- FIXME: Add velocity dependence
 

@@ -265,6 +265,8 @@ contains
              V  = PWS % Speed, &
              T  = PWS % Integrator % T )
 
+call R % ComputeFromPrimitive ( R )
+
     end associate !-- RV, etc.
     end associate !-- C, etc.
     end select !-- A
