@@ -30,7 +30,7 @@ module Integrator_CS__Form
       ShowParameters
     procedure, public, pass :: &   !-- 2
       ShowFields
-    procedure, private, pass :: &   !-- 2
+    procedure, public, pass :: &   !-- 2
       PrepareEvolution
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CS

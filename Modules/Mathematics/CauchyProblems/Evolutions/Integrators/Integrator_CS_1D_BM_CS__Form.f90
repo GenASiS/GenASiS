@@ -24,6 +24,8 @@ module Integrator_CS_1D_BM_CS__Form
       Finalize
     procedure, public, pass :: &   !-- 2
       ShowFields
+    procedure, public, pass :: &   !-- 2
+      PrepareEvolution
   end type Integrator_CS_1D_BM_CS_Form
 
 
@@ -122,6 +124,27 @@ contains
 !    end do !-- iD
 
   end subroutine ShowFields
+
+
+  subroutine PrepareEvolution ( I )
+
+    class ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
+      I
+
+    call I % Integrator_CS_Form % PrepareEvolution ( )
+
+    if ( .not. allocated ( I % CurrentSet_X_1D ) ) &
+      return
+
+    associate ( CS  =>  I % CurrentSet_X_1D )
+    call CS % UpdateDevice ( )
+    call CS % ExchangeGhostData ( )
+    call CS % ComputeFromInitial ( )
+    call CS % ApplyBoundaryConditions ( )
+    call CS % UpdateHost ( )
+    end associate !-- CS
+
+  end subroutine PrepareEvolution
 
 
 end module Integrator_CS_1D_BM_CS__Form

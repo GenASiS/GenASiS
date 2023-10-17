@@ -137,6 +137,17 @@ contains
              ! nCellsEnergyOption = 4 )
 
     select type ( I  =>  PWS % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    do iD  =  1, 3
+      call F % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
+    end do !-- iD
+    end associate !-- F
+    end select !-- I
+             
+    select type ( I  =>  PWS % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
     associate &
       ( R  =>  I % CurrentSet_X_1D )
@@ -258,9 +269,6 @@ contains
              K  = PWS % Wavenumber, &
              V  = PWS % Speed, &
              T  = PWS % Integrator % T )
-
-!-- FIXME: Remove later
-call R % ComputeFromPrimitive ( R )
 
     end associate !-- RV, etc.
     end associate !-- C, etc.

@@ -377,6 +377,11 @@ contains
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
 
+    call Show ( 'ComputeFromInitial', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'CurrentSet', CONSOLE % INFO_6 )
+
+    call CS % ComputeFromPrimitive ( CS )
+
   end subroutine ComputeFromInitial
 
 

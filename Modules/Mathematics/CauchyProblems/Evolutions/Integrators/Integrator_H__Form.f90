@@ -123,7 +123,7 @@ module Integrator_H__Form
       ShowCheckpointing
     procedure, private, pass :: &   !-- 2
       PrepareInitial
-    procedure, private, pass :: &   !-- 2
+    procedure, public, pass :: &   !-- 2
       PrepareEvolution
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
