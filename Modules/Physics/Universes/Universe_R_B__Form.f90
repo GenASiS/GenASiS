@@ -315,6 +315,33 @@ contains
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
+    !-- Fluid step. If EvolveFluid = .false., will be deallocated in 
+    !   InitializeIntegrator.
+    call U % InitializeStep ( )
+
+    !-- Radiation step.
+    select type ( I  =>  U % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      associate &
+        ( R  =>  I % CurrentSet_X_1D )
+
+      allocate ( Step_RK_CS_Form :: I % Step_1D )
+      select type ( S  =>  I % Step_1D )
+        class is ( Step_RK_CS_Form )
+
+      allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+      associate ( DT  =>  S % DivergenceTotal )
+      call DT % Initialize ( R )
+      end associate !-- DT
+
+      call S % Initialize ( R )
+
+      end select !-- S
+      end associate !-- R
+
+    end select !-- I
+
   end subroutine InitializeSteps
 
 
