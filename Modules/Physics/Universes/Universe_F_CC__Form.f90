@@ -422,7 +422,8 @@ contains
       else !-- .not. Coarsen
         select type ( I )
         class is ( Integrator_CS_Form )
-          call I % Compute_dT_CS_CGS ( dT_Candidate ( 1 ), iC, T_Option )
+          call I % Compute_dT_CS_CGS &
+                 ( I % EigenspeedSet_X, dT_Candidate ( 1 ), iC, T_Option )
         end select !-- I
       end if !-- Coarsen
     end select !-- U

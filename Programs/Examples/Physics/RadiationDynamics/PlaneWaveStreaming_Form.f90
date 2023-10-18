@@ -197,7 +197,7 @@ contains
     end where
     end associate !-- BoxSize
 
-    PWS % Speed  =  1.0_KDR
+    PWS % Speed  =  CONSTANT % SPEED_OF_LIGHT
     call PROGRAM_HEADER % GetParameter ( PWS % Speed, 'Speed' )
     PWS % Speed  =  Direction  *  PWS % Speed
 

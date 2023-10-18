@@ -18,8 +18,6 @@ module Integrator_CS_1D_BM_CS__Form
     Integrator_CS_1D_BM_CS_Form
       class ( CurrentSetForm ), allocatable :: &
         CurrentSet_X_1D
-      class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
-        EigenspeedSet_X_1D
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H      
@@ -124,8 +122,6 @@ contains
     type ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
       I
 
-    if ( allocated ( I % EigenspeedSet_X_1D ) ) &
-      deallocate ( I % EigenspeedSet_X_1D )
     if ( allocated ( I % CurrentSet_X_1D ) ) &
       deallocate ( I % CurrentSet_X_1D )
 

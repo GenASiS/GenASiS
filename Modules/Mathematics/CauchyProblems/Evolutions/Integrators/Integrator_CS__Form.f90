@@ -38,7 +38,7 @@ module Integrator_CS__Form
       ComputeTally
     procedure, public, nopass :: &   !-- 3
       Analyze_CS
-    procedure, public, pass :: &
+    procedure, public, pass ( I ) :: &
       Compute_dT_CS_CGS
   end type Integrator_CS_Form
 
@@ -317,21 +317,23 @@ contains
   end subroutine Analyze_CS
 
 
-  subroutine Compute_dT_CS_CGS ( I, dT, iC, T_Option )
+  subroutine Compute_dT_CS_CGS ( ES, dT, I, iC, T_Option )
 
-    class ( Integrator_CS_Form ), intent ( inout ) :: &
-      I
+    class ( EigenspeedSet_F_Form ), dimension ( : ), intent ( inout ) :: &
+      ES
     real ( KDR ), intent ( inout ) :: &
       dT
+    class ( Integrator_CS_Form ), intent ( in ) :: &
+      I
     integer ( KDI ), intent ( in ) :: &
       iC
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
     associate &
-      ( ES_1  =>  I % EigenspeedSet_X ( 1 ), &
-        ES_2  =>  I % EigenspeedSet_X ( 2 ), &
-        ES_3  =>  I % EigenspeedSet_X ( 3 ), &
+      ( ES_1  =>  ES ( 1 ), &
+        ES_2  =>  ES ( 2 ), &
+        ES_3  =>  ES ( 3 ), &
          G    =>  I % Geometry_X )
 
     select type ( A  =>  G % Atlas )
@@ -393,7 +395,8 @@ contains
 
     select type ( I )
     class is ( Integrator_CS_Form )
-      call I % Compute_dT_CS_CGS ( dT_Candidate ( 1 ), iC, T_Option )
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X, dT_Candidate ( 1 ), iC, T_Option )
     end select !-- I
 
   end subroutine Compute_dT_Local
