@@ -8,6 +8,7 @@ module Integrator_CS_1D_BM_CS__Form
 
   use Basics
   use Fields
+  use Steps
   use Integrator_CS_1D_CS__Form
 
   implicit none
@@ -17,6 +18,8 @@ module Integrator_CS_1D_BM_CS__Form
     Integrator_CS_1D_BM_CS_Form
       class ( CurrentSetForm ), allocatable :: &
         CurrentSet_X_1D
+      class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
+        EigenspeedSet_X_1D
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H      
@@ -54,17 +57,13 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
+    integer ( KDI ) :: &
+      iD
+    character ( 1 ) :: &
+      Suffix
+
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_CS_1D_BM_CS'
-
-    ! if ( .not. allocated ( I % Current_ASC_1D ) ) then
-    !   call Show ( 'Current_ASC_1D not allocated by an extension', &
-    !               CONSOLE % WARNING )
-    !   call Show ( 'Integrator_C_1D_PS_C_PS__Form', 'module', &
-    !               CONSOLE % WARNING )
-    !   call Show ( 'Initialize', 'subroutine', &
-    !               CONSOLE % WARNING )
-    ! end if
 
     call I % Integrator_CS_1D_CS_Form % Initialize &
            ( CommunicatorOption = CommunicatorOption, &
@@ -76,17 +75,41 @@ contains
              T_FinishOption = T_FinishOption, &
              nWriteOption = nWriteOption )
 
+    !-- CurrentSet, if necessary. Member iCurrentSet should already be set.
+
+    if ( .not. allocated ( I % CurrentSet_X_1D ) ) then
+      allocate ( I % CurrentSet_X_1D )
+      associate &
+        ( CS  =>  I % CurrentSet_X_1D, &
+           G  =>  I % Geometry_X )
+      write ( Suffix, fmt = '(i1.1)' ) I % iCurrentSet
+      call CS % Initialize ( G, NameOption = 'CurrentSet_X_1D_' // Suffix )
+      end associate !-- CS, etc.
+    end if
+
+    !-- EigenspeedSet
+
+    allocate ( I % EigenspeedSet_X ( 3 ) )
+    do iD  =  1, 3
+      associate &
+        ( ES  =>  I % EigenspeedSet_X_1D ( iD ), &
+          CS  =>  I % CurrentSet_X_1D )
+      write ( Suffix, fmt = '(i1.1)' ) iD
+      call ES % Initialize ( CS, CS, SuffixOption = Suffix ) 
+      end associate !-- ES, etc.
+    end do !-- iD
+
     !-- Stream
 
-    ! select type ( S  =>  I % Step_X )
-    !   class is ( Step_RK_CS_Form )
+    select type ( S  =>  I % Step_1D )
+      class is ( Step_RK_CS_Form )
     associate &
       ( CS_X_1D  =>  I % CurrentSet_X_1D, &
          S_X     =>  I % Checkpoint_X )
     call CS_X_1D % SetStream ( S_X )
-    ! call  S   % SetStream ( S_X )
+    call  S      % SetStream ( S_X )
     end associate !-- CS_X_1D, etc.
-    ! end select !-- S
+    end select !-- S
 
     ! select type ( TS  =>  I % TimeSeries )
     ! type is ( TimeSeries_C_1D_C_Form )
@@ -101,6 +124,8 @@ contains
     type ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
       I
 
+    if ( allocated ( I % EigenspeedSet_X_1D ) ) &
+      deallocate ( I % EigenspeedSet_X_1D )
     if ( allocated ( I % CurrentSet_X_1D ) ) &
       deallocate ( I % CurrentSet_X_1D )
 

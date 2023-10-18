@@ -102,7 +102,7 @@ contains
     integer ( KDI ) :: &
       iD
     character ( 1 ) :: &
-      Dimension
+      Suffix
 
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_CS'
@@ -130,7 +130,7 @@ contains
       associate &
         ( CS  =>  I % CurrentSet_X, &
            G  =>  I % Geometry_X )
-      call CS % Initialize ( G )
+      call CS % Initialize ( G, NameOption = 'CurrentSet_X' )
       end associate !-- CS, etc.
     end if
 
@@ -154,8 +154,8 @@ contains
       associate &
         ( ES  =>  I % EigenspeedSet_X ( iD ), &
           CS  =>  I % CurrentSet_X )
-      write ( Dimension, fmt = '(i1.1)' ) iD
-      call ES % Initialize ( CS, CS, SuffixOption = Dimension ) 
+      write ( Suffix, fmt = '(i1.1)' ) iD
+      call ES % Initialize ( CS, CS, SuffixOption = Suffix ) 
       end associate !-- ES, etc.
     end do !-- iD
 
