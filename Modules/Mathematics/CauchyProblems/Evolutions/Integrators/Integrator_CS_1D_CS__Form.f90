@@ -24,6 +24,8 @@ module Integrator_CS_1D_CS__Form
       Initialize_H      
     final :: &
       Finalize
+    procedure, private, pass :: &  !-- 2
+      ComputeCycle
   end type Integrator_CS_1D_CS_Form
 
 
@@ -99,6 +101,66 @@ contains
       deallocate ( I % Step_1D )
 
   end subroutine Finalize
+
+
+  subroutine ComputeCycle ( I, T_CC )
+
+    class ( Integrator_CS_1D_CS_Form ), intent ( inout ) :: &
+      I
+    type ( TimerForm ), intent ( in ) :: &
+      T_CC
+
+    real ( KDR ) :: &
+      T_New  !-- Use of Compute_T_New is a relic of past AMR evolution
+    type ( TimerForm ), pointer :: &
+      T_CTN, &
+      T_S
+
+    T_CTN  =>  PROGRAM_HEADER % Timer &
+                ( Handle = I % iTimer_CTN, &
+                  Name = trim ( I % Name ) // '_CmptDt', &
+                  Level = T_CC % Level + 1 )
+    call T_CTN % Start ( )
+    call I % Compute_T_New ( T_New )
+    call T_CTN % Stop ( )
+
+    associate ( dT  =>  T_New  -  I % T )    
+
+    ! select type ( Chart => PS % Chart )
+    ! class is ( Chart_SLD_Form )
+
+    if ( allocated ( I % Step_X ) ) then
+      associate ( S  =>  I % Step_X )
+      T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
+      call T_S % Start ( )
+      call S % Compute ( I % T, dT, T_Option = T_S )
+      call T_S % Stop ( )
+      end associate !--  S
+    end if !-- allocated Step
+
+    ! class default
+    !   call Show ( 'Chart type not found', CONSOLE % ERROR )
+    !   call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
+    !   call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select !-- C
+
+    I % iCycle  =  I % iCycle  +   1
+    I % T       =  I % T       +  dT
+
+    if ( I % T_CheckpointExact ) then
+      if ( abs ( I % T_Checkpoint  -  I % T )  /  I % T_Checkpoint  &
+           <  1.0e-14 ) &
+        I % CheckpointDue  =  .true.
+    else 
+      if ( I % T  >  I % T_Checkpoint &
+           .or. abs ( I % T_Checkpoint  -  I % T )  <  0.5_KDR * dT ) &
+        I % CheckpointDue  =  .true.
+    end if
+
+    end associate !-- dT
+
+  end subroutine ComputeCycle
 
 
 end module Integrator_CS_1D_CS__Form

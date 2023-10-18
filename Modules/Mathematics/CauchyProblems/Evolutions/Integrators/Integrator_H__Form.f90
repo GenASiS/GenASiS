@@ -143,9 +143,7 @@ module Integrator_H__Form
       Write_H
     procedure, private, pass :: &   !-- 3
       Read_H
-    procedure, private, pass :: &   !-- 3
-      PrepareCycle
-    procedure, private, pass :: &   !-- 3
+    procedure, public, pass :: &   !-- 3
       Compute_T_New
     procedure, private, pass :: &   !-- 4
       Compute_dT
@@ -893,17 +891,8 @@ contains
     real ( KDR ) :: &
       T_New  !-- Use of Compute_T_New is a relic of past AMR evolution
     type ( TimerForm ), pointer :: &
-      T_PC, &
       T_CTN, &
       T_S
-
-    T_PC  =>  PROGRAM_HEADER % Timer &
-                ( Handle = I % iTimer_PC, &
-                  Name = trim ( I % Name ) // '_PprCcl', &
-                  Level = T_CC % Level + 1 )
-    call T_PC % Start ( )
-    call I % PrepareCycle ( )
-    call T_PC % Stop ( )
 
     T_CTN  =>  PROGRAM_HEADER % Timer &
                 ( Handle = I % iTimer_CTN, &
