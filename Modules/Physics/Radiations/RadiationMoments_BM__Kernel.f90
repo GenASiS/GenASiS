@@ -224,4 +224,41 @@ contains
   end procedure Compute_J_H_G_Kernel
 
 
+  module procedure Compute_ES_G_Kernel
+
+    !-- Compute_EigenspeedSet_Galileo_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( EF_P )
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        EF_P ( iV )  =  + sqrt ( M_UU_Dim ( iV ) )  *  c 
+        EF_M ( iV )  =  - sqrt ( M_UU_Dim ( iV ) )  *  c
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        EF_P ( iV )  =  + sqrt ( M_UU_Dim ( iV ) )  *  c 
+        EF_M ( iV )  =  - sqrt ( M_UU_Dim ( iV ) )  *  c
+      end do
+      !$OMP end parallel do
+    end if
+
+  end procedure Compute_ES_G_Kernel
+
+
 end submodule RadiationMoments_BM__Kernel

@@ -65,12 +65,10 @@ module RadiationMoments_BM__Form
       ComputeFromPrimitive
     procedure, public, pass :: &
       ComputeFromBalanced
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeRawFluxes
+    procedure, public, pass ( CS ) :: &
+      ComputeEigenspeeds
   !   procedure, public, pass ( C ) :: &
   !     ComputeDiffusionFactor_HLL
-  !   procedure, public, nopass :: &
-  !     ComputeComovingStress_D
     final :: &
       Finalize
   end type RadiationMoments_BM_Form
@@ -125,6 +123,21 @@ module RadiationMoments_BM__Form
         UseDeviceOption
     end subroutine Compute_J_H_G_Kernel
 
+    module subroutine Compute_ES_G_Kernel &
+             ( c, M_UU_Dim, EF_P, EF_M, UseDeviceOption )
+      !-- Compute_EigenspeedSet_Galileo_Kernel
+      use Basics
+      implicit none
+      real ( KDR ), intent ( in ) :: &
+        c
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M_UU_Dim
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        EF_P, EF_M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_ES_G_Kernel
+    
   end interface
 
 
@@ -535,6 +548,41 @@ contains
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
   end subroutine ComputeFromBalanced
+
+
+  subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )
+
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
+      ES
+    class ( RadiationMoments_BM_Form ), intent ( in ) :: &
+      CS
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
+      FS_CS
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaEigenspeeds
+    integer ( KDI ), intent ( in ) :: &
+      iC, &  !-- iChart
+      iD     !-- iDimension
+
+    associate ( G  =>  CS % Geometry )
+    associate &
+      ( ESV  =>  ES    % Storage ( iC ) % Value, &
+        CSV  =>  FS_CS % Storage ( iC ) % Value, &
+        GSV  =>  G     % Storage ( iC ) % Value )
+    associate &
+      (   EF_P    =>  ESV ( :, iaEigenspeeds ( 1 ) ), &
+          EF_M    =>  ESV ( :, iaEigenspeeds ( 2 ) ), & 
+        M_UU_Dim  =>  GSV ( :, G % METRIC_F_UU ( iD ) ) )
+ 
+    call Compute_ES_G_Kernel &
+           ( CONSTANT % SPEED_OF_LIGHT, M_UU_Dim, EF_P, EF_M, &
+             UseDeviceOption = CS % DeviceMemory )
+  
+    end associate !-- EF_P, etc.
+    end associate !-- ESV, etc.
+    end associate !-- G
+
+  end subroutine ComputeEigenspeeds
 
 
   impure elemental subroutine Finalize ( RM )

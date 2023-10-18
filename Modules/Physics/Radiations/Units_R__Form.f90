@@ -8,9 +8,9 @@ module Units_R__Form
   private
 
   type, public :: Units_R_Form
-!     !-- Phase space 
-!     type ( QuantityForm ) :: &
-!       Time, &
+    !-- Phase space 
+    type ( QuantityForm ) :: &
+      Time!, &
 !       Length, &
 !       SqrtDet_M  !-- SquareRoot_Determinant_Metric
 ! !-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
