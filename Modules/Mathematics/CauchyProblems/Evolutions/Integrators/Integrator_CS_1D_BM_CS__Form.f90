@@ -89,7 +89,7 @@ contains
 
     !-- EigenspeedSet
 
-    allocate ( I % EigenspeedSet_X ( 3 ) )
+    allocate ( I % EigenspeedSet_X_1D ( 3 ) )
     do iD  =  1, 3
       associate &
         ( ES  =>  I % EigenspeedSet_X_1D ( iD ), &
@@ -144,9 +144,9 @@ contains
 
     call I % CurrentSet_X_1D % Show ( )
 
-!    do iD  =  1, 3
-!      call I % EigenspeedSet_X ( iD ) % Show ( )
-!    end do !-- iD
+    do iD  =  1, 3
+      call I % EigenspeedSet_X_1D ( iD ) % Show ( )
+    end do !-- iD
 
   end subroutine ShowFields
 
