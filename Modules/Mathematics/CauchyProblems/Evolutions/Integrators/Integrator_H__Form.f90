@@ -913,7 +913,7 @@ contains
       call T_S % Start ( )
       call S % Compute ( I % T, dT, T_Option = T_S )
       call T_S % Stop ( )
-      end associate !--  S
+      end associate !-- S
     end if !-- allocated Step
 
     ! class default

@@ -122,7 +122,8 @@ contains
       T_New  !-- Use of Compute_T_New is a relic of past AMR evolution
     type ( TimerForm ), pointer :: &
       T_CTN, &
-      T_S
+      T_S, &
+      T_S_1D
 
     T_CTN  =>  PROGRAM_HEADER % Timer &
                 ( Handle = I % iTimer_CTN, &
@@ -137,13 +138,20 @@ contains
     ! select type ( Chart => PS % Chart )
     ! class is ( Chart_SLD_Form )
 
+    associate ( S_1D  =>  I % Step_1D )
+    T_S_1D  =>  S_1D % Timer ( Level = T_CC % Level + 1 )
+    call T_S_1D % Start ( )
+    call S_1D % Compute ( I % T, dT, T_Option = T_S_1D )
+    call T_S_1D % Stop ( )
+    end associate !-- S_1D
+
     if ( allocated ( I % Step_X ) ) then
       associate ( S  =>  I % Step_X )
       T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
       call T_S % Start ( )
       call S % Compute ( I % T, dT, T_Option = T_S )
       call T_S % Stop ( )
-      end associate !--  S
+      end associate !-- S
     end if !-- allocated Step
 
     ! class default

@@ -17,7 +17,8 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      H
+      H, &
+      SqrtTiny
     logical ( KDL ) :: &
       UseDevice
 
@@ -27,21 +28,25 @@ contains
 
     nV = size ( E )
 
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
     if ( UseDevice ) then
 
     else 
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny ) &
       !$OMP private ( H )
       do iV = 1, nV
 
-        if ( J ( iV )  <  0.0_KDR ) &
+        if ( J ( iV )  <  SqrtTiny ) &
           J ( iV )  =  0.0_KDR
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        H  =  max ( H, SqrtTiny )
 
         if ( H  >  J ( iV ) ) then
 
@@ -52,12 +57,13 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+          H  =  max ( H, SqrtTiny )
 
         end if
 
         !-- Moment factors ( Minerbo SF )
 
-        FF ( iV )  =  H  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+        FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
 
         SF ( iV )  =  1.0_KDR / 3.0_KDR &
                       +  2.0_KDR / 3.0_KDR &
@@ -89,7 +95,8 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      H
+      H, &
+      SqrtTiny
     logical ( KDL ) :: &
       UseDevice
 
@@ -99,12 +106,15 @@ contains
 
     nV = size ( J )
 
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
     if ( UseDevice ) then
 
     else 
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny ) &
       !$OMP private ( H )
       do iV = 1, nV
 
@@ -140,7 +150,12 @@ contains
 
           !-- Moment factors ( Minerbo SF )
 
-          FF ( iV )  =  H  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+          H  =  max ( H, SqrtTiny )
+
+          FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
 
           SF ( iV )  =  1.0_KDR / 3.0_KDR &
                         +  2.0_KDR / 3.0_KDR &
@@ -185,6 +200,7 @@ contains
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        H  =  max ( H, SqrtTiny )
         
         if ( H  >  J ( iV ) ) then
 
@@ -195,10 +211,11 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+          H  =  max ( H, SqrtTiny )
 
           !-- Moment factors ( Minerbo SF )
 
-          FF ( iV )  =  H  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+          FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
 
           SF ( iV )  =  1.0_KDR / 3.0_KDR &
                         +  2.0_KDR / 3.0_KDR &

@@ -20,7 +20,8 @@ contains
       nV
     real ( KDR ) :: &
       H_Sq, &
-      K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3
+      K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3, &
+      SqrtTiny
     logical ( KDL ) :: &
       UseDevice
       
@@ -39,13 +40,14 @@ contains
     Delta_3  =  int (    real ( 3 + iDim  -  abs ( 3 - iDim ) )  &
                       /  real ( 3 + iDim  +  abs ( 3 - iDim ) ) )
 
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
     if ( UseDevice ) then
     
     else
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( Delta_1, Delta_2, Delta_3 ) &
+      !$OMP shared ( Delta_1, Delta_2, Delta_3, SqrtTiny ) &
       !$OMP private ( H_Sq, K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3 )
       do iV = 1, nV
 
@@ -54,6 +56,7 @@ contains
         H_Sq  =     M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                  +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                  +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2
+        H_Sq  =  max ( H_Sq, SqrtTiny )
 
         K_U_Dim_D_1  &
           =  0.5_KDR * ( ( 1.0_KDR  -  SF ( iV ) )  *  Delta_1  &
