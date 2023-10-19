@@ -17,6 +17,8 @@ module Integrator_CS_1D_BM_CS__Form
 
   type, public, extends ( Integrator_CS_1D_CS_Form ) :: &
     Integrator_CS_1D_BM_CS_Form
+      type ( CommunicatorForm ), allocatable :: &
+        Communicator_X_1D
       class ( CurrentSetForm ), allocatable :: &
         CurrentSet_X_1D
       class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
@@ -26,10 +28,14 @@ module Integrator_CS_1D_BM_CS__Form
       Initialize_H      
     final :: &
       Finalize
+    procedure, public, pass :: &  !-- 2
+      ShowParameters
     procedure, public, pass :: &   !-- 2
       ShowFields
     procedure, public, pass :: &   !-- 2
       PrepareEvolution
+    procedure, private, pass :: &   !-- 2
+      SetCommunicator_1D
   end type Integrator_CS_1D_BM_CS_Form
 
     private :: &
@@ -115,11 +121,17 @@ contains
     end associate !-- CS_X_1D, etc.
     end select !-- S
 
+    !-- Communicator
+
+    call I % SetCommunicator_1D ( )
+
+    !-- Series
+
     ! select type ( TS  =>  I % TimeSeries )
     ! type is ( TimeSeries_C_1D_C_Form )
     !   I % InitializeTimeSeries  =>  InitializeTimeSeries_C_1D_PS
     ! end select !-- TS
-
+    
     !-- Time step
     
     I % Compute_dT_Local  =>  Compute_dT_Local
@@ -132,12 +144,26 @@ contains
     type ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
       I
 
-    if ( allocated ( I % CurrentSet_X_1D ) ) &
-      deallocate ( I % CurrentSet_X_1D )
     if ( allocated ( I % EigenspeedSet_X_1D ) ) &
       deallocate ( I % EigenspeedSet_X_1D )
+    if ( allocated ( I % CurrentSet_X_1D ) ) &
+      deallocate ( I % CurrentSet_X_1D )
+    if ( allocated ( I % Communicator_X_1D ) ) &
+      deallocate ( I % Communicator_X_1D )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( I )
+
+    class ( Integrator_CS_1D_BM_CS_Form ), intent ( in ) :: &
+      I
+
+    call I % Integrator_CS_1D_CS_Form % ShowParameters ( )
+
+    call I % Communicator_X_1D % Show ( I % IGNORABILITY )
+
+  end subroutine ShowParameters
 
 
   subroutine ShowFields ( I )
@@ -178,6 +204,35 @@ contains
     end associate !-- CS
 
   end subroutine PrepareEvolution
+
+
+  subroutine SetCommunicator_1D ( I )
+
+    class ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iR  !-- iRadiation
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      Rank
+
+    allocate ( I % Communicator_X_1D )
+
+    associate &
+      ( C     =>  I % Communicator, &
+        C_P   =>  I % Communicator % Parent, &
+        C_1D  =>  I % Communicator_X_1D )
+
+    allocate ( Rank, &
+               source = [ ( iR, iR = C % Rank, C_P % Size - 1, C % Size ) ] )
+
+    !-- C_1D % Size will be I % N_CURRENT_SETS_1D
+
+    call C_1D % Initialize ( C_P, Rank, NameOption = 'Communicator_X_1D' )
+
+    end associate !-- C, etc.
+
+  end subroutine SetCommunicator_1D
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )

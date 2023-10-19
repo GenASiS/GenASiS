@@ -16,7 +16,7 @@ module Integrator_CS_1D_CS__Form
 
   type, public, extends ( Integrator_CS_Form ) :: Integrator_CS_1D_CS_Form
     integer ( KDI ) :: &
-      N_CURRENT_SETS_1D = 0, &
+      nCurrentSets = 0, &
       iCurrentSet = 0
     class ( Step_RK_H_Form ), allocatable :: &
       Step_1D
@@ -25,6 +25,10 @@ module Integrator_CS_1D_CS__Form
       Initialize_H      
     final :: &
       Finalize
+    procedure, public, pass :: &  !-- 2
+      ShowParameters
+    procedure, public, pass :: &  !-- 2
+      ShowSteps
     procedure, private, pass :: &  !-- 2
       ComputeCycle
   end type Integrator_CS_1D_CS_Form
@@ -99,6 +103,31 @@ contains
       deallocate ( I % Step_1D )
 
   end subroutine Finalize
+
+
+  subroutine ShowParameters ( I )
+
+    class ( Integrator_CS_1D_CS_Form ), intent ( in ) :: &
+      I
+
+    call I % Integrator_CS_Form % ShowParameters ( )
+
+    call Show ( I % nCurrentSets, 'nCurrentSets', I % IGNORABILITY )
+    call Show ( I % iCurrentSet,  'iCurrentSet',  I % IGNORABILITY )
+
+  end subroutine ShowParameters
+
+
+  subroutine ShowSteps ( I )
+
+    class ( Integrator_CS_1D_CS_Form ), intent ( in ) :: &
+      I
+
+    call I % Integrator_CS_Form % ShowSteps ( )
+
+    call I % Step_1D % Show ( )
+
+  end subroutine ShowSteps
 
 
   subroutine ComputeCycle ( I, T_CC )
