@@ -246,14 +246,34 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
     select type ( I )
     class is ( Integrator_CS_1D_BM_CS_Form )
+
+      !-- CS
+
       call I % Compute_dT_CS_CGS &
              ( I % EigenspeedSet_X, &
                dT_Candidate ( 1 ), iC, T_Option )
+
+      !-- CS_1D, my element
+
       call I % Compute_dT_CS_CGS &
              ( I % EigenspeedSet_X_1D, &
                dT_Candidate ( 1  +  I % iCurrentSet ), iC, T_Option )
+
+      !-- Reduce across CS_1D
+
+      call CO % Initialize &
+             ( I % Communicator_X_1D, nOutgoing = [ I % n_dT_Candidates ], &
+               nIncoming = [ I % n_dT_Candidates ] )
+
+      CO % Outgoing % Value  =  I % dT_Candidate
+      call CO % Reduce ( REDUCTION % MIN )
+      I % dT_Candidate  =  CO % Incoming % Value
+
     end select !-- I
 
   end subroutine Compute_dT_Local
