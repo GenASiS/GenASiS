@@ -36,6 +36,8 @@ module Integrator_CS_1D_BM_CS__Form
       PrepareEvolution
     procedure, private, pass :: &   !-- 2
       SetCommunicator_1D
+    procedure, private, pass :: &
+      ComputeTally_1D
   end type Integrator_CS_1D_BM_CS_Form
 
     private :: &
@@ -233,6 +235,27 @@ contains
     end associate !-- C, etc.
 
   end subroutine SetCommunicator_1D
+
+
+  subroutine ComputeTally_1D ( I, ChangeOption, IgnorabilityOption )
+
+    class ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      ChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    if ( .not. allocated ( I % CurrentSet_X_1D ) ) &
+      return
+
+    associate ( CS => I % CurrentSet_X_1D )
+    call CS % ComputeTally &
+           ( ChangeOption = ChangeOption, &
+             IgnorabilityOption = IgnorabilityOption )
+    end associate !-- CS
+
+  end subroutine ComputeTally_1D
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )

@@ -31,6 +31,10 @@ module Integrator_CS_1D_CS__Form
       ShowSteps
     procedure, private, pass :: &  !-- 2
       ComputeCycle
+    procedure, private, pass :: &  !-- 3
+      ComputeTally
+    procedure, private, pass :: &
+      ComputeTally_1D
   end type Integrator_CS_1D_CS_Form
 
 
@@ -196,6 +200,55 @@ contains
     end associate !-- dT
 
   end subroutine ComputeCycle
+
+
+  subroutine ComputeTally ( I, ChangeOption, IgnorabilityOption )
+
+    class ( Integrator_CS_1D_CS_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      ChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    call I % ComputeTally_1D &
+           ( ChangeOption = ChangeOption, &
+             IgnorabilityOption  = IgnorabilityOption )
+
+    if ( allocated ( I % CurrentSet_X ) ) then
+      associate ( CS => I % CurrentSet_X )
+      call CS % ComputeTally &
+             ( ChangeOption = ChangeOption, &
+               IgnorabilityOption = IgnorabilityOption )
+      end associate !-- CS
+    end if
+
+    ! if ( associated ( I % SeriesChangeGrandTotal ) ) then
+    !   associate ( SCGT => I % SeriesChangeGrandTotal )
+    !   call Show ( 'Change in Grand Total Tally', IgnorabilityOption )
+    !   do iV = 1, SCGT % nVariables
+    !     iS = SCGT % iaSelected ( iV )
+    !     call Show ( SCGT % Value ( I % iTime, iS ), SCGT % Unit ( iS ), &
+    !                 SCGT % Variable ( iS ), IgnorabilityOption )
+    !   end do !-- iV
+    !   end associate !-- SCGT, etc.
+    ! end if
+
+  end subroutine ComputeTally
+
+
+  subroutine ComputeTally_1D ( I, ChangeOption, IgnorabilityOption )
+
+    class ( Integrator_CS_1D_CS_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      ChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    !-- To be filled in by extension
+
+  end subroutine ComputeTally_1D
 
 
 end module Integrator_CS_1D_CS__Form
