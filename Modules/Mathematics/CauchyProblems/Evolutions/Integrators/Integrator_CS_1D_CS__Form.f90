@@ -9,7 +9,6 @@ module Integrator_CS_1D_CS__Form
   use Basics
   use Fields
   use Steps
-  use Integrator_H__Form
   use Integrator_CS__Form
 
   implicit none
@@ -19,8 +18,6 @@ module Integrator_CS_1D_CS__Form
     integer ( KDI ) :: &
       N_CURRENT_SETS_1D = 0, &
       iCurrentSet = 0
-    class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
-      EigenspeedSet_X_1D
     class ( Step_RK_H_Form ), allocatable :: &
       Step_1D
   contains
@@ -31,9 +28,6 @@ module Integrator_CS_1D_CS__Form
     procedure, private, pass :: &  !-- 2
       ComputeCycle
   end type Integrator_CS_1D_CS_Form
-
-    private :: &
-      Compute_dT_Local
 
 
 contains
@@ -88,8 +82,6 @@ contains
              T_FinishOption = T_FinishOption, &
              nWriteOption = nWriteOption )
 
-    I % Compute_dT_Local  =>  Compute_dT_Local
-
   end subroutine Initialize_H
 
 
@@ -105,8 +97,6 @@ contains
 
     if ( allocated ( I % Step_1D ) ) &
       deallocate ( I % Step_1D )
-    if ( allocated ( I % EigenspeedSet_X_1D ) ) &
-      deallocate ( I % EigenspeedSet_X_1D )
 
   end subroutine Finalize
 
@@ -177,30 +167,6 @@ contains
     end associate !-- dT
 
   end subroutine ComputeCycle
-
-
-  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
-
-    class ( Integrator_H_Form ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      dT_Candidate
-    integer ( KDI ), intent ( in ) :: &
-      iC
-    type ( TimerForm ), intent ( in ), optional :: &
-      T_Option
-
-    select type ( I )
-    class is ( Integrator_CS_1D_CS_Form )
-      call I % Compute_dT_CS_CGS &
-             ( I % EigenspeedSet_X, &
-               dT_Candidate ( 1 ), iC, T_Option )
-      call I % Compute_dT_CS_CGS &
-             ( I % EigenspeedSet_X_1D, &
-               dT_Candidate ( 1  +  I % iCurrentSet ), iC, T_Option )
-    end select !-- I
-
-  end subroutine Compute_dT_Local
 
 
 end module Integrator_CS_1D_CS__Form

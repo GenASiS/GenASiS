@@ -9,6 +9,7 @@ module Integrator_CS_1D_BM_CS__Form
   use Basics
   use Fields
   use Steps
+  use Integrator_H__Form
   use Integrator_CS_1D_CS__Form
 
   implicit none
@@ -18,6 +19,8 @@ module Integrator_CS_1D_BM_CS__Form
     Integrator_CS_1D_BM_CS_Form
       class ( CurrentSetForm ), allocatable :: &
         CurrentSet_X_1D
+      class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
+        EigenspeedSet_X_1D
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H      
@@ -28,6 +31,9 @@ module Integrator_CS_1D_BM_CS__Form
     procedure, public, pass :: &   !-- 2
       PrepareEvolution
   end type Integrator_CS_1D_BM_CS_Form
+
+    private :: &
+      Compute_dT_Local
 
 
 contains
@@ -114,6 +120,10 @@ contains
     !   I % InitializeTimeSeries  =>  InitializeTimeSeries_C_1D_PS
     ! end select !-- TS
 
+    !-- Time step
+    
+    I % Compute_dT_Local  =>  Compute_dT_Local
+
   end subroutine Initialize_H
 
 
@@ -124,6 +134,8 @@ contains
 
     if ( allocated ( I % CurrentSet_X_1D ) ) &
       deallocate ( I % CurrentSet_X_1D )
+    if ( allocated ( I % EigenspeedSet_X_1D ) ) &
+      deallocate ( I % EigenspeedSet_X_1D )
 
   end subroutine Finalize
 
@@ -166,6 +178,30 @@ contains
     end associate !-- CS
 
   end subroutine PrepareEvolution
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( I )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X, &
+               dT_Candidate ( 1 ), iC, T_Option )
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X_1D, &
+               dT_Candidate ( 1  +  I % iCurrentSet ), iC, T_Option )
+    end select !-- I
+
+  end subroutine Compute_dT_Local
 
 
 end module Integrator_CS_1D_BM_CS__Form
