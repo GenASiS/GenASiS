@@ -358,7 +358,7 @@ contains
 
     class ( PlaneWaveStreamingForm ), intent ( in ) :: &
       PWS
-    type ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       R  !-- RadiationSection
 
     select type ( A  =>  R % Atlas )
