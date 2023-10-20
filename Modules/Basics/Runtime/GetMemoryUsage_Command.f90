@@ -111,9 +111,7 @@ contains
          .or. present ( Mean_HWM_Option ) .or. present ( Max_RSS_Option ) &
          .or. present ( Min_RSS_Option ) .or. present (  Mean_RSS_Option ) ) ) &
     then
-      call CO % Initialize &
-             ( C_Option, nOutgoing = [ 1 ], nIncoming = [ 1 ], &
-               RootOption = CONSOLE % DisplayRank )
+      call CO % Initialize ( C_Option, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
     end if
       
     if ( present ( Max_HWM_Option ) ) then

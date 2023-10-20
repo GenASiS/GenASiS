@@ -806,7 +806,7 @@ contains
     !-- Record statistics
 
     call PROGRAM_HEADER % RecordStatistics &
-           ( Ignorability, CommunicatorOption = PROGRAM_HEADER % Communicator )
+           ( Ignorability, CommunicatorOption = I % Communicator )
 
     !-- Initialize series
 

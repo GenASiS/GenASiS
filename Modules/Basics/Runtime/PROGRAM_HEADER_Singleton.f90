@@ -979,25 +979,28 @@ contains
     if ( present ( CommunicatorOption ) ) then
 
       !-- nTimers sanity check
+
       call CO % Initialize &
              ( CommunicatorOption, nOutgoing = [ 1 ], &
-               nIncoming = [ CommunicatorOption % Size ], &
-               RootOption = CONSOLE % DisplayRank )
+               nIncoming = [ CommunicatorOption % Size ] )
+
       CO % Outgoing % Value  =  PH % Timer_1D % nTimers
+
       call CO % Gather ( )
-      if ( CommunicatorOption % Rank  ==  CONSOLE % DisplayRank ) then
-        if ( any ( CO % Incoming % Value  /=  CO % Incoming % Value ( 1 ) ) ) &
-        then
-          call Show ( 'Unequal number of timers across processes', &
-                      CONSOLE % ERROR )
-          call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
-          call Show ( 'ReadTimers', 'subroutine', CONSOLE % ERROR )
-          call Show ( CO % Incoming % Value, 'nTimers', CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end if !-- unequal nTimers
-      end if !-- CONSOLE % DisplayRank
+
+      if ( any ( CO % Incoming % Value  /=  CO % Incoming % Value ( 1 ) ) ) &
+      then
+        call Show ( 'Unequal number of timers across processes', &
+                    CONSOLE % ERROR )
+        call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
+        call Show ( 'ReadTimers', 'subroutine', CONSOLE % ERROR )
+        call Show ( CO % Incoming % Value, 'nTimers', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if !-- unequal nTimers
 
     end if !-- CommunicatorOption
+
+    !-- Read timers 
 
     call PH % Timer_1D % Read ( Ignorability, CommunicatorOption )
 
