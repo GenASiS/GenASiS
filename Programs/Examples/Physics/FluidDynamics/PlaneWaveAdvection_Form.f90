@@ -214,7 +214,7 @@ contains
     call F_R % SetStream ( S )
     call F_D % SetStream ( S )
 
-    end associate !-- FA_R, etc.
+    end associate !-- F_R, etc.
 
   end subroutine InitializeDiagnostics
 

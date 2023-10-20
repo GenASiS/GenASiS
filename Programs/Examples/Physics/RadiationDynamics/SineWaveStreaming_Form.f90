@@ -69,12 +69,12 @@ contains
   end subroutine ShowParameters
 
 
-  function Waveform ( PWA, X ) result ( W )
+  function Waveform ( PWS, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
 
     class ( SineWaveStreamingForm ), intent ( in ) :: &
-      PWA
+      PWS
     real ( KDR ), intent ( in ) :: &
       X
     real ( KDR ) :: &
@@ -84,8 +84,8 @@ contains
       TwoPi
 
     associate &
-      ( O => PWA % Offset, &
-        A => PWA % Amplitude )
+      ( O => PWS % Offset, &
+        A => PWS % Amplitude )
 
     TwoPi  =  2.0_KDR * CONSTANT % PI
 

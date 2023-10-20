@@ -17,14 +17,16 @@ module PlaneWaveStreaming_Form
       Period
     real ( KDR ), dimension ( 3 ) :: &
       Wavenumber
-!    type ( Fluid_D_Form ), allocatable :: &
-!      Reference, &
-!      Difference
+    type ( RadiationMoments_BM_Form ), allocatable :: &
+      Reference, &
+      Difference
   contains
     procedure, private, pass :: &
       Initialize_PWS
     generic, public :: &
       Initialize => Initialize_PWS
+    procedure, public, pass :: &
+      ComputeError
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -35,9 +37,9 @@ module PlaneWaveStreaming_Form
 
     private :: &
       InitializeUniverse, &
-    !   InitializeDiagnostics, &
-      SetInitial!, &
-    !   SetReference
+      InitializeDiagnostics, &
+      SetInitial, &
+      SetReference
 
       private :: &
         SetRadiation
@@ -61,9 +63,57 @@ contains
       PWS % Type  =  'a PlaneWaveStreaming'
 
     call InitializeUniverse ( PWS, FormalismType, Name )
-    ! call InitializeDiagnostics ( PWS, FormalismType )
+    call InitializeDiagnostics ( PWS )
  
   end subroutine Initialize_PWS
+
+
+  subroutine ComputeError ( PWS )
+
+    class ( PlaneWaveStreamingForm ), intent ( in ) :: &
+      PWS
+
+    real ( KDR ) :: &
+      L1
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( A  =>  PWS % Reference % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C    =>  A % Chart_GS, &
+        R_R  =>  PWS % Reference, &
+        R_D  =>  PWS % Difference )
+    associate &
+      ( RV_R  =>  R_R % Storage_GS % Value, &
+        RV_D  =>  R_D % Storage_GS % Value )
+
+    call CO % Initialize ( C % Communicator, [ 2 ], [ 2 ] )
+
+    associate &
+      ( D  =>  RV_D ( :, R_D % ENERGY_DENSITY_C ), &
+        R  =>  RV_R ( :, R_R % ENERGY_DENSITY_C ), &
+        Norm_D  =>  CO % Incoming % Value ( 1 ), &
+        Norm_R  =>  CO % Incoming % Value ( 2 ) )
+
+    CO % Outgoing % Value ( 1 ) &
+      =  sum ( abs ( D ), mask = C % ProperCell )
+    CO % Outgoing % Value ( 2 ) &
+      =  sum ( abs ( R ), mask = C % ProperCell )
+
+    call CO % Reduce ( REDUCTION % SUM )
+
+    L1  =  Norm_D / Norm_R
+    call Show ( L1, '*** L1 error', &
+                nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+
+    end associate !-- D, etc.
+    end associate !-- RV_R, etc.
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine ComputeError
 
 
   impure elemental subroutine Finalize ( PWS )
@@ -71,10 +121,10 @@ contains
     type ( PlaneWaveStreamingForm ), intent ( inout ) :: &
       PWS
 
-    ! if ( allocated ( PW % Difference ) ) &
-    !   deallocate ( PW % Difference )
-    ! if ( allocated ( PW % Reference ) ) &
-    !   deallocate ( PW % Reference )
+    if ( allocated ( PWS % Difference ) ) &
+      deallocate ( PWS % Difference )
+    if ( allocated ( PWS % Reference ) ) &
+      deallocate ( PWS % Reference )
 
   end subroutine Finalize
 
@@ -95,12 +145,12 @@ contains
   end subroutine ShowParameters
 
 
-  function Waveform ( PWA, X ) result ( W )
+  function Waveform ( PWS, X ) result ( W )
 
     !-- Waveform with a full period in the range 0 < X < 1
 
     class ( PlaneWaveStreamingForm ), intent ( in ) :: &
-      PWA
+      PWS
     real ( KDR ), intent ( in ) :: &
       X
     real ( KDR ) :: &
@@ -159,9 +209,46 @@ contains
     end select !-- I
              
     PWS % Integrator % SetInitial    =>  SetInitial
-    ! PW % Integrator % SetReference  =>  SetReference
+    PWS % Integrator % SetReference  =>  SetReference
 
   end subroutine InitializeUniverse
+
+
+  subroutine InitializeDiagnostics ( PWS )
+
+    class ( PlaneWaveStreamingForm ), intent ( inout ) :: &
+      PWS
+
+    character ( LDL ) :: &
+      ReferenceName, &
+      DifferenceName
+
+    allocate &
+      ( PWS % Reference, &
+        PWS % Difference )
+    associate &
+      ( R_R  =>  PWS % Reference, &
+        R_D  =>  PWS % Difference, &
+        G    =>  PWS % Integrator % Geometry_X, &
+        S    =>  PWS % Integrator % Checkpoint_X )
+
+    select case ( PWS % iRadiation )
+    case ( 1 )
+      ReferenceName   =  'Reference_1'
+      DifferenceName  =  'Difference_1'
+    case ( 2 )
+      ReferenceName   =  'Reference_2'
+      DifferenceName  =  'Difference_2'
+    end select
+    
+    call R_R % Initialize ( G, PWS % Units_R, NameOption = ReferenceName )
+    call R_D % Initialize ( G, PWS % Units_R, NameOption = DifferenceName )
+    call R_R % SetStream ( S )
+    call R_D % SetStream ( S )
+
+    end associate !-- R_R, etc.
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetInitial ( I )
@@ -238,6 +325,33 @@ contains
     end select !-- PWS
 
   end subroutine SetInitial
+
+
+  subroutine SetReference ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( PWS  =>  I % System )
+      class is ( PlaneWaveStreamingForm )
+    select type ( I  =>  PWS % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    associate &
+      ( R_R  =>  PWS % Reference, &
+        R_D  =>  PWS % Difference )
+
+    call SetRadiation ( PWS, R_R )
+
+    call R_D % MultiplyAdd ( R, R_R, -1.0_KDR )
+
+    end associate !-- R_R, etc.
+    end select !-- F
+    end select !-- I
+    end select !-- PWS
+
+  end subroutine SetReference
 
 
   subroutine SetRadiation ( PWS, R )
