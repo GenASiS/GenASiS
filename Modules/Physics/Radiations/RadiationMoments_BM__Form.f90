@@ -75,7 +75,8 @@ module RadiationMoments_BM__Form
 
     private :: &
       Compute_E_S_G_Kernel, &
-      Compute_J_H_G_Kernel
+      Compute_J_H_G_Kernel, &
+      Compute_ES_G_Kernel
 
   interface
 
