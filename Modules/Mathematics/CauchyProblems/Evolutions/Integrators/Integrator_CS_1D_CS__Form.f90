@@ -129,7 +129,8 @@ contains
 
     call I % Integrator_CS_Form % ShowSteps ( )
 
-    call I % Step_1D % Show ( )
+    if ( allocated ( I % Step_1D ) ) &
+      call I % Step_1D % Show ( )
 
   end subroutine ShowSteps
 
@@ -161,12 +162,14 @@ contains
     ! select type ( Chart => PS % Chart )
     ! class is ( Chart_SLD_Form )
 
-    associate ( S_1D  =>  I % Step_1D )
-    T_S_1D  =>  S_1D % Timer ( Level = T_CC % Level + 1 )
-    call T_S_1D % Start ( )
-    call S_1D % Compute ( I % T, dT, T_Option = T_S_1D )
-    call T_S_1D % Stop ( )
-    end associate !-- S_1D
+    if ( allocated ( I % Step_1D ) ) then
+      associate ( S_1D  =>  I % Step_1D )
+      T_S_1D  =>  S_1D % Timer ( Level = T_CC % Level + 1 )
+      call T_S_1D % Start ( )
+      call S_1D % Compute ( I % T, dT, T_Option = T_S_1D )
+      call T_S_1D % Stop ( )
+      end associate !-- S_1D
+    end if !-- allocated Step_1D
 
     if ( allocated ( I % Step_X ) ) then
       associate ( S  =>  I % Step_X )
@@ -175,7 +178,7 @@ contains
       call S % Compute ( I % T, dT, T_Option = T_S )
       call T_S % Stop ( )
       end associate !-- S
-    end if !-- allocated Step
+    end if !-- allocated Step_X
 
     ! class default
     !   call Show ( 'Chart type not found', CONSOLE % ERROR )

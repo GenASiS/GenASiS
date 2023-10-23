@@ -87,7 +87,7 @@ contains
              T_FinishOption = T_FinishOption, &
              nWriteOption = nWriteOption )
 
-    !-- CurrentSet, if necessary. Member iCurrentSet should already be set.
+    !-- CurrentSet, if necessary
 
     if ( .not. allocated ( I % CurrentSet_X_1D ) ) then
       allocate ( I % CurrentSet_X_1D )
@@ -97,6 +97,19 @@ contains
       write ( Suffix, fmt = '(i1.1)' ) I % iCurrentSet
       call CS % Initialize ( G, NameOption = 'CurrentSet_X_1D_' // Suffix )
       end associate !-- CS, etc.
+    end if
+
+    !-- Step, if necessary
+
+    if ( .not. allocated ( I % Step_1D ) ) then
+      allocate ( Step_RK_CS_Form :: I % Step_1D )
+      select type ( S  =>  I % Step_1D )
+        class is ( Step_RK_CS_Form )
+      associate &
+        ( CS  =>  I % CurrentSet_X_1D )
+      call S % Initialize ( CS )
+      end associate !-- CS, etc.
+      end select !-- S
     end if
 
     !-- EigenspeedSet
@@ -113,15 +126,13 @@ contains
 
     !-- Stream
 
-    select type ( S  =>  I % Step_1D )
-      class is ( Step_RK_CS_Form )
     associate &
-      ( CS_X_1D  =>  I % CurrentSet_X_1D, &
+      (  S       =>  I % Step_1D, &
+        CS_X_1D  =>  I % CurrentSet_X_1D, &
          S_X     =>  I % Checkpoint_X )
     call CS_X_1D % SetStream ( S_X )
     call  S      % SetStream ( S_X )
-    end associate !-- CS_X_1D, etc.
-    end select !-- S
+    end associate !-- S, etc.
 
     !-- Communicator
 

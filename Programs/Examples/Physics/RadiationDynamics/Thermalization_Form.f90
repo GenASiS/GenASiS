@@ -9,7 +9,8 @@ module Thermalization_Form
     real ( KDR ) :: &
       TemperatureMin, &
       TemperatureMax, &
-      OpacityAbsorption, &
+      OpacityAbsorption_1, &
+      OpacityAbsorption_2, &
       TimeScale
     type ( RadiationMoments_BM_Form ), allocatable :: &
       Reference, &
@@ -21,21 +22,23 @@ module Thermalization_Form
       Initialize => Initialize_T
     final :: &
       Finalize
+    procedure, public, pass :: &
+      ShowParameters
   end type ThermalizationForm
 
     private :: &
-      InitializeUniverse!, &
+      InitializeUniverse, &
       ! InitializeDiagnostics, &
-      ! SetInitial, &
+      SetInitial!, &
       ! SetReference
 
       private :: &
-        SetFluid
-      !   SetRadiation
+        SetFluid, &
+        SetRadiation
 
         private :: &
-          SetFluidKernel!, &
-!          SetRadiationKernel
+          SetFluidKernel, &
+          SetRadiationKernel
 
 contains
 
@@ -70,16 +73,32 @@ contains
   end subroutine Finalize
 
 
+  subroutine ShowParameters ( U )
+
+    class ( ThermalizationForm ), intent ( in ) :: &
+      U
+
+    call U % Universe_R_B_Form % ShowParameters ( )
+
+    call Show ( U % TemperatureMin,      'TemperatureMin' )
+    call Show ( U % TemperatureMax,      'TemperatureMax' )
+    call Show ( U % OpacityAbsorption_1, 'OpacityAbsorption_1' )
+    call Show ( U % OpacityAbsorption_2, 'OpacityAbsorption_2' )
+    call Show ( U % TimeScale,           'TimeScale' )
+
+  end subroutine ShowParameters
+
+
   subroutine InitializeUniverse ( T, FormalismType, Name )
 
-    class ( ThermalizationForm ), intent ( inout ) :: &
+    class ( ThermalizationForm ), intent ( inout ), target :: &
       T
     character ( * ), intent ( in )  :: &
       FormalismType, &
       Name
 
-    ! integer ( KDI ) :: &
-    !   iD
+    integer ( KDI ) :: &
+      iD
 
     call T % Initialize &
            ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
@@ -90,32 +109,94 @@ contains
              EvolveFluidOption = .false., &
              nCellsPositionOption = [ 128, 128, 128 ] )
 
-    ! select type ( I  =>  T % Integrator )
-    !   class is ( Integrator_CS_Form )
-    ! associate &
-    !   ( F  =>  I % CurrentSet_X )
-    ! do iD  =  1, 3
-    !   call F % SetBoundaryConditionsFace &
-    !          ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
-    ! end do !-- iD
-    ! end associate !-- F
-    ! end select !-- I
+    select type ( I  =>  T % Integrator )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( F  =>  I % CurrentSet_X )
+    do iD  =  1, 3
+      call F % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = iD )
+    end do !-- iD
+    end associate !-- F
+    end select !-- I
              
-    ! select type ( I  =>  T % Integrator )
-    !   class is ( Integrator_CS_1D_BM_CS_Form )
-    ! associate &
-    !   ( R  =>  I % CurrentSet_X_1D )
-    ! do iD  =  1, 3
-    !   call R % SetBoundaryConditionsFace &
-    !          ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = iD )
-    ! end do !-- iD
-    ! end associate !-- R
-    ! end select !-- I
+    select type ( I  =>  T % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    associate &
+      ( R  =>  I % CurrentSet_X_1D )
+    do iD  =  1, 3
+      call R % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = iD )
+    end do !-- iD
+    end associate !-- R
+    end select !-- I
              
-    ! T % Integrator % SetInitial    =>  SetInitial
+    T % Integrator % SetInitial    =>  SetInitial
     ! T % Integrator % SetReference  =>  SetReference
+    T % Integrator % System        =>  T
 
   end subroutine InitializeUniverse
+
+
+  subroutine SetInitial ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( T  =>  I % System )
+      class is ( ThermalizationForm )
+    select type ( I )
+      class is ( Integrator_CS_1D_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_I_Form )
+
+    T % TemperatureMin  =   1.0_KDR
+    T % TemperatureMax  =  10.0_KDR
+    call PROGRAM_HEADER % GetParameter ( T % TemperatureMin, 'TemperatureMin' )
+    call PROGRAM_HEADER % GetParameter ( T % TemperatureMax, 'TemperatureMax' )
+
+    T % OpacityAbsorption_1  =  1.0_KDR
+    T % OpacityAbsorption_2  =  2.0_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( T % OpacityAbsorption_1, 'OpacityAbsorption_1' )
+    call PROGRAM_HEADER % GetParameter &
+           ( T % OpacityAbsorption_2, 'OpacityAbsorption_2' )
+
+    associate &
+      ( c        =>  CONSTANT % SPEED_OF_LIGHT, &
+        Kappa_A  =>  min ( T % OpacityAbsorption_1, T % OpacityAbsorption_2 ) )
+    T % TimeScale   =  1.0 / ( c * Kappa_A )
+    end associate !-- c, etc.
+
+    I % T_Finish  =  10.0_KDR  *  T % TimeScale
+
+    call InitializeRandomSeed ( I % Communicator )
+
+    call SetFluid ( T, F )
+    call F % SetUseInitialTemperature ( .true. )
+
+    select type ( I )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( RadiationMoments_BM_Form )
+    
+      call SetRadiation ( T, R, F )
+
+      end select !-- R
+
+    class default
+      call Show ( 'Integrator type not recognized', CONSOLE % ERROR )
+      call Show ( 'ThermalizationForm', 'module', CONSOLE % ERROR )
+      call Show ( 'SetInitial', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- I    
+
+    end select !-- F
+    end select !-- I
+    end select !-- PWS
+
+  end subroutine SetInitial
 
 
   subroutine SetFluid ( T, F )
@@ -174,6 +255,56 @@ contains
   end subroutine SetFluid
 
 
+  subroutine SetRadiation ( T, R, F )
+
+    class ( ThermalizationForm ), intent ( in ) :: &
+      T
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      R
+    class ( Fluid_P_I_Form ), intent ( in ) :: &
+      F
+
+    real ( KDR ) :: &
+      sigma, &  
+      Amplitude
+
+    select type ( A  =>  R % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS, &
+        RV  =>  R % Storage_GS % Value, &
+        FV  =>  F % Storage_GS % Value )
+
+    !-- Grey
+
+    associate &
+      ( J  =>  RV ( :, R % ENERGY_DENSITY_C ), &
+        T  =>  FV ( :, F % TEMPERATURE ) )
+
+    sigma  =  CONSTANT % STEFAN_BOLTZMANN
+
+    J  =  ( 4 * sigma )  *  T ** 4
+
+    end associate !-- J, etc.
+
+    !-- Perturbations
+
+    Amplitude  =  0.5_KDR
+
+    call SetRadiationKernel &
+           ( J   = RV ( :, R % ENERGY_DENSITY_C ), &
+             H_1 = RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
+             H_2 = RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
+             H_3 = RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
+             ProperCell = C % ProperCell, &
+             A   = Amplitude )
+
+    end associate !-- C, etc.
+    end select !-- A
+
+  end subroutine SetRadiation
+
+
   subroutine SetFluidKernel &
                ( T, N, V_1, V_2, V_3, R, T_Min, T_Max, R_Min, R_Max )
 
@@ -198,6 +329,51 @@ contains
     V_3  =  0.0_KDR
 
   end subroutine SetFluidKernel
+
+
+  subroutine SetRadiationKernel ( J, H_1, H_2, H_3, ProperCell, A )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J, &
+      H_1, H_2, H_3
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      ProperCell
+    real ( KDR ), intent ( in ) :: &
+      A  !-- Amplitude
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nV
+    real ( KDR ) :: &
+      
+      P  !-- Perturbation
+
+    nV  =  size ( J )
+
+    do iV  =  1, nV
+
+      if ( .not. ProperCell ( iV ) ) &
+        cycle
+
+      call random_number ( P )
+      P         =  A * 2.0_KDR * ( P - 0.5_KDR ) 
+      J ( iV )  =  ( 1.0_KDR + P )  *  J ( iV )
+
+      call random_number ( P )
+      P           =  0.01_KDR  *  J ( iV )  *  2.0_KDR * ( P - 0.5_KDR ) 
+      H_1 ( iV )  =  P
+
+      call random_number ( P )
+      P           =  0.01_KDR  *  J ( iV )  *  2.0_KDR * ( P - 0.5_KDR ) 
+      H_2 ( iV )  =  P
+
+      call random_number ( P )
+      P           =  0.01_KDR  *  J ( iV )  *  2.0_KDR * ( P - 0.5_KDR ) 
+      H_3 ( iV )  =  P
+
+    end do
+
+  end subroutine SetRadiationKernel
 
 
 end module Thermalization_Form

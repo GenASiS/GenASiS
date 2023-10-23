@@ -161,15 +161,13 @@ contains
 
     !-- Stream
 
-    select type ( S  =>  I % Step_X )
-      class is ( Step_RK_CS_Form )
     associate &
-      ( CS_X  =>  I % CurrentSet_X, &
+      (  S    =>  I % Step_X, &
+        CS_X  =>  I % CurrentSet_X, &
          S_X  =>  I % Checkpoint_X )
     call CS_X % SetStream ( S_X )
     call  S   % SetStream ( S_X )
-    end associate !-- CS_X, etc.
-    end select !-- S
+    end associate !-- S, etc.
 
     !-- Courant factor
 

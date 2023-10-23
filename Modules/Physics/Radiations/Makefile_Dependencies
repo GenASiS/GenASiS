@@ -2,6 +2,13 @@ Units_R__Form.o: \
   Basics.o \
   Units_R__Form.f90
 
+Interactions_BM__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluids.o \
+  Units_R__Form.o \
+  Interactions_BM__Form.f90
+
 RadiationMoments_BM__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -28,6 +35,7 @@ DivergencePart_RM__Kernel.o: \
 
 Radiations.o: \
   Units_R__Form.o \
+  Interactions_BM__Form.o \
   RadiationMoments_BM__Form.o \
   DivergencePart_RM__Form.o \
   Radiations.f90

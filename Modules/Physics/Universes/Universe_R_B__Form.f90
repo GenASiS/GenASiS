@@ -326,18 +326,23 @@ contains
       associate &
         ( R  =>  I % CurrentSet_X_1D )
 
-      allocate ( Step_RK_CS_Form :: I % Step_1D )
-      select type ( S  =>  I % Step_1D )
-        class is ( Step_RK_CS_Form )
+      if ( U % ApplyStreaming .and. .not. U % ApplyInteractions ) then
 
-      allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
-      associate ( DT  =>  S % DivergenceTotal )
-      call DT % Initialize ( R )
-      end associate !-- DT
+        allocate ( Step_RK_CS_Form :: I % Step_1D )
+        select type ( S  =>  I % Step_1D )
+          class is ( Step_RK_CS_Form )
 
-      call S % Initialize ( R )
+        allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+        call DT % Initialize ( R )
+        end associate !-- DT
 
-      end select !-- S
+        call S % Initialize ( R )
+
+        end select !-- S
+
+      end if !-- Streaming and not Interactions
+
       end associate !-- R
 
     end select !-- I

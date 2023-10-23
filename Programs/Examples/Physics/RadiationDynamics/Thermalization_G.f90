@@ -16,8 +16,7 @@ program Thermalization_G
 
   allocate ( T )
   call T % Initialize ( 'GREY', PROGRAM_HEADER % Name )
-!call T % Show ( )
-!  call T % Evolve ( )
+  call T % Evolve ( )
   deallocate ( T )
 
   deallocate ( PROGRAM_HEADER )
