@@ -21,6 +21,28 @@ module Interactions_C__Form
       Finalize
   end type Interactions_C_Form
 
+    private :: &
+      ComputeKernel
+
+  interface
+
+    module subroutine ComputeKernel &
+             ( Xi_J, Chi_J, Chi_H, J_EQ, Kappa_A, UseDeviceOption )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+         Xi_J, &
+        Chi_J, &
+        Chi_H
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        J_EQ
+      real ( KDR ), intent ( in ) :: &
+        Kappa_A
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeKernel
+
+  end interface
 
 contains
 
@@ -31,7 +53,7 @@ contains
 
     class ( Interactions_C_Form ), intent ( inout ) :: &
       I
-    class ( Fluid_D_Form ), intent ( in ), target :: &
+    class ( Fluid_P_Form ), intent ( in ), target :: &
       F
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
@@ -85,7 +107,37 @@ contains
     class ( CurrentSetForm ), intent ( in ) :: &
       R
 
-    !-- To be filled in by extension
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'Compute', CONSOLE % INFO_6 )
+    call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
+
+    associate ( F  =>  I % Fluid )
+
+    do iC  =  1,  I % Atlas % nCharts
+      associate &
+        ( FV  =>  F % Storage ( iC ) % Value, &
+          IV  =>  I % Storage ( iC ) % Value )
+      associate &
+        (   T    =>  FV ( :, F % TEMPERATURE ), &
+           Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
+          Chi_J  =>  IV ( :, I % OPACITY_J ), &
+          Chi_H  =>  IV ( :, I % OPACITY_H ), &
+           J_EQ  =>  IV ( :, I % EQUILIBRIUM_J ) )
+
+      call I % Compute_J_EQ_Ph_G_Kernel &
+             ( J_EQ, T, UseDeviceOption = I % DeviceMemory )
+
+      call ComputeKernel &
+             ( Xi_J, Chi_J, Chi_H, J_EQ, Kappa_A = I % OpacityAbsorption, &
+               UseDeviceOption = I % DeviceMemory )
+             
+      end associate !-- T, etc.
+      end associate !-- FV, etc.
+    end do !-- iC
+
+    end associate !-- F
 
   end subroutine Compute
 

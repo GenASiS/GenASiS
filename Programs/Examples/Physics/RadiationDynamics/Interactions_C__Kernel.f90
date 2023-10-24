@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Interactions_BM__Form ) Interactions_BM__Kernel
+submodule ( Interactions_C__Form ) Interactions_C__Kernel
 
   use Basics 
   
@@ -9,9 +9,7 @@ submodule ( Interactions_BM__Form ) Interactions_BM__Kernel
 contains
 
 
-  module procedure Compute_J_EQ_Ph_G_Kernel
-
-    !-- Compute_J_EQ_Photons_Grey_Kernel
+  module procedure ComputeKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -27,27 +25,27 @@ contains
       
     nV  =  size ( J_EQ )
 
-    a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
-
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( a )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
-        J_EQ  ( iV )  =  a  *  T ( iV ) ** 4
+         Xi_J ( iV )  =  Kappa_A  *  J_EQ ( iV )
+        Chi_J ( iV )  =  Kappa_A
+        Chi_H ( iV )  =  Kappa_A
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( a )
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
-        J_EQ  ( iV )  =  a  *  T ( iV ) ** 4
+         Xi_J ( iV )  =  Kappa_A  *  J_EQ ( iV )
+        Chi_J ( iV )  =  Kappa_A
+        Chi_H ( iV )  =  Kappa_A
       end do
       !$OMP end parallel do
     end if
 
-  end procedure Compute_J_EQ_Ph_G_Kernel
+  end procedure ComputeKernel
 
 
-end submodule Interactions_BM__Kernel
+end submodule Interactions_C__Kernel

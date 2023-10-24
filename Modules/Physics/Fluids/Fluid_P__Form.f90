@@ -22,7 +22,8 @@ module Fluid_P__Form
       N_PRIMITIVE_P      = N_PRIMITIVE_P, &
       N_BALANCED_P       = N_BALANCED_P, &
       N_FIELDS_P         = N_FIELDS_P, &
-      N_VECTORS_P        = N_VECTORS_P, &
+      N_VECTORS_P        = N_VECTORS_P
+    integer ( KDI ) :: &
       ENERGY_DENSITY_C   = 0, &
       ENERGY_DENSITY_B   = 0, &
       PRESSURE           = 0, &

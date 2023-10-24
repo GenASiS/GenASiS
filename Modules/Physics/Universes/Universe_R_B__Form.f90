@@ -286,7 +286,7 @@ contains
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     select type ( F  =>  I % CurrentSet_X )
-      class is ( Fluid_D_Form )
+      class is ( Fluid_P_Form )
 
     if ( allocated ( U % Interactions_BM ) ) &
       call U % Interactions_BM % Initialize ( F, U % Units_R )

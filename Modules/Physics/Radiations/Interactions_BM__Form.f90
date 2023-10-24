@@ -23,7 +23,7 @@ module Interactions_BM__Form
       OPACITY_N         = 0, &
       EQUILIBRIUM_J     = 0, &
       EQUILIBRIUM_N     = 0
-    class ( Fluid_D_Form ), pointer :: &
+    class ( Fluid_P_Form ), pointer :: &
       Fluid => null ( )
   contains
     procedure, private, pass :: &
@@ -43,13 +43,13 @@ module Interactions_BM__Form
     final :: &
       Finalize
     procedure, public, nopass :: &
-      Compute_J_EQ_G_Kernel
+      Compute_J_EQ_Ph_G_Kernel
   end type Interactions_BM_Form
 
   interface
 
-    module subroutine Compute_J_EQ_G_Kernel ( J_EQ, T, UseDeviceOption )
-      !-- Compute_J_EQ_Grey_Kernel
+    module subroutine Compute_J_EQ_Ph_G_Kernel ( J_EQ, T, UseDeviceOption )
+      !-- Compute_J_EQ_Photons_Grey_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -58,7 +58,7 @@ module Interactions_BM__Form
         T
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Compute_J_EQ_G_Kernel
+    end subroutine Compute_J_EQ_Ph_G_Kernel
 
   end interface
 
@@ -72,7 +72,7 @@ contains
 
     class ( Interactions_BM_Form ), intent ( inout ) :: &
       I
-    class ( Fluid_D_Form ), intent ( in ), target :: &
+    class ( Fluid_P_Form ), intent ( in ), target :: &
       F
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R

@@ -8,6 +8,7 @@ all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G #\
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 INTERACTIONS_EXAMPLES = \
+  Interactions_C__Kernel.o \
   Interactions_C__Form.o
 
 SineWaveStreaming_G: ThirdParty.a GenASiS.a SineWaveStreaming_G.o
@@ -24,7 +25,8 @@ SineWaveStreaming_S: ThirdParty.a GenASiS.a SineWaveStreaming_S.o
           PlaneWaveStreaming_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-Thermalization_G: ThirdParty.a GenASiS.a Thermalization_G.o
+Thermalization_G: ThirdParty.a GenASiS.a Thermalization_G.o \
+  $(INTERACTIONS_EXAMPLES)
 	$(LINK) $(FLAGS) \
           -o Thermalization_G_$(MACHINE) \
           Thermalization_G.o Thermalization_Form.o \

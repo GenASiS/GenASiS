@@ -288,7 +288,7 @@ contains
     !-- Grey, equilibrium
 
     associate ( I  =>  T % Interactions_BM )
-    call I % Compute_J_EQ_G_Kernel &
+    call I % Compute_J_EQ_Ph_G_Kernel &
            ( J_EQ = RV ( :, R % ENERGY_DENSITY_C ), &
              T    = FV ( :, F % TEMPERATURE ) )
     end associate !-- I
