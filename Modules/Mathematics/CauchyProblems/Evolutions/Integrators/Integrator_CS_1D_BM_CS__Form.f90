@@ -99,19 +99,6 @@ contains
       end associate !-- CS, etc.
     end if
 
-    !-- Step, if necessary
-
-    if ( .not. allocated ( I % Step_1D ) ) then
-      allocate ( Step_RK_CS_Form :: I % Step_1D )
-      select type ( S  =>  I % Step_1D )
-        class is ( Step_RK_CS_Form )
-      associate &
-        ( CS  =>  I % CurrentSet_X_1D )
-      call S % Initialize ( CS )
-      end associate !-- CS, etc.
-      end select !-- S
-    end if
-
     !-- EigenspeedSet
 
     allocate ( I % EigenspeedSet_X_1D ( 3 ) )
@@ -127,12 +114,18 @@ contains
     !-- Stream
 
     associate &
-      (  S       =>  I % Step_1D, &
-        CS_X_1D  =>  I % CurrentSet_X_1D, &
+      ( CS_X_1D  =>  I % CurrentSet_X_1D, &
          S_X     =>  I % Checkpoint_X )
+
     call CS_X_1D % SetStream ( S_X )
-    call  S      % SetStream ( S_X )
-    end associate !-- S, etc.
+
+    if ( allocated ( I % Step_1D ) ) then
+      associate ( S  =>  I % Step_1D )
+      call S % SetStream ( S_X )
+      end associate !-- S
+    end if
+
+    end associate !-- CS_X, etc.
 
     !-- Communicator
 

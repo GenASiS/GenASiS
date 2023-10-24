@@ -437,12 +437,6 @@ contains
 
     call I % AdministerCheckpoint ( )
 
-call PROGRAM_HEADER % Communicator % Synchronize ( )
-call Show ( '>>> Stop before evolution' )
-call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
-            CONSOLE % ERROR ) 
-call PROGRAM_HEADER % Communicator % Synchronize ( )
-call PROGRAM_HEADER % Abort ( )
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 

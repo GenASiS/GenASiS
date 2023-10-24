@@ -67,12 +67,9 @@ contains
       I % Type = 'an Integrator_CS_1D_CS'
 
     if ( .not. allocated ( I % Step_1D ) ) then
-      call Show ( 'Step_1D not allocated by an extension', &
-                  CONSOLE % WARNING )
-      call Show ( 'Integrator_CS_1D_CS__Form', 'module', &
-                  CONSOLE % WARNING )
-      call Show ( 'Initialize_H', 'subroutine', &
-                  CONSOLE % WARNING )
+      call Show ( 'Step_1D not allocated', CONSOLE % WARNING )
+      call Show ( 'Integrator_CS_1D_CS__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'Initialize_H', 'subroutine', CONSOLE % WARNING )
     end if
 
     ! if ( .not. allocated ( I % TimeSeries ) ) then

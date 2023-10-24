@@ -5,6 +5,7 @@ program Integrator_CS__Form_Test
   use Basics
   use Manifolds
   use Fields
+  use Steps
   use Integrators
 
   implicit none
@@ -35,6 +36,17 @@ program Integrator_CS__Form_Test
   call I % Initialize ( )
   I % SetInitial    =>  SetInitial
   I % SetReference  =>  SetReference
+
+  allocate ( Step_RK_CS_Form :: I % Step_X )
+  select type ( S  =>  I % Step_X )
+    class is ( Step_RK_CS_Form )
+  associate &
+    ( CS    =>  I % CurrentSet_X, &
+       S_X  =>  I % Checkpoint_X )
+  call S % Initialize ( CS )
+  call S % SetStream ( S_X )
+  end associate !-- CS, etc.
+  end select !-- S
 
   associate ( CS  =>  I % CurrentSet_X )
   do iD  =  1, 3
