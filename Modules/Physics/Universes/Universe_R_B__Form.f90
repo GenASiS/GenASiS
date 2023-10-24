@@ -288,7 +288,8 @@ contains
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_D_Form )
 
-    call U % Interactions_BM % Initialize ( F, U % Units_R )
+    if ( allocated ( U % Interactions_BM ) ) &
+      call U % Interactions_BM % Initialize ( F, U % Units_R )
 
     end select !-- F
     end select !-- I
@@ -341,11 +342,13 @@ contains
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
-    !-- Fluid step. If EvolveFluid = .false., will be deallocated in 
-    !   InitializeIntegrator.
-    call U % InitializeStep ( )
+    !-- Fluid step
 
-    !-- Radiation step.
+    if ( U % EvolveFluid ) &
+      call U % InitializeStep ( )
+
+    !-- Radiation step
+
     select type ( I  =>  U % Integrator )
     class is ( Integrator_CS_1D_BM_CS_Form )
 
@@ -417,9 +420,6 @@ contains
              Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
-
-    if ( .not. U % EvolveFluid ) &
-      deallocate ( I % Step_X )
 
     end select !-- I
 
