@@ -28,6 +28,8 @@ module Universe_R_B__Form
       Communicator_PS  !-- PositionSpace
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
+    class ( Interactions_BM_Form ), allocatable :: &
+      Interactions_BM
   contains
     procedure, private, pass :: &
       Initialize_R_B
@@ -41,6 +43,8 @@ module Universe_R_B__Form
       AllocateIntegrator
     procedure, public, pass :: &
       InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeInteractions
     procedure, public, pass :: &
       InitializeRadiation
     procedure, public, pass :: &
@@ -140,6 +144,8 @@ contains
            ( GravitationType = 'GALILEO' )
     call U % InitializeFluid &
            ( FluidType = 'IDEAL' )
+    call U % InitializeInteractions &
+           ( )
     call U % InitializeRadiation &
            ( )
     call U % InitializeSteps &
@@ -156,6 +162,8 @@ contains
     type ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
+    if ( allocated ( U % Interactions_BM ) ) &
+      deallocate ( U % Interactions_BM )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
     if ( allocated ( U % Communicator_PS ) ) &
@@ -268,6 +276,24 @@ contains
              nCellsOption = nCellsPosition )
 
   end subroutine InitializePositionSpace
+
+
+  subroutine InitializeInteractions ( U )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_D_Form )
+
+    call U % Interactions_BM % Initialize ( F, U % Units_R )
+
+    end select !-- F
+    end select !-- I
+
+  end subroutine InitializeInteractions
 
 
   subroutine InitializeRadiation ( U )

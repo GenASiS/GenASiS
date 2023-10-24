@@ -1,6 +1,7 @@
 module Thermalization_Form
 
   use GenASiS
+  use Interactions_C__Form
 
   implicit none
   private
@@ -9,9 +10,9 @@ module Thermalization_Form
     real ( KDR ) :: &
       TemperatureMin, &
       TemperatureMax, &
-      OpacityAbsorption_1, &
-      OpacityAbsorption_2, &
       TimeScale
+    real ( KDR ), dimension ( 2 ) :: &
+      OpacityAbsorption
     type ( RadiationMoments_BM_Form ), allocatable :: &
       Reference, &
       FractionalDifference
@@ -80,11 +81,10 @@ contains
 
     call U % Universe_R_B_Form % ShowParameters ( )
 
-    call Show ( U % TemperatureMin,      'TemperatureMin' )
-    call Show ( U % TemperatureMax,      'TemperatureMax' )
-    call Show ( U % OpacityAbsorption_1, 'OpacityAbsorption_1' )
-    call Show ( U % OpacityAbsorption_2, 'OpacityAbsorption_2' )
-    call Show ( U % TimeScale,           'TimeScale' )
+    call Show ( U % TemperatureMin,    'TemperatureMin' )
+    call Show ( U % TemperatureMax,    'TemperatureMax' )
+    call Show ( U % OpacityAbsorption, 'OpacityAbsorption' )
+    call Show ( U % TimeScale,         'TimeScale' )
 
   end subroutine ShowParameters
 
@@ -99,6 +99,8 @@ contains
 
     integer ( KDI ) :: &
       iD
+
+    allocate ( Interactions_C_Form :: T % Interactions_BM )
 
     call T % Initialize &
            ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
@@ -155,16 +157,13 @@ contains
     call PROGRAM_HEADER % GetParameter ( T % TemperatureMin, 'TemperatureMin' )
     call PROGRAM_HEADER % GetParameter ( T % TemperatureMax, 'TemperatureMax' )
 
-    T % OpacityAbsorption_1  =  1.0_KDR
-    T % OpacityAbsorption_2  =  2.0_KDR
+    T % OpacityAbsorption  =  [ 1.0_KDR, 2.0_KDR ]
     call PROGRAM_HEADER % GetParameter &
-           ( T % OpacityAbsorption_1, 'OpacityAbsorption_1' )
-    call PROGRAM_HEADER % GetParameter &
-           ( T % OpacityAbsorption_2, 'OpacityAbsorption_2' )
+           ( T % OpacityAbsorption, 'OpacityAbsorption' )
 
     associate &
       ( c        =>  CONSTANT % SPEED_OF_LIGHT, &
-        Kappa_A  =>  min ( T % OpacityAbsorption_1, T % OpacityAbsorption_2 ) )
+        Kappa_A  =>  minval ( T % OpacityAbsorption ) )
     T % TimeScale   =  1.0 / ( c * Kappa_A )
     end associate !-- c, etc.
 
@@ -172,8 +171,20 @@ contains
 
     call InitializeRandomSeed ( I % Communicator )
 
+    !-- Fluid
+
     call SetFluid ( T, F )
     call F % SetUseInitialTemperature ( .true. )
+
+    !-- Interactions
+
+    select type ( Intrctns  =>  T % Interactions_BM )
+    class is ( Interactions_C_Form )
+       call Intrctns % SetOpacityAbsorption &
+              ( T % OpacityAbsorption ( T % iRadiation ) )
+    end select !-- Intrctns
+    
+    !-- Radiation
 
     select type ( I )
     class is ( Integrator_CS_1D_BM_CS_Form )
