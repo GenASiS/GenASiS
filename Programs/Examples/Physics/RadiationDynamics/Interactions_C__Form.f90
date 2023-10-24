@@ -15,6 +15,8 @@ module Interactions_C__Form
       InitializeAllocate_I
     procedure, public, pass :: &
       SetOpacityAbsorption
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Interactions_C_Form
@@ -74,6 +76,18 @@ contains
                 I % IGNORABILITY + 1 )
 
   end subroutine SetOpacityAbsorption
+
+
+  subroutine Compute ( I, R )
+
+    class ( Interactions_C_Form ), intent ( inout ) :: &
+      I
+    class ( CurrentSetForm ), intent ( in ) :: &
+      R
+
+    !-- To be filled in by extension
+
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( I )

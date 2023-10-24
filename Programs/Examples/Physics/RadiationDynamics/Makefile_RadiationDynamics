@@ -69,6 +69,11 @@ Interactions_C__Form.o: \
   GenASiS.o \
   Interactions_C__Form.f90
 
+Interactions_C__Kernel.o: \
+  Basics.o \
+  Interactions_C__Form.o \
+  Interactions_C__Kernel.f90
+
 Thermalization_Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \

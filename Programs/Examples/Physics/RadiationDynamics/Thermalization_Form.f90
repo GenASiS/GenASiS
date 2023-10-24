@@ -39,7 +39,7 @@ module Thermalization_Form
 
         private :: &
           SetFluidKernel, &
-          SetRadiationKernel
+          SetPerturbationKernel
 
 contains
 
@@ -276,7 +276,6 @@ contains
       F
 
     real ( KDR ) :: &
-      sigma, &  
       Amplitude
 
     select type ( A  =>  R % Atlas )
@@ -286,23 +285,19 @@ contains
         RV  =>  R % Storage_GS % Value, &
         FV  =>  F % Storage_GS % Value )
 
-    !-- Grey
+    !-- Grey, equilibrium
 
-    associate &
-      ( J  =>  RV ( :, R % ENERGY_DENSITY_C ), &
-        T  =>  FV ( :, F % TEMPERATURE ) )
+    associate ( I  =>  T % Interactions_BM )
+    call I % Compute_J_EQ_G_Kernel &
+           ( J_EQ = RV ( :, R % ENERGY_DENSITY_C ), &
+             T    = FV ( :, F % TEMPERATURE ) )
+    end associate !-- I
 
-    sigma  =  CONSTANT % STEFAN_BOLTZMANN
-
-    J  =  ( 4 * sigma )  *  T ** 4
-
-    end associate !-- J, etc.
-
-    !-- Perturbations
+    !-- Perturbations on equilibrium
 
     Amplitude  =  0.5_KDR
 
-    call SetRadiationKernel &
+    call SetPerturbationKernel &
            ( J   = RV ( :, R % ENERGY_DENSITY_C ), &
              H_1 = RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
              H_2 = RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
@@ -342,7 +337,7 @@ contains
   end subroutine SetFluidKernel
 
 
-  subroutine SetRadiationKernel ( J, H_1, H_2, H_3, ProperCell, A )
+  subroutine SetPerturbationKernel ( J, H_1, H_2, H_3, ProperCell, A )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
@@ -384,7 +379,7 @@ contains
 
     end do
 
-  end subroutine SetRadiationKernel
+  end subroutine SetPerturbationKernel
 
 
 end module Thermalization_Form

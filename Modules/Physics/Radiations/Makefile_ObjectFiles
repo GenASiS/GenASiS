@@ -4,5 +4,6 @@ RADIATIONS = \
   DivergencePart_RM__Form.o \
   RadiationMoments_BM__Kernel.o \
   RadiationMoments_BM__Form.o \
+  Interactions_BM__Kernel.o \
   Interactions_BM__Form.o \
   Units_R__Form.o
