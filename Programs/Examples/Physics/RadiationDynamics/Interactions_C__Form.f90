@@ -27,7 +27,7 @@ module Interactions_C__Form
   interface
 
     module subroutine ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, J_EQ, Kappa_A, UseDeviceOption )
+             ( Xi_J, Chi_J, Chi_H, J_Eq, Kappa_A, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -35,7 +35,7 @@ module Interactions_C__Form
         Chi_J, &
         Chi_H
       real ( KDR ), dimension ( : ), intent ( in ) :: &
-        J_EQ
+        J_Eq
       real ( KDR ), intent ( in ) :: &
         Kappa_A
       logical ( KDL ), intent ( in ), optional :: &
@@ -124,13 +124,13 @@ contains
            Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
           Chi_J  =>  IV ( :, I % OPACITY_J ), &
           Chi_H  =>  IV ( :, I % OPACITY_H ), &
-           J_EQ  =>  IV ( :, I % EQUILIBRIUM_J ) )
+           J_Eq  =>  IV ( :, I % EQUILIBRIUM_J ) )
 
-      call I % Compute_J_EQ_Ph_G_Kernel &
-             ( J_EQ, T, UseDeviceOption = I % DeviceMemory )
+      call I % Compute_J_Eq_Ph_G_Kernel &
+             ( J_Eq, T, UseDeviceOption = I % DeviceMemory )
 
       call ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, J_EQ, Kappa_A = I % OpacityAbsorption, &
+             ( Xi_J, Chi_J, Chi_H, J_Eq, Kappa_A = I % OpacityAbsorption, &
                UseDeviceOption = I % DeviceMemory )
              
       end associate !-- T, etc.

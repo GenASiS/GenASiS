@@ -43,22 +43,22 @@ module Interactions_BM__Form
     final :: &
       Finalize
     procedure, public, nopass :: &
-      Compute_J_EQ_Ph_G_Kernel
+      Compute_J_Eq_Ph_G_Kernel
   end type Interactions_BM_Form
 
   interface
 
-    module subroutine Compute_J_EQ_Ph_G_Kernel ( J_EQ, T, UseDeviceOption )
-      !-- Compute_J_EQ_Photons_Grey_Kernel
+    module subroutine Compute_J_Eq_Ph_G_Kernel ( J_Eq, T, UseDeviceOption )
+      !-- Compute_J_Eq_Photons_Grey_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
-        J_EQ
+        J_Eq
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         T
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Compute_J_EQ_Ph_G_Kernel
+    end subroutine Compute_J_Eq_Ph_G_Kernel
 
   end interface
 

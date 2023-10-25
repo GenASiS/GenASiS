@@ -30,8 +30,9 @@ module Thermalization_Form
     private :: &
       InitializeUniverse, &
       ! InitializeDiagnostics, &
-      SetInitial!, &
+      SetInitial, &
       ! SetReference
+      Compute_dT_Local
 
       private :: &
         SetFluid, &
@@ -136,7 +137,9 @@ contains
     T % Integrator % SetInitial    =>  SetInitial
     ! T % Integrator % SetReference  =>  SetReference
     T % Integrator % System        =>  T
-
+    
+    T % Integrator % Compute_dT_Local  =>  Compute_dT_Local
+    
   end subroutine InitializeUniverse
 
 
@@ -208,6 +211,52 @@ contains
     end select !-- PWS
 
   end subroutine SetInitial
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option  )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( T => I % System )
+      class is ( ThermalizationForm )
+
+    dT_Candidate  =  huge ( 1.0_KDR )
+
+    associate &
+      ( c        =>  CONSTANT % SPEED_OF_LIGHT, &
+        Kappa_A  =>  T % OpacityAbsorption ( T % iRadiation ) )
+
+    dT_Candidate ( 1  +  T % nRadiations  +  T % iRadiation )  &
+      =  T % InteractionFactor  *  1.0 / ( c * Kappa_A )
+
+    end associate !-- c, etc.
+
+    !-- Reduce across CS_1D
+
+    call CO % Initialize &
+           ( I % Communicator_X_1D, nOutgoing = [ I % n_dT_Candidates ], &
+             nIncoming = [ I % n_dT_Candidates ] )
+
+    CO % Outgoing % Value  =  I % dT_Candidate
+    call CO % Reduce ( REDUCTION % MIN )
+    I % dT_Candidate  =  CO % Incoming % Value
+
+    end select !-- I
+    end select !-- T
+
+  end subroutine Compute_dT_Local
 
 
   subroutine SetFluid ( T, F )
@@ -288,8 +337,8 @@ contains
     !-- Grey, equilibrium
 
     associate ( I  =>  T % Interactions_BM )
-    call I % Compute_J_EQ_Ph_G_Kernel &
-           ( J_EQ = RV ( :, R % ENERGY_DENSITY_C ), &
+    call I % Compute_J_Eq_Ph_G_Kernel &
+           ( J_Eq = RV ( :, R % ENERGY_DENSITY_C ), &
              T    = FV ( :, F % TEMPERATURE ) )
     end associate !-- I
 

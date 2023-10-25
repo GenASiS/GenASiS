@@ -23,13 +23,13 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
       
-    nV  =  size ( J_EQ )
+    nV  =  size ( J_Eq )
 
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
-         Xi_J ( iV )  =  Kappa_A  *  J_EQ ( iV )
+         Xi_J ( iV )  =  Kappa_A  *  J_Eq ( iV )
         Chi_J ( iV )  =  Kappa_A
         Chi_H ( iV )  =  Kappa_A
       end do
@@ -38,7 +38,7 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
-         Xi_J ( iV )  =  Kappa_A  *  J_EQ ( iV )
+         Xi_J ( iV )  =  Kappa_A  *  J_Eq ( iV )
         Chi_J ( iV )  =  Kappa_A
         Chi_H ( iV )  =  Kappa_A
       end do

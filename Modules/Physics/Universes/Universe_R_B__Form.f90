@@ -15,6 +15,8 @@ module Universe_R_B__Form
     integer ( KDI ) :: &
       iRadiation  = 0, &
       nRadiations = 0
+    real ( KDR ) :: &
+      InteractionFactor
     logical ( KDL ) :: &
       ApplyStreaming, &
       ApplyInteractions, &
@@ -413,6 +415,11 @@ contains
         =  trim ( U % RadiationName ( iCS ) ) // '_Interactions'
     end do !-- iCS
 
+    U % InteractionFactor  =  1.0e-2_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( U % InteractionFactor, 'InteractionFactor' )
+
+
     I % StreamSuffix  =  '_' // trim ( U % RadiationName ( U % iRadiation ) )
 
     call I % Initialize &
@@ -447,6 +454,7 @@ contains
     call Show ( U % ApplyStreaming,    'ApplyStreaming',    U % IGNORABILITY )
     call Show ( U % ApplyInteractions, 'ApplyInteractions', U % IGNORABILITY )
     call Show ( U % EvolveFluid,       'EvolveFluid',       U % IGNORABILITY )
+    call Show ( U % InteractionFactor, 'InteractionFactor', U % IGNORABILITY )
 
   end subroutine ShowParameters
 
