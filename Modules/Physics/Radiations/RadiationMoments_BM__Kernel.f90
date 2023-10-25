@@ -25,7 +25,7 @@ contains
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
-
+      
     nV = size ( E )
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )

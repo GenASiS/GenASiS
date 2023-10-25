@@ -36,6 +36,8 @@ module Integrator_CS_1D_BM_CS__Form
       PrepareEvolution
     procedure, private, pass :: &   !-- 2
       SetCommunicator_1D
+    procedure, public, pass :: &   !-- 3
+      UpdateHost => UpdateHost_CS_1D
     procedure, private, pass :: &
       ComputeTally_1D
   end type Integrator_CS_1D_BM_CS_Form
@@ -210,8 +212,8 @@ contains
     end associate !-- CS
 
   end subroutine PrepareEvolution
-
-
+  
+  
   subroutine SetCommunicator_1D ( I )
 
     class ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
@@ -239,6 +241,20 @@ contains
     end associate !-- C, etc.
 
   end subroutine SetCommunicator_1D
+
+
+  subroutine UpdateHost_CS_1D ( I )
+
+    class ( Integrator_CS_1D_BM_CS_Form ), intent ( inout ) :: &
+      I
+
+    call I % Integrator_CS_Form % UpdateHost ( )
+
+    associate ( CS  =>  I % CurrentSet_X_1D )
+    call CS % UpdateHost ( )
+    end associate !-- CS
+
+  end subroutine UpdateHost_CS_1D
 
 
   subroutine ComputeTally_1D ( I, ChangeOption, IgnorabilityOption )

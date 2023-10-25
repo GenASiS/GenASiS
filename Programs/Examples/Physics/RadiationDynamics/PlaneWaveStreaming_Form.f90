@@ -344,7 +344,7 @@ contains
 
     call SetRadiation ( PWS, R_R )
 
-    call R_D % MultiplyAdd ( R, R_R, -1.0_KDR )
+    call R_D % MultiplyAdd ( R, R_R, -1.0_KDR, UseDeviceOption = .false. )
 
     end associate !-- R_R, etc.
     end select !-- F
