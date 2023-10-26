@@ -28,7 +28,7 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then      
-          S_E   ( iV )  =  Xi_J ( iV )  -  Chi_J ( iV )  *  S_1 ( iV )
+          S_E   ( iV )  =  Xi_J ( iV )  -  Chi_J ( iV )  *  E ( iV )
           S_S_1 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_1 ( iV )
           S_S_2 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV )
           S_S_3 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV )
@@ -44,7 +44,7 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then      
-          S_E   ( iV )  =  Xi_J ( iV )  -  Chi_J ( iV )  *  S_1 ( iV )
+          S_E   ( iV )  =  Xi_J ( iV )  -  Chi_J ( iV )  *  E ( iV )
           S_S_1 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_1 ( iV )
           S_S_2 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV )
           S_S_3 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV )

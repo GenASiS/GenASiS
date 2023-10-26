@@ -177,7 +177,7 @@ contains
 
     call PWS % Initialize &
            ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
-             RadiationType = [ 'GENERIC', 'GENERIC' ], &
+             RadiationType = [ 'PHOTONS', 'PHOTONS' ], &
              FormalismType = FormalismType, &
              Name = Name, &
              ApplyInteractionsOption = .false., &

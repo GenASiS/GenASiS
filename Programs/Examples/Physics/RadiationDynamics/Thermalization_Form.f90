@@ -29,9 +29,9 @@ module Thermalization_Form
 
     private :: &
       InitializeUniverse, &
-      ! InitializeDiagnostics, &
+      InitializeDiagnostics, &
       SetInitial, &
-      ! SetReference
+      SetReference, &
       Compute_dT_Local
 
       private :: &
@@ -57,7 +57,7 @@ contains
       T % Type  =  'a Thermalization'
 
     call InitializeUniverse ( T, FormalismType, Name )
-!    call InitializeDiagnostics ( T )
+    call InitializeDiagnostics ( T )
  
   end subroutine Initialize_T
 
@@ -105,7 +105,7 @@ contains
 
     call T % Initialize &
            ( RadiationName = [ 'Radiation_1', 'Radiation_2' ], &
-             RadiationType = [ 'GENERIC', 'GENERIC' ], &
+             RadiationType = [ 'PHOTONS', 'PHOTONS' ], &
              FormalismType = FormalismType, &
              Name = Name, &
              ApplyStreamingOption = .false., &
@@ -135,12 +135,49 @@ contains
     end select !-- I
              
     T % Integrator % SetInitial    =>  SetInitial
-    ! T % Integrator % SetReference  =>  SetReference
+    T % Integrator % SetReference  =>  SetReference
     T % Integrator % System        =>  T
     
     T % Integrator % Compute_dT_Local  =>  Compute_dT_Local
     
   end subroutine InitializeUniverse
+
+
+  subroutine InitializeDiagnostics ( T )
+
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
+
+    character ( LDL ) :: &
+      ReferenceName, &
+      DifferenceName
+
+    allocate &
+      ( T % Reference, &
+        T % FractionalDifference )
+    associate &
+      ( R_R   =>  T % Reference, &
+        R_FD  =>  T % FractionalDifference, &
+        G     =>  T % Integrator % Geometry_X, &
+        S     =>  T % Integrator % Checkpoint_X )
+
+    select case ( T % iRadiation )
+    case ( 1 )
+      ReferenceName   =  'Reference_1'
+      DifferenceName  =  'FractionalDifference_1'
+    case ( 2 )
+      ReferenceName   =  'Reference_2'
+      DifferenceName  =  'FractionalDifference_2'
+    end select
+    
+    call R_R  % Initialize ( G, T % Units_R, NameOption = ReferenceName )
+    call R_FD % Initialize ( G, T % Units_R, NameOption = DifferenceName )
+    call R_R  % SetStream ( S )
+    call R_FD % SetStream ( S )
+
+    end associate !-- R_R, etc.
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetInitial ( I )
@@ -208,9 +245,56 @@ contains
 
     end select !-- F
     end select !-- I
-    end select !-- PWS
+    end select !-- T
 
   end subroutine SetInitial
+
+
+  subroutine SetReference ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( T  =>  I % System )
+      class is ( ThermalizationForm )
+    select type ( I  =>  T % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_I_Form )
+    select type ( A  =>  R % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( R_R   =>  T % Reference, &
+        R_FD  =>  T % FractionalDifference, &
+        I     =>  T % Interactions_BM )
+    associate &
+      ( C      =>  A % Chart_GS, &
+        FV     =>  F    % Storage_GS % Value, &
+        RV     =>  R    % Storage_GS % Value, &
+        R_RV   =>  R_R  % Storage_GS % Value, &
+        R_FDV  =>  R_FD % Storage_GS % Value )
+
+    call I % Compute_J_Eq_Ph_G_Kernel &
+           ( J_Eq = R_RV ( :, R % ENERGY_DENSITY_C ), &
+             T    = FV   ( :, F % TEMPERATURE ) )
+
+    call ComputeFractionalDifferenceKernel &
+           ( J_FD = R_FDV ( :, R % ENERGY_DENSITY_C ), &
+             J    = RV    ( :, R % ENERGY_DENSITY_C ), &
+             J_R  = R_RV  ( :, R % ENERGY_DENSITY_C ), & 
+             ProperCell = C % ProperCell )
+
+    end associate !-- C, etc.
+    end associate !-- R_R, etc.
+    end select !-- A
+    end select !-- F
+    end select !-- R
+    end select !-- I
+    end select !-- T
+
+  end subroutine SetReference
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option  )
@@ -399,8 +483,7 @@ contains
     integer ( KDI ) :: &
       iV, &  !-- iValue
       nV
-    real ( KDR ) :: &
-      
+    real ( KDR ) :: &      
       P  !-- Perturbation
 
     nV  =  size ( J )
@@ -429,6 +512,35 @@ contains
     end do
 
   end subroutine SetPerturbationKernel
+
+
+  subroutine ComputeFractionalDifferenceKernel ( J_FD, J, J_R, ProperCell )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J_FD
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J, J_R
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      ProperCell
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nV
+ 
+    nV  =  size ( J )
+
+    !$OMP parallel do private ( iV )
+    do iV  =  1,  nV
+
+      if ( .not. ProperCell ( iV ) ) &
+        cycle
+
+      J_FD ( iV )  =  ( J ( iV )  -  J_R ( iV ) )  /  J_R ( iV )
+
+    end do !-- iV
+    !$OMP end parallel do
+    
+  end subroutine ComputeFractionalDifferenceKernel
 
 
 end module Thermalization_Form

@@ -57,6 +57,8 @@ module Universe_R_B__Form
       ShowParameters
   end type Universe_R_B_Form
 
+    private :: &
+      SetSlope_RM_I
 
 contains
 
@@ -312,7 +314,7 @@ contains
           iR  =>  U % iRadiation )
 
       select case ( trim ( U % RadiationType ( iR ) ) )
-      case ( 'GENERIC' )
+      case ( 'PHOTONS' )
 
         allocate ( RadiationMoments_BM_Form :: I % CurrentSet_X_1D )
         select type ( R  =>  I % CurrentSet_X_1D )
@@ -374,7 +376,20 @@ contains
 
         end select !-- S
 
-      end if !-- Streaming and not Interactions
+      else if ( U % ApplyInteractions .and. .not. U % ApplyStreaming ) then
+
+        allocate ( Step_RK_CS_Form :: I % Step_1D )
+        select type ( S  =>  I % Step_1D )
+          class is ( Step_RK_CS_Form )
+
+        S % SetSlope  =>  SetSlope_RM_I 
+
+        call S % Initialize ( R )
+
+        end select !-- S
+
+        
+      end if !-- Radiation operators
 
       end associate !-- R
 
@@ -459,6 +474,33 @@ contains
     call Show ( U % InteractionFactor, 'InteractionFactor', U % IGNORABILITY )
 
   end subroutine ShowParameters
+
+
+  subroutine SetSlope_RM_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_RM_I_Form :: K )
+    select type ( K )
+      class is ( Slope_RM_I_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( RadiationMoments_BM_Form )
+
+    call K % Initialize &
+           ( R )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+    end select !-- K
+
+    end select !-- R
+    end select !-- S
+
+  end subroutine SetSlope_RM_I
 
 
 end module Universe_R_B__Form
