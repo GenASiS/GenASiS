@@ -1,25 +1,25 @@
-module Interactions_C__Form
+module Interactions_MWV_1__Form
 
-  !-- Interactions_Constant_Form
-
+  !-- Interactions_MarshakWaveVaytet_1__Form, Vaytet et al. 2011
+  
   use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( Interactions_BM_Form ) :: Interactions_C_Form
+  type, public, extends ( Interactions_BM_Form ) :: Interactions_MWV_1_Form
     real ( KDR ) :: &
-      OpacityAbsorption = 0.0_KDR
+      SpecificOpacity = 0.0_KDR
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
     procedure, public, pass :: &
-      SetOpacityAbsorption
+      SetSpecificOpacity
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
-  end type Interactions_C_Form
+  end type Interactions_MWV_1_Form
 
     private :: &
       ComputeKernel
@@ -27,7 +27,7 @@ module Interactions_C__Form
   interface
 
     module subroutine ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, J_Eq, Kappa_A, UseDeviceOption )
+             ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -35,14 +35,17 @@ module Interactions_C__Form
         Chi_J, &
         Chi_H
       real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
         J_Eq
       real ( KDR ), intent ( in ) :: &
-        Kappa_A
+        Kappa
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine ComputeKernel
 
   end interface
+
 
 contains
 
@@ -51,7 +54,7 @@ contains
                ( I, F, Units_R, FieldOption, NameOption, UnitOption, &
                  nFieldsOption, IgnorabilityOption )
 
-    class ( Interactions_C_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
     class ( Fluid_P_Form ), intent ( in ), target :: &
       F
@@ -68,7 +71,7 @@ contains
       IgnorabilityOption
 
     if ( I % Type  ==  '' ) &
-      I % Type  =  'an Interactions_C' 
+      I % Type  =  'an Interactions_MWV_1' 
     
     call I % Interactions_BM_Form % Initialize &
            ( F, Units_R, &
@@ -81,28 +84,28 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine SetOpacityAbsorption ( I, Kappa_A )
+  subroutine SetSpecificOpacity ( I, SpecificOpacity )
 
-    class ( Interactions_C_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
     real ( KDR ), intent ( in ) :: &
-      Kappa_A
+      SpecificOpacity
 
-    I % OpacityAbsorption  =  Kappa_A
+    I % SpecificOpacity  =  SpecificOpacity
 
-    call Show ( 'Setting OpacityAbsorption of an Interactions_C', &
+    call Show ( 'Setting SpecificOpacity of an Interactions_MWV_1', &
                 I % IGNORABILITY + 1 )
     call Show ( I % Name, 'Name', &
                 I % IGNORABILITY + 1 )
-    call Show ( I % OpacityAbsorption, 'OpacityAbsorption', &
+    call Show ( I % SpecificOpacity, 'SpecificOpacity', &
                 I % IGNORABILITY + 1 )
 
-  end subroutine SetOpacityAbsorption
+  end subroutine SetSpecificOpacity
 
 
   subroutine Compute ( I, R )
 
-    class ( Interactions_C_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
     class ( CurrentSetForm ), intent ( in ) :: &
       R
@@ -120,7 +123,9 @@ contains
         ( FV  =>  F % Storage ( iC ) % Value, &
           IV  =>  I % Storage ( iC ) % Value )
       associate &
-        (   T    =>  FV ( :, F % TEMPERATURE ), &
+        (   M    =>  FV ( :, F % BARYON_MASS ), &
+            N    =>  FV ( :, F % BARYON_DENSITY_C ), &
+            T    =>  FV ( :, F % TEMPERATURE ), &
            Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
           Chi_J  =>  IV ( :, I % OPACITY_J ), &
           Chi_H  =>  IV ( :, I % OPACITY_H ), &
@@ -130,7 +135,7 @@ contains
              ( J_Eq, T, UseDeviceOption = I % DeviceMemory )
 
       call ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, J_Eq, Kappa_A = I % OpacityAbsorption, &
+             ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa = I % SpecificOpacity, &
                UseDeviceOption = I % DeviceMemory )
              
       end associate !-- T, etc.
@@ -144,10 +149,10 @@ contains
 
   impure elemental subroutine Finalize ( I )
 
-    type ( Interactions_C_Form ), intent ( inout ) :: &
+    type ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
 
   end subroutine Finalize
 
 
-end module Interactions_C__Form
+end module Interactions_MWV_1__Form

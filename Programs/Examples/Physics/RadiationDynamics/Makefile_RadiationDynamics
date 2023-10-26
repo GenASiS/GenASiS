@@ -1,13 +1,15 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G #\
-      Thermalization_G_S MarshakWave_G MarshakWave_S
+all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G MarshakWave_G #\
+      Thermalization_G_S MarshakWave_S
         #SineWaveDiffusion \
         HomogeneousSphere StreamingProfile
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 INTERACTIONS_EXAMPLES = \
+  Interactions_MWV_1__Kernel.o \
+  Interactions_MWV_1__Form.o \
   Interactions_C__Kernel.o \
   Interactions_C__Form.o
 
@@ -33,19 +35,25 @@ Thermalization_G: ThirdParty.a GenASiS.a Thermalization_G.o \
           $(INTERACTIONS_EXAMPLES) \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
+MarshakWave_G: ThirdParty.a GenASiS.a MarshakWave_G.o \
+  $(INTERACTIONS_EXAMPLES)
+	$(LINK) $(FLAGS) \
+          -o MarshakWave_G_$(MACHINE) \
+          MarshakWave_G.o MarshakWave_Form.o \
+          $(INTERACTIONS_EXAMPLES) \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
 clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f SineWaveStreaming_G_*
-	rm -f SineWaveStreaming_S_*
-	rm -f Thermalization_G_*
-	# rm -f Thermalization_G_S_*
+	rm -f SineWaveStreaming_*
+	rm -f Thermalization_*
+	rm -f MarshakWave_*
 	# rm -f SineWaveDiffusion_*
 	# rm -f HomogeneousSphere_*
-	# rm -f MarshakWave_*
 	# rm -f StreamingProfile_*
 
 PlaneWaveStreaming_Form.o: \
@@ -85,3 +93,17 @@ Thermalization_G.o: \
   GenASiS.o \
   Thermalization_Form.o \
   Thermalization_G.f90
+
+Interactions_MWV_1__Form.o: \
+  GenASiS.o \
+  Interactions_MWV_1__Form.f90
+
+Interactions_MWV_1__Kernel.o: \
+  Basics.o \
+  Interactions_MWV_1__Form.o \
+  Interactions_MWV_1__Kernel.f90
+
+MarshakWave_G.o: \
+  GenASiS.o \
+  MarshakWave_Form.o \
+  MarshakWave_G.f90

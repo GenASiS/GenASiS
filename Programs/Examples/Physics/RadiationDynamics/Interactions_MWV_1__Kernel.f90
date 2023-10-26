@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Interactions_C__Form ) Interactions_C__Kernel
+submodule ( Interactions_MWV_1__Form ) Interactions_MWV_1__Kernel
 
   use Basics 
   
@@ -27,18 +27,18 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
-         Xi_J ( iV )  =  Kappa_A  *  J_Eq ( iV )
-        Chi_J ( iV )  =  Kappa_A
-        Chi_H ( iV )  =  Kappa_A
+         Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  J_Eq ( iV )
+        Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
+        Chi_H ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
-         Xi_J ( iV )  =  Kappa_A  *  J_Eq ( iV )
-        Chi_J ( iV )  =  Kappa_A
-        Chi_H ( iV )  =  Kappa_A
+         Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  J_Eq ( iV )
+        Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
+        Chi_H ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
       end do
       !$OMP end parallel do
     end if
@@ -46,4 +46,4 @@ contains
   end procedure ComputeKernel
 
 
-end submodule Interactions_C__Kernel
+end submodule Interactions_MWV_1__Kernel

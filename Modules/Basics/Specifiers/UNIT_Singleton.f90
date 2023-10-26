@@ -78,6 +78,7 @@ module UNIT_Singleton
       HBAR_C
     type ( QuantityForm ) :: &  !-- Number density
       NUMBER_DENSITY_MKS, &
+      NUMBER_DENSITY_CGS, &
       NUMBER_DENSITY_ANGSTROM, &
       NUMBER_DENSITY_NUCLEAR, &
       NUMBER_DENSITY_MEV_HBAR_C
@@ -86,6 +87,7 @@ module UNIT_Singleton
       MASS_DENSITY_CGS
     type ( QuantityForm ) :: &  !-- Energy density
       ENERGY_DENSITY_MKS, &
+      ENERGY_DENSITY_CGS, &
       ENERGY_DENSITY_NUCLEAR
     type ( QuantityForm ) :: &  !-- Computer resources
       KILOBYTE, &
@@ -286,6 +288,8 @@ contains
     !-- Number density
     U % NUMBER_DENSITY_MKS &
       =  1 / U % METER ** 3
+    U % NUMBER_DENSITY_CGS &
+      =  U % MOLE / U % CENTIMETER ** 3
     U % NUMBER_DENSITY_ANGSTROM &
       =  1 / U % ANGSTROM ** 3
     U % NUMBER_DENSITY_NUCLEAR &
@@ -302,6 +306,8 @@ contains
     !-- Energy density
     U % ENERGY_DENSITY_MKS &
       =  U % JOULE  /  U % METER ** 3
+    U % ENERGY_DENSITY_CGS &
+      =  U % ERG  /  U % METER ** 3
     U % ENERGY_DENSITY_NUCLEAR &
       =  U % MEGA_ELECTRON_VOLT  /  U % FEMTOMETER ** 3
 

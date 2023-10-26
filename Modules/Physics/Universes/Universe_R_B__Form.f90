@@ -121,11 +121,15 @@ contains
 
     !-- Units
 
-    allocate ( U % Units_F ( 1 ) )
-    call U % Units_F ( 1 ) % Initialize ( )
+    if ( .not. allocated ( U % Units_F ) ) then
+      allocate ( U % Units_F ( 1 ) )
+      call U % Units_F ( 1 ) % Initialize ( )
+    end if
 
-    allocate ( U % Units_R ( 1 ) )
-    call U % Units_R ( 1 ) % Initialize ( )
+    if ( .not. allocated ( U % Units_F ) ) then
+      allocate ( U % Units_R ( 1 ) )
+      call U % Units_R ( 1 ) % Initialize ( )
+    end if
 
     !-- Initializations
 

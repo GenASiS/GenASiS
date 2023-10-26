@@ -96,6 +96,38 @@ contains
         U % Energy           =  UNIT % JOULE
         U % Momentum         =  UNIT % KILOGRAM  *  UNIT % SPEED_MKS
         U % AngularMomentum  =  U % Momentum  *  UNIT % METER
+      case ( 'CGS' )
+        !-- Phase space 
+        U % Time                 =  UNIT % SECOND
+        U % Length               =  UNIT % CENTIMETER
+        U % SqrtDet_M            =  UNIT % IDENTITY
+        U % Coordinate_PS ( 1 )  =  UNIT % CENTIMETER
+        U % Coordinate_PS ( 2 )  =  UNIT % CENTIMETER
+        U % Coordinate_PS ( 3 )  =  UNIT % CENTIMETER
+        U % Coordinate_MS ( 1 )  =  UNIT % ERG
+        U % Coordinate_MS ( 2 )  =  UNIT % RADIAN
+        U % Coordinate_MS ( 3 )  =  UNIT % RADIAN
+        !-- Local
+        U % BaryonMass               =  UNIT % GRAM
+        U % NumberDensity            =  UNIT % NUMBER_DENSITY_CGS
+        U % MassDensity              =  UNIT % MASS_DENSITY_CGS
+        U % EnergyDensity            =  UNIT % ENERGY_DENSITY_CGS
+        U % Temperature              =  UNIT % KELVIN
+        U % Velocity_U ( 1 )         =  UNIT % SPEED_CGS
+        U % Velocity_U ( 2 )         =  UNIT % SPEED_CGS
+        U % Velocity_U ( 3 )         =  UNIT % SPEED_CGS
+        U % MomentumDensity_D ( 1 )  =  UNIT % MASS_DENSITY_CGS  &
+                                        *  UNIT % SPEED_CGS
+        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_CGS  &
+                                        *  UNIT % SPEED_CGS
+        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_CGS  &
+                                        *  UNIT % SPEED_CGS
+        !-- Global
+        U % Number           =  UNIT % MOLE
+        U % Mass             =  UNIT % GRAM
+        U % Energy           =  UNIT % ERG
+        U % Momentum         =  UNIT % GRAM  *  UNIT % SPEED_CGS
+        U % AngularMomentum  =  U % Momentum  *  UNIT % CENTIMETER
       case ( 'ASTROPHYSICS' )
         !-- Phase space 
         U % Time                 =  UNIT % SECOND
