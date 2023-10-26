@@ -19,6 +19,7 @@ RadiationMoments_BM__Form.o: \
   Mathematics.o \
   Gravitations.o \
   Units_R__Form.o \
+  Interactions_BM__Form.o \
   RadiationMoments_BM__Form.f90
 
 RadiationMoments_BM__Kernel.o: \
@@ -38,11 +39,24 @@ DivergencePart_RM__Kernel.o: \
   DivergencePart_RM__Form.o \
   DivergencePart_RM__Kernel.f90
 
+Slope_RM_I__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_BM__Form.o \
+  RadiationMoments_BM__Form.o \
+  Slope_RM_I__Form.f90
+
+Slope_RM_I__Kernel.o: \
+  Basics.o \
+  Slope_RM_I__Form.o \
+  Slope_RM_I__Kernel.f90
+
 Radiations.o: \
   Units_R__Form.o \
   Interactions_BM__Form.o \
   RadiationMoments_BM__Form.o \
   DivergencePart_RM__Form.o \
+  Slope_RM_I__Form.o \
   Radiations.f90
 
 Radiations.a: $(RADIATIONS)

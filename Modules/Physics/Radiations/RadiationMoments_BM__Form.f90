@@ -6,6 +6,7 @@ module RadiationMoments_BM__Form
   use Mathematics
   use Gravitations
   use Units_R__Form
+  use Interactions_BM__Form
 
   implicit none
   private
@@ -50,15 +51,15 @@ module RadiationMoments_BM__Form
   !   character ( LDL ) :: &
   !     RadiationType = '', &
   !     MomentsType = ''
-  !   class ( InteractionsTemplate ), pointer :: &
-  !     Interactions => null ( )
+    class ( Interactions_BM_Form ), pointer :: &
+      Interactions => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_RM
     generic, public :: &
       Initialize => InitializeAllocate_RM
-  !   procedure, public, pass :: &
-  !     SetInteractions
+    procedure, public, pass :: &
+      SetInteractions
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass ( CS ) :: &
@@ -385,6 +386,18 @@ contains
     !        ( F % BaryonDensityMin, 'BaryonDensityMin' )
 
   end subroutine InitializeAllocate_RM
+
+
+  subroutine SetInteractions ( RM, Interactions )
+
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      RM
+    class ( Interactions_BM_Form ), intent ( in ), target :: &
+      Interactions
+
+    RM % Interactions  =>  Interactions
+
+  end subroutine SetInteractions
 
 
   subroutine SetStream ( S, CS )

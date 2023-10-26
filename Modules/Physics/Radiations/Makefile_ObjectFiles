@@ -1,5 +1,7 @@
 RADIATIONS = \
   Radiations.o \
+  Slope_RM_I__Kernel.o \
+  Slope_RM_I__Form.o \
   DivergencePart_RM__Kernel.o \
   DivergencePart_RM__Form.o \
   RadiationMoments_BM__Kernel.o \

@@ -320,6 +320,8 @@ contains
 
         call R % Initialize &
                ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+        if ( allocated ( U % Interactions_BM ) ) &
+          call R % SetInteractions ( U % Interactions_BM )
 
         end select !-- R
 
