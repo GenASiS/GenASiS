@@ -35,7 +35,7 @@ module Integrator_H__Form
       iTimer_SR  = 0, &   !-- SetReference
       iTimer_W   = 0, &   !-- Write
       iTimer_CC  = 0, &   !-- ComputeCycle
-      iTimer_PC  = 0, &   !-- PrepareCycle
+      iTimer_RC  = 0, &   !-- ResolveCycle
       iTimer_CTN = 0      !-- Compute_T_New
     real ( KDR ) :: &   !-- Physical 
       T_Start               = 0.0_KDR, &
@@ -86,6 +86,8 @@ module Integrator_H__Form
     !procedure ( SS ), public, pointer :: &
     procedure ( SS_I ), public, pointer :: &
       ShowSystem => null ( )
+    procedure ( RC ), public, pointer :: &
+      ResolveCycle => null ( )
     procedure ( A ), public, pointer :: &
       Analyze => null ( )
     procedure ( W ), public, pointer :: &
@@ -177,6 +179,13 @@ module Integrator_H__Form
         I
     end subroutine SS_I
 
+    subroutine RC ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine RC
+
     subroutine A ( I, Ignorability, T_Option )
       use Basics
       import Integrator_H_Form
@@ -245,6 +254,13 @@ module Integrator_H__Form
       class ( Integrator_H_Form ), intent ( inout ) :: &
         I
     end subroutine IS
+    
+    subroutine CC ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine CC
     
   end interface
 
@@ -428,12 +444,14 @@ contains
       T_E, &
       T_AC, &
       T_CC, &
+      T_RC, &
       T_WC
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
+    call I % ResolveCycle ( )
 
     call I % AdministerCheckpoint ( )
 
@@ -465,6 +483,14 @@ contains
       call T_CC % Start ( )
       call I % ComputeCycle ( T_CC )
       call T_CC % Stop ( )
+
+      T_RC  =>  PROGRAM_HEADER % Timer &
+                ( Handle = I % iTimer_CC, &
+                  Name = trim ( I % Name ) // '_RslvCcl', &
+                  Level = T_E % Level + 1 )
+      call T_RC % Start ( )
+      call I % ResolveCycle ( )
+      call T_RC % Stop ( )
 
       call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
       call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
@@ -681,6 +707,13 @@ contains
       call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
       call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
       I % ShowSystem  =>  ShowSystem_H
+    end if
+
+    if ( .not. associated ( I % ResolveCycle ) ) then
+      call Show ( 'ResolveCycle method unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'PrepareInitial', 'subroutine', CONSOLE % WARNING )
+      I % ResolveCycle  =>  ResolveCycle_H
     end if
 
     if ( .not. associated ( I % Analyze ) ) then
@@ -978,6 +1011,14 @@ contains
   end subroutine ShowSystem_H
 
 
+  subroutine ResolveCycle_H ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+  end subroutine ResolveCycle_H
+
+
   subroutine UpdateHost_H ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -1163,14 +1204,6 @@ contains
     end associate !-- GIS
 
   end subroutine Read_H
-
-
-  subroutine PrepareCycle ( I )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-
-  end subroutine PrepareCycle
 
 
   subroutine Compute_T_New ( I, T_New, HoldCheckpointSolveOption )
