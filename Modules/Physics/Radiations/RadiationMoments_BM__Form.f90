@@ -177,7 +177,7 @@ contains
       iV, &  !-- iVector
       iP, &  !-- iPrimitive
       iB, &  !-- iBalanced
-      ! iC, &  !-- iChart
+      iC, &  !-- iChart
       oF, &  !-- oField
       oV, &  !-- oVector
       oP, &  !-- oPrimitive
@@ -273,26 +273,30 @@ contains
       allocate ( FieldUnit ( nFields, nC ) )
     end if !-- FieldOption
 
-    ! do iC  =  1, nC
-    !   FieldUnit ( F % BARYON_DENSITY_C, iC ) &
-    !     =  Units_F ( iC ) % NumberDensity
-    !   FieldUnit ( F % BARYON_DENSITY_B, iC ) &
-    !     =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % NumberDensity
-    !   FieldUnit ( F % BARYON_MASS, iC ) &
-    !     =  Units_F ( iC ) % BaryonMass
-    !   FieldUnit ( F % VELOCITY_U_1, iC ) &
-    !     =  Units_F ( iC ) % Velocity_U ( 1 )
-    !   FieldUnit ( F % VELOCITY_U_2, iC ) &
-    !     =  Units_F ( iC ) % Velocity_U ( 2 )
-    !   FieldUnit ( F % VELOCITY_U_3, iC ) &
-    !     =  Units_F ( iC ) % Velocity_U ( 3 )
-    !   FieldUnit ( F % MOMENTUM_DENSITY_D_1, iC ) &
-    !     =  Units_F ( iC ) % MomentumDensity_D ( 1 )
-    !   FieldUnit ( F % MOMENTUM_DENSITY_D_2, iC ) &
-    !     =  Units_F ( iC ) % MomentumDensity_D ( 2 )
-    !   FieldUnit ( F % MOMENTUM_DENSITY_D_3, iC ) &
-    !     =  Units_F ( iC ) % MomentumDensity_D ( 3 )
-    ! end do !-- iC
+    do iC  =  1, nC
+      FieldUnit ( RM % ENERGY_DENSITY_C, iC ) &
+        =  Units_R ( iC ) % EnergyDensity
+      FieldUnit ( RM % ENERGY_DENSITY_B, iC ) &
+        =  Units_R ( iC ) % EnergyDensity
+      FieldUnit ( RM % MOMENTUM_DENSITY_C_U_1, iC ) &
+        =  Units_R ( iC ) % MomentumDensity_U ( 1 )
+      FieldUnit ( RM % MOMENTUM_DENSITY_C_U_2, iC ) &
+        =  Units_R ( iC ) % MomentumDensity_U ( 2 )
+      FieldUnit ( RM % MOMENTUM_DENSITY_C_U_3, iC ) &
+        =  Units_R ( iC ) % MomentumDensity_U ( 3 )
+      FieldUnit ( RM % MOMENTUM_DENSITY_B_D_1, iC ) &
+        =  Units_R ( iC ) % MomentumDensity_D ( 1 )
+      FieldUnit ( RM % MOMENTUM_DENSITY_B_D_2, iC ) &
+        =  Units_R ( iC ) % MomentumDensity_D ( 2 )
+      FieldUnit ( RM % MOMENTUM_DENSITY_B_D_3, iC ) &
+        =  Units_R ( iC ) % MomentumDensity_D ( 3 )
+      FieldUnit ( RM % FLUID_VELOCITY_U_1, iC ) &
+        =  Units_R ( iC ) % Velocity_U ( 1 )
+      FieldUnit ( RM % FLUID_VELOCITY_U_2, iC ) &
+        =  Units_R ( iC ) % Velocity_U ( 2 )
+      FieldUnit ( RM % FLUID_VELOCITY_U_3, iC ) &
+        =  Units_R ( iC ) % Velocity_U ( 3 )
+    end do !-- iC
 
     end associate !-- nC
 

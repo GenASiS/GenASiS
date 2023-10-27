@@ -83,7 +83,8 @@ contains
       IgnorabilityOption
 
     integer ( KDI ) :: &
-      oF, &    !-- oField
+      iC, &  !-- iChart
+      oF, &  !-- oField
       nFields
     type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
@@ -116,7 +117,7 @@ contains
       allocate ( Field ( nFields ) )
     end if !-- FieldOption
 
-    Field ( oF + 1 : oF + RM % N_FIELDS_RM ) &
+    Field ( oF + 1 : oF + RM % N_FIELDS_PM ) &
       = [ 'TemperatureParameter  ', &
           'TemperatureEquilibrium' ]
 
@@ -130,26 +131,12 @@ contains
       allocate ( FieldUnit ( nFields, nC ) )
     end if !-- FieldOption
 
-    ! do iC  =  1, nC
-    !   FieldUnit ( F % BARYON_DENSITY_C, iC ) &
-    !     =  Units_F ( iC ) % NumberDensity
-    !   FieldUnit ( F % BARYON_DENSITY_B, iC ) &
-    !     =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % NumberDensity
-    !   FieldUnit ( F % BARYON_MASS, iC ) &
-    !     =  Units_F ( iC ) % BaryonMass
-    !   FieldUnit ( F % VELOCITY_U_1, iC ) &
-    !     =  Units_F ( iC ) % Velocity_U ( 1 )
-    !   FieldUnit ( F % VELOCITY_U_2, iC ) &
-    !     =  Units_F ( iC ) % Velocity_U ( 2 )
-    !   FieldUnit ( F % VELOCITY_U_3, iC ) &
-    !     =  Units_F ( iC ) % Velocity_U ( 3 )
-    !   FieldUnit ( F % MOMENTUM_DENSITY_D_1, iC ) &
-    !     =  Units_F ( iC ) % MomentumDensity_D ( 1 )
-    !   FieldUnit ( F % MOMENTUM_DENSITY_D_2, iC ) &
-    !     =  Units_F ( iC ) % MomentumDensity_D ( 2 )
-    !   FieldUnit ( F % MOMENTUM_DENSITY_D_3, iC ) &
-    !     =  Units_F ( iC ) % MomentumDensity_D ( 3 )
-    ! end do !-- iC
+    do iC  =  1, nC
+      FieldUnit ( RM % TEMPERATURE_PARAMETER, iC ) &
+        =  Units_R ( iC ) % Temperature
+      FieldUnit ( RM % TEMPERATURE_EQUILIBRIUM, iC ) &
+        =  Units_R ( iC ) % Temperature
+    end do !-- iC
 
     end associate !-- nC
 
@@ -157,6 +144,7 @@ contains
 
     call RM % RadiationMoments_BM_Form % Initialize &
            ( G, &
+             Units_R = Units_R, &
              FieldOption = Field, &
              VectorOption = VectorOption, &
              NameOption = Name, &

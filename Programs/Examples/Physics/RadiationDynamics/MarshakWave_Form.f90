@@ -138,6 +138,9 @@ contains
     allocate ( MW % Units_F ( 1 ) )
     call MW % Units_F ( 1 ) % Initialize ( TypeOption = 'CGS' )
 
+    allocate ( MW % Units_R ( 1 ) )
+    call MW % Units_R ( 1 ) % Initialize ( TypeOption = 'CGS' )
+
     !-- Position space parameters
 
     MW % BoxLength  =  25.0_KDR  *  UNIT % CENTIMETER

@@ -13,7 +13,7 @@ module Thermalization_Form
       TimeScale
     real ( KDR ), dimension ( 2 ) :: &
       OpacityAbsorption
-    type ( RadiationMoments_BM_Form ), allocatable :: &
+    type ( PhotonMoments_G_Form ), allocatable :: &
       Reference, &
       FractionalDifference
   contains
@@ -279,6 +279,7 @@ contains
     call I % Compute_J_Eq_Ph_G_Kernel &
            ( J_Eq = R_RV ( :, R % ENERGY_DENSITY_C ), &
              T    = FV   ( :, F % TEMPERATURE ) )
+    call R_R % ComputeSpectralParameters ( )
 
     call ComputeFractionalDifferenceKernel &
            ( J_FD = R_FDV ( :, R % ENERGY_DENSITY_C ), &

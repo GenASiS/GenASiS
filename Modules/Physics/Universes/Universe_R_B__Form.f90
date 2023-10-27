@@ -58,6 +58,7 @@ module Universe_R_B__Form
   end type Universe_R_B_Form
 
     private :: &
+      ResolveCycle_R, &
       SetSlope_RM_I
 
 contains
@@ -94,8 +95,10 @@ contains
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_B'
 
+call Show ( '>>> 1' )
     call U % Universe_H_Form % Initialize ( Name )
 
+call Show ( '>>> 2' )
     !-- Radiations
 
     U % nRadiations  =  size ( RadiationName )
@@ -126,17 +129,20 @@ contains
       call U % Units_F ( 1 ) % Initialize ( )
     end if
 
-    if ( .not. allocated ( U % Units_F ) ) then
+    if ( .not. allocated ( U % Units_R ) ) then
       allocate ( U % Units_R ( 1 ) )
       call U % Units_R ( 1 ) % Initialize ( )
     end if
 
     !-- Initializations
 
+call Show ( '>>> 3' )
     call U % SetCommunicator &
            ( )
+call Show ( '>>> 4' )
     call U % AllocateIntegrator &
            ( )
+call Show ( '>>> 5' )
     call U % InitializePositionSpace &
            ( MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
@@ -318,11 +324,24 @@ contains
           iR  =>  U % iRadiation )
 
       select case ( trim ( U % RadiationType ( iR ) ) )
-      case ( 'PHOTONS' )
+      case ( 'GENERIC' )
 
         allocate ( RadiationMoments_BM_Form :: I % CurrentSet_X_1D )
         select type ( R  =>  I % CurrentSet_X_1D )
         class is ( RadiationMoments_BM_Form )
+
+        call R % Initialize &
+               ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+        if ( allocated ( U % Interactions_BM ) ) &
+          call R % SetInteractions ( U % Interactions_BM )
+
+        end select !-- R
+
+      case ( 'PHOTONS' )
+
+        allocate ( PhotonMoments_G_Form :: I % CurrentSet_X_1D )
+        select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( PhotonMoments_G_Form )
 
         call R % Initialize &
                ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
@@ -338,7 +357,7 @@ contains
         call Show ( 'Universe_R_B__Form', 'module', CONSOLE % ERROR )
         call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
-      end select !-- FluidType
+      end select !-- RadiationType
 
       end associate !-- G, etc.
 
@@ -449,6 +468,8 @@ contains
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
+    I % ResolveCycle  =>  ResolveCycle_R
+
     end select !-- I
 
     ! select type ( I => U % Integrator )
@@ -478,6 +499,24 @@ contains
     call Show ( U % InteractionFactor, 'InteractionFactor', U % IGNORABILITY )
 
   end subroutine ShowParameters
+
+
+  subroutine ResolveCycle_R ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( PhotonMoments_G_Form )
+
+    call R % ComputeSpectralParameters ( )
+
+    end select !-- R
+    end select !-- I
+
+  end subroutine ResolveCycle_R
 
 
   subroutine SetSlope_RM_I ( S, K )
