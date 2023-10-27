@@ -307,7 +307,7 @@ contains
     U % ENERGY_DENSITY_MKS &
       =  U % JOULE  /  U % METER ** 3
     U % ENERGY_DENSITY_CGS &
-      =  U % ERG  /  U % METER ** 3
+      =  U % ERG  /  U % CENTIMETER ** 3
     U % ENERGY_DENSITY_NUCLEAR &
       =  U % MEGA_ELECTRON_VOLT  /  U % FEMTOMETER ** 3
 

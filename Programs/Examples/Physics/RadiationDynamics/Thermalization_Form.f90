@@ -392,7 +392,7 @@ contains
              R_Max = 1.0_KDR  /  CO % Incoming % Value ( 2 ) )
 
     end associate !-- X, etc.
-    end associate !-- RV, etc.
+    end associate !-- FV, etc.
     end associate !-- C, etc.
     end select !-- A
 
