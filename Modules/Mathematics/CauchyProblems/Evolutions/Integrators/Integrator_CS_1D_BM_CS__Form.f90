@@ -42,9 +42,6 @@ module Integrator_CS_1D_BM_CS__Form
       ComputeTally_1D
   end type Integrator_CS_1D_BM_CS_Form
 
-    private :: &
-      Compute_dT_Local
-
 
 contains
 
@@ -140,10 +137,6 @@ contains
     !   I % InitializeTimeSeries  =>  InitializeTimeSeries_C_1D_PS
     ! end select !-- TS
     
-    !-- Time step
-    
-    I % Compute_dT_Local  =>  Compute_dT_Local
-
   end subroutine Initialize_H
 
 
@@ -276,50 +269,6 @@ contains
     end associate !-- CS
 
   end subroutine ComputeTally_1D
-
-
-  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
-
-    class ( Integrator_H_Form ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      dT_Candidate
-    integer ( KDI ), intent ( in ) :: &
-      iC
-    type ( TimerForm ), intent ( in ), optional :: &
-      T_Option
-
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-
-    select type ( I )
-    class is ( Integrator_CS_1D_BM_CS_Form )
-
-      !-- CS
-
-      call I % Compute_dT_CS_CGS &
-             ( I % EigenspeedSet_X, &
-               dT_Candidate ( 1 ), iC, T_Option )
-
-      !-- CS_1D, my element
-
-      call I % Compute_dT_CS_CGS &
-             ( I % EigenspeedSet_X_1D, &
-               dT_Candidate ( 1  +  I % iCurrentSet ), iC, T_Option )
-
-      !-- Reduce across CS_1D
-
-      call CO % Initialize &
-             ( I % Communicator_X_1D, nOutgoing = [ I % n_dT_Candidates ], &
-               nIncoming = [ I % n_dT_Candidates ] )
-
-      CO % Outgoing % Value  =  I % dT_Candidate
-      call CO % Reduce ( REDUCTION % MIN )
-      I % dT_Candidate  =  CO % Incoming % Value
-
-    end select !-- I
-
-  end subroutine Compute_dT_Local
 
 
 end module Integrator_CS_1D_BM_CS__Form

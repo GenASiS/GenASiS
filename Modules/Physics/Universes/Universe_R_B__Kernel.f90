@@ -1,0 +1,57 @@
+#include "Preprocessor"
+
+submodule ( Universe_R_B__Form ) Universe_R_B__Kernel
+
+  use Basics
+  
+  implicit none
+
+contains
+
+
+  module procedure Compute_dT_ET_CGS_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice  =  .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice  =  UseDeviceOption
+      
+    nV  =  size ( Q )
+    
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP reduction ( min : dT )
+      do iV = 1, nV
+        if ( ProperCell ( iV ) ) &
+          dT  =  min ( dT,  &
+                       E ( iV )  /  max ( SqrtTiny, abs ( Q ( iV ) ) ) )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP reduction ( min : dT )
+      do iV = 1, nV
+        if ( ProperCell ( iV ) ) &
+          dT  =  min ( dT,  &
+                       E ( iV )  /  max ( SqrtTiny, abs ( Q ( iV ) ) ) )
+      end do
+      !$OMP  end parallel do
+    end if
+      
+  end procedure Compute_dT_ET_CGS_Kernel
+
+
+end submodule Universe_R_B__Kernel

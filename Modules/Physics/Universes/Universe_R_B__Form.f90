@@ -55,11 +55,36 @@ module Universe_R_B__Form
       InitializeIntegrator
     procedure, public, pass :: &
       ShowParameters
+    procedure, public, pass ( U ) :: &
+      Compute_dT_ET_CGS
   end type Universe_R_B_Form
 
     private :: &
       ResolveCycle_R, &
+      Compute_dT_Local, &
       SetSlope_RM_I
+
+      private :: &
+        Compute_dT_ET_CGS_Kernel
+
+    interface
+    
+      module subroutine Compute_dT_ET_CGS_Kernel &
+               ( dT, ProperCell, Q, E, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Q, E
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_ET_CGS_Kernel
+
+    end interface
+
 
 contains
 
@@ -162,6 +187,12 @@ contains
     call U % InitializeIntegrator &
            ( FinishTimeOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
+
+    !-- Integrator methods
+
+    associate ( I  =>  U % Integrator )
+    I % Compute_dT_Local  =>  Compute_dT_Local
+    end associate !-- I
 
   end subroutine Initialize_R_B
 
@@ -434,26 +465,15 @@ contains
     I % iCurrentSet  =  U % iRadiation
 
     I % nCurrentSets  =  size ( U % RadiationName )
-    allocate ( I % dT_Label &
-                 ( 1  +  I % nCurrentSets  +  I % nCurrentSets ) )
+    allocate ( I % dT_Label ( 3 ) )
 
-    I % dT_Label ( 1 )  &
-      =  'FluidAdvection'
+    I % dT_Label ( 1 )  =  'FluidAdvection'
+    I % dT_Label ( 2 )  =  'RadiationStreaming'
+    I % dT_Label ( 3 )  =  'EnergyTransfer'
 
-    do iCS = 1, I % nCurrentSets
-      I % dT_Label ( 1 + iCS )  &
-        =  trim ( U % RadiationName ( iCS ) ) // '_Streaming'
-    end do !-- iCS
-
-    do iCS = 1, I % nCurrentSets
-      I % dT_Label ( I % nCurrentSets  +  1  +  iCS )  &
-        =  trim ( U % RadiationName ( iCS ) ) // '_Interactions'
-    end do !-- iCS
-
-    U % InteractionFactor  =  1.0e-2_KDR
+    U % InteractionFactor  =  1.0e-2_KDR  /  I % nCurrentSets
     call PROGRAM_HEADER % GetParameter &
            ( U % InteractionFactor, 'InteractionFactor' )
-
 
     I % StreamSuffix  =  '_' // trim ( U % RadiationName ( U % iRadiation ) )
 
@@ -496,6 +516,54 @@ contains
   end subroutine ShowParameters
 
 
+  subroutine Compute_dT_ET_CGS ( dT, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT
+    class ( Universe_R_B_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+  
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      ( C   =>  A % Chart_GS, &
+        FV  =>  F % Storage_GS % Value, &
+        RV  =>  R % Storage_GS % Value )
+
+    call Compute_dT_ET_CGS_Kernel &
+           ( dT, C % ProperCell, &
+             Q  =  RV ( :, R % HEATING_RATE ), &
+             E  =  FV ( :, F % ENERGY_DENSITY_C ), &
+             UseDeviceOption = F % DeviceMemory )
+
+    end associate !-- C, etc.
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Universe_R_B_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_ET_CGS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+    end select !-- F
+    end select !-- R
+    end select !-- I
+
+    dT  =  U % InteractionFactor  *  dT
+    
+  end subroutine Compute_dT_ET_CGS
+
+
   subroutine ResolveCycle_R ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -513,6 +581,58 @@ contains
     end select !-- I
 
   end subroutine ResolveCycle_R
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_B_Form )
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+     
+
+      !-- CS
+
+      if ( U % EvolveFluid ) &
+        call I % Compute_dT_CS_CGS &
+               ( I % EigenspeedSet_X, dT_Candidate ( 1 ), iC, T_Option )
+
+      !-- CS_1D
+
+      if ( U % ApplyStreaming ) &
+        call I % Compute_dT_CS_CGS &
+               ( I % EigenspeedSet_X_1D, dT_Candidate ( 2 ), iC, T_Option )
+
+      if ( U % ApplyInteractions ) &
+        call U % Compute_dT_ET_CGS &
+               ( dT_Candidate ( 3 ), iC, T_Option )
+
+      !-- Reduce across CS_1D
+
+      call CO % Initialize &
+             ( I % Communicator_X_1D, nOutgoing = [ 2 ], &
+               nIncoming = [ 2 ] )
+
+      CO % Outgoing % Value  =  I % dT_Candidate ( 2 : 3 )
+      call CO % Reduce ( REDUCTION % MIN )
+      I % dT_Candidate ( 2 : 3 )  =  CO % Incoming % Value
+
+    end select !-- I
+    end select !-- U
+
+  end subroutine Compute_dT_Local
 
 
   subroutine SetSlope_RM_I ( S, K )

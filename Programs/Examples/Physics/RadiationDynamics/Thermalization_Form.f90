@@ -323,7 +323,7 @@ contains
       ( c        =>  CONSTANT % SPEED_OF_LIGHT, &
         Kappa_A  =>  T % OpacityAbsorption ( T % iRadiation ) )
 
-    dT_Candidate ( 1  +  T % nRadiations  +  T % iRadiation )  &
+    dT_Candidate ( 3 )  &
       =  T % InteractionFactor  *  1.0 / ( c * Kappa_A )
 
     end associate !-- c, etc.
@@ -331,12 +331,12 @@ contains
     !-- Reduce across CS_1D
 
     call CO % Initialize &
-           ( I % Communicator_X_1D, nOutgoing = [ I % n_dT_Candidates ], &
-             nIncoming = [ I % n_dT_Candidates ] )
+           ( I % Communicator_X_1D, nOutgoing = [ 1 ], &
+             nIncoming = [ 1 ] )
 
-    CO % Outgoing % Value  =  I % dT_Candidate
+    CO % Outgoing % Value ( 1 )  =  I % dT_Candidate ( 3 )
     call CO % Reduce ( REDUCTION % MIN )
-    I % dT_Candidate  =  CO % Incoming % Value
+    I % dT_Candidate ( 3 )  =  CO % Incoming % Value ( 1 )
 
     end select !-- I
     end select !-- T
