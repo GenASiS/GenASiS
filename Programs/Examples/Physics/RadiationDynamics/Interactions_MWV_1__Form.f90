@@ -103,12 +103,10 @@ contains
   end subroutine SetSpecificOpacity
 
 
-  subroutine Compute ( I, R )
+  subroutine Compute ( I )
 
     class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
-    class ( CurrentSetForm ), intent ( in ) :: &
-      R
 
     integer ( KDI ) :: &
       iC

@@ -180,6 +180,7 @@ contains
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
+                    CS % HEATING_RATE, &
                     CS % TEMPERATURE_PARAMETER, &
                     CS % TEMPERATURE_EQUILIBRIUM ] )
 

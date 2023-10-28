@@ -15,14 +15,14 @@ module Interactions_BM__Form
     integer ( KDI ) :: &
       N_FIELDS_I = N_FIELDS_I
     integer ( KDI ) :: &
-      EMISSIVITY_J      = 0, &
-      EMISSIVITY_H      = 0, &
-      EMISSIVITY_N      = 0, &
-      OPACITY_J         = 0, &
-      OPACITY_H         = 0, &
-      OPACITY_N         = 0, &
-      EQUILIBRIUM_J     = 0, &
-      EQUILIBRIUM_N     = 0
+      EMISSIVITY_J  = 0, &
+      EMISSIVITY_H  = 0, &
+      EMISSIVITY_N  = 0, &
+      OPACITY_J     = 0, &
+      OPACITY_H     = 0, &
+      OPACITY_N     = 0, &
+      EQUILIBRIUM_J = 0, &
+      EQUILIBRIUM_N = 0
     class ( Fluid_P_Form ), pointer :: &
       Fluid => null ( )
   contains
@@ -38,8 +38,6 @@ module Interactions_BM__Form
     !   ComputeEquilibrium_T
     ! procedure, private, pass ( I ) :: &
     !   ComputeEquilibrium_T_Eta
-    ! procedure, public, pass :: &
-    !  ComputeTimeScale
     final :: &
       Finalize
     procedure, public, nopass :: &
@@ -206,12 +204,10 @@ contains
   end subroutine SetStream
 
 
-  subroutine Compute ( I, R )
+  subroutine Compute ( I )
 
     class ( Interactions_BM_Form ), intent ( inout ) :: &
       I
-    class ( CurrentSetForm ), intent ( in ) :: &
-      R
 
     !-- To be filled in by extension
 

@@ -100,12 +100,10 @@ contains
   end subroutine SetOpacityAbsorption
 
 
-  subroutine Compute ( I, R )
+  subroutine Compute ( I )
 
     class ( Interactions_C_Form ), intent ( inout ) :: &
       I
-    class ( CurrentSetForm ), intent ( in ) :: &
-      R
 
     integer ( KDI ) :: &
       iC

@@ -33,6 +33,7 @@ contains
           S_S_2 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV )
           S_S_3 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV )
         else
+          S_E   ( iV )  =  0.0_KDR
           S_S_1 ( iV )  =  0.0_KDR
           S_S_2 ( iV )  =  0.0_KDR
           S_S_3 ( iV )  =  0.0_KDR
@@ -49,6 +50,7 @@ contains
           S_S_2 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV )
           S_S_3 ( iV )  =  Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV )
         else
+          S_E   ( iV )  =  0.0_KDR
           S_S_1 ( iV )  =  0.0_KDR
           S_S_2 ( iV )  =  0.0_KDR
           S_S_3 ( iV )  =  0.0_KDR

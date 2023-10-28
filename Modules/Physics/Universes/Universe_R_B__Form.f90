@@ -95,10 +95,8 @@ contains
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_B'
 
-call Show ( '>>> 1' )
     call U % Universe_H_Form % Initialize ( Name )
 
-call Show ( '>>> 2' )
     !-- Radiations
 
     U % nRadiations  =  size ( RadiationName )
@@ -136,13 +134,10 @@ call Show ( '>>> 2' )
 
     !-- Initializations
 
-call Show ( '>>> 3' )
     call U % SetCommunicator &
            ( )
-call Show ( '>>> 4' )
     call U % AllocateIntegrator &
            ( )
-call Show ( '>>> 5' )
     call U % InitializePositionSpace &
            ( MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
@@ -512,6 +507,7 @@ call Show ( '>>> 5' )
       class is ( PhotonMoments_G_Form )
 
     call R % ComputeSpectralParameters ( )
+    call R % ComputeHeatingRate ( )
 
     end select !-- R
     end select !-- I

@@ -114,7 +114,7 @@ contains
       ( RM  =>  S % RadiationMoments, &
          I  =>  S % RadiationMoments % Interactions )
 
-    call I % Compute ( RM )
+    call I % Compute ( )
 
     do iC  =  1,  S % Atlas % nCharts
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
