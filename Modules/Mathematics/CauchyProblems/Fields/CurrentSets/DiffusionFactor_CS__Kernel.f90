@@ -33,7 +33,7 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iV = 1, nV
+      do iV  =  1,  nV
         DF ( iV )  =  1.0_KDR
       end do
       !$OMP end parallel do

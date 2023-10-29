@@ -5,6 +5,7 @@ module Radiations
   use RadiationMoments_BM__Form
   use PhotonMoments_G__Form
   use DivergencePart_RM__Form
+  use DiffusionFactor_RM__Form
   use Slope_RM_I__Form
 
 end module Radiations

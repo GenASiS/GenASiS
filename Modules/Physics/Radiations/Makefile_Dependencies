@@ -51,6 +51,19 @@ DivergencePart_RM__Kernel.o: \
   DivergencePart_RM__Form.o \
   DivergencePart_RM__Kernel.f90
 
+DiffusionFactor_RM__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Interactions_BM__Form.o \
+  RadiationMoments_BM__Form.o \
+  DiffusionFactor_RM__Form.f90
+
+DiffusionFactor_RM__Kernel.o: \
+  Basics.o \
+  DiffusionFactor_RM__Form.o \
+  DiffusionFactor_RM__Kernel.f90
+
 Slope_RM_I__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -69,6 +82,7 @@ Radiations.o: \
   RadiationMoments_BM__Form.o \
   PhotonMoments_G__Form.o \
   DivergencePart_RM__Form.o \
+  DiffusionFactor_RM__Form.o \
   Slope_RM_I__Form.o \
   Radiations.f90
 
