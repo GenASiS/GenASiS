@@ -32,6 +32,7 @@ DivergencePart_CS__Kernel.o: \
 
 DiffusionFactor_CS__Form.o: \
   Basics.o \
+  Manifolds.o \
   FieldSets.o \
   CurrentSet_Form.o \
   DiffusionFactor_CS__Form.f90

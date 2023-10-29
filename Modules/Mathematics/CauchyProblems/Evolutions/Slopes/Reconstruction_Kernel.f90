@@ -91,6 +91,7 @@ contains
           end do !-- jV
         end do !-- kV
       end do !-- iS
+      !$OMP end parallel do
       
     end if !-- UseDevice
         

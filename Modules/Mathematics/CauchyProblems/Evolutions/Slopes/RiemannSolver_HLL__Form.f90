@@ -26,8 +26,8 @@ module RiemannSolver_HLL__Form
       iTimer_CFP   = 0, &  !-- ComputeFromPrimitive
       iTimer_E     = 0, &  !-- Eigenspeeds
       iTimer_A     = 0, &  !-- Alpha
-      iTimer_F     = 0, &  !-- Flux
       iTimer_DF    = 0, &  !-- DiffusionFactor
+      iTimer_F     = 0, &  !-- Flux
       iTimer_K_HLL = 0     !-- Kernel_HLL
     character ( LDL ) :: &
       ReconstructedSet = ''
@@ -40,6 +40,8 @@ module RiemannSolver_HLL__Form
       CurrentSet => null ( )
     class ( EigenspeedSet_F_Form ), allocatable :: &
       EigenspeedSet_IL, EigenspeedSet_IR
+    class ( DiffusionFactor_CS_Form ), allocatable :: &
+      DiffusionFactor
     class ( ReconstructionForm ), allocatable :: &
       Reconstruction_PS
   contains
@@ -125,8 +127,8 @@ module RiemannSolver_HLL__Form
       end subroutine ComputeDiffusionKernel
 
       module subroutine ComputeKernel &
-               ( RSV, F_IL, F_IR, U_IL, U_IR, iaBalanced, iaFluxes, iAP, iAM, &
-                 UseDeviceOption )
+               ( RSV, F_IL, F_IR, U_IL, U_IR, &
+                 iaBalanced, iaFluxes, iAP, iAM, iDF, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
@@ -139,12 +141,13 @@ module RiemannSolver_HLL__Form
           iaFluxes
         integer ( KDI ), intent ( in ) :: &
           iAP, &  !-- iAlphaPlus
-          iAM     !-- iAlphaMinus
+          iAM, &  !-- iAlphaMinus
+          iDF     !-- iDiffusionFlux
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeKernel
 
-    end interface
+    End interface
 
 
 contains
@@ -233,13 +236,15 @@ contains
           RS % FluxSet_IL, &
           RS % FluxSet_IR, &
           RS % EigenspeedSet_IL, &
-          RS % EigenspeedSet_IR )
+          RS % EigenspeedSet_IR, &
+          RS % DiffusionFactor )
       associate &
         ( FS     =>  RS % FluxSet, &
           FS_IL  =>  RS % FluxSet_IL, &
           FS_IR  =>  RS % FluxSet_IR, &
           ES_IL  =>  RS % EigenspeedSet_IL, &
-          ES_IR  =>  RS % EigenspeedSet_IR )
+          ES_IR  =>  RS % EigenspeedSet_IR, &
+          DF     =>  RS % DiffusionFactor )
       call FS % Initialize &
              ( CS % Atlas, &
                FieldOption = CS % Balanced, &
@@ -266,6 +271,7 @@ contains
                IgnorabilityOption = CS % IGNORABILITY + 1 )               
       call ES_IL % Initialize ( CS, CS_IL )
       call ES_IR % Initialize ( CS, CS_IR )
+      call DF % Initialize ( CS )
 
       end associate !-- FS, etc.
       end associate !-- RPS
@@ -398,7 +404,8 @@ contains
       T_RPS, &
       T_CFP, &
       T_ES, &
-      T_A
+      T_A, &
+      T_DF
     
     associate &
       (  CS     =>  RS % CurrentSet, &
@@ -406,6 +413,7 @@ contains
          CS_IR  =>  RS % CurrentSet_IR, &
          ES_IL  =>  RS % EigenspeedSet_IL, &
          ES_IR  =>  RS % EigenspeedSet_IR, &
+         DF     =>  RS % DiffusionFactor, &
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
@@ -424,6 +432,10 @@ contains
       T_A    =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_A, &
                      Name = trim ( RS % Name ) // '_Alpha', &
+                     Level = T_Option % Level + 1 )
+      T_DF   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_DF, &
+                     Name = trim ( RS % Name ) // '_DffsnFctr', &
                      Level = T_Option % Level + 1 )
     else
       T_RPS  =>  null ( )
@@ -466,6 +478,11 @@ contains
     end associate !-- RSV, etc.
     end associate !-- RSS, etc.
     if ( associated ( T_A ) ) call T_A % Stop ( )
+
+    if ( associated ( T_DF ) ) call T_DF % Start ( )
+    call DF % Compute ( iC, iD )
+    call DF % ComputeReconstruction ( RS, RS % DIFFUSION_FACTOR, iC, iD )
+    if ( associated ( T_DF ) ) call T_DF % Stop ( )
 
     end associate !-- CS, etc.
 
@@ -700,7 +717,7 @@ contains
     
     call ComputeKernel &
            ( RSV, F_IL, F_IR, U_IL, U_IR, CS % iaBalanced, iaFluxes, &
-             RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, &
+             RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, RS % DIFFUSION_FACTOR, &
              UseDeviceOption = RS % DeviceMemory )
 
     call FSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
@@ -724,6 +741,8 @@ contains
 
     if ( allocated ( RS % Reconstruction_PS ) ) &
       deallocate ( RS % Reconstruction_PS )
+    if ( allocated ( RS % DiffusionFactor ) ) &
+      deallocate ( RS % DiffusionFactor )
     if ( allocated ( RS % EigenspeedSet_IR ) ) &
       deallocate ( RS % EigenspeedSet_IR )
     if ( allocated ( RS % EigenspeedSet_IL ) ) &

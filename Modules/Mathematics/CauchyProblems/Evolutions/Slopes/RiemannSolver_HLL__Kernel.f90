@@ -227,7 +227,8 @@ contains
     associate &
       ( F_I  => RSV, &
         AP_I => RSV ( :, iAP ), &
-        AM_I => RSV ( :, iAM ) )
+        AM_I => RSV ( :, iAM ), &
+        DF_I => RSV ( :, iDF ) )
     
     if ( UseDevice ) then
     
@@ -243,7 +244,7 @@ contains
           F_I ( iV, iF_F ) &
             =  (    AP_I ( iV )  *  F_IL ( iV, iF ) &
                  +  AM_I ( iV )  *  F_IR ( iV, iF ) &
-                 -  AP_I ( iV )  *  AM_I ( iV ) &
+                 -  DF_I ( iV )  *  AP_I ( iV )  *  AM_I ( iV ) &
                     *  ( U_IR ( iV, iF_B )  -  U_IL ( iV, iF_B ) ) ) &
                /  max ( AP_I ( iV )  +  AM_I ( iV ),  SqrtTiny )
 
@@ -265,7 +266,7 @@ contains
           F_I ( iV, iF_F ) &
             =  (    AP_I ( iV )  *  F_IL ( iV, iF ) &
                  +  AM_I ( iV )  *  F_IR ( iV, iF ) &
-                 -  AP_I ( iV )  *  AM_I ( iV ) &
+                 -  DF_I ( iV )  *  AP_I ( iV )  *  AM_I ( iV ) &
                     *  ( U_IR ( iV, iF_B )  -  U_IL ( iV, iF_B ) ) ) &
                /  max ( AP_I ( iV )  +  AM_I ( iV ),  SqrtTiny )
 
