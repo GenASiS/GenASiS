@@ -17,6 +17,8 @@ module Slope_DFV_PD__Form
       iTimer_K = 0     !-- Kernel
     class ( DivergencePart_CS_Form ), pointer :: &
       DivergencePart => null ( )
+    class ( DiffusionFactor_CS_Form ), pointer :: &
+      DiffusionFactor => null ( )
     class ( RiemannSolver_HLL_Form ), pointer :: &
       RiemannSolver => null ( )
   contains
@@ -78,12 +80,14 @@ module Slope_DFV_PD__Form
 contains
 
 
-  subroutine InitializeAllocate_PD ( S, RS, DP, IgnorabilityOption )
+  subroutine InitializeAllocate_PD ( S, RS, DF, DP, IgnorabilityOption )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( in ), target :: &
+      DF
     class ( DivergencePart_CS_Form ), intent ( in ), target :: &
       DP
     integer ( KDI ), intent ( in ), optional :: &
@@ -99,8 +103,9 @@ contains
 
     Name  =  trim ( CS % Name ) // '_Slp_DFV_PD_' // trim ( DP % Name )
 
-    S % DivergencePart  =>  DP
-    S % RiemannSolver   =>  RS
+    S % DivergencePart   =>  DP
+    S % DiffusionFactor  =>  DF
+    S % RiemannSolver    =>  RS
 
     call S % Slope_H_Form % Initialize &
            ( CS % Atlas, &
@@ -147,6 +152,7 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
+        DF  =>  S % DiffusionFactor, &
         DP  =>  S % DivergencePart, &
         CS  =>  S % RiemannSolver % CurrentSet, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
@@ -171,10 +177,10 @@ contains
 
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
-      call RS % ComputeFlux ( DP, iC, iD, T_Option = T_RS )
+      call RS % ComputeFlux ( DF, DP, iC, iD, T_Option = T_RS )
       call T_RS % Stop ( )
     else
-      call RS % ComputeFlux ( DP, iC, iD )
+      call RS % ComputeFlux ( DF, DP, iC, iD )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
@@ -367,7 +373,9 @@ contains
       S
 
     nullify ( S % RiemannSolver )
+    nullify ( S % DiffusionFactor )
     nullify ( S % DivergencePart )
+
   end subroutine Finalize
 
 

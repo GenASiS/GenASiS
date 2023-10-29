@@ -30,12 +30,14 @@ module Slope_DFV_F_DP__Form
 contains
 
 
-  subroutine InitializeAllocate_F ( S, RS, DP_1D, IgnorabilityOption )
+  subroutine InitializeAllocate_F ( S, RS, DF, DP_1D, IgnorabilityOption )
 
     class ( Slope_DFV_F_DP_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( in ) :: &
+      DF
     type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
       DP_1D
     integer ( KDI ), intent ( in ), optional :: &
@@ -73,7 +75,7 @@ contains
       allocate ( Slope_DFV_DP_Form :: S % Component ( nSC ) % Element )
       select type ( SDP  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_DP_Form )
-        call SDP % Initialize ( RS, DP_1D ( iDP ) % Element )
+        call SDP % Initialize ( RS, DF, DP_1D ( iDP ) % Element )
       end select !-- SDP
     end do !-- iDP
     end associate !-- nSC

@@ -40,8 +40,6 @@ module RiemannSolver_HLL__Form
       CurrentSet => null ( )
     class ( EigenspeedSet_F_Form ), allocatable :: &
       EigenspeedSet_IL, EigenspeedSet_IR
-    class ( DiffusionFactor_CS_Form ), allocatable :: &
-      DiffusionFactor
     class ( ReconstructionForm ), allocatable :: &
       Reconstruction_PS
   contains
@@ -236,15 +234,13 @@ contains
           RS % FluxSet_IL, &
           RS % FluxSet_IR, &
           RS % EigenspeedSet_IL, &
-          RS % EigenspeedSet_IR, &
-          RS % DiffusionFactor )
+          RS % EigenspeedSet_IR )
       associate &
         ( FS     =>  RS % FluxSet, &
           FS_IL  =>  RS % FluxSet_IL, &
           FS_IR  =>  RS % FluxSet_IR, &
           ES_IL  =>  RS % EigenspeedSet_IL, &
-          ES_IR  =>  RS % EigenspeedSet_IR, &
-          DF     =>  RS % DiffusionFactor )
+          ES_IR  =>  RS % EigenspeedSet_IR )
       call FS % Initialize &
              ( CS % Atlas, &
                FieldOption = CS % Balanced, &
@@ -271,7 +267,6 @@ contains
                IgnorabilityOption = CS % IGNORABILITY + 1 )               
       call ES_IL % Initialize ( CS, CS_IL )
       call ES_IR % Initialize ( CS, CS_IR )
-      call DF % Initialize ( CS )
 
       end associate !-- FS, etc.
       end associate !-- RPS
@@ -404,8 +399,7 @@ contains
       T_RPS, &
       T_CFP, &
       T_ES, &
-      T_A, &
-      T_DF
+      T_A
     
     associate &
       (  CS     =>  RS % CurrentSet, &
@@ -413,7 +407,6 @@ contains
          CS_IR  =>  RS % CurrentSet_IR, &
          ES_IL  =>  RS % EigenspeedSet_IL, &
          ES_IR  =>  RS % EigenspeedSet_IR, &
-         DF     =>  RS % DiffusionFactor, &
         RPS     =>  RS % Reconstruction_PS )
 
     if ( present ( T_Option ) ) then
@@ -432,10 +425,6 @@ contains
       T_A    =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_A, &
                      Name = trim ( RS % Name ) // '_Alpha', &
-                     Level = T_Option % Level + 1 )
-      T_DF   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_DF, &
-                     Name = trim ( RS % Name ) // '_DffsnFctr', &
                      Level = T_Option % Level + 1 )
     else
       T_RPS  =>  null ( )
@@ -479,20 +468,17 @@ contains
     end associate !-- RSS, etc.
     if ( associated ( T_A ) ) call T_A % Stop ( )
 
-    if ( associated ( T_DF ) ) call T_DF % Start ( )
-    call DF % Compute ( iC, iD )
-    call DF % ComputeReconstruction ( RS, RS % DIFFUSION_FACTOR, iC, iD )
-    if ( associated ( T_DF ) ) call T_DF % Stop ( )
-
     end associate !-- CS, etc.
 
   end subroutine Prepare
 
 
-  subroutine ComputeFlux ( RS, DP, iC, iD, T_Option )
+  subroutine ComputeFlux ( RS, DF, DP, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( inout ) :: &
+      DF
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
     integer ( KDI ), intent ( in ) :: &
@@ -527,15 +513,16 @@ contains
                    ( Handle = RS % iTimer_F, &
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
-      T_DF  =>  PROGRAM_HEADER % Timer &
+      T_DF   =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_DF, &
-                     Name = trim ( RS % Name ) // '_Flx', &
+                     Name = trim ( RS % Name ) // '_DffsnFctr', &
                      Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_K_HLL, &
                      Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
+      T_DF  =>  null ( )
       T_F   =>  null ( )
       T_K   =>  null ( )
     end if !-- T_Option
@@ -545,6 +532,11 @@ contains
     call DP % ComputeFluxes ( FS_IL, CS_IL, iC, iD )
     call DP % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
     if ( associated ( T_F ) ) call T_F % Stop ( )
+
+    if ( associated ( T_DF ) ) call T_DF % Start ( )
+    call DF % Compute ( iC, iD )
+    call DF % ComputeReconstruction ( RS, RS % DIFFUSION_FACTOR, iC, iD )
+    if ( associated ( T_DF ) ) call T_DF % Stop ( )
 
     if ( associated ( T_K ) ) call T_K % Start ( )
     associate &
@@ -741,8 +733,6 @@ contains
 
     if ( allocated ( RS % Reconstruction_PS ) ) &
       deallocate ( RS % Reconstruction_PS )
-    if ( allocated ( RS % DiffusionFactor ) ) &
-      deallocate ( RS % DiffusionFactor )
     if ( allocated ( RS % EigenspeedSet_IR ) ) &
       deallocate ( RS % EigenspeedSet_IR )
     if ( allocated ( RS % EigenspeedSet_IL ) ) &

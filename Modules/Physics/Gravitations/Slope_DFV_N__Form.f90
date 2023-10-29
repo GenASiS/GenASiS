@@ -26,13 +26,15 @@ contains
 
 
   subroutine InitializeAllocate_N_DT &
-               ( S, RS, DT, iVelocity_F, iMomentum_B, iBaryonMass_F, &
+               ( S, RS, DF, DT, iVelocity_F, iMomentum_B, iBaryonMass_F, &
                  iBaryonDensity_F, iEnergy_B )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( in ) :: &
+      DF
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DT
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -72,7 +74,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_DT_Form )
 
-    call SF % Initialize ( RS, DT )
+    call SF % Initialize ( RS, DF, DT )
 
     end select !-- SF
 
@@ -98,13 +100,15 @@ contains
 
 
   subroutine InitializeAllocate_N_DP &
-               ( S, RS, DP_1D, iVelocity_F, iMomentum_B, iBaryonMass_F, &
+               ( S, RS, DF, DP_1D, iVelocity_F, iMomentum_B, iBaryonMass_F, &
                  iBaryonDensity_F, iEnergy_B )
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( in ) :: &
+      DF
     type ( DivergencePartElement ), dimension ( : ), intent ( in ) :: &
       DP_1D
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -144,7 +148,7 @@ contains
     select type ( SF  =>  S % Component ( nSC ) % Element )
       class is ( Slope_DFV_F_DP_Form )
 
-    call SF % Initialize ( RS, DP_1D )
+    call SF % Initialize ( RS, DF, DP_1D )
 
     end select !-- SF
 

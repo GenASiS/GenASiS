@@ -29,6 +29,8 @@ module Step_RK_CS__Form
       DivergenceTotal
     type ( DivergencePartElement ), dimension ( : ), allocatable :: &
       DivergencePart
+    class ( DiffusionFactor_CS_Form ), allocatable :: &
+      DiffusionFactor
     class ( RiemannSolver_HLL_Form ), allocatable :: &
       RiemannSolver
   contains
@@ -162,6 +164,15 @@ contains
 
     end if !-- allocated DivergenceTotal or DivergencePart
 
+    !-- DiffusionFactor
+
+    if ( .not. allocated ( S % DiffusionFactor ) ) then
+      allocate ( S % DiffusionFactor )
+      associate ( DF  =>  S % DiffusionFactor )
+      call DF % Initialize ( CS )
+      end associate !-- DF
+    end if
+
     !-- RiemannSolver
 
     if ( .not. allocated ( S % RiemannSolver ) ) then
@@ -237,6 +248,8 @@ contains
 
     if ( allocated ( S % RiemannSolver ) ) &
       deallocate ( S % RiemannSolver )
+    if ( allocated ( S % DiffusionFactor ) ) &
+      deallocate ( S % DiffusionFactor )
     if ( allocated ( S % DivergencePart ) ) &
       deallocate ( S % DivergencePart )
     if ( allocated ( S % DivergenceTotal ) ) &
@@ -468,7 +481,7 @@ contains
       select type ( K )
         class is ( Slope_DFV_F_DT_Form )
       call K % Initialize &
-             ( S % RiemannSolver, S % DivergenceTotal, &
+             ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, &
                IgnorabilityOption = S % IGNORABILITY )
       end select !-- K
     else if ( allocated ( S % DivergencePart ) ) then
@@ -476,7 +489,7 @@ contains
       select type ( K )
         class is ( Slope_DFV_F_DP_Form )
       call K % Initialize &
-             ( S % RiemannSolver, S % DivergencePart, &
+             ( S % RiemannSolver, S % DiffusionFactor, S % DivergencePart, &
                IgnorabilityOption = S % IGNORABILITY )
       end select !-- K
     end if

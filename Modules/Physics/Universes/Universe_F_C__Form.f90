@@ -1309,6 +1309,7 @@ contains
     if ( allocated ( S % DivergenceTotal ) ) then
       call K % Initialize &
              ( S % RiemannSolver, &
+               S % DiffusionFactor, &
                S % DivergenceTotal, &
                iVelocity_F = F % VELOCITY_U, &
                iMomentum_B = iMomentum_B, &
@@ -1318,6 +1319,7 @@ contains
     else if ( allocated ( S % DivergencePart ) ) then
       call K % Initialize &
              ( S % RiemannSolver, &
+               S % DiffusionFactor, &
                S % DivergencePart, &
                iVelocity_F = F % VELOCITY_U, &
                iMomentum_B = iMomentum_B, &
