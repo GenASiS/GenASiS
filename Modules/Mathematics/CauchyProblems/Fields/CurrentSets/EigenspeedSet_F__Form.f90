@@ -15,8 +15,6 @@ module EigenspeedSet_F__Form
 
   type, public, extends ( FieldSet_BM_Form ) :: EigenspeedSet_F_Form
     integer ( KDI ) :: &
-      iTimer = 0
-    integer ( KDI ) :: &
       N_FIELDS_F  = N_FIELDS_F, &
       N_VECTORS_F = N_VECTORS_F
     integer ( KDI ) :: &
@@ -31,8 +29,6 @@ module EigenspeedSet_F__Form
       InitializeAllocate_ES
     generic, public :: &
       Initialize => InitializeAllocate_ES
-    procedure, public, pass :: &
-      Timer
     procedure, public, pass :: &
       Compute
     final :: &
@@ -111,23 +107,6 @@ contains
              IgnorabilityOption = CS % IGNORABILITY + 1 )
 
   end subroutine InitializeAllocate_ES
-
-
-  function Timer ( ES, Level ) result ( T )
-
-    class ( EigenspeedSet_F_Form ), intent ( inout ) :: &
-      ES
-    integer ( KDI ), intent ( in ) :: &
-      Level
-    type ( TimerForm ), pointer :: &
-      T
-
-    T  =>  PROGRAM_HEADER % Timer &
-             ( Handle = ES % iTimer, &
-               Name = ES % Name, &
-               Level = Level )
-
-  end function Timer
 
 
   subroutine Compute ( ES, iC, iD )

@@ -9,7 +9,7 @@ submodule ( RiemannSolver_HLL__Form ) RiemannSolver_HLL__Kernel
 contains
 
 
-  module procedure PrepareKernel
+  module procedure ComputeAlphaKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -51,7 +51,7 @@ contains
     
     end associate   !-- AP_I, AM_I
 
-  end procedure PrepareKernel
+  end procedure ComputeAlphaKernel
 
 
   module procedure ComputeFluxKernel

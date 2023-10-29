@@ -10,14 +10,15 @@ module RiemannSolver_HLL__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_SOLVER_SPEEDS_HLL  =  2
+      N_SOLVER_FIELDS_HLL  =  3
 
   type, public, extends ( FieldSet_BM_Form ) :: RiemannSolver_HLL_Form
     integer ( KDI ) :: &
-      N_SOLVER_SPEEDS_HLL = N_SOLVER_SPEEDS_HLL
+      N_SOLVER_FIELDS_HLL = N_SOLVER_FIELDS_HLL
     integer ( KDI ) :: &
-      ALPHA_PLUS_U    = 0, &
-      ALPHA_MINUS_U   = 0
+      ALPHA_PLUS_U     = 0, &
+      ALPHA_MINUS_U    = 0, &
+      DIFFUSION_FACTOR = 0
     integer ( KDI ) :: &
       iTimer_P     = 0, &  !-- Prepare
       iTimer_C     = 0, &  !-- Compute
@@ -26,6 +27,7 @@ module RiemannSolver_HLL__Form
       iTimer_E     = 0, &  !-- Eigenspeeds
       iTimer_A     = 0, &  !-- Alpha
       iTimer_F     = 0, &  !-- Flux
+      iTimer_DF    = 0, &  !-- DiffusionFactor
       iTimer_K_HLL = 0     !-- Kernel_HLL
     character ( LDL ) :: &
       ReconstructedSet = ''
@@ -64,13 +66,13 @@ module RiemannSolver_HLL__Form
   end type RiemannSolver_HLL_Form
 
     private :: &
-      PrepareKernel, &
+      ComputeAlphaKernel, &
       ComputeFluxKernel, &
       ComputeKernel
 
     interface
       
-      module subroutine PrepareKernel &
+      module subroutine ComputeAlphaKernel &
                ( EP_IL, EP_IR, EM_IL, EM_IR, iAP, iAM, RSV, UseDeviceOption )
         use Basics
         implicit none
@@ -84,7 +86,7 @@ module RiemannSolver_HLL__Form
           RSV     !-- RiemannSolver Value
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine PrepareKernel
+      end subroutine ComputeAlphaKernel
 
       module subroutine ComputeFluxKernel &
                ( RSV, F_IL, F_IR, iaFluxes, iAP, iAM, UseDeviceOption )
@@ -282,12 +284,13 @@ contains
 
     !-- Field indices
 
-    nFields  =  nB  +  RS % N_SOLVER_SPEEDS_HLL
+    nFields  =  nB  +  RS % N_SOLVER_FIELDS_HLL
     if ( present ( nFieldsOption ) )  &
       nFields  =  nFieldsOption
 
-    RS % ALPHA_PLUS_U   =  nB  +  1
-    RS % ALPHA_MINUS_U  =  nB  +  2
+    RS % ALPHA_PLUS_U      =  nB  +  1
+    RS % ALPHA_MINUS_U     =  nB  +  2
+    RS % DIFFUSION_FACTOR  =  nB  +  3
 
     !-- Field names
 
@@ -299,9 +302,10 @@ contains
 
     Field ( : nB )  =  CS % Balanced
 
-    Field ( nB + 1 : nB + RS % N_SOLVER_SPEEDS_HLL ) &
-      =  [ 'AlphaPlus_U ', &
-           'AlphaMinus_U' ]
+    Field ( nB + 1 : nB + RS % N_SOLVER_FIELDS_HLL ) &
+      =  [ 'AlphaPlus_U    ', &
+           'AlphaMinus_U   ', &
+           'DiffusionFactor' ]
           
     !-- FieldSet
 
@@ -454,7 +458,7 @@ contains
          EM_IL  =>  RES_IL % Value ( :, ES_IL % EIGENSPEED_FAST_MINUS_U ), &
          EM_IR  =>  RES_IR % Value ( :, ES_IR % EIGENSPEED_FAST_MINUS_U ) )
     
-    call PrepareKernel &
+    call ComputeAlphaKernel &
            ( EP_IL, EP_IR, EM_IL, EM_IR, &
              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, RSV, &
              UseDeviceOption = RS % DeviceMemory )
@@ -486,6 +490,7 @@ contains
       iaFluxes
     type ( TimerForm ), pointer :: &
       T_F, &
+      T_DF, &
       T_K
     
     call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
@@ -503,6 +508,10 @@ contains
     if ( present ( T_Option ) ) then
       T_F   =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_F, &
+                     Name = trim ( RS % Name ) // '_Flx', &
+                     Level = T_Option % Level + 1 )
+      T_DF  =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_DF, &
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &

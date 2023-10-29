@@ -9,9 +9,7 @@ module DivergencePart_CS__Form
 
   type, public :: DivergencePart_CS_Form
     integer ( KDI ) :: &
-      IGNORABILITY = 0, &
-      iTimer_F     = 0, &
-      iTimer_S     = 0
+      IGNORABILITY = 0
     character ( LDL ) :: &
       Type = '', &
       Name
@@ -22,10 +20,6 @@ module DivergencePart_CS__Form
       Initialize
     procedure, public, pass :: &
       Show => Show_DP
-    procedure, public, pass :: &
-      Timer_F
-    procedure, public, pass :: &
-      Timer_S
     procedure, public, pass ( DP ) :: &
       ComputeFluxes
     procedure, public, pass ( DP ) :: &
@@ -110,42 +104,6 @@ contains
     call Show ( DP % CurrentSet % Name, 'CurrentSet', DP % IGNORABILITY )
 
   end subroutine Show_DP
-
-
-  function Timer_F ( DP, Level ) result ( T )
-
-    class ( DivergencePart_CS_Form ), intent ( inout ) :: &
-      DP
-    integer ( KDI ), intent ( in ) :: &
-      Level
-    type ( TimerForm ), pointer :: &
-      T
-
-    T  =>  PROGRAM_HEADER % Timer &
-             ( Handle = DP % iTimer_F, &
-               Name = 'Flx_' // trim ( DP % Name ) &
-                      // '_' // trim ( DP % CurrentSet % Name ), &
-               Level = Level )
-
-  end function Timer_F
-
-
-  function Timer_S ( DP, Level ) result ( T )
-
-    class ( DivergencePart_CS_Form ), intent ( inout ) :: &
-      DP
-    integer ( KDI ), intent ( in ) :: &
-      Level
-    type ( TimerForm ), pointer :: &
-      T
-
-    T  =>  PROGRAM_HEADER % Timer &
-             ( Handle = DP % iTimer_S, &
-               Name = 'Strss_' // trim ( DP % Name ) &
-                      // '_' // trim ( DP % CurrentSet % Name ), &
-               Level = Level )
-
-  end function Timer_S
 
 
   subroutine ComputeFluxes ( FS_F, DP, FS_CS, iC, iD )

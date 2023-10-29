@@ -12,7 +12,7 @@ module RadiationMoments_BM__Form
   private
 
   integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM    = 15, &
+      N_FIELDS_RM    = 14, &
       N_VECTORS_RM   =  3, &
       N_PRIMITIVE_RM =  7, &
       N_BALANCED_RM  =  4
@@ -37,10 +37,9 @@ module RadiationMoments_BM__Form
       MOMENTUM_DENSITY_C_U = 0, &
       MOMENTUM_DENSITY_B_D = 0
     integer ( KDI ) :: &
-      FLUX_FACTOR        = 0, &
-      STRESS_FACTOR      = 0, &
-      DIFFUSION_FACTOR_E = 0, &
-      HEATING_RATE       = 0
+      FLUX_FACTOR   = 0, &
+      STRESS_FACTOR = 0, &
+      HEATING_RATE  = 0
     integer ( KDI ) :: &
       FLUID_VELOCITY_U_1 = 0, &
       FLUID_VELOCITY_U_2 = 0, &
@@ -240,11 +239,10 @@ contains
     RM % MOMENTUM_DENSITY_B_D_3  =  oF +  8
     RM % FLUX_FACTOR             =  oF +  9
     RM % STRESS_FACTOR           =  oF + 10
-    RM % DIFFUSION_FACTOR_E      =  oF + 11
-    RM % HEATING_RATE            =  oF + 12
-    RM % FLUID_VELOCITY_U_1      =  oF + 13
-    RM % FLUID_VELOCITY_U_2      =  oF + 14
-    RM % FLUID_VELOCITY_U_3      =  oF + 15
+    RM % HEATING_RATE            =  oF + 11
+    RM % FLUID_VELOCITY_U_1      =  oF + 12
+    RM % FLUID_VELOCITY_U_2      =  oF + 13
+    RM % FLUID_VELOCITY_U_3      =  oF + 14
 
     nFields  =  oF  +  RM % N_FIELDS_RM
     if ( present ( nFieldsOption ) ) &
@@ -279,7 +277,6 @@ contains
           'MomentumDensity_B_D_3', &
           'FluxFactor           ', &
           'StressFactor         ', &
-          'DiffusionFactor_E    ', &
           'HeatingRate          ', &
           'FluidVelocity_U_1    ', &
           'FluidVelocity_U_2    ', &

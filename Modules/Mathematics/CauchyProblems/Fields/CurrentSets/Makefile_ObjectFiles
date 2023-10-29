@@ -1,6 +1,8 @@
 CURRENT_SETS = \
   CurrentSets.o \
   EigenspeedSet_F__Form.o \
+  DiffusionFactor_CS__Kernel.o \
+  DiffusionFactor_CS__Form.o \
   DivergencePart_CS__Kernel.o \
   DivergencePart_CS__Form.o \
   CurrentSet_Kernel.o \

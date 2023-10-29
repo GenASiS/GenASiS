@@ -25,6 +25,22 @@ DivergencePart_CS__Form.o: \
   CurrentSet_Form.o \
   DivergencePart_CS__Form.f90
 
+DivergencePart_CS__Kernel.o: \
+  Basics.o \
+  DivergencePart_CS__Form.o \
+  DivergencePart_CS__Kernel.f90
+
+DiffusionFactor_CS__Form.o: \
+  Basics.o \
+  FieldSets.o \
+  CurrentSet_Form.o \
+  DiffusionFactor_CS__Form.f90
+
+DiffusionFactor_CS__Kernel.o: \
+  Basics.o \
+  DiffusionFactor_CS__Form.o \
+  DiffusionFactor_CS__Kernel.f90
+
 EigenspeedSet_F__Form.o: \
   Basics.o \
   FieldSets.o \
@@ -35,6 +51,7 @@ CurrentSets.o: \
   Tally_CS__Form.o \
   CurrentSet_Form.o \
   DivergencePart_CS__Form.o \
+  DiffusionFactor_CS__Form.o \
   EigenspeedSet_F__Form.o \
   CurrentSets.f90
 

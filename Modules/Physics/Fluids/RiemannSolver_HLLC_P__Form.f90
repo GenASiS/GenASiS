@@ -10,11 +10,11 @@ module RiemannSolver_HLLC_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_SOLVER_SPEEDS_HLLC  =  1
+      N_SOLVER_FIELDS_HLLC  =  1
 
   type, public, extends ( RiemannSolver_HLL_Form ) :: RiemannSolver_HLLC_P_Form
     integer ( KDI ) :: &
-      N_SOLVER_SPEEDS_HLLC = N_SOLVER_SPEEDS_HLLC
+      N_SOLVER_FIELDS_HLLC = N_SOLVER_FIELDS_HLLC
     integer ( KDI ) :: &
       ALPHA_CENTER_U = 0
     integer ( KDI ) :: &
@@ -158,9 +158,9 @@ contains
 
     !-- Field indices
 
-    oF  =  nB  +  RS % N_SOLVER_SPEEDS_HLL
+    oF  =  nB  +  RS % N_SOLVER_FIELDS_HLL
 
-    nFields  =  oF  +  RS % N_SOLVER_SPEEDS_HLLC
+    nFields  =  oF  +  RS % N_SOLVER_FIELDS_HLLC
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
@@ -174,7 +174,7 @@ contains
       allocate ( Field ( nFields ) )
     end if !-- FieldOption
 
-    Field ( oF + 1 : oF + RS % N_SOLVER_SPEEDS_HLLC ) &
+    Field ( oF + 1 : oF + RS % N_SOLVER_FIELDS_HLLC ) &
       =  [ 'AlphaCenter_U' ]
           
     !-- FieldSet
