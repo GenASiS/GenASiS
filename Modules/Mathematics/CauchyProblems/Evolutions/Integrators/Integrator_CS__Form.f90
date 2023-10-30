@@ -164,7 +164,7 @@ contains
 
     !-- Courant factor
 
-    I % CourantFactor  =  0.95_KDR
+    I % CourantFactor  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter ( I % CourantFactor, 'CourantFactor' )
 
   end subroutine Initialize_H
@@ -368,8 +368,6 @@ contains
 
     end associate !-- ES_1, etc.
 
-    dT  =  I % CourantFactor  *  dT
-    
   end subroutine Compute_dT_CS_CGS
 
 
@@ -385,9 +383,14 @@ contains
       T_Option
 
     select type ( I )
-    class is ( Integrator_CS_Form )
-      call I % Compute_dT_CS_CGS &
-             ( I % EigenspeedSet_X, dT_Candidate ( 1 ), iC, T_Option )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( dT  =>  dT_Candidate ( 1 ) )
+
+      call I % Compute_dT_CS_CGS ( I % EigenspeedSet_X, dT, iC, T_Option )
+      dT  =  I % CourantFactor  *  dT
+
+    end associate !-- dT
     end select !-- I
 
   end subroutine Compute_dT_Local

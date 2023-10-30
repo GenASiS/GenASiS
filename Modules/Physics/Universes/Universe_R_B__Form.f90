@@ -559,8 +559,6 @@ contains
     end select !-- R
     end select !-- I
 
-    dT  =  U % InteractionFactor  *  dT
-    
   end subroutine Compute_dT_ET_CGS
 
 
@@ -597,27 +595,36 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
+    associate &
+      ( dT_1  =>  dT_Candidate ( 1 ), &
+        dT_2  =>  dT_Candidate ( 2 ), &
+        dT_3  =>  dT_Candidate ( 3 ) )
+
     select type ( U  =>  I % System )
       class is ( Universe_R_B_Form )
     select type ( I )
       class is ( Integrator_CS_1D_BM_CS_Form )
      
+      !-- CS ( Fluid )
 
-      !-- CS
-
-      if ( U % EvolveFluid ) &
+      if ( U % EvolveFluid ) then
         call I % Compute_dT_CS_CGS &
-               ( I % EigenspeedSet_X, dT_Candidate ( 1 ), iC, T_Option )
+               ( I % EigenspeedSet_X, dT_1, iC, T_Option )
+        dT_1  =  I % CourantFactor  *  dT_1
+      end if
 
-      !-- CS_1D
+      !-- CS_1D ( Radiation )
 
-      if ( U % ApplyStreaming ) &
+      if ( U % ApplyStreaming ) then
         call I % Compute_dT_CS_CGS &
-               ( I % EigenspeedSet_X_1D, dT_Candidate ( 2 ), iC, T_Option )
+               ( I % EigenspeedSet_X_1D, dT_2, iC, T_Option )
+        dT_2  =  I % CourantFactor_1D  *  dT_2
+      end if
 
-      if ( U % ApplyInteractions ) &
-        call U % Compute_dT_ET_CGS &
-               ( dT_Candidate ( 3 ), iC, T_Option )
+      if ( U % ApplyInteractions ) then
+        call U % Compute_dT_ET_CGS ( dT_3, iC, T_Option )
+        dT_3  =  U % InteractionFactor  *  dT_3
+      end if
 
       !-- Reduce across CS_1D
 
@@ -631,6 +638,7 @@ contains
 
     end select !-- I
     end select !-- U
+    end associate !-- dT_1, etc.
 
   end subroutine Compute_dT_Local
 

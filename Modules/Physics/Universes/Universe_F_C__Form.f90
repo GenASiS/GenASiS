@@ -1123,8 +1123,6 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
-    dT  =  I % CourantFactor  *  dT
-    
     end associate !-- ES_1, etc.
     end select !-- I
 

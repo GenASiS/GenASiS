@@ -326,8 +326,6 @@ contains
 
     end select !-- G
 
-    dT  =  U % GravityFactor  *  dT
-    
   end subroutine Compute_dT_G_CGS
 
 
@@ -416,21 +414,30 @@ contains
       T_Option
 
     select type ( U  =>  I % System )
-    class is ( Universe_F_C_Form )
-      if ( U % Coarsen ) then
-        call U % Compute_dT_CS_CGS_C ( dT_Candidate ( 1 ), iC, T_Option )
-      else !-- .not. Coarsen
-        select type ( I )
-        class is ( Integrator_CS_Form )
-          call I % Compute_dT_CS_CGS &
-                 ( I % EigenspeedSet_X, dT_Candidate ( 1 ), iC, T_Option )
-        end select !-- I
-      end if !-- Coarsen
-    end select !-- U
+      class is ( Universe_F_CC_Form )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( dT_1  =>  dT_Candidate ( 1 ), &
+        dT_2  =>  dT_Candidate ( 2 ) )
 
-    select type ( U  =>  I % System )
-    class is ( Universe_F_CC_Form )
-      call U % Compute_dT_G_CGS ( dT_Candidate ( 2 ), iC, T_Option )
+    !-- Advection step
+
+    if ( U % Coarsen ) then
+      call U % Compute_dT_CS_CGS_C ( dT_1, iC, T_Option )
+    else !-- .not. Coarsen
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X, dT_1, iC, T_Option )
+    end if !-- Coarsen
+    dT_1  =  I % CourantFactor  *  dT_1
+    
+    !-- Gravity step
+
+    call U % Compute_dT_G_CGS ( dT_2, iC, T_Option )
+    dT_2  =  U % GravityFactor  *  dT_2    
+
+    end associate !-- dT_1, etc.
+    end select !-- I
     end select !-- U
 
   end subroutine Compute_dT_Local

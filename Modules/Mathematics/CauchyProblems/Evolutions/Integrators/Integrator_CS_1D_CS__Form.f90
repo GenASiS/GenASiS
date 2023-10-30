@@ -18,6 +18,8 @@ module Integrator_CS_1D_CS__Form
     integer ( KDI ) :: &
       nCurrentSets = 0, &
       iCurrentSet = 0
+    real ( KDR ) :: &
+      CourantFactor_1D
     class ( Step_RK_H_Form ), allocatable :: &
       Step_1D
   contains
@@ -87,6 +89,12 @@ contains
              T_FinishOption = T_FinishOption, &
              nWriteOption = nWriteOption )
 
+    !-- Courant factor
+
+    I % CourantFactor_1D  =  0.95_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( I % CourantFactor_1D, 'CourantFactor_1D' )
+
   end subroutine Initialize_H
 
 
@@ -115,6 +123,8 @@ contains
 
     call Show ( I % nCurrentSets, 'nCurrentSets', I % IGNORABILITY )
     call Show ( I % iCurrentSet,  'iCurrentSet',  I % IGNORABILITY )
+    call Show ( I % CourantFactor_1D, 'CourantFactor_1D', I % IGNORABILITY )
+
 
   end subroutine ShowParameters
 

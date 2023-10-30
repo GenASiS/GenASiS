@@ -25,6 +25,8 @@ module Universe_F_CE__Form
       InitializeAtlas
   end type Universe_F_CE_Form
 
+    private :: &
+      Compute_dT_Local
 
 contains
 
@@ -66,6 +68,12 @@ contains
              CentralMassOption = CentralMassOption, &
              nCellsPolarOption = nCellsPolarOption, &
              nWriteOption = nWriteOption ) 
+
+    !-- Integrator methods
+
+    associate ( I  =>  U % Integrator )
+    I % Compute_dT_Local  =>  Compute_dT_Local
+    end associate !-- I
 
   end subroutine Initialize_F_CE
 
@@ -199,6 +207,41 @@ contains
     end associate !-- I
 
   end subroutine InitializeAtlas
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_C_Form )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    associate &
+      ( dT_1  =>  dT_Candidate ( 1 ) )
+
+    !-- Advection step
+
+    if ( U % Coarsen ) then
+      call U % Compute_dT_CS_CGS_C ( dT_1, iC, T_Option )
+    else !-- .not. Coarsen
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X, dT_1, iC, T_Option )
+    end if !-- Coarsen
+    dT_1  =  I % CourantFactor  *  dT_1
+    
+    end associate !-- dT_1
+    end select !-- I
+    end select !-- U
+
+  end subroutine Compute_dT_Local
 
 
 end module Universe_F_CE__Form
