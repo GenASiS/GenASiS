@@ -473,12 +473,10 @@ contains
   end subroutine Prepare
 
 
-  subroutine ComputeFlux ( RS, DF, DP, iC, iD, T_Option )
+  subroutine ComputeFlux ( RS, DP, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ) :: &
       RS
-    class ( DiffusionFactor_CS_Form ), intent ( inout ) :: &
-      DF
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
     integer ( KDI ), intent ( in ) :: &
@@ -493,7 +491,6 @@ contains
       iaFluxes
     type ( TimerForm ), pointer :: &
       T_F, &
-      T_DF, &
       T_K
     
     call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
@@ -513,16 +510,11 @@ contains
                    ( Handle = RS % iTimer_F, &
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
-      T_DF   =>  PROGRAM_HEADER % Timer &
-                   ( Handle = RS % iTimer_DF, &
-                     Name = trim ( RS % Name ) // '_DffsnFctr', &
-                     Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_K_HLL, &
                      Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
-      T_DF  =>  null ( )
       T_F   =>  null ( )
       T_K   =>  null ( )
     end if !-- T_Option
@@ -532,11 +524,6 @@ contains
     call DP % ComputeFluxes ( FS_IL, CS_IL, iC, iD )
     call DP % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
     if ( associated ( T_F ) ) call T_F % Stop ( )
-
-    if ( associated ( T_DF ) ) call T_DF % Start ( )
-    call DF % Compute ( iC, iD )
-    call DF % ComputeReconstruction ( RS, RS % DIFFUSION_FACTOR, iC, iD )
-    if ( associated ( T_DF ) ) call T_DF % Stop ( )
 
     if ( associated ( T_K ) ) call T_K % Start ( )
     associate &
@@ -637,10 +624,12 @@ contains
   end subroutine ComputeDiffusion
 
 
-  subroutine Compute ( RS, DP, iC, iD, T_Option )
+  subroutine Compute ( RS, DF, DP, iC, iD, T_Option )
 
     class ( RiemannSolver_HLL_Form ), intent ( inout ), target :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( inout ) :: &
+      DF
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
     integer ( KDI ), intent ( in ) :: &
@@ -655,6 +644,7 @@ contains
       iaFluxes
     type ( TimerForm ), pointer :: &
       T_F, &
+      T_DF, &
       T_K
     
     call Show ( 'Computing ' // trim ( RS % Type ), RS % IGNORABILITY + 3 )
@@ -672,12 +662,17 @@ contains
                    ( Handle = RS % iTimer_F, &
                      Name = trim ( RS % Name ) // '_Flx', &
                      Level = T_Option % Level + 1 )
+      T_DF   =>  PROGRAM_HEADER % Timer &
+                   ( Handle = RS % iTimer_DF, &
+                     Name = trim ( RS % Name ) // '_DffsnFctr', &
+                     Level = T_Option % Level + 1 )
       T_K   =>  PROGRAM_HEADER % Timer &
                    ( Handle = RS % iTimer_K_HLL, &
                      Name = trim ( RS % Name ) // '_Krnl_HLL', &
                      Level = T_Option % Level + 1 )
     else
       T_F   =>  null ( )
+      T_DF  =>  null ( )
       T_K   =>  null ( )
     end if !-- T_Option
 
@@ -686,6 +681,11 @@ contains
     call DP % ComputeFluxes ( FS_IR, CS_IR, iC, iD )
     if ( associated ( T_F ) ) call T_F % Stop ( )
 
+    if ( associated ( T_DF ) ) call T_DF % Start ( )
+    call DF % Compute ( iC, iD )
+    call DF % ComputeReconstruction ( RS, RS % DIFFUSION_FACTOR, iC, iD )
+    if ( associated ( T_DF ) ) call T_DF % Stop ( )
+    
     if ( associated ( T_K ) ) call T_K % Start ( )
     associate &
       ( RSS     =>  RS % Storage ( iC ), &

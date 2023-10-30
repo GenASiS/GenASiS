@@ -230,10 +230,12 @@ contains
   end subroutine InitializeAllocate_RS
 
 
-  subroutine Compute ( RS, DP, iC, iD, T_Option )
+  subroutine Compute ( RS, DF, DP, iC, iD, T_Option )
 
     class ( RiemannSolver_HLLC_P_Form ), intent ( inout ), target :: &
       RS
+    class ( DiffusionFactor_CS_Form ), intent ( inout ) :: &
+      DF
     class ( DivergencePart_CS_Form ), intent ( inout ) :: &
       DP
     integer ( KDI ), intent ( in ) :: &
@@ -268,7 +270,7 @@ contains
     end if !-- T_Option
 
     if ( associated ( T_HLL ) ) call T_HLL % Start ( )
-    call RS % RiemannSolver_HLL_Form % Compute ( DP, iC, iD, T_Option )
+    call RS % RiemannSolver_HLL_Form % Compute ( DF, DP, iC, iD, T_Option )
     if ( associated ( T_HLL ) ) call T_HLL % Stop ( )
 
     select type ( CS  =>  RS % CurrentSet )

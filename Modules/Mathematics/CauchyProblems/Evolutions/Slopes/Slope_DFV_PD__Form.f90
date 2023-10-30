@@ -152,7 +152,6 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
-        DF  =>  S % DiffusionFactor, &
         DP  =>  S % DivergencePart, &
         CS  =>  S % RiemannSolver % CurrentSet, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
@@ -177,10 +176,10 @@ contains
 
     if ( associated ( T_RS ) ) then
       call T_RS % Start ( )
-      call RS % ComputeFlux ( DF, DP, iC, iD, T_Option = T_RS )
+      call RS % ComputeFlux ( DP, iC, iD, T_Option = T_RS )
       call T_RS % Stop ( )
     else
-      call RS % ComputeFlux ( DF, DP, iC, iD )
+      call RS % ComputeFlux ( DP, iC, iD )
     end if
 
     if ( associated ( T_K ) ) call T_K % Start ( )
@@ -261,6 +260,7 @@ contains
 
     associate &
       ( RS  =>  S % RiemannSolver, &
+        DF  =>  S % DiffusionFactor, &
         DP  =>  S % DivergencePart, &
         CS  =>  S % RiemannSolver % CurrentSet, &
          G  =>  S % RiemannSolver % CurrentSet % Geometry )
@@ -302,10 +302,10 @@ contains
         end if
         if ( associated ( T_RSC ) ) then
           call T_RSC % Start ( )
-          call RS % Compute ( DP, iC, iD, T_Option = T_RSC )
+          call RS % Compute ( DF, DP, iC, iD, T_Option = T_RSC )
           call T_RSC % Stop ( )
         else
-          call RS % Compute ( DP, iC, iD )
+          call RS % Compute ( DF, DP, iC, iD )
         end if
 
         if ( present ( T_Option ) ) then
