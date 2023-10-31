@@ -31,7 +31,7 @@ contains
 
     class ( Slope_DFV_N_Form ), intent ( inout ) :: &
       S
-    class ( RiemannSolver_HLL_Form ), intent ( in ), target :: &
+    class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       RS
     class ( DiffusionFactor_CS_Form ), intent ( in ) :: &
       DF
