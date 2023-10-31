@@ -91,7 +91,7 @@ contains
 
     !-- Courant factor
 
-    I % CourantFactor_1D  =  0.95_KDR
+    I % CourantFactor_1D  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor_1D, 'CourantFactor_1D' )
 

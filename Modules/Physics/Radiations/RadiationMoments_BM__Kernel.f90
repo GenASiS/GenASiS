@@ -420,6 +420,11 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      H, &
+      H_Dim_H, &
+      c_D, &
+      SqrtTiny
     logical ( KDL ) :: &
       UseDevice      
           
@@ -429,22 +434,64 @@ contains
       
     nV  =  size ( EF_P )
 
+    SqrtTiny   =  sqrt ( tiny ( 0.0_KDR ) )
+
     if ( UseDevice ) then
+
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP private ( H, H_Dim_H, c_D ) &
+      !$OMP shared ( SqrtTiny )
       do iV = 1, nV
-        EF_P ( iV )  =  + sqrt ( M_UU_Dim ( iV ) )  *  c 
-        EF_M ( iV )  =  - sqrt ( M_UU_Dim ( iV ) )  *  c
+
+        !-- CYC: This convex combination of streaming and diffusion speeds
+        !        is my own hack, not actual eigenvalues.
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        H  =  max ( H, SqrtTiny )
+
+        H_Dim_H  =  H_Dim ( iV )  /  H
+        
+        c_D  =  sqrt ( M_UU_Dim ( iV ) )  *  c  /  sqrt ( 3.0_KDR )
+
+        EF_P ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
+                        +  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
+        EF_M ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
+                        -  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
+
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
     else
+
       !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP private ( H, H_Dim_H, c_D ) &
+      !$OMP shared ( SqrtTiny )
       do iV = 1, nV
-        EF_P ( iV )  =  + sqrt ( M_UU_Dim ( iV ) )  *  c 
-        EF_M ( iV )  =  - sqrt ( M_UU_Dim ( iV ) )  *  c
+
+        !-- CYC: This convex combination of streaming and diffusion speeds
+        !        is my own hack, not actual eigenvalues.
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        H  =  max ( H, SqrtTiny )
+
+        H_Dim_H  =  H_Dim ( iV )  /  H
+        
+        c_D  =  sqrt ( M_UU_Dim ( iV ) )  *  c  /  sqrt ( 3.0_KDR )
+
+        EF_P ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
+                        +  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
+        EF_M ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
+                        -  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
+
       end do
       !$OMP end parallel do
+
     end if
 
   end procedure Compute_ES_G_Kernel

@@ -410,36 +410,38 @@ contains
       associate &
         ( R  =>  I % CurrentSet_X_1D )
 
-      if ( U % ApplyStreaming .and. .not. U % ApplyInteractions ) then
+      allocate ( Step_RK_CS_Form :: I % Step_1D )
+      select type ( S  =>  I % Step_1D )
+        class is ( Step_RK_CS_Form )
 
-        allocate ( Step_RK_CS_Form :: I % Step_1D )
-        select type ( S  =>  I % Step_1D )
-          class is ( Step_RK_CS_Form )
+      if ( U % ApplyStreaming .and. .not. U % ApplyInteractions ) then
 
         allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
         associate ( DT  =>  S % DivergenceTotal )
         call DT % Initialize ( R )
         end associate !-- DT
 
-        call S % Initialize ( R )
-
-        end select !-- S
-
       else if ( U % ApplyInteractions .and. .not. U % ApplyStreaming ) then
-
-        allocate ( Step_RK_CS_Form :: I % Step_1D )
-        select type ( S  =>  I % Step_1D )
-          class is ( Step_RK_CS_Form )
 
         S % SetSlope  =>  SetSlope_RM_I 
 
-        call S % Initialize ( R )
+      else if ( U % ApplyStreaming .and. U % ApplyInteractions ) then
 
-        end select !-- S
+        allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+        associate ( DT  =>  S % DivergenceTotal )
+        call DT % Initialize ( R )
+        end associate !-- DT
 
-        
+        allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
+        associate ( DF  =>  S % DiffusionFactor )
+        call DF % Initialize ( R )
+        end associate !-- DF
+
       end if !-- Radiation operators
 
+      call S % Initialize ( R )
+
+      end select !-- S
       end associate !-- R
 
     end select !-- I

@@ -228,6 +228,8 @@ contains
     class ( Step_RK_CS_Form ), intent ( in ) :: &
       S
 
+   integer ( KDI ) :: &
+     iP  !-- iPart
    character ( LDL ), dimension ( : ), allocatable :: &
      TypeWord, &
      TypePiece
@@ -236,6 +238,16 @@ contains
 
     call S % Solution % Show ( )
     call S % Intermediate % Show ( )
+
+    if ( allocated ( S % DivergenceTotal ) ) &
+      call S % DivergenceTotal % Show ( )
+    if ( allocated ( S % DivergencePart ) ) then
+      do iP  =  1,  size ( S % DivergencePart )
+        call S % DivergencePart ( iP ) % Element % Show ( )
+      end do
+    end if
+
+    call S % DiffusionFactor % Show ( )
     call S % RiemannSolver % Show ( )
 
   end subroutine Show_S

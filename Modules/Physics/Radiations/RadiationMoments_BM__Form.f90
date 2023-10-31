@@ -129,14 +129,16 @@ module RadiationMoments_BM__Form
       end subroutine Compute_J_H_G_Kernel
 
       module subroutine Compute_ES_G_Kernel &
-               ( c, M_UU_Dim, EF_P, EF_M, UseDeviceOption )
+               ( H_1, H_2, H_3, H_Dim, FF, M_DD_11, M_DD_22, M_DD_33, &
+                 M_UU_Dim, c, EF_P, EF_M, UseDeviceOption )
         !-- Compute_EigenspeedSet_Galileo_Kernel
         use Basics
         implicit none
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          H_1, H_2, H_3, H_Dim, FF, &
+          M_DD_11, M_DD_22, M_DD_33, M_UU_Dim
         real ( KDR ), intent ( in ) :: &
           c
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          M_UU_Dim
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           EF_P, EF_M
         logical ( KDL ), intent ( in ), optional :: &
@@ -611,16 +613,26 @@ contains
         GSV  =>  G     % Storage ( iC ) % Value )
     associate &
       (   EF_P    =>  ESV ( :, iaEigenspeeds ( 1 ) ), &
-          EF_M    =>  ESV ( :, iaEigenspeeds ( 2 ) ), & 
+          EF_M    =>  ESV ( :, iaEigenspeeds ( 2 ) ), &
+           H_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+           H_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+           H_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+           H_Dim  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U ( iD ) ), &
+          FF      =>  CSV ( :, CS % FLUX_FACTOR ), &
+        M_DD_11   =>  GSV ( :, G % METRIC_F_DD ( 1 ) ), &
+        M_DD_22   =>  GSV ( :, G % METRIC_F_DD ( 2 ) ), &
+        M_DD_33   =>  GSV ( :, G % METRIC_F_DD ( 3 ) ), &
         M_UU_Dim  =>  GSV ( :, G % METRIC_F_UU ( iD ) ) )
  
     call Compute_ES_G_Kernel &
-           ( CONSTANT % SPEED_OF_LIGHT, M_UU_Dim, EF_P, EF_M, &
+           ( H_1, H_2, H_3, H_Dim, FF, M_DD_11, M_DD_22, M_DD_33, M_UU_Dim, &
+             CONSTANT % SPEED_OF_LIGHT, EF_P, EF_M, &
              UseDeviceOption = CS % DeviceMemory )
   
     end associate !-- EF_P, etc.
     end associate !-- ESV, etc.
     end associate !-- G
+
 
   end subroutine ComputeEigenspeeds
 
