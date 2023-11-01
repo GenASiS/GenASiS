@@ -68,6 +68,17 @@ contains
 
     end select !-- SD
 
+    !-- Slope component: Interactions
+
+    nSC  =  nSC + 1
+    allocate ( Slope_RM_I_Form :: S % Component ( nSC ) % Element )
+    select type ( SI  =>  S % Component ( nSC ) % Element )
+      class is ( Slope_RM_I_Form )
+
+    call SI % Initialize ( RM )
+
+    end select !-- SI
+
     !-- Cleanup
 
     end associate !-- nSC
