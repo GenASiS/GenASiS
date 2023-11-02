@@ -57,10 +57,12 @@ contains
   end subroutine InitializeAllocate_F_P_S
 
 
-  subroutine Compute ( S, T_Option )
+  subroutine Compute ( S, dT, T_Option )
 
     class ( Slope_F_P_S_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 

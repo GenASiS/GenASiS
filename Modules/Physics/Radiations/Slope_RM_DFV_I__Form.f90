@@ -34,7 +34,7 @@ contains
       DF
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DT
-    class ( RadiationMoments_BM_Form ), intent ( in ) :: &
+    class ( RadiationMoments_BM_Form ), intent ( in ), target :: &
       RM
 
     character ( LDL ) :: &

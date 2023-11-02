@@ -124,10 +124,12 @@ contains
   end subroutine InitializeAllocate_C_N
 
 
-  subroutine Compute ( S, T_Option )
+  subroutine Compute ( S, dT, T_Option )
 
     class ( Slope_DFV_C_N_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 

@@ -65,7 +65,8 @@ module Universe_R_B__Form
       Compute_dT_Local, &
       SetSlope_F_P_S, &
       SetSlope_RM_I, &
-      SetSlope_RM_DFV_I
+      SetSlope_RM_DFV_I, &
+      SetSlope_RM_DFV_I_I
 
       private :: &
         Compute_dT_ET_CGS_Kernel
@@ -478,7 +479,8 @@ contains
         call DF % Initialize ( R )
         end associate !-- DF
 
-        S % SetSlope  =>  SetSlope_RM_DFV_I 
+!        S % SetSlope  =>  SetSlope_RM_DFV_I
+        S % SetSlope  =>  SetSlope_RM_DFV_I_I 
 
       end if !-- Radiation operators
 
@@ -812,6 +814,33 @@ contains
     end select !-- S
 
   end subroutine SetSlope_RM_DFV_I
+
+
+  subroutine SetSlope_RM_DFV_I_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_RM_DFV_I_I_Form :: K )
+    select type ( K )
+      class is ( Slope_RM_DFV_I_I_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( RadiationMoments_BM_Form )
+
+    call K % Initialize &
+           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, R )
+            !, IgnorabilityOption = S % IGNORABILITY )
+
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_RM_DFV_I_I
 
 
 end module Universe_R_B__Form

@@ -230,10 +230,12 @@ contains
   end subroutine ComputeDimension
 
 
-  subroutine Compute ( S, T_Option )
+  subroutine Compute ( S, dT, T_Option )
 
     class ( Slope_DFV_PD_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 

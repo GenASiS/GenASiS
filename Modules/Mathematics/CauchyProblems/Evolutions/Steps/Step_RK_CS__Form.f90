@@ -385,7 +385,7 @@ contains
       T_CS   =>  null ( )
     end if
     if ( associated ( T_CS ) ) call T_CS % Start ( )
-    call K % Compute ( T_Option = T_CS )
+    call K % Compute ( dT, T_Option = T_CS )
     if ( associated ( T_CS ) ) call T_CS % Stop ( )
 
     !-- Coarsening

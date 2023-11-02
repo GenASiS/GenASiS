@@ -97,10 +97,12 @@ contains
   end subroutine InitializeAllocate_RM_I
 
 
-  subroutine Compute ( S, T_Option )
+  subroutine Compute ( S, dT, T_Option )
 
     class ( Slope_RM_I_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 

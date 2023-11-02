@@ -173,10 +173,12 @@ contains
   end function Timer
 
 
-  subroutine Compute ( S, T_Option )
+  subroutine Compute ( S, dT, T_Option )
 
     class ( Slope_H_Form ), intent ( inout ) :: &
       S
+    real ( KDR ), intent ( in ) :: &
+      dT
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
@@ -197,10 +199,10 @@ contains
         if ( present ( T_Option ) ) then
           T_C  =>  SC % Timer ( Level = T_Option % Level + 1 )
           call T_C % Start ( )
-          call SC % Compute ( T_Option = T_C )
+          call SC % Compute ( dT, T_Option = T_C )
           call T_C % Stop ( )
         else
-          call SC % Compute ( )
+          call SC % Compute ( dT )
         end if
 
         end associate !-- SC
