@@ -8,5 +8,6 @@ module Radiations
   use DiffusionFactor_RM__Form
   use Slope_RM_I__Form
   use Slope_RM_DFV_I__Form
+  use Slope_F_RM_I__Form
 
 end module Radiations

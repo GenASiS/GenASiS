@@ -377,7 +377,7 @@ contains
       call S % InitializeIntermediate ( iS )
       if ( associated ( T_II ) ) call T_II % Stop ( )
 
-      !-- Loop: Set  Y  =   Y  +  A * K ( iK )
+      !-- Loop: Set  Y  =   Y  +  dT * A * K ( iK )
 
       if ( associated ( T_II_A ) ) call T_II_A % Start ( )
       do iK = 1, iS - 1

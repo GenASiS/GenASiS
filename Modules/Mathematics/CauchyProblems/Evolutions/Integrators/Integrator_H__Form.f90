@@ -98,6 +98,8 @@ module Integrator_H__Form
       SetReference => null ( )
     procedure ( STCI ), pointer :: &
       Set_T_CheckpointInterval => null ( )
+    procedure ( PS ), pointer :: &
+      PrepareStep => null ( )
     procedure ( C_dT_L ), pointer :: &
       Compute_dT_Local => null ( )
     procedure ( IS ), pointer :: &
@@ -233,6 +235,13 @@ module Integrator_H__Form
       class ( Integrator_H_Form ), intent ( inout ), target :: &
         I
     end subroutine STCI
+
+    subroutine PS ( I )
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+    end subroutine PS
 
     subroutine C_dT_L ( I, dT_Candidate, iC, T_Option )
       use Basics
@@ -941,6 +950,8 @@ contains
     ! class is ( Chart_SLD_Form )
 
     if ( allocated ( I % Step_X ) ) then
+      if ( associated ( I % PrepareStep ) ) &
+        call I % PrepareStep ( )
       associate ( S  =>  I % Step_X )
       T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
       call T_S % Start ( )

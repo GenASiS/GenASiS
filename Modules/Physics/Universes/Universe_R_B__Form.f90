@@ -61,7 +61,9 @@ module Universe_R_B__Form
 
     private :: &
       ResolveCycle_R, &
+      PrepareStep_F, &
       Compute_dT_Local, &
+      SetSlope_F_RM_I, &
       SetSlope_RM_I, &
       SetSlope_RM_DFV_I
 
@@ -192,6 +194,8 @@ contains
     !-- Integrator methods
 
     associate ( I  =>  U % Integrator )
+    I % ResolveCycle      =>  ResolveCycle_R
+    I % PrepareStep       =>  PrepareStep_F
     I % Compute_dT_Local  =>  Compute_dT_Local
     end associate !-- I
 
@@ -400,8 +404,9 @@ contains
 
     !-- Fluid step
 
-    if ( U % EvolveFluid ) &
+    if ( U % EvolveFluid ) then
       call U % InitializeStep ( )
+    end if
 
     !-- Radiation step
 
@@ -487,8 +492,6 @@ contains
              Unit_T_Option = U % Units_F ( 1 ) % Time, &
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
-
-    I % ResolveCycle  =>  ResolveCycle_R
 
     end select !-- I
 
@@ -586,6 +589,24 @@ contains
   end subroutine ResolveCycle_R
 
 
+  subroutine PrepareStep_F ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( I )
+      class is ( Integrator_CS_1D_CS_Form )
+    select type ( S_1D  =>  I % Step_1D )
+      class is ( Step_RK_CS_Form )
+
+call Show ( '>>> PrepareStep' )
+
+    end select !-- S_1D
+    end select !-- I
+
+  end subroutine PrepareStep_F
+
+
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ), target :: &
@@ -648,6 +669,33 @@ contains
   end subroutine Compute_dT_Local
 
 
+  subroutine SetSlope_F_RM_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_F_RM_I_Form :: K )
+    select type ( K )
+      class is ( Slope_F_RM_I_Form )
+!     select type ( R  =>  S % CurrentSet )
+!       class is ( RadiationMoments_BM_Form )
+
+!     call K % Initialize &
+!            ( R )!, &
+! !             IgnorabilityOption = S % IGNORABILITY )
+
+!     end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_F_RM_I
+
+
   subroutine SetSlope_RM_I ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
@@ -667,9 +715,9 @@ contains
     call K % Initialize &
            ( R )!, &
 !             IgnorabilityOption = S % IGNORABILITY )
-    end select !-- K
 
     end select !-- R
+    end select !-- K
     end select !-- S
 
   end subroutine SetSlope_RM_I
@@ -694,9 +742,9 @@ contains
     call K % Initialize &
            ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, R )
             !, IgnorabilityOption = S % IGNORABILITY )
-    end select !-- K
 
     end select !-- R
+    end select !-- K
     end select !-- S
 
   end subroutine SetSlope_RM_DFV_I

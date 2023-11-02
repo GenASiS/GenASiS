@@ -179,6 +179,8 @@ contains
     end if !-- allocated Step_1D
 
     if ( allocated ( I % Step_X ) ) then
+      if ( associated ( I % PrepareStep ) ) &
+        call I % PrepareStep ( )
       associate ( S  =>  I % Step_X )
       T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
       call T_S % Start ( )
