@@ -424,6 +424,8 @@ contains
       H, &
       H_Dim_H, &
       c_D, &
+      SF, SFP, &
+      D, &
       SqrtTiny
     logical ( KDL ) :: &
       UseDevice      
@@ -440,12 +442,13 @@ contains
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP private ( H, H_Dim_H, c_D ) &
+      !$OMP private ( H, H_Dim_H, c_D, SF, SFP, D ) &
       !$OMP shared ( SqrtTiny )
       do iV = 1, nV
+        ! !-- Speed of light streaming
 
-        !-- CYC: This convex combination of streaming and diffusion speeds
-        !        is my own hack, not actual eigenvalues.
+        ! EF_P ( iV )  =    sqrt ( M_UU_Dim ( iV ) )  *  c
+        ! EF_M ( iV )  =  - sqrt ( M_UU_Dim ( iV ) )  *  c
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
@@ -454,12 +457,34 @@ contains
 
         H_Dim_H  =  H_Dim ( iV )  /  H
         
-        c_D  =  sqrt ( M_UU_Dim ( iV ) )  *  c  /  sqrt ( 3.0_KDR )
+        ! !-- A convex combination of streaming and diffusion speeds
+        ! !        is my own hack, not actual eigenvalues.
 
-        EF_P ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
-                        +  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
-        EF_M ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
-                        -  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
+        ! c_D  =  sqrt ( M_UU_Dim ( iV ) )  *  c  /  sqrt ( 3.0_KDR )
+
+        ! EF_P ( iV )  =  FF ( iV )**2  *  H_Dim_H  *  c  &
+        !                 +  ( 1.0_KDR  -  FF ( iV )**2 )  *  c_D
+        ! EF_M ( iV )  =  FF ( iV )**2  *  H_Dim_H  *  c  &
+        !                 -  ( 1.0_KDR  -  FF ( iV )**2 )  *  c_D
+
+        !-- 1D eigenvalues from Endeve et al. 2017
+
+        SF  =  1.0_KDR / 3.0_KDR  &
+               +  2.0_KDR / 15.0_KDR  &
+                  *  FF ( iV ) ** 2 &
+                     *  ( 3.0_KDR  -  FF ( iV )  +  3.0_KDR  *  FF ( iV ) ** 2 )
+
+        SFP  =  2.0_KDR / 5.0_KDR  *  FF ( iV )  &
+                *  ( 2.0_KDR  -  FF ( iV )  +  4.0_KDR  *  FF ( iV ) ** 2 )
+
+        D  =  max ( ( SFP  -  2.0_KDR  *  FF ( iV ) ) ** 2  &
+                    +  4.0_KDR * ( SF  -  FF ( iV ) ** 2 ), &
+                    tiny ( 0.0_KDR ) )
+
+        EF_P ( iV )  =  ( H_Dim_H * SFP  &
+                          +  sqrt ( M_UU_Dim ( iV )  * D ) )  /  2.0_KDR 
+        EF_M ( iV )  =  ( H_Dim_H * SFP  &
+                          -  sqrt ( M_UU_Dim ( iV )  * D ) )  /  2.0_KDR 
 
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -468,12 +493,14 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( H, H_Dim_H, c_D ) &
+      !$OMP private ( H, H_Dim_H, c_D, SF, SFP, D ) &
       !$OMP shared ( SqrtTiny )
       do iV = 1, nV
 
-        !-- CYC: This convex combination of streaming and diffusion speeds
-        !        is my own hack, not actual eigenvalues.
+        ! !-- Speed of light streaming
+
+        ! EF_P ( iV )  =    sqrt ( M_UU_Dim ( iV ) )  *  c
+        ! EF_M ( iV )  =  - sqrt ( M_UU_Dim ( iV ) )  *  c
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
@@ -482,12 +509,34 @@ contains
 
         H_Dim_H  =  H_Dim ( iV )  /  H
         
-        c_D  =  sqrt ( M_UU_Dim ( iV ) )  *  c  /  sqrt ( 3.0_KDR )
+        ! !-- A convex combination of streaming and diffusion speeds
+        ! !        is my own hack, not actual eigenvalues.
 
-        EF_P ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
-                        +  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
-        EF_M ( iV )  =  FF ( iV )  *  H_Dim_H  *  c  &
-                        -  ( 1.0_KDR  -  FF ( iV ) )  *  c_D
+        ! c_D  =  sqrt ( M_UU_Dim ( iV ) )  *  c  /  sqrt ( 3.0_KDR )
+
+        ! EF_P ( iV )  =  FF ( iV )**2  *  H_Dim_H  *  c  &
+        !                 +  ( 1.0_KDR  -  FF ( iV )**2 )  *  c_D
+        ! EF_M ( iV )  =  FF ( iV )**2  *  H_Dim_H  *  c  &
+        !                 -  ( 1.0_KDR  -  FF ( iV )**2 )  *  c_D
+
+        !-- 1D eigenvalues from Endeve et al. 2017
+
+        SF  =  1.0_KDR / 3.0_KDR  &
+               +  2.0_KDR / 15.0_KDR  &
+                  *  FF ( iV ) ** 2 &
+                     *  ( 3.0_KDR  -  FF ( iV )  +  3.0_KDR  *  FF ( iV ) ** 2 )
+
+        SFP  =  2.0_KDR / 5.0_KDR  *  FF ( iV )  &
+                *  ( 2.0_KDR  -  FF ( iV )  +  4.0_KDR  *  FF ( iV ) ** 2 )
+
+        D  =  max ( ( SFP  -  2.0_KDR  *  FF ( iV ) ) ** 2  &
+                    +  4.0_KDR * ( SF  -  FF ( iV ) ** 2 ), &
+                    tiny ( 0.0_KDR ) )
+
+        EF_P ( iV )  =  ( H_Dim_H * SFP  &
+                          +  sqrt ( M_UU_Dim ( iV )  * D ) )  /  2.0_KDR 
+        EF_M ( iV )  =  ( H_Dim_H * SFP  &
+                          -  sqrt ( M_UU_Dim ( iV )  * D ) )  /  2.0_KDR 
 
       end do
       !$OMP end parallel do
