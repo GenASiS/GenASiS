@@ -63,7 +63,7 @@ module Universe_R_B__Form
       ResolveCycle_R, &
       PrepareStep_F, &
       Compute_dT_Local, &
-      SetSlope_F_RM_I, &
+      SetSlope_F_P_S, &
       SetSlope_RM_I, &
       SetSlope_RM_DFV_I
 
@@ -402,10 +402,45 @@ contains
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
+    character ( LDL ) :: &
+      RiemannSolverType
+
     !-- Fluid step
 
     if ( U % EvolveFluid ) then
-      call U % InitializeStep ( )
+ 
+      select type ( I  =>  U % Integrator )
+        class is ( Integrator_CS_Form )
+      associate &
+        ( F  =>  I % CurrentSet_X )
+
+      allocate ( Step_RK_CS_Form :: I % Step_X )
+      select type ( S  =>  I % Step_X )
+        class is ( Step_RK_CS_Form )
+
+      allocate ( DivergencePart_F_P_T_Form :: S % DivergenceTotal )
+      associate ( DT  =>  S % DivergenceTotal )
+        call DT % Initialize ( F )
+      end associate !-- DT
+
+      RiemannSolverType = 'HLLC'
+      call PROGRAM_HEADER % GetParameter &
+             ( RiemannSolverType, 'RiemannSolverType' )
+      if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+        allocate ( RiemannSolver_HLLC_P_Form :: S % RiemannSolver )
+        associate ( RS  =>  S % RiemannSolver )
+        call RS % Initialize ( F )
+        end associate !-- RS
+      end if
+
+      S % SetSlope  =>  SetSlope_F_P_S
+
+      call S % Initialize ( F )
+
+      end select !-- S
+      end associate !-- F
+      end select !-- I
+
     end if
 
     !-- Radiation step
@@ -594,13 +629,43 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
+    integer ( KDI ) :: &
+      iC, &  !-- iChart
+      iEnergy_R, iEnergy_F
+
     select type ( I )
-      class is ( Integrator_CS_1D_CS_Form )
+      class is ( Integrator_CS_1D_BM_CS_Form )
     select type ( S_1D  =>  I % Step_1D )
       class is ( Step_RK_CS_Form )
+    select type ( SS_R_I  =>  S_1D % SlopeSum % Component ( 2 ) % Element )
+      class is ( Slope_RM_I_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
 
-call Show ( '>>> PrepareStep' )
+    call Search &
+           ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
+    call Search &
+           ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_F )
 
+    do iC  =  1,  F % Atlas % nCharts    
+      associate &
+        ( RSV  =>  SS_R_I % Storage ( iC ) % Value, &
+          FSV  =>  F % Source % Storage ( iC ) % Value )
+      associate &
+        ( RS_E  =>  RSV ( :, iEnergy_R ), &
+          FS_G  =>  FSV ( :, iEnergy_F ) )
+          
+      FS_G  =  - RS_E
+
+      end associate !-- RS_E, etc.
+      end associate !-- RSV, etc.      
+    end do !-- iC
+
+    end select !-- F
+    end select !-- R
+    end select !-- SS_R_I
     end select !-- S_1D
     end select !-- I
 
@@ -669,7 +734,7 @@ call Show ( '>>> PrepareStep' )
   end subroutine Compute_dT_Local
 
 
-  subroutine SetSlope_F_RM_I ( S, K )
+  subroutine SetSlope_F_P_S ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
@@ -679,21 +744,20 @@ call Show ( '>>> PrepareStep' )
     select type ( S )
       class is ( Step_RK_CS_Form )
 
-    allocate ( Slope_F_RM_I_Form :: K )
+    allocate ( Slope_F_P_S_Form :: K )
     select type ( K )
-      class is ( Slope_F_RM_I_Form )
-!     select type ( R  =>  S % CurrentSet )
-!       class is ( RadiationMoments_BM_Form )
+      class is ( Slope_F_P_S_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_P_Form )
 
-!     call K % Initialize &
-!            ( R )!, &
-! !             IgnorabilityOption = S % IGNORABILITY )
+    call K % Initialize ( F )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
 
-!     end select !-- R
+    end select !-- F
     end select !-- K
     end select !-- S
 
-  end subroutine SetSlope_F_RM_I
+  end subroutine SetSlope_F_P_S
 
 
   subroutine SetSlope_RM_I ( S, K )

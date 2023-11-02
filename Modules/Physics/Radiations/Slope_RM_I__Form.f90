@@ -16,7 +16,7 @@ module Slope_RM_I__Form
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_B
     class ( RadiationMoments_BM_Form ), pointer :: &
-      RadiationMoments
+      RadiationMoments => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_RM_I

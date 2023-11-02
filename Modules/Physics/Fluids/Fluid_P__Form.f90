@@ -35,6 +35,8 @@ module Fluid_P__Form
       TemperatureMin
     logical ( KDL ) :: &
       UseInitialTemperature
+    type ( FieldSet_BM_Form ), allocatable :: &
+      Source
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
@@ -499,6 +501,9 @@ contains
 
     type ( Fluid_P_Form ), intent ( inout ) :: &
       F
+
+    if ( allocated ( F % Source ) ) &
+      deallocate ( F % Source )
 
   end subroutine Finalize
 

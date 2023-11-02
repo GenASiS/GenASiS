@@ -232,6 +232,12 @@ Coarsening_C_F__Kernel.o: \
   Coarsening_C_F__Form.o \
   Coarsening_C_F__Kernel.f90
 
+Slope_F_P_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Form.o \
+  Slope_F_P_S__Form.f90
+
 Fluids.o: \
   Units_F__Form.o \
   EOS_P_HN_OConnorOtt__Form.o \
@@ -253,6 +259,7 @@ Fluids.o: \
   DivergencePart_F_P_HN_V__Form.o \
   DivergencePart_F_P_HN_P__Form.o \
   Coarsening_C_F__Form.o \
+  Slope_F_P_S__Form.o \
   Fluids.f90
 #  Slope_DFV_F_F_P_HN__Form.o \
 #  Slope_DFV_N_F_P_HN__Form.o \

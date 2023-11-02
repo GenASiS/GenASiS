@@ -22,5 +22,6 @@ module Fluids
 !  use Slope_DFV_F_F_P_HN__Form
 !  use Slope_DFV_N_F_P_HN__Form
   use Coarsening_C_F__Form
+  use Slope_F_P_S__Form
 
 end module Fluids

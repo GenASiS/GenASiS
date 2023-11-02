@@ -179,6 +179,19 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
+    !-- Fluid source
+
+    allocate ( I % Fluid % Source )
+    call I % Fluid % Source % Initialize &
+           ( F % Atlas, &
+             FieldOption = F % Balanced, &
+             NameOption = Name, &
+             DeviceMemoryOption = F % DeviceMemory, &
+             PinnedMemoryOption = F % PinnedMemory, &
+             DevicesCommunicateOption = F % DevicesCommunicate, &
+             nFieldsOption = F % nBalanced, &
+             IgnorabilityOption = F % IGNORABILITY + 1 )
+
   end subroutine InitializeAllocate_I
 
 

@@ -1,5 +1,6 @@
 FLUIDS = \
   Fluids.o \
+  Slope_F_P_S__Form.o \
   Coarsening_C_F__Kernel.o \
   Coarsening_C_F__Form.o \
   DivergencePart_F_P_HN_P__Kernel.o \
