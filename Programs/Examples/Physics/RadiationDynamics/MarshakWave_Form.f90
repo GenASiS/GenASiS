@@ -4,6 +4,7 @@ module MarshakWave_Form
 
   use GenASiS
   use Interactions_MWV_1__Form
+  use Interactions_MWV_2__Form
 
   implicit none
   private
@@ -17,8 +18,8 @@ module MarshakWave_Form
       Temperature, &
       TemperatureInner, &
       SpecificOpacity, &
-      SpecificOpacityFloor!, &
-    !   EnergyMax, &
+      SpecificOpacityMin, &
+      EnergyMax
    real ( KDR ) :: &  !-- Derived parameters
       SoundSpeed, &
       DynamicalTime, &
@@ -28,6 +29,8 @@ module MarshakWave_Form
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate
+    character ( LDL ) :: &
+      InteractionsType = ''
   contains
     procedure, private, pass :: &
       Initialize_MW
@@ -107,9 +110,14 @@ contains
     call Show ( U % SpecificOpacity, &
                 UNIT % CENTIMETER ** 2 / UNIT % GRAM, &
                 'SpecificOpacity' )
-    call Show ( U % SpecificOpacityFloor, &
+    call Show ( U % SpecificOpacityMin, &
                 UNIT % CENTIMETER ** 2 / UNIT % GRAM, &
-                'SpecificOpacityFloor' )
+                'SpecificOpacityMin' )
+    call Show ( U % EnergyMax, &
+                UNIT % ELECTRON_VOLT, &
+                'EnergyMax' )
+    call Show ( U % InteractionsType, &
+                'InteractionsType' )
                 
     call Show ( 'Derived Parameters' )
     call Show ( U % SoundSpeed, &
@@ -161,7 +169,23 @@ contains
 
     !-- Interactions
 
-    allocate ( Interactions_MWV_1_Form :: MW % Interactions_BM )
+    MW % InteractionsType = 'MARSHAK_WAVE_VAYTET_1'
+    call PROGRAM_HEADER % GetParameter &
+           ( MW % InteractionsType, 'InteractionsType' )
+
+    select case ( trim ( MW % InteractionsType ) )
+    case ( 'MARSHAK_WAVE_VAYTET_1' )
+      allocate ( Interactions_MWV_1_Form :: MW % Interactions_BM )
+    case ( 'MARSHAK_WAVE_VAYTET_2' )
+      allocate ( Interactions_MWV_2_Form :: MW % Interactions_BM )
+!    case ( 'MARSHAK_WAVE_VAYTET_3' )
+!      allocate ( Interactions_MWV_3_Form :: MW % Interactions_BM )
+    case default
+      call Show ( 'InteractionsType not recognized', CONSOLE % ERROR )
+      call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeUniverse', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
 
     !-- Initialization
 
@@ -229,7 +253,8 @@ contains
         T_0        =>  MW % Temperature, &
         T_I        =>  MW % TemperatureInner, &
         Kappa      =>  MW % SpecificOpacity, &
-        Kappa_Min  =>  MW % SpecificOpacityFloor )
+        Kappa_Min  =>  MW % SpecificOpacityMin, &
+        E_Max      =>  MW % EnergyMax )
 
     Gamma      =  1.4_KDR
     C_V        =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
@@ -238,6 +263,7 @@ contains
     T_I        =  1.0e3_KDR   *  UNIT % KELVIN
     Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    E_Max      =  0.620_KDR   *  UNIT % ELECTRON_VOLT
 
     call PROGRAM_HEADER % GetParameter ( Gamma,     'AdiabaticIndex' )
     call PROGRAM_HEADER % GetParameter ( C_V,       'SpecificHeatCapacity' )
@@ -245,7 +271,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( T_0,       'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,       'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa,     'SpecificOpacity' )
-    call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityFloor' )
+    call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityMin' )
+    call PROGRAM_HEADER % GetParameter ( E_Max,     'EnergyMax' )
 
     end associate !-- Gamma, etc.
 
@@ -259,12 +286,23 @@ contains
 
     !-- Interactions
 
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( PhotonMoments_G_Form )
+
     select type ( Intrctns  =>  MW % Interactions_BM )
-    type is ( Interactions_MWV_1_Form )
-       call Intrctns % SetSpecificOpacity &
-              ( MW % SpecificOpacity )
+    class is ( Interactions_MWV_2_Form )
+       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
+       call Intrctns % SetEnergyMax ( MW % EnergyMax )
+       call Intrctns % SetRadiation ( R )
+    class is ( Interactions_MWV_1_Form )
+       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
     end select !-- Intrctns
     
+    end select !-- R
+    end select !-- I
+
     !-- Radiation
 
     select type ( I )
