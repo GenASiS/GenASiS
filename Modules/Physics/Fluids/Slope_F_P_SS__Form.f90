@@ -1,6 +1,6 @@
-module Slope_F_P_S__Form
+module Slope_F_P_SS__Form
 
-  !-- Slope_Fluid_Perfect_Source__Form
+  !-- Slope_Fluid_Perfect_SplitSource__Form
 
   use Basics
   use Mathematics
@@ -9,27 +9,27 @@ module Slope_F_P_S__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_Form ) :: Slope_F_P_S_Form
+  type, public, extends ( Slope_H_Form ) :: Slope_F_P_SS_Form
     class ( Fluid_P_Form ), pointer :: &
       Fluid => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_F_P_S
+      InitializeAllocate_F_P_SS
     generic, public :: &
-      Initialize => InitializeAllocate_F_P_S
+      Initialize => InitializeAllocate_F_P_SS
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
-  end type Slope_F_P_S_Form
+  end type Slope_F_P_SS_Form
 
 
 contains
 
 
-  subroutine InitializeAllocate_F_P_S ( S, F )
+  subroutine InitializeAllocate_F_P_SS ( S, F )
 
-    class ( Slope_F_P_S_Form ), intent ( inout ) :: &
+    class ( Slope_F_P_SS_Form ), intent ( inout ) :: &
       S
     class ( Fluid_P_Form ), intent ( in ), target :: &
       F
@@ -38,9 +38,9 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_F_P_S' 
+      S % Type  =  'a Slope_F_P_SS' 
     
-    Name  =  trim ( F % Name ) // '_Slp_F_P_S'
+    Name  =  trim ( F % Name ) // '_Slp_F_P_SS'
 
     S % Fluid  =>  F
 
@@ -54,12 +54,12 @@ contains
              nFieldsOption = F % nBalanced, &
              IgnorabilityOption = F % IGNORABILITY + 1 )
 
-  end subroutine InitializeAllocate_F_P_S
+  end subroutine InitializeAllocate_F_P_SS
 
 
   subroutine Compute ( S, dT, T_Option )
 
-    class ( Slope_F_P_S_Form ), intent ( inout ) :: &
+    class ( Slope_F_P_SS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       dT
@@ -72,32 +72,16 @@ contains
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
-    do iC  =  1,  S % Atlas % nCharts
-      select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
-        class is ( Chart_GS_Form )
-
-      associate &
-        ( FSV  =>   S % Fluid % Source % Storage ( iC ) % Value, &
-           SV  =>   S % Storage ( iC ) % Value )
-
-      SV  =  FSV
-
-      end associate !-- FSV, etc.
-
-      class default
-        call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Slope_RM_I__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- C
-    end do !-- iC
+    associate ( FSS  =>  S % Fluid % SplitSource )
+    call FSS % Copy ( S )
+    end associate !-- FS
 
   end subroutine Compute
 
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Slope_F_P_S_Form ), intent ( inout ) :: &
+    type ( Slope_F_P_SS_Form ), intent ( inout ) :: &
       S
 
     nullify ( S % Fluid )
@@ -105,4 +89,4 @@ contains
   end subroutine Finalize
 
 
-end module Slope_F_P_S__Form
+end module Slope_F_P_SS__Form

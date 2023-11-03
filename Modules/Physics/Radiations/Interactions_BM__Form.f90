@@ -179,10 +179,10 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
-    !-- Fluid source
+    !-- Fluid SplitSource
 
-    allocate ( I % Fluid % Source )
-    call I % Fluid % Source % Initialize &
+    allocate ( I % Fluid % SplitSource )
+    call I % Fluid % SplitSource % Initialize &
            ( F % Atlas, &
              FieldOption = F % Balanced, &
              NameOption = Name, &

@@ -36,7 +36,7 @@ module Fluid_P__Form
     logical ( KDL ) :: &
       UseInitialTemperature
     type ( FieldSet_BM_Form ), allocatable :: &
-      Source
+      SplitSource
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
@@ -502,8 +502,8 @@ contains
     type ( Fluid_P_Form ), intent ( inout ) :: &
       F
 
-    if ( allocated ( F % Source ) ) &
-      deallocate ( F % Source )
+    if ( allocated ( F % SplitSource ) ) &
+      deallocate ( F % SplitSource )
 
   end subroutine Finalize
 

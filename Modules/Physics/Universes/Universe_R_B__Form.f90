@@ -28,6 +28,8 @@ module Universe_R_B__Form
       RadiationType
     type ( CommunicatorForm ), allocatable :: &
       Communicator_PS  !-- PositionSpace
+    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
+      CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
     class ( Interactions_BM_Form ), allocatable :: &
@@ -212,6 +214,8 @@ contains
       deallocate ( U % Interactions_BM )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
+    if ( allocated ( U % CO_SplitSource ) ) &
+      deallocate ( U % CO_SplitSource )
     if ( allocated ( U % Communicator_PS ) ) &
       deallocate ( U % Communicator_PS )
     if ( allocated ( U % RadiationType ) ) &
@@ -633,8 +637,17 @@ contains
 
     integer ( KDI ) :: &
       iC, &  !-- iChart
-      iEnergy_R, iEnergy_F
+      iEnergy_R, iEnergy_F, &
+      nSources, &
+      nValues
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum_R, iMomentum_F
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      RSB, &  !-- 2D alias for outgoing buffer
+      FSB     !-- 2D alias for incoming buffer
 
+    select type ( U  =>  I % System )
+      class is ( Universe_R_B_Form )
     select type ( I )
       class is ( Integrator_CS_1D_BM_CS_Form )
     select type ( S_1D  =>  I % Step_1D )
@@ -649,20 +662,69 @@ contains
     call Search &
            ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
     call Search &
-           ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_F )
+           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_R ( 1 ) )
+    call Search &
+           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_R ( 2 ) )
+    call Search &
+           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_R ( 3 ) )
 
-    do iC  =  1,  F % Atlas % nCharts    
+    call Search &
+           ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_F )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_F ( 1 ) )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_F ( 2 ) )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_F ( 3 ) )
+
+    nSources  =  4
+
+    if ( .not. allocated ( U % CO_SplitSource ) ) &
+      allocate ( U % CO_SplitSource ( F % Atlas % nCharts ) )
+
+    do iC  =  1,  F % Atlas % nCharts
+      associate &
+        ( CO  =>  U % CO_SplitSource ( iC ) )
       associate &
         ( RSV  =>  SS_R_I % Storage ( iC ) % Value, &
-          FSV  =>  F % Source % Storage ( iC ) % Value )
+          FSV  =>  F % SplitSource % Storage ( iC ) % Value )
       associate &
-        ( RS_E  =>  RSV ( :, iEnergy_R ), &
-          FS_G  =>  FSV ( :, iEnergy_F ) )
-          
-      FS_G  =  - RS_E
+        ( RS_E    =>  RSV ( :, iEnergy_R ), &
+          RS_S_1  =>  RSV ( :, iMomentum_R ( 1 ) ), &
+          RS_S_2  =>  RSV ( :, iMomentum_R ( 2 ) ), &
+          RS_S_3  =>  RSV ( :, iMomentum_R ( 3 ) ), &
+          FS_G    =>  FSV ( :, iEnergy_F ), &
+          FS_S_1  =>  FSV ( :, iMomentum_F ( 1 ) ), &
+          FS_S_2  =>  FSV ( :, iMomentum_F ( 2 ) ), &
+          FS_S_3  =>  FSV ( :, iMomentum_F ( 3 ) ) )
+
+      nValues  =  size ( FSV, dim = 1 )
+
+      if ( .not. allocated ( CO % Outgoing ) )  &
+        call CO % Initialize &
+               ( I % Communicator_X_1D, &
+                 nOutgoing  =  [ nValues * nSources ], &
+                 nIncoming  =  [ nValues * nSources ] )
+
+      RSB ( 1 : nValues,  1 : nSources )  =>  CO % Outgoing % Value
+      FSB ( 1 : nValues,  1 : nSources )  =>  CO % Incoming % Value
+
+      call Copy ( RS_E,   RSB ( :, 1 ) )
+      call Copy ( RS_S_1, RSB ( :, 2 ) )
+      call Copy ( RS_S_2, RSB ( :, 3 ) )
+      call Copy ( RS_S_3, RSB ( :, 4 ) )
+      call Multiply ( RSB, -1.0_KDR )
+      call CO % Reduce ( REDUCTION % SUM )
+      call Copy ( FSB ( :, 1 ), FS_G )
+      call Copy ( FSB ( :, 2 ), FS_S_1 )
+      call Copy ( FSB ( :, 3 ), FS_S_2 )
+      call Copy ( FSB ( :, 4 ), FS_S_3 )
+
+!      FS_G  =  - RS_E
 
       end associate !-- RS_E, etc.
-      end associate !-- RSV, etc.      
+      end associate !-- RSV, etc.
+      end associate !-- CO
     end do !-- iC
 
     end select !-- F
@@ -670,6 +732,7 @@ contains
     end select !-- SS_R_I
     end select !-- S_1D
     end select !-- I
+    end select !-- U
 
   end subroutine PrepareStep_F
 
@@ -746,9 +809,9 @@ contains
     select type ( S )
       class is ( Step_RK_CS_Form )
 
-    allocate ( Slope_F_P_S_Form :: K )
+    allocate ( Slope_F_P_SS_Form :: K )
     select type ( K )
-      class is ( Slope_F_P_S_Form )
+      class is ( Slope_F_P_SS_Form )
     select type ( F  =>  S % CurrentSet )
       class is ( Fluid_P_Form )
 
