@@ -5,6 +5,7 @@ module ArrayOperations
   use Sort_Command
   use Search_Command
   use Add_Command
+  use Multiply_Command
   use MultiplyAdd_Command
 
 end module ArrayOperations

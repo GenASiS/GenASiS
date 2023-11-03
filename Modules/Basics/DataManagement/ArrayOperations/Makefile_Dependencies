@@ -21,6 +21,10 @@ Add_Command.o: \
   Specifiers.o \
   Add_Command.f90
 
+Multiply_Command.o: \
+  Specifiers.o \
+  Multiply_Command.f90
+
 MultiplyAdd_Command.o: \
   Specifiers.o \
   Devices.o \
@@ -32,6 +36,7 @@ ArrayOperations.o: \
   Sort_Command.o \
   Search_Command.o \
   Add_Command.o \
+  Multiply_Command.o \
   MultiplyAdd_Command.o \
   ArrayOperations.f90
 
