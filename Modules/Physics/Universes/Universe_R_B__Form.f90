@@ -65,7 +65,8 @@ module Universe_R_B__Form
       ResolveCycle_R, &
       PrepareStep_F, &
       Compute_dT_Local, &
-      SetSlope_F_P_S, &
+      SetSlope_F_P_DFV_SS, &
+      SetSlope_F_P_SS, &
       SetSlope_RM_I, &
       SetSlope_RM_DFV_I, &
       SetSlope_RM_DFV_I_I
@@ -438,7 +439,7 @@ contains
         end associate !-- RS
       end if
 
-      S % SetSlope  =>  SetSlope_F_P_S
+      S % SetSlope  =>  SetSlope_F_P_DFV_SS
 
       call S % Initialize ( F )
 
@@ -720,8 +721,6 @@ contains
       call Copy ( FSB ( :, 3 ), FS_S_2 )
       call Copy ( FSB ( :, 4 ), FS_S_3 )
 
-!      FS_G  =  - RS_E
-
       end associate !-- RS_E, etc.
       end associate !-- RSV, etc.
       end associate !-- CO
@@ -799,7 +798,7 @@ contains
   end subroutine Compute_dT_Local
 
 
-  subroutine SetSlope_F_P_S ( S, K )
+  subroutine SetSlope_F_P_SS ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
       S
@@ -822,7 +821,34 @@ contains
     end select !-- K
     end select !-- S
 
-  end subroutine SetSlope_F_P_S
+  end subroutine SetSlope_F_P_SS
+
+
+  subroutine SetSlope_F_P_DFV_SS ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_F_P_DFV_SS_Form :: K )
+    select type ( K )
+      class is ( Slope_F_P_DFV_SS_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_P_Form )
+
+    call K % Initialize &
+           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, F )
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    end select !-- F
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_F_P_DFV_SS
 
 
   subroutine SetSlope_RM_I ( S, K )
