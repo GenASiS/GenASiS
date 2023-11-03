@@ -26,6 +26,28 @@ module Slope_RM_DFV_I_I__Form
       Finalize
   end type Slope_RM_DFV_I_I_Form
 
+    private :: &
+      ComputeKernel
+
+    interface
+
+      module subroutine ComputeKernel &
+               ( S_E, S_S_1, S_S_2, S_S_3, Chi_J, Chi_H, dT, UseDeviceOption ) 
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          S_E, &
+          S_S_1, S_S_2, S_S_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Chi_J, Chi_H
+        real ( KDR ), intent ( in ) :: &
+          dT
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeKernel
+
+    end interface
+
 
 contains
 
@@ -101,14 +123,9 @@ contains
           S_S_2  =>  SV ( :, S % iMomentum_B ( 2 ) ), &
           S_S_3  =>  SV ( :, S % iMomentum_B ( 3 ) ) )
 
-!call Show ( S_E, '>>> S_E before' )
-
-      S_E   =  S_E    /  ( 1.0_KDR  +  Chi_J * dT )
-      S_S_1 =  S_S_1  /  ( 1.0_KDR  +  Chi_H * dT )
-      S_S_2 =  S_S_2  /  ( 1.0_KDR  +  Chi_H * dT )
-      S_S_3 =  S_S_3  /  ( 1.0_KDR  +  Chi_H * dT )
-
-!call Show ( S_E, '>>> S_E after' )
+      call ComputeKernel &
+             ( S_E, S_S_1, S_S_2, S_S_3, Chi_J, Chi_H, dT, &
+               UseDeviceOption = S % DeviceMemory ) 
 
       end associate !-- IV, etc.
       end associate !-- Chi_J, etc.
