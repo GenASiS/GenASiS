@@ -5,6 +5,7 @@ module MarshakWave_Form
   use GenASiS
   use Interactions_MWV_1__Form
   use Interactions_MWV_2__Form
+  use Interactions_MWV_3__Form
 
   implicit none
   private
@@ -178,8 +179,8 @@ contains
       allocate ( Interactions_MWV_1_Form :: MW % Interactions_BM )
     case ( 'MARSHAK_WAVE_VAYTET_2' )
       allocate ( Interactions_MWV_2_Form :: MW % Interactions_BM )
-!    case ( 'MARSHAK_WAVE_VAYTET_3' )
-!      allocate ( Interactions_MWV_3_Form :: MW % Interactions_BM )
+    case ( 'MARSHAK_WAVE_VAYTET_3' )
+      allocate ( Interactions_MWV_3_Form :: MW % Interactions_BM )
     case default
       call Show ( 'InteractionsType not recognized', CONSOLE % ERROR )
       call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )
@@ -206,7 +207,7 @@ contains
       ( F  =>  I % CurrentSet_X )
     do iD  =  1, 3
       call F % SetBoundaryConditionsFace &
-             ( [ 'INFLOW', 'INFLOW' ], iC = 1, iD = iD )
+             ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = iD )
     end do !-- iD
     end associate !-- F
     end select !-- I
@@ -292,6 +293,11 @@ contains
       class is ( PhotonMoments_G_Form )
 
     select type ( Intrctns  =>  MW % Interactions_BM )
+    class is ( Interactions_MWV_3_Form )
+       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
+       call Intrctns % SetEnergyMax ( MW % EnergyMax )
+       call Intrctns % SetTemperatureScale ( MW % Temperature )
+       call Intrctns % SetRadiation ( R )
     class is ( Interactions_MWV_2_Form )
        call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
        call Intrctns % SetEnergyMax ( MW % EnergyMax )

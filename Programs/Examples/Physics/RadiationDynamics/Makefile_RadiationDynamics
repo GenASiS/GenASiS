@@ -8,6 +8,8 @@ all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G MarshakWave_G #\
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 INTERACTIONS_EXAMPLES = \
+  Interactions_MWV_3__Kernel.o \
+  Interactions_MWV_3__Form.o \
   Interactions_MWV_2__Kernel.o \
   Interactions_MWV_2__Form.o \
   Interactions_MWV_1__Kernel.o \
@@ -115,10 +117,21 @@ Interactions_MWV_2__Kernel.o: \
   Interactions_MWV_2__Form.o \
   Interactions_MWV_2__Kernel.f90
 
+Interactions_MWV_3__Form.o: \
+  GenASiS.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.f90
+
+Interactions_MWV_3__Kernel.o: \
+  Basics.o \
+  Interactions_MWV_3__Form.o \
+  Interactions_MWV_3__Kernel.f90
+
 MarshakWave_Form.o: \
   GenASiS.o \
   Interactions_MWV_1__Form.o \
-  Interactions_MWV_2__form.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.o \
   MarshakWave_Form.f90
 
 MarshakWave_G.o: \
