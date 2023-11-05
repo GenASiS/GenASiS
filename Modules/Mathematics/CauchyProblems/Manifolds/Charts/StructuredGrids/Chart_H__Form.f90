@@ -256,7 +256,8 @@ contains
 
     C % CoordinateUnit = [ UNIT % IDENTITY, UNIT % IDENTITY, UNIT % IDENTITY ]
     if ( present ( CoordinateUnitOption ) ) &
-      C % CoordinateUnit ( : nD ) = CoordinateUnitOption ( : nD )
+!      C % CoordinateUnit ( : nD ) = CoordinateUnitOption ( : nD )
+      C % CoordinateUnit = CoordinateUnitOption
 
     end associate !-- nD
 
