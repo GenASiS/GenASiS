@@ -539,7 +539,8 @@ contains
     
     if ( allocated ( S % D_Selected ) ) then
       if ( S % AllocatedValue .and. S % AllocatedDevice ) then
-        call DeallocateDevice ( S % D_Selected ( 1 ) )
+        call S % DisassociateHost_S ( )
+        call DeallocateDevice ( S % D_Value )
       end if
       deallocate ( S % D_Selected )
     end if
