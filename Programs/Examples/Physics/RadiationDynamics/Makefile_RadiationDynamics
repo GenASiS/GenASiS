@@ -50,7 +50,7 @@ MarshakWave_G: ThirdParty.a GenASiS.a MarshakWave_G.o \
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
 clean: clean_ThirdParty
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f SineWaveStreaming_*
