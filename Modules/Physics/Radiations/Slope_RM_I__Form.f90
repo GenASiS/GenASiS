@@ -35,7 +35,7 @@ module Slope_RM_I__Form
 
       module subroutine ComputeKernel &
                ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, E, S_1, S_2, S_3, &
-                 S_E, S_S_1, S_S_2, S_S_3, UseDeviceOption )
+                 dT, S_E, S_S_1, S_S_2, S_S_3, UseDeviceOption )
         use Basics
         implicit none
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
@@ -45,6 +45,8 @@ module Slope_RM_I__Form
           Chi_J, Chi_H, &
           E, &
           S_1, S_2, S_3
+        real ( KDR ), intent ( in ) :: &
+          dT
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           S_E, &
           S_S_1, S_S_2, S_S_3
@@ -142,7 +144,7 @@ contains
 
       call ComputeKernel &
              ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, E, S_1, S_2, S_3, &
-               S_E, S_S_1, S_S_2, S_S_3, &
+               dT, S_E, S_S_1, S_S_2, S_S_3, &
                UseDeviceOption = S % DeviceMemory )
 
       end associate !-- Xi_J, etc.
