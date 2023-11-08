@@ -131,6 +131,8 @@ contains
     associate &
       ( C  =>  A % Chart_GS )
 
+    L % C_AngularMoments  =>  C % Communicator
+
     if ( C % nDimensions  <  3 ) &
       L % MaxOrder  =  0
     if ( C % nDimensions  <  2 ) &

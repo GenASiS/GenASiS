@@ -56,6 +56,8 @@ module Laplacian_M_H__Form
       RadialMoments_R, &
       RadialMoments_I, &
       DeltaFactor
+    type ( CommunicatorForm ), pointer :: &
+      C_AngularMoments => null ( )
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO_AngularMoments
     type ( IntegralForm ), allocatable :: &
@@ -286,6 +288,8 @@ contains
 
     if ( allocated ( L % CO_AngularMoments ) ) &
       deallocate ( L % CO_AngularMoments )
+
+    nullify ( L % C_AngularMoments )
 
     if ( allocated ( L % DeltaFactor ) ) &
       deallocate ( L % DeltaFactor )
@@ -741,13 +745,13 @@ contains
     allocate ( L % CO_AngularMoments )
     associate &
       (  CO  =>  L % CO_AngularMoments, &
-        PHC  =>  PROGRAM_HEADER % Communicator )
+          C  =>  L % C_AngularMoments )
       call CO % Initialize &
-             ( PHC, OutgoingValue = MyAngularMoment_1D, &
+             ( C, OutgoingValue = MyAngularMoment_1D, &
                IncomingValue = AngularMoment_1D )
       if ( L % DevicesCommunicate ) &
         call CO % AllocateDevice ( )
-    end associate !-- RM, etc.
+    end associate !-- CO, etc.
 
     nullify ( AngularMoment_1D, MyAngularMoment_1D )
 
