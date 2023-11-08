@@ -22,14 +22,14 @@ module Universe_R_CC__Form
     character ( LDL ), dimension ( : ), allocatable :: &
       RadiationName, &
       RadiationType
-  !   type ( CommunicatorForm ), allocatable :: &
-  !     Communicator_PS  !-- PositionSpace
+    type ( CommunicatorForm ), allocatable :: &
+      Communicator_PS  !-- PositionSpace
   !   type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
   !     CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
-  !   class ( Interactions_BM_Form ), allocatable :: &
-  !     Interactions_BM
+    class ( Interactions_BM_Form ), allocatable :: &
+      Interactions_BM
   contains
     procedure, private, pass :: &
       Initialize_R_CC
@@ -37,30 +37,30 @@ module Universe_R_CC__Form
       Initialize => Initialize_R_CC
     final :: &
       Finalize
-  !   procedure, private, pass :: &
-  !     SetCommunicator
-  !   procedure, private, pass :: &
-  !     AllocateIntegrator
-  !   procedure, public, pass :: &
-  !     InitializePositionSpace
+    procedure, private, pass :: &
+      SetCommunicator
+    procedure, private, pass :: &
+      AllocateIntegrator
   !   procedure, public, pass :: &
   !     InitializeInteractions
-  !   procedure, public, pass :: &
-  !     InitializeRadiation
-  !   procedure, public, pass :: &
-  !     InitializeSteps
-  !   procedure, public, pass :: &
-  !     InitializeIntegrator
-  !   procedure, public, pass :: &
-  !     ShowParameters
+    procedure, public, pass :: &
+      InitializeRadiation
+    procedure, public, pass :: &
+      SetBoundaryConditions
+    procedure, public, pass :: &
+      InitializeSteps
+    procedure, public, pass :: &
+      InitializeIntegrator
+    procedure, public, pass :: &
+      ShowParameters
   !   procedure, public, pass ( U ) :: &
   !     Compute_dT_ET_CGS
   end type Universe_R_CC_Form
 
-    ! private :: &
+    private :: &
     !   ResolveCycle_R, &
     !   PrepareStep_F, &
-    !   Compute_dT_Local, &
+      Compute_dT_Local!, &
     !   SetSlope_F_P_DFV_SS, &
     !   SetSlope_F_P_SS, &
     !   SetSlope_RM_I, &
@@ -93,9 +93,10 @@ contains
 
 
   subroutine Initialize_R_CC &
-               ( U, RadiationName, RadiationType, FormalismType, Name )!, &
-!                MinCoordinateOption, MaxCoordinateOption, &
-!                 FinishTimeOption, nCellsPositionOption, nWriteOption )
+               ( U, RadiationName, RadiationType, FormalismType, FluidType, &
+                 GravitationType, Name, FinishTimeOption, RadiusMaxOption, &
+                 RadiusCoreOption, RadialRatioOption, nCellsPolarOption, &
+                 nWriteOption )
 
     class ( Universe_R_CC_Form ), intent ( inout ) :: &
       U
@@ -104,20 +105,17 @@ contains
       RadiationType
     character ( * ), intent ( in ) :: &
       FormalismType, &
+      FluidType, &
+      GravitationType, &
       Name
-    ! logical ( KDL ), intent ( in ), optional :: &
-    !   ApplyStreamingOption, &
-    !   ApplyInteractionsOption, &
-    !   EvolveFluidOption
-    ! real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-    !   MinCoordinateOption, &
-    !   MaxCoordinateOption
-    ! real ( KDR ), intent ( in ), optional :: &
-    !   FinishTimeOption
-    ! integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-    !   nCellsPositionOption
-    ! integer ( KDI ), intent ( in ), optional :: &
-    !   nWriteOption
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption, &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption, &
+      nWriteOption
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_CC'
@@ -147,45 +145,48 @@ contains
       call U % Units_R ( 1 ) % Initialize ( TypeOption = 'ASTROPHYSICS' )
     end if
 
-call Show ( '>>> 1' )
-    ! !-- Initializations
+    !-- Initializations
 
-    ! call U % SetCommunicator &
-    !        ( )
-    ! call U % AllocateIntegrator &
-    !        ( )
-    ! call U % InitializePositionSpace &
-    !        ( MinCoordinateOption = MinCoordinateOption, &
-    !          MaxCoordinateOption = MaxCoordinateOption, &
-    !          nCellsOption = nCellsPositionOption )
-    ! ! call RB % InitializeMomentumSpace &
-    ! !        ( EnergySpacingOption = EnergySpacingOption, &
-    ! !          MinEnergyOption = MinEnergyOption, &
-    ! !          MaxEnergyOption = MaxEnergyOption, &
-    ! !          MinWidthEnergyOption = MinWidthEnergyOption, &
-    ! !          EnergyScaleOption = EnergyScaleOption, &
-    ! !          nCellsEnergyOption = nCellsEnergyOption )
-    ! call U % InitializeGravitation &
-    !        ( GravitationType = 'GALILEO' )
-    ! call U % InitializeFluid &
-    !        ( FluidType = 'IDEAL' )
+    call U % SetCommunicator &
+           ( )
+    call U % AllocateIntegrator &
+           ( )
+    call U % InitializePositionSpace &
+           ( RadiusMaxOption = RadiusMaxOption, &
+             RadiusCoreOption = RadiusCoreOption, &
+             RadialRatioOption = RadialRatioOption, &
+             nCellsPolarOption = nCellsPolarOption )
+    ! call RB % InitializeMomentumSpace &
+    !        ( EnergySpacingOption = EnergySpacingOption, &
+    !          MinEnergyOption = MinEnergyOption, &
+    !          MaxEnergyOption = MaxEnergyOption, &
+    !          MinWidthEnergyOption = MinWidthEnergyOption, &
+    !          EnergyScaleOption = EnergyScaleOption, &
+    !          nCellsEnergyOption = nCellsEnergyOption )
+    call U % InitializeGravitation &
+           ( GravitationType )
+    call U % InitializeFluid &
+           ( FluidType )
     ! call U % InitializeInteractions &
     !        ( )
-    ! call U % InitializeRadiation &
-    !        ( )
-    ! call U % InitializeSteps &
-    !        ( )
-    ! call U % InitializeIntegrator &
-    !        ( FinishTimeOption = FinishTimeOption, &
-    !          nWriteOption = nWriteOption )
+    call U % InitializeRadiation &
+           ( )
+    call U % SetBoundaryConditions &
+           ( )
+    call U % InitializeSteps &
+           ( )
+    call U % InitializeIntegrator &
+           ( GravitationType, &
+             FinishTimeOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
 
-    ! !-- Integrator methods
+    !-- Integrator methods
 
-    ! associate ( I  =>  U % Integrator )
+    associate ( I  =>  U % Integrator )
     ! I % ResolveCycle      =>  ResolveCycle_R
     ! I % PrepareStep       =>  PrepareStep_F
-    ! I % Compute_dT_Local  =>  Compute_dT_Local
-    ! end associate !-- I
+    I % Compute_dT_Local  =>  Compute_dT_Local
+    end associate !-- I
 
   end subroutine Initialize_R_CC
 
@@ -195,20 +196,267 @@ call Show ( '>>> 1' )
     type ( Universe_R_CC_Form ), intent ( inout ) :: &
       U
 
-    ! if ( allocated ( U % Interactions_BM ) ) &
-    !   deallocate ( U % Interactions_BM )
+    if ( allocated ( U % Interactions_BM ) ) &
+      deallocate ( U % Interactions_BM )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
     ! if ( allocated ( U % CO_SplitSource ) ) &
     !   deallocate ( U % CO_SplitSource )
-    ! if ( allocated ( U % Communicator_PS ) ) &
-    !   deallocate ( U % Communicator_PS )
+    if ( allocated ( U % Communicator_PS ) ) &
+      deallocate ( U % Communicator_PS )
     if ( allocated ( U % RadiationType ) ) &
       deallocate ( U % RadiationType )
     if ( allocated ( U % RadiationName ) ) &
       deallocate ( U % RadiationName )
 
   end subroutine Finalize
+
+
+  subroutine SetCommunicator ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      iP, &  !-- iProcess
+      iPS, &  !-- iPositionSpace
+      nProcesses, &
+      nProcesses_PS  !-- PositionSpace
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      Rank
+
+    nProcesses  =  U % Communicator % Size
+    if ( mod ( nProcesses, U % nRadiations )  /=  0 ) then
+      call Show ( 'nRadiations must evenly divide nProcesses', CONSOLE % ERROR )
+      call Show ( nProcesses, 'nProcesses', CONSOLE % ERROR )
+      call Show ( U % nRadiations, 'nRadiations', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    select case ( trim ( U % FormalismType ) )
+    case ( 'GREY' )
+
+      nProcesses_PS  =  nProcesses / U % nRadiations
+
+      do iPS  =  1,  U % nRadiations
+        allocate ( Rank, &
+                   source =  [ ( iP, iP = ( iPS - 1 ) * nProcesses_PS, &
+                                            iPS * nProcesses_PS  -  1 ) ] )
+        if ( any ( U % Communicator % Rank  ==  Rank ) ) then
+          U % iRadiation = iPS
+          allocate ( U % Communicator_PS )
+          call U % Communicator_PS % Initialize &
+                 ( U % Communicator, Rank, NameOption = 'Communicator_PS' )
+        end if
+        deallocate ( Rank )
+      end do !-- iPS
+
+    case default
+      call Show ( 'FormalismType not recognized', CONSOLE % ERROR )
+      call Show ( U % FormalismType, 'FormalismType', CONSOLE % ERROR )
+      call Show ( 'Universe_R_CC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetCommunicator', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FormalismType
+
+  end subroutine SetCommunicator
+
+
+  subroutine AllocateIntegrator ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+
+    select case ( trim ( U % FormalismType ) )
+    case ( 'GREY' )
+      allocate ( Integrator_CS_1D_BM_CS_Form :: U % Integrator )
+    case ( 'SPECTRAL' )
+      allocate ( Integrator_CS_1D_CB_CS_Form :: U % Integrator )
+    case default
+      call Show ( 'FormalismType not recognized', CONSOLE % ERROR )
+      call Show ( U % FormalismType, 'FormalismType', CONSOLE % ERROR )
+      call Show ( 'Universe_R_CC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateIntegrator', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FormalismType
+
+  end subroutine AllocateIntegrator
+
+
+  subroutine InitializeRadiation ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      associate &
+        ( G   =>  I % Geometry_X, &
+          iR  =>  U % iRadiation )
+
+      ! select case ( trim ( U % RadiationType ( iR ) ) )
+      ! case ( 'GENERIC' )
+
+      !   allocate ( RadiationMoments_BM_Form :: I % CurrentSet_X_1D )
+      !   select type ( R  =>  I % CurrentSet_X_1D )
+      !   class is ( RadiationMoments_BM_Form )
+
+      !   call R % Initialize &
+      !          ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+      !   if ( allocated ( U % Interactions_BM ) ) &
+      !     call R % SetInteractions ( U % Interactions_BM )
+
+      !   end select !-- R
+
+      ! case ( 'PHOTONS' )
+
+        allocate ( PhotonMoments_G_Form :: I % CurrentSet_X_1D )
+        select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( PhotonMoments_G_Form )
+
+        call R % Initialize &
+               ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+        if ( allocated ( U % Interactions_BM ) ) &
+          call R % SetInteractions ( U % Interactions_BM )
+
+        end select !-- R
+
+    !   case default
+    !     call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+    !     call Show ( U % RadiationType ( iR ), 'RadiationType', &
+    !                 CONSOLE % ERROR )
+    !     call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
+    !     call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+    !     call PROGRAM_HEADER % Abort ( )
+    !   end select !-- RadiationType
+
+      end associate !-- G, etc.
+
+    end select !-- I
+
+  end subroutine InitializeRadiation
+
+
+  subroutine SetBoundaryConditions ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+    
+    call U % Universe_F_CC_Form % SetBoundaryConditions ( )
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+
+    associate &
+      ( F  =>  I % CurrentSet_X_1D )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iC = 1, iD = 1 )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iC = 1, iD = 2 )
+    call F % SetBoundaryConditionsFace &
+           ( [ 'PERIODIC', 'PERIODIC' ], iC = 1, iD = 3 )
+    end associate !-- F
+
+    end select !-- I
+
+  end subroutine SetBoundaryConditions
+
+
+  subroutine InitializeSteps ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+
+    !-- Fluid step
+
+    call U % InitializeStep ( )
+
+    !-- Radiation step
+
+    select type ( I  =>  U % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      associate &
+        ( R  =>  I % CurrentSet_X_1D )
+
+      allocate ( Step_RK_CS_Form :: I % Step_1D )
+      select type ( S  =>  I % Step_1D )
+        class is ( Step_RK_CS_Form )
+
+      allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+      associate ( DT  =>  S % DivergenceTotal )
+      call DT % Initialize ( R )
+      end associate !-- DT
+
+      allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
+      associate ( DF  =>  S % DiffusionFactor )
+      call DF % Initialize ( R )
+      end associate !-- DF
+
+!        S % SetSlope  =>  SetSlope_RM_DFV_I
+!        S % SetSlope  =>  SetSlope_RM_DFV_I_I 
+
+      call S % Initialize ( R )
+
+      end select !-- S
+      end associate !-- R
+
+    end select !-- I
+
+  end subroutine InitializeSteps
+
+
+  subroutine InitializeIntegrator &
+               ( U, GravitationType, FinishTimeOption, GravityFactorOption, &
+                 nWriteOption )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+    character ( * ), intent ( in ) :: &
+      GravitationType
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption, &
+      GravityFactorOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
+
+    integer ( KDI ) :: &
+      iCS  !-- iCurrentSet
+
+    select type ( I => U % Integrator )
+    class is ( Integrator_CS_1D_CS_Form )
+
+    I % iCurrentSet  =  U % iRadiation
+
+    I % nCurrentSets  =  size ( U % RadiationName )
+    allocate ( I % dT_Label ( 5 ) )
+
+    I % dT_Label ( 1 )  =  'GravitationAcceleration'
+    I % dT_Label ( 2 )  =  'FluidAdvection'
+    I % dT_Label ( 3 )  =  'RadiationStreaming'
+    I % dT_Label ( 4 )  =  'EnergyTransfer'
+    I % dT_Label ( 5 )  =  'ElectronNumberTransfer'
+
+    U % GravityFactor  =  0.7_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( U % GravityFactor, 'GravityFactor' )
+
+    U % InteractionFactor  =  1.0e-2_KDR  /  I % nCurrentSets
+    call PROGRAM_HEADER % GetParameter &
+           ( U % InteractionFactor, 'InteractionFactor' )
+
+    I % StreamSuffix  =  '_' // trim ( U % RadiationName ( U % iRadiation ) )
+
+    call I % Initialize &
+           ( CommunicatorOption = U % Communicator_PS, &
+             Unit_T_Option = U % Units_F ( 1 ) % Time, &
+             T_FinishOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
+
+    end select !-- I
+
+  end subroutine InitializeIntegrator
 
 
   subroutine ShowParameters ( U )
@@ -225,6 +473,56 @@ call Show ( '>>> 1' )
     call Show ( U % InteractionFactor, 'InteractionFactor', U % IGNORABILITY )
 
   end subroutine ShowParameters
+
+
+  subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dT_Candidate
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_CC_Form )
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    associate &
+      ( dT_1  =>  dT_Candidate ( 1 ), &
+        dT_2  =>  dT_Candidate ( 2 ), &
+        dT_3  =>  dT_Candidate ( 3 ), &
+        dT_4  =>  dT_Candidate ( 4 ), &
+        dT_5  =>  dT_Candidate ( 5 ) )
+
+    !-- Gravity step
+
+    call U % Compute_dT_G_CGS ( dT_1, iC, T_Option )
+    dT_1  =  U % GravityFactor  *  dT_1    
+
+    !-- Fluid advection step
+
+    if ( U % Coarsen ) then
+      call U % Compute_dT_CS_CGS_C ( dT_2, iC, T_Option )
+    else !-- .not. Coarsen
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X, dT_2, iC, T_Option )
+    end if !-- Coarsen
+    dT_2  =  I % CourantFactor  *  dT_2
+    
+    !-- Radiation streaming step
+
+    call I % Compute_dT_CS_CGS &
+           ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
+        dT_3  =  I % CourantFactor_1D  *  dT_3
+
+    end associate !-- dT_1, etc.
+    end select !-- I
+    end select !-- U
+
+  end subroutine Compute_dT_Local
 
 
 end module Universe_R_CC__Form

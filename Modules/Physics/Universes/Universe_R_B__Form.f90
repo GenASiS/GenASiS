@@ -291,7 +291,7 @@ contains
       call Show ( 'FormalismType not recognized', CONSOLE % ERROR )
       call Show ( U % FormalismType, 'FormalismType', CONSOLE % ERROR )
       call Show ( 'Universe_R_B_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AllocateIntegrator_R_B', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'AllocateIntegrator', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- FormalismType
 
@@ -536,13 +536,6 @@ contains
              nWriteOption = nWriteOption )
 
     end select !-- I
-
-    ! select type ( I => U % Integrator )
-    ! class is ( Integrator_C_1D_PS_C_PS_Form )
-    !   allocate ( I % Current_ASC_1D ( I % nCurrentSets ) )
-    ! class is ( Integrator_C_1D_MS_C_PS_Form )
-    !   allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % nCurrentSets ) )
-    ! end select !-- I
 
   end subroutine InitializeIntegrator
 

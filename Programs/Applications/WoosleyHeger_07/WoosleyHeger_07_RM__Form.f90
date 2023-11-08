@@ -66,21 +66,20 @@ contains
     !-- Initialization
 
     call WH % Initialize &
-           ( RadiationName = [ 'Radiation_Nu_E    ', &
-                               'Radiation_Nu_E_Bar' ], &
+           ( RadiationName = [ 'Neutrinos_E    ', &
+                               'Neutrinos_E_Bar' ], &
              RadiationType = [ 'NEUTRINOS_E    ', &
-                               'ANTINEUTRINOS_E' ], &
+                               'NEUTRINOS_E_BAR' ], &
              FormalismType = FormalismType, &
-             Name = Name )!, &
-    !        ( FluidType = 'HEAVY_NUCLEUS', &
-    !          GravitationType = 'NEWTON_SG', &
-    !          Name = Name, &
-    !          FinishTimeOption = FinishTime, &
-    !          nCellsPolarOption = 128, &
-    !          nWriteOption = 30 )
+             FluidType = 'HEAVY_NUCLEUS', &
+             GravitationType = 'NEWTON_SG', &
+             Name = Name, &
+             FinishTimeOption = FinishTime, &
+             nCellsPolarOption = 128, &
+             nWriteOption = 30 )
 
-    ! WH % Integrator % SetInitial    =>  SetInitial
-    ! WH % Integrator % System        =>  WH
+    WH % Integrator % SetInitial    =>  SetInitial
+    WH % Integrator % System        =>  WH
 
   end subroutine InitializeUniverse
 
@@ -90,12 +89,12 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    ! select type ( WH  =>  I % System )
-    !   class is ( WoosleyHeger_07_Form )
+    select type ( WH  =>  I % System )
+      class is ( WoosleyHeger_07_Form )
 
-    ! call WH % SetFluid ( )
+    call WH % SetFluid ( )
 
-    ! end select !-- WH
+    end select !-- WH
 
   end subroutine SetInitial
 
