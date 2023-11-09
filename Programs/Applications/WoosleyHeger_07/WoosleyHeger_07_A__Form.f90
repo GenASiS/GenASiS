@@ -74,7 +74,10 @@ contains
     FinishTime  =  0.7_KDR  *  UNIT % SECOND
 
     call WH % Initialize &
-           ( FluidType = 'HEAVY_NUCLEUS', &
+           ( RadiationName = [ 'None' ], &
+             RadiationType = [ 'NONE' ], &
+             FormalismType = 'NONE', &
+             FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &
              Name = Name, &
              FinishTimeOption = FinishTime, &
