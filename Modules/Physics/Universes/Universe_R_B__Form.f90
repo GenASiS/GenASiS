@@ -64,6 +64,7 @@ module Universe_R_B__Form
     private :: &
       ResolveCycle_R, &
       PrepareStep_F, &
+      ComputeSource_F, &
       Compute_dT_Local, &
       SetSlope_F_P_DFV_SS, &
       SetSlope_F_P_SS, &
@@ -521,7 +522,7 @@ contains
     I % dT_Label ( 2 )  =  'RadiationStreaming'
     I % dT_Label ( 3 )  =  'EnergyTransfer'
 
-    U % InteractionFactor  =  1.0e-2_KDR  /  I % nCurrentSets
+    U % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
            ( U % InteractionFactor, 'InteractionFactor' )
 
@@ -634,6 +635,16 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
+    call ComputeSource_F ( I )
+
+  end subroutine PrepareStep_F
+
+
+  subroutine ComputeSource_F ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
     integer ( KDI ) :: &
       iC, &  !-- iChart
       iEnergy_R, iEnergy_F, &
@@ -731,7 +742,7 @@ contains
     end select !-- I
     end select !-- U
 
-  end subroutine PrepareStep_F
+  end subroutine ComputeSource_F
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
