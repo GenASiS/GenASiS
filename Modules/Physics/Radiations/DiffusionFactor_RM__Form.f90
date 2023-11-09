@@ -62,7 +62,7 @@ contains
       nFieldsOption
 
     if ( DF % Type  ==  '' ) &
-      DF % Type  =  'an DiffusionFactor_RM' 
+      DF % Type  =  'a DiffusionFactor_RM' 
 
     DF % Interactions  =>  I
 

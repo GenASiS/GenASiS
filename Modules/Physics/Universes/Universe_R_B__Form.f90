@@ -479,9 +479,10 @@ contains
         end associate !-- DT
 
         allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
-        associate ( DF  =>  S % DiffusionFactor )
-        call DF % Initialize ( R )
-        end associate !-- DF
+        select type ( DF  =>  S % DiffusionFactor )
+        class is ( DiffusionFactor_RM_Form )
+          call DF % Initialize ( U % Interactions_BM )
+        end select !-- DF
 
         S % SetSlope  =>  SetSlope_RM_DFV_I
 
