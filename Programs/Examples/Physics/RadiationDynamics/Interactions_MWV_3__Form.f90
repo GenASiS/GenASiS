@@ -31,7 +31,7 @@ module Interactions_MWV_3__Form
   interface
 
     module subroutine ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, TP, &
+             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, T_R, &
                Kappa, E_Max, T_0, Ratio_P, k_B, UseDeviceOption )
       use Basics
       implicit none
@@ -44,7 +44,7 @@ module Interactions_MWV_3__Form
         N, &
         T, &
         J_Eq, &
-        TP
+        T_R
       real ( KDR ), intent ( in ) :: &
         Kappa, &
         E_Max, &
@@ -134,24 +134,21 @@ contains
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
-        ( FV  =>  F % Storage ( iC ) % Value, &
-          IV  =>  I % Storage ( iC ) % Value, &
-          RV  =>  R % Storage ( iC ) % Value )
+        ( IV  =>  I % Storage ( iC ) % Value, &
+          RV  =>  R % Storage ( iC ) % Value, &
+          FV  =>  F % Storage ( iC ) % Value )
       associate &
-        (   M    =>  FV ( :, F % BARYON_MASS ), &
-            N    =>  FV ( :, F % BARYON_DENSITY_C ), &
-            T    =>  FV ( :, F % TEMPERATURE ), &
-           Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
-          Chi_J  =>  IV ( :, I % OPACITY_J ), &
-          Chi_H  =>  IV ( :, I % OPACITY_H ), &
-           J_Eq  =>  IV ( :, I % EQUILIBRIUM_J ), &
-          TP     =>  RV ( :, R % TEMPERATURE_PARAMETER ) )
-
-      call I % Compute_J_Eq_Ph_G_Kernel &
-             ( J_Eq, T, UseDeviceOption = I % DeviceMemory )
+        (   M     =>  FV ( :, F % BARYON_MASS ), &
+            N     =>  FV ( :, F % BARYON_DENSITY_C ), &
+            T     =>  FV ( :, F % TEMPERATURE ), &
+           Xi_J   =>  IV ( :, I % EMISSIVITY_J ), &
+          Chi_J   =>  IV ( :, I % OPACITY_J ), &
+          Chi_H   =>  IV ( :, I % OPACITY_H ), &
+            J_Eq  =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
+            T_R   =>  RV ( :, R % TEMPERATURE_GREY ) )
 
       call ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, TP, &
+             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, T_R, &
                Kappa = I % SpecificOpacity, E_Max = I % EnergyMax, &
                T_0 = I % TemperatureScale, Ratio_P = PlanckRatio, &
                k_B = CONSTANT % BOLTZMANN, UseDeviceOption = I % DeviceMemory )

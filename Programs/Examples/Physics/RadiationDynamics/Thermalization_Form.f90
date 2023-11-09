@@ -14,7 +14,6 @@ module Thermalization_Form
     real ( KDR ), dimension ( 2 ) :: &
       OpacityAbsorption
     type ( PhotonMoments_G_Form ), allocatable :: &
-      Reference, &
       FractionalDifference
   contains
     procedure, private, pass :: &
@@ -69,8 +68,6 @@ contains
 
     if ( allocated ( T % FractionalDifference ) ) &
       deallocate ( T % FractionalDifference )
-    if ( allocated ( T % Reference ) ) &
-      deallocate ( T % Reference )
 
   end subroutine Finalize
 
@@ -149,30 +146,23 @@ contains
       T
 
     character ( LDL ) :: &
-      ReferenceName, &
       DifferenceName
 
     allocate &
-      ( T % Reference, &
-        T % FractionalDifference )
+      ( T % FractionalDifference )
     associate &
-      ( R_R   =>  T % Reference, &
-        R_FD  =>  T % FractionalDifference, &
+      ( R_FD  =>  T % FractionalDifference, &
         G     =>  T % Integrator % Geometry_X, &
         S     =>  T % Integrator % Checkpoint_X )
 
     select case ( T % iRadiation )
     case ( 1 )
-      ReferenceName   =  'Reference_1'
       DifferenceName  =  'FractionalDifference_1'
     case ( 2 )
-      ReferenceName   =  'Reference_2'
       DifferenceName  =  'FractionalDifference_2'
     end select
     
-    call R_R  % Initialize ( G, T % Units_R, NameOption = ReferenceName )
     call R_FD % Initialize ( G, T % Units_R, NameOption = DifferenceName )
-    call R_R  % SetStream ( S )
     call R_FD % SetStream ( S )
 
     end associate !-- R_R, etc.
@@ -222,7 +212,7 @@ contains
     class is ( Integrator_CS_1D_BM_CS_Form )
 
       select type ( R  =>  I % CurrentSet_X_1D )
-        class is ( RadiationMoments_BM_Form )
+        class is ( PhotonMoments_G_Form )
 
       call SetRadiation ( T, R, F )
 
@@ -260,31 +250,26 @@ contains
     select type ( I  =>  T % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
     select type ( R  =>  I % CurrentSet_X_1D )
-      class is ( RadiationMoments_BM_Form )
+      class is ( PhotonMoments_G_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_I_Form )
     select type ( A  =>  R % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
-      ( R_R   =>  T % Reference, &
-        R_FD  =>  T % FractionalDifference, &
-        I     =>  T % Interactions_BM )
+      ( R_FD  =>  T % FractionalDifference )
     associate &
       ( C      =>  A % Chart_GS, &
         FV     =>  F    % Storage_GS % Value, &
         RV     =>  R    % Storage_GS % Value, &
-        R_RV   =>  R_R  % Storage_GS % Value, &
         R_FDV  =>  R_FD % Storage_GS % Value )
 
-    call I % Compute_J_Eq_Ph_G_Kernel &
-           ( J_Eq = R_RV ( :, R % ENERGY_DENSITY_C ), &
-             T    = FV   ( :, F % TEMPERATURE ) )
-    call R_R % ComputeSpectralParameters ( )
+    call R % ComputeSpectralParameters ( )
+    call R % ComputeEquilibrium ( )
 
     call ComputeFractionalDifferenceKernel &
            ( J_FD = R_FDV ( :, R % ENERGY_DENSITY_C ), &
              J    = RV    ( :, R % ENERGY_DENSITY_C ), &
-             J_R  = R_RV  ( :, R % ENERGY_DENSITY_C ), & 
+             J_R  = RV    ( :, R % ENERGY_DENSITY_C_EQ ), & 
              ProperCell = C % ProperCell )
 
     end associate !-- C, etc.
@@ -404,7 +389,7 @@ contains
 
     class ( ThermalizationForm ), intent ( in ) :: &
       T
-    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+    class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       R
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       F
@@ -416,16 +401,13 @@ contains
       class is ( Atlas_SCG_Form )
     associate &
       ( C   =>  A % Chart_GS, &
-        RV  =>  R % Storage_GS % Value, &
-        FV  =>  F % Storage_GS % Value )
+        RV  =>  R % Storage_GS % Value )
 
     !-- Grey, equilibrium
 
-    associate ( I  =>  T % Interactions_BM )
-    call I % Compute_J_Eq_Ph_G_Kernel &
-           ( J_Eq = RV ( :, R % ENERGY_DENSITY_C ), &
-             T    = FV ( :, F % TEMPERATURE ) )
-    end associate !-- I
+    call R % ComputeEquilibrium ( )
+    call Copy ( RV ( :, R % ENERGY_DENSITY_C_EQ ), &
+                RV ( :, R % ENERGY_DENSITY_C ) )
 
     !-- Perturbations on equilibrium
 

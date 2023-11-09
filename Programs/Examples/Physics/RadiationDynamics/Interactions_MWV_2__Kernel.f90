@@ -32,8 +32,8 @@ contains
       !$OMP private ( S, S_Eq )
       do iV = 1, nV
 
-        S     =  1.0_KDR  -  Ratio_P  *  k_B  *  TP ( iV )  /  E_Max
-        S_Eq  =  1.0_KDR  -  Ratio_P  *  k_B  *   T ( iV )  /  E_Max
+        S     =  1.0_KDR  -  Ratio_P  *  k_B  *  T_R ( iV )  /  E_Max
+        S_Eq  =  1.0_KDR  -  Ratio_P  *  k_B  *  T   ( iV )  /  E_Max
 
          Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  S_Eq * J_Eq ( iV )
         Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  S   
@@ -47,8 +47,8 @@ contains
       !$OMP private ( S, S_Eq )
       do iV = 1, nV
 
-        S     =  1.0_KDR  -  Ratio_P  *  k_B  *  TP ( iV )  /  E_Max
-        S_Eq  =  1.0_KDR  -  Ratio_P  *  k_B  *   T ( iV )  /  E_Max
+        S     =  1.0_KDR  -  Ratio_P  *  k_B  *  T_R ( iV )  /  E_Max
+        S_Eq  =  1.0_KDR  -  Ratio_P  *  k_B  *  T   ( iV )  /  E_Max
 
          Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  S_Eq * J_Eq ( iV )
         Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  S   

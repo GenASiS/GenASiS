@@ -9,7 +9,6 @@ RADIATIONS = \
   DiffusionFactor_RM__Form.o \
   DivergencePart_RM__Kernel.o \
   DivergencePart_RM__Form.o \
-  Interactions_BM__Kernel.o \
   Interactions_BM__Form.o \
   RadiationMoments_BM__Kernel.o \
   RadiationMoments_BM__Form.o \

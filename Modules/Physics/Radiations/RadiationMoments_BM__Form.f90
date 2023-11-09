@@ -11,7 +11,7 @@ module RadiationMoments_BM__Form
   private
 
   integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM    = 13, &
+      N_FIELDS_RM    = 14, &
       N_VECTORS_RM   =  3, &
       N_PRIMITIVE_RM =  7, &
       N_BALANCED_RM  =  4
@@ -23,8 +23,9 @@ module RadiationMoments_BM__Form
       N_PRIMITIVE_RM = N_PRIMITIVE_RM, &
       N_BALANCED_RM  = N_BALANCED_RM
     integer ( KDI ) :: &
-      ENERGY_DENSITY_C = 0, &  !-- Comoving
-      ENERGY_DENSITY_B = 0     !-- Balanced
+      ENERGY_DENSITY_C    = 0, &  !-- Comoving
+      ENERGY_DENSITY_C_EQ = 0, &
+      ENERGY_DENSITY_B    = 0     !-- Balanced
     integer ( KDI ) :: &
       MOMENTUM_DENSITY_C_U_1 = 0, &    !-- Comoving
       MOMENTUM_DENSITY_C_U_2 = 0, &
@@ -66,6 +67,8 @@ module RadiationMoments_BM__Form
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
+    procedure, public, pass :: &
+      ComputeEquilibrium
     final :: &
       Finalize
   end type RadiationMoments_BM_Form
@@ -209,18 +212,19 @@ contains
     oF  =  RM % N_FIELDS_CS
 
     RM % ENERGY_DENSITY_C        =  oF +  1
-    RM % ENERGY_DENSITY_B        =  oF +  2
-    RM % MOMENTUM_DENSITY_C_U_1  =  oF +  3
-    RM % MOMENTUM_DENSITY_C_U_2  =  oF +  4
-    RM % MOMENTUM_DENSITY_C_U_3  =  oF +  5
-    RM % MOMENTUM_DENSITY_B_D_1  =  oF +  6
-    RM % MOMENTUM_DENSITY_B_D_2  =  oF +  7
-    RM % MOMENTUM_DENSITY_B_D_3  =  oF +  8
-    RM % FLUX_FACTOR             =  oF +  9
-    RM % STRESS_FACTOR           =  oF + 10
-    RM % FLUID_VELOCITY_U_1      =  oF + 11
-    RM % FLUID_VELOCITY_U_2      =  oF + 12
-    RM % FLUID_VELOCITY_U_3      =  oF + 13
+    RM % ENERGY_DENSITY_C_EQ     =  oF +  2
+    RM % ENERGY_DENSITY_B        =  oF +  3
+    RM % MOMENTUM_DENSITY_C_U_1  =  oF +  4
+    RM % MOMENTUM_DENSITY_C_U_2  =  oF +  5
+    RM % MOMENTUM_DENSITY_C_U_3  =  oF +  6
+    RM % MOMENTUM_DENSITY_B_D_1  =  oF +  7
+    RM % MOMENTUM_DENSITY_B_D_2  =  oF +  8
+    RM % MOMENTUM_DENSITY_B_D_3  =  oF +  9
+    RM % FLUX_FACTOR             =  oF + 10
+    RM % STRESS_FACTOR           =  oF + 11
+    RM % FLUID_VELOCITY_U_1      =  oF + 12
+    RM % FLUID_VELOCITY_U_2      =  oF + 13
+    RM % FLUID_VELOCITY_U_3      =  oF + 14
 
     nFields  =  oF  +  RM % N_FIELDS_RM
     if ( present ( nFieldsOption ) ) &
@@ -246,6 +250,7 @@ contains
 
     Field ( oF + 1 : oF + RM % N_FIELDS_RM ) &
       = [ 'EnergyDensity_C      ', &
+          'EnergyDensity_C_Eq   ', &
           'EnergyDensity_B      ', &
           'MomentumDensity_C_U_1', &
           'MomentumDensity_C_U_2', &
@@ -271,6 +276,8 @@ contains
 
     do iC  =  1, nC
       FieldUnit ( RM % ENERGY_DENSITY_C, iC ) &
+        =  Units_R ( iC ) % EnergyDensity
+      FieldUnit ( RM % ENERGY_DENSITY_C_EQ, iC ) &
         =  Units_R ( iC ) % EnergyDensity
       FieldUnit ( RM % ENERGY_DENSITY_B, iC ) &
         =  Units_R ( iC ) % EnergyDensity
@@ -607,6 +614,19 @@ contains
 
 
   end subroutine ComputeEigenspeeds
+
+
+  subroutine ComputeEquilibrium ( RM )
+
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      RM
+
+    call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeEquilibrium', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeEquilibrium
 
 
   impure elemental subroutine Finalize ( RM )

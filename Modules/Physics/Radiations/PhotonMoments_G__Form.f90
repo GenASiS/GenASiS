@@ -6,6 +6,7 @@ module PhotonMoments_G__Form
   use Mathematics
   use Units_R__Form
   use RadiationMoments_BM__Form
+  use Interactions_BM__Form
 
   implicit none
   private
@@ -17,7 +18,7 @@ module PhotonMoments_G__Form
     integer ( KDI ) :: &
       N_FIELDS_PM = N_FIELDS_PM
     integer ( KDI ) :: &
-      TEMPERATURE_PARAMETER = 0
+      TEMPERATURE_GREY = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_RM
@@ -26,24 +27,37 @@ module PhotonMoments_G__Form
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass :: &
+      ComputeEquilibrium
+    procedure, public, pass :: &
       ComputeSpectralParameters
   end type PhotonMoments_G_Form
 
     private :: &
+      Compute_Eq_Kernel, &
       Compute_SP_Kernel
     
     interface
 
-      module subroutine Compute_SP_Kernel ( TP, J, a, UseDeviceOption )
+      module subroutine Compute_Eq_Kernel ( J_Eq, T, UseDeviceOption )
+        !-- Compute_Equilibrium_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_Eq_Kernel
+
+      module subroutine Compute_SP_Kernel ( T_R, J, UseDeviceOption )
         !-- Compute_SpectralParameters_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          TP
+          T_R
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           J
-        real ( KDR ), intent ( in ) :: &
-          a
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_SP_Kernel
@@ -103,7 +117,7 @@ contains
 
     oF  =  RM % N_FIELDS_CS  +  RM % N_FIELDS_RM
 
-    RM % TEMPERATURE_PARAMETER  =  oF + 1
+    RM % TEMPERATURE_GREY  =  oF + 1
 
     nFields  =  oF  +  RM % N_FIELDS_PM
     if ( present ( nFieldsOption ) ) &
@@ -116,7 +130,7 @@ contains
     end if !-- FieldOption
 
     Field ( oF + 1 : oF + RM % N_FIELDS_PM ) &
-      = [ 'TemperatureParameter' ]
+      = [ 'TemperatureGrey' ]
 
     !-- Units
 
@@ -129,7 +143,7 @@ contains
     end if !-- FieldOption
 
     do iC  =  1, nC
-      FieldUnit ( RM % TEMPERATURE_PARAMETER, iC ) &
+      FieldUnit ( RM % TEMPERATURE_GREY, iC ) &
         =  Units_R ( iC ) % Temperature
     end do !-- iC
 
@@ -175,9 +189,47 @@ contains
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
-                    CS % TEMPERATURE_PARAMETER ] )
+                    CS % TEMPERATURE_GREY ] )
 
   end subroutine SetStream
+
+
+  subroutine ComputeEquilibrium ( RM )
+
+    class ( PhotonMoments_G_Form ), intent ( inout ) :: &
+      RM
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeEquilibrium', CONSOLE % INFO_6 )
+    call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
+
+    select type ( I  =>  RM % Interactions )
+      class is ( Interactions_BM_Form )
+    associate &
+      ( F  =>  I % Fluid )
+
+    do iC  =  1, RM % Atlas % nCharts
+      associate &
+        ( RMV  =>  RM % Storage ( iC ) % Value, &
+           FV  =>   F % Storage ( iC ) % Value )
+      associate &
+        ( J_Eq  =>  RMV ( :, RM % ENERGY_DENSITY_C_EQ ), &
+          T     =>   FV ( :,  F % TEMPERATURE ) )
+               
+      call Compute_Eq_Kernel &
+             ( J_Eq, T, &
+               UseDeviceOption = RM % DeviceMemory )
+
+      end associate !-- T_R, etc.
+      end associate !-- RV, etc.
+    end do !-- iC
+
+    end associate !-- F
+    end select !-- I
+
+  end subroutine ComputeEquilibrium
 
 
   subroutine ComputeSpectralParameters ( RM )
@@ -192,17 +244,17 @@ contains
     call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
 
     do iC  =  1, RM % Atlas % nCharts
-      associate ( RMV  =>  RM % Storage ( iC ) % Value )
       associate &
-        ( TP  =>  RMV ( :, RM % TEMPERATURE_PARAMETER ), &
-           J  =>  RMV ( :, RM % ENERGY_DENSITY_C ) )
+        ( RMV  =>  RM % Storage ( iC ) % Value )
+      associate &
+        ( T_R  =>  RMV ( :, RM % TEMPERATURE_GREY ), &
+          J    =>  RMV ( :, RM % ENERGY_DENSITY_C ) )
                
       call Compute_SP_Kernel &
-             ( TP, J, &
-               a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN, &
+             ( T_R, J, &
                UseDeviceOption  =  RM % DeviceMemory )
 
-      end associate !-- TP, etc.
+      end associate !-- T_R, etc.
       end associate !-- RV, etc.
     end do !-- iC
 

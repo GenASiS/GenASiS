@@ -116,23 +116,22 @@ contains
     call Show ( 'Compute', CONSOLE % INFO_6 )
     call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
-    associate ( F  =>  I % Fluid )
+    associate &
+      ( R  =>  I % Radiation, &
+        F  =>  I % Fluid )
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
-        ( FV  =>  F % Storage ( iC ) % Value, &
-          IV  =>  I % Storage ( iC ) % Value )
+        ( IV  =>  I % Storage ( iC ) % Value, &
+          RV  =>  R % Storage ( iC ) % Value, &
+          FV  =>  F % Storage ( iC ) % Value )
       associate &
-        (   M    =>  FV ( :, F % BARYON_MASS ), &
-            N    =>  FV ( :, F % BARYON_DENSITY_C ), &
-            T    =>  FV ( :, F % TEMPERATURE ), &
-           Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
-          Chi_J  =>  IV ( :, I % OPACITY_J ), &
-          Chi_H  =>  IV ( :, I % OPACITY_H ), &
-           J_Eq  =>  IV ( :, I % EQUILIBRIUM_J ) )
-
-      call I % Compute_J_Eq_Ph_G_Kernel &
-             ( J_Eq, T, UseDeviceOption = I % DeviceMemory )
+        (   M     =>  FV ( :, F % BARYON_MASS ), &
+            N     =>  FV ( :, F % BARYON_DENSITY_C ), &
+           Xi_J   =>  IV ( :, I % EMISSIVITY_J ), &
+          Chi_J   =>  IV ( :, I % OPACITY_J ), &
+          Chi_H   =>  IV ( :, I % OPACITY_H ), &
+            J_Eq  =>  RV ( :, R % ENERGY_DENSITY_C_EQ ) )
 
       call ComputeKernel &
              ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa = I % SpecificOpacity, &
@@ -142,7 +141,7 @@ contains
       end associate !-- FV, etc.
     end do !-- iC
 
-    end associate !-- F
+    end associate !-- R, etc.
 
   end subroutine Compute
 

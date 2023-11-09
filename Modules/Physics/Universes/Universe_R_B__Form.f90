@@ -623,6 +623,7 @@ contains
       class is ( PhotonMoments_G_Form )
 
     call R % ComputeSpectralParameters ( )
+    call R % ComputeEquilibrium ( )
     call U % Interactions_BM % Compute ( )
 
 !    call R % ComputeHeatingRate ( )

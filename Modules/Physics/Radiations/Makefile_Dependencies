@@ -22,11 +22,6 @@ Interactions_BM__Form.o: \
   RadiationMoments_BM__Form.o \
   Interactions_BM__Form.f90
 
-Interactions_BM__Kernel.o: \
-  Basics.o \
-  Interactions_BM__Form.o \
-  Interactions_BM__Kernel.f90
-
 DivergencePart_RM__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -74,6 +69,7 @@ PhotonMoments_G__Form.o: \
   Mathematics.o \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
+  Interactions_BM__Form.o \
   PhotonMoments_G__Form.f90
 
 PhotonMoments_G__Kernel.o: \
