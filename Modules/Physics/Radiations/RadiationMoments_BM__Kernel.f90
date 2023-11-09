@@ -39,12 +39,11 @@ contains
       do iV = 1, nV
 
         if ( J ( iV )  <  SqrtTiny ) &
-          J ( iV )  =  0.0_KDR
+          J ( iV )  =  SqrtTiny
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-        H  =  max ( H, SqrtTiny )
 
         if ( H  >  J ( iV ) ) then
 
@@ -55,13 +54,12 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-          H  =  max ( H, SqrtTiny )
 
         end if
 
         !-- Moment factors ( Minerbo SF )
 
-        FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
+        FF ( iV )  =  H  /  J ( iV )
 
         SF ( iV )  =  1.0_KDR / 3.0_KDR &
                       +  2.0_KDR / 3.0_KDR &
@@ -89,12 +87,11 @@ contains
       do iV = 1, nV
 
         if ( J ( iV )  <  SqrtTiny ) &
-          J ( iV )  =  0.0_KDR
+          J ( iV )  =  SqrtTiny
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-        H  =  max ( H, SqrtTiny )
 
         if ( H  >  J ( iV ) ) then
 
@@ -105,13 +102,12 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-          H  =  max ( H, SqrtTiny )
 
         end if
 
         !-- Moment factors ( Minerbo SF )
 
-        FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
+        FF ( iV )  =  H  /  J ( iV )
 
         SF ( iV )  =  1.0_KDR / 3.0_KDR &
                       +  2.0_KDR / 3.0_KDR &
@@ -188,7 +184,7 @@ contains
 
           !-- FIXME: Do solve above
 
-          J ( iV )  =  E ( iV )
+          J ( iV )  =  max ( E ( iV ), SqrtTiny )
           
           H_1 ( iV )  =  M_UU_11 ( iV )  *  S_1 ( iV )
           H_2 ( iV )  =  M_UU_22 ( iV )  *  S_2 ( iV )
@@ -199,9 +195,8 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-          H  =  max ( H, SqrtTiny )
 
-          FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
+          FF ( iV )  =  H  /  J ( iV )
 
           SF ( iV )  =  1.0_KDR / 3.0_KDR &
                         +  2.0_KDR / 3.0_KDR &
@@ -211,7 +206,7 @@ contains
 
         else
 
-          J   ( iV )  =  0.0_KDR
+          J   ( iV )  =  SqrtTiny
           H_1 ( iV )  =  0.0_KDR
           H_2 ( iV )  =  0.0_KDR
           H_3 ( iV )  =  0.0_KDR
@@ -220,33 +215,15 @@ contains
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
           FF  ( iV )  =  0.0_KDR
-          SF  ( iV )  =  0.0_KDR
+          SF  ( iV )  =  1.0_KDR / 3.0_KDR
 
           cycle 
-
-        end if
-
-        if ( J ( iV )  <  0.0_KDR ) then
-
-          J   ( iV )  =  0.0_KDR
-          H_1 ( iV )  =  0.0_KDR
-          H_2 ( iV )  =  0.0_KDR
-          H_3 ( iV )  =  0.0_KDR
-          E   ( iV )  =  0.0_KDR
-          S_1 ( iV )  =  0.0_KDR
-          S_2 ( iV )  =  0.0_KDR
-          S_3 ( iV )  =  0.0_KDR
-          FF  ( iV )  =  0.0_KDR
-          SF  ( iV )  =  0.0_KDR
-
-          cycle
 
         end if
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-        H  =  max ( H, SqrtTiny )
         
         if ( H  >  J ( iV ) ) then
 
@@ -257,11 +234,10 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-          H  =  max ( H, SqrtTiny )
 
           !-- Moment factors ( Minerbo SF )
 
-          FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
+          FF ( iV )  =  H  /  J ( iV )
 
           SF ( iV )  =  1.0_KDR / 3.0_KDR &
                         +  2.0_KDR / 3.0_KDR &
@@ -314,7 +290,7 @@ contains
 
           !-- FIXME: Do solve above
 
-          J ( iV )  =  E ( iV )
+          J ( iV )  =  max ( E ( iV ), SqrtTiny )
           
           H_1 ( iV )  =  M_UU_11 ( iV )  *  S_1 ( iV )
           H_2 ( iV )  =  M_UU_22 ( iV )  *  S_2 ( iV )
@@ -325,9 +301,8 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-          H  =  max ( H, SqrtTiny )
 
-          FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
+          FF ( iV )  =  H  /  J ( iV )
 
           SF ( iV )  =  1.0_KDR / 3.0_KDR &
                         +  2.0_KDR / 3.0_KDR &
@@ -337,7 +312,7 @@ contains
 
         else
 
-          J   ( iV )  =  0.0_KDR
+          J   ( iV )  =  SqrtTiny
           H_1 ( iV )  =  0.0_KDR
           H_2 ( iV )  =  0.0_KDR
           H_3 ( iV )  =  0.0_KDR
@@ -346,33 +321,15 @@ contains
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
           FF  ( iV )  =  0.0_KDR
-          SF  ( iV )  =  0.0_KDR
+          SF  ( iV )  =  1.0_KDR / 3.0_KDR
 
           cycle 
-
-        end if
-
-        if ( J ( iV )  <  0.0_KDR ) then
-
-          J   ( iV )  =  0.0_KDR
-          H_1 ( iV )  =  0.0_KDR
-          H_2 ( iV )  =  0.0_KDR
-          H_3 ( iV )  =  0.0_KDR
-          E   ( iV )  =  0.0_KDR
-          S_1 ( iV )  =  0.0_KDR
-          S_2 ( iV )  =  0.0_KDR
-          S_3 ( iV )  =  0.0_KDR
-          FF  ( iV )  =  0.0_KDR
-          SF  ( iV )  =  0.0_KDR
-
-          cycle
 
         end if
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-        H  =  max ( H, SqrtTiny )
         
         if ( H  >  J ( iV ) ) then
 
@@ -383,11 +340,10 @@ contains
           H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                        +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                        +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-          H  =  max ( H, SqrtTiny )
 
           !-- Moment factors ( Minerbo SF )
 
-          FF ( iV )  =  H  /  max ( J ( iV ), SqrtTiny )
+          FF ( iV )  =  H  /  J ( iV )
 
           SF ( iV )  =  1.0_KDR / 3.0_KDR &
                         +  2.0_KDR / 3.0_KDR &
