@@ -216,14 +216,6 @@ contains
     call SetFluid ( T, F )
     call F % SetUseInitialTemperature ( .true. )
 
-    !-- Interactions
-
-    select type ( Intrctns  =>  T % Interactions_BM )
-    class is ( Interactions_C_Form )
-       call Intrctns % SetOpacityAbsorption &
-              ( T % OpacityAbsorption ( T % iRadiation ) )
-    end select !-- Intrctns
-    
     !-- Radiation
 
     select type ( I )
@@ -243,6 +235,14 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- I    
 
+    !-- Interactions
+
+    select type ( Intrctns  =>  T % Interactions_BM )
+    class is ( Interactions_C_Form )
+       call Intrctns % SetOpacityAbsorption &
+              ( T % OpacityAbsorption ( T % iRadiation ) )
+    end select !-- Intrctns
+    
     end select !-- F
     end select !-- I
     end select !-- T

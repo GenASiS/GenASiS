@@ -12,9 +12,13 @@ module DiffusionFactor_RM__Form
   private
 
   type, public, extends ( DiffusionFactor_CS_Form ) :: DiffusionFactor_RM_Form
+    class ( Interactions_BM_Form ), pointer :: &
+      Interactions => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_DF
+      InitializeAllocate_RM
+    generic, public :: &
+      Initialize => InitializeAllocate_RM
     procedure, public, pass :: &
       Compute
     final :: &
@@ -45,13 +49,13 @@ module DiffusionFactor_RM__Form
 contains
 
 
-  subroutine InitializeAllocate_DF &
-               ( DF, CS, FieldOption, nFieldsOption )
+  subroutine InitializeAllocate_RM &
+               ( DF, I, FieldOption, nFieldsOption )
 
     class ( DiffusionFactor_RM_Form ), intent ( inout ) :: &
       DF
-    class ( CurrentSetForm ), intent ( in ), target :: &
-      CS
+    class ( Interactions_BM_Form ), intent ( in ), target :: &
+      I
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -59,11 +63,13 @@ contains
 
     if ( DF % Type  ==  '' ) &
       DF % Type  =  'an DiffusionFactor_RM' 
-    
-    call DF % DiffusionFactor_CS_Form % Initialize &
-           ( CS, FieldOption, nFieldsOption )
 
-  end subroutine InitializeAllocate_DF
+    DF % Interactions  =>  I
+
+    call DF % DiffusionFactor_CS_Form % Initialize &
+           ( I % Radiation, FieldOption, nFieldsOption )
+
+  end subroutine InitializeAllocate_RM
 
 
   subroutine Compute ( DF, iC, iD )
@@ -77,10 +83,9 @@ contains
     call Show ( 'Computing ' // trim ( DF % Type ), DF % IGNORABILITY + 3 )
     call Show ( DF % Name, 'Name', DF % IGNORABILITY + 3 )
 
-    select type ( RM  =>  DF % CurrentSet )
-      class is ( RadiationMoments_BM_Form )
-    select type ( I  =>  RM % Interactions )
-      class is ( Interactions_BM_Form )
+    associate &
+      (  I  =>  DF % Interactions, &
+        RM  =>  DF % Interactions % Radiation )
     associate &
       ( DFV  =>  DF % Storage ( iC ) % Value, &
         RMV  =>  RM % Storage ( iC ) % Value, &
@@ -114,8 +119,7 @@ contains
 
     end associate !-- DFR, etc.
     end associate !-- DFV, etc.
-    end select !-- I
-    end select !-- RM
+    end associate !-- I, etc.
 
   end subroutine Compute
 
@@ -124,6 +128,8 @@ contains
 
     type ( DiffusionFactor_RM_Form ), intent ( inout ) :: &
       DF
+
+    nullify ( DF % Interactions )
 
   end subroutine Finalize
 

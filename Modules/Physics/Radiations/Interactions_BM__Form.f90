@@ -4,6 +4,7 @@ module Interactions_BM__Form
   use Mathematics
   use Fluids
   use Units_R__Form
+  use RadiationMoments_BM__Form
 
  implicit none
  private
@@ -25,6 +26,8 @@ module Interactions_BM__Form
       EQUILIBRIUM_N = 0
     class ( Fluid_P_Form ), pointer :: &
       Fluid => null ( )
+    class ( RadiationMoments_BM_Form ), pointer :: &
+      Radiation => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
@@ -65,15 +68,17 @@ contains
 
 
   subroutine InitializeAllocate_I &
-               ( I, F, Units_R, FieldOption, NameOption, UnitOption, &
+               ( I, R, Units_R, F, FieldOption, NameOption, UnitOption, &
                  nFieldsOption, IgnorabilityOption )
 
     class ( Interactions_BM_Form ), intent ( inout ) :: &
       I
-    class ( Fluid_P_Form ), intent ( in ), target :: &
-      F
+    class ( RadiationMoments_BM_Form ), intent ( inout ), target :: &
+      R
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    class ( Fluid_P_Form ), intent ( in ), target :: &
+      F
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
@@ -100,7 +105,10 @@ contains
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
-    I % Fluid  =>  F
+    I % Fluid      =>  F
+    I % Radiation  =>  R
+
+    call R % SetInteractions ( I )
 
     !-- Field indices
 
@@ -232,6 +240,7 @@ contains
     type ( Interactions_BM_Form ), intent ( inout ) :: &
       I
 
+    nullify ( I % Radiation )
     nullify ( I % Fluid )
 
   end subroutine Finalize

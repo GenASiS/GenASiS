@@ -48,9 +48,9 @@ module Universe_R_B__Form
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
-      InitializeInteractions
-    procedure, public, pass :: &
       InitializeRadiation
+    procedure, public, pass :: &
+      InitializeInteractions
     procedure, public, pass :: &
       InitializeSteps
     procedure, public, pass :: &
@@ -185,9 +185,9 @@ contains
            ( GravitationType = 'GALILEO' )
     call U % InitializeFluid &
            ( FluidType = 'IDEAL' )
-    call U % InitializeInteractions &
-           ( )
     call U % InitializeRadiation &
+           ( )
+    call U % InitializeInteractions &
            ( )
     call U % InitializeSteps &
            ( )
@@ -329,25 +329,6 @@ contains
   end subroutine InitializePositionSpace
 
 
-  subroutine InitializeInteractions ( U )
-
-    class ( Universe_R_B_Form ), intent ( inout ) :: &
-      U
-
-    select type ( I  =>  U % Integrator )
-      class is ( Integrator_CS_Form )
-    select type ( F  =>  I % CurrentSet_X )
-      class is ( Fluid_P_Form )
-
-    if ( allocated ( U % Interactions_BM ) ) &
-      call U % Interactions_BM % Initialize ( F, U % Units_R )
-
-    end select !-- F
-    end select !-- I
-
-  end subroutine InitializeInteractions
-
-
   subroutine InitializeRadiation ( U )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
@@ -369,8 +350,6 @@ contains
 
         call R % Initialize &
                ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
-        if ( allocated ( U % Interactions_BM ) ) &
-          call R % SetInteractions ( U % Interactions_BM )
 
         end select !-- R
 
@@ -382,8 +361,6 @@ contains
 
         call R % Initialize &
                ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
-        if ( allocated ( U % Interactions_BM ) ) &
-          call R % SetInteractions ( U % Interactions_BM )
 
         end select !-- R
 
@@ -401,6 +378,28 @@ contains
     end select !-- I
 
   end subroutine InitializeRadiation
+
+
+  subroutine InitializeInteractions ( U )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
+
+    if ( allocated ( U % Interactions_BM ) ) &
+      call U % Interactions_BM % Initialize ( R, U % Units_R, F )
+
+    end select !-- F
+    end select !-- R
+    end select !-- I
+
+  end subroutine InitializeInteractions
 
 
   subroutine InitializeSteps ( U )
@@ -589,11 +588,11 @@ contains
         FV  =>  F % Storage_GS % Value, &
         RV  =>  R % Storage_GS % Value )
 
-    call Compute_dT_ET_CGS_Kernel &
-           ( dT, C % ProperCell, &
-             Q  =  RV ( :, R % HEATING_RATE ), &
-             E  =  FV ( :, F % ENERGY_DENSITY_C ), &
-             UseDeviceOption = F % DeviceMemory )
+!    call Compute_dT_ET_CGS_Kernel &
+!           ( dT, C % ProperCell, &
+!             Q  =  RV ( :, R % HEATING_RATE ), &
+!             E  =  FV ( :, F % ENERGY_DENSITY_C ), &
+!             UseDeviceOption = F % DeviceMemory )
 
     end associate !-- C, etc.
 
@@ -615,17 +614,22 @@ contains
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_B_Form )
     select type ( I )
       class is ( Integrator_CS_1D_BM_CS_Form )
     select type ( R  =>  I % CurrentSet_X_1D )
       class is ( PhotonMoments_G_Form )
 
     call R % ComputeSpectralParameters ( )
-    call R % ComputeHeatingRate ( )
+    call U % Interactions_BM % Compute ( )
+
+!    call R % ComputeHeatingRate ( )
 
     end select !-- R
     end select !-- I
+    end select !-- U
 
   end subroutine ResolveCycle_R
 
@@ -875,11 +879,14 @@ contains
       class is ( Slope_RM_I_Form )
     select type ( R  =>  S % CurrentSet )
       class is ( RadiationMoments_BM_Form )
+    select type ( I  =>  R % Interactions )
+      class is ( Interactions_BM_Form )
 
     call K % Initialize &
-           ( R )!, &
+           ( I )!, &
 !             IgnorabilityOption = S % IGNORABILITY )
 
+    end select !-- I
     end select !-- R
     end select !-- K
     end select !-- S
@@ -902,11 +909,14 @@ contains
       class is ( Slope_RM_DFV_I_Form )
     select type ( R  =>  S % CurrentSet )
       class is ( RadiationMoments_BM_Form )
+    select type ( I  =>  R % Interactions )
+      class is ( Interactions_BM_Form )
 
     call K % Initialize &
-           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, R )
+           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, I )
             !, IgnorabilityOption = S % IGNORABILITY )
 
+    end select !-- I
     end select !-- R
     end select !-- K
     end select !-- S

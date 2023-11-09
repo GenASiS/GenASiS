@@ -48,15 +48,17 @@ contains
 
 
   subroutine InitializeAllocate_I &
-               ( I, F, Units_R, FieldOption, NameOption, UnitOption, &
+               ( I, R, Units_R, F, FieldOption, NameOption, UnitOption, &
                  nFieldsOption, IgnorabilityOption )
 
     class ( Interactions_C_Form ), intent ( inout ) :: &
       I
-    class ( Fluid_P_Form ), intent ( in ), target :: &
-      F
+    class ( RadiationMoments_BM_Form ), intent ( inout ), target :: &
+      R
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    class ( Fluid_P_Form ), intent ( in ), target :: &
+      F
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
@@ -71,7 +73,7 @@ contains
       I % Type  =  'an Interactions_C' 
     
     call I % Interactions_BM_Form % Initialize &
-           ( F, Units_R, &
+           ( R, Units_R, F, &
              FieldOption = FieldOption, &
              NameOption = NameOption, &
              UnitOption = UnitOption, &

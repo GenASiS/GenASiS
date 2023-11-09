@@ -2,24 +2,11 @@ Units_R__Form.o: \
   Basics.o \
   Units_R__Form.f90
 
-Interactions_BM__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Fluids.o \
-  Units_R__Form.o \
-  Interactions_BM__Form.f90
-
-Interactions_BM__Kernel.o: \
-  Basics.o \
-  Interactions_BM__Form.o \
-  Interactions_BM__Kernel.f90
-
 RadiationMoments_BM__Form.o: \
   Basics.o \
   Mathematics.o \
   Gravitations.o \
   Units_R__Form.o \
-  Interactions_BM__Form.o \
   RadiationMoments_BM__Form.f90
 
 RadiationMoments_BM__Kernel.o: \
@@ -27,17 +14,18 @@ RadiationMoments_BM__Kernel.o: \
   RadiationMoments_BM__Form.o \
   RadiationMoments_BM__Kernel.f90
 
-PhotonMoments_G__Form.o: \
+Interactions_BM__Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluids.o \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
-  PhotonMoments_G__Form.f90
+  Interactions_BM__Form.f90
 
-PhotonMoments_G__Kernel.o: \
+Interactions_BM__Kernel.o: \
   Basics.o \
-  PhotonMoments_G__Form.o \
-  PhotonMoments_G__Kernel.f90
+  Interactions_BM__Form.o \
+  Interactions_BM__Kernel.f90
 
 DivergencePart_RM__Form.o: \
   Basics.o \
@@ -56,7 +44,6 @@ DiffusionFactor_RM__Form.o: \
   Mathematics.o \
   Gravitations.o \
   Interactions_BM__Form.o \
-  RadiationMoments_BM__Form.o \
   DiffusionFactor_RM__Form.f90
 
 DiffusionFactor_RM__Kernel.o: \
@@ -68,7 +55,6 @@ Slope_RM_I__Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_BM__Form.o \
-  RadiationMoments_BM__Form.o \
   Slope_RM_I__Form.f90
 
 Slope_RM_I__Kernel.o: \
@@ -79,19 +65,31 @@ Slope_RM_I__Kernel.o: \
 Slope_RM_DFV_I__Form.o: \
   Basics.o \
   Mathematics.o \
-  RadiationMoments_BM__Form.o \
+  Interactions_BM__Form.o \
   Slope_RM_I__Form.o \
   Slope_RM_DFV_I__Form.f90
 
+PhotonMoments_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Units_R__Form.o \
+  RadiationMoments_BM__Form.o \
+  PhotonMoments_G__Form.f90
+
+PhotonMoments_G__Kernel.o: \
+  Basics.o \
+  PhotonMoments_G__Form.o \
+  PhotonMoments_G__Kernel.f90
+
 Radiations.o: \
   Units_R__Form.o \
-  Interactions_BM__Form.o \
   RadiationMoments_BM__Form.o \
-  PhotonMoments_G__Form.o \
+  Interactions_BM__Form.o \
   DivergencePart_RM__Form.o \
   DiffusionFactor_RM__Form.o \
   Slope_RM_I__Form.o \
   Slope_RM_DFV_I__Form.o \
+  PhotonMoments_G__Form.o \
   Radiations.f90
 
 Radiations.a: $(RADIATIONS)

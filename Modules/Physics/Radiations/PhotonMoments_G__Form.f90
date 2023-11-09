@@ -11,14 +11,13 @@ module PhotonMoments_G__Form
   private
 
   integer ( KDI ), private, parameter :: &
-      N_FIELDS_PM = 2
+      N_FIELDS_PM = 1
 
   type, public, extends ( RadiationMoments_BM_Form ) :: PhotonMoments_G_Form
     integer ( KDI ) :: &
       N_FIELDS_PM = N_FIELDS_PM
     integer ( KDI ) :: &
-      TEMPERATURE_PARAMETER   = 0, &
-      TEMPERATURE_EQUILIBRIUM = 0
+      TEMPERATURE_PARAMETER = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_RM
@@ -35,14 +34,14 @@ module PhotonMoments_G__Form
     
     interface
 
-      module subroutine Compute_SP_Kernel ( TP, TE, J, T, a, UseDeviceOption )
+      module subroutine Compute_SP_Kernel ( TP, J, a, UseDeviceOption )
         !-- Compute_SpectralParameters_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          TP, TE
+          TP
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          J, T
+          J
         real ( KDR ), intent ( in ) :: &
           a
         logical ( KDL ), intent ( in ), optional :: &
@@ -104,8 +103,7 @@ contains
 
     oF  =  RM % N_FIELDS_CS  +  RM % N_FIELDS_RM
 
-    RM % TEMPERATURE_PARAMETER    =  oF + 1
-    RM % TEMPERATURE_EQUILIBRIUM  =  oF + 2
+    RM % TEMPERATURE_PARAMETER  =  oF + 1
 
     nFields  =  oF  +  RM % N_FIELDS_PM
     if ( present ( nFieldsOption ) ) &
@@ -118,8 +116,7 @@ contains
     end if !-- FieldOption
 
     Field ( oF + 1 : oF + RM % N_FIELDS_PM ) &
-      = [ 'TemperatureParameter  ', &
-          'TemperatureEquilibrium' ]
+      = [ 'TemperatureParameter' ]
 
     !-- Units
 
@@ -133,8 +130,6 @@ contains
 
     do iC  =  1, nC
       FieldUnit ( RM % TEMPERATURE_PARAMETER, iC ) &
-        =  Units_R ( iC ) % Temperature
-      FieldUnit ( RM % TEMPERATURE_EQUILIBRIUM, iC ) &
         =  Units_R ( iC ) % Temperature
     end do !-- iC
 
@@ -180,9 +175,7 @@ contains
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
-                    CS % HEATING_RATE, &
-                    CS % TEMPERATURE_PARAMETER, &
-                    CS % TEMPERATURE_EQUILIBRIUM ] )
+                    CS % TEMPERATURE_PARAMETER ] )
 
   end subroutine SetStream
 
@@ -198,31 +191,20 @@ contains
     call Show ( 'ComputeSpectralParameters', CONSOLE % INFO_6 )
     call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
 
-    if ( .not. associated ( RM % Interactions ) ) &
-      return
-
-    associate ( F  =>  RM % Interactions % Fluid )
-
     do iC  =  1, RM % Atlas % nCharts
-      associate &
-        ( RMV  =>  RM % Storage ( iC ) % Value, &
-           FV  =>   F % Storage ( iC ) % Value )
+      associate ( RMV  =>  RM % Storage ( iC ) % Value )
       associate &
         ( TP  =>  RMV ( :, RM % TEMPERATURE_PARAMETER ), &
-          TE  =>  RMV ( :, RM % TEMPERATURE_EQUILIBRIUM ), &
-           J  =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
-           T  =>   FV ( :,  F % TEMPERATURE ) )
+           J  =>  RMV ( :, RM % ENERGY_DENSITY_C ) )
                
       call Compute_SP_Kernel &
-             ( TP, TE, J, T, &
+             ( TP, J, &
                a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN, &
                UseDeviceOption  =  RM % DeviceMemory )
 
       end associate !-- TP, etc.
       end associate !-- RV, etc.
     end do !-- iC
-
-    end associate !-- F
 
   end subroutine ComputeSpectralParameters
 

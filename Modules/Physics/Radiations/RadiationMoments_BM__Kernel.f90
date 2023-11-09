@@ -546,39 +546,4 @@ contains
   end procedure Compute_ES_G_Kernel
 
 
-  module procedure Compute_Q_Kernel
-
-    !-- Compute_HeatingRate_Kernel
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    logical ( KDL ) :: &
-      UseDevice      
-          
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-      
-    nV  =  size ( Q )
-
-    if ( UseDevice ) then
-      !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET )
-      do iV = 1, nV
-        Q ( iV )  =  - ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) )
-      end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    else
-      !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST )
-      do iV = 1, nV
-        Q ( iV )  =  - ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) )
-      end do
-      !$OMP end parallel do
-    end if
-
-  end procedure Compute_Q_Kernel
-
-
 end submodule RadiationMoments_BM__Kernel

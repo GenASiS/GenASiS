@@ -30,7 +30,6 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         TP ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
-        TE ( iV )  =  T ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
@@ -38,7 +37,6 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         TP ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
-        TE ( iV )  =  T ( iV )
       end do
       !$OMP end parallel do
     end if

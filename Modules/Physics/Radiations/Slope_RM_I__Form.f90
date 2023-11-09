@@ -5,7 +5,6 @@ module Slope_RM_I__Form
   use Basics
   use Mathematics
   use Interactions_BM__Form
-  use RadiationMoments_BM__Form
 
   implicit none
   private
@@ -15,8 +14,8 @@ module Slope_RM_I__Form
       iEnergy_B
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_B
-    class ( RadiationMoments_BM_Form ), pointer :: &
-      RadiationMoments => null ( )
+    class ( Interactions_BM_Form ), pointer :: &
+      Interactions => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_RM_I
@@ -60,12 +59,12 @@ module Slope_RM_I__Form
 contains
 
 
-  subroutine InitializeAllocate_RM_I ( S, RM )
+  subroutine InitializeAllocate_RM_I ( S, I )
 
     class ( Slope_RM_I_Form ), intent ( inout ) :: &
       S
-    class ( RadiationMoments_BM_Form ), intent ( in ), target :: &
-      RM
+    class ( Interactions_BM_Form ), intent ( in ), target :: &
+      I
 
     character ( LDL ) :: &
       Name
@@ -73,9 +72,11 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_RM_I' 
     
+    associate ( RM  =>  I % Radiation )
+
     Name  =  trim ( RM % Name ) // '_Slp_RM_I'
 
-    S % RadiationMoments  =>  RM
+    S % Interactions  =>  I
 
     call Search ( RM % iaBalanced, RM % ENERGY_DENSITY_B, &
                   S % iEnergy_B )
@@ -96,6 +97,8 @@ contains
              nFieldsOption = RM % nBalanced, &
              IgnorabilityOption = RM % IGNORABILITY + 1 )
 
+    end associate !-- RM
+
   end subroutine InitializeAllocate_RM_I
 
 
@@ -115,10 +118,8 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
-      ( RM  =>  S % RadiationMoments, &
-         I  =>  S % RadiationMoments % Interactions )
-
-    call I % Compute ( )
+      (  I  =>  S % Interactions, &
+        RM  =>  S % Interactions % Radiation )
 
     do iC  =  1,  S % Atlas % nCharts
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
@@ -158,7 +159,7 @@ contains
       end select !-- C
     end do !-- iC
 
-    end associate !-- RM, etc.
+    end associate !-- I, etc.
 
   end subroutine Compute
 
@@ -168,7 +169,7 @@ contains
     type ( Slope_RM_I_Form ), intent ( inout ) :: &
       S
 
-    nullify ( S % RadiationMoments )
+    nullify ( S % Interactions )
     
   end subroutine Finalize
 

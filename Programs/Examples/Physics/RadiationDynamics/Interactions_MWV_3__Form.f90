@@ -62,15 +62,17 @@ contains
 
 
   subroutine InitializeAllocate_I &
-               ( I, F, Units_R, FieldOption, NameOption, UnitOption, &
+               ( I, R, Units_R, F, FieldOption, NameOption, UnitOption, &
                  nFieldsOption, IgnorabilityOption )
 
     class ( Interactions_MWV_3_Form ), intent ( inout ) :: &
       I
-    class ( Fluid_P_Form ), intent ( in ), target :: &
-      F
+    class ( RadiationMoments_BM_Form ), intent ( inout ), target :: &
+      R
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    class ( Fluid_P_Form ), intent ( in ), target :: &
+      F
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
@@ -85,7 +87,7 @@ contains
       I % Type  =  'an Interactions_MWV_3' 
     
     call I % Interactions_BM_Form % Initialize &
-           ( F, Units_R, &
+           ( R, Units_R, F, &
              FieldOption = FieldOption, &
              NameOption = NameOption, &
              UnitOption = UnitOption, &
@@ -125,9 +127,10 @@ contains
     call Show ( 'Compute', CONSOLE % INFO_6 )
     call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
+    select type ( R  =>  I % Radiation )
+      class is ( PhotonMoments_G_Form )
     associate &
-      ( F  =>  I % Fluid, &
-        R  =>  I % Radiation )
+      ( F  =>  I % Fluid )
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
@@ -158,6 +161,7 @@ contains
     end do !-- iC
 
     end associate !-- F
+    end select !-- R
 
   end subroutine Compute
 
