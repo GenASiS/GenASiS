@@ -58,7 +58,7 @@ contains
       nFieldsOption
 
     if ( DF % Type  ==  '' ) &
-      DF % Type  =  'an DiffusionFactor_RM' 
+      DF % Type  =  'a DiffusionFactor_RM' 
     
     call DF % DiffusionFactor_CS_Form % Initialize &
            ( CS, FieldOption, nFieldsOption )

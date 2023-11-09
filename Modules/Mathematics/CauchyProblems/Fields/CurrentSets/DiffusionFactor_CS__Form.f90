@@ -91,7 +91,7 @@ contains
       Field
 
     if ( DF % Type  ==  '' ) &
-      DF % Type  =  'an DiffusionFactor_CS' 
+      DF % Type  =  'a DiffusionFactor_CS' 
     
     Name  =  trim ( CS % Name ) // '_DffsnFctr'
 
