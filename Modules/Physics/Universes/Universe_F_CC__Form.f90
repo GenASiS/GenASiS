@@ -25,18 +25,22 @@ module Universe_F_CC__Form
       Finalize
     procedure, public, pass :: &
       SetBoundaryConditions
+    procedure, public, pass :: &
+      SetMeasures
     procedure, private, pass :: &
       InitializeAtlas
     procedure, public, pass :: &
       Compute_dT_G_CGS
     procedure, public, nopass :: &
+      InitializeSeries_F_CC      
+    procedure, public, nopass :: &
       Analyze_F_CC
+    procedure, public, nopass :: &
+      Set_T_CheckpointInterval_F_CC
   end type Universe_F_CC_Form
 
     private :: &
-      Set_T_CheckpointInterval, &
-      Compute_dT_Local, &
-      InitializeSeries
+      Compute_dT_Local
 
       private :: &
         Compute_dT_G_CGS_Kernel
@@ -92,12 +96,6 @@ contains
       nCellsPolarOption, &
       nWriteOption
 
-    class ( Atlas_H_Form ), pointer :: &
-      A_SA
-    class ( FieldSet_BM_Form ), pointer :: &
-      G_SA, &
-      F_SA      
-
     if ( U % Type == '' ) &
       U % Type = 'a Universe_F_CC'
 
@@ -112,33 +110,15 @@ contains
              nCellsPolarOption = nCellsPolarOption, &
              nWriteOption = nWriteOption ) 
 
-    !-- Measures
-
-    if ( allocated ( U % PositionSpace_SA ) ) then
-      A_SA  =>  U % PositionSpace_SA
-      G_SA  =>  U % SA_Gravitation % FieldSet_SA
-      F_SA  =>  U % SA_Fluid % FieldSet_SA
-    else !-- 1D
-      select type ( I  =>  U % Integrator )
-        class is ( Integrator_CS_Form )
-      A_SA  =>  I % X
-      G_SA  =>  I % Geometry_X
-      F_SA  =>  I % CurrentSet_X
-      end select !-- I
-    end if
-
-    allocate ( U % Measures )
-    associate ( M  =>  U % Measures )
-    call M % Initialize ( F_SA, G_SA, A_SA, Units_F = U % Units_F ( 1 ) )
-    end associate !-- M
+    call U % SetMeasures ( )
 
     !-- Integrator methods
 
     associate ( I  =>  U % Integrator )
     I % Compute_dT_Local          =>  Compute_dT_Local
-    I % InitializeSeries          =>  InitializeSeries
+    I % InitializeSeries          =>  InitializeSeries_F_CC
     I % Analyze                   =>  Analyze_F_CC
-    I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
+    I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval_F_CC
     end associate !-- I
 
   end subroutine Initialize_F_CC
@@ -176,6 +156,38 @@ contains
     end select !-- I
 
   end subroutine SetBoundaryConditions
+
+
+  subroutine SetMeasures ( U )
+
+    class ( Universe_F_CC_Form ), intent ( inout ), target :: &
+      U
+
+    class ( Atlas_H_Form ), pointer :: &
+      A_SA
+    class ( FieldSet_BM_Form ), pointer :: &
+      G_SA, &
+      F_SA      
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      A_SA  =>  U % PositionSpace_SA
+      G_SA  =>  U % SA_Gravitation % FieldSet_SA
+      F_SA  =>  U % SA_Fluid % FieldSet_SA
+    else !-- 1D
+      select type ( I  =>  U % Integrator )
+        class is ( Integrator_CS_Form )
+      A_SA  =>  I % X
+      G_SA  =>  I % Geometry_X
+      F_SA  =>  I % CurrentSet_X
+      end select !-- I
+    end if
+
+    allocate ( U % Measures )
+    associate ( M  =>  U % Measures )
+    call M % Initialize ( F_SA, G_SA, A_SA, Units_F = U % Units_F ( 1 ) )
+    end associate !-- M
+
+  end subroutine SetMeasures
 
 
   subroutine InitializeAtlas &
@@ -249,7 +261,7 @@ contains
       call PS % Initialize &
              ( RadiusMax = RadiusMax, &
                RadiusCore = RadiusCore, &
-               CommunicatorOption = PROGRAM_HEADER % Communicator, &
+               CommunicatorOption = Communicator, &
                NameOption = 'PositionSpace', &
                DeviceMemoryOption = U % DeviceMemory, &
                CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
@@ -329,6 +341,30 @@ contains
   end subroutine Compute_dT_G_CGS
 
 
+  subroutine InitializeSeries_F_CC ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    allocate ( Series_F_CC_Form :: I % Series )
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_CC_Form )
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    select type ( S  =>  I % Series )
+      class is ( Series_F_CC_Form )
+    call S % Initialize &
+      ( U % Measures, I % CurrentSet_X, I % GridImageStream, I % dT_Label, &
+        I % Unit_T, I % dT_Candidate, I % T, I % Communicator % Rank, &
+        I % nWrite, I % iCycle )
+    end select !-- S
+    end select !-- I
+    end select !-- U
+
+  end subroutine InitializeSeries_F_CC
+
+
   subroutine Analyze_F_CC ( I, Ignorability, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -352,7 +388,7 @@ contains
   end subroutine Analyze_F_CC
 
 
-  subroutine Set_T_CheckpointInterval ( I )
+  subroutine Set_T_CheckpointInterval_F_CC ( I )
 
     class ( Integrator_H_Form ), intent ( inout ), target :: &
       I
@@ -399,7 +435,7 @@ contains
     end associate !-- M
     end select !-- U
 
-  end subroutine Set_T_CheckpointInterval
+  end subroutine Set_T_CheckpointInterval_F_CC
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
@@ -441,30 +477,6 @@ contains
     end select !-- U
 
   end subroutine Compute_dT_Local
-
-
-  subroutine InitializeSeries ( I )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-
-    allocate ( Series_F_CC_Form :: I % Series )
-
-    select type ( U  =>  I % System )
-      class is ( Universe_F_CC_Form )
-    select type ( I )
-      class is ( Integrator_CS_Form )
-    select type ( S  =>  I % Series )
-      class is ( Series_F_CC_Form )
-    call S % Initialize &
-      ( U % Measures, I % CurrentSet_X, I % GridImageStream, I % dT_Label, &
-        I % Unit_T, I % dT_Candidate, I % T, I % Communicator % Rank, &
-        I % nWrite, I % iCycle )
-    end select !-- S
-    end select !-- I
-    end select !-- U
-
-  end subroutine InitializeSeries
 
 
 end module Universe_F_CC__Form

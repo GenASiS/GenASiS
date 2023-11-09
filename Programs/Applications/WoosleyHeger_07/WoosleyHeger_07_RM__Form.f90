@@ -78,8 +78,8 @@ contains
              nCellsPolarOption = 128, &
              nWriteOption = 30 )
 
-    WH % Integrator % SetInitial    =>  SetInitial
-    WH % Integrator % System        =>  WH
+    WH % Integrator % SetInitial  =>  SetInitial
+    WH % Integrator % System      =>  WH
 
   end subroutine InitializeUniverse
 

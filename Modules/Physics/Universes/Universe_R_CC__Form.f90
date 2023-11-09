@@ -60,7 +60,10 @@ module Universe_R_CC__Form
     private :: &
     !   ResolveCycle_R, &
     !   PrepareStep_F, &
-      Compute_dT_Local!, &
+      Compute_dT_Local, &
+      InitializeSeries, &
+      Analyze, &
+      Set_T_CheckpointInterval
     !   SetSlope_F_P_DFV_SS, &
     !   SetSlope_F_P_SS, &
     !   SetSlope_RM_I, &
@@ -135,6 +138,10 @@ contains
 
     !-- Units
 
+    U % Dimensionless  =  .false.
+!    if ( present ( DimensionlessOption ) ) &
+!      U % Dimensionless  =  DimensionlessOption
+
     if ( .not. allocated ( U % Units_F ) ) then
       allocate ( U % Units_F ( 1 ) )
       call U % Units_F ( 1 ) % Initialize ( TypeOption = 'ASTROPHYSICS' )
@@ -152,7 +159,8 @@ contains
     call U % AllocateIntegrator &
            ( )
     call U % InitializePositionSpace &
-           ( RadiusMaxOption = RadiusMaxOption, &
+           ( CommunicatorOption = U % Communicator_PS, &
+             RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
@@ -180,12 +188,17 @@ contains
              FinishTimeOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
+    call U % SetMeasures ( )
+
     !-- Integrator methods
 
     associate ( I  =>  U % Integrator )
+    I % Compute_dT_Local          =>  Compute_dT_Local
+    I % InitializeSeries          =>  InitializeSeries
+    I % Analyze                   =>  Analyze
+    I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
     ! I % ResolveCycle      =>  ResolveCycle_R
     ! I % PrepareStep       =>  PrepareStep_F
-    I % Compute_dT_Local  =>  Compute_dT_Local
     end associate !-- I
 
   end subroutine Initialize_R_CC
@@ -389,13 +402,12 @@ contains
       call DT % Initialize ( R )
       end associate !-- DT
 
-      allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
-      associate ( DF  =>  S % DiffusionFactor )
-      call DF % Initialize ( R )
-      end associate !-- DF
+      ! allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
+      ! associate ( DF  =>  S % DiffusionFactor )
+      ! call DF % Initialize ( R )
+      ! end associate !-- DF
 
 !        S % SetSlope  =>  SetSlope_RM_DFV_I
-!        S % SetSlope  =>  SetSlope_RM_DFV_I_I 
 
       call S % Initialize ( R )
 
@@ -516,13 +528,62 @@ contains
 
     call I % Compute_dT_CS_CGS &
            ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
-        dT_3  =  I % CourantFactor_1D  *  dT_3
+    dT_3  =  I % CourantFactor_1D  *  dT_3
 
     end associate !-- dT_1, etc.
     end select !-- I
     end select !-- U
 
   end subroutine Compute_dT_Local
+
+
+  subroutine InitializeSeries ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_CC_Form )
+
+    call U % InitializeSeries_F_CC ( I )
+
+    end select !-- U
+
+  end subroutine InitializeSeries
+
+
+  subroutine Analyze ( I, Ignorability, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      Ignorability
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_CC_Form )
+
+    call U % Analyze_F_CC ( I, Ignorability, T_Option )
+
+    end select !-- U
+
+  end subroutine Analyze
+
+
+  subroutine Set_T_CheckpointInterval ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ), target :: &
+      I
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_CC_Form )
+
+    call U % Set_T_CheckpointInterval_F_CC ( I )
+
+    end select !-- U
+
+  end subroutine Set_T_CheckpointInterval
 
 
 end module Universe_R_CC__Form
