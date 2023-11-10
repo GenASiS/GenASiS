@@ -4,6 +4,7 @@ module NeutrinoMoments_G__Form
 
   use Basics
   use Mathematics
+  use Fluids
   use Units_R__Form
   use Interactions_BM__Form
   use PhotonMoments_G__Form
@@ -34,16 +35,57 @@ module NeutrinoMoments_G__Form
       InitializeAllocate_RM
     final :: &
       Finalize
+    procedure, public, pass ( CS ) :: &
+      SetStream
+    procedure, public, pass :: &
+      ComputeEquilibrium
   end type NeutrinoMoments_G_Form
+
+    private :: &
+!      Compute_SP_Kernel, &
+      Compute_Eq_Kernel
+    
+    interface
+
+      ! module subroutine Compute_SP_Kernel ( T_R, J, UseDeviceOption )
+      !   !-- Compute_SpectralParameters_Kernel
+      !   use Basics
+      !   implicit none
+      !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      !     T_R
+      !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      !     J
+      !   logical ( KDL ), intent ( in ), optional :: &
+      !     UseDeviceOption
+      ! end subroutine Compute_SP_Kernel
+ 
+      module subroutine Compute_Eq_Kernel &
+               ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign, UseDeviceOption )
+        !-- Compute_Equilibrium_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq, N_Eq
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T, &
+          Mu_E, Mu_NP
+        real ( KDR ), intent ( in ) :: &
+          Sign
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_Eq_Kernel
+
+    end interface
 
 
 contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, G, Units_R, FieldOption, VectorOption, NameOption, &
-                 UnitOption, VectorIndicesOption, iaPrimitiveOption, &
-                 iaBalancedOption, nFieldsOption, IgnorabilityOption )
+               ( RM, G, Units_R, RadiationType, FieldOption, VectorOption, &
+                 NameOption, UnitOption, VectorIndicesOption, &
+                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
+                 IgnorabilityOption )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -51,6 +93,8 @@ contains
       G
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    character ( * ), intent ( in ) :: &
+      RadiationType
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -177,8 +221,7 @@ contains
     !-- PhotonMoments_G
 
     call RM % PhotonMoments_G_Form % Initialize &
-           ( G, &
-             Units_R = Units_R, &
+           ( G, Units_R, RadiationType, &
              FieldOption = Field, &
              VectorOption = VectorOption, &
              NameOption = Name, &
@@ -198,6 +241,83 @@ contains
       PM
 
   end subroutine Finalize
+
+
+  subroutine SetStream ( S, CS )
+
+    class ( Stream_BM_Form ), intent ( inout ) :: &
+      S
+    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+      CS
+
+    call S % AddFieldSet &
+           ( CS, &
+             iaSelectedOption &
+               =  [ CS % ENERGY_DENSITY_C, &
+                    CS % MOMENTUM_DENSITY_C_U, &
+                    CS % FLUX_FACTOR, &
+                    CS % STRESS_FACTOR, &
+                    CS % TEMPERATURE_GREY, &
+                    CS % NUMBER_DENSITY_C, &
+                    CS % DEGENERACY_GREY, &
+                    CS % ENERGY_AVERAGE, &
+                    CS % OCCUPANCY_AVERAGE ] )
+
+  end subroutine SetStream
+
+
+  subroutine ComputeEquilibrium ( RM )
+
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      RM
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeEquilibrium', CONSOLE % INFO_6 )
+    call Show ( RM % Name, 'NeutrinoMoments', CONSOLE % INFO_6 )
+
+    select type ( I  =>  RM % Interactions )
+      class is ( Interactions_BM_Form )
+    select type ( F  =>  I % Fluid )
+      class is ( Fluid_P_HN_Form )
+
+    do iC  =  1, RM % Atlas % nCharts
+      associate &
+        ( RMV  =>  RM % Storage ( iC ) % Value, &
+           FV  =>   F % Storage ( iC ) % Value )
+      associate &
+        (  J_Eq  =>  RMV ( :, RM % ENERGY_DENSITY_C_EQ ), &
+           N_Eq  =>  RMV ( :, RM % NUMBER_DENSITY_C_EQ ), &
+           T     =>   FV ( :,  F % TEMPERATURE ), &
+          Mu_E   =>   FV ( :,  F % CHEMICAL_POTENTIAL_E ), &
+          Mu_NP  =>   FV ( :,  F % CHEMICAL_POTENTIAL_N_P ) )
+
+      select case ( trim ( RM % RadiationType ) )
+      case ( 'NEUTRINOS_E' )
+        call Compute_Eq_Kernel &
+               ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign = +1.0_KDR, &
+                 UseDeviceOption = RM % DeviceMemory )
+      case ( 'NEUTRINOS_E_BAR' )
+        call Compute_Eq_Kernel &
+               ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign = -1.0_KDR, &
+                 UseDeviceOption = RM % DeviceMemory )
+      case default
+        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+        call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
+        call Show ( 'NeutrinoMoments_G__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeEquilibrium', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Name
+
+      end associate !-- T_R, etc.
+      end associate !-- RV, etc.
+    end do !-- iC
+
+    end select !-- F
+    end select !-- I
+
+  end subroutine ComputeEquilibrium
 
 
 end module NeutrinoMoments_G__Form

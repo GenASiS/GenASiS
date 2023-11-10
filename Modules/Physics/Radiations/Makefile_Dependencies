@@ -80,10 +80,16 @@ PhotonMoments_G__Kernel.o: \
 NeutrinoMoments_G__Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluids.o \
   Units_R__Form.o \
   Interactions_BM__Form.o \
   PhotonMoments_G__Form.o \
   NeutrinoMoments_G__Form.f90
+
+NeutrinoMoments_G__Kernel.o: \
+  Basics.o \
+  NeutrinoMoments_G__Form.o \
+  NeutrinoMoments_G__Kernel.f90
 
 Radiations.o: \
   Units_R__Form.o \

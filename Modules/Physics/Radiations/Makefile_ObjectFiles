@@ -1,5 +1,6 @@
 RADIATIONS = \
   Radiations.o \
+  NeutrinoMoments_G__Kernel.o \
   NeutrinoMoments_G__Form.o \
   PhotonMoments_G__Kernel.o \
   PhotonMoments_G__Form.o \

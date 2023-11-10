@@ -47,8 +47,8 @@ module RadiationMoments_BM__Form
       FLUID_VELOCITY_U = 0
     integer ( KDI ) :: &
       iTimer_CFB = 0
-  !   character ( LDL ) :: &
-  !     RadiationType = '', &
+    character ( LDL ) :: &
+      RadiationType = ''!, &
   !     MomentsType = ''
     class ( FieldSet_BM_Form ), pointer :: &
       Interactions => null ( )
@@ -148,9 +148,10 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, G, Units_R, FieldOption, VectorOption, NameOption, &
-                 UnitOption, VectorIndicesOption, iaPrimitiveOption, &
-                 iaBalancedOption, nFieldsOption, IgnorabilityOption )
+               ( RM, G, Units_R, RadiationType, FieldOption, VectorOption, &
+                 NameOption, UnitOption, VectorIndicesOption, &
+                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
@@ -158,6 +159,8 @@ contains
       G
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    character ( * ), intent ( in ) :: &
+      RadiationType
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -203,6 +206,8 @@ contains
     if ( RM % Type  ==  '' ) &
       RM % Type  =  'a RadiationMoments' 
     
+    RM % RadiationType  =  RadiationType
+
     Name  =  'RadiationMoments'
     if ( present ( NameOption ) ) &
       Name  =  NameOption

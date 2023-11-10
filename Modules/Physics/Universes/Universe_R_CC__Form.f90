@@ -320,41 +320,29 @@ contains
         ( G   =>  I % Geometry_X, &
           iR  =>  U % iRadiation )
 
-      ! select case ( trim ( U % RadiationType ( iR ) ) )
-      ! case ( 'GENERIC' )
-
-      !   allocate ( RadiationMoments_BM_Form :: I % CurrentSet_X_1D )
-      !   select type ( R  =>  I % CurrentSet_X_1D )
-      !   class is ( RadiationMoments_BM_Form )
-
-      !   call R % Initialize &
-      !          ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
-      !   if ( allocated ( U % Interactions_BM ) ) &
-      !     call R % SetInteractions ( U % Interactions_BM )
-
-      !   end select !-- R
-
-      ! case ( 'PHOTONS' )
+      select case ( trim ( U % RadiationType ( iR ) ) )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
 
         allocate ( NeutrinoMoments_G_Form :: I % CurrentSet_X_1D )
         select type ( R  =>  I % CurrentSet_X_1D )
         class is ( NeutrinoMoments_G_Form )
 
         call R % Initialize &
-               ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+               ( G, U % Units_R, U % RadiationType ( iR ), &
+                 NameOption = U % RadiationName ( iR ) )
         if ( allocated ( U % Interactions_BM ) ) &
           call R % SetInteractions ( U % Interactions_BM )
 
         end select !-- R
 
-    !   case default
-    !     call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
-    !     call Show ( U % RadiationType ( iR ), 'RadiationType', &
-    !                 CONSOLE % ERROR )
-    !     call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
-    !     call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
-    !     call PROGRAM_HEADER % Abort ( )
-    !   end select !-- RadiationType
+      case default
+        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+        call Show ( U % RadiationType ( iR ), 'RadiationType', &
+                    CONSOLE % ERROR )
+        call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- RadiationType
 
       end associate !-- G, etc.
 

@@ -349,7 +349,8 @@ contains
         class is ( RadiationMoments_BM_Form )
 
         call R % Initialize &
-               ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+               ( G, U % Units_R, U % RadiationType ( iR ), &
+                 NameOption = U % RadiationName ( iR ) )
 
         end select !-- R
 
@@ -360,7 +361,8 @@ contains
         class is ( PhotonMoments_G_Form )
 
         call R % Initialize &
-               ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )
+               ( G, U % Units_R, U % RadiationType ( iR ), &
+                 NameOption = U % RadiationName ( iR ) )
 
         end select !-- R
 

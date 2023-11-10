@@ -27,28 +27,16 @@ module PhotonMoments_G__Form
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass :: &
-      ComputeEquilibrium
-    procedure, public, pass :: &
       ComputeSpectralParameters
+    procedure, public, pass :: &
+      ComputeEquilibrium
   end type PhotonMoments_G_Form
 
     private :: &
-      Compute_Eq_Kernel, &
-      Compute_SP_Kernel
+      Compute_SP_Kernel, &
+      Compute_Eq_Kernel
     
     interface
-
-      module subroutine Compute_Eq_Kernel ( J_Eq, T, UseDeviceOption )
-        !-- Compute_Equilibrium_Kernel
-        use Basics
-        implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          J_Eq
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          T
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine Compute_Eq_Kernel
 
       module subroutine Compute_SP_Kernel ( T_R, J, UseDeviceOption )
         !-- Compute_SpectralParameters_Kernel
@@ -62,6 +50,18 @@ module PhotonMoments_G__Form
           UseDeviceOption
       end subroutine Compute_SP_Kernel
  
+      module subroutine Compute_Eq_Kernel ( J_Eq, T, UseDeviceOption )
+        !-- Compute_Equilibrium_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_Eq_Kernel
+
     end interface
 
 
@@ -69,9 +69,10 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, G, Units_R, FieldOption, VectorOption, NameOption, &
-                 UnitOption, VectorIndicesOption, iaPrimitiveOption, &
-                 iaBalancedOption, nFieldsOption, IgnorabilityOption )
+               ( RM, G, Units_R, RadiationType, FieldOption, VectorOption, &
+                 NameOption, UnitOption, VectorIndicesOption, &
+                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
+                 IgnorabilityOption )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -79,6 +80,8 @@ contains
       G
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    character ( * ), intent ( in ) :: &
+      RadiationType
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
       VectorOption
@@ -152,8 +155,7 @@ contains
     !-- RadiationMoments_BM
 
     call RM % RadiationMoments_BM_Form % Initialize &
-           ( G, &
-             Units_R = Units_R, &
+           ( G, Units_R, RadiationType, &             
              FieldOption = Field, &
              VectorOption = VectorOption, &
              NameOption = Name, &
