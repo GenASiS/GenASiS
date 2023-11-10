@@ -336,9 +336,9 @@ contains
 
       ! case ( 'PHOTONS' )
 
-        allocate ( PhotonMoments_G_Form :: I % CurrentSet_X_1D )
+        allocate ( NeutrinoMoments_G_Form :: I % CurrentSet_X_1D )
         select type ( R  =>  I % CurrentSet_X_1D )
-        class is ( PhotonMoments_G_Form )
+        class is ( NeutrinoMoments_G_Form )
 
         call R % Initialize &
                ( G, U % Units_R, NameOption = U % RadiationName ( iR ) )

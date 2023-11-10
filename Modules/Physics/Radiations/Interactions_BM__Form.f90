@@ -156,7 +156,7 @@ contains
              PinnedMemoryOption = F % PinnedMemory, &
              DevicesCommunicateOption = F % DevicesCommunicate, &
              nFieldsOption = F % nBalanced, &
-             IgnorabilityOption = F % IGNORABILITY + 1 )
+             IgnorabilityOption = F % IGNORABILITY )
 
   end subroutine InitializeAllocate_I
 

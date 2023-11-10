@@ -361,7 +361,7 @@ contains
     else
       nBalanced  =  oB  +  RM % N_BALANCED_RM
       allocate ( iaBalanced ( nBalanced ) )
-    end if !-- iaPrimitiveOption
+    end if !-- iaBalancedOption
 
     iaBalanced ( oB  +  1 : oB  +  RM % N_BALANCED_RM )  &
       =  [ RM % ENERGY_DENSITY_B, RM % MOMENTUM_DENSITY_B_D ]
