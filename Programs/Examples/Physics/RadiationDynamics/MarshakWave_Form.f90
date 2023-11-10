@@ -285,30 +285,6 @@ contains
       call F % SetUseInitialTemperature ( .true. )
     end select !-- F
 
-    !-- Interactions
-
-    select type ( I )
-      class is ( Integrator_CS_1D_BM_CS_Form )
-    select type ( R  =>  I % CurrentSet_X_1D )
-      class is ( PhotonMoments_G_Form )
-
-    select type ( Intrctns  =>  MW % Interactions_BM )
-    class is ( Interactions_MWV_3_Form )
-       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
-       call Intrctns % SetEnergyMax ( MW % EnergyMax )
-       call Intrctns % SetTemperatureScale ( MW % Temperature )
-       call Intrctns % SetRadiation ( R )
-    class is ( Interactions_MWV_2_Form )
-       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
-       call Intrctns % SetEnergyMax ( MW % EnergyMax )
-       call Intrctns % SetRadiation ( R )
-    class is ( Interactions_MWV_1_Form )
-       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
-    end select !-- Intrctns
-    
-    end select !-- R
-    end select !-- I
-
     !-- Radiation
 
     select type ( I )
@@ -327,6 +303,28 @@ contains
       call Show ( 'SetInitial', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- I    
+
+    !-- Interactions
+
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( PhotonMoments_G_Form )
+
+    select type ( Intrctns  =>  MW % Interactions_BM )
+    class is ( Interactions_MWV_3_Form )
+       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
+       call Intrctns % SetEnergyMax ( MW % EnergyMax )
+       call Intrctns % SetTemperatureScale ( MW % Temperature )
+    class is ( Interactions_MWV_2_Form )
+       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
+       call Intrctns % SetEnergyMax ( MW % EnergyMax )
+    class is ( Interactions_MWV_1_Form )
+       call Intrctns % SetSpecificOpacity ( MW % SpecificOpacity )
+    end select !-- Intrctns
+    
+    end select !-- R
+    end select !-- I
 
     !-- Cleanup
 

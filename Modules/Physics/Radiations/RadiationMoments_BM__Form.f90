@@ -6,7 +6,6 @@ module RadiationMoments_BM__Form
   use Mathematics
   use Gravitations
   use Units_R__Form
-  use Interactions_BM__Form
 
   implicit none
   private
@@ -24,8 +23,9 @@ module RadiationMoments_BM__Form
       N_PRIMITIVE_RM = N_PRIMITIVE_RM, &
       N_BALANCED_RM  = N_BALANCED_RM
     integer ( KDI ) :: &
-      ENERGY_DENSITY_C = 0, &  !-- Comoving
-      ENERGY_DENSITY_B = 0     !-- Balanced
+      ENERGY_DENSITY_C    = 0, &  !-- Comoving
+      ENERGY_DENSITY_C_EQ = 0, &
+      ENERGY_DENSITY_B    = 0     !-- Balanced
     integer ( KDI ) :: &
       MOMENTUM_DENSITY_C_U_1 = 0, &    !-- Comoving
       MOMENTUM_DENSITY_C_U_2 = 0, &
@@ -38,8 +38,7 @@ module RadiationMoments_BM__Form
       MOMENTUM_DENSITY_B_D = 0
     integer ( KDI ) :: &
       FLUX_FACTOR   = 0, &
-      STRESS_FACTOR = 0, &
-      HEATING_RATE  = 0
+      STRESS_FACTOR = 0
     integer ( KDI ) :: &
       FLUID_VELOCITY_U_1 = 0, &
       FLUID_VELOCITY_U_2 = 0, &
@@ -51,7 +50,7 @@ module RadiationMoments_BM__Form
   !   character ( LDL ) :: &
   !     RadiationType = '', &
   !     MomentsType = ''
-    class ( Interactions_BM_Form ), pointer :: &
+    class ( FieldSet_BM_Form ), pointer :: &
       Interactions => null ( )
   contains
     procedure, private, pass :: &
@@ -69,9 +68,7 @@ module RadiationMoments_BM__Form
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
     procedure, public, pass :: &
-     ComputeHeatingRate
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeDiffusionFactor_HLL
+      ComputeEquilibrium
     final :: &
       Finalize
   end type RadiationMoments_BM_Form
@@ -79,8 +76,7 @@ module RadiationMoments_BM__Form
     private :: &
       Compute_E_S_G_Kernel, &
       Compute_J_H_G_Kernel, &
-      Compute_ES_G_Kernel, &
-      Compute_Q_Kernel
+      Compute_ES_G_Kernel
 
     interface
 
@@ -145,22 +141,6 @@ module RadiationMoments_BM__Form
           UseDeviceOption
       end subroutine Compute_ES_G_Kernel
       
-      module subroutine Compute_Q_Kernel &
-               ( Q, Xi_J, Chi_J, J, UseDeviceOption )
-        !-- Compute_HeatingRate_Kernel
-        use Basics
-        implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          Q
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-           Xi_J, &
-          Chi_J, &
-            J
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-        
-      end subroutine Compute_Q_Kernel
-
     end interface
 
 
@@ -232,16 +212,16 @@ contains
     oF  =  RM % N_FIELDS_CS
 
     RM % ENERGY_DENSITY_C        =  oF +  1
-    RM % ENERGY_DENSITY_B        =  oF +  2
-    RM % MOMENTUM_DENSITY_C_U_1  =  oF +  3
-    RM % MOMENTUM_DENSITY_C_U_2  =  oF +  4
-    RM % MOMENTUM_DENSITY_C_U_3  =  oF +  5
-    RM % MOMENTUM_DENSITY_B_D_1  =  oF +  6
-    RM % MOMENTUM_DENSITY_B_D_2  =  oF +  7
-    RM % MOMENTUM_DENSITY_B_D_3  =  oF +  8
-    RM % FLUX_FACTOR             =  oF +  9
-    RM % STRESS_FACTOR           =  oF + 10
-    RM % HEATING_RATE            =  oF + 11
+    RM % ENERGY_DENSITY_C_EQ     =  oF +  2
+    RM % ENERGY_DENSITY_B        =  oF +  3
+    RM % MOMENTUM_DENSITY_C_U_1  =  oF +  4
+    RM % MOMENTUM_DENSITY_C_U_2  =  oF +  5
+    RM % MOMENTUM_DENSITY_C_U_3  =  oF +  6
+    RM % MOMENTUM_DENSITY_B_D_1  =  oF +  7
+    RM % MOMENTUM_DENSITY_B_D_2  =  oF +  8
+    RM % MOMENTUM_DENSITY_B_D_3  =  oF +  9
+    RM % FLUX_FACTOR             =  oF + 10
+    RM % STRESS_FACTOR           =  oF + 11
     RM % FLUID_VELOCITY_U_1      =  oF + 12
     RM % FLUID_VELOCITY_U_2      =  oF + 13
     RM % FLUID_VELOCITY_U_3      =  oF + 14
@@ -270,6 +250,7 @@ contains
 
     Field ( oF + 1 : oF + RM % N_FIELDS_RM ) &
       = [ 'EnergyDensity_C      ', &
+          'EnergyDensity_C_Eq   ', &
           'EnergyDensity_B      ', &
           'MomentumDensity_C_U_1', &
           'MomentumDensity_C_U_2', &
@@ -279,7 +260,6 @@ contains
           'MomentumDensity_B_D_3', &
           'FluxFactor           ', &
           'StressFactor         ', &
-          'HeatingRate          ', &
           'FluidVelocity_U_1    ', &
           'FluidVelocity_U_2    ', &
           'FluidVelocity_U_3    ' ]
@@ -297,6 +277,8 @@ contains
     do iC  =  1, nC
       FieldUnit ( RM % ENERGY_DENSITY_C, iC ) &
         =  Units_R ( iC ) % EnergyDensity
+      FieldUnit ( RM % ENERGY_DENSITY_C_EQ, iC ) &
+        =  Units_R ( iC ) % EnergyDensity
       FieldUnit ( RM % ENERGY_DENSITY_B, iC ) &
         =  Units_R ( iC ) % EnergyDensity
       FieldUnit ( RM % MOMENTUM_DENSITY_C_U_1, iC ) &
@@ -311,8 +293,6 @@ contains
         =  Units_R ( iC ) % MomentumDensity_D ( 2 )
       FieldUnit ( RM % MOMENTUM_DENSITY_B_D_3, iC ) &
         =  Units_R ( iC ) % MomentumDensity_D ( 3 )
-      FieldUnit ( RM % HEATING_RATE, iC ) &
-        =  Units_R ( iC ) % EnergyDensity  /  Units_R ( iC ) % Time
       FieldUnit ( RM % FLUID_VELOCITY_U_1, iC ) &
         =  Units_R ( iC ) % Velocity_U ( 1 )
       FieldUnit ( RM % FLUID_VELOCITY_U_2, iC ) &
@@ -415,14 +395,14 @@ contains
   end subroutine InitializeAllocate_RM
 
 
-  subroutine SetInteractions ( RM, Interactions )
+  subroutine SetInteractions ( RM, I )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
-    class ( Interactions_BM_Form ), intent ( in ), target :: &
-      Interactions
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
+      I
 
-    RM % Interactions  =>  Interactions
+    RM % Interactions  =>  I
 
   end subroutine SetInteractions
 
@@ -440,8 +420,7 @@ contains
                =  [ CS % ENERGY_DENSITY_C, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
-                    CS % STRESS_FACTOR, &
-                    CS % HEATING_RATE ] )
+                    CS % STRESS_FACTOR ] )
 
   end subroutine SetStream
 
@@ -637,50 +616,25 @@ contains
   end subroutine ComputeEigenspeeds
 
 
-  subroutine ComputeHeatingRate ( RM )
+  subroutine ComputeEquilibrium ( RM )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
 
-    integer ( KDI ) :: &
-      iC
+    call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeEquilibrium', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
 
-    if ( .not. associated ( RM % Interactions ) ) &
-      return
-
-    associate &
-      ( I  =>  RM % Interactions )
-
-    call I % Compute ( )
-
-    do iC  =  1,  RM % Atlas % nCharts
-
-      associate &
-        ( IV  =>   I % Storage ( iC ) % Value, &
-          RV  =>  RM % Storage ( iC ) % Value )
-      associate &
-        (  Xi_J  =>  IV ( :, I  % EMISSIVITY_J ), &
-          Chi_J  =>  IV ( :, I  % OPACITY_J ), &
-            J    =>  RV ( :, RM % ENERGY_DENSITY_C ), &
-            Q    =>  RV ( :, RM % HEATING_RATE ) )
-
-      call Compute_Q_Kernel &
-             ( Q, Xi_J, Chi_J, J, UseDeviceOption = RM % DeviceMemory )
-
-      end associate !-- Xi_J, etc.
-      end associate !-- IV, etc.
-
-    end do !-- iC
-
-    end associate !-- I
-
-  end subroutine ComputeHeatingRate
+  end subroutine ComputeEquilibrium
 
 
   impure elemental subroutine Finalize ( RM )
 
     type ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
+
+    nullify ( RM % Interactions )
 
   end subroutine Finalize
 

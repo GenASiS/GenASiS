@@ -4,7 +4,7 @@ module Slope_RM_DFV_I__Form
 
   use Basics
   use Mathematics
-  use RadiationMoments_BM__Form
+  use Interactions_BM__Form
   use Slope_RM_I__Form
 
   implicit none
@@ -24,7 +24,7 @@ module Slope_RM_DFV_I__Form
 contains
 
 
-  subroutine InitializeAllocate_RM_DFV_I ( S, RS, DF, DT, RM )
+  subroutine InitializeAllocate_RM_DFV_I ( S, RS, DF, DT, I )
 
     class ( Slope_RM_DFV_I_Form ), intent ( inout ) :: &
       S
@@ -34,8 +34,8 @@ contains
       DF
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DT
-    class ( RadiationMoments_BM_Form ), intent ( in ), target :: &
-      RM
+    class ( Interactions_BM_Form ), intent ( in ), target :: &
+      I
 
     character ( LDL ) :: &
       Name
@@ -43,6 +43,8 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_RM_DFV_I' 
     
+    associate ( RM  =>  I % Radiation )
+
     Name  =  trim ( RM % Name ) // '_Slp_RM_DFV_I'
 
     call S % Slope_H_Form % Initialize &
@@ -75,13 +77,14 @@ contains
     select type ( SI  =>  S % Component ( nSC ) % Element )
       class is ( Slope_RM_I_Form )
 
-    call SI % Initialize ( RM )
+    call SI % Initialize ( I )
 
     end select !-- SI
 
     !-- Cleanup
 
     end associate !-- nSC
+    end associate !-- RM
 
   end subroutine InitializeAllocate_RM_DFV_I
 

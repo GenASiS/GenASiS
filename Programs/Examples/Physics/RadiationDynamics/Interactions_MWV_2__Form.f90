@@ -12,15 +12,11 @@ module Interactions_MWV_2__Form
     real ( KDR ) :: &
       SpecificOpacityMin = 0.0_KDR, &
       EnergyMax = 0.0_KDR
-    class ( PhotonMoments_G_Form ), pointer :: &
-      Radiation => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
     procedure, public, pass :: &
       SetEnergyMax
-    procedure, public, pass :: &
-      SetRadiation
     procedure, public, pass :: &
       Compute
     final :: &
@@ -36,7 +32,7 @@ module Interactions_MWV_2__Form
   interface
 
     module subroutine ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, TP, &
+             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, T_R, &
                Kappa, E_Max, Ratio_P, k_B, UseDeviceOption )
       use Basics
       implicit none
@@ -49,7 +45,7 @@ module Interactions_MWV_2__Form
         N, &
         T, &
         J_Eq, &
-        TP
+        T_R
       real ( KDR ), intent ( in ) :: &
         Kappa, &
         E_Max, &
@@ -66,15 +62,17 @@ contains
 
 
   subroutine InitializeAllocate_I &
-               ( I, F, Units_R, FieldOption, NameOption, UnitOption, &
+               ( I, R, Units_R, F, FieldOption, NameOption, UnitOption, &
                  nFieldsOption, IgnorabilityOption )
 
     class ( Interactions_MWV_2_Form ), intent ( inout ) :: &
       I
-    class ( Fluid_P_Form ), intent ( in ), target :: &
-      F
+    class ( RadiationMoments_BM_Form ), intent ( inout ), target :: &
+      R
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
+    class ( Fluid_P_Form ), intent ( in ), target :: &
+      F
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption
     character ( * ), intent ( in ), optional :: &
@@ -89,7 +87,7 @@ contains
       I % Type  =  'an Interactions_MWV_2' 
     
     call I % Interactions_BM_Form % Initialize &
-           ( F, Units_R, &
+           ( R, Units_R, F, &
              FieldOption = FieldOption, &
              NameOption = NameOption, &
              UnitOption = UnitOption, &
@@ -118,25 +116,6 @@ contains
   end subroutine SetEnergyMax
 
 
-  subroutine SetRadiation ( I, R )
-
-    class ( Interactions_MWV_2_Form ), intent ( inout ) :: &
-      I
-    class ( PhotonMoments_G_Form ), intent ( in ), target :: &
-      R
-
-    I % Radiation  =>  R
-
-    call Show ( 'Setting Radiation of an Interactions_MWV_2', &
-                I % IGNORABILITY + 1 )
-    call Show ( I % Name, 'Name', &
-                I % IGNORABILITY + 1 )
-    call Show ( R % Name, 'Radiation', &
-                I % IGNORABILITY + 1 )
-
-  end subroutine SetRadiation
-
-
   subroutine Compute ( I )
 
     class ( Interactions_MWV_2_Form ), intent ( inout ) :: &
@@ -148,30 +127,28 @@ contains
     call Show ( 'Compute', CONSOLE % INFO_6 )
     call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
+    select type ( R  =>  I % Radiation )
+      class is ( PhotonMoments_G_Form )
     associate &
-      ( F  =>  I % Fluid, &
-        R  =>  I % Radiation )
+      ( F  =>  I % Fluid )
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
-        ( FV  =>  F % Storage ( iC ) % Value, &
-          IV  =>  I % Storage ( iC ) % Value, &
-          RV  =>  R % Storage ( iC ) % Value )
+        ( IV  =>  I % Storage ( iC ) % Value, &
+          RV  =>  R % Storage ( iC ) % Value, &
+          FV  =>  F % Storage ( iC ) % Value )
       associate &
-        (   M    =>  FV ( :, F % BARYON_MASS ), &
-            N    =>  FV ( :, F % BARYON_DENSITY_C ), &
-            T    =>  FV ( :, F % TEMPERATURE ), &
-           Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
-          Chi_J  =>  IV ( :, I % OPACITY_J ), &
-          Chi_H  =>  IV ( :, I % OPACITY_H ), &
-           J_Eq  =>  IV ( :, I % EQUILIBRIUM_J ), &
-          TP     =>  RV ( :, R % TEMPERATURE_PARAMETER ) )
-
-      call I % Compute_J_Eq_Ph_G_Kernel &
-             ( J_Eq, T, UseDeviceOption = I % DeviceMemory )
+        (   M     =>  FV ( :, F % BARYON_MASS ), &
+            N     =>  FV ( :, F % BARYON_DENSITY_C ), &
+            T     =>  FV ( :, F % TEMPERATURE ), &
+           Xi_J   =>  IV ( :, I % EMISSIVITY_J ), &
+          Chi_J   =>  IV ( :, I % OPACITY_J ), &
+          Chi_H   =>  IV ( :, I % OPACITY_H ), &
+            J_Eq  =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
+            T_R   =>  RV ( :, R % TEMPERATURE_GREY ) )
 
       call ComputeKernel &
-             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, TP, &
+             ( Xi_J, Chi_J, Chi_H, M, N, T, J_Eq, T_R, &
                Kappa = I % SpecificOpacity, E_Max = I % EnergyMax, &
                Ratio_P = PlanckRatio, k_B = CONSTANT % BOLTZMANN, &
                UseDeviceOption = I % DeviceMemory )
@@ -181,6 +158,7 @@ contains
     end do !-- iC
 
     end associate !-- F
+    end select !-- R
 
   end subroutine Compute
 
@@ -189,8 +167,6 @@ contains
 
     type ( Interactions_MWV_2_Form ), intent ( inout ) :: &
       I
-
-    nullify ( I % Radiation )
 
   end subroutine Finalize
 
