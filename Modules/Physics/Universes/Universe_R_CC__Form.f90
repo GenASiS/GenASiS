@@ -41,10 +41,10 @@ module Universe_R_CC__Form
       SetCommunicator
     procedure, private, pass :: &
       AllocateIntegrator
-  !   procedure, public, pass :: &
-  !     InitializeInteractions
     procedure, public, pass :: &
       InitializeRadiation
+  !   procedure, public, pass :: &
+  !     InitializeInteractions
     procedure, public, pass :: &
       SetBoundaryConditions
     procedure, public, pass :: &
@@ -187,10 +187,10 @@ contains
            ( GravitationType )
     call U % InitializeFluid &
            ( FluidType )
-    ! call U % InitializeInteractions &
-    !        ( )
     call U % InitializeRadiation &
            ( )
+    ! call U % InitializeInteractions &
+    !        ( )
     call U % SetBoundaryConditions &
            ( )
     call U % InitializeSteps &
@@ -466,7 +466,7 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( U % GravityFactor, 'GravityFactor' )
 
-    U % InteractionFactor  =  1.0e-2_KDR  /  I % nCurrentSets
+    U % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
            ( U % InteractionFactor, 'InteractionFactor' )
 
