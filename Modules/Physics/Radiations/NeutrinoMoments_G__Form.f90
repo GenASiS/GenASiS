@@ -38,26 +38,30 @@ module NeutrinoMoments_G__Form
     procedure, public, pass ( CS ) :: &
       SetStream
     procedure, public, pass :: &
+      ComputeSpectralParameters
+    procedure, public, pass :: &
       ComputeEquilibrium
   end type NeutrinoMoments_G_Form
 
     private :: &
-!      Compute_SP_Kernel, &
+      Compute_SP_Kernel, &
       Compute_Eq_Kernel
     
     interface
 
-      ! module subroutine Compute_SP_Kernel ( T_R, J, UseDeviceOption )
-      !   !-- Compute_SpectralParameters_Kernel
-      !   use Basics
-      !   implicit none
-      !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      !     T_R
-      !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      !     J
-      !   logical ( KDL ), intent ( in ), optional :: &
-      !     UseDeviceOption
-      ! end subroutine Compute_SP_Kernel
+      module subroutine Compute_SP_Kernel &
+               ( T_R, Eta_R, E_Ave, F_Ave, J, N, UseDeviceOption )
+        !-- Compute_SpectralParameters_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          T_R, Eta_R, &
+          E_Ave, F_Ave
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J, N
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_SP_Kernel
  
       module subroutine Compute_Eq_Kernel &
                ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign, UseDeviceOption )
@@ -264,6 +268,39 @@ contains
                     CS % OCCUPANCY_AVERAGE ] )
 
   end subroutine SetStream
+
+
+  subroutine ComputeSpectralParameters ( RM )
+
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      RM
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeSpectralParameters', CONSOLE % INFO_6 )
+    call Show ( RM % Name, 'NeutrinoMoments', CONSOLE % INFO_6 )
+
+    do iC  =  1, RM % Atlas % nCharts
+      associate &
+        ( RMV  =>  RM % Storage ( iC ) % Value )
+      associate &
+        (   T_R    =>  RMV ( :, RM % TEMPERATURE_GREY ), &
+          Eta_R    =>  RMV ( :, RM % DEGENERACY_GREY ), &
+            E_Ave  =>  RMV ( :, RM % ENERGY_AVERAGE ), &
+            F_Ave  =>  RMV ( :, RM % OCCUPANCY_AVERAGE ), &
+            J      =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
+            N      =>  RMV ( :, RM % NUMBER_DENSITY_C ) )
+               
+      call Compute_SP_Kernel &
+             ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
+               UseDeviceOption  =  RM % DeviceMemory )
+
+      end associate !-- T_R, etc.
+      end associate !-- RV, etc.
+    end do !-- iC
+
+  end subroutine ComputeSpectralParameters
 
 
   subroutine ComputeEquilibrium ( RM )
