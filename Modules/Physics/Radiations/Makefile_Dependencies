@@ -81,6 +81,7 @@ NeutrinoMoments_G__Form.o: \
   Basics.o \
   Mathematics.o \
   Fluids.o \
+  Gravitations.o \
   Units_R__Form.o \
   Interactions_BM__Form.o \
   PhotonMoments_G__Form.o \
@@ -90,6 +91,14 @@ NeutrinoMoments_G__Kernel.o: \
   Basics.o \
   NeutrinoMoments_G__Form.o \
   NeutrinoMoments_G__Kernel.f90
+
+Interactions_NM_G__Form.o: \
+  Basics.o \
+  Fluids.o \
+  Units_R__Form.o \
+  RadiationMoments_BM__Form.o \
+  Interactions_BM__Form.o \
+  Interactions_NM_G__Form.f90
 
 DivergencePart_NM_G__Form.o: \
   Basics.o \
@@ -114,6 +123,7 @@ Radiations.o: \
   Slope_RM_DFV_I__Form.o \
   PhotonMoments_G__Form.o \
   NeutrinoMoments_G__Form.o \
+  Interactions_NM_G__Form.o \
   DivergencePart_NM_G__Form.o \
   Radiations.f90
 

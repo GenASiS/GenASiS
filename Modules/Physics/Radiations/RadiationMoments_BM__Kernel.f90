@@ -210,7 +210,7 @@ contains
           H_1 ( iV )  =  0.0_KDR
           H_2 ( iV )  =  0.0_KDR
           H_3 ( iV )  =  0.0_KDR
-          E   ( iV )  =  0.0_KDR
+          E   ( iV )  =  SqrtTiny
           S_1 ( iV )  =  0.0_KDR
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR
@@ -316,7 +316,7 @@ contains
           H_1 ( iV )  =  0.0_KDR
           H_2 ( iV )  =  0.0_KDR
           H_3 ( iV )  =  0.0_KDR
-          E   ( iV )  =  0.0_KDR
+          E   ( iV )  =  SqrtTiny
           S_1 ( iV )  =  0.0_KDR
           S_2 ( iV )  =  0.0_KDR
           S_3 ( iV )  =  0.0_KDR

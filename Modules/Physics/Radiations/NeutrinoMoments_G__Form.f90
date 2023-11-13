@@ -5,6 +5,7 @@ module NeutrinoMoments_G__Form
   use Basics
   use Mathematics
   use Fluids
+  use Gravitations
   use Units_R__Form
   use Interactions_BM__Form
   use PhotonMoments_G__Form
@@ -37,6 +38,10 @@ module NeutrinoMoments_G__Form
       Finalize
     procedure, public, pass ( CS ) :: &
       SetStream
+    procedure, public, pass ( CS ) :: &
+      ComputeFromPrimitive
+    procedure, public, pass :: &
+      ComputeFromBalanced
     procedure, public, pass :: &
       ComputeSpectralParameters
     procedure, public, pass :: &
@@ -44,10 +49,60 @@ module NeutrinoMoments_G__Form
   end type NeutrinoMoments_G_Form
 
     private :: &
+      Compute_E_S_G_G_Kernel, &
+      Compute_J_H_N_G_Kernel, &
       Compute_SP_Kernel, &
       Compute_Eq_Kernel
     
     interface
+
+      module subroutine Compute_E_S_G_G_Kernel &
+                 ( E, S_1, S_2, S_3, G, J, H_1, H_2, H_3, N, FF, SF, &
+                   M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, UseDeviceOption )
+        !-- Compute_BalancedEnergy_Momentum_Galileo_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          E, &
+          S_1, S_2, S_3, &
+          G
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J, &
+          H_1, H_2, H_3, &
+          N, &
+          FF, SF
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M_DD_11, M_DD_22, M_DD_33, &
+          V_1, V_2, V_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_E_S_G_G_Kernel
+
+      module subroutine Compute_J_H_N_G_Kernel &
+                 ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, G, FF, SF, & !RM, &
+                   M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                   V_1, V_2, V_3, UseDeviceOption )
+        !-- Compute_ComovingEnergy_Momentum_Galileo_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J, &
+          H_1, H_2, H_3, &
+          N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          E, &
+          S_1, S_2, S_3, &
+          G, &
+          FF, SF
+  !      class ( RadiationMomentsForm ), intent ( in ) :: &
+  !        RM
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M_DD_11, M_DD_22, M_DD_33, &
+          M_UU_11, M_UU_22, M_UU_33, &
+          V_1, V_2, V_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_J_H_N_G_Kernel
 
       module subroutine Compute_SP_Kernel &
                ( T_R, Eta_R, E_Ave, F_Ave, J, N, UseDeviceOption )
@@ -268,6 +323,156 @@ contains
                     CS % OCCUPANCY_AVERAGE ] )
 
   end subroutine SetStream
+
+
+  subroutine ComputeFromPrimitive ( FS_CS, CS )
+
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
+      FS_CS
+    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+      CS
+
+    integer ( KDI ) :: &
+      iC
+
+    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
+
+    do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        ( CSV  =>  FS_CS % Storage ( iC ) % Value )
+      associate &
+        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          N    =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
+          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          G    =>  CSV ( :, CS % NUMBER_DENSITY_B ), &
+          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
+          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+
+      select type ( Grvttn  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Grvttn % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, Grvttn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Grvttn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Grvttn % METRIC_F_DD_33 ) )
+
+        call Compute_E_S_G_G_Kernel &
+               ( E, S_1, S_2, S_3, G, J, H_1, H_2, H_3, N, FF, SF, &
+                 M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, &
+                 UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Grvttn
+
+      end associate !-- J, etc.
+      end associate !-- CSV, etc.
+
+    end do !-- iC
+
+  end subroutine ComputeFromPrimitive
+
+
+  subroutine ComputeFromBalanced ( CS, T_Option )
+
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      CS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iC
+    type ( TimerForm ), pointer :: &
+      T_K
+
+    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
+
+    if ( present ( T_Option ) ) then
+      T_K  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = CS % iTimer_CFB, &
+                   Name = trim ( T_Option % Name ) // '_Krnl', &
+                   Level = T_Option % Level + 1 )
+    else
+      T_K  =>  null ( )
+    end if
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+    do iC  =  1, CS % Atlas % nCharts
+
+      associate &
+        ( CSV  =>  CS % Storage ( iC ) % Value )
+      associate &
+        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          N    =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
+          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          G    =>  CSV ( :, CS % NUMBER_DENSITY_B ), &
+          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
+          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+
+      select type ( Grvttn  =>  CS % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  Grvttn % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, Grvttn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Grvttn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Grvttn % METRIC_F_DD_33 ), &
+            M_UU_11  =>  GSV ( :, Grvttn % METRIC_F_UU_11 ), &
+            M_UU_22  =>  GSV ( :, Grvttn % METRIC_F_UU_22 ), &
+            M_UU_33  =>  GSV ( :, Grvttn % METRIC_F_UU_33 ) )
+
+        call Compute_J_H_N_G_Kernel &
+               ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, G, FF, SF, & !RM, &
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 V_1, V_2, V_3, UseDeviceOption = CS % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- G
+
+      end associate !-- CSV, etc.
+      end associate !-- J, etc.
+
+    end do !-- iC
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+  end subroutine ComputeFromBalanced
 
 
   subroutine ComputeSpectralParameters ( RM )

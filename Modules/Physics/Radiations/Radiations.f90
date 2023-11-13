@@ -9,6 +9,7 @@ module Radiations
   use Slope_RM_DFV_I__Form
   use PhotonMoments_G__Form
   use NeutrinoMoments_G__Form
+  use Interactions_NM_G__Form
   use DivergencePart_NM_G__Form
 
 end module Radiations

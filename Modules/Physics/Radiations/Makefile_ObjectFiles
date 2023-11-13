@@ -2,6 +2,7 @@ RADIATIONS = \
   Radiations.o \
   DivergencePart_NM_G__Kernel.o \
   DivergencePart_NM_G__Form.o \
+  Interactions_NM_G__Form.o \
   NeutrinoMoments_G__Kernel.o \
   NeutrinoMoments_G__Form.o \
   PhotonMoments_G__Kernel.o \

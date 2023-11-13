@@ -10,6 +10,382 @@ submodule ( NeutrinoMoments_G__Form ) NeutrinoMoments_G__Kernel
 contains
 
 
+  module procedure Compute_E_S_G_G_Kernel
+
+    !-- Compute_BalancedEnergy_Momentum_Galileo_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      H, &
+      SqrtTiny
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV = size ( E )
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    if ( UseDevice ) then
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP private ( H )
+      do iV = 1, nV
+
+        if ( J ( iV )  <  SqrtTiny ) &
+          J ( iV )  =  SqrtTiny
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+        if ( H  >  J ( iV ) ) then
+
+          H_1 ( iV )  =  ( H_1 ( iV )  /  H )  *  J ( iV )
+          H_2 ( iV )  =  ( H_2 ( iV )  /  H )  *  J ( iV )
+          H_3 ( iV )  =  ( H_3 ( iV )  /  H )  *  J ( iV )
+  
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+        end if
+
+        !-- Moment factors ( Minerbo SF )
+
+        FF ( iV )  =  H  /  J ( iV )
+
+        SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                      +  2.0_KDR / 3.0_KDR &
+                         *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                              * ( 3.0_KDR  -  FF ( iV )  &
+                                  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+        !-- FIXME: Add velocity dependence
+
+        E ( iV )  =  J ( iV )
+
+        S_1 ( iV )  =  M_DD_11 ( iV )  *  H_1 ( iV )
+        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
+        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+        G ( iV )  =  N ( iV )
+
+      end do !-- iV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+    else 
+
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP private ( H )
+      do iV = 1, nV
+
+        if ( J ( iV )  <  SqrtTiny ) &
+          J ( iV )  =  SqrtTiny
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+        if ( H  >  J ( iV ) ) then
+
+          H_1 ( iV )  =  ( H_1 ( iV )  /  H )  *  J ( iV )
+          H_2 ( iV )  =  ( H_2 ( iV )  /  H )  *  J ( iV )
+          H_3 ( iV )  =  ( H_3 ( iV )  /  H )  *  J ( iV )
+  
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+        end if
+
+        !-- Moment factors ( Minerbo SF )
+
+        FF ( iV )  =  H  /  J ( iV )
+
+        SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                      +  2.0_KDR / 3.0_KDR &
+                         *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                              * ( 3.0_KDR  -  FF ( iV )  &
+                                  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+        !-- FIXME: Add velocity dependence
+
+        E ( iV )  =  J ( iV )
+
+        S_1 ( iV )  =  M_DD_11 ( iV )  *  H_1 ( iV )
+        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
+        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+        G ( iV )  =  N ( iV )
+
+      end do !-- iV
+      !$OMP end parallel do
+
+    end if
+
+  end procedure Compute_E_S_G_G_Kernel
+
+
+  module procedure Compute_J_H_N_G_Kernel
+
+    !-- Compute_ComovingEnergy_Momentum_Galileo_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      H, &
+      SqrtTiny
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV = size ( J )
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    if ( UseDevice ) then
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP private ( H )
+      do iV = 1, nV
+
+        if ( E ( iV )  >  0.0_KDR  .and.  N ( iV )  >  0.0_KDR ) then
+
+          ! call ComputeComovingNonlinearSolve &
+          !        ( J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), FF ( iV ), &
+          !          SF ( iV ), E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
+          !          M_DD_22 ( iV ), M_DD_33 ( iV ), M_UU_22 ( iV ), &
+          !          M_UU_33 ( iV ), V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
+          !          Success, Delta_J_J, Delta_H_H )
+          ! if ( .not. Success ) then
+          !   call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
+          !   call Show ( RM % Name, '>>> Species', CONSOLE % ERROR )
+          !   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+          !               CONSOLE % ERROR )
+          !   call Show ( iV, '>>> iV', CONSOLE % ERROR )
+          !   call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+          !   call Show ( H_1 ( iV ), '>>> H_1', CONSOLE % ERROR )
+          !   call Show ( H_2 ( iV ), '>>> H_2', CONSOLE % ERROR )
+          !   call Show ( H_3 ( iV ), '>>> H_3', CONSOLE % ERROR )
+          !   call Show ( Delta_J_J, '>>> Delta_J_J', CONSOLE % ERROR )
+          !   call Show ( Delta_H_H, '>>> Delta_H_H', CONSOLE % ERROR )
+          ! end if
+
+          !-- FIXME: Do solve above
+
+          J ( iV )  =  max ( E ( iV ), SqrtTiny )
+          
+          H_1 ( iV )  =  M_UU_11 ( iV )  *  S_1 ( iV )
+          H_2 ( iV )  =  M_UU_22 ( iV )  *  S_2 ( iV )
+          H_3 ( iV )  =  M_UU_33 ( iV )  *  S_3 ( iV )          
+
+          N ( iV )  =  max ( G ( iV ), SqrtTiny )
+          
+          !-- Moment factors ( Minerbo SF )
+
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+          FF ( iV )  =  H  /  J ( iV )
+
+          SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                        +  2.0_KDR / 3.0_KDR &
+                           *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                                * ( 3.0_KDR  -  FF ( iV )  &
+                                    +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+        else
+
+          J   ( iV )  =  SqrtTiny
+          H_1 ( iV )  =  0.0_KDR
+          H_2 ( iV )  =  0.0_KDR
+          H_3 ( iV )  =  0.0_KDR
+          N   ( iV )  =  SqrtTiny
+          E   ( iV )  =  SqrtTiny
+          S_1 ( iV )  =  0.0_KDR
+          S_2 ( iV )  =  0.0_KDR
+          S_3 ( iV )  =  0.0_KDR
+          G   ( iV )  =  SqrtTiny
+          FF  ( iV )  =  0.0_KDR
+          SF  ( iV )  =  1.0_KDR / 3.0_KDR
+
+          cycle 
+
+        end if
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        
+        if ( H  >  J ( iV ) ) then
+
+          H_1 ( iV )  =  ( H_1 ( iV )  /  H )  *  J ( iV )
+          H_2 ( iV )  =  ( H_2 ( iV )  /  H )  *  J ( iV )
+          H_3 ( iV )  =  ( H_3 ( iV )  /  H )  *  J ( iV )
+
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+          !-- Moment factors ( Minerbo SF )
+
+          FF ( iV )  =  H  /  J ( iV )
+
+          SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                        +  2.0_KDR / 3.0_KDR &
+                           *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                                * ( 3.0_KDR  -  FF ( iV )  &
+                                    +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+          !-- FIXME: Add velocity dependence
+
+          E ( iV )  =  J ( iV )
+
+          S_1 ( iV )  =  M_DD_11 ( iV )  *  H_1 ( iV )
+          S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
+          S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+          G ( iV )  =  N ( iV )
+
+        end if
+
+      end do !-- iV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+    else 
+
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP private ( H )
+      do iV = 1, nV
+
+        if ( E ( iV )  >  0.0_KDR  .and.  N ( iV )  >  0.0_KDR ) then
+
+          ! call ComputeComovingNonlinearSolve &
+          !        ( J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), FF ( iV ), &
+          !          SF ( iV ), E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
+          !          M_DD_22 ( iV ), M_DD_33 ( iV ), M_UU_22 ( iV ), &
+          !          M_UU_33 ( iV ), V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
+          !          Success, Delta_J_J, Delta_H_H )
+          ! if ( .not. Success ) then
+          !   call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
+          !   call Show ( RM % Name, '>>> Species', CONSOLE % ERROR )
+          !   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+          !               CONSOLE % ERROR )
+          !   call Show ( iV, '>>> iV', CONSOLE % ERROR )
+          !   call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+          !   call Show ( H_1 ( iV ), '>>> H_1', CONSOLE % ERROR )
+          !   call Show ( H_2 ( iV ), '>>> H_2', CONSOLE % ERROR )
+          !   call Show ( H_3 ( iV ), '>>> H_3', CONSOLE % ERROR )
+          !   call Show ( Delta_J_J, '>>> Delta_J_J', CONSOLE % ERROR )
+          !   call Show ( Delta_H_H, '>>> Delta_H_H', CONSOLE % ERROR )
+          ! end if
+
+          !-- FIXME: Do solve above
+
+          J ( iV )  =  max ( E ( iV ), SqrtTiny )
+          
+          H_1 ( iV )  =  M_UU_11 ( iV )  *  S_1 ( iV )
+          H_2 ( iV )  =  M_UU_22 ( iV )  *  S_2 ( iV )
+          H_3 ( iV )  =  M_UU_33 ( iV )  *  S_3 ( iV )          
+
+          N ( iV )  =  max ( G ( iV ), SqrtTiny )
+          
+          !-- Moment factors ( Minerbo SF )
+
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+          FF ( iV )  =  H  /  J ( iV )
+
+          SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                        +  2.0_KDR / 3.0_KDR &
+                           *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                                * ( 3.0_KDR  -  FF ( iV )  &
+                                    +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+        else
+
+          J   ( iV )  =  SqrtTiny
+          H_1 ( iV )  =  0.0_KDR
+          H_2 ( iV )  =  0.0_KDR
+          H_3 ( iV )  =  0.0_KDR
+          N   ( iV )  =  SqrtTiny
+          E   ( iV )  =  SqrtTiny
+          S_1 ( iV )  =  0.0_KDR
+          S_2 ( iV )  =  0.0_KDR
+          S_3 ( iV )  =  0.0_KDR
+          G   ( iV )  =  SqrtTiny
+          FF  ( iV )  =  0.0_KDR
+          SF  ( iV )  =  1.0_KDR / 3.0_KDR
+
+          cycle 
+
+        end if
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+        
+        if ( H  >  J ( iV ) ) then
+
+          H_1 ( iV )  =  ( H_1 ( iV )  /  H )  *  J ( iV )
+          H_2 ( iV )  =  ( H_2 ( iV )  /  H )  *  J ( iV )
+          H_3 ( iV )  =  ( H_3 ( iV )  /  H )  *  J ( iV )
+
+          H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                       +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                       +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+          !-- Moment factors ( Minerbo SF )
+
+          FF ( iV )  =  H  /  J ( iV )
+
+          SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                        +  2.0_KDR / 3.0_KDR &
+                           *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                                * ( 3.0_KDR  -  FF ( iV )  &
+                                    +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+          !-- FIXME: Add velocity dependence
+
+          E ( iV )  =  J ( iV )
+
+          S_1 ( iV )  =  M_DD_11 ( iV )  *  H_1 ( iV )
+          S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
+          S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+          G ( iV )  =  N ( iV )
+
+        end if
+
+      end do !-- iV
+      !$OMP end parallel do
+
+    end if
+
+  end procedure Compute_J_H_N_G_Kernel
+
+
   module procedure Compute_SP_Kernel
 
     !-- Compute_SpectralParameters_Kernel
