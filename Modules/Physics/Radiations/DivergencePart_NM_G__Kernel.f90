@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( DivergencePart_RM__Form ) DivergencePart_RM__Kernel
+submodule ( DivergencePart_NM_G__Form ) DivergencePart_NM_G__Kernel
 
   use Basics
 
@@ -88,6 +88,12 @@ contains
         F_S_2 ( iV )  =  K_U_Dim_D_2
         F_S_3 ( iV )  =  K_U_Dim_D_3
 
+        !-- Number
+        !-- FIXME: Add velocity dependence
+
+        F_D ( iV )  =  ( H_Dim ( iV )  /  max ( J ( iV ), SqrtTiny ) )  &
+                       *  N ( iV )
+
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
 
@@ -137,6 +143,12 @@ contains
         F_S_2 ( iV )  =  K_U_Dim_D_2
         F_S_3 ( iV )  =  K_U_Dim_D_3
 
+        !-- Number
+        !-- FIXME: Add velocity dependence
+
+        F_D ( iV )  =  ( H_Dim ( iV )  /  max ( J ( iV ), SqrtTiny ) )  &
+                       *  N ( iV )
+
       end do !-- iV
       !$OMP  end parallel do
     
@@ -145,101 +157,4 @@ contains
   end procedure Compute_FS_G_Kernel
 
 
-  module procedure Compute_S_UD_Kernel
-
-    !-- Compute_Stress_UD_Kernel
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    real ( KDR ) :: &
-      H_Sq, &
-      K_UD_22, K_UD_33, &
-      SqrtTiny
-    logical ( KDL ) :: &
-      UseDevice
-      
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    nV = size ( S_UD_22 )
-    
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
-    if ( UseDevice ) then
-    
-      !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( SqrtTiny ) &
-      !$OMP private ( H_Sq, K_UD_22, K_UD_33 )
-      do iV = 1, nV
-
-        H_Sq  =     M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
-                 +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                 +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2
-        H_Sq  =  max ( H_Sq, SqrtTiny )
-
-        K_UD_22  &
-          =  0.5_KDR * ( ( 1.0_KDR  -  SF ( iV ) )  &
-                         +  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                            *  H_2 ( iV )  &
-                            *  M_DD_22 ( iV ) * H_2 ( iV )  /  H_Sq )  &
-             *  J ( iV )
-
-        K_UD_33  &
-          =  0.5_KDR * ( ( 1.0_KDR  -  SF ( iV ) )  &
-                         +  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                            *  H_3 ( iV )  &
-                            *  M_DD_33 ( iV ) * H_3 ( iV )  /  H_Sq )  &
-             *  J ( iV )
-
-        !-- FIXME: Add velocity dependence
-
-        S_UD_22 ( iV )  =  K_UD_22
-        S_UD_33 ( iV )  =  K_UD_33
-
-      end do !-- iV
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-
-    else
-
-      !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( SqrtTiny ) &
-      !$OMP private ( H_Sq, K_UD_22, K_UD_33 )
-      do iV = 1, nV
-
-        H_Sq  =     M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
-                 +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                 +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2
-        H_Sq  =  max ( H_Sq, SqrtTiny )
-
-        K_UD_22  &
-          =  0.5_KDR * ( ( 1.0_KDR  -  SF ( iV ) )  &
-                         +  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                            *  H_2 ( iV )  &
-                            *  M_DD_22 ( iV ) * H_2 ( iV )  /  H_Sq )  &
-             *  J ( iV )
-
-        K_UD_33  &
-          =  0.5_KDR * ( ( 1.0_KDR  -  SF ( iV ) )  &
-                         +  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                            *  H_3 ( iV )  &
-                            *  M_DD_33 ( iV ) * H_3 ( iV )  /  H_Sq )  &
-             *  J ( iV )
-
-        !-- FIXME: Add velocity dependence
-
-        S_UD_22 ( iV )  =  K_UD_22
-        S_UD_33 ( iV )  =  K_UD_33
-
-      end do !-- iV
-      !$OMP  end parallel do
-    
-    end if
-
-  end procedure Compute_S_UD_Kernel
-
-
-end submodule DivergencePart_RM__Kernel
+end submodule DivergencePart_NM_G__Kernel
