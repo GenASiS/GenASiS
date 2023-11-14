@@ -9,17 +9,17 @@ module Interactions_BM__Form
  implicit none
  private
 
-  integer ( KDI ), private, parameter :: &
-    N_FIELDS_I = 4
+    integer ( KDI ), private, parameter :: &
+      N_FIELDS_I = 4
 
   type, public, extends ( FieldSet_BM_Form ) :: Interactions_BM_Form
     integer ( KDI ) :: &
       N_FIELDS_I = N_FIELDS_I
     integer ( KDI ) :: &
-      EMISSIVITY_J  = 0, &
-      EMISSIVITY_H  = 0, &
-      OPACITY_J     = 0, &
-      OPACITY_H     = 0
+      EMISSIVITY_J = 0, &
+      EMISSIVITY_H = 0, &
+      OPACITY_J    = 0, &
+      OPACITY_H    = 0
     class ( Fluid_P_Form ), pointer :: &
       Fluid => null ( )
     class ( RadiationMoments_BM_Form ), pointer :: &
@@ -86,10 +86,10 @@ contains
 
     !-- Field indices
 
-    I % EMISSIVITY_J   =  1
-    I % EMISSIVITY_H   =  2
-    I % OPACITY_J      =  3
-    I % OPACITY_H      =  4
+    I % EMISSIVITY_J  =  1
+    I % EMISSIVITY_H  =  2
+    I % OPACITY_J     =  3
+    I % OPACITY_H     =  4
 
     nFields  =  I % N_FIELDS_I
     if ( present ( nFieldsOption ) ) &

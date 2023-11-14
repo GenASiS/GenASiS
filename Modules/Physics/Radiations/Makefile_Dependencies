@@ -94,11 +94,18 @@ NeutrinoMoments_G__Kernel.o: \
 
 Interactions_NM_G__Form.o: \
   Basics.o \
+  Mathematics.o \
   Fluids.o \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
   Interactions_BM__Form.o \
+  NeutrinoMoments_G__Form.o \
   Interactions_NM_G__Form.f90
+
+Interactions_NM_G__Kernel.o: \
+  Basics.o \
+  Interactions_NM_G__Form.o \
+  Interactions_NM_G__Kernel.f90
 
 DivergencePart_NM_G__Form.o: \
   Basics.o \
