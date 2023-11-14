@@ -72,6 +72,25 @@ contains
     iaS ( iD )  =  1
     
     if ( UseDevice ) then
+    
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP private ( iaVM )
+      do kV  =  lV ( 3 ),  uV ( 3 ) 
+        do jV  =  lV ( 2 ),  uV ( 2 )
+          do iV  =  lV ( 1 ),  uV ( 1 )
+
+              iaVM  =  [ iV, jV, kV ]  -  iaS
+
+              DF_I ( iV, jV, kV )  &
+                =  min ( 1.0_KDR, &
+                         max ( DF ( iV,         jV,         kV         ), &
+                               DF ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) ) ) )
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
 
     else
 
