@@ -62,7 +62,7 @@ module Universe_R_CC__Form
       UNIVERSE => null ( )
 
     private :: &
-    !   ResolveCycle_R, &
+      ResolveCycle_R, &
     !   PrepareStep_F, &
       Compute_dT_Local, &
       InitializeSeries, &
@@ -211,12 +211,12 @@ contains
     !-- Integrator methods
 
     associate ( I  =>  U % Integrator )
+    I % ResolveCycle              =>  ResolveCycle_R
+    ! I % PrepareStep       =>  PrepareStep_F
     I % Compute_dT_Local          =>  Compute_dT_Local
     I % InitializeSeries          =>  InitializeSeries
     I % Analyze                   =>  Analyze
     I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval
-    ! I % ResolveCycle      =>  ResolveCycle_R
-    ! I % PrepareStep       =>  PrepareStep_F
     end associate !-- I
 
   end subroutine Initialize_R_CC
@@ -525,6 +525,43 @@ contains
     call Show ( U % InteractionFactor, 'InteractionFactor', U % IGNORABILITY )
 
   end subroutine ShowParameters
+
+
+  subroutine ResolveCycle_R ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_CC_Form )
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( NeutrinoMoments_G_Form )
+
+    call R % ComputeSpectralParameters ( )
+    call R % ComputeEquilibrium ( )
+    call U % Interactions_NM_G % Compute ( )
+
+    ! select type ( S_1D  =>  I % Step_1D )
+    !   class is ( Step_RK_CS_Form )
+    ! if ( S_1D % Slope % nComponents  >  1 ) then
+    !   select type ( S_R_I  =>  S_1D % Slope % Component ( 2 ) % Element )
+    !     class is ( Slope_RM_I_Form )
+
+    !   !-- To be used for EnergyTransfer time step
+    !   call S_R_I % Compute ( dT = 0.0_KDR )
+    !   call ComputeSource_F ( I, S_R_I )
+
+    !   end select !-- S_R_I
+    ! end if !-- Slope % nComponents > 1
+    ! end select !-- S_1D
+
+    end select !-- R
+    end select !-- I
+    end select !-- U
+
+  end subroutine ResolveCycle_R
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )

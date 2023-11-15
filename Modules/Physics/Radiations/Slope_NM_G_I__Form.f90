@@ -4,7 +4,6 @@ module Slope_NM_G_I__Form
 
   use Basics
   use Mathematics
-use Interactions_BM__Form
   use NeutrinoMoments_G__Form
   use Interactions_NM_G__Form
 
@@ -165,12 +164,10 @@ contains
           S_S_3  =>  SV ( :, S % iMomentum_B ( 3 ) ), &
           S_D    =>  SV ( :, S % iNumber_B ) )
 
-!call Show ( Xi_J, '>>> Xi_J' )
       call ComputeKernel &
              ( C % ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                E, S_1, S_2, S_3, D, dT, S_E, S_S_1, S_S_2, S_S_3, S_D, &
                UseDeviceOption = S % DeviceMemory )
-!call Show ( S_E, '>>> S_E' )
 
       end associate !-- Xi_J, etc.
       end associate !-- IV, etc.
