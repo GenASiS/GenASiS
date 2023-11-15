@@ -49,6 +49,7 @@ DiffusionFactor_RM__Kernel.o: \
 Slope_RM_I__Form.o: \
   Basics.o \
   Mathematics.o \
+  RadiationMoments_BM__Form.o \
   Interactions_BM__Form.o \
   Slope_RM_I__Form.f90
 
@@ -60,6 +61,7 @@ Slope_RM_I__Kernel.o: \
 Slope_RM_DFV_I__Form.o: \
   Basics.o \
   Mathematics.o \
+  RadiationMoments_BM__Form.o \
   Interactions_BM__Form.o \
   Slope_RM_I__Form.o \
   Slope_RM_DFV_I__Form.f90
@@ -123,7 +125,6 @@ DivergencePart_NM_G__Kernel.o: \
 Slope_NM_G_I__Form.o: \
   Basics.o \
   Mathematics.o \
-  Interactions_BM__Form.o \
   NeutrinoMoments_G__Form.o \
   Interactions_NM_G__Form.o \
   Slope_NM_G_I__Form.f90

@@ -908,14 +908,11 @@ contains
       class is ( Slope_RM_I_Form )
     select type ( R  =>  S % CurrentSet )
       class is ( RadiationMoments_BM_Form )
-    select type ( I  =>  R % Interactions )
-      class is ( Interactions_BM_Form )
 
     call K % Initialize &
-           ( I )!, &
+           ( R )!, &
 !             IgnorabilityOption = S % IGNORABILITY )
 
-    end select !-- I
     end select !-- R
     end select !-- K
     end select !-- S
@@ -938,14 +935,11 @@ contains
       class is ( Slope_RM_DFV_I_Form )
     select type ( R  =>  S % CurrentSet )
       class is ( RadiationMoments_BM_Form )
-    select type ( I  =>  R % Interactions )
-      class is ( Interactions_BM_Form )
 
     call K % Initialize &
-           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, I )
+           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, R )
             !, IgnorabilityOption = S % IGNORABILITY )
 
-    end select !-- I
     end select !-- R
     end select !-- K
     end select !-- S

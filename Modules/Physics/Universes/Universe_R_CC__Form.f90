@@ -28,8 +28,8 @@ module Universe_R_CC__Form
   !     CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
-    class ( Interactions_BM_Form ), allocatable :: &
-      Interactions_BM
+    class ( Interactions_NM_G_Form ), allocatable :: &
+      Interactions_NM_G
   contains
     procedure, private, pass :: &
       Initialize_R_CC
@@ -56,6 +56,10 @@ module Universe_R_CC__Form
   !   procedure, public, pass ( U ) :: &
   !     Compute_dT_ET_CGS
   end type Universe_R_CC_Form
+
+    !-- FIXME: This is for a workaround in SetSlope routines below
+    class ( Universe_R_CC_Form ), private, pointer :: &
+      UNIVERSE => null ( )
 
     private :: &
     !   ResolveCycle_R, &
@@ -100,7 +104,7 @@ contains
                  RadiusCoreOption, RadialRatioOption, nCellsPolarOption, &
                  nWriteOption )
 
-    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+    class ( Universe_R_CC_Form ), intent ( inout ), target :: &
       U
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
@@ -123,6 +127,9 @@ contains
       U % Type  =  'a Universe_R_CC'
 
     call U % Universe_H_Form % Initialize ( Name )
+
+    !-- FIXME: This is for a workaround in SetSlope routines below
+    UNIVERSE  =>  U
 
     !-- Radiations
 
@@ -220,8 +227,8 @@ contains
     type ( Universe_R_CC_Form ), intent ( inout ) :: &
       U
 
-    if ( allocated ( U % Interactions_BM ) ) &
-      deallocate ( U % Interactions_BM )
+    if ( allocated ( U % Interactions_NM_G ) ) &
+      deallocate ( U % Interactions_NM_G )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
     ! if ( allocated ( U % CO_SplitSource ) ) &
@@ -329,8 +336,18 @@ contains
         call R % Initialize &
                ( G, U % Units_R, U % RadiationType ( iR ), &
                  NameOption = U % RadiationName ( iR ) )
-        if ( allocated ( U % Interactions_BM ) ) &
-          call R % SetInteractions ( U % Interactions_BM )
+        if ( allocated ( U % Interactions_NM_G ) ) &
+          call R % SetInteractions ( U % Interactions_NM_G )
+
+!     select type ( I  =>  R % Interactions )
+!     class is ( Interactions_BM_Form )
+! call Show ( '>>> Interactions_BM InitializeRadiation' )
+!     end select
+
+!     select type ( I  =>  R % Interactions )
+!     type is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G InitializeRadiation' )
+!     end select
 
         end select !-- R
 
@@ -387,8 +404,8 @@ contains
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_Form )
 
-    if ( allocated ( U % Interactions_BM ) ) &
-      call U % Interactions_BM % Initialize ( R, U % Units_R, F )
+    if ( allocated ( U % Interactions_NM_G ) ) &
+      call U % Interactions_NM_G % Initialize ( R, U % Units_R, F )
 
     end select !-- F
     end select !-- R
@@ -426,7 +443,7 @@ contains
       allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
       select type ( DF  =>  S % DiffusionFactor )
       class is ( DiffusionFactor_RM_Form )
-        call DF % Initialize ( U % Interactions_BM )
+        call DF % Initialize ( U % Interactions_NM_G )
       end select !-- DF
 
 !      S % SetSlope  =>  SetSlope_RM_DFV_I
@@ -623,15 +640,31 @@ contains
     select type ( K )
       class is ( Slope_NM_G_I_Form )
     select type ( R  =>  S % CurrentSet )
-      class is ( RadiationMoments_BM_Form )
-    select type ( I  =>  R % Interactions )
-      class is ( Interactions_BM_Form )
+      class is ( NeutrinoMoments_G_Form )
+
+!     select type ( I  =>  R % Interactions )
+!     class is ( Interactions_BM_Form )
+! call Show ( '>>> Interactions_BM SetSlope_NM_G_I' )
+!     end select
+
+!     select type ( I  =>  R % Interactions )
+!     type is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G SetSlope_NM_G_I' )
+!     end select
+
+!     select type ( I  =>  UNIVERSE % Interactions_NM_G )
+!     class is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G SetSlope_NM_G_I UNIVERSE' )
+!     end select
 
     call K % Initialize &
-           ( I )!, &
+           ( R )!, &
 !             IgnorabilityOption = S % IGNORABILITY )
 
-    end select !-- I
+    !-- FIXME: This is a workaround because the correct type of 
+    !          R % Interactions is not being recognized in K % Initialize
+    K % Interactions  =>  UNIVERSE % Interactions_NM_G
+
     end select !-- R
     end select !-- K
     end select !-- S

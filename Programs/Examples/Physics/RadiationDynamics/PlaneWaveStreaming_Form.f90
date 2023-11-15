@@ -241,8 +241,14 @@ contains
       DifferenceName  =  'Difference_2'
     end select
     
-    call R_R % Initialize ( G, PWS % Units_R, NameOption = ReferenceName )
-    call R_D % Initialize ( G, PWS % Units_R, NameOption = DifferenceName )
+    call R_R % Initialize &
+           ( G, PWS % Units_R, &
+             RadiationType = 'GENERIC', &
+             NameOption = ReferenceName )
+    call R_D % Initialize &
+           ( G, PWS % Units_R, &
+             RadiationType = 'GENERIC', &
+             NameOption = DifferenceName )
     call R_R % SetStream ( S )
     call R_D % SetStream ( S )
 

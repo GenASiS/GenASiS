@@ -65,7 +65,7 @@ contains
 
     !-- Interactions
 
-    allocate ( Interactions_NM_G_Form :: WH % Interactions_BM )
+    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G )
 
     !-- Initialization
 

@@ -162,7 +162,10 @@ contains
       DifferenceName  =  'FractionalDifference_2'
     end select
     
-    call R_FD % Initialize ( G, T % Units_R, NameOption = DifferenceName )
+    call R_FD % Initialize &
+           ( G, T % Units_R, &
+             RadiationType = 'PHOTONS', &
+             NameOption = DifferenceName )
     call R_FD % SetStream ( S )
 
     end associate !-- R_R, etc.

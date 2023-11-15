@@ -4,6 +4,7 @@ module Slope_RM_DFV_I__Form
 
   use Basics
   use Mathematics
+  use RadiationMoments_BM__Form
   use Interactions_BM__Form
   use Slope_RM_I__Form
 
@@ -24,7 +25,7 @@ module Slope_RM_DFV_I__Form
 contains
 
 
-  subroutine InitializeAllocate_RM_DFV_I ( S, RS, DF, DT, I )
+  subroutine InitializeAllocate_RM_DFV_I ( S, RS, DF, DT, R )
 
     class ( Slope_RM_DFV_I_Form ), intent ( inout ) :: &
       S
@@ -34,8 +35,8 @@ contains
       DF
     class ( DivergencePart_CS_Form ), intent ( in ) :: &
       DT
-    class ( Interactions_BM_Form ), intent ( in ), target :: &
-      I
+    class ( RadiationMoments_BM_Form ), intent ( in ) :: &
+      R
 
     character ( LDL ) :: &
       Name
@@ -43,19 +44,17 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_RM_DFV_I' 
     
-    associate ( RM  =>  I % Radiation )
-
-    Name  =  trim ( RM % Name ) // '_Slp_RM_DFV_I'
+    Name  =  trim ( R % Name ) // '_Slp_RM_DFV_I'
 
     call S % Slope_H_Form % Initialize &
-           ( RM % Atlas, &
-             FieldOption = RM % Balanced, &
+           ( R % Atlas, &
+             FieldOption = R % Balanced, &
              NameOption = Name, &
-             DeviceMemoryOption = RM % DeviceMemory, &
-             PinnedMemoryOption = RM % PinnedMemory, &
-             DevicesCommunicateOption = RM % DevicesCommunicate, &
-             nFieldsOption = RM % nBalanced, &
-             IgnorabilityOption = RM % IGNORABILITY + 1 )
+             DeviceMemoryOption = R % DeviceMemory, &
+             PinnedMemoryOption = R % PinnedMemory, &
+             DevicesCommunicateOption = R % DevicesCommunicate, &
+             nFieldsOption = R % nBalanced, &
+             IgnorabilityOption = R % IGNORABILITY + 1 )
 
     associate ( nSC  =>  S % nComponents )
 
@@ -77,14 +76,13 @@ contains
     select type ( SI  =>  S % Component ( nSC ) % Element )
       class is ( Slope_RM_I_Form )
 
-    call SI % Initialize ( I )
+    call SI % Initialize ( R )
 
     end select !-- SI
 
     !-- Cleanup
 
     end associate !-- nSC
-    end associate !-- RM
 
   end subroutine InitializeAllocate_RM_DFV_I
 

@@ -4,7 +4,7 @@ module Slope_NM_G_I__Form
 
   use Basics
   use Mathematics
-  use Interactions_BM__Form
+use Interactions_BM__Form
   use NeutrinoMoments_G__Form
   use Interactions_NM_G__Form
 
@@ -17,13 +17,15 @@ module Slope_NM_G_I__Form
       iNumber_B
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_B
-    class ( Interactions_BM_Form ), pointer :: &
+    class ( NeutrinoMoments_G_Form ), pointer :: &
+      Radiation => null ( )
+    class ( Interactions_NM_G_Form ), pointer :: &
       Interactions => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_NM_I
+      InitializeAllocate_NM_G_I
     generic, public :: &
-      Initialize => InitializeAllocate_NM_I
+      Initialize => InitializeAllocate_NM_G_I
     procedure, public, pass :: &
       Compute
     final :: &
@@ -65,12 +67,12 @@ module Slope_NM_G_I__Form
 contains
 
 
-  subroutine InitializeAllocate_NM_I ( S, I )
+  subroutine InitializeAllocate_NM_G_I ( S, R )
 
     class ( Slope_NM_G_I_Form ), intent ( inout ) :: &
       S
-    class ( Interactions_BM_Form ), intent ( in ), target :: &
-      I
+    class ( NeutrinoMoments_G_Form ), intent ( in ), target :: &
+      R
 
     character ( LDL ) :: &
       Name
@@ -78,37 +80,44 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_NM_G_I' 
     
-    select type ( NM  =>  I % Radiation )
-      class is ( NeutrinoMoments_G_Form )
+    Name  =  trim ( R % Name ) // '_Slp_NM_I'
 
-    Name  =  trim ( NM % Name ) // '_Slp_NM_I'
+    S % Radiation  =>  R
 
-    S % Interactions  =>  I
+    !-- FIXME: As a workaround because the correct type of R % Interactions 
+    !          is not being recognized, this pointer is previously assigned 
+    ! select type ( I  =>  R % Interactions )
+    ! class is ( Interactions_NM_G_Form )
+    !   S % Interactions  =>  I
+    ! class default
+    !   call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
+    !   call Show ( 'Slope_NM_G_I__Form', 'module', CONSOLE % ERROR )
+    !   call Show ( 'InitializeAllocate_NM_G_I', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select
 
-    call Search ( NM % iaBalanced, NM % ENERGY_DENSITY_B, &
+    call Search ( R % iaBalanced, R % ENERGY_DENSITY_B, &
                   S % iEnergy_B )
-    call Search ( NM % iaBalanced, NM % MOMENTUM_DENSITY_B_D_1, &
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, &
                   S % iMomentum_B ( 1 ) )
-    call Search ( NM % iaBalanced, NM % MOMENTUM_DENSITY_B_D_2, &
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, &
                   S % iMomentum_B ( 2 ) )
-    call Search ( NM % iaBalanced, NM % MOMENTUM_DENSITY_B_D_3, &
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, &
                   S % iMomentum_B ( 3 ) )
-    call Search ( NM % iaBalanced, NM % NUMBER_DENSITY_B, &
+    call Search ( R % iaBalanced, R % NUMBER_DENSITY_B, &
                   S % iNumber_B )
 
     call S % Slope_H_Form % Initialize &
-           ( NM % Atlas, &
-             FieldOption = NM % Balanced, &
+           ( R % Atlas, &
+             FieldOption = R % Balanced, &
              NameOption = Name, &
-             DeviceMemoryOption = NM % DeviceMemory, &
-             PinnedMemoryOption = NM % PinnedMemory, &
-             DevicesCommunicateOption = NM % DevicesCommunicate, &
-             nFieldsOption = NM % nBalanced, &
-             IgnorabilityOption = NM % IGNORABILITY + 1 )
+             DeviceMemoryOption = R % DeviceMemory, &
+             PinnedMemoryOption = R % PinnedMemory, &
+             DevicesCommunicateOption = R % DevicesCommunicate, &
+             nFieldsOption = R % nBalanced, &
+             IgnorabilityOption = R % IGNORABILITY + 1 )
 
-    end select !-- NM
-
-  end subroutine InitializeAllocate_NM_I
+  end subroutine InitializeAllocate_NM_G_I
 
 
   subroutine Compute ( S, dT, T_Option )
@@ -126,19 +135,18 @@ contains
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
-    select type ( I  =>  S % Interactions )
-      class is ( Interactions_NM_G_Form )
-    select type ( NM  =>  I % Radiation )
-      class is ( NeutrinoMoments_G_Form )
+    associate &
+      (  I  =>  S % Interactions, &
+         R  =>  S % Radiation )
 
     do iC  =  1,  S % Atlas % nCharts
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
         class is ( Chart_GS_Form )
 
       associate &
-        ( IV  =>   I % Storage ( iC ) % Value, &
-          RV  =>  NM % Storage ( iC ) % Value, &
-          SV  =>   S % Storage ( iC ) % Value )
+        ( IV  =>  I % Storage ( iC ) % Value, &
+          RV  =>  R % Storage ( iC ) % Value, &
+          SV  =>  S % Storage ( iC ) % Value )
       associate &
         (  Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
            Xi_H  =>  IV ( :, I % EMISSIVITY_H ), &
@@ -146,21 +154,23 @@ contains
           Chi_J  =>  IV ( :, I % OPACITY_J ), &
           Chi_H  =>  IV ( :, I % OPACITY_H ), &
           Chi_N  =>  IV ( :, I % OPACITY_N ), &
-            E    =>  RV ( :, NM % ENERGY_DENSITY_B ), &
-            S_1  =>  RV ( :, NM % MOMENTUM_DENSITY_B_D_1 ), &
-            S_2  =>  RV ( :, NM % MOMENTUM_DENSITY_B_D_2 ), &
-            S_3  =>  RV ( :, NM % MOMENTUM_DENSITY_B_D_3 ), &
-            D    =>  RV ( :, NM % NUMBER_DENSITY_B ), &
+            E    =>  RV ( :, R % ENERGY_DENSITY_B ), &
+            S_1  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+            S_2  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
+            S_3  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
+            D    =>  RV ( :, R % NUMBER_DENSITY_B ), &
           S_E    =>  SV ( :, S % iEnergy_B ), &
           S_S_1  =>  SV ( :, S % iMomentum_B ( 1 ) ), &
           S_S_2  =>  SV ( :, S % iMomentum_B ( 2 ) ), &
           S_S_3  =>  SV ( :, S % iMomentum_B ( 3 ) ), &
           S_D    =>  SV ( :, S % iNumber_B ) )
 
+!call Show ( Xi_J, '>>> Xi_J' )
       call ComputeKernel &
              ( C % ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                E, S_1, S_2, S_3, D, dT, S_E, S_S_1, S_S_2, S_S_3, S_D, &
                UseDeviceOption = S % DeviceMemory )
+!call Show ( S_E, '>>> S_E' )
 
       end associate !-- Xi_J, etc.
       end associate !-- IV, etc.
@@ -173,8 +183,7 @@ contains
       end select !-- C
     end do !-- iC
 
-    end select !-- NM
-    end select !-- I
+    end associate !-- I, etc.
 
   end subroutine Compute
 

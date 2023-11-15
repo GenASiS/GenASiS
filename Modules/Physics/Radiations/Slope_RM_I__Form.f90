@@ -4,6 +4,7 @@ module Slope_RM_I__Form
 
   use Basics
   use Mathematics
+  use RadiationMoments_BM__Form
   use Interactions_BM__Form
 
   implicit none
@@ -14,6 +15,8 @@ module Slope_RM_I__Form
       iEnergy_B
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_B
+    class ( RadiationMoments_BM_Form ), pointer :: &
+      Radiation => null ( )
     class ( Interactions_BM_Form ), pointer :: &
       Interactions => null ( )
   contains
@@ -59,12 +62,12 @@ module Slope_RM_I__Form
 contains
 
 
-  subroutine InitializeAllocate_RM_I ( S, I )
+  subroutine InitializeAllocate_RM_I ( S, R )
 
     class ( Slope_RM_I_Form ), intent ( inout ) :: &
       S
-    class ( Interactions_BM_Form ), intent ( in ), target :: &
-      I
+    class ( RadiationMoments_BM_Form ), intent ( in ), target :: &
+      R
 
     character ( LDL ) :: &
       Name
@@ -72,32 +75,33 @@ contains
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Slope_RM_I' 
     
-    associate ( RM  =>  I % Radiation )
+    Name  =  trim ( R % Name ) // '_Slp_RM_I'
 
-    Name  =  trim ( RM % Name ) // '_Slp_RM_I'
+    S % Radiation  =>  R
 
-    S % Interactions  =>  I
+    select type ( I  =>  R % Interactions )
+    class is ( Interactions_BM_Form )
+      S % Interactions  =>  I
+    end select
 
-    call Search ( RM % iaBalanced, RM % ENERGY_DENSITY_B, &
+    call Search ( R % iaBalanced, R % ENERGY_DENSITY_B, &
                   S % iEnergy_B )
-    call Search ( RM % iaBalanced, RM % MOMENTUM_DENSITY_B_D_1, &
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, &
                   S % iMomentum_B ( 1 ) )
-    call Search ( RM % iaBalanced, RM % MOMENTUM_DENSITY_B_D_2, &
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, &
                   S % iMomentum_B ( 2 ) )
-    call Search ( RM % iaBalanced, RM % MOMENTUM_DENSITY_B_D_3, &
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, &
                   S % iMomentum_B ( 3 ) )
 
     call S % Slope_H_Form % Initialize &
-           ( RM % Atlas, &
-             FieldOption = RM % Balanced, &
+           ( R % Atlas, &
+             FieldOption = R % Balanced, &
              NameOption = Name, &
-             DeviceMemoryOption = RM % DeviceMemory, &
-             PinnedMemoryOption = RM % PinnedMemory, &
-             DevicesCommunicateOption = RM % DevicesCommunicate, &
-             nFieldsOption = RM % nBalanced, &
-             IgnorabilityOption = RM % IGNORABILITY + 1 )
-
-    end associate !-- RM
+             DeviceMemoryOption = R % DeviceMemory, &
+             PinnedMemoryOption = R % PinnedMemory, &
+             DevicesCommunicateOption = R % DevicesCommunicate, &
+             nFieldsOption = R % nBalanced, &
+             IgnorabilityOption = R % IGNORABILITY + 1 )
 
   end subroutine InitializeAllocate_RM_I
 
@@ -119,25 +123,25 @@ contains
 
     associate &
       (  I  =>  S % Interactions, &
-        RM  =>  S % Interactions % Radiation )
+         R  =>  S % Radiation )
 
     do iC  =  1,  S % Atlas % nCharts
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
         class is ( Chart_GS_Form )
 
       associate &
-        ( IV  =>   I % Storage ( iC ) % Value, &
-          RV  =>  RM % Storage ( iC ) % Value, &
-          SV  =>   S % Storage ( iC ) % Value )
+        ( IV  =>  I % Storage ( iC ) % Value, &
+          RV  =>  R % Storage ( iC ) % Value, &
+          SV  =>  S % Storage ( iC ) % Value )
       associate &
         (  Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
            Xi_H  =>  IV ( :, I % EMISSIVITY_H ), &
           Chi_J  =>  IV ( :, I % OPACITY_J ), &
           Chi_H  =>  IV ( :, I % OPACITY_H ), &
-            E    =>  RV ( :, RM % ENERGY_DENSITY_B ), &
-            S_1  =>  RV ( :, RM % MOMENTUM_DENSITY_B_D_1 ), &
-            S_2  =>  RV ( :, RM % MOMENTUM_DENSITY_B_D_2 ), &
-            S_3  =>  RV ( :, RM % MOMENTUM_DENSITY_B_D_3 ), &
+            E    =>  RV ( :, R % ENERGY_DENSITY_B ), &
+            S_1  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+            S_2  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
+            S_3  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
           S_E    =>  SV ( :, S % iEnergy_B ), &
           S_S_1  =>  SV ( :, S % iMomentum_B ( 1 ) ), &
           S_S_2  =>  SV ( :, S % iMomentum_B ( 2 ) ), &
