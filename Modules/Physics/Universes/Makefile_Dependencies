@@ -89,6 +89,11 @@ Universe_R_CC__Form.o: \
   Universe_F_CC__Form.o \
   Universe_R_CC__Form.f90
 
+Universe_R_CC__Kernel.o: \
+  Basics.o \
+  Universe_R_CC__Form.o \
+  Universe_R_CC__Kernel.f90
+
 Universes.o: \
   Measures_F_CC__Form.o \
   Series_F_CC__Form.o \

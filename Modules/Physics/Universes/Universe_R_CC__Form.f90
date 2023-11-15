@@ -53,8 +53,8 @@ module Universe_R_CC__Form
       InitializeIntegrator
     procedure, public, pass :: &
       ShowParameters
-  !   procedure, public, pass ( U ) :: &
-  !     Compute_dT_ET_CGS
+    procedure, public, pass ( U ) :: &
+      Compute_dT_RT_CGS
   end type Universe_R_CC_Form
 
     !-- FIXME: This is for a workaround in SetSlope routines below
@@ -74,26 +74,27 @@ module Universe_R_CC__Form
       SetSlope_NM_G_I, &
       SetSlope_NM_G_DFV_I
 
-    !   private :: &
-    !     Compute_dT_ET_CGS_Kernel
+      private :: &
+        Compute_dT_RT_CGS_Kernel
 
-    ! interface
+    interface
     
-    !   module subroutine Compute_dT_ET_CGS_Kernel &
-    !            ( dT, ProperCell, Q, E, UseDeviceOption )
-    !     use Basics
-    !     implicit none
-    !     real ( KDR ), intent ( inout ) :: &
-    !       dT
-    !     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-    !       ProperCell
-    !     real ( KDR ), dimension ( : ), intent ( in ) :: &
-    !       Q, E
-    !     logical ( KDL ), intent ( in ), optional :: &
-    !       UseDeviceOption
-    !   end subroutine Compute_dT_ET_CGS_Kernel
+      module subroutine Compute_dT_RT_CGS_Kernel &
+               ( dT_E, dT_N, ProperCell, Q, R, E, N, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT_E, dT_N
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Q, R, &
+          E, N
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_RT_CGS_Kernel
 
-    ! end interface
+    end interface
 
 
 contains
@@ -528,6 +529,66 @@ contains
   end subroutine ShowParameters
 
 
+  subroutine Compute_dT_RT_CGS ( dT_E, dT_N, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT_E, dT_N
+    class ( Universe_R_CC_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B, iNumber_B
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S_1D  =>  I % Step_1D )
+      class is ( Step_RK_CS_Form )
+    select type ( S_R_I  =>  S_1D % Slope % Component ( 2 ) % Element )
+      class is ( Slope_NM_G_I_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_HN_Form )
+    associate &
+      ( FS =>  F % SplitSource )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      (   C  =>   A % Chart_GS, &
+        FSV  =>  FS % Storage_GS % Value, &
+         FV  =>   F % Storage_GS % Value )
+
+    call Search ( F % iaBalanced, F % ENERGY_DENSITY_B,   iEnergy_B )
+    call Search ( F % iaBalanced, F % ELECTRON_DENSITY_B, iNumber_B )
+
+    call Compute_dT_RT_CGS_Kernel &
+           ( dT_E, dT_N, C % ProperCell, &
+             Q  =  FSV ( :, iEnergy_B ), &
+             R  =  FSV ( :, iNumber_B ), &
+             E  =   FV ( :, F % ENERGY_DENSITY_B ), &
+             N  =   FV ( :, F % ELECTRON_DENSITY_B ), &
+             UseDeviceOption = F % DeviceMemory )
+
+    end associate !-- C, etc.
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Universe_R_CC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_RT_CGS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+    end associate !-- FS
+    end select !-- F
+    end select !-- SS_R_I
+    end select !-- S_1D
+    end select !-- I
+
+  end subroutine Compute_dT_RT_CGS
+
+
   subroutine ResolveCycle_R ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -725,6 +786,9 @@ contains
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
     select type ( U  =>  I % System )
       class is ( Universe_R_CC_Form )
     select type ( I )
@@ -756,6 +820,22 @@ contains
     call I % Compute_dT_CS_CGS &
            ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
     dT_3  =  I % CourantFactor_1D  *  dT_3
+
+    !-- Radiative transfer steps
+
+    call U % Compute_dT_RT_CGS ( dT_4, dT_5, iC, T_Option )
+    dT_4  =  U % InteractionFactor  *  dT_4
+    dT_5  =  U % InteractionFactor  *  dT_5
+
+    !-- Reduce across radiation types
+
+    call CO % Initialize &
+           ( I % Communicator_X_1D, nOutgoing = [ 3 ], &
+             nIncoming = [ 3 ] )
+
+    CO % Outgoing % Value  =  I % dT_Candidate ( 3 : 5 )
+    call CO % Reduce ( REDUCTION % MIN )
+    I % dT_Candidate ( 3 : 5 )  =  CO % Incoming % Value
 
     end associate !-- dT_1, etc.
     end select !-- I
