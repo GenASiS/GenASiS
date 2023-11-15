@@ -43,8 +43,8 @@ module Universe_R_CC__Form
       AllocateIntegrator
     procedure, public, pass :: &
       InitializeRadiation
-  !   procedure, public, pass :: &
-  !     InitializeInteractions
+    procedure, public, pass :: &
+      InitializeInteractions
     procedure, public, pass :: &
       SetBoundaryConditions
     procedure, public, pass :: &
@@ -63,12 +63,11 @@ module Universe_R_CC__Form
       Compute_dT_Local, &
       InitializeSeries, &
       Analyze, &
-      Set_T_CheckpointInterval
+      Set_T_CheckpointInterval, &
     !   SetSlope_F_P_DFV_SS, &
     !   SetSlope_F_P_SS, &
-    !   SetSlope_RM_I, &
+      SetSlope_NM_G_I!, &
     !   SetSlope_RM_DFV_I, &
-    !   SetSlope_RM_DFV_I_I
 
     !   private :: &
     !     Compute_dT_ET_CGS_Kernel
@@ -189,8 +188,8 @@ contains
            ( FluidType )
     call U % InitializeRadiation &
            ( )
-    ! call U % InitializeInteractions &
-    !        ( )
+    call U % InitializeInteractions &
+           ( )
     call U % SetBoundaryConditions &
            ( )
     call U % InitializeSteps &
@@ -376,6 +375,28 @@ contains
   end subroutine SetBoundaryConditions
 
 
+  subroutine InitializeInteractions ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
+
+    if ( allocated ( U % Interactions_BM ) ) &
+      call U % Interactions_BM % Initialize ( R, U % Units_R, F )
+
+    end select !-- F
+    end select !-- R
+    end select !-- I
+
+  end subroutine InitializeInteractions
+
+
   subroutine InitializeSteps ( U )
 
     class ( Universe_R_CC_Form ), intent ( inout ) :: &
@@ -397,17 +418,19 @@ contains
       select type ( S  =>  I % Step_1D )
         class is ( Step_RK_CS_Form )
 
-      allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+      allocate ( DivergencePart_NM_G_Form :: S % DivergenceTotal )
       associate ( DT  =>  S % DivergenceTotal )
       call DT % Initialize ( R )
       end associate !-- DT
 
-      ! allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
-      ! associate ( DF  =>  S % DiffusionFactor )
-      ! call DF % Initialize ( R )
-      ! end associate !-- DF
+      allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
+      select type ( DF  =>  S % DiffusionFactor )
+      class is ( DiffusionFactor_RM_Form )
+        call DF % Initialize ( U % Interactions_BM )
+      end select !-- DF
 
-!        S % SetSlope  =>  SetSlope_RM_DFV_I
+!      S % SetSlope  =>  SetSlope_RM_DFV_I
+      S % SetSlope  =>  SetSlope_NM_G_I
 
       call S % Initialize ( R )
 
@@ -584,6 +607,36 @@ contains
     end select !-- U
 
   end subroutine Set_T_CheckpointInterval
+
+
+  subroutine SetSlope_NM_G_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_NM_G_I_Form :: K )
+    select type ( K )
+      class is ( Slope_NM_G_I_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( RadiationMoments_BM_Form )
+    select type ( I  =>  R % Interactions )
+      class is ( Interactions_BM_Form )
+
+    call K % Initialize &
+           ( I )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    end select !-- I
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_NM_G_I
 
 
 end module Universe_R_CC__Form

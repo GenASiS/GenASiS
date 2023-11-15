@@ -63,6 +63,10 @@ contains
 
     FinishTime  =  0.7_KDR  *  UNIT % SECOND
 
+    !-- Interactions
+
+    allocate ( Interactions_NM_G_Form :: WH % Interactions_BM )
+
     !-- Initialization
 
     call WH % Initialize &

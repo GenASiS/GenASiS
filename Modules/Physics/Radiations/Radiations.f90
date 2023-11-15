@@ -11,5 +11,6 @@ module Radiations
   use NeutrinoMoments_G__Form
   use Interactions_NM_G__Form
   use DivergencePart_NM_G__Form
+  use Slope_NM_G_I__Form
 
 end module Radiations

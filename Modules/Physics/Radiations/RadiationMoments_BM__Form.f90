@@ -50,7 +50,7 @@ module RadiationMoments_BM__Form
     character ( LDL ) :: &
       RadiationType = ''!, &
   !     MomentsType = ''
-    class ( FieldSet_BM_Form ), pointer :: &
+    class ( * ), pointer :: &
       Interactions => null ( )
   contains
     procedure, private, pass :: &
