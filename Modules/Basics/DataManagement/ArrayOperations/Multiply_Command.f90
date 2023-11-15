@@ -11,11 +11,53 @@ module Multiply_Command
     Multiply
     
   interface Multiply
+    module procedure MultiplyReal_0D_1D_InPlace
     module procedure MultiplyReal_0D_2D_InPlace
   end interface
 
 
 contains  
+
+
+  subroutine MultiplyReal_0D_1D_InPlace ( A, B, UseDeviceOption )
+  
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      A
+    real ( KDR ), intent ( in ) :: &
+      B
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+                      
+    integer ( KDI ) :: &
+      iV
+    integer ( KDI ) :: &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV  =  size ( A )
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV  =  1,  nV
+        A ( iV )  =  B  *  A ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else 
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST )
+      do iV  =  1,  nV
+        A ( iV )  =  B  *  A ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+    
+  end subroutine MultiplyReal_0D_1D_InPlace
 
 
   subroutine MultiplyReal_0D_2D_InPlace ( A, B, UseDeviceOption )
