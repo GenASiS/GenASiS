@@ -134,6 +134,14 @@ Slope_NM_G_I__Kernel.o: \
   Slope_NM_G_I__Form.o \
   Slope_NM_G_I__Kernel.f90
 
+Slope_NM_G_DFV_I__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  NeutrinoMoments_G__Form.o \
+  Interactions_NM_G__Form.o \
+  Slope_NM_G_I__Form.o \
+  Slope_NM_G_DFV_I__Form.f90
+
 Radiations.o: \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
@@ -147,6 +155,7 @@ Radiations.o: \
   Interactions_NM_G__Form.o \
   DivergencePart_NM_G__Form.o \
   Slope_NM_G_I__Form.o \
+  Slope_NM_G_DFV_I__Form.o \
   Radiations.f90
 
 Radiations.a: $(RADIATIONS)

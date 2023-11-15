@@ -70,8 +70,8 @@ module Universe_R_CC__Form
       Set_T_CheckpointInterval, &
     !   SetSlope_F_P_DFV_SS, &
     !   SetSlope_F_P_SS, &
-      SetSlope_NM_G_I!, &
-    !   SetSlope_RM_DFV_I, &
+      SetSlope_NM_G_I, &
+      SetSlope_NM_G_DFV_I
 
     !   private :: &
     !     Compute_dT_ET_CGS_Kernel
@@ -446,8 +446,8 @@ contains
         call DF % Initialize ( U % Interactions_NM_G )
       end select !-- DF
 
-!      S % SetSlope  =>  SetSlope_RM_DFV_I
-      S % SetSlope  =>  SetSlope_NM_G_I
+!      S % SetSlope  =>  SetSlope_NM_G_I
+      S % SetSlope  =>  SetSlope_NM_G_DFV_I
 
       call S % Initialize ( R )
 
@@ -707,6 +707,40 @@ contains
     end select !-- S
 
   end subroutine SetSlope_NM_G_I
+
+
+  subroutine SetSlope_NM_G_DFV_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_NM_G_DFV_I_Form :: K )
+    select type ( K )
+      class is ( Slope_NM_G_DFV_I_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( NeutrinoMoments_G_Form )
+
+    call K % Initialize &
+           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, R )
+            !, IgnorabilityOption = S % IGNORABILITY )
+
+    !-- FIXME: This is a workaround because the correct type of 
+    !          R % Interactions is not being recognized in K % Initialize
+    select type ( K2  =>  K % Component ( 2 ) % Element )
+    class is ( Slope_NM_G_I_Form )
+      K2 % Interactions  =>  UNIVERSE % Interactions_NM_G
+    end select !-- K2
+    
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_NM_G_DFV_I
 
 
 end module Universe_R_CC__Form
