@@ -420,9 +420,62 @@ contains
     class ( Universe_R_CC_Form ), intent ( inout ) :: &
       U
 
+    character ( LDL ) :: &
+      RiemannSolverType
+
+    U % Coarsen  =  .true.
+    call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
+
     !-- Fluid step
 
-    call U % InitializeStep ( )
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_HN_Form )
+
+    allocate ( Step_RK_CS_Form :: I % Step_X )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
+    associate ( DT  =>  S % DivergenceTotal )
+      call DT % Initialize ( F )
+    end associate !-- DT
+
+    RiemannSolverType = 'HLL'
+    call PROGRAM_HEADER % GetParameter &
+           ( RiemannSolverType, 'RiemannSolverType' )
+    if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+      allocate ( RiemannSolver_HLLC_P_HN_Form :: S % RiemannSolver )
+      associate ( RS  =>  S % RiemannSolver )
+      call RS % Initialize ( F )
+      end associate !-- RS
+    end if        
+
+    S % SetSlope  =>  SetSlope_F_P_DFV_N_SS
+
+    call S % Initialize ( F )
+
+    !-- Coarsening
+    if ( U % Coarsen ) then
+      allocate ( U % Coarsening )
+      associate &
+        ( C  =>  U % Coarsening, &
+          G  =>  I % Geometry_X )
+        call C % Initialize ( F, G )
+        call S % SetCoarsening ( C )
+      end associate !-- C, etc.
+    end if
+
+    end select !-- S
+
+    class default
+      call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select    !-- F
+    end select !-- I
 
     !-- Radiation step
 
@@ -913,6 +966,33 @@ contains
     end select !-- U
 
   end subroutine Set_T_CheckpointInterval
+
+
+  subroutine SetSlope_F_P_DFV_N_SS ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_F_P_DFV_N_SS_Form :: K )
+    select type ( K )
+      class is ( Slope_F_P_DFV_N_SS_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_P_Form )
+
+    call K % Initialize &
+           ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, F )
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    end select !-- F
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_F_P_DFV_N_SS
 
 
   subroutine SetSlope_NM_G_I ( S, K )
