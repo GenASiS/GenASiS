@@ -1300,8 +1300,7 @@ contains
     !-- Perfect fluid
     select type ( F )
     class is ( Fluid_P_Form )
-      call Search &
-             ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_B )
+      call Search ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_B )
     end select !-- F
 
     if ( allocated ( S % DivergenceTotal ) ) then

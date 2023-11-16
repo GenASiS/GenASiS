@@ -245,6 +245,14 @@ Slope_F_P_DFV_SS__Form.o: \
   Slope_F_P_SS__Form.o \
   Slope_F_P_DFV_SS__Form.f90
 
+Slope_F_P_DFV_N_SS__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Fluid_P__Form.o \
+  Slope_F_P_SS__Form.o \
+  Slope_F_P_DFV_SS__Form.f90
+
 Fluids.o: \
   Units_F__Form.o \
   EOS_P_HN_OConnorOtt__Form.o \
@@ -268,6 +276,7 @@ Fluids.o: \
   Coarsening_C_F__Form.o \
   Slope_F_P_SS__Form.o \
   Slope_F_P_DFV_SS__Form.o \
+  Slope_F_P_DFV_N_SS__Form.o \
   Fluids.f90
 #  Slope_DFV_F_F_P_HN__Form.o \
 #  Slope_DFV_N_F_P_HN__Form.o \

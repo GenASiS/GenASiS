@@ -63,14 +63,13 @@ module Universe_R_CC__Form
 
     private :: &
       ResolveCycle_R, &
-    !   PrepareStep_F, &
+      PrepareStep_F, &
       ComputeSource_F, &
       Compute_dT_Local, &
       InitializeSeries, &
       Analyze, &
       Set_T_CheckpointInterval, &
-    !   SetSlope_F_P_DFV_SS, &
-    !   SetSlope_F_P_SS, &
+      SetSlope_F_P_DFV_N_SS, &
       SetSlope_NM_G_I, &
       SetSlope_NM_G_DFV_I
 
@@ -214,7 +213,7 @@ contains
 
     associate ( I  =>  U % Integrator )
     I % ResolveCycle              =>  ResolveCycle_R
-    ! I % PrepareStep       =>  PrepareStep_F
+    I % PrepareStep               =>  PrepareStep_F
     I % Compute_dT_Local          =>  Compute_dT_Local
     I % InitializeSeries          =>  InitializeSeries
     I % Analyze                   =>  Analyze
@@ -626,6 +625,29 @@ contains
   end subroutine ResolveCycle_R
 
 
+  subroutine PrepareStep_F ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S_1D  =>  I % Step_1D )
+      class is ( Step_RK_CS_Form )
+    if ( S_1D % Slope % nComponents  >  1 ) then
+      select type ( SS_R_I  =>  S_1D % SlopeSum % Component ( 2 ) % Element )
+        class is ( Slope_NM_G_I_Form )
+
+      call ComputeSource_F ( I, SS_R_I )
+
+      end select !-- SS_R_I
+    end if !-- Slope % nComponents > 1
+    end select !-- S_1D
+    end select !-- I
+
+  end subroutine PrepareStep_F
+
+
   subroutine ComputeSource_F ( I, S_R_I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -974,4 +996,3 @@ contains
 
 
 end module Universe_R_CC__Form
-
