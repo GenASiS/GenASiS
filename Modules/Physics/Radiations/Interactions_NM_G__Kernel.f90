@@ -19,7 +19,7 @@ contains
     real ( KDR ) :: &
       Pi, TwoPi, FourPi, &
       G_F, g_A, m_n, m_p, amu, &
-      Factor, Q, &
+      Factor_p, Q, &
       N_p, Eta_e_Q, Xi, &
       Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
       fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
@@ -41,14 +41,14 @@ contains
     m_p     =  CONSTANT % PROTON_MASS
     amu     =  CONSTANT % ATOMIC_MASS_UNIT
 
-    Factor  =  FourPi  /  TwoPi ** 3  &
+    Factor_p  =  FourPi  /  TwoPi ** 3  &
                *  G_F ** 2  /  Pi  *  ( 1  +  3 * g_A ** 2 )
          Q  =  m_n - m_p
 
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor, Q ) &
+      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor_p, Q ) &
       !$OMP private ( N_p, Eta_e_Q, Xi ) &
       !$OMP private ( Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q ) &
       !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
@@ -71,10 +71,14 @@ contains
 
         !--- Energy
 
-        Xi  =  Factor  *  N_p  *  T ( iV ) ** 4  &
+        !-- e- + p  ->  n + nu_e 
+        Xi  =  Factor_p  *  N_p  *  T ( iV ) ** 4  &
                *  (    T ( iV ) ** 2     *  Fermi_5_e_Q  &
                     +  2 * Q * T ( iV )  *  Fermi_4_e_Q  &
                     +  Q ** 2            *  Fermi_3_e_Q )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
         Chi_J ( iV )  =  Xi / J_eq ( iV )
@@ -86,10 +90,14 @@ contains
 
         !-- Number
 
-        Xi  =  Factor  *  N_p  *  T ( iV ) ** 3  &
+        !-- e- + p  ->  n + nu_e 
+        Xi  =  Factor_p  *  N_p  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
                     +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
                     +  Q ** 2            *  Fermi_2_e_Q )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
         Chi_N ( iV )  =  Xi / N_eq ( iV )
@@ -99,7 +107,7 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor, Q ) &
+      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor_p, Q ) &
       !$OMP private ( N_p, Eta_e_Q, Xi ) &
       !$OMP private ( Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q ) &
       !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
@@ -122,10 +130,14 @@ contains
 
         !--- Energy
 
-        Xi  =  Factor  *  N_p  *  T ( iV ) ** 4  &
+        !-- e- + p  ->  n + nu_e 
+        Xi  =  Factor_p  *  N_p  *  T ( iV ) ** 4  &
                *  (    T ( iV ) ** 2     *  Fermi_5_e_Q  &
                     +  2 * Q * T ( iV )  *  Fermi_4_e_Q  &
                     +  Q ** 2            *  Fermi_3_e_Q )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
         Chi_J ( iV )  =  Xi / J_eq ( iV )
@@ -137,10 +149,14 @@ contains
 
         !-- Number
 
-        Xi  =  Factor  *  N_p  *  T ( iV ) ** 3  &
+        !-- e- + p  ->  n + nu_e 
+        Xi  =  Factor_p  *  N_p  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
                     +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
                     +  Q ** 2            *  Fermi_2_e_Q )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
         Chi_N ( iV )  =  Xi / N_eq ( iV )
@@ -162,7 +178,7 @@ contains
     real ( KDR ) :: &
       Pi, TwoPi, FourPi, &
       G_F, g_A, m_n, m_p, amu, &
-      Factor, Q, &
+      Factor_n, Q, &
       N_n, Eta_e, Xi, &
       Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
       fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
@@ -184,14 +200,14 @@ contains
     m_p     =  CONSTANT % PROTON_MASS
     amu     =  CONSTANT % ATOMIC_MASS_UNIT
 
-    Factor  =  FourPi  /  TwoPi ** 3  &
+    Factor_n  =  FourPi  /  TwoPi ** 3  &
                *  G_F ** 2  /  Pi  *  ( 1  +  3 * g_A ** 2 )
          Q  =  m_n - m_p
 
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor, Q ) &
+      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor_n, Q ) &
       !$OMP private ( N_n, Eta_e, Xi ) &
       !$OMP private ( Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e ) &
       !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
@@ -214,11 +230,15 @@ contains
 
         !--- Energy
 
-        Xi  =  Factor  *  N_n  *  T ( iV ) ** 3  &
+        !-- e+ + n  ->  p + nu_e_bar 
+        Xi  =  Factor_n  *  N_n  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 3             *  Fermi_5_e  &
                     +  3 *  Q  *  T ( iV ) ** 2  *  Fermi_4_e  &
                     +  3 *  Q ** 2  *  T ( iV )  *  Fermi_3_e  &
                     +  Q ** 3                    *  Fermi_2_e )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
         Chi_J ( iV )  =  Xi / J_eq ( iV )
@@ -230,10 +250,14 @@ contains
 
         !-- Number
 
-        Xi  =  Factor  *  N_n  *  T ( iV ) ** 3  &
+        !-- e+ + n  ->  p + nu_e_bar 
+        Xi  =  Factor_n  *  N_n  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 2     *  Fermi_4_e  &
                     +  2 * Q * T ( iV )  *  Fermi_3_e  &
                     +  Q ** 2            *  Fermi_2_e )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
         Chi_N ( iV )  =  Xi / N_eq ( iV )
@@ -243,7 +267,7 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor, Q ) &
+      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor_n, Q ) &
       !$OMP private ( N_n, Eta_e, Xi ) &
       !$OMP private ( Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e ) &
       !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
@@ -266,11 +290,15 @@ contains
 
         !--- Energy
 
-        Xi  =  Factor  *  N_n  *  T ( iV ) ** 3  &
+        !-- e+ + n  ->  p + nu_e_bar 
+        Xi  =  Factor_n  *  N_n  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 3             *  Fermi_5_e  &
                     +  3 *  Q  *  T ( iV ) ** 2  *  Fermi_4_e  &
                     +  3 *  Q ** 2  *  T ( iV )  *  Fermi_3_e  &
                     +  Q ** 3                    *  Fermi_2_e )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
         Chi_J ( iV )  =  Xi / J_eq ( iV )
@@ -282,10 +310,14 @@ contains
 
         !-- Number
 
-        Xi  =  Factor  *  N_n  *  T ( iV ) ** 3  &
+        !-- e+ + n  ->  p + nu_e_bar 
+        Xi  =  Factor_n  *  N_n  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 2     *  Fermi_4_e  &
                     +  2 * Q * T ( iV )  *  Fermi_3_e  &
                     +  Q ** 2            *  Fermi_2_e )
+
+        !-- final state blocking
+        Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
         Chi_N ( iV )  =  Xi / N_eq ( iV )

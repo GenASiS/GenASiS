@@ -313,11 +313,13 @@ contains
            ( CS, &
              iaSelectedOption &
                =  [ CS % ENERGY_DENSITY_C, &
+                    CS % ENERGY_DENSITY_C_EQ, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
                     CS % TEMPERATURE_GREY, &
                     CS % NUMBER_DENSITY_C, &
+                    CS % NUMBER_DENSITY_C_EQ, &
                     CS % DEGENERACY_GREY, &
                     CS % ENERGY_AVERAGE, &
                     CS % OCCUPANCY_AVERAGE ] )

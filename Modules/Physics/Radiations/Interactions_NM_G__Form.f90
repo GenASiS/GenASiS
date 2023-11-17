@@ -39,14 +39,14 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, M, N, T, X_p, Mu_e, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_p, Mu_e, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_Kernel
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_eq, N_eq, &
+          J_eq, N_eq, F_Ave, &
           M, N, T, X_p, Mu_e
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -54,14 +54,14 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_Bar_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, M, N, T, X_n, Mu_e, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_Bar_Kernel
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_eq, N_eq, &
+          J_eq, N_eq, F_Ave, &
           M, N, T, X_n, Mu_e
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -213,20 +213,21 @@ contains
           RV  =>  R % Storage ( iC ) % Value, &
           FV  =>  F % Storage ( iC ) % Value )
       associate &
-        (  Xi_J   =>  IV ( :, I % EMISSIVITY_J ), &
-           Xi_H   =>  IV ( :, I % EMISSIVITY_H ), &
-           Xi_N   =>  IV ( :, I % EMISSIVITY_N ), &
-          Chi_J   =>  IV ( :, I % OPACITY_J ), &
-          Chi_H   =>  IV ( :, I % OPACITY_H ), &
-          Chi_N   =>  IV ( :, I % OPACITY_N ), &
-            J_Eq  =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
-            N_Eq  =>  RV ( :, R % NUMBER_DENSITY_C_EQ ), &
-            M     =>  FV ( :, F % BARYON_MASS ), &
-            N     =>  FV ( :, F % BARYON_DENSITY_C ), &
-            T     =>  FV ( :, F % TEMPERATURE ), &
-            X_p   =>  FV ( :, F % MASS_FRACTION_PROTON ), &
-            X_n   =>  FV ( :, F % MASS_FRACTION_NEUTRON ), &
-           Mu_e   =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
+        (  Xi_J    =>  IV ( :, I % EMISSIVITY_J ), &
+           Xi_H    =>  IV ( :, I % EMISSIVITY_H ), &
+           Xi_N    =>  IV ( :, I % EMISSIVITY_N ), &
+          Chi_J    =>  IV ( :, I % OPACITY_J ), &
+          Chi_H    =>  IV ( :, I % OPACITY_H ), &
+          Chi_N    =>  IV ( :, I % OPACITY_N ), &
+            J_Eq   =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
+            N_Eq   =>  RV ( :, R % NUMBER_DENSITY_C_EQ ), &
+            F_Ave  =>  RV ( :, R % OCCUPANCY_AVERAGE ), &
+            M      =>  FV ( :, F % BARYON_MASS ), &
+            N      =>  FV ( :, F % BARYON_DENSITY_C ), &
+            T      =>  FV ( :, F % TEMPERATURE ), &
+            X_p    =>  FV ( :, F % MASS_FRACTION_PROTON ), &
+            X_n    =>  FV ( :, F % MASS_FRACTION_NEUTRON ), &
+           Mu_e    =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
 
       !-- Emission / Absorption
 
@@ -234,12 +235,12 @@ contains
       case ( 'NEUTRINOS_E' )
         call Compute_EA_E_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, M, N, T, X_p, Mu_e, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_p, Mu_e, &
                  UseDeviceOption = I % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
         call Compute_EA_E_Bar_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, M, N, T, X_n, Mu_e, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
              

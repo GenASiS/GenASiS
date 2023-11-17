@@ -423,6 +423,7 @@ contains
            ( CS, &
              iaSelectedOption &
                =  [ CS % ENERGY_DENSITY_C, &
+                    CS % ENERGY_DENSITY_C_EQ, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR ] )
