@@ -39,7 +39,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_p, Mu_e, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_Kernel
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -47,7 +47,7 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J_eq, N_eq, F_Ave, &
-          M, N, T, X_p, Mu_e
+          M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_EA_E_Kernel
@@ -227,7 +227,11 @@ contains
             T      =>  FV ( :, F % TEMPERATURE ), &
             X_p    =>  FV ( :, F % MASS_FRACTION_PROTON ), &
             X_n    =>  FV ( :, F % MASS_FRACTION_NEUTRON ), &
-           Mu_e    =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
+            X_A    =>  FV ( :, F % MASS_FRACTION_HEAVY ), &
+            Z      =>  FV ( :, F % ATOMIC_NUMBER_HEAVY ), &
+            A      =>  FV ( :, F % MASS_NUMBER_HEAVY ), &
+           Mu_e    =>  FV ( :, F % CHEMICAL_POTENTIAL_E ), &
+           Mu_n_p  =>  FV ( :, F % CHEMICAL_POTENTIAL_N_P ) )
 
       !-- Emission / Absorption
 
@@ -235,7 +239,7 @@ contains
       case ( 'NEUTRINOS_E' )
         call Compute_EA_E_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_p, Mu_e, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption = I % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
         call Compute_EA_E_Bar_Kernel &
