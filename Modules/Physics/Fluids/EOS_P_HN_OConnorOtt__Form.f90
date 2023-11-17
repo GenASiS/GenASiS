@@ -342,6 +342,17 @@ contains
     call h5dclose_f(dset_id,error)
     accerr=accerr+error
 
+  ! average nucleus
+    call h5dopen_f(file_id, "Abar", dset_id, error)
+    call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, alltables(:,:,:,17), dims3, error)
+    call h5dclose_f(dset_id,error)
+    accerr=accerr+error
+
+    call h5dopen_f(file_id, "Zbar", dset_id, error)
+    call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, alltables(:,:,:,18), dims3, error)
+    call h5dclose_f(dset_id,error)
+    accerr=accerr+error
+
     ! Gamma
     call h5dopen_f(file_id, "gamma", dset_id, error)
     call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, alltables(:,:,:,19), dims3, error)
