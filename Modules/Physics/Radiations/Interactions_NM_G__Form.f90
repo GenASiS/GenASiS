@@ -67,6 +67,19 @@ module Interactions_NM_G__Form
           UseDeviceOption
       end subroutine Compute_EA_E_Bar_Kernel
 
+      module subroutine Compute_S_N_A_Kernel &
+               ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
+                 UseDeviceOption )
+        !-- Compute_Scattering_Nucleons_Nuclei
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T_nu, Eta_nu, &
+          M, N, X_p, X_n, X_A, Z, A
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_S_N_A_Kernel
+
     end interface
 
 
@@ -219,6 +232,8 @@ contains
           Chi_J    =>  IV ( :, I % OPACITY_J ), &
           Chi_H    =>  IV ( :, I % OPACITY_H ), &
           Chi_N    =>  IV ( :, I % OPACITY_N ), &
+            T_Nu   =>  RV ( :, R % TEMPERATURE_GREY ), &
+          Eta_Nu   =>  RV ( :, R % DEGENERACY_GREY ), &
             J_Eq   =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
             N_Eq   =>  RV ( :, R % NUMBER_DENSITY_C_EQ ), &
             F_Ave  =>  RV ( :, R % OCCUPANCY_AVERAGE ), &
@@ -248,6 +263,12 @@ contains
                  UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
              
+      !-- Elastic scattering on nucleons and nuclei
+
+      call Compute_S_N_A_Kernel &
+             ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
+               UseDeviceOption = I % DeviceMemory )
+
       end associate !-- Xi_J, etc.
       end associate !-- FV, etc.
     end do !-- iC

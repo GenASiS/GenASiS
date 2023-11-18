@@ -17,6 +17,7 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
+      SqrtTiny, &
       Pi, TwoPi, FourPi, &
       G_F, g_A, m_n, m_p, amu, &
       Factor_p, Q, Factor_A, Dlta, &
@@ -32,6 +33,8 @@ contains
       UseDevice = UseDeviceOption
       
     nV  =  size ( J_Eq )
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     Pi      =  CONSTANT % PI
     TwoPi   =  2.0_KDR * CONSTANT % PI
@@ -53,7 +56,7 @@ contains
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu ) &
+      !$OMP shared ( SqrtTiny, Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu ) &
       !$OMP shared ( Factor_p, Q, Factor_A, Dlta ) &
       !$OMP private ( N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, Xi ) &
       !$OMP private ( Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q  ) &
@@ -77,7 +80,8 @@ contains
         call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
                       fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
-        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  /  ( A ( iV ) * amu )
+        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+                /  ( max ( A ( iV ), SqrtTiny ) * amu )
         
         if ( Z ( iV )  <=  20.0_KDR ) then
           N_p_Z  =  0.0_KDR
@@ -160,7 +164,7 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu ) &
+      !$OMP shared ( SqrtTiny, Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu ) &
       !$OMP shared ( Factor_p, Q, Factor_A, Dlta ) &
       !$OMP private ( N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, Xi ) &
       !$OMP private ( Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q  ) &
@@ -184,7 +188,8 @@ contains
         call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
                       fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
-        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  /  ( A ( iV ) * amu )
+        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+                /  ( max ( A ( iV ), SqrtTiny ) * amu )
         
         if ( Z ( iV )  <=  20.0_KDR ) then
           N_p_Z  =  0.0_KDR
@@ -428,6 +433,112 @@ contains
     end if
 
   end procedure Compute_EA_E_Bar_Kernel
+
+
+  module procedure Compute_S_N_A_Kernel
+
+    !-- Compute_Scattering_Nucleons_Nuclei
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny, &
+      Pi, &
+      G_F, Sin_2_Theta_W, g_A, Sin_2_Theta_W, amu, &
+      Factor_n, Factor_p, Factor_A, &
+      N_p, N_n, N_A, &
+      Fermi_3_nu, Fermi_5_nu, &
+      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Chi_H )
+
+    SqrtTiny  =  tiny ( 0.0_KDR )
+
+    Pi             =  CONSTANT % PI
+    G_F            =  CONSTANT % FERMI_COUPLING
+    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
+    g_A            =  CONSTANT % NEUTRON_AXIAL_COUPLING
+    amu            =  CONSTANT % ATOMIC_MASS_UNIT
+
+    Factor_p  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
+                 *  ( ( 1. / 2.  -  2. * Sin_2_Theta_W ) ** 2  &
+                      +  5. / 4. * g_A ** 2 )
+
+    Factor_n  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
+                 *  ( 1. / 4.  +  5. / 4. * g_A ** 2 )
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( SqrtTiny, Pi, G_F, Sin_2_Theta_W, g_A, amu ) &
+      !$OMP shared ( Factor_n, Factor_p ) &
+      !$OMP private ( Factor_A, N_p, N_n, N_A ) &
+      !$OMP private ( Fermi_3_nu, Fermi_5_nu ) &
+      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      do iV = 1, nV
+
+        Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
+                     *  (    A ( iV )  *  ( 1. / 2.  -  2. * Sin_2_Theta_W ) &
+                          -  Z ( iV )  *  ( 1.  -  2. * Sin_2_Theta_W ) ) ** 2  
+
+        N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+        N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+                /  ( max ( A ( iV ), SqrtTiny ) * amu )
+
+        call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
+                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+        Chi_H ( iV )  &
+          =  Chi_H ( iV )  &
+             +  ( Factor_p * N_p  +  Factor_n * N_n  +  Factor_A * N_A )  &
+                *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny, Pi, G_F, Sin_2_Theta_W, g_A, amu ) &
+      !$OMP shared ( Factor_n, Factor_p ) &
+      !$OMP private ( Factor_A, N_p, N_n, N_A ) &
+      !$OMP private ( Fermi_3_nu, Fermi_5_nu ) &
+      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      do iV = 1, nV
+
+        Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
+                     *  (    A ( iV )  *  ( 1. / 2.  -  2. * Sin_2_Theta_W ) &
+                          -  Z ( iV )  *  ( 1.  -  2. * Sin_2_Theta_W ) ) ** 2  
+
+        N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+        N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+                /  ( max ( A ( iV ), SqrtTiny ) * amu )
+
+        call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
+                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+        Chi_H ( iV )  &
+          =  Chi_H ( iV )  &
+             +  ( Factor_p * N_p  +  Factor_n * N_n  +  Factor_A * N_A )  &
+                *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+      end do
+      !$OMP end parallel do
+    end if
+
+  end procedure Compute_S_N_A_Kernel
 
 
 end submodule Interactions_NM_G__Kernel
