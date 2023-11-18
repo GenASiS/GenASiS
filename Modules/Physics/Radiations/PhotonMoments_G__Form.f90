@@ -4,6 +4,7 @@ module PhotonMoments_G__Form
 
   use Basics
   use Mathematics
+  use Fluids
   use Units_R__Form
   use RadiationMoments_BM__Form
   use Interactions_BM__Form
@@ -69,15 +70,15 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, G, Units_R, RadiationType, FieldOption, VectorOption, &
+               ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
                  NameOption, UnitOption, VectorIndicesOption, &
                  iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
                  IgnorabilityOption )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
-    class ( Geometry_F_Form ), intent ( in ) :: &
-      G
+    class ( Fluid_P_Form ), intent ( in ), target :: &
+      F
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
     character ( * ), intent ( in ) :: &
@@ -137,7 +138,7 @@ contains
 
     !-- Units
 
-    associate ( nC  =>  G % Atlas % nCharts )
+    associate ( nC  =>  F % Atlas % nCharts )
 
     if ( present ( UnitOption ) ) then
       allocate ( FieldUnit, source = UnitOption )
@@ -155,7 +156,7 @@ contains
     !-- RadiationMoments_BM
 
     call RM % RadiationMoments_BM_Form % Initialize &
-           ( G, Units_R, RadiationType, &             
+           ( F, Units_R, RadiationType, &             
              FieldOption = Field, &
              VectorOption = VectorOption, &
              NameOption = Name, &

@@ -323,9 +323,10 @@ contains
     select type ( I  =>  U % Integrator )
     class is ( Integrator_CS_1D_BM_CS_Form )
 
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_Form )
       associate &
-        ( G   =>  I % Geometry_X, &
-          iR  =>  U % iRadiation )
+        ( iR  =>  U % iRadiation )
 
       select case ( trim ( U % RadiationType ( iR ) ) )
       case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
@@ -335,7 +336,7 @@ contains
         class is ( NeutrinoMoments_G_Form )
 
         call R % Initialize &
-               ( G, U % Units_R, U % RadiationType ( iR ), &
+               ( F, U % Units_R, U % RadiationType ( iR ), &
                  NameOption = U % RadiationName ( iR ) )
         if ( allocated ( U % Interactions_NM_G ) ) &
           call R % SetInteractions ( U % Interactions_NM_G )
@@ -361,7 +362,8 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- RadiationType
 
-      end associate !-- G, etc.
+      end associate !-- iR
+      end select !-- F
 
     end select !-- I
 
@@ -653,6 +655,8 @@ contains
     select type ( R  =>  I % CurrentSet_X_1D )
       class is ( NeutrinoMoments_G_Form )
 
+    call R % SetFluidVelocity ( )
+    call R % ComputeFromBalanced ( )
     call R % ComputeSpectralParameters ( )
     call R % ComputeEquilibrium ( )
     call U % Interactions_NM_G % Compute ( )

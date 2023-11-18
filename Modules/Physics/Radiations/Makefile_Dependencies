@@ -6,6 +6,7 @@ RadiationMoments_BM__Form.o: \
   Basics.o \
   Mathematics.o \
   Gravitations.o \
+  Fluids.o \
   Units_R__Form.o \
   RadiationMoments_BM__Form.f90
 
@@ -69,6 +70,7 @@ Slope_RM_DFV_I__Form.o: \
 PhotonMoments_G__Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluids.o \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
   Interactions_BM__Form.o \

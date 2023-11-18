@@ -5,6 +5,7 @@ module RadiationMoments_BM__Form
   use Basics
   use Mathematics
   use Gravitations
+  use Fluids
   use Units_R__Form
 
   implicit none
@@ -50,6 +51,8 @@ module RadiationMoments_BM__Form
     character ( LDL ) :: &
       RadiationType = ''!, &
   !     MomentsType = ''
+    class ( Fluid_P_Form ), pointer :: &
+      Fluid => null ( )
     class ( * ), pointer :: &
       Interactions => null ( )
   contains
@@ -69,6 +72,8 @@ module RadiationMoments_BM__Form
       ComputeEigenspeeds
     procedure, public, pass :: &
       ComputeEquilibrium
+    procedure, public, pass :: &
+      SetFluidVelocity
     final :: &
       Finalize
   end type RadiationMoments_BM_Form
@@ -148,15 +153,15 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, G, Units_R, RadiationType, FieldOption, VectorOption, &
+               ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
                  NameOption, UnitOption, VectorIndicesOption, &
                  iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
                  IgnorabilityOption )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
-    class ( Geometry_F_Form ), intent ( in ) :: &
-      G
+    class ( Fluid_P_Form ), intent ( in ), target :: &
+      F
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
     character ( * ), intent ( in ) :: &
@@ -211,6 +216,8 @@ contains
     Name  =  'RadiationMoments'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
+
+    RM % Fluid  =>  F
 
     !-- Field indices
 
@@ -271,7 +278,7 @@ contains
           
     !-- Units
 
-    associate ( nC  =>  G % Atlas % nCharts )
+    associate ( nC  =>  F % Atlas % nCharts )
 
     if ( present ( UnitOption ) ) then
       allocate ( FieldUnit, source = UnitOption )
@@ -374,7 +381,7 @@ contains
     !-- CurrentSet
 
     call RM % CurrentSetForm % Initialize &
-           ( G, &
+           ( F % Geometry, &
              FieldOption = Field, &
              VectorOption = Vector, &
              NameOption = Name, &
@@ -508,7 +515,7 @@ contains
     type ( TimerForm ), pointer :: &
       T_K
 
-    call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
 
     if ( present ( T_Option ) ) then
@@ -635,12 +642,40 @@ contains
   end subroutine ComputeEquilibrium
 
 
+  subroutine SetFluidVelocity ( RM )
+
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      RM
+
+    integer ( KDI ) :: &
+      iC
+
+    associate ( F  =>  RM % Fluid )
+    do iC  =  1, RM % Atlas % nCharts
+      associate &
+        ( RSV  =>  RM % Storage ( iC ) % Value, &
+          FSV  =>  F  % Storage ( iC ) % Value )
+
+      call Copy ( FSV ( :,   F  % VELOCITY_U_1  &
+                           : F  % VELOCITY_U_3 ), &
+                  RSV ( :,   RM % FLUID_VELOCITY_U_1 &
+                           : RM % FLUID_VELOCITY_U_3 ), &
+                  UseDeviceOption = RM % DeviceMemory )
+
+      end associate !-- RV, etc.
+    end do !-- iC
+    end associate !-- F
+
+  end subroutine SetFluidVelocity
+
+
   impure elemental subroutine Finalize ( RM )
 
     type ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
 
     nullify ( RM % Interactions )
+    nullify ( RM % Fluid )
 
   end subroutine Finalize
 
