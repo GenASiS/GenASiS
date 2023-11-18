@@ -19,9 +19,9 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
+      SqrtTiny, &
       H_Sq, &
-      K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3, &
-      SqrtTiny
+      K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3
     logical ( KDL ) :: &
       UseDevice
       
@@ -50,11 +50,7 @@ contains
       !$OMP private ( H_Sq, K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3 )
       do iV = 1, nV
 
-        !-- Energy
-
-        F_E ( iV )  =  M_UU_Dim ( iV )  *  S_Dim ( iV ) 
-
-        !-- Momentum
+        !-- Comoving fluxes
 
         H_Sq  =     M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                  +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
@@ -82,11 +78,26 @@ contains
                             *  M_DD_33 ( iV ) * H_3 ( iV )  /  H_Sq )  &
              *  J ( iV )
 
-        !-- FIXME: Add velocity dependence
+        !-- Energy
 
-        F_S_1 ( iV )  =  K_U_Dim_D_1
-        F_S_2 ( iV )  =  K_U_Dim_D_2
-        F_S_3 ( iV )  =  K_U_Dim_D_3
+        F_E ( iV )  =  H_Dim ( iV )  +  V_Dim ( iV )  *  J ( iV )  &
+                       +  K_U_Dim_D_1  *  V_1 ( iV )  &
+                       +  K_U_Dim_D_2  *  V_2 ( iV )  &
+                       +  K_U_Dim_D_3  *  V_3 ( iV )
+
+        !-- Momentum
+
+        F_S_1 ( iV )  =  K_U_Dim_D_1  &
+                         +  H_Dim ( iV )  *  V_1 ( iV )  *  M_DD_11 ( iV )  &
+                         +  V_Dim ( iV )  *  H_1 ( iV )  *  M_DD_11 ( iV )
+
+        F_S_2 ( iV )  =  K_U_Dim_D_2  &
+                         +  H_Dim ( iV )  *  V_2 ( iV )  *  M_DD_22 ( iV )  &
+                         +  V_Dim ( iV )  *  H_2 ( iV )  *  M_DD_22 ( iV )
+
+        F_S_3 ( iV )  =  K_U_Dim_D_3  &
+                         +  H_Dim ( iV )  *  V_3 ( iV )  *  M_DD_33 ( iV )  &
+                         +  V_Dim ( iV )  *  H_3 ( iV )  *  M_DD_33 ( iV )
 
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -99,11 +110,7 @@ contains
       !$OMP private ( H_Sq, K_U_Dim_D_1, K_U_Dim_D_2, K_U_Dim_D_3 )
       do iV = 1, nV
 
-        !-- Energy
-
-        F_E ( iV )  =  M_UU_Dim ( iV )  *  S_Dim ( iV ) 
-
-        !-- Momentum
+        !-- Comoving fluxes
 
         H_Sq  =     M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                  +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
@@ -131,11 +138,26 @@ contains
                             *  M_DD_33 ( iV ) * H_3 ( iV )  /  H_Sq )  &
              *  J ( iV )
 
-        !-- FIXME: Add velocity dependence
+        !-- Energy
 
-        F_S_1 ( iV )  =  K_U_Dim_D_1
-        F_S_2 ( iV )  =  K_U_Dim_D_2
-        F_S_3 ( iV )  =  K_U_Dim_D_3
+        F_E ( iV )  =  H_Dim ( iV )  +  V_Dim ( iV )  *  J ( iV )  &
+                       +  K_U_Dim_D_1  *  V_1 ( iV )  &
+                       +  K_U_Dim_D_2  *  V_2 ( iV )  &
+                       +  K_U_Dim_D_3  *  V_3 ( iV )
+
+        !-- Momentum
+
+        F_S_1 ( iV )  =  K_U_Dim_D_1  &
+                         +  H_Dim ( iV )  *  V_1 ( iV )  *  M_DD_11 ( iV )  &
+                         +  V_Dim ( iV )  *  H_1 ( iV )  *  M_DD_11 ( iV )
+
+        F_S_2 ( iV )  =  K_U_Dim_D_2  &
+                         +  H_Dim ( iV )  *  V_2 ( iV )  *  M_DD_22 ( iV )  &
+                         +  V_Dim ( iV )  *  H_2 ( iV )  *  M_DD_22 ( iV )
+
+        F_S_3 ( iV )  =  K_U_Dim_D_3  &
+                         +  H_Dim ( iV )  *  V_3 ( iV )  *  M_DD_33 ( iV )  &
+                         +  V_Dim ( iV )  *  H_3 ( iV )  *  M_DD_33 ( iV )
 
       end do !-- iV
       !$OMP  end parallel do
@@ -153,9 +175,9 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
+      SqrtTiny, &
       H_Sq, &
-      K_UD_22, K_UD_33, &
-      SqrtTiny
+      K_UD_22, K_UD_33
     logical ( KDL ) :: &
       UseDevice
       
@@ -194,10 +216,13 @@ contains
                             *  M_DD_33 ( iV ) * H_3 ( iV )  /  H_Sq )  &
              *  J ( iV )
 
-        !-- FIXME: Add velocity dependence
+        S_UD_22 ( iV )  =  K_UD_22  &
+                           +  H_2 ( iV )  *  V_2 ( iV )  *  M_DD_22 ( iV )  &
+                           +  V_2 ( iV )  *  H_2 ( iV )  *  M_DD_22 ( iV )
 
-        S_UD_22 ( iV )  =  K_UD_22
-        S_UD_33 ( iV )  =  K_UD_33
+        S_UD_33 ( iV )  =  K_UD_33  &
+                           +  H_3 ( iV )  *  V_3 ( iV )  *  M_DD_33 ( iV )  &
+                           +  V_3 ( iV )  *  H_3 ( iV )  *  M_DD_33 ( iV )
 
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -229,10 +254,13 @@ contains
                             *  M_DD_33 ( iV ) * H_3 ( iV )  /  H_Sq )  &
              *  J ( iV )
 
-        !-- FIXME: Add velocity dependence
+        S_UD_22 ( iV )  =  K_UD_22  &
+                           +  H_2 ( iV )  *  V_2 ( iV )  *  M_DD_22 ( iV )  &
+                           +  V_2 ( iV )  *  H_2 ( iV )  *  M_DD_22 ( iV )
 
-        S_UD_22 ( iV )  =  K_UD_22
-        S_UD_33 ( iV )  =  K_UD_33
+        S_UD_33 ( iV )  =  K_UD_33  &
+                           +  H_3 ( iV )  *  V_3 ( iV )  *  M_DD_33 ( iV )  &
+                           +  V_3 ( iV )  *  H_3 ( iV )  *  M_DD_33 ( iV )
 
       end do !-- iV
       !$OMP  end parallel do

@@ -27,22 +27,19 @@ module DivergencePart_NM_G__Form
     interface
 
       module subroutine Compute_FS_G_Kernel &
-               ( J, H_1, H_2, H_3, N, H_Dim, S_Dim, SF, V_1, V_2, V_3, &
-                 M_DD_11, M_DD_22, M_DD_33, M_UU_Dim, iDim, &
+               ( J, H_1, H_2, H_3, N, H_Dim, SF, V_1, V_2, V_3, V_Dim, &
+                 M_DD_11, M_DD_22, M_DD_33, iDim, &
                  F_E, F_S_1, F_S_2, F_S_3, F_D, UseDeviceOption )
         !-- Compute_FluxSet_Galileo_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J, &
-          H_1, H_2, H_3, &
+          H_1, H_2, H_3, H_Dim, &
           N, &
-          H_Dim, &
-          S_Dim, &
           SF, &
-          V_1, V_2, V_3, &
-          M_DD_11, M_DD_22, M_DD_33, &
-          M_UU_Dim
+          V_1, V_2, V_3, V_Dim, &
+          M_DD_11, M_DD_22, M_DD_33
         integer ( KDI ), intent ( in ) :: &
           iDim
         real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -134,11 +131,11 @@ contains
           H_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
           N      =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
           H_Dim  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U ( iD ) ), &
-          S_Dim  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D ( iD ) ), &
          SF      =>  CSV ( :, CS % STRESS_FACTOR ), &
           V_1    =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
           V_2    =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
-          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ), &
+          V_Dim  =>  CSV ( :, CS % FLUID_VELOCITY_U ( iD ) ) )
  
     select type ( G  =>  CS % Geometry )
     class is ( Gravitation_G_Form )
@@ -148,12 +145,11 @@ contains
       associate &
         ( M_DD_11   =>  GSV ( :, G % METRIC_F_DD_11 ), &
           M_DD_22   =>  GSV ( :, G % METRIC_F_DD_22 ), &
-          M_DD_33   =>  GSV ( :, G % METRIC_F_DD_33 ), &
-          M_UU_Dim  =>  GSV ( :, G % METRIC_F_UU ( iD ) ) )
+          M_DD_33   =>  GSV ( :, G % METRIC_F_DD_33 ) )
 
       call Compute_FS_G_Kernel &
-             ( J, H_1, H_2, H_3, N, H_Dim, S_Dim, SF, V_1, V_2, V_3, &
-               M_DD_11, M_DD_22, M_DD_33, M_UU_Dim, iD, &
+             ( J, H_1, H_2, H_3, N, H_Dim, SF, V_1, V_2, V_3, V_Dim, &
+               M_DD_11, M_DD_22, M_DD_33, iD, &
                F_E, F_S_1, F_S_2, F_S_3, F_D, &
                UseDeviceOption = CS % DeviceMemory )
 

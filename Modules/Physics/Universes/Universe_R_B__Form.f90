@@ -631,6 +631,8 @@ contains
     select type ( R  =>  I % CurrentSet_X_1D )
       class is ( PhotonMoments_G_Form )
 
+    call R % SetFluidVelocity ( )
+    call R % ComputeFromBalanced ( )
     call R % ComputeSpectralParameters ( )
     call R % ComputeEquilibrium ( )
     call U % Interactions_BM % Compute ( )
