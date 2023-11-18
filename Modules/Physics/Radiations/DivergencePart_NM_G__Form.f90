@@ -27,7 +27,7 @@ module DivergencePart_NM_G__Form
     interface
 
       module subroutine Compute_FS_G_Kernel &
-               ( J, H_1, H_2, H_3, N, H_Dim, S_Dim, SF, &
+               ( J, H_1, H_2, H_3, N, H_Dim, S_Dim, SF, V_1, V_2, V_3, &
                  M_DD_11, M_DD_22, M_DD_33, M_UU_Dim, iDim, &
                  F_E, F_S_1, F_S_2, F_S_3, F_D, UseDeviceOption )
         !-- Compute_FluxSet_Galileo_Kernel
@@ -40,6 +40,7 @@ module DivergencePart_NM_G__Form
           H_Dim, &
           S_Dim, &
           SF, &
+          V_1, V_2, V_3, &
           M_DD_11, M_DD_22, M_DD_33, &
           M_UU_Dim
         integer ( KDI ), intent ( in ) :: &
@@ -134,7 +135,10 @@ contains
           N      =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
           H_Dim  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U ( iD ) ), &
           S_Dim  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D ( iD ) ), &
-         SF      =>  CSV ( :, CS % STRESS_FACTOR ) )
+         SF      =>  CSV ( :, CS % STRESS_FACTOR ), &
+          V_1    =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2    =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
  
     select type ( G  =>  CS % Geometry )
     class is ( Gravitation_G_Form )
@@ -148,7 +152,7 @@ contains
           M_UU_Dim  =>  GSV ( :, G % METRIC_F_UU ( iD ) ) )
 
       call Compute_FS_G_Kernel &
-             ( J, H_1, H_2, H_3, N, H_Dim, S_Dim, SF, &
+             ( J, H_1, H_2, H_3, N, H_Dim, S_Dim, SF, V_1, V_2, V_3, &
                M_DD_11, M_DD_22, M_DD_33, M_UU_Dim, iD, &
                F_E, F_S_1, F_S_2, F_S_3, F_D, &
                UseDeviceOption = CS % DeviceMemory )
