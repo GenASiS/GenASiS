@@ -491,7 +491,9 @@ contains
       call Show ( C % Name, 'Chart', FS % IGNORABILITY )
       do iS  =  1, FS % nFields
         iF  =  FS % iaSelected ( iS )
-        call Show ( FS % Unit ( iF, iC ),  'Unit',  FS % IGNORABILITY )
+        call Show ( FS % Unit ( iF, iC ), &
+                    'Unit ' // trim ( FS % Field ( iF ) ), &
+                    FS % IGNORABILITY )
       end do !-- iS
       call B % Show ( C, FS % IGNORABILITY )
       end associate !-- C
