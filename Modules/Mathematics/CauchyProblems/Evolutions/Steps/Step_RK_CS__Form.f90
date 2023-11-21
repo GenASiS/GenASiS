@@ -208,6 +208,8 @@ contains
 
     call S % SetStream_H ( Sm )
 
+call SM % AddFieldSet ( S % RiemannSolver )
+
   end subroutine SetStream
 
 

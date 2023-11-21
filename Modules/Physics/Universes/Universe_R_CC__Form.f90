@@ -562,6 +562,9 @@ contains
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
+    call U % Interactions_NM_G % SetStream ( I % Checkpoint_X )
+    call U % Interactions_NM_G % Show ( )
+
     end select !-- I
 
   end subroutine InitializeIntegrator
@@ -655,8 +658,8 @@ contains
     select type ( R  =>  I % CurrentSet_X_1D )
       class is ( NeutrinoMoments_G_Form )
 
-    call R % SetFluidVelocity ( )
-    call R % ComputeFromBalanced ( )
+!    call R % SetFluidVelocity ( )
+!    call R % ComputeFromBalanced ( )
     call R % ComputeSpectralParameters ( )
     call R % ComputeEquilibrium ( )
     call U % Interactions_NM_G % Compute ( )

@@ -64,6 +64,7 @@ contains
       IgnorabilityOption
 
     integer ( KDI ) :: &
+      iC, &
       nFields
     type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
@@ -119,16 +120,16 @@ contains
       allocate ( FieldUnit ( nFields, nC ) )
     end if !-- FieldOption
 
-    ! do iC  =  1, nC
-      ! FieldUnit ( I % EMISSIVITY_J ) &
-      !   =  Units % EnergyDensity  *  Units % Length ** (-1)
-      ! FieldUnit ( I % EMISSIVITY_H ) &
-      !   =  Units % EnergyDensity  *  Units % Length ** (-1)
-      ! FieldUnit ( I % OPACITY_J ) &
-      !   =  Units % Length ** (-1)
-      ! FieldUnit ( I % OPACITY_H ) &
-      !   =  Units % Length ** (-1)
-    ! end do !-- iC
+    do iC  =  1, nC
+      FieldUnit ( I % EMISSIVITY_J, iC ) &
+        =  Units_R ( iC ) % EnergyDensity  *  Units_R ( iC ) % Length ** (-1)
+      FieldUnit ( I % EMISSIVITY_H, iC ) &
+        =  Units_R ( iC ) % EnergyDensity  *  Units_R ( iC ) % Length ** (-1)
+      FieldUnit ( I % OPACITY_J, iC ) &
+        =  Units_R ( iC ) % Length ** (-1)
+      FieldUnit ( I % OPACITY_H, iC ) &
+        =  Units_R ( iC ) % Length ** (-1)
+    end do !-- iC
 
     end associate !-- nC
 
