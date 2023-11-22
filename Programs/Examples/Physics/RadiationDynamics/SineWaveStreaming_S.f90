@@ -13,7 +13,7 @@ program SineWaveStreaming_S
          ( 'SineWaveStreaming_S', DimensionalityOption = '2D_1D' )
 
   allocate ( SWS )
-  call SWS % Initialize ( 'SPECTRAL', PROGRAM_HEADER % Name )
+  call SWS % Initialize_PWS ( 'SPECTRAL', PROGRAM_HEADER % Name )
 call SWS % ShowParameters ( )
   ! call SWS % Evolve ( )
   ! call SWS % ComputeError ( )

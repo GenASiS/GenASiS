@@ -21,10 +21,8 @@ module PlaneWaveStreaming_Form
       Reference, &
       Difference
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_PWS
-    generic, public :: &
-      Initialize => Initialize_PWS
     procedure, public, pass :: &
       ComputeError
     final :: &
@@ -229,8 +227,11 @@ contains
     associate &
       ( R_R  =>  PWS % Reference, &
         R_D  =>  PWS % Difference, &
-        G    =>  PWS % Integrator % Geometry_X, &
         S    =>  PWS % Integrator % Checkpoint_X )
+    select type ( I  =>  PWS % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
 
     select case ( PWS % iRadiation )
     case ( 1 )
@@ -242,16 +243,18 @@ contains
     end select
     
     call R_R % Initialize &
-           ( G, PWS % Units_R, &
+           ( F, PWS % Units_R, &
              RadiationType = 'GENERIC', &
              NameOption = ReferenceName )
     call R_D % Initialize &
-           ( G, PWS % Units_R, &
+           ( F, PWS % Units_R, &
              RadiationType = 'GENERIC', &
              NameOption = DifferenceName )
     call R_R % SetStream ( S )
     call R_D % SetStream ( S )
 
+    end select !-- F
+    end select !-- I
     end associate !-- R_R, etc.
 
   end subroutine InitializeDiagnostics

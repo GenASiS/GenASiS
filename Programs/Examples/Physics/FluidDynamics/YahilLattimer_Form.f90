@@ -69,7 +69,7 @@ module YahilLattimer_Form
 contains
 
 
-  subroutine Initialize_H ( U, Name, CommunicatorOption )
+  subroutine Initialize_H ( U, Name, CommunicatorOption, UnitsTypeOption )
 
     class ( YahilLattimerForm ), intent ( inout ), target :: &
       U
@@ -77,6 +77,8 @@ contains
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
 
     if ( U % Type == '' ) &
       U % Type = 'a YahilLattimer'
@@ -226,6 +228,7 @@ contains
            ( FluidType = 'IDEAL', &
              GravitationType = 'NEWTON_SG', &
              Name = Name, &
+             UnitsTypeOption = 'ASTROPHYSICS', &
              nCellsPolarOption = 128 )
 
     YL % Integrator % SetInitial    =>  SetInitial

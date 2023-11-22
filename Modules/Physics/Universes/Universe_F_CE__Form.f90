@@ -33,7 +33,7 @@ contains
 
   subroutine Initialize_F_CE &
                ( U, FluidType, GravitationType, Name, &
-                 DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
+                 UnitsTypeOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusExcisionOption, RadialRatioOption, CentralMassOption, &
                  nCellsPolarOption, nWriteOption )
 
@@ -43,8 +43,8 @@ contains
       FluidType, &
       GravitationType, &
       Name
-    logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       RadiusMaxOption, &
@@ -60,7 +60,7 @@ contains
 
     call U % Initialize_F_C &
            ( FluidType, GravitationType, Name, &
-             DimensionlessOption = DimensionlessOption, &
+             UnitsTypeOption = UnitsTypeOption, &
              FinishTimeOption = FinishTimeOption, &
              RadiusMaxOption = RadiusMaxOption, &
              RadiusExcisionOption = RadiusExcisionOption, &
@@ -129,6 +129,8 @@ contains
       RadiusMax, &
       RadiusExcision, &
       RadialRatio
+    type ( QuantityForm ), dimension ( 3 ) :: &
+      CoordinateUnit
     type ( CommunicatorForm ), pointer :: &
       Communicator
 
@@ -144,24 +146,10 @@ contains
     select type ( PS  =>  I % X )
       class is ( Atlas_SCG_CE_Form )
 
-    if ( U % Dimensionless ) then
+    select case ( trim ( U % UnitsType ) )
+    case ( 'ASTROPHYSICS' )
 
-      RadiusMax       =  10.0_KDR
-      RadiusExcision  =  0.45_KDR
-      if ( present ( RadiusMaxOption ) ) &
-        RadiusMax  =  RadiusMaxOption
-      if ( present ( RadiusExcisionOption ) ) &
-        RadiusExcision  =  RadiusExcisionOption
-
-      call PS % Initialize &
-             ( RadiusMax = RadiusMax, &
-               RadiusExcision = RadiusExcision, &
-               CommunicatorOption = Communicator, &
-               NameOption = 'PositionSpace', &
-               DeviceMemoryOption = U % DeviceMemory, &
-               nCellsPolarOption = nCellsPolarOption )
-
-    else
+      CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
 
       RadiusMax       =  1.0e3_KDR  *  UNIT % KILOMETER
       RadiusExcision  =   40.0_KDR  *  UNIT % KILOMETER
@@ -179,11 +167,28 @@ contains
                CommunicatorOption = PROGRAM_HEADER % Communicator, &
                NameOption = 'PositionSpace', &
                DeviceMemoryOption = U % DeviceMemory, &
-               CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
+               CoordinateUnitOption = CoordinateUnit, &
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
-    end if !-- Dimensionless
+    case default
+
+      RadiusMax       =  10.0_KDR
+      RadiusExcision  =  0.45_KDR
+      if ( present ( RadiusMaxOption ) ) &
+        RadiusMax  =  RadiusMaxOption
+      if ( present ( RadiusExcisionOption ) ) &
+        RadiusExcision  =  RadiusExcisionOption
+
+      call PS % Initialize &
+             ( RadiusMax = RadiusMax, &
+               RadiusExcision = RadiusExcision, &
+               CommunicatorOption = Communicator, &
+               NameOption = 'PositionSpace', &
+               DeviceMemoryOption = U % DeviceMemory, &
+               nCellsPolarOption = nCellsPolarOption )
+
+    end select !-- UnitsType
 
     !-- Azimuthal average
     if ( PS % Chart_GS_CE % nDimensions  >  2 ) then

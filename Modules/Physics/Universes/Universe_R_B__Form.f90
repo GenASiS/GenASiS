@@ -98,8 +98,9 @@ contains
 
   subroutine Initialize_R_B &
                ( U, RadiationName, RadiationType, FormalismType, Name, &
-                 ApplyStreamingOption, ApplyInteractionsOption, &
-                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
+                 UnitsTypeOption, ApplyStreamingOption, &
+                 ApplyInteractionsOption, EvolveFluidOption, &
+                 MinCoordinateOption, MaxCoordinateOption, &
                  FinishTimeOption, nCellsPositionOption, nWriteOption )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
@@ -110,6 +111,8 @@ contains
     character ( * ), intent ( in ) :: &
       FormalismType, &
       Name
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
       ApplyInteractionsOption, &
@@ -127,7 +130,8 @@ contains
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_B'
 
-    call U % Universe_H_Form % Initialize ( Name )
+    call U % Universe_H_Form % Initialize &
+           ( Name, UnitsTypeOption = UnitsTypeOption )
 
     !-- Radiations
 
@@ -151,18 +155,6 @@ contains
       U % ApplyInteractions = ApplyInteractionsOption
     if ( present ( EvolveFluidOption ) ) &
       U % EvolveFluid = EvolveFluidOption
-
-    !-- Units
-
-    if ( .not. allocated ( U % Units_F ) ) then
-      allocate ( U % Units_F ( 1 ) )
-      call U % Units_F ( 1 ) % Initialize ( )
-    end if
-
-    if ( .not. allocated ( U % Units_R ) ) then
-      allocate ( U % Units_R ( 1 ) )
-      call U % Units_R ( 1 ) % Initialize ( )
-    end if
 
     !-- Initializations
 
@@ -336,6 +328,15 @@ contains
 
     select type ( I  =>  U % Integrator )
     class is ( Integrator_CS_1D_BM_CS_Form )
+
+      select type ( A  =>  I % X )
+      class is ( Atlas_SCG_Form )
+      associate ( C  =>  A % Chart_GS )
+        allocate ( U % Units_R ( 1 ) )
+        call U % Units_R ( 1 ) % Initialize &
+               ( C % CoordinateUnit, TypeOption = U % UnitsType )
+      end associate !-- C
+      end select !-- A
 
       select type ( F  =>  I % CurrentSet_X )
         class is ( Fluid_P_Form )

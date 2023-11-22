@@ -42,7 +42,7 @@ contains
 
 
   subroutine Initialize_F_B &
-               ( U, FluidType, GravitationType, Name, &
+               ( U, FluidType, GravitationType, Name, UnitsTypeOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  UniformAccelerationOption, nCellsOption, nWriteOption )
 
@@ -52,6 +52,8 @@ contains
       FluidType, &
       GravitationType, &
       Name
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -63,13 +65,15 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
+    type ( QuantityForm ), dimension ( 3 ) :: &
+      CoordinateUnit
+
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_F_B'
 
-    call U % Universe_H_Form % Initialize ( Name )
-
-    allocate ( U % Units_F ( 1 ) )
-    call U % Units_F ( 1 ) % Initialize ( )
+    call U % Universe_H_Form % Initialize &
+           ( Name, &
+             UnitsTypeOption = UnitsTypeOption )
 
     call U % AllocateIntegrator &
            ( )
@@ -113,8 +117,8 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( U, CommunicatorOption, MinCoordinateOption, &
-                 MaxCoordinateOption, nCellsOption )
+               ( U, CommunicatorOption, &
+                 MinCoordinateOption, MaxCoordinateOption, nCellsOption )
 
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
@@ -126,8 +130,22 @@ contains
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsOption
 
+    type ( QuantityForm ), dimension ( 3 ) :: &
+      CoordinateUnit
     type ( CommunicatorForm ), pointer :: &
       Communicator
+
+    select case ( trim ( U % UnitsType ) )
+    case ( 'MKS' )
+      CoordinateUnit  &
+        =  [ UNIT % METER, UNIT % METER, UNIT % METER ]
+    case ( 'CGS' )
+      CoordinateUnit  &
+        =  [ UNIT % CENTIMETER, UNIT % CENTIMETER, UNIT % CENTIMETER ]
+    case ( 'ASTROPHYSICS' )
+      CoordinateUnit  &
+        =  [ UNIT % KILOMETER, UNIT % KILOMETER, UNIT % KILOMETER ]
+    end select !-- UnitsType
 
     if ( present ( CommunicatorOption ) ) then
       Communicator  =>  CommunicatorOption
@@ -145,7 +163,7 @@ contains
            ( CommunicatorOption = Communicator, &
              NameOption = 'PositionSpace', &
              DeviceMemoryOption = U % DeviceMemory, &
-             CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
+             CoordinateUnitOption = CoordinateUnit, &
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsOption )
@@ -227,6 +245,15 @@ contains
       class is ( Integrator_CS_Form )
     associate &
       ( G  =>  I % Geometry_X )
+
+    select type ( A  =>  I % X )
+    class is ( Atlas_SCG_Form )
+    associate ( C  =>  A % Chart_GS )
+      allocate ( U % Units_F ( 1 ) )
+      call U % Units_F ( 1 ) % Initialize &
+             ( C % CoordinateUnit, TypeOption = U % UnitsType )
+    end associate !-- C
+    end select !-- A
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )

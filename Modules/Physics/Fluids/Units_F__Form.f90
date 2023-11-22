@@ -8,7 +8,7 @@ module Units_F__Form
   private
 
   type, public :: Units_F_Form
-    !-- Phase space 
+    !-- Spacetime 
     type ( QuantityForm ) :: &
       Time, &
       Length, &
@@ -16,8 +16,7 @@ module Units_F__Form
 !-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
 !    type ( MeasuredValueForm ), dimension ( 3 ) :: &
     type ( QuantityForm ), dimension ( : ), allocatable :: &
-      Coordinate_PS, &  !-- Coordinate_PositionSpace
-      Coordinate_MS     !-- Coordinate_MomentumSpace
+      Coordinate_PS  !-- Coordinate_PositionSpace
     !-- Local
     type ( QuantityForm ) :: &
       BaryonMass, &
@@ -49,47 +48,55 @@ module Units_F__Form
 contains
 
 
-  subroutine Initialize ( U, TypeOption, CoordinateSystemOption )
+  subroutine Initialize ( U, CoordinateUnit, TypeOption )
 
     class ( Units_F_Form ), intent ( inout ) :: &
       U
+    type ( QuantityForm ), dimension ( : ), intent ( in ) :: &
+      CoordinateUnit
     character ( * ), intent ( in ), optional :: &
-      TypeOption, &
-      CoordinateSystemOption
+      TypeOption
 
     allocate ( U % Coordinate_PS ( 3 ) )
-    allocate ( U % Coordinate_MS ( 3 ) )
     allocate ( U % Velocity_U ( 3 ) )
     allocate ( U % MomentumDensity_D ( 3 ) )
 
     if ( present ( TypeOption ) ) then
       select case ( trim ( TypeOption ) )
+      case ( '' )
       case ( 'MKS' )
-        !-- Phase space 
-        U % Time                 =  UNIT % SECOND
-        U % Length               =  UNIT % METER
-        U % SqrtDet_M            =  UNIT % IDENTITY
-        U % Coordinate_PS ( 1 )  =  UNIT % METER
-        U % Coordinate_PS ( 2 )  =  UNIT % METER
-        U % Coordinate_PS ( 3 )  =  UNIT % METER
-        U % Coordinate_MS ( 1 )  =  UNIT % JOULE
-        U % Coordinate_MS ( 2 )  =  UNIT % RADIAN
-        U % Coordinate_MS ( 3 )  =  UNIT % RADIAN
+        !-- Spacetime 
+        U % Time           =  UNIT % SECOND
+        U % Length         =  UNIT % METER
+        U % SqrtDet_M      =  UNIT % IDENTITY
+        U % Coordinate_PS  =  CoordinateUnit
         !-- Local
         U % BaryonMass               =  UNIT % KILOGRAM
         U % NumberDensity            =  UNIT % NUMBER_DENSITY_MKS
         U % MassDensity              =  UNIT % MASS_DENSITY_MKS
         U % EnergyDensity            =  UNIT % ENERGY_DENSITY_MKS
         U % Temperature              =  UNIT % KELVIN
-        U % Velocity_U ( 1 )         =  UNIT % SPEED_MKS
-        U % Velocity_U ( 2 )         =  UNIT % SPEED_MKS
-        U % Velocity_U ( 3 )         =  UNIT % SPEED_MKS
+        U % Velocity_U ( 1 )         =  U % Coordinate_PS ( 1 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_MKS
+        U % Velocity_U ( 2 )         =  U % Coordinate_PS ( 2 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_MKS
+        U % Velocity_U ( 3 )         =  U % Coordinate_PS ( 3 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_MKS
         U % MomentumDensity_D ( 1 )  =  UNIT % MASS_DENSITY_MKS  &
-                                        *  UNIT % SPEED_MKS
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 1 ) ** 2  &
+                                        *  U % Velocity_U ( 1 )
         U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_MKS  &
-                                        *  UNIT % SPEED_MKS
-        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_MKS  &
-                                        *  UNIT % SPEED_MKS
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 2 ) ** 2  &
+                                        *  U % Velocity_U ( 2 )
+        U % MomentumDensity_D ( 3 )  =  UNIT % MASS_DENSITY_MKS  &
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 3 ) ** 2  &
+                                        *  U % Velocity_U ( 3 )
         !-- Global
         U % Number           =  UNIT % MOLE
         U % Mass             =  UNIT % KILOGRAM
@@ -97,31 +104,38 @@ contains
         U % Momentum         =  UNIT % KILOGRAM  *  UNIT % SPEED_MKS
         U % AngularMomentum  =  U % Momentum  *  UNIT % METER
       case ( 'CGS' )
-        !-- Phase space 
-        U % Time                 =  UNIT % SECOND
-        U % Length               =  UNIT % CENTIMETER
-        U % SqrtDet_M            =  UNIT % IDENTITY
-        U % Coordinate_PS ( 1 )  =  UNIT % CENTIMETER
-        U % Coordinate_PS ( 2 )  =  UNIT % CENTIMETER
-        U % Coordinate_PS ( 3 )  =  UNIT % CENTIMETER
-        U % Coordinate_MS ( 1 )  =  UNIT % ERG
-        U % Coordinate_MS ( 2 )  =  UNIT % RADIAN
-        U % Coordinate_MS ( 3 )  =  UNIT % RADIAN
+        !-- Spacetime 
+        U % Time           =  UNIT % SECOND
+        U % Length         =  UNIT % CENTIMETER
+        U % SqrtDet_M      =  UNIT % IDENTITY
+        U % Coordinate_PS  =  CoordinateUnit
         !-- Local
         U % BaryonMass               =  UNIT % GRAM
         U % NumberDensity            =  UNIT % NUMBER_DENSITY_CGS
         U % MassDensity              =  UNIT % MASS_DENSITY_CGS
         U % EnergyDensity            =  UNIT % ENERGY_DENSITY_CGS
         U % Temperature              =  UNIT % KELVIN
-        U % Velocity_U ( 1 )         =  UNIT % SPEED_CGS
-        U % Velocity_U ( 2 )         =  UNIT % SPEED_CGS
-        U % Velocity_U ( 3 )         =  UNIT % SPEED_CGS
+        U % Velocity_U ( 1 )         =  U % Coordinate_PS ( 1 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_CGS
+        U % Velocity_U ( 2 )         =  U % Coordinate_PS ( 2 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_CGS
+        U % Velocity_U ( 3 )         =  U % Coordinate_PS ( 3 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_CGS
         U % MomentumDensity_D ( 1 )  =  UNIT % MASS_DENSITY_CGS  &
-                                        *  UNIT % SPEED_CGS
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 1 ) ** 2  &
+                                        *  U % Velocity_U ( 1 )
         U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_CGS  &
-                                        *  UNIT % SPEED_CGS
-        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_CGS  &
-                                        *  UNIT % SPEED_CGS
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 2 ) ** 2  &
+                                        *  U % Velocity_U ( 2 )
+        U % MomentumDensity_D ( 3 )  =  UNIT % MASS_DENSITY_CGS  &
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 3 ) ** 2  &
+                                        *  U % Velocity_U ( 3 )
         !-- Global
         U % Number           =  UNIT % MOLE
         U % Mass             =  UNIT % GRAM
@@ -129,31 +143,38 @@ contains
         U % Momentum         =  UNIT % GRAM  *  UNIT % SPEED_CGS
         U % AngularMomentum  =  U % Momentum  *  UNIT % CENTIMETER
       case ( 'ASTROPHYSICS' )
-        !-- Phase space 
-        U % Time                 =  UNIT % SECOND
-        U % Length               =  UNIT % KILOMETER
-        U % SqrtDet_M            =  UNIT % IDENTITY
-        U % Coordinate_PS ( 1 )  =  UNIT % KILOMETER
-        U % Coordinate_PS ( 2 )  =  UNIT % RADIAN
-        U % Coordinate_PS ( 3 )  =  UNIT % RADIAN
-        U % Coordinate_MS ( 1 )  =  UNIT % MEGA_ELECTRON_VOLT
-        U % Coordinate_MS ( 2 )  =  UNIT % RADIAN
-        U % Coordinate_MS ( 3 )  =  UNIT % RADIAN
+        !-- Spacetime 
+        U % Time           =  UNIT % SECOND
+        U % Length         =  UNIT % KILOMETER
+        U % SqrtDet_M      =  UNIT % IDENTITY
+        U % Coordinate_PS  =  CoordinateUnit
         !-- Local
-        U % BaryonMass               =  UNIT % ATOMIC_MASS_UNIT
+        U % BaryonMass               =  UNIT % MEGA_ELECTRON_VOLT
         U % NumberDensity            =  UNIT % NUMBER_DENSITY_NUCLEAR
         U % MassDensity              =  UNIT % MASS_DENSITY_CGS
         U % EnergyDensity            =  UNIT % ENERGY_DENSITY_NUCLEAR
         U % Temperature              =  UNIT % MEGA_ELECTRON_VOLT
-        U % Velocity_U ( 1 )         =  UNIT % KILOMETER  /  UNIT % SECOND
-        U % Velocity_U ( 2 )         =  UNIT % RADIAN     /  UNIT % SECOND
-        U % Velocity_U ( 3 )         =  UNIT % RADIAN     /  UNIT % SECOND
-        U % MomentumDensity_D ( 1 )  =  UNIT % ENERGY_DENSITY_NUCLEAR &
-                                        /  UNIT % SPEED_OF_LIGHT
-        U % MomentumDensity_D ( 2 )  =  UNIT % ENERGY_DENSITY_NUCLEAR  &
-                                        /  UNIT % SPEED_OF_LIGHT
-        U % MomentumDensity_D ( 2 )  =  UNIT % ENERGY_DENSITY_NUCLEAR &
-                                        /  UNIT % SPEED_OF_LIGHT
+        U % Velocity_U ( 1 )         =  U % Coordinate_PS ( 1 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_OF_LIGHT
+        U % Velocity_U ( 2 )         =  U % Coordinate_PS ( 2 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_OF_LIGHT
+        U % Velocity_U ( 3 )         =  U % Coordinate_PS ( 3 )  &
+                                        /  U % Length  &
+                                        *  UNIT % SPEED_OF_LIGHT
+        U % MomentumDensity_D ( 1 )  =  UNIT % MASS_DENSITY_NUCLEAR  &
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 1 ) ** 2  &
+                                        *  U % Velocity_U ( 1 )
+        U % MomentumDensity_D ( 2 )  =  UNIT % MASS_DENSITY_NUCLEAR  &
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 2 ) ** 2  &
+                                        *  U % Velocity_U ( 2 )
+        U % MomentumDensity_D ( 3 )  =  UNIT % MASS_DENSITY_NUCLEAR  &
+                                        *  U % Length ** 2  &
+                                        /  U % Coordinate_PS ( 3 ) ** 2  &
+                                        *  U % Velocity_U ( 3 )
         !-- Global
         U % Number           =  UNIT % SOLAR_BARYON_NUMBER
         U % Mass             =  UNIT % SOLAR_MASS
@@ -168,20 +189,6 @@ contains
       end select !-- TypeOption
     end if !-- TypeOption
 
-    if ( present ( CoordinateSystemOption ) ) then
-      select case ( trim ( CoordinateSystemOption ) )
-      case ( 'RECTANGULAR' )
-        !-- Leave defaults
-!      case ( 'CYLINDRICAL' )
-!      case ( 'SPHERICAL' )
-      case default
-        call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
-        call Show ( 'Units_F__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- CoordinateSystemOption
-    end if !-- CoordinateSystemOption 
-
   end subroutine Initialize
 
 
@@ -192,12 +199,11 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    call Show ( 'Units -- Phase space', IgnorabilityOption )
+    call Show ( 'Units -- Spacetime', IgnorabilityOption )
     call Show ( U % Time,          'Time',          IgnorabilityOption )
     call Show ( U % Length,        'Length',        IgnorabilityOption )
     call Show ( U % SqrtDet_M,     'SqrtDet_M',     IgnorabilityOption )
     call Show ( U % Coordinate_PS, 'Coordinate_PS', IgnorabilityOption )
-    call Show ( U % Coordinate_MS, 'Coordinate_MS', IgnorabilityOption )
 
     call Show ( 'Units -- Local' )
     call Show ( U % BaryonMass,        'BaryonMass',    IgnorabilityOption )
@@ -228,8 +234,6 @@ contains
       deallocate ( U % MomentumDensity_D )
     if ( allocated ( U % Velocity_U ) ) &
       deallocate ( U % Velocity_U )
-    if ( allocated ( U % Coordinate_MS ) ) &
-      deallocate ( U % Coordinate_MS )
     if ( allocated ( U % Coordinate_PS ) ) &
       deallocate ( U % Coordinate_PS )
 

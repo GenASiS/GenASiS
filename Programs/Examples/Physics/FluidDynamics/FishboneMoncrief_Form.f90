@@ -34,7 +34,7 @@ module FishboneMoncrief_Form
 contains
 
 
-  subroutine Initialize_H ( U, Name, CommunicatorOption )
+  subroutine Initialize_H ( U, Name, CommunicatorOption, UnitsTypeOption )
 
     class ( FishboneMoncriefForm ), intent ( inout ), target :: &
       U
@@ -42,6 +42,8 @@ contains
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
 
     if ( U % Type == '' ) &
       U % Type = 'a FishboneMoncrief'
@@ -134,6 +136,7 @@ contains
            ( FluidType = 'IDEAL', &
              GravitationType = 'NEWTON_CM', &
              Name = Name, &
+             UnitsTypeOption = 'ASTROPHYSICS', &
              FinishTimeOption = T_Finish, &
              RadiusMaxOption = R_Out, &
              RadiusExcisionOption = R_Min, &

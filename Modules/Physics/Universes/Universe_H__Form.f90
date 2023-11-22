@@ -15,6 +15,8 @@ module Universe_H__Form
       DeviceMemory, &
       PinnedMemory, &
       DevicesCommunicate
+    character ( LDL ) :: &
+      UnitsType = ''
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -48,7 +50,7 @@ module Universe_H__Form
 contains
 
  
-  subroutine Initialize_H ( U, Name, CommunicatorOption )
+  subroutine Initialize_H ( U, Name, CommunicatorOption, UnitsTypeOption )
 
     class ( Universe_H_Form ), intent ( inout ), target :: &
       U
@@ -56,6 +58,8 @@ contains
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
 
     U % IGNORABILITY = CONSOLE % INFO_1
 
@@ -63,6 +67,9 @@ contains
       U % Type  =  'a Universe' 
 
     U % Name  =  Name
+
+    if ( present ( UnitsTypeOption ) ) &
+      U % UnitsType  =  UnitsTypeOption
 
     if ( present ( CommunicatorOption ) ) then
       U % Communicator  =>  CommunicatorOption
@@ -145,12 +152,15 @@ contains
       U
 
     call U % Communicator % Show ( U % IGNORABILITY )
+
     call Show ( U % DeviceMemory, &
                 'DeviceMemory', U % IGNORABILITY ) 
     call Show ( U % PinnedMemory, &
                 'PinnedMemory', U % IGNORABILITY ) 
     call Show ( U % DevicesCommunicate, &
-                'DevicesCommunicate', U % IGNORABILITY ) 
+                'DevicesCommunicate', U % IGNORABILITY )
+    call Show ( U % UnitsType, &
+                'UnitsType', U % IGNORABILITY )
 
   end subroutine ShowParameters
 

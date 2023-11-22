@@ -15,7 +15,7 @@ program SineWaveStreaming_G
          ( 'SineWaveStreaming_G', DimensionalityOption = '2D' )
 
   allocate ( SWS )
-  call SWS % Initialize ( 'GREY', PROGRAM_HEADER % Name )
+  call SWS % Initialize_PWS ( 'GREY', PROGRAM_HEADER % Name )
   call SWS % Evolve ( )
   call SWS % ComputeError ( )
   deallocate ( SWS )

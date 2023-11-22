@@ -62,7 +62,7 @@ module LinMestelShu_Form
 contains
 
 
-  subroutine Initialize_H ( U, Name, CommunicatorOption )
+  subroutine Initialize_H ( U, Name, CommunicatorOption, UnitsTypeOption )
 
     class ( LinMestelShuForm ), intent ( inout ), target :: &
       U
@@ -70,6 +70,8 @@ contains
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a LinMestelShu'
@@ -205,7 +207,6 @@ contains
            ( FluidType = 'DUST', &
              GravitationType = 'NEWTON_SG', &
              Name = Name, &
-             DimensionlessOption = .true., &
              RadiusMaxOption = RadiusMax, &
              RadiusCoreOption = RadiusCore, &
              RadialRatioOption = RadialRatio, &

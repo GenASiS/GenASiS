@@ -30,7 +30,7 @@ module WoosleyHeger_07_A__Form
 contains
 
 
-  subroutine Initialize_H ( U, Name, CommunicatorOption )
+  subroutine Initialize_H ( U, Name, CommunicatorOption, UnitsTypeOption )
 
     class ( WoosleyHeger_07_A_Form ), intent ( inout ), target :: &
       U
@@ -38,6 +38,8 @@ contains
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
 
     if ( U % Type == '' ) &
       U % Type = 'a WoosleyHeger_07_A'
@@ -80,6 +82,7 @@ contains
              FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &
              Name = Name, &
+             UnitsTypeOption = 'ASTROPHYSICS', &
              FinishTimeOption = FinishTime, &
              nCellsPolarOption = 128, &
              nWriteOption = 30 )

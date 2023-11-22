@@ -16,10 +16,8 @@ module Thermalization_Form
     type ( PhotonMoments_G_Form ), allocatable :: &
       FractionalDifference
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_T
-    generic, public :: &
-      Initialize => Initialize_T
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -152,8 +150,11 @@ contains
       ( T % FractionalDifference )
     associate &
       ( R_FD  =>  T % FractionalDifference, &
-        G     =>  T % Integrator % Geometry_X, &
         S     =>  T % Integrator % Checkpoint_X )
+    select type ( I  =>  T % Integrator )
+      class is ( Integrator_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
 
     select case ( T % iRadiation )
     case ( 1 )
@@ -163,11 +164,13 @@ contains
     end select
     
     call R_FD % Initialize &
-           ( G, T % Units_R, &
+           ( F, T % Units_R, &
              RadiationType = 'PHOTONS', &
              NameOption = DifferenceName )
     call R_FD % SetStream ( S )
 
+    end select !-- F
+    end select !-- I
     end associate !-- R_R, etc.
 
   end subroutine InitializeDiagnostics

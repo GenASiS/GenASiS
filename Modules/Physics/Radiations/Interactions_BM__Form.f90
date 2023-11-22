@@ -122,13 +122,15 @@ contains
 
     do iC  =  1, nC
       FieldUnit ( I % EMISSIVITY_J, iC ) &
-        =  Units_R ( iC ) % EnergyDensity  *  Units_R ( iC ) % Length ** (-1)
+        =  Units_R ( iC ) % EnergyDensity  &
+           *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
       FieldUnit ( I % EMISSIVITY_H, iC ) &
-        =  Units_R ( iC ) % EnergyDensity  *  Units_R ( iC ) % Length ** (-1)
+        =  Units_R ( iC ) % EnergyDensity  &
+           *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
       FieldUnit ( I % OPACITY_J, iC ) &
-        =  Units_R ( iC ) % Length ** (-1)
+        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
       FieldUnit ( I % OPACITY_H, iC ) &
-        =  Units_R ( iC ) % Length ** (-1)
+        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
     end do !-- iC
 
     end associate !-- nC

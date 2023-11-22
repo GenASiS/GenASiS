@@ -11,7 +11,7 @@ module SineWaveStreaming_Form
       Offset, &
       Amplitude
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_PWS
     final :: &
       Finalize
@@ -41,7 +41,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( PWS % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( PWS % Amplitude, 'Amplitude' )
 
-    call PWS % PlaneWaveStreamingForm % Initialize ( FormalismType, Name )
+    call PWS % PlaneWaveStreamingForm % Initialize_PWS ( FormalismType, Name )
 
     PWS % Integrator % System  =>  PWS
 

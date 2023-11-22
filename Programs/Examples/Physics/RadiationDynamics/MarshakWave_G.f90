@@ -13,7 +13,7 @@ program MarshakWave_G
          ( 'MarshakWave_G', DimensionalityOption = '1D' )
 
   allocate ( MW )
-  call MW % Initialize ( 'GREY', PROGRAM_HEADER % Name )
+  call MW % Initialize_MW ( 'GREY', PROGRAM_HEADER % Name )
   call MW % Evolve ( )
   deallocate ( MW )
 

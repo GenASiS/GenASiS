@@ -33,10 +33,8 @@ module MarshakWave_Form
     character ( LDL ) :: &
       InteractionsType = ''
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_MW
-    generic, public :: &
-      Initialize => Initialize_MW
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -142,14 +140,6 @@ contains
     integer ( KDI ) :: &
       iD
 
-    !-- Units
-
-    allocate ( MW % Units_F ( 1 ) )
-    call MW % Units_F ( 1 ) % Initialize ( TypeOption = 'CGS' )
-
-    allocate ( MW % Units_R ( 1 ) )
-    call MW % Units_R ( 1 ) % Initialize ( TypeOption = 'CGS' )
-
     !-- Position space parameters
 
     MW % BoxLength  =  25.0_KDR  *  UNIT % CENTIMETER
@@ -195,6 +185,7 @@ contains
              RadiationType = [ 'PHOTONS' ], &
              FormalismType = FormalismType, &
              Name = Name, &
+             UnitsTypeOption = 'CGS', &
              MinCoordinateOption = MW % MinCoordinate, &
              MaxCoordinateOption = MW % MaxCoordinate, &
              nCellsPositionOption = [ 128, 128, 128 ] )

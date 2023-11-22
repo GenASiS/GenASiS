@@ -161,9 +161,10 @@ contains
 
     do iC  =  1, nC
       FieldUnit ( I % EMISSIVITY_N, iC ) &
-        =  Units_R ( iC ) % NumberDensity  *  Units_R ( iC ) % Length ** (-1)
+        =  Units_R ( iC ) % NumberDensity  &
+           *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
       FieldUnit ( I % OPACITY_N, iC ) &
-        =  Units_R ( iC ) % Length ** (-1)
+        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
     end do !-- iC
 
     end associate !-- nC

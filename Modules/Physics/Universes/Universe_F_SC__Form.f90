@@ -42,8 +42,8 @@ contains
 
 
   subroutine Initialize_F_SC &
-               ( U, FluidType, Name, RadiusMax, FinishTimeOption, &
-                 nCellsRadiusOption, nWriteOption )
+               ( U, FluidType, Name, RadiusMax, &
+                 FinishTimeOption, nCellsRadiusOption, nWriteOption )
 
     class ( Universe_F_SC_Form ), intent ( inout ) :: &
       U
@@ -62,9 +62,6 @@ contains
       U % Type  =  'a Universe_F_SC'
 
     call U % Universe_H_Form % Initialize ( Name )
-
-    allocate ( U % Units_F ( 1 ) )
-    call U % Units_F ( 1 ) % Initialize ( )
 
     call U % AllocateIntegrator &
            ( )
@@ -139,7 +136,6 @@ contains
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              NameOption = 'PositionSpace', &
              DeviceMemoryOption = U % DeviceMemory, &
-             CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
              nCellsRadiusOption = nCellsRadiusOption )
 
     end select !-- PS
@@ -184,6 +180,14 @@ contains
       class is ( Integrator_CS_Form )
     associate &
       ( G  =>  I % Geometry_X )
+
+    select type ( A  =>  I % X )
+    class is ( Atlas_SCG_Form )
+    associate ( C  =>  A % Chart_GS )
+      allocate ( U % Units_F ( 1 ) )
+      call U % Units_F ( 1 ) % Initialize ( C % CoordinateUnit )
+    end associate !-- C
+    end select !-- A
 
     select case ( trim ( FluidType ) )
     case ( 'IDEAL' )

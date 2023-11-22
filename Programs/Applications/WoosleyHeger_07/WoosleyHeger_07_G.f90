@@ -15,7 +15,7 @@ program WoosleyHeger_07_G
          ( 'WoosleyHeger_07_G', DimensionalityOption = '1D' )
 
   allocate ( WH )
-  call WH % Initialize ( 'GREY', PROGRAM_HEADER % Name )
+  call WH % Initialize_RM ( 'GREY', PROGRAM_HEADER % Name )
   call WH % Evolve ( )
   deallocate ( WH )
 

@@ -15,7 +15,7 @@ program Thermalization_G
          ( 'Thermalization_G', DimensionalityOption = '2D' )
 
   allocate ( T )
-  call T % Initialize ( 'GREY', PROGRAM_HEADER % Name )
+  call T % Initialize_T ( 'GREY', PROGRAM_HEADER % Name )
   call T % Evolve ( )
   deallocate ( T )
 

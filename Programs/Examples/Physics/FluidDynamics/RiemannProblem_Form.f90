@@ -39,7 +39,7 @@ module RiemannProblem_Form
 contains
 
 
-  subroutine Initialize_H ( U, Name, CommunicatorOption )
+  subroutine Initialize_H ( U, Name, CommunicatorOption, UnitsTypeOption )
 
     class ( RiemannProblemForm ), intent ( inout ), target :: &
       U
@@ -47,6 +47,8 @@ contains
       Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
 
     if ( U % Type  ==  '' ) &
       U % Type  =  'a RiemannProblem'

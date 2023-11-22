@@ -84,7 +84,8 @@ module UNIT_Singleton
       NUMBER_DENSITY_MEV_HBAR_C
     type ( QuantityForm ) :: &  !-- Mass density
       MASS_DENSITY_MKS, &
-      MASS_DENSITY_CGS
+      MASS_DENSITY_CGS, &
+      MASS_DENSITY_NUCLEAR
     type ( QuantityForm ) :: &  !-- Energy density
       ENERGY_DENSITY_MKS, &
       ENERGY_DENSITY_CGS, &
@@ -302,6 +303,9 @@ contains
       =  U % KILOGRAM  /  U % METER ** 3
     U % MASS_DENSITY_CGS &
       =  U % GRAM  /  U % CENTIMETER ** 3
+    U % MASS_DENSITY_NUCLEAR &
+      =  U % MEGA_ELECTRON_VOLT  /  U % FEMTOMETER ** 3 &
+         /  U % SPEED_OF_LIGHT ** 2
 
     !-- Energy density
     U % ENERGY_DENSITY_MKS &
@@ -426,6 +430,8 @@ contains
       Result = UNIT % MASS_DENSITY_MKS
     case ( 'MASS_DENSITY_CGS' )
       Result = UNIT % MASS_DENSITY_CGS
+    case ( 'MASS_DENSITY_NUCLEAR' )
+      Result = UNIT % MASS_DENSITY_NUCLEAR
     case ( 'ENERGY_DENSITY_MKS' )
       Result = UNIT % ENERGY_DENSITY_MKS
     case ( 'ENERGY_DENSITY_NUCLEAR' )

@@ -15,7 +15,6 @@ module Universe_F_C__Form
     real ( KDR ) :: &
       GravityFactor = 0.0_KDR
     logical ( KDL ) :: &
-      Dimensionless, &
       Coarsen
     type ( Coarsening_C_F_Form ), allocatable :: &
       Coarsening
@@ -103,7 +102,7 @@ contains
 
   subroutine Initialize_F_C &
                ( U, FluidType, GravitationType, Name, &
-                 DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
+                 UnitsTypeOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
                  GravityFactorOption, CentralMassOption, nCellsPolarOption, &
                  nWriteOption )
@@ -114,8 +113,8 @@ contains
       FluidType, &
       GravitationType, &
       Name
-    logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       RadiusMaxOption, &
@@ -131,14 +130,8 @@ contains
     if ( U % Type == '' ) &
       U % Type = 'a Universe_F_C'
 
-    call U % Universe_H_Form % Initialize ( Name )
-
-    U % Dimensionless  =  .false.
-    if ( present ( DimensionlessOption ) ) &
-      U % Dimensionless  =  DimensionlessOption
-
-    allocate ( U % Units_F ( 1 ) )
-    call U % Units_F ( 1 ) % Initialize ( )
+    call U % Universe_H_Form % Initialize &
+           ( Name, UnitsTypeOption = UnitsTypeOption )
 
     call U % AllocateIntegrator &
            ( )
@@ -227,15 +220,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
-    if ( .not. U % Dimensionless ) then
-      U % Units_F ( 1 ) % Time &
-        =  UNIT % SECOND
-      U % Units_F ( 1 ) % Length &
-        =  UNIT % KILOMETER
-      U % Units_F ( 1 ) % Coordinate_PS  &
-        =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
-    end if
-
     call U % InitializeAtlas &
            ( CommunicatorOption = CommunicatorOption, &
              RadiusMaxOption = RadiusMaxOption, &
@@ -311,7 +295,7 @@ contains
 
     case ( 'NEWTON_CM' )
 
-      if ( U % Dimensionless ) then
+      if ( trim ( U % UnitsType )  ==  '' ) then
         GravitationalConstant  =  1.0_KDR
       else
         GravitationalConstant  =  CONSTANT % GRAVITATIONAL
@@ -372,7 +356,7 @@ contains
 
     case ( 'NEWTON_SG' )
 
-      if ( U % Dimensionless ) then
+      if ( trim ( U % UnitsType )  ==  '' ) then
         GravitationalConstant  =  1.0_KDR
       else
         GravitationalConstant  =  CONSTANT % GRAVITATIONAL
@@ -450,35 +434,14 @@ contains
     associate &
       ( G  =>  I % Geometry_X )
 
-    if ( .not. U % Dimensionless ) then
-
-      U % Units_F ( 1 ) % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
-      U % Units_F ( 1 ) % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
-      U % Units_F ( 1 ) % MassDensity    =  UNIT % MASS_DENSITY_CGS
-      U % Units_F ( 1 ) % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
-      U % Units_F ( 1 ) % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
-
-      U % Units_F ( 1 ) % Velocity_U  &
-        =  U % Units_F ( 1 ) % Coordinate_PS  /  U % Units_F ( 1 ) % Time
-
-      U % Units_F ( 1 ) % MomentumDensity_D  &
-        =  U % Units_F ( 1 ) % BaryonMass  &
-           *  U % Units_F ( 1 ) % NumberDensity  &
-           *  U % Units_F ( 1 ) % Velocity_U
-      U % Units_F ( 1 ) % MomentumDensity_D ( 2 )  &
-        =  U % Units_F ( 1 ) % MomentumDensity_D ( 2 )  &
-           *  U % Units_F ( 1 ) % Coordinate_PS ( 1 ) ** 2
-      U % Units_F ( 1 ) % MomentumDensity_D ( 3 )  &
-        =  U % Units_F ( 1 ) % MomentumDensity_D ( 3 )  &
-           *  U % Units_F ( 1 ) % Coordinate_PS ( 1 ) ** 2
-
-      U % Units_F ( 1 ) % Number           =  UNIT % SOLAR_BARYON_NUMBER
-      U % Units_F ( 1 ) % Mass             =  UNIT % SOLAR_MASS
-      U % Units_F ( 1 ) % Energy           =  UNIT % ENERGY_SOLAR_MASS
-      U % Units_F ( 1 ) % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
-      U % Units_F ( 1 ) % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
-
-    end if
+    select type ( A  =>  I % X )
+    class is ( Atlas_SCG_Form )
+    associate ( C  =>  A % Chart_GS )
+      allocate ( U % Units_F ( 1 ) )
+      call U % Units_F ( 1 ) % Initialize &
+             ( C % CoordinateUnit, TypeOption = U % UnitsType )
+    end associate !-- C
+    end select !-- A
 
     select case ( trim ( FluidType ) )
     case ( 'DUST' )
@@ -1025,7 +988,6 @@ contains
 
     call U % Universe_H_Form % ShowParameters ( )
 
-    call Show ( U % Dimensionless, 'Dimensionless' )
     call Show ( U % Coarsen, 'Coarsen' )
 
     if ( U % GravityFactor  >  0.0_KDR ) &

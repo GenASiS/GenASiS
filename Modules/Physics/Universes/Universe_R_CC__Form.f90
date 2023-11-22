@@ -101,9 +101,9 @@ contains
 
   subroutine Initialize_R_CC &
                ( U, RadiationName, RadiationType, FormalismType, FluidType, &
-                 GravitationType, Name, FinishTimeOption, RadiusMaxOption, &
-                 RadiusCoreOption, RadialRatioOption, nCellsPolarOption, &
-                 nWriteOption )
+                 GravitationType, Name, UnitsTypeOption, FinishTimeOption, &
+                 RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
+                 nCellsPolarOption, nWriteOption )
 
     class ( Universe_R_CC_Form ), intent ( inout ), target :: &
       U
@@ -115,6 +115,8 @@ contains
       FluidType, &
       GravitationType, &
       Name
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       RadiusMaxOption, &
@@ -127,7 +129,8 @@ contains
     if ( U % Type  ==  '' ) &
       U % Type  =  'a Universe_R_CC'
 
-    call U % Universe_H_Form % Initialize ( Name )
+    call U % Universe_H_Form % Initialize &
+           ( Name, UnitsTypeOption = UnitsTypeOption )
 
     !-- FIXME: This is for a workaround in SetSlope routines below
     UNIVERSE  =>  U
@@ -153,22 +156,6 @@ contains
                nCellsPolarOption = nCellsPolarOption, &
                nWriteOption = nWriteOption )
       return
-    end if
-
-    !-- Units
-
-    U % Dimensionless  =  .false.
-!    if ( present ( DimensionlessOption ) ) &
-!      U % Dimensionless  =  DimensionlessOption
-
-    if ( .not. allocated ( U % Units_F ) ) then
-      allocate ( U % Units_F ( 1 ) )
-      call U % Units_F ( 1 ) % Initialize ( TypeOption = 'ASTROPHYSICS' )
-    end if
-
-    if ( .not. allocated ( U % Units_R ) ) then
-      allocate ( U % Units_R ( 1 ) )
-      call U % Units_R ( 1 ) % Initialize ( TypeOption = 'ASTROPHYSICS' )
     end if
 
     !-- Initializations
@@ -322,6 +309,15 @@ contains
 
     select type ( I  =>  U % Integrator )
     class is ( Integrator_CS_1D_BM_CS_Form )
+
+      select type ( A  =>  I % X )
+      class is ( Atlas_SCG_Form )
+      associate ( C  =>  A % Chart_GS )
+        allocate ( U % Units_R ( 1 ) )
+        call U % Units_R ( 1 ) % Initialize &
+               ( C % CoordinateUnit, TypeOption = U % UnitsType )
+      end associate !-- C
+      end select !-- A
 
       select type ( F  =>  I % CurrentSet_X )
         class is ( Fluid_P_Form )

@@ -10,10 +10,8 @@ module WoosleyHeger_07_RM__Form
 
   type, public, extends ( WoosleyHeger_07_Form ) :: WoosleyHeger_07_RM_Form
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_RM
-    generic, public :: &
-      Initialize => Initialize_RM
     final :: &
       Finalize
   end type WoosleyHeger_07_RM_Form
@@ -78,6 +76,7 @@ contains
              FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &
              Name = Name, &
+             UnitsTypeOption = 'ASTROPHYSICS', &
              FinishTimeOption = FinishTime, &
              nCellsPolarOption = 128, &
              nWriteOption = 30 )

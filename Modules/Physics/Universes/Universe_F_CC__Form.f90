@@ -74,7 +74,7 @@ contains
 
   subroutine Initialize_F_CC &
                ( U, FluidType, GravitationType, Name, &
-                 DimensionlessOption, FinishTimeOption, RadiusMaxOption, &
+                 UnitsTypeOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusCoreOption, RadialRatioOption, GravityFactorOption, &
                  nCellsPolarOption, nWriteOption )
 
@@ -84,8 +84,8 @@ contains
       FluidType, &
       GravitationType, &
       Name
-    logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption
+    character ( * ), intent ( in ), optional :: &
+      UnitsTypeOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       RadiusMaxOption, &
@@ -101,7 +101,7 @@ contains
 
     call U % Initialize_F_C &
            ( FluidType, GravitationType, Name, &
-             DimensionlessOption = DimensionlessOption, &
+             UnitsTypeOption = UnitsTypeOption, &
              FinishTimeOption = FinishTimeOption, &
              RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
@@ -210,6 +210,8 @@ contains
       RadiusMax, &
       RadiusCore, &
       RadialRatio
+    type ( QuantityForm ), dimension ( 3 ) :: &
+      CoordinateUnit
     type ( CommunicatorForm ), pointer :: &
       Communicator
 
@@ -225,7 +227,32 @@ contains
     select type ( PS  =>  I % X )
       class is ( Atlas_SCG_CC_Form )
 
-    if ( U % Dimensionless ) then
+    select case ( trim ( U % UnitsType ) )
+    case ( 'ASTROPHYSICS' )
+
+      CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+
+      RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
+      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
+      RadialRatio  =  5.9_KDR
+      if ( present ( RadiusMaxOption ) ) &
+        RadiusMax  =  RadiusMaxOption
+      if ( present ( RadiusCoreOption ) ) &
+        RadiusCore  =  RadiusCoreOption
+      if ( present ( RadialRatioOption ) ) &
+        RadialRatio  =  RadialRatioOption
+
+      call PS % Initialize &
+             ( RadiusMax = RadiusMax, &
+               RadiusCore = RadiusCore, &
+               CommunicatorOption = Communicator, &
+               NameOption = 'PositionSpace', &
+               DeviceMemoryOption = U % DeviceMemory, &
+               CoordinateUnitOption = CoordinateUnit, &
+               RadialRatioOption = RadialRatio, &
+               nCellsPolarOption = nCellsPolarOption )
+
+    case default
 
       RadiusMax   =  10.0_KDR
       RadiusCore  =  10.0_KDR / 8.0_KDR
@@ -246,29 +273,7 @@ contains
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
-    else
-
-      RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  5.9_KDR
-      if ( present ( RadiusMaxOption ) ) &
-        RadiusMax  =  RadiusMaxOption
-      if ( present ( RadiusCoreOption ) ) &
-        RadiusCore  =  RadiusCoreOption
-      if ( present ( RadialRatioOption ) ) &
-        RadialRatio  =  RadialRatioOption
-
-      call PS % Initialize &
-             ( RadiusMax = RadiusMax, &
-               RadiusCore = RadiusCore, &
-               CommunicatorOption = Communicator, &
-               NameOption = 'PositionSpace', &
-               DeviceMemoryOption = U % DeviceMemory, &
-               CoordinateUnitOption = U % Units_F ( 1 ) % Coordinate_PS, &
-               RadialRatioOption = RadialRatio, &
-               nCellsPolarOption = nCellsPolarOption )
-
-    end if !-- Dimensionless
+    end select !-- UnitsType
 
     !-- Azimuthal average
     if ( PS % Chart_GS_CC % nDimensions  >  2 ) then
@@ -413,7 +418,7 @@ contains
 
     T_V  =  R_V_Max  /  max ( V_Max, sqrt ( tiny ( 0.0_KDR ) ) )
 
-    if ( U % Dimensionless ) then
+    if ( trim ( U % UnitsType )  ==  '' ) then
       Constant_G  =  1.0_KDR
     else
       Constant_G  =  CONSTANT % GRAVITATIONAL
