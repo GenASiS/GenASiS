@@ -686,7 +686,7 @@ contains
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
-    class ( Slope_RM_I_Form ), intent ( in ) :: &
+    class ( Slope_RM_I_Form ), intent ( inout ) :: &
       S_R_I
 
     integer ( KDI ) :: &
@@ -750,25 +750,44 @@ contains
 
       nValues  =  size ( FSV, dim = 1 )
 
-      if ( .not. allocated ( CO % Outgoing ) )  &
+      if ( .not. allocated ( CO % Outgoing ) ) then
         call CO % Initialize &
                ( I % Communicator_X_1D, &
                  nOutgoing  =  [ nValues * nSources ], &
                  nIncoming  =  [ nValues * nSources ] )
-
+        if ( S_R_I % DeviceMemory .and. S_R_I % DevicesCommunicate ) then
+          call CO % AllocateDevice ( )
+        end if
+      end if
+      
+      if ( .not. CO % AllocatedDevice ) &
+        call S_R_I % UpdateHost ( )
+      
       RSB ( 1 : nValues,  1 : nSources )  =>  CO % Outgoing % Value
       FSB ( 1 : nValues,  1 : nSources )  =>  CO % Incoming % Value
 
-      call Copy ( RS_E,   RSB ( :, 1 ) )
-      call Copy ( RS_S_1, RSB ( :, 2 ) )
-      call Copy ( RS_S_2, RSB ( :, 3 ) )
-      call Copy ( RS_S_3, RSB ( :, 4 ) )
-      call Multiply ( RSB, -1.0_KDR )
+      call Copy ( RS_E,   RSB ( :, 1 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( RS_S_1, RSB ( :, 2 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( RS_S_2, RSB ( :, 3 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( RS_S_3, RSB ( :, 4 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Multiply ( RSB, -1.0_KDR, &
+                      UseDeviceOption = CO % AllocatedDevice )
       call CO % Reduce ( REDUCTION % SUM )
-      call Copy ( FSB ( :, 1 ), FS_G )
-      call Copy ( FSB ( :, 2 ), FS_S_1 )
-      call Copy ( FSB ( :, 3 ), FS_S_2 )
-      call Copy ( FSB ( :, 4 ), FS_S_3 )
+      call Copy ( FSB ( :, 1 ), FS_G, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( FSB ( :, 2 ), FS_S_1, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( FSB ( :, 3 ), FS_S_2, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( FSB ( :, 4 ), FS_S_3, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      
+      if ( .not. CO % AllocatedDevice ) &
+        call F % SplitSource % UpdateDevice ( )
 
       end associate !-- RS_E, etc.
       end associate !-- RSV, etc.

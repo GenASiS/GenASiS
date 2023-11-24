@@ -380,7 +380,7 @@ call SM % AddFieldSet ( S % RiemannSolver )
     end if !-- iStage > 1
 
     !-- Compute slope
-
+    
     if ( present ( T_Option ) ) then
       T_CS  =>  K % Timer ( Level = T_Option % Level + 1 )
     else
@@ -389,7 +389,7 @@ call SM % AddFieldSet ( S % RiemannSolver )
     if ( associated ( T_CS ) ) call T_CS % Start ( )
     call K % Compute ( dT, T_Option = T_CS )
     if ( associated ( T_CS ) ) call T_CS % Stop ( )
-
+    
     !-- Coarsening
 
     if ( associated ( S % Coarsening ) ) then
@@ -428,8 +428,8 @@ call SM % AddFieldSet ( S % RiemannSolver )
 
     call K % Copy ( K_Stage )
 
-    call S % AccumulateSlope ( iS ) 
-
+    call S % AccumulateSlope ( iS )
+    
     associate ( CS  =>  S % CurrentSet )
     call CS % AccumulateBoundaryFluence ( dT  *  S % B ( iS ) )
     end associate !-- CS
