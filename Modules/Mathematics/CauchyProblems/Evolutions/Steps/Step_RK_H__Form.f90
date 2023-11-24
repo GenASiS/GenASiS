@@ -19,6 +19,7 @@ module Step_RK_H__Form
       iTimer_LI   = 0, &  !-- LoadInitial
       iTimer_II   = 0, &  !-- InitializeIntermediate
       iTimer_II_A = 0, &  !-- IncrementIntermediate
+      iTimer_SI   = 0, &  !-- StoreIntermediate
       iTimer_CS   = 0, &  !-- ComputeStage
       iTimer_IS_B = 0, &  !-- IncrementSolution
       iTimer_SS   = 0, &  !-- StoreSolution
@@ -69,6 +70,8 @@ module Step_RK_H__Form
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
+    procedure, private, pass :: &
+      StoreIntermediate
     procedure, private, pass :: &
       ComputeStage
     procedure, private, pass :: &
@@ -332,6 +335,7 @@ contains
       T_LI, &
       T_II, &
       T_II_A, &
+      T_SI, &
       T_CS, &
       T_IS_B, &
       T_SS
@@ -352,14 +356,18 @@ contains
                     ( Handle = S % iTimer_II_A, &
                       Name = trim ( S % Name ) // '_IncrmntIntmdt', &
                       Level = T_Option % Level + 1 )
+      T_SI    =>  PROGRAM_HEADER % Timer &
+                    ( Handle = S % iTimer_SI, &
+                      Name = trim ( S % Name ) // '_StrIntmdt', &
+                      Level = T_Option % Level + 1 )
     else
       T_LI    =>  null ( )
       T_II    =>  null ( )
       T_II_A  =>  null ( )
+      T_SI    =>  null ( )
     end if
 
-    !-- Set  Solution  =  Y_N  (old value)
-
+    !-- Set  Y  =  Y_N  (old value)
     if ( associated ( T_LI ) ) call T_LI % Start ( )
     call S % LoadSolution ( )
     if ( associated ( T_LI ) ) call T_LI % Stop ( )
@@ -371,23 +379,26 @@ contains
       call Show ( 'Computing a stage', S % IGNORABILITY + 3 )
       call Show ( iS, 'iStage', S % IGNORABILITY + 3 )
 
-      !-- Set  Y  =  Solution
-
+      !-- Set  Y_I  =  Y
       if ( associated ( T_II ) ) call T_II % Start ( )
       call S % InitializeIntermediate ( iS )
       if ( associated ( T_II ) ) call T_II % Stop ( )
 
-      !-- Loop: Set  Y  =   Y  +  dT * A * K ( iK )
-
-      if ( associated ( T_II_A ) ) call T_II_A % Start ( )
       do iK = 1, iS - 1
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
-        !-- Set Y  =  Y  +  dT * A * K ( iK )
+        !-- Set Y_I  =  Y_I  +  dT * A * K ( iK )
+        if ( associated ( T_II_A ) ) call T_II_A % Start ( )
         call S % IncrementIntermediate ( A, dT, iK )
+        if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
         end associate !-- A
+        if ( iK  ==  iS - 1 ) then
+          if ( associated ( T_SI ) ) call T_SI % Start ( )
+          call S % StoreIntermediate ( T_Option = T_SI )
+          if ( associated ( T_SI ) ) call T_SI % Stop ( )
+        end if
       end do !-- iK
-      if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
 
+      !-- Compute K ( iS )  =  dY/dT ( Y_I )
       if ( present ( T_Option ) ) then
         T_CS  =>  PROGRAM_HEADER % Timer &
                     ( Handle = S % iTimer_CS, &
@@ -402,6 +413,8 @@ contains
 
     end do !-- iS
 
+    !-- Assemble stages
+
     if ( present ( T_Option ) ) then
       T_IS_B  =>  PROGRAM_HEADER % Timer &
                     ( Handle = S % iTimer_IS_B, &
@@ -411,16 +424,16 @@ contains
       T_IS_B  =>  null ( )
     end if
     if ( associated ( T_IS_B ) ) call T_IS_B % Start ( )
-    !-- Assemble stages
     do iS = 1, S % nStages
       associate ( B  =>  S % B ( iS ) )
-      !-- Set Solution  =  Solution  +  dT * B * K ( iS )
+      !-- Set Y  =  Y  +  dT * B * K ( iS )
       call S % IncrementSolution ( B, dT, iS )
       end associate !-- B
     end do !-- iS
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )
 
-    !-- On exit, Solution  =  Y_(N+1) (new value)
+    !-- Set Y_(N+1)  =  Y
+
     if ( present ( T_Option ) ) then
       T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level + 1 )
       call T_SS % Start ( )
@@ -526,6 +539,20 @@ contains
     call Show ( 'IncrementIntermediate', 'subroutine', CONSOLE % WARNING )
 
   end subroutine IncrementIntermediate
+
+
+  subroutine StoreIntermediate ( S, T_Option )
+
+    class ( Step_RK_H_Form ), intent ( inout ) :: &
+      S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    call Show ( 'StoreIntermediate should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'StoreIntermediate', 'subroutine', CONSOLE % WARNING )
+
+  end subroutine StoreIntermediate
 
 
   subroutine ComputeStage ( S, T, dT, iS, T_Option )

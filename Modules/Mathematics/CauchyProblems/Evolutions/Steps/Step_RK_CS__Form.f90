@@ -53,6 +53,8 @@ module Step_RK_CS__Form
     procedure, private, pass :: &
       IncrementIntermediate
     procedure, private, pass :: &
+      StoreIntermediate
+    procedure, private, pass :: &
       ComputeStage
     procedure, private, pass :: &
       IncrementSolution
@@ -63,7 +65,7 @@ module Step_RK_CS__Form
     private :: &
       SetSlope_CS, &
       SetSlopeStage_CS, &
-      StoreSolution_CS
+      StoreBalanced_CS
 
 contains
 
@@ -337,6 +339,20 @@ call SM % AddFieldSet ( S % RiemannSolver )
   end subroutine IncrementIntermediate
 
 
+  subroutine StoreIntermediate ( S, T_Option )
+
+    class ( Step_RK_CS_Form ), intent ( inout ) :: &
+      S
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    associate ( Y_I  =>  S % Intermediate )
+    call StoreBalanced_CS ( S, Y_I, T_Option )
+    end associate !-- Y
+  
+  end subroutine StoreIntermediate
+
+
   subroutine ComputeStage ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
@@ -361,23 +377,6 @@ call SM % AddFieldSet ( S % RiemannSolver )
     associate &
       ( K  =>  S % Slope, &
         K_Stage  =>  S % SlopeStage ( iS ) % Element )
-
-    if ( iS  >  1 ) then
-      associate ( Y_I  =>  S % Intermediate )
-      if ( present ( T_Option ) ) then
-        T_SS  =>  S % TimerStoreSolution ( Level = T_Option % Level )
-        !-- Pause and then restart ComputeStage timer T_Option to avoid double 
-        !   counting time to be attributed to StoreSolution timer T_SS
-        call T_Option % Stop ( )  !-- Pause ComputeStage timer
-        call T_SS % Start ( )
-        call StoreSolution_CS ( S, Y_I, T_Option = T_SS )
-        call T_SS % Stop ( )
-        call T_Option % Start ( )  !-- Restart ComputeStage timer
-      else
-        call StoreSolution_CS ( S, Y_I )
-      end if
-      end associate !-- Y_I, etc.
-    end if !-- iStage > 1
 
     !-- Compute slope
     
@@ -475,7 +474,7 @@ call SM % AddFieldSet ( S % RiemannSolver )
       T_Option
 
     associate ( Y  =>  S % Solution )
-    call StoreSolution_CS ( S, Y, T_Option )
+    call StoreBalanced_CS ( S, Y, T_Option )
     end associate !-- Y
   
   end subroutine StoreSolution
@@ -547,7 +546,7 @@ call SM % AddFieldSet ( S % RiemannSolver )
   end subroutine SetSlopeStage_CS
 
 
-  subroutine StoreSolution_CS ( S, Y, T_Option )
+  subroutine StoreBalanced_CS ( S, Y, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
@@ -557,7 +556,7 @@ call SM % AddFieldSet ( S % RiemannSolver )
       T_Option
 
     type ( TimerForm ), pointer :: &
-      T_SC, &   !-- SolutionCopy
+      T_CB, &   !-- SolutionCopy
       T_CFB, &  !-- ComputeFromBalanced
       T_BC      !-- BoundaryConditions
 
@@ -566,16 +565,16 @@ call SM % AddFieldSet ( S % RiemannSolver )
         CS    =>  S % CurrentSet )
 
     if ( present ( T_Option ) ) then
-      T_SC   =>  PROGRAM_HEADER % Timer &
+      T_CB   =>  PROGRAM_HEADER % Timer &
                    ( Handle = S % iTimer_SC, &
-                     Name = trim ( S % Name ) // '_CpySltn', &
+                     Name = trim ( S % Name ) // '_CpyBlncd', &
                      Level = T_Option % Level + 1 )
     else
-      T_SC   =>  null ( )
+      T_CB   =>  null ( )
     end if
-    if ( associated ( T_SC ) ) call T_SC % Start ( )
+    if ( associated ( T_CB ) ) call T_CB % Start ( )
     call  Y % Copy ( CS_B )
-    if ( associated ( T_SC ) ) call T_SC % Stop ( )
+    if ( associated ( T_CB ) ) call T_CB % Stop ( )
 
     if ( present ( T_Option ) ) then
       T_CFB  =>  PROGRAM_HEADER % Timer &
@@ -607,7 +606,7 @@ call SM % AddFieldSet ( S % RiemannSolver )
   
     end associate !-- CS_B
 
-  end subroutine StoreSolution_CS
+  end subroutine StoreBalanced_CS
 
 
 end module Step_RK_CS__Form
