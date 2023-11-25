@@ -562,30 +562,10 @@ contains
     integer ( KDI ) :: &
       iC
     type ( TimerForm ), pointer :: &
-      T_G, &
       T_K
 
     call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
-
-    select type ( G  =>  CS % Geometry )
-      class is ( Gravitation_N_H_Form )
-    if ( present ( T_Option ) ) then
-      T_G  =>  G % Timer ( Level = T_Option % Level + 1 ) 
-      call T_G % Start ( )
-      call G % Solve &
-             ( CS, &
-               iBaryonMass = CS % BARYON_MASS, &
-               iBaryonDensity = CS % BARYON_DENSITY_B, &
-               T_Option = T_G )
-      call T_G % Stop ( )
-    else
-      call G % Solve &
-             ( CS, &
-               iBaryonMass = CS % BARYON_MASS, &
-               iBaryonDensity = CS % BARYON_DENSITY_B )
-    end if
-    end select !-- G
 
     if ( present ( T_Option ) ) then
       T_K  =>  PROGRAM_HEADER % Timer &
