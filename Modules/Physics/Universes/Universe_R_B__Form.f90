@@ -412,8 +412,13 @@ contains
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
+    integer ( KDI ) :: &
+      EvolutionOrder
     character ( LDL ) :: &
       RiemannSolverType
+
+    EvolutionOrder  =  2
+    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
 
     !-- Fluid step
 
@@ -445,7 +450,7 @@ contains
 
       S % SetSlope  =>  SetSlope_F_P_DFV_SS
 
-      call S % Initialize ( F )
+      call S % Initialize ( F, OrderOption = EvolutionOrder )
 
       end select !-- S
       end associate !-- F
@@ -493,7 +498,7 @@ contains
 
       end if !-- Radiation operators
 
-      call S % Initialize ( R )
+      call S % Initialize ( R, OrderOption = EvolutionOrder )
 
       end select !-- S
       end associate !-- R

@@ -70,7 +70,7 @@ module Step_RK_CS__Form
 contains
 
 
-  subroutine Initialize_CS ( S, CS, NameOption, A_Option, B_Option, C_Option )
+  subroutine Initialize_CS ( S, CS, NameOption, OrderOption )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
@@ -78,12 +78,8 @@ contains
       CS
     character ( * ), intent ( in ), optional :: &
       NameOption
-    real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
-      A_Option
-    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      B_Option
-    real ( KDR ), dimension ( 2 : ), intent ( in ), optional :: &
-      C_Option
+    integer ( KDI ), intent ( in ), optional :: &
+      OrderOption
 
     integer ( KDI ) :: &
       iS  !-- iStage
@@ -194,9 +190,7 @@ contains
     call S % Initialize_H &
            ( CS % Atlas, &
              NameOption = Name, &
-             A_Option = A_Option, &
-             B_Option = B_Option, &
-             C_Option = C_Option )
+             OrderOption = OrderOption )
 
   end subroutine Initialize_CS
 

@@ -418,8 +418,13 @@ contains
     class ( Universe_R_CC_Form ), intent ( inout ) :: &
       U
 
+    integer ( KDI ) :: &
+      EvolutionOrder
     character ( LDL ) :: &
       RiemannSolverType
+
+    EvolutionOrder  =  2
+    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
 
     U % Coarsen  =  .true.
     call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
@@ -452,7 +457,7 @@ contains
 
     S % SetSlope  =>  SetSlope_F_P_DFV_N_SS
 
-    call S % Initialize ( F )
+    call S % Initialize ( F, OrderOption = EvolutionOrder )
 
     !-- Coarsening
     if ( U % Coarsen ) then
@@ -501,7 +506,7 @@ contains
 !      S % SetSlope  =>  SetSlope_NM_G_I
       S % SetSlope  =>  SetSlope_NM_G_DFV_I
 
-      call S % Initialize ( R )
+      call S % Initialize ( R, OrderOption = EvolutionOrder )
 
       end select !-- S
       end associate !-- R

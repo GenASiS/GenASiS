@@ -115,7 +115,7 @@ module Step_RK_H__Form
 contains
 
 
-  subroutine Initialize_H ( S, Atlas, NameOption, A_Option, B_Option, C_Option )
+  subroutine Initialize_H ( S, Atlas, NameOption, OrderOption )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -123,12 +123,8 @@ contains
       Atlas
     character ( * ), intent ( in ), optional :: &
       NameOption
-    real ( KDR ), dimension ( 2 : , : ), intent ( in ), optional :: &
-      A_Option  !-- RungeKutta matrix
-    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-      B_Option  !-- RungeKutta weights
-    real ( KDR ), dimension ( 2 : ), intent ( in ), optional :: &
-      C_Option  !-- RungeKutta nodes
+    integer ( KDI ), intent ( in ), optional :: &
+      OrderOption
 
     integer ( KDI ) :: &
       iS
@@ -141,31 +137,58 @@ contains
 
     S % IGNORABILITY  =  CONSOLE % INFO_1
 
-    if ( present ( A_Option ) ) then
-      allocate ( A ( 2 : ubound ( A_Option, dim = 1 ), &
-                     size ( A_Option, dim = 2 ) ) )
-      A  =  A_Option
-    else
+    S % nStages  =  2
+    if ( present ( OrderOption ) ) &
+      S % nStages  =  OrderOption
+
+    select case ( S % nStages )
+    case ( 2 )
       allocate ( A ( 2 : 2, 1 : 1 ) )
       A           =  0.0_KDR
       A ( 2, 1 )  =  1.0_KDR
-    end if
-
-    if ( present ( B_Option ) ) then
-      allocate ( B, source = B_Option )
-    else
       allocate ( B ( 1 : 2 ) )
       B ( 1 )  =  0.5_KDR
       B ( 2 )  =  0.5_KDR
-    end if
-
-    if ( present ( C_Option ) ) then
-      allocate ( C ( 2 : ubound ( C_Option, dim = 1 ) ) )
-      C  =  C_Option
-    else
       allocate ( C ( 2 : 2 ) )
       C ( 2 )  =  1.0_KDR
-    end if
+    case ( 3 )
+      allocate ( A ( 3 : 3, 2 : 2 ) )
+      A           =   0.0_KDR
+      A ( 2, 1 )  =   0.5_KDR
+      A ( 3, 1 )  =  -1.0_KDR
+      A ( 3, 2 )  =   2.0_KDR
+      allocate ( B ( 1 : 3 ) )
+      B ( 1 )  =  1.0_KDR / 6.0_KDR
+      B ( 2 )  =  2.0_KDR / 3.0_KDR
+      B ( 3 )  =  1.0_KDR / 6.0_KDR
+      allocate ( C ( 2 : 3 ) )
+      C ( 2 )  =  0.5_KDR
+      C ( 3 )  =  1.0_KDR
+    case ( 4 )
+      allocate ( A ( 4 : 4, 3 : 3 ) )
+      A           =  0.0_KDR
+      A ( 2, 1 )  =  0.5_KDR
+      A ( 3, 1 )  =  0.0_KDR
+      A ( 4, 1 )  =  0.0_KDR
+      A ( 3, 2 )  =  0.5_KDR
+      A ( 4, 2 )  =  0.0_KDR
+      A ( 4, 3 )  =  1.0_KDR
+      allocate ( B ( 1 : 4 ) )
+      B ( 1 )  =  1.0_KDR / 6.0_KDR
+      B ( 2 )  =  1.0_KDR / 3.0_KDR
+      B ( 3 )  =  1.0_KDR / 3.0_KDR
+      B ( 4 )  =  1.0_KDR / 6.0_KDR
+      allocate ( C ( 2 : 4 ) )
+      C ( 2 )  =  0.5_KDR
+      C ( 3 )  =  0.5_KDR
+      C ( 4 )  =  1.0_KDR
+    case default
+      call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
+      call Show ( S % nStages, 'Order', CONSOLE % ERROR )
+      call Show ( 'Step_RK_H__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize_H', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- nStages
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK' 
@@ -388,7 +411,8 @@ contains
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
         !-- Set Y_I  =  Y_I  +  dT * A * K ( iK )
         if ( associated ( T_II_A ) ) call T_II_A % Start ( )
-        call S % IncrementIntermediate ( A, dT, iK )
+        if ( A  /=  0.0_KDR ) & 
+          call S % IncrementIntermediate ( A, dT, iK )
         if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
         end associate !-- A
         if ( iK  ==  iS - 1 ) then
@@ -427,7 +451,8 @@ contains
     do iS = 1, S % nStages
       associate ( B  =>  S % B ( iS ) )
       !-- Set Y  =  Y  +  dT * B * K ( iS )
-      call S % IncrementSolution ( B, dT, iS )
+      if ( B /=  0.0_KDR ) & 
+        call S % IncrementSolution ( B, dT, iS )
       end associate !-- B
     end do !-- iS
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )

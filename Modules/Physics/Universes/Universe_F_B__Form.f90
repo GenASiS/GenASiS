@@ -357,10 +357,15 @@ contains
     class ( Universe_F_B_Form ), intent ( inout ) :: &
       U
 
+    integer ( KDI ) :: &
+      EvolutionOrder
     logical ( KDL ) :: &
       DivergenceParts
     character ( LDL ) :: &
       RiemannSolverType
+
+    EvolutionOrder  =  2
+    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
@@ -441,7 +446,7 @@ contains
       end select !-- F
     end if  !-- DivergenceParts
 
-    call S % Initialize ( F )
+    call S % Initialize ( F, OrderOption = EvolutionOrder )
 
     end select !-- S
 
