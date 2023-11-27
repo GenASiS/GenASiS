@@ -54,6 +54,8 @@ module Universe_R_B__Form
 !    procedure, public, pass :: &
 !      InitializeSteps
     procedure, public, pass :: &
+      InitializeStep
+    procedure, public, pass :: &
       InitializeIntegrator
     procedure, public, pass :: &
       ShowParameters
@@ -508,6 +510,51 @@ contains
   !   end select !-- I
 
   ! end subroutine InitializeSteps
+
+
+  subroutine InitializeStep ( U )
+
+    class ( Universe_R_B_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      EvolutionOrder
+    character ( LDL ) :: &
+      RiemannSolverType
+
+    EvolutionOrder  =  2
+    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    associate &
+      ( R  =>  I % CurrentSet_X_1D )
+
+      if ( .not. U % EvolveFluid ) then
+
+        allocate ( Step_RK_CS_Form :: I % Step_X )
+        select type ( S  =>  I % Step_X )
+          class is ( Step_RK_CS_Form )
+
+        if ( U % ApplyStreaming .and. .not. U % ApplyInteractions ) then
+
+          allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+          associate ( DT  =>  S % DivergenceTotal )
+          call DT % Initialize ( R )
+          end associate !-- DT
+
+        end if !-- Radiation operators
+
+        call S % Initialize ( R, OrderOption = EvolutionOrder )
+
+        end select !-- S
+
+      end if !-- EvolveFluid
+
+    end associate !-- R
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
   subroutine InitializeIntegrator ( U, FinishTimeOption, nWriteOption )
