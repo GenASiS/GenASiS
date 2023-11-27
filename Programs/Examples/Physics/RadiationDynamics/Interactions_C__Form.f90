@@ -113,7 +113,13 @@ contains
     call Show ( 'Compute', CONSOLE % INFO_6 )
     call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
-    associate ( R  =>  I % Radiation )
+    select type ( R  =>  I % Radiation )
+      class is ( PhotonMoments_G_Form )
+
+    call R % SetFluidVelocity ( )
+    call R % ComputeFromBalanced ( )
+    call R % ComputeSpectralParameters ( )
+    call R % ComputeEquilibrium ( )
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
@@ -133,7 +139,7 @@ contains
       end associate !-- FV, etc.
     end do !-- iC
 
-    end associate !-- R
+    end select !-- R
 
   end subroutine Compute
 

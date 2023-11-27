@@ -79,10 +79,18 @@ contains
 
     S % Radiation  =>  R
 
-    select type ( I  =>  R % Interactions )
-    class is ( Interactions_BM_Form )
-      S % Interactions  =>  I
-    end select
+!    select type ( I  =>  R % Interactions )
+!    class is ( Interactions_BM_Form )
+!      S % Interactions  =>  I
+!    end select
+
+    if ( .not. associated ( S % Interactions ) ) then
+      call Show ( 'Please set Interactions before initialization', &
+                  CONSOLE % ERROR )
+      call Show ( 'Slope_RM_I__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeAllocate_RM_I', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     call Search ( R % iaBalanced, R % ENERGY_DENSITY_B, &
                   S % iEnergy_B )
@@ -124,6 +132,8 @@ contains
     associate &
       (  I  =>  S % Interactions, &
          R  =>  S % Radiation )
+
+    call I % Compute ( )
 
     do iC  =  1,  S % Atlas % nCharts
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )

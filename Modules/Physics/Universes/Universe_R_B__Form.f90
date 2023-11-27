@@ -63,6 +63,9 @@ module Universe_R_B__Form
       Compute_dT_ET_CGS
   end type Universe_R_B_Form
 
+    class ( Universe_R_B_Form ), private, pointer :: &
+      UNIVERSE => null ( )
+
     private :: &
 !      ResolveCycle_R, &
 !      PrepareStep_F, &
@@ -105,7 +108,7 @@ contains
                  MinCoordinateOption, MaxCoordinateOption, &
                  FinishTimeOption, nCellsPositionOption, nWriteOption )
 
-    class ( Universe_R_B_Form ), intent ( inout ) :: &
+    class ( Universe_R_B_Form ), intent ( inout ), target :: &
       U
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
@@ -134,6 +137,8 @@ contains
 
     call U % Universe_H_Form % Initialize &
            ( Name, UnitsTypeOption = UnitsTypeOption )
+
+    UNIVERSE  =>  U
 
     !-- Radiations
 
@@ -542,6 +547,10 @@ contains
           associate ( DT  =>  S % DivergenceTotal )
           call DT % Initialize ( R )
           end associate !-- DT
+
+        else if ( U % ApplyInteractions .and. .not. U % ApplyStreaming ) then
+
+          S % SetSlope  =>  SetSlope_RM_I 
 
         end if !-- Radiation operators
 
@@ -989,6 +998,8 @@ contains
       class is ( Slope_RM_I_Form )
     select type ( R  =>  S % CurrentSet )
       class is ( RadiationMoments_BM_Form )
+
+    K % Interactions  =>  UNIVERSE % Interactions_BM
 
     call K % Initialize &
            ( R )!, &
