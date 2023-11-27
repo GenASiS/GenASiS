@@ -36,8 +36,8 @@ module Timer_Form
       ShowTotal
   end type TimerForm
 
-    character ( 10 ), private, parameter :: &
-      Suffix = '::::::::::'
+    character ( 12 ), private, parameter :: &
+      Suffix = '::::::::::::'
     
 contains
 

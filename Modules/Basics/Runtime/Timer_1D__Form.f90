@@ -64,7 +64,7 @@ contains
     T_1D % LevelMin  =  LevelMin
     call Show ( T_1D % LevelMin, 'LevelMin', CONSOLE % INFO_1 )
 
-    T_1D % LevelMax  =  10  !-- Should match "Suffix" length in Timer_Form
+    T_1D % LevelMax  =  12  !-- Should match "Suffix" length in Timer_Form
     call Show ( T_1D % LevelMax, 'LevelMax', CONSOLE % INFO_1 )
 
     T_1D % DisplayFraction  =  DisplayFraction
