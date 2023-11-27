@@ -47,8 +47,8 @@ module Universe_R_CC__Form
       InitializeInteractions
     procedure, public, pass :: &
       SetBoundaryConditions
-    procedure, public, pass :: &
-      InitializeSteps
+!    procedure, public, pass :: &
+!      InitializeSteps
     procedure, public, pass :: &
       InitializeIntegrator
     procedure, public, pass :: &
@@ -62,9 +62,9 @@ module Universe_R_CC__Form
       UNIVERSE => null ( )
 
     private :: &
-      ResolveCycle_R, &
-      PrepareStep_F, &
-      ComputeSource_F, &
+!      ResolveCycle_R, &
+!      PrepareStep_F, &
+!      ComputeSource_F, &
       Compute_dT_Local, &
       InitializeSeries, &
       Analyze, &
@@ -187,8 +187,8 @@ contains
            ( )
     call U % SetBoundaryConditions &
            ( )
-    call U % InitializeSteps &
-           ( )
+!    call U % InitializeSteps &
+!           ( )
     call U % InitializeIntegrator &
            ( GravitationType, &
              FinishTimeOption = FinishTimeOption, &
@@ -199,8 +199,8 @@ contains
     !-- Integrator methods
 
     associate ( I  =>  U % Integrator )
-    I % ResolveCycle              =>  ResolveCycle_R
-    I % PrepareStep               =>  PrepareStep_F
+!    I % ResolveCycle              =>  ResolveCycle_R
+!    I % PrepareStep               =>  PrepareStep_F
     I % Compute_dT_Local          =>  Compute_dT_Local
     I % InitializeSeries          =>  InitializeSeries
     I % Analyze                   =>  Analyze
@@ -413,107 +413,107 @@ contains
   end subroutine InitializeInteractions
 
 
-  subroutine InitializeSteps ( U )
+!   subroutine InitializeSteps ( U )
 
-    class ( Universe_R_CC_Form ), intent ( inout ) :: &
-      U
+!     class ( Universe_R_CC_Form ), intent ( inout ) :: &
+!       U
 
-    integer ( KDI ) :: &
-      EvolutionOrder
-    character ( LDL ) :: &
-      RiemannSolverType
+!     integer ( KDI ) :: &
+!       EvolutionOrder
+!     character ( LDL ) :: &
+!       RiemannSolverType
 
-    EvolutionOrder  =  2
-    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+!     EvolutionOrder  =  2
+!     call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
 
-    U % Coarsen  =  .true.
-    call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
+!     U % Coarsen  =  .true.
+!     call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
 
-    !-- Fluid step
+!     !-- Fluid step
 
-    select type ( I  =>  U % Integrator )
-      class is ( Integrator_CS_Form )
-    select type ( F  =>  I % CurrentSet_X )
-      class is ( Fluid_P_HN_Form )
+!     select type ( I  =>  U % Integrator )
+!       class is ( Integrator_CS_Form )
+!     select type ( F  =>  I % CurrentSet_X )
+!       class is ( Fluid_P_HN_Form )
 
-    allocate ( Step_RK_CS_Form :: I % Step_X )
-    select type ( S  =>  I % Step_X )
-      class is ( Step_RK_CS_Form )
+!     allocate ( Step_RK_CS_Form :: I % Step_X )
+!     select type ( S  =>  I % Step_X )
+!       class is ( Step_RK_CS_Form )
 
-    allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
-    associate ( DT  =>  S % DivergenceTotal )
-      call DT % Initialize ( F )
-    end associate !-- DT
+!     allocate ( DivergencePart_F_P_HN_T_Form :: S % DivergenceTotal )
+!     associate ( DT  =>  S % DivergenceTotal )
+!       call DT % Initialize ( F )
+!     end associate !-- DT
 
-    RiemannSolverType = 'HLL'
-    call PROGRAM_HEADER % GetParameter &
-           ( RiemannSolverType, 'RiemannSolverType' )
-    if ( trim ( RiemannSolverType ) == 'HLLC' ) then
-      allocate ( RiemannSolver_HLLC_P_HN_Form :: S % RiemannSolver )
-      associate ( RS  =>  S % RiemannSolver )
-      call RS % Initialize ( F )
-      end associate !-- RS
-    end if        
+!     RiemannSolverType = 'HLL'
+!     call PROGRAM_HEADER % GetParameter &
+!            ( RiemannSolverType, 'RiemannSolverType' )
+!     if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+!       allocate ( RiemannSolver_HLLC_P_HN_Form :: S % RiemannSolver )
+!       associate ( RS  =>  S % RiemannSolver )
+!       call RS % Initialize ( F )
+!       end associate !-- RS
+!     end if        
 
-    S % SetSlope  =>  SetSlope_F_P_DFV_N_SS
+!     S % SetSlope  =>  SetSlope_F_P_DFV_N_SS
 
-    call S % Initialize ( F, OrderOption = EvolutionOrder )
+!     call S % Initialize ( F, OrderOption = EvolutionOrder )
 
-    !-- Coarsening
-    if ( U % Coarsen ) then
-      allocate ( U % Coarsening )
-      associate &
-        ( C  =>  U % Coarsening, &
-          G  =>  I % Geometry_X )
-        call C % Initialize ( F, G )
-        call S % SetCoarsening ( C )
-      end associate !-- C, etc.
-    end if
+!     !-- Coarsening
+!     if ( U % Coarsen ) then
+!       allocate ( U % Coarsening )
+!       associate &
+!         ( C  =>  U % Coarsening, &
+!           G  =>  I % Geometry_X )
+!         call C % Initialize ( F, G )
+!         call S % SetCoarsening ( C )
+!       end associate !-- C, etc.
+!     end if
 
-    end select !-- S
+!     end select !-- S
 
-    class default
-      call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select    !-- F
-    end select !-- I
+!     class default
+!       call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+!       call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
+!       call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+!       call PROGRAM_HEADER % Abort ( )
+!     end select    !-- F
+!     end select !-- I
 
-    !-- Radiation step
+!     !-- Radiation step
 
-    select type ( I  =>  U % Integrator )
-    class is ( Integrator_CS_1D_BM_CS_Form )
+!     select type ( I  =>  U % Integrator )
+!     class is ( Integrator_CS_1D_BM_CS_Form )
 
-      associate &
-        ( R  =>  I % CurrentSet_X_1D )
+!       associate &
+!         ( R  =>  I % CurrentSet_X_1D )
 
-      allocate ( Step_RK_CS_Form :: I % Step_1D )
-      select type ( S  =>  I % Step_1D )
-        class is ( Step_RK_CS_Form )
+!       allocate ( Step_RK_CS_Form :: I % Step_1D )
+!       select type ( S  =>  I % Step_1D )
+!         class is ( Step_RK_CS_Form )
 
-      allocate ( DivergencePart_NM_G_Form :: S % DivergenceTotal )
-      associate ( DT  =>  S % DivergenceTotal )
-      call DT % Initialize ( R )
-      end associate !-- DT
+!       allocate ( DivergencePart_NM_G_Form :: S % DivergenceTotal )
+!       associate ( DT  =>  S % DivergenceTotal )
+!       call DT % Initialize ( R )
+!       end associate !-- DT
 
-      allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
-      select type ( DF  =>  S % DiffusionFactor )
-      class is ( DiffusionFactor_RM_Form )
-        call DF % Initialize ( U % Interactions_NM_G )
-      end select !-- DF
+!       allocate ( DiffusionFactor_RM_Form :: S % DiffusionFactor )
+!       select type ( DF  =>  S % DiffusionFactor )
+!       class is ( DiffusionFactor_RM_Form )
+!         call DF % Initialize ( U % Interactions_NM_G )
+!       end select !-- DF
 
-!      S % SetSlope  =>  SetSlope_NM_G_I
-      S % SetSlope  =>  SetSlope_NM_G_DFV_I
+! !      S % SetSlope  =>  SetSlope_NM_G_I
+!       S % SetSlope  =>  SetSlope_NM_G_DFV_I
 
-      call S % Initialize ( R, OrderOption = EvolutionOrder )
+!       call S % Initialize ( R, OrderOption = EvolutionOrder )
 
-      end select !-- S
-      end associate !-- R
+!       end select !-- S
+!       end associate !-- R
 
-    end select !-- I
+!     end select !-- I
 
-  end subroutine InitializeSteps
+!   end subroutine InitializeSteps
 
 
   subroutine InitializeIntegrator &
@@ -603,9 +603,11 @@ contains
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
-    select type ( S_1D  =>  I % Step_1D )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( S_R  =>  S % Step_CS_1 )
       class is ( Step_RK_CS_Form )
-    select type ( S_R_I  =>  S_1D % Slope % Component ( 2 ) % Element )
+    select type ( S_R_I  =>  S_R % Slope % Component ( 2 ) % Element )
       class is ( Slope_NM_G_I_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_HN_Form )
@@ -640,222 +642,223 @@ contains
 
     end associate !-- FS
     end select !-- F
-    end select !-- SS_R_I
-    end select !-- S_1D
+    end select !-- S_R_I
+    end select !-- S_R
+    end select !-- S
     end select !-- I
 
   end subroutine Compute_dT_RT_CGS
 
 
-  subroutine ResolveCycle_R ( I )
+!   subroutine ResolveCycle_R ( I )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
+!     class ( Integrator_H_Form ), intent ( inout ) :: &
+!       I
 
-    select type ( U  =>  I % System )
-      class is ( Universe_R_CC_Form )
-    select type ( I )
-      class is ( Integrator_CS_1D_BM_CS_Form )
-    select type ( R  =>  I % CurrentSet_X_1D )
-      class is ( NeutrinoMoments_G_Form )
+!     select type ( U  =>  I % System )
+!       class is ( Universe_R_CC_Form )
+!     select type ( I )
+!       class is ( Integrator_CS_1D_BM_CS_Form )
+!     select type ( R  =>  I % CurrentSet_X_1D )
+!       class is ( NeutrinoMoments_G_Form )
 
-!    call R % SetFluidVelocity ( )
-!    call R % ComputeFromBalanced ( )
-    call R % ComputeSpectralParameters ( )
-    call R % ComputeEquilibrium ( )
-    call U % Interactions_NM_G % Compute ( )
+! !    call R % SetFluidVelocity ( )
+! !    call R % ComputeFromBalanced ( )
+!     call R % ComputeSpectralParameters ( )
+!     call R % ComputeEquilibrium ( )
+!     call U % Interactions_NM_G % Compute ( )
 
-    select type ( S_1D  =>  I % Step_1D )
-      class is ( Step_RK_CS_Form )
-    if ( S_1D % Slope % nComponents  >  1 ) then
-      select type ( S_R_I  =>  S_1D % Slope % Component ( 2 ) % Element )
-        class is ( Slope_NM_G_I_Form )
+!     select type ( S_1D  =>  I % Step_1D )
+!       class is ( Step_RK_CS_Form )
+!     if ( S_1D % Slope % nComponents  >  1 ) then
+!       select type ( S_R_I  =>  S_1D % Slope % Component ( 2 ) % Element )
+!         class is ( Slope_NM_G_I_Form )
 
-      !-- To be used for EnergyTransfer and ElectronNumberTransfer time steps
-      call S_R_I % Compute ( dT = 0.0_KDR )
-      call ComputeSource_F ( I, S_R_I )
+!       !-- To be used for EnergyTransfer and ElectronNumberTransfer time steps
+!       call S_R_I % Compute ( dT = 0.0_KDR )
+!       call ComputeSource_F ( I, S_R_I )
 
-      end select !-- S_R_I
-    end if !-- Slope % nComponents > 1
-    end select !-- S_1D
+!       end select !-- S_R_I
+!     end if !-- Slope % nComponents > 1
+!     end select !-- S_1D
 
-    end select !-- R
-    end select !-- I
-    end select !-- U
+!     end select !-- R
+!     end select !-- I
+!     end select !-- U
 
-  end subroutine ResolveCycle_R
-
-
-  subroutine PrepareStep_F ( I )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-
-    select type ( I )
-      class is ( Integrator_CS_1D_BM_CS_Form )
-    select type ( S_1D  =>  I % Step_1D )
-      class is ( Step_RK_CS_Form )
-    if ( S_1D % Slope % nComponents  >  1 ) then
-      select type ( SS_R_I  =>  S_1D % SlopeSum % Component ( 2 ) % Element )
-        class is ( Slope_NM_G_I_Form )
-
-      call ComputeSource_F ( I, SS_R_I )
-
-      end select !-- SS_R_I
-    end if !-- Slope % nComponents > 1
-    end select !-- S_1D
-    end select !-- I
-
-  end subroutine PrepareStep_F
+!   end subroutine ResolveCycle_R
 
 
-  subroutine ComputeSource_F ( I, S_R_I )
+!   subroutine PrepareStep_F ( I )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    class ( Slope_NM_G_I_Form ), intent ( inout ) :: &
-      S_R_I
+!     class ( Integrator_H_Form ), intent ( inout ) :: &
+!       I
 
-    integer ( KDI ) :: &
-      iC, &  !-- iChart
-      iEnergy_R, iEnergy_F, &
-      iNumber_R, iNumber_F, &
-      nSources, &
-      nValues
-    integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum_R, iMomentum_F
-    real ( KDR ) :: &
-      NumberFactor
-    real ( KDR ), dimension ( :, : ), pointer :: &
-      RSB, &  !-- 2D alias for outgoing buffer
-      FSB     !-- 2D alias for incoming buffer
+!     select type ( I )
+!       class is ( Integrator_CS_1D_BM_CS_Form )
+!     select type ( S_1D  =>  I % Step_1D )
+!       class is ( Step_RK_CS_Form )
+!     if ( S_1D % Slope % nComponents  >  1 ) then
+!       select type ( SS_R_I  =>  S_1D % SlopeSum % Component ( 2 ) % Element )
+!         class is ( Slope_NM_G_I_Form )
 
-    select type ( U  =>  I % System )
-      class is ( Universe_R_CC_Form )
-    select type ( I )
-      class is ( Integrator_CS_1D_BM_CS_Form )
-    select type ( R  =>  I % CurrentSet_X_1D )
-      class is ( NeutrinoMoments_G_Form )
-    select type ( F  =>  I % CurrentSet_X )
-      class is ( Fluid_P_HN_Form )
+!       call ComputeSource_F ( I, SS_R_I )
 
-    call Search &
-           ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
-    call Search &
-           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_R ( 1 ) )
-    call Search &
-           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_R ( 2 ) )
-    call Search &
-           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_R ( 3 ) )
-    call Search &
-           ( R % iaBalanced, R % NUMBER_DENSITY_B, iNumber_R )
+!       end select !-- SS_R_I
+!     end if !-- Slope % nComponents > 1
+!     end select !-- S_1D
+!     end select !-- I
 
-    call Search &
-           ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_F )
-    call Search &
-           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_F ( 1 ) )
-    call Search &
-           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_F ( 2 ) )
-    call Search &
-           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_F ( 3 ) )
-    call Search &
-           ( F % iaBalanced, F % ELECTRON_DENSITY_B, iNumber_F )
+!   end subroutine PrepareStep_F
 
-    nSources  =  5
 
-    if ( .not. allocated ( U % CO_SplitSource ) ) &
-      allocate ( U % CO_SplitSource ( F % Atlas % nCharts ) )
+!   subroutine ComputeSource_F ( I, S_R_I )
 
-    do iC  =  1,  F % Atlas % nCharts
-      associate &
-        ( CO  =>  U % CO_SplitSource ( iC ) )
-      associate &
-        ( RSV  =>  S_R_I % Storage ( iC ) % Value, &
-          FSV  =>  F % SplitSource % Storage ( iC ) % Value )
-      associate &
-        ( RS_E    =>  RSV ( :, iEnergy_R ), &
-          RS_S_1  =>  RSV ( :, iMomentum_R ( 1 ) ), &
-          RS_S_2  =>  RSV ( :, iMomentum_R ( 2 ) ), &
-          RS_S_3  =>  RSV ( :, iMomentum_R ( 3 ) ), &
-          RS_D    =>  RSV ( :, iNumber_R ), &
-          FS_G    =>  FSV ( :, iEnergy_F ), &
-          FS_S_1  =>  FSV ( :, iMomentum_F ( 1 ) ), &
-          FS_S_2  =>  FSV ( :, iMomentum_F ( 2 ) ), &
-          FS_S_3  =>  FSV ( :, iMomentum_F ( 3 ) ), &
-          FS_D    =>  FSV ( :, iNumber_F ) )
+!     class ( Integrator_H_Form ), intent ( inout ) :: &
+!       I
+!     class ( Slope_NM_G_I_Form ), intent ( inout ) :: &
+!       S_R_I
 
-      nValues  =  size ( FSV, dim = 1 )
+!     integer ( KDI ) :: &
+!       iC, &  !-- iChart
+!       iEnergy_R, iEnergy_F, &
+!       iNumber_R, iNumber_F, &
+!       nSources, &
+!       nValues
+!     integer ( KDI ), dimension ( 3 ) :: &
+!       iMomentum_R, iMomentum_F
+!     real ( KDR ) :: &
+!       NumberFactor
+!     real ( KDR ), dimension ( :, : ), pointer :: &
+!       RSB, &  !-- 2D alias for outgoing buffer
+!       FSB     !-- 2D alias for incoming buffer
 
-      if ( .not. allocated ( CO % Outgoing ) ) then
-        call CO % Initialize &
-               ( I % Communicator_X_1D, &
-                 nOutgoing  =  [ nValues * nSources ], &
-                 nIncoming  =  [ nValues * nSources ] )
-        if ( S_R_I % DeviceMemory .and. S_R_I % DevicesCommunicate ) then
-          call CO % AllocateDevice ( )
-        end if
-      end if
+!     select type ( U  =>  I % System )
+!       class is ( Universe_R_CC_Form )
+!     select type ( I )
+!       class is ( Integrator_CS_1D_BM_CS_Form )
+!     select type ( R  =>  I % CurrentSet_X_1D )
+!       class is ( NeutrinoMoments_G_Form )
+!     select type ( F  =>  I % CurrentSet_X )
+!       class is ( Fluid_P_HN_Form )
+
+!     call Search &
+!            ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
+!     call Search &
+!            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_R ( 1 ) )
+!     call Search &
+!            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_R ( 2 ) )
+!     call Search &
+!            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_R ( 3 ) )
+!     call Search &
+!            ( R % iaBalanced, R % NUMBER_DENSITY_B, iNumber_R )
+
+!     call Search &
+!            ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_F )
+!     call Search &
+!            ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_F ( 1 ) )
+!     call Search &
+!            ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_F ( 2 ) )
+!     call Search &
+!            ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_F ( 3 ) )
+!     call Search &
+!            ( F % iaBalanced, F % ELECTRON_DENSITY_B, iNumber_F )
+
+!     nSources  =  5
+
+!     if ( .not. allocated ( U % CO_SplitSource ) ) &
+!       allocate ( U % CO_SplitSource ( F % Atlas % nCharts ) )
+
+!     do iC  =  1,  F % Atlas % nCharts
+!       associate &
+!         ( CO  =>  U % CO_SplitSource ( iC ) )
+!       associate &
+!         ( RSV  =>  S_R_I % Storage ( iC ) % Value, &
+!           FSV  =>  F % SplitSource % Storage ( iC ) % Value )
+!       associate &
+!         ( RS_E    =>  RSV ( :, iEnergy_R ), &
+!           RS_S_1  =>  RSV ( :, iMomentum_R ( 1 ) ), &
+!           RS_S_2  =>  RSV ( :, iMomentum_R ( 2 ) ), &
+!           RS_S_3  =>  RSV ( :, iMomentum_R ( 3 ) ), &
+!           RS_D    =>  RSV ( :, iNumber_R ), &
+!           FS_G    =>  FSV ( :, iEnergy_F ), &
+!           FS_S_1  =>  FSV ( :, iMomentum_F ( 1 ) ), &
+!           FS_S_2  =>  FSV ( :, iMomentum_F ( 2 ) ), &
+!           FS_S_3  =>  FSV ( :, iMomentum_F ( 3 ) ), &
+!           FS_D    =>  FSV ( :, iNumber_F ) )
+
+!       nValues  =  size ( FSV, dim = 1 )
+
+!       if ( .not. allocated ( CO % Outgoing ) ) then
+!         call CO % Initialize &
+!                ( I % Communicator_X_1D, &
+!                  nOutgoing  =  [ nValues * nSources ], &
+!                  nIncoming  =  [ nValues * nSources ] )
+!         if ( S_R_I % DeviceMemory .and. S_R_I % DevicesCommunicate ) then
+!           call CO % AllocateDevice ( )
+!         end if
+!       end if
       
-      if ( .not. CO % AllocatedDevice ) &
-        call S_R_I % UpdateHost ( )
+!       if ( .not. CO % AllocatedDevice ) &
+!         call S_R_I % UpdateHost ( )
       
-      RSB ( 1 : nValues,  1 : nSources )  =>  CO % Outgoing % Value
-      FSB ( 1 : nValues,  1 : nSources )  =>  CO % Incoming % Value
+!       RSB ( 1 : nValues,  1 : nSources )  =>  CO % Outgoing % Value
+!       FSB ( 1 : nValues,  1 : nSources )  =>  CO % Incoming % Value
 
-      call Copy ( RS_E,   RSB ( :, 1 ), &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( RS_S_1, RSB ( :, 2 ), &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( RS_S_2, RSB ( :, 3 ), &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( RS_S_3, RSB ( :, 4 ), &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( RS_D,   RSB ( :, 5 ), &
-                  UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( RS_E,   RSB ( :, 1 ), &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( RS_S_1, RSB ( :, 2 ), &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( RS_S_2, RSB ( :, 3 ), &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( RS_S_3, RSB ( :, 4 ), &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( RS_D,   RSB ( :, 5 ), &
+!                   UseDeviceOption = CO % AllocatedDevice )
       
-      !-- Energy / Momentum
-      call Multiply ( RSB ( :, 1 : 4 ), -1.0_KDR, &
-                      UseDeviceOption = CO % AllocatedDevice )
+!       !-- Energy / Momentum
+!       call Multiply ( RSB ( :, 1 : 4 ), -1.0_KDR, &
+!                       UseDeviceOption = CO % AllocatedDevice )
 
-      !-- Electron number
-      select case ( trim ( R % RadiationType ) )
-      case ( 'NEUTRINOS_E' )
-        NumberFactor  =  - 1.0_KDR
-      case ( 'NEUTRINOS_E_BAR' )
-        NumberFactor  =  + 1.0_KDR
-      case default
-        NumberFactor  =    0.0_KDR
-      end select !-- RadiationType
-      call Multiply ( RSB ( :, 5 ), NumberFactor, &
-                      UseDeviceOption = CO % AllocatedDevice )
+!       !-- Electron number
+!       select case ( trim ( R % RadiationType ) )
+!       case ( 'NEUTRINOS_E' )
+!         NumberFactor  =  - 1.0_KDR
+!       case ( 'NEUTRINOS_E_BAR' )
+!         NumberFactor  =  + 1.0_KDR
+!       case default
+!         NumberFactor  =    0.0_KDR
+!       end select !-- RadiationType
+!       call Multiply ( RSB ( :, 5 ), NumberFactor, &
+!                       UseDeviceOption = CO % AllocatedDevice )
 
-      call CO % Reduce ( REDUCTION % SUM )
+!       call CO % Reduce ( REDUCTION % SUM )
 
-      call Copy ( FSB ( :, 1 ), FS_G, &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( FSB ( :, 2 ), FS_S_1, &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( FSB ( :, 3 ), FS_S_2, &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( FSB ( :, 4 ), FS_S_3, &
-                  UseDeviceOption = CO % AllocatedDevice )
-      call Copy ( FSB ( :, 5 ), FS_D, &
-                  UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( FSB ( :, 1 ), FS_G, &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( FSB ( :, 2 ), FS_S_1, &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( FSB ( :, 3 ), FS_S_2, &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( FSB ( :, 4 ), FS_S_3, &
+!                   UseDeviceOption = CO % AllocatedDevice )
+!       call Copy ( FSB ( :, 5 ), FS_D, &
+!                   UseDeviceOption = CO % AllocatedDevice )
       
-      if ( .not. CO % AllocatedDevice ) &
-        call F % SplitSource % UpdateDevice ( )
+!       if ( .not. CO % AllocatedDevice ) &
+!         call F % SplitSource % UpdateDevice ( )
 
-      end associate !-- RS_E, etc.
-      end associate !-- RSV, etc.
-      end associate !-- CO
-    end do !-- iC
+!       end associate !-- RS_E, etc.
+!       end associate !-- RSV, etc.
+!       end associate !-- CO
+!     end do !-- iC
 
-    end select !-- F
-    end select !-- R
-    end select !-- I
-    end select !-- U
+!     end select !-- F
+!     end select !-- R
+!     end select !-- I
+!     end select !-- U
 
-  end subroutine ComputeSource_F
+!   end subroutine ComputeSource_F
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )

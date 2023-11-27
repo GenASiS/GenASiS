@@ -118,11 +118,11 @@ contains
 
     call CS_X_1D % SetStream ( S_X )
 
-    if ( allocated ( I % Step_1D ) ) then
-      associate ( S  =>  I % Step_1D )
-      call S % SetStream ( S_X )
-      end associate !-- S
-    end if
+    ! if ( allocated ( I % Step_1D ) ) then
+    !   associate ( S  =>  I % Step_1D )
+    !   call S % SetStream ( S_X )
+    !   end associate !-- S
+    ! end if
 
     end associate !-- CS_X, etc.
 

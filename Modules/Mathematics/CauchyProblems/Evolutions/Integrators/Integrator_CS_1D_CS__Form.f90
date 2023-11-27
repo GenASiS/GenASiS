@@ -20,8 +20,8 @@ module Integrator_CS_1D_CS__Form
       iCurrentSet = 0
     real ( KDR ) :: &
       CourantFactor_1D
-    class ( Step_RK_H_Form ), allocatable :: &
-      Step_1D
+!    class ( Step_RK_H_Form ), allocatable :: &
+!      Step_1D
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_H      
@@ -29,10 +29,10 @@ module Integrator_CS_1D_CS__Form
       Finalize
     procedure, public, pass :: &  !-- 2
       ShowParameters
-    procedure, public, pass :: &  !-- 2
-      ShowSteps
-    procedure, private, pass :: &  !-- 2
-      ComputeCycle
+!    procedure, public, pass :: &  !-- 2
+!      ShowSteps
+!    procedure, private, pass :: &  !-- 2
+!      ComputeCycle
     procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
@@ -68,11 +68,11 @@ contains
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_CS_1D_CS'
 
-    if ( .not. allocated ( I % Step_1D ) ) then
-      call Show ( 'Step_1D not allocated', CONSOLE % WARNING )
-      call Show ( 'Integrator_CS_1D_CS__Form', 'module', CONSOLE % WARNING )
-      call Show ( 'Initialize_H', 'subroutine', CONSOLE % WARNING )
-    end if
+    ! if ( .not. allocated ( I % Step_1D ) ) then
+    !   call Show ( 'Step_1D not allocated', CONSOLE % WARNING )
+    !   call Show ( 'Integrator_CS_1D_CS__Form', 'module', CONSOLE % WARNING )
+    !   call Show ( 'Initialize_H', 'subroutine', CONSOLE % WARNING )
+    ! end if
 
     ! if ( .not. allocated ( I % TimeSeries ) ) then
     !   allocate ( TimeSeries_C_1D_C_Form :: I % TimeSeries )
@@ -108,8 +108,8 @@ contains
     ! nullify ( I % SeriesChangeGrandTotal )
     ! nullify ( I % iTime )
 
-    if ( allocated ( I % Step_1D ) ) &
-      deallocate ( I % Step_1D )
+    ! if ( allocated ( I % Step_1D ) ) &
+    !   deallocate ( I % Step_1D )
 
   end subroutine Finalize
 
@@ -129,89 +129,89 @@ contains
   end subroutine ShowParameters
 
 
-  subroutine ShowSteps ( I )
+  ! subroutine ShowSteps ( I )
 
-    class ( Integrator_CS_1D_CS_Form ), intent ( in ) :: &
-      I
+  !   class ( Integrator_CS_1D_CS_Form ), intent ( in ) :: &
+  !     I
 
-    call I % Integrator_CS_Form % ShowSteps ( )
+  !   call I % Integrator_CS_Form % ShowSteps ( )
 
-    if ( allocated ( I % Step_1D ) ) &
-      call I % Step_1D % Show ( )
+  !   if ( allocated ( I % Step_1D ) ) &
+  !     call I % Step_1D % Show ( )
 
-  end subroutine ShowSteps
+  ! end subroutine ShowSteps
 
 
-  subroutine ComputeCycle ( I, T_CC )
+  ! subroutine ComputeCycle ( I, T_CC )
 
-    class ( Integrator_CS_1D_CS_Form ), intent ( inout ) :: &
-      I
-    type ( TimerForm ), intent ( in ) :: &
-      T_CC
+  !   class ( Integrator_CS_1D_CS_Form ), intent ( inout ) :: &
+  !     I
+  !   type ( TimerForm ), intent ( in ) :: &
+  !     T_CC
 
-    real ( KDR ) :: &
-      T_New  !-- Use of Compute_T_New is a relic of past AMR evolution
-    type ( TimerForm ), pointer :: &
-      T_CTN, &
-      T_S, &
-      T_S_1D
+  !   real ( KDR ) :: &
+  !     T_New  !-- Use of Compute_T_New is a relic of past AMR evolution
+  !   type ( TimerForm ), pointer :: &
+  !     T_CTN, &
+  !     T_S, &
+  !     T_S_1D
 
-    T_CTN  =>  PROGRAM_HEADER % Timer &
-                ( Handle = I % iTimer_CTN, &
-                  Name = trim ( I % Name ) // '_CmptDt', &
-                  Level = T_CC % Level + 1 )
-    call T_CTN % Start ( )
-    call I % Compute_T_New ( T_New )
-    call T_CTN % Stop ( )
+  !   T_CTN  =>  PROGRAM_HEADER % Timer &
+  !               ( Handle = I % iTimer_CTN, &
+  !                 Name = trim ( I % Name ) // '_CmptDt', &
+  !                 Level = T_CC % Level + 1 )
+  !   call T_CTN % Start ( )
+  !   call I % Compute_T_New ( T_New )
+  !   call T_CTN % Stop ( )
 
-    associate ( dT  =>  T_New  -  I % T )    
+  !   associate ( dT  =>  T_New  -  I % T )    
 
-    ! select type ( Chart => PS % Chart )
-    ! class is ( Chart_SLD_Form )
+  !   ! select type ( Chart => PS % Chart )
+  !   ! class is ( Chart_SLD_Form )
 
-    if ( allocated ( I % Step_1D ) ) then
-      associate ( S_1D  =>  I % Step_1D )
-      T_S_1D  =>  S_1D % Timer ( Level = T_CC % Level + 1 )
-      call T_S_1D % Start ( )
-      call S_1D % Compute ( I % T, dT, T_Option = T_S_1D )
-      call T_S_1D % Stop ( )
-      end associate !-- S_1D
-    end if !-- allocated Step_1D
+  !   if ( allocated ( I % Step_1D ) ) then
+  !     associate ( S_1D  =>  I % Step_1D )
+  !     T_S_1D  =>  S_1D % Timer ( Level = T_CC % Level + 1 )
+  !     call T_S_1D % Start ( )
+  !     call S_1D % Compute ( I % T, dT, T_Option = T_S_1D )
+  !     call T_S_1D % Stop ( )
+  !     end associate !-- S_1D
+  !   end if !-- allocated Step_1D
 
-    if ( allocated ( I % Step_X ) ) then
-      if ( associated ( I % PrepareStep ) ) &
-        call I % PrepareStep ( )
-      associate ( S  =>  I % Step_X )
-      T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
-      call T_S % Start ( )
-      call S % Compute ( I % T, dT, T_Option = T_S )
-      call T_S % Stop ( )
-      end associate !-- S
-    end if !-- allocated Step_X
+  !   if ( allocated ( I % Step_X ) ) then
+  !     if ( associated ( I % PrepareStep ) ) &
+  !       call I % PrepareStep ( )
+  !     associate ( S  =>  I % Step_X )
+  !     T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
+  !     call T_S % Start ( )
+  !     call S % Compute ( I % T, dT, T_Option = T_S )
+  !     call T_S % Stop ( )
+  !     end associate !-- S
+  !   end if !-- allocated Step_X
 
-    ! class default
-    !   call Show ( 'Chart type not found', CONSOLE % ERROR )
-    !   call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
-    !   call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- C
+  !   ! class default
+  !   !   call Show ( 'Chart type not found', CONSOLE % ERROR )
+  !   !   call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
+  !   !   call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
+  !   !   call PROGRAM_HEADER % Abort ( )
+  !   ! end select !-- C
 
-    I % iCycle  =  I % iCycle  +   1
-    I % T       =  I % T       +  dT
+  !   I % iCycle  =  I % iCycle  +   1
+  !   I % T       =  I % T       +  dT
 
-    if ( I % T_CheckpointExact ) then
-      if ( abs ( I % T_Checkpoint  -  I % T )  /  I % T_Checkpoint  &
-           <  1.0e-14 ) &
-        I % CheckpointDue  =  .true.
-    else 
-      if ( I % T  >  I % T_Checkpoint &
-           .or. abs ( I % T_Checkpoint  -  I % T )  <  0.5_KDR * dT ) &
-        I % CheckpointDue  =  .true.
-    end if
+  !   if ( I % T_CheckpointExact ) then
+  !     if ( abs ( I % T_Checkpoint  -  I % T )  /  I % T_Checkpoint  &
+  !          <  1.0e-14 ) &
+  !       I % CheckpointDue  =  .true.
+  !   else 
+  !     if ( I % T  >  I % T_Checkpoint &
+  !          .or. abs ( I % T_Checkpoint  -  I % T )  <  0.5_KDR * dT ) &
+  !       I % CheckpointDue  =  .true.
+  !   end if
 
-    end associate !-- dT
+  !   end associate !-- dT
 
-  end subroutine ComputeCycle
+  ! end subroutine ComputeCycle
 
 
   subroutine ComputeTally ( I, ChangeOption, IgnorabilityOption )
