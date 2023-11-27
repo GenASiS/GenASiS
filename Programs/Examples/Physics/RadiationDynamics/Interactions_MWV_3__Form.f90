@@ -132,6 +132,9 @@ contains
     associate &
       ( F  =>  I % Fluid )
 
+    call R % ComputeSpectralParameters ( )
+    call R % ComputeEquilibrium ( )
+
     do iC  =  1,  I % Atlas % nCharts
       associate &
         ( IV  =>  I % Storage ( iC ) % Value, &

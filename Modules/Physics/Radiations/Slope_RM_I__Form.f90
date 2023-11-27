@@ -15,6 +15,10 @@ module Slope_RM_I__Form
       iEnergy_B
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_B
+    type ( CommunicatorForm ), pointer :: &
+      Communicator_X_1D  =>  null ( )
+    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
+      CO_SplitSource
     class ( RadiationMoments_BM_Form ), pointer :: &
       Radiation => null ( )
     class ( Interactions_BM_Form ), pointer :: &
@@ -84,14 +88,6 @@ contains
 !      S % Interactions  =>  I
 !    end select
 
-    if ( .not. associated ( S % Interactions ) ) then
-      call Show ( 'Please set Interactions before initialization', &
-                  CONSOLE % ERROR )
-      call Show ( 'Slope_RM_I__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeAllocate_RM_I', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
     call Search ( R % iaBalanced, R % ENERGY_DENSITY_B, &
                   S % iEnergy_B )
     call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, &
@@ -128,6 +124,14 @@ contains
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+
+    if ( .not. associated ( S % Interactions ) ) then
+      call Show ( 'Please set Interactions', &
+                  CONSOLE % ERROR )
+      call Show ( 'Slope_RM_I__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     associate &
       (  I  =>  S % Interactions, &
@@ -175,6 +179,10 @@ contains
 
     end associate !-- I, etc.
 
+    if ( associated ( S % Communicator_X_1D ) ) then
+      call ComputeSource_F ( S )
+    end if
+
   end subroutine Compute
 
 
@@ -184,8 +192,124 @@ contains
       S
 
     nullify ( S % Interactions )
+    nullify ( S % Radiation )
     
+    if ( allocated ( S % CO_SplitSource ) ) &
+      deallocate ( S % CO_SplitSource )
+
+    nullify ( S % Communicator_X_1D )
+
   end subroutine Finalize
+
+
+  subroutine ComputeSource_F ( S )
+
+    class ( Slope_RM_I_Form ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC, &  !-- iChart
+      iEnergy_R, iEnergy_F, &
+      nSources, &
+      nValues
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum_R, iMomentum_F
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      RSB, &  !-- 2D alias for outgoing buffer
+      FSB     !-- 2D alias for incoming buffer
+
+    associate &
+      ( R  =>  S % Radiation, &
+        F  =>  S % Radiation % Fluid )
+
+    call Search &
+           ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
+    call Search &
+           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_R ( 1 ) )
+    call Search &
+           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_R ( 2 ) )
+    call Search &
+           ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_R ( 3 ) )
+
+    call Search &
+           ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_F )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_F ( 1 ) )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_F ( 2 ) )
+    call Search &
+           ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_F ( 3 ) )
+
+    nSources  =  4
+
+    if ( .not. allocated ( S % CO_SplitSource ) ) &
+      allocate ( S % CO_SplitSource ( F % Atlas % nCharts ) )
+
+    do iC  =  1,  F % Atlas % nCharts
+      associate &
+        ( CO  =>  S % CO_SplitSource ( iC ) )
+      associate &
+        ( RSV  =>  S % Storage ( iC ) % Value, &
+          FSV  =>  F % SplitSource % Storage ( iC ) % Value )
+      associate &
+        ( RS_E    =>  RSV ( :, iEnergy_R ), &
+          RS_S_1  =>  RSV ( :, iMomentum_R ( 1 ) ), &
+          RS_S_2  =>  RSV ( :, iMomentum_R ( 2 ) ), &
+          RS_S_3  =>  RSV ( :, iMomentum_R ( 3 ) ), &
+          FS_G    =>  FSV ( :, iEnergy_F ), &
+          FS_S_1  =>  FSV ( :, iMomentum_F ( 1 ) ), &
+          FS_S_2  =>  FSV ( :, iMomentum_F ( 2 ) ), &
+          FS_S_3  =>  FSV ( :, iMomentum_F ( 3 ) ) )
+
+      nValues  =  size ( FSV, dim = 1 )
+
+      if ( .not. allocated ( CO % Outgoing ) ) then
+        call CO % Initialize &
+               ( S % Communicator_X_1D, &
+                 nOutgoing  =  [ nValues * nSources ], &
+                 nIncoming  =  [ nValues * nSources ] )
+        if ( S % DeviceMemory .and. S % DevicesCommunicate ) then
+          call CO % AllocateDevice ( )
+        end if
+      end if
+      
+      if ( .not. CO % AllocatedDevice ) &
+        call S % UpdateHost ( )
+      
+      RSB ( 1 : nValues,  1 : nSources )  =>  CO % Outgoing % Value
+      FSB ( 1 : nValues,  1 : nSources )  =>  CO % Incoming % Value
+
+      call Copy ( RS_E,   RSB ( :, 1 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( RS_S_1, RSB ( :, 2 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( RS_S_2, RSB ( :, 3 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( RS_S_3, RSB ( :, 4 ), &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Multiply ( RSB, -1.0_KDR, &
+                      UseDeviceOption = CO % AllocatedDevice )
+      call CO % Reduce ( REDUCTION % SUM )
+      call Copy ( FSB ( :, 1 ), FS_G, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( FSB ( :, 2 ), FS_S_1, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( FSB ( :, 3 ), FS_S_2, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      call Copy ( FSB ( :, 4 ), FS_S_3, &
+                  UseDeviceOption = CO % AllocatedDevice )
+      
+      if ( .not. CO % AllocatedDevice ) &
+        call F % SplitSource % UpdateDevice ( )
+
+      end associate !-- RS_E, etc.
+      end associate !-- RSV, etc.
+      end associate !-- CO
+    end do !-- iC
+
+    end associate !-- R, F
+
+  end subroutine ComputeSource_F
 
 
 end module Slope_RM_I__Form

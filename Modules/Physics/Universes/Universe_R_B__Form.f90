@@ -28,8 +28,8 @@ module Universe_R_B__Form
       RadiationType
     type ( CommunicatorForm ), allocatable :: &
       Communicator_PS  !-- PositionSpace
-    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
-      CO_SplitSource
+!    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
+!      CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
     class ( Interactions_BM_Form ), allocatable :: &
@@ -216,8 +216,8 @@ contains
       deallocate ( U % Interactions_BM )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
-    if ( allocated ( U % CO_SplitSource ) ) &
-      deallocate ( U % CO_SplitSource )
+!    if ( allocated ( U % CO_SplitSource ) ) &
+!      deallocate ( U % CO_SplitSource )
     if ( allocated ( U % Communicator_PS ) ) &
       deallocate ( U % Communicator_PS )
     if ( allocated ( U % RadiationType ) ) &
@@ -286,6 +286,10 @@ contains
     select case ( trim ( U % FormalismType ) )
     case ( 'GREY' )
       allocate ( Integrator_CS_1D_BM_CS_Form :: U % Integrator )
+      select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+        allocate ( I % Communicator_X_1D )
+      end select !-- I
     case ( 'SPECTRAL' )
       allocate ( Integrator_CS_1D_CB_CS_Form :: U % Integrator )
     case default
@@ -556,6 +560,64 @@ contains
 
         call S % Initialize ( R, OrderOption = EvolutionOrder )
 
+        end select !-- S
+
+      else !-- EvolveFluid
+
+        allocate ( Step_RK_CS_CS_Form :: I % Step_X )
+        select type ( S  =>  I % Step_X )
+          class is ( Step_RK_CS_CS_Form )
+
+        allocate ( S % Step_CS_1 )
+        allocate ( S % Step_CS_2 )
+        associate &
+          ( S_R  =>  S % Step_CS_1, &
+            S_F  =>  S % Step_CS_2 )
+
+        !-- Radiation
+        if ( U % ApplyStreaming .and. U % ApplyInteractions ) then
+
+          allocate ( DivergencePart_RM_Form :: S_R % DivergenceTotal )
+          associate ( DT  =>  S_R % DivergenceTotal )
+          call DT % Initialize ( R )
+          end associate !-- DT
+
+          allocate ( DiffusionFactor_RM_Form :: S_R % DiffusionFactor )
+          select type ( DF  =>  S_R % DiffusionFactor )
+          class is ( DiffusionFactor_RM_Form )
+            call DF % Initialize ( U % Interactions_BM )
+          end select !-- DF
+
+          S_R % SetSlope  =>  SetSlope_RM_DFV_I
+
+        end if !-- Radiation operators
+
+        !-- Fluid
+        associate &
+          ( F  =>  I % CurrentSet_X )
+
+        allocate ( DivergencePart_F_P_T_Form :: S_F % DivergenceTotal )
+        associate ( DT  =>  S_F % DivergenceTotal )
+          call DT % Initialize ( F )
+        end associate !-- DT
+
+        RiemannSolverType = 'HLLC'
+        call PROGRAM_HEADER % GetParameter &
+               ( RiemannSolverType, 'RiemannSolverType' )
+        if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+          allocate ( RiemannSolver_HLLC_P_Form :: S_F % RiemannSolver )
+          associate ( RS  =>  S_F % RiemannSolver )
+          call RS % Initialize ( F )
+          end associate !-- RS
+        end if
+
+        S_F % SetSlope  =>  SetSlope_F_P_DFV_SS
+
+        !-- Combined step
+        call S % Initialize ( R, F, OrderOption = EvolutionOrder )
+
+        end associate !-- F
+        end associate !-- S_R, S_F
         end select !-- S
 
       end if !-- EvolveFluid
@@ -999,11 +1061,11 @@ contains
     select type ( R  =>  S % CurrentSet )
       class is ( RadiationMoments_BM_Form )
 
-    K % Interactions  =>  UNIVERSE % Interactions_BM
-
     call K % Initialize &
            ( R )!, &
 !             IgnorabilityOption = S % IGNORABILITY )
+
+    K % Interactions  =>  UNIVERSE % Interactions_BM
 
     end select !-- R
     end select !-- K
@@ -1031,6 +1093,15 @@ contains
     call K % Initialize &
            ( S % RiemannSolver, S % DiffusionFactor, S % DivergenceTotal, R )
             !, IgnorabilityOption = S % IGNORABILITY )
+
+    select type ( K2  =>  K % Component ( 2 ) % Element )
+    class is ( Slope_RM_I_Form )
+      K2 % Interactions  =>  UNIVERSE % Interactions_BM
+      select type ( I  =>  UNIVERSE % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+        K2 % Communicator_X_1D  =>  I % Communicator_X_1D
+      end select !-- I
+    end select !-- K2
 
     end select !-- R
     end select !-- K

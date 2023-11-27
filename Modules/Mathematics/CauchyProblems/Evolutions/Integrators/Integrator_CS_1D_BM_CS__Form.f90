@@ -217,7 +217,12 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       Rank
 
-    allocate ( I % Communicator_X_1D )
+    if ( .not. allocated ( I % Communicator_X_1D ) ) then
+      call Show ( 'Communicator_X_1D not allocated', CONSOLE % WARNING )
+      call Show ( 'Integrator_CS_1D_BM_CS__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'SetCommunicator_1D', 'subroutine', CONSOLE % WARNING )
+      return
+    end if
 
     associate &
       ( C     =>  I % Communicator, &
