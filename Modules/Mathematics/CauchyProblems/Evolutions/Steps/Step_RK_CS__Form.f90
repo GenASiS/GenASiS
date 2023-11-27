@@ -46,19 +46,19 @@ module Step_RK_CS__Form
       Show => Show_S
     final :: &
       Finalize
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       LoadSolution
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeIntermediate
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       IncrementIntermediate
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       StoreIntermediate
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeStage
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       IncrementSolution
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       StoreSolution
   end type Step_RK_CS_Form
 
@@ -204,7 +204,7 @@ contains
 
     call S % SetStream_H ( Sm )
 
-call SM % AddFieldSet ( S % RiemannSolver )
+!call SM % AddFieldSet ( S % RiemannSolver )
 
   end subroutine SetStream
 

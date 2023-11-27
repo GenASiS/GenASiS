@@ -64,19 +64,19 @@ module Step_RK_H__Form
       AccumulateSlope
     final :: &
       Finalize
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       LoadSolution
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeIntermediate
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       IncrementIntermediate
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       StoreIntermediate
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeStage
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       IncrementSolution
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       StoreSolution
   end type Step_RK_H_Form
 
