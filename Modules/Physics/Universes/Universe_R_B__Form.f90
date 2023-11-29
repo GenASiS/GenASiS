@@ -60,6 +60,8 @@ module Universe_R_B__Form
     procedure, public, pass :: &
       ShowParameters
     procedure, public, pass ( U ) :: &
+      Compute_dT_R_E_CGS
+    procedure, public, pass ( U ) :: &
       Compute_dT_ET_CGS
   end type Universe_R_B_Form
 
@@ -81,6 +83,20 @@ module Universe_R_B__Form
 
     interface
     
+      module subroutine Compute_dT_R_E_CGS_Kernel &
+               ( dT, ProperCell, Q, E, E_Eq, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Q, E, E_Eq
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_R_E_CGS_Kernel
+
       module subroutine Compute_dT_ET_CGS_Kernel &
                ( dT, ProperCell, Q, E, UseDeviceOption )
         use Basics
@@ -646,11 +662,12 @@ contains
     I % iCurrentSet  =  U % iRadiation
 
     I % nCurrentSets  =  size ( U % RadiationName )
-    allocate ( I % dT_Label ( 3 ) )
+    allocate ( I % dT_Label ( 4 ) )
 
     I % dT_Label ( 1 )  =  'FluidAdvection'
     I % dT_Label ( 2 )  =  'RadiationStreaming'
-    I % dT_Label ( 3 )  =  'EnergyTransfer'
+    I % dT_Label ( 3 )  =  'RadiationEnergy'
+    I % dT_Label ( 4 )  =  'EnergyTransfer'
 
     U % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -688,7 +705,7 @@ contains
   end subroutine ShowParameters
 
 
-  subroutine Compute_dT_ET_CGS ( dT, U, iC, T_Option )
+  subroutine Compute_dT_R_E_CGS ( dT, U, iC, T_Option )
 
     real ( KDR ), intent ( inout ) :: &
       dT
@@ -708,8 +725,66 @@ contains
       class is ( Step_RK_CS_CS_Form )
     select type ( S_R  =>  S % Step_CS_1 )
       class is ( Step_RK_CS_Form )
-    select type ( S_R_I  =>  S_R % Slope % Component ( 2 ) % Element )
+    select type ( S_I  =>  S_R % Slope % Component ( 2 ) % Element )
       class is ( Slope_RM_I_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( A  =>  R % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      (   C  =>  A   % Chart_GS, &
+        SIV  =>  S_I % Storage_GS % Value, &
+         RV  =>  R   % Storage_GS % Value )
+
+    call Search ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_B )
+
+    call Compute_dT_R_E_CGS_Kernel &
+           ( dT, C % ProperCell, &
+             Q     =  SIV ( :, iEnergy_B ), &
+             E     =   RV ( :, R % ENERGY_DENSITY_C ), &
+             E_Eq  =   RV ( :, R % ENERGY_DENSITY_C_EQ ), &
+             UseDeviceOption = R % DeviceMemory )
+
+    end associate !-- C, etc.
+
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Universe_R_B_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_ET_CGS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+    end select !-- R
+    end select !-- S_R_I
+    end select !-- S_R
+    end select !-- S
+    end select !-- I
+
+  end subroutine Compute_dT_R_E_CGS
+
+
+  subroutine Compute_dT_ET_CGS ( dT, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT
+    class ( Universe_R_B_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    ! select type ( S  =>  I % Step_X )
+    !   class is ( Step_RK_CS_CS_Form )
+    ! select type ( S_R  =>  S % Step_CS_1 )
+    !   class is ( Step_RK_CS_Form )
+    ! select type ( S_R_I  =>  S_R % Slope % Component ( 2 ) % Element )
+    !   class is ( Slope_RM_I_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_Form )
     associate &
@@ -740,9 +815,9 @@ contains
 
     end associate !-- FS
     end select !-- F
-    end select !-- S_R_I
-    end select !-- S_R
-    end select !-- S
+    ! end select !-- S_R_I
+    ! end select !-- S_R
+    ! end select !-- S
     end select !-- I
 
   end subroutine Compute_dT_ET_CGS
@@ -947,7 +1022,8 @@ contains
     associate &
       ( dT_1  =>  dT_Candidate ( 1 ), &
         dT_2  =>  dT_Candidate ( 2 ), &
-        dT_3  =>  dT_Candidate ( 3 ) )
+        dT_3  =>  dT_Candidate ( 3 ), &
+        dT_4  =>  dT_Candidate ( 4 ) )
 
     select type ( U  =>  I % System )
       class is ( Universe_R_B_Form )
@@ -971,19 +1047,24 @@ contains
       end if
 
       if ( U % ApplyInteractions ) then
-        call U % Compute_dT_ET_CGS ( dT_3, iC, T_Option )
+        call U % Compute_dT_R_E_CGS ( dT_3, iC, T_Option )
         dT_3  =  U % InteractionFactor  *  dT_3
+      end if
+
+      if ( U % ApplyInteractions ) then
+        call U % Compute_dT_ET_CGS ( dT_4, iC, T_Option )
+        dT_4  =  U % InteractionFactor  *  dT_4
       end if
 
       !-- Reduce across CS_1D
 
       call CO % Initialize &
-             ( I % Communicator_X_1D, nOutgoing = [ 2 ], &
-               nIncoming = [ 2 ] )
+             ( I % Communicator_X_1D, nOutgoing = [ 3 ], &
+               nIncoming = [ 3 ] )
 
-      CO % Outgoing % Value  =  I % dT_Candidate ( 2 : 3 )
+      CO % Outgoing % Value  =  I % dT_Candidate ( 2 : 4 )
       call CO % Reduce ( REDUCTION % MIN )
-      I % dT_Candidate ( 2 : 3 )  =  CO % Incoming % Value
+      I % dT_Candidate ( 2 : 4 )  =  CO % Incoming % Value
 
     end select !-- I
     end select !-- U
