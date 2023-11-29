@@ -64,7 +64,7 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Step_RK_CS'
+      S % Type  =  'a Step_RK_CS_CS'
 
     Name  =  trim ( CS_1 % Name ) // '_' // trim ( CS_2 % Name ) // '_Stp' 
     if ( present ( NameOption ) ) &

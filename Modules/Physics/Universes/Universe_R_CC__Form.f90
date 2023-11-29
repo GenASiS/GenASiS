@@ -24,8 +24,8 @@ module Universe_R_CC__Form
       RadiationType
     type ( CommunicatorForm ), allocatable :: &
       Communicator_PS  !-- PositionSpace
-    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
-      CO_SplitSource
+!    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
+!      CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
     class ( Interactions_NM_G_Form ), allocatable :: &
@@ -49,6 +49,8 @@ module Universe_R_CC__Form
       SetBoundaryConditions
 !    procedure, public, pass :: &
 !      InitializeSteps
+    procedure, public, pass :: &
+      InitializeStep
     procedure, public, pass :: &
       InitializeIntegrator
     procedure, public, pass :: &
@@ -189,6 +191,8 @@ contains
            ( )
 !    call U % InitializeSteps &
 !           ( )
+    call U % InitializeStep &
+           ( )
     call U % InitializeIntegrator &
            ( GravitationType, &
              FinishTimeOption = FinishTimeOption, &
@@ -219,8 +223,8 @@ contains
       deallocate ( U % Interactions_NM_G )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
-    if ( allocated ( U % CO_SplitSource ) ) &
-      deallocate ( U % CO_SplitSource )
+!    if ( allocated ( U % CO_SplitSource ) ) &
+!      deallocate ( U % CO_SplitSource )
     if ( allocated ( U % Communicator_PS ) ) &
       deallocate ( U % Communicator_PS )
     if ( allocated ( U % RadiationType ) ) &
@@ -289,6 +293,10 @@ contains
     select case ( trim ( U % FormalismType ) )
     case ( 'GREY' )
       allocate ( Integrator_CS_1D_BM_CS_Form :: U % Integrator )
+      select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+        allocate ( I % Communicator_X_1D )
+      end select !-- I
     case ( 'SPECTRAL' )
       allocate ( Integrator_CS_1D_CB_CS_Form :: U % Integrator )
     case default
@@ -514,6 +522,101 @@ contains
 !     end select !-- I
 
 !   end subroutine InitializeSteps
+
+
+  subroutine InitializeStep ( U )
+
+    class ( Universe_R_CC_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      EvolutionOrder
+    character ( LDL ) :: &
+      RiemannSolverType
+
+    EvolutionOrder  =  2
+    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+
+    U % Coarsen  =  .true.
+    call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
+
+    select type ( I  =>  U % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+
+      allocate ( Step_RK_CS_CS_Form :: I % Step_X )
+      select type ( S  =>  I % Step_X )
+        class is ( Step_RK_CS_CS_Form )
+
+      allocate ( S % Step_CS_1 )
+      allocate ( S % Step_CS_2 )
+      associate &
+        ( S_R  =>  S % Step_CS_1, &
+          S_F  =>  S % Step_CS_2 )
+
+      !-- Radiation
+      associate ( R  =>  I % CurrentSet_X_1D )
+
+      allocate ( DivergencePart_NM_G_Form :: S_R % DivergenceTotal )
+      associate ( DT  =>  S_R % DivergenceTotal )
+      call DT % Initialize ( R )
+      end associate !-- DT
+
+      allocate ( DiffusionFactor_RM_Form :: S_R % DiffusionFactor )
+      select type ( DF  =>  S_R % DiffusionFactor )
+      class is ( DiffusionFactor_RM_Form )
+        call DF % Initialize ( U % Interactions_NM_G )
+      end select !-- DF
+
+      S_R % SetSlope  =>  SetSlope_NM_G_DFV_I
+
+      !-- Fluid
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_HN_Form )
+
+      allocate ( DivergencePart_F_P_HN_T_Form :: S_F % DivergenceTotal )
+      associate ( DT  =>  S_F % DivergenceTotal )
+        call DT % Initialize ( F )
+      end associate !-- DT
+
+      RiemannSolverType = 'HLL'
+      call PROGRAM_HEADER % GetParameter &
+             ( RiemannSolverType, 'RiemannSolverType' )
+      if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+        allocate ( RiemannSolver_HLLC_P_HN_Form :: S_F % RiemannSolver )
+        associate ( RS  =>  S_F % RiemannSolver )
+        call RS % Initialize ( F )
+        end associate !-- RS
+      end if        
+
+      S_F % SetSlope  =>  SetSlope_F_P_DFV_N_SS
+
+      !-- Combined step
+      call S % Initialize ( R, F, OrderOption = EvolutionOrder )
+
+      !-- Coarsening
+      if ( U % Coarsen ) then
+        allocate ( U % Coarsening )
+        associate &
+          ( C  =>  U % Coarsening, &
+            G  =>  I % Geometry_X )
+          call C % Initialize ( F, G )
+          call S_F % SetCoarsening ( C )
+        end associate !-- C, etc.
+      end if
+
+      class default
+        call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+        call Show ( 'Universe_R_CC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select    !-- F
+      end associate !-- R
+      end associate !-- S_R, S_F
+      end select !-- S
+
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
   subroutine InitializeIntegrator &
@@ -1077,6 +1180,10 @@ contains
     select type ( K2  =>  K % Component ( 2 ) % Element )
     class is ( Slope_NM_G_I_Form )
       K2 % Interactions  =>  UNIVERSE % Interactions_NM_G
+      select type ( I  =>  UNIVERSE % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+        K2 % Communicator_X_1D  =>  I % Communicator_X_1D
+      end select !-- I
     end select !-- K2
     
     end select !-- R

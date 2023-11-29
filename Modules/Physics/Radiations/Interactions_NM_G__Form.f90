@@ -218,6 +218,9 @@ contains
     select type ( F  =>  I % Fluid )
       class is ( Fluid_P_HN_Form )
 
+    call R % ComputeSpectralParameters ( )
+    call R % ComputeEquilibrium ( )
+
     do iC  =  1,  I % Atlas % nCharts
       associate &
         ( IV  =>  I % Storage ( iC ) % Value, &

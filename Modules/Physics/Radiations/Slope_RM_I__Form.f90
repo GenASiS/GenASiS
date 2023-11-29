@@ -35,6 +35,9 @@ module Slope_RM_I__Form
   end type Slope_RM_I_Form
 
     private :: &
+      ComputeSource_F
+
+    private :: &
       ComputeKernel
 
     interface

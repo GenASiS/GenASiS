@@ -128,6 +128,7 @@ DivergencePart_NM_G__Kernel.o: \
 Slope_NM_G_I__Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluids.o \
   NeutrinoMoments_G__Form.o \
   Interactions_NM_G__Form.o \
   Slope_NM_G_I__Form.f90
