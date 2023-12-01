@@ -444,6 +444,7 @@ contains
       I
     
     integer ( KDI ) :: &
+      iTSC, &  
       iT_WC = 0   !-- iTimer_WallCheckpoint
     real ( KDR ) :: &
       dT_Ratio
@@ -509,12 +510,21 @@ contains
         =  minval ( I % dT_Candidate ) &
              /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
       if ( dT_Ratio  <  1.0e-8  *  I % nWrite ) then
-        call I % AdministerCheckpoint ( )
-        call Show ( '*** dT_Ratio too small', CONSOLE % WARNING, &
-                    nLeadingLinesOption = 2 )
-        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING, &
-                    nTrailingLinesOption = 2 )
-        exit
+!        call I % AdministerCheckpoint ( )
+!        call Show ( '*** dT_Ratio too small', CONSOLE % WARNING, &
+!                    nLeadingLinesOption = 2 )
+!        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING, &
+!                    nTrailingLinesOption = 2 )
+!        exit
+        call Show ( '*** dT_Ratio small', CONSOLE % WARNING )
+        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
+        call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
+        call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY )
+        do iTSC = 1, I % n_dT_Candidates
+          call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
+                      trim ( I % dT_Label ( iTSC ) ) // ' dT', &
+                      I % IGNORABILITY )
+        end do !-- iTSC
       end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then

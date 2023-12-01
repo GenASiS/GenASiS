@@ -35,7 +35,8 @@ contains
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then
           if ( abs ( E ( iV )  -  E_Eq ( iV ) ) &
-                   /  max ( SqrtTiny, E_Eq ( iV ) )  <  0.1_KDR ) & 
+                   /  max ( SqrtTiny, E_Eq ( iV ) )  <  0.1_KDR & 
+               .and. E ( iV )  >  SqrtTiny ) & 
           then
             dT  =  min ( dT,  &
                          E ( iV )  /  max ( SqrtTiny, abs ( Q ( iV ) ) ) )
@@ -51,7 +52,8 @@ contains
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then
           if ( abs ( E ( iV )  -  E_Eq ( iV ) ) &
-                   /  max ( SqrtTiny, E_Eq ( iV ) )  <  0.1_KDR ) & 
+                   /  max ( SqrtTiny, E_Eq ( iV ) )  <  0.1_KDR & 
+               .and. E ( iV )  >  SqrtTiny ) & 
           then
             dT  =  min ( dT,  &
                          E ( iV )  /  max ( SqrtTiny, abs ( Q ( iV ) ) ) )

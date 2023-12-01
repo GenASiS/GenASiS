@@ -725,7 +725,7 @@ contains
       class is ( Step_RK_CS_CS_Form )
     select type ( S_R  =>  S % Step_CS_1 )
       class is ( Step_RK_CS_Form )
-    select type ( S_I  =>  S_R % Slope % Component ( 2 ) % Element )
+    select type ( S_I  =>  S_R % SlopeSum % Component ( 2 ) % Element )
       class is ( Slope_RM_I_Form )
     select type ( R  =>  I % CurrentSet_X_1D )
       class is ( RadiationMoments_BM_Form )
@@ -750,7 +750,7 @@ contains
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'Universe_R_B_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_dT_ET_CGS', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Compute_dT_R_E_CGS', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
