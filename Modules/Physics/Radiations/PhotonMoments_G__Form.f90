@@ -51,13 +51,14 @@ module PhotonMoments_G__Form
           UseDeviceOption
       end subroutine Compute_SP_Kernel
  
-      module subroutine Compute_Eq_Kernel ( J_Eq, T, UseDeviceOption )
+      module subroutine Compute_Eq_Kernel ( J_Eq, J_RD, J, T, UseDeviceOption )
         !-- Compute_Equilibrium_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          J_Eq
+          J_Eq, J_RD
         real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J, &
           T
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -190,6 +191,7 @@ contains
              iaSelectedOption &
                =  [ CS % ENERGY_DENSITY_C, &
                     CS % ENERGY_DENSITY_C_EQ, &
+                    CS % ENERGY_DENSITY_C_RD, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
@@ -220,10 +222,12 @@ contains
            FV  =>   F % Storage ( iC ) % Value )
       associate &
         ( J_Eq  =>  RMV ( :, RM % ENERGY_DENSITY_C_EQ ), &
+          J_RD  =>  RMV ( :, RM % ENERGY_DENSITY_C_RD ), &
+          J     =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
           T     =>   FV ( :,  F % TEMPERATURE ) )
                
       call Compute_Eq_Kernel &
-             ( J_Eq, T, &
+             ( J_Eq, J_RD, J, T, &
                UseDeviceOption = RM % DeviceMemory )
 
       end associate !-- T_R, etc.

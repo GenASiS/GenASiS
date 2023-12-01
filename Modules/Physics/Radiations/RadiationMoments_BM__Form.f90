@@ -12,7 +12,7 @@ module RadiationMoments_BM__Form
   private
 
   integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM    = 14, &
+      N_FIELDS_RM    = 15, &
       N_VECTORS_RM   =  3, &
       N_PRIMITIVE_RM =  7, &
       N_BALANCED_RM  =  4
@@ -26,6 +26,7 @@ module RadiationMoments_BM__Form
     integer ( KDI ) :: &
       ENERGY_DENSITY_C    = 0, &  !-- Comoving
       ENERGY_DENSITY_C_EQ = 0, &
+      ENERGY_DENSITY_C_RD = 0, &  !-- Relative difference from equilibrium
       ENERGY_DENSITY_B    = 0     !-- Balanced
     integer ( KDI ) :: &
       MOMENTUM_DENSITY_C_U_1 = 0, &    !-- Comoving
@@ -225,18 +226,19 @@ contains
 
     RM % ENERGY_DENSITY_C        =  oF +  1
     RM % ENERGY_DENSITY_C_EQ     =  oF +  2
-    RM % ENERGY_DENSITY_B        =  oF +  3
-    RM % MOMENTUM_DENSITY_C_U_1  =  oF +  4
-    RM % MOMENTUM_DENSITY_C_U_2  =  oF +  5
-    RM % MOMENTUM_DENSITY_C_U_3  =  oF +  6
-    RM % MOMENTUM_DENSITY_B_D_1  =  oF +  7
-    RM % MOMENTUM_DENSITY_B_D_2  =  oF +  8
-    RM % MOMENTUM_DENSITY_B_D_3  =  oF +  9
-    RM % FLUX_FACTOR             =  oF + 10
-    RM % STRESS_FACTOR           =  oF + 11
-    RM % FLUID_VELOCITY_U_1      =  oF + 12
-    RM % FLUID_VELOCITY_U_2      =  oF + 13
-    RM % FLUID_VELOCITY_U_3      =  oF + 14
+    RM % ENERGY_DENSITY_C_RD     =  oF +  3
+    RM % ENERGY_DENSITY_B        =  oF +  4
+    RM % MOMENTUM_DENSITY_C_U_1  =  oF +  5
+    RM % MOMENTUM_DENSITY_C_U_2  =  oF +  6
+    RM % MOMENTUM_DENSITY_C_U_3  =  oF +  7
+    RM % MOMENTUM_DENSITY_B_D_1  =  oF +  8
+    RM % MOMENTUM_DENSITY_B_D_2  =  oF +  9
+    RM % MOMENTUM_DENSITY_B_D_3  =  oF + 10
+    RM % FLUX_FACTOR             =  oF + 11
+    RM % STRESS_FACTOR           =  oF + 12
+    RM % FLUID_VELOCITY_U_1      =  oF + 13
+    RM % FLUID_VELOCITY_U_2      =  oF + 14
+    RM % FLUID_VELOCITY_U_3      =  oF + 15
 
     nFields  =  oF  +  RM % N_FIELDS_RM
     if ( present ( nFieldsOption ) ) &
@@ -263,6 +265,7 @@ contains
     Field ( oF + 1 : oF + RM % N_FIELDS_RM ) &
       = [ 'EnergyDensity_C      ', &
           'EnergyDensity_C_Eq   ', &
+          'EnergyDensity_C_RD   ', &
           'EnergyDensity_B      ', &
           'MomentumDensity_C_U_1', &
           'MomentumDensity_C_U_2', &
@@ -431,6 +434,7 @@ contains
              iaSelectedOption &
                =  [ CS % ENERGY_DENSITY_C, &
                     CS % ENERGY_DENSITY_C_EQ, &
+                    CS % ENERGY_DENSITY_C_RD, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR ] )

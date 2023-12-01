@@ -58,6 +58,7 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
+      SqrtTiny, &
       a
     logical ( KDL ) :: &
       UseDevice      
@@ -68,22 +69,28 @@ contains
       
     nV  =  size ( J_Eq )
 
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
     a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
 
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( a )
+      !$OMP shared ( SqrtTiny, a )
       do iV = 1, nV
         J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+        J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, J_Eq ( iV ) )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( a )
+      !$OMP shared ( SqrtTiny, a )
       do iV = 1, nV
         J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+        J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, J_Eq ( iV ) )
       end do
       !$OMP end parallel do
     end if
