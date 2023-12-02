@@ -68,10 +68,10 @@ contains
     !-- Initialization
 
     call WH % Initialize &
-           ( RadiationName = [ 'Neutrinos_E    ', &
-                               'Neutrinos_E_Bar' ], &
-             RadiationType = [ 'NEUTRINOS_E    ', &
-                               'NEUTRINOS_E_BAR' ], &
+           ( RadiationName = [ 'Neutrinos_E    ' ], &
+!                               'Neutrinos_E_Bar' ], &
+             RadiationType = [ 'NEUTRINOS_E    ' ], &
+!                               'NEUTRINOS_E_BAR' ], &
              FormalismType = FormalismType, &
              FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &
