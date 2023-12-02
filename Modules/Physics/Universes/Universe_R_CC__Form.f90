@@ -789,22 +789,22 @@ contains
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
-    ! select type ( S  =>  I % Step_X )
-    !   class is ( Step_RK_CS_CS_Form )
-    ! select type ( S_R  =>  S % Step_CS_1 )
-    !   class is ( Step_RK_CS_Form )
-    ! select type ( S_R_I  =>  S_R % Slope % Component ( 2 ) % Element )
-    !   class is ( Slope_NM_G_I_Form )
+     select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( S_F  =>  S % Step_CS_2 )
+      class is ( Step_RK_CS_Form )
+    select type ( S_F_SS  =>  S_F % SlopeSum % Component ( 2 ) % Element )
+      class is ( Slope_F_P_SS_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_HN_Form )
-    associate &
-      ( FS =>  F % SplitSource )
+!    associate &
+!      ( FS =>  F % SplitSource )
     select type ( A  =>  F % Atlas )
       class is ( Atlas_SCG_Form )
     associate &
-      (   C  =>   A % Chart_GS, &
-        FSV  =>  FS % Storage_GS % Value, &
-         FV  =>   F % Storage_GS % Value )
+      (   C  =>  A      % Chart_GS, &
+        FSV  =>  S_F_SS % Storage_GS % Value, &
+         FV  =>  F      % Storage_GS % Value )
 
     call Search ( F % iaBalanced, F % ENERGY_DENSITY_B,   iEnergy_B )
     call Search ( F % iaBalanced, F % ELECTRON_DENSITY_B, iNumber_B )
@@ -826,11 +826,11 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
-    end associate !-- FS
+ !   end associate !-- FS
     end select !-- F
-    ! end select !-- S_R_I
-    ! end select !-- S_R
-    ! end select !-- S
+    end select !-- S_F_SS
+    end select !-- S_F
+    end select !-- S
     end select !-- I
 
   end subroutine Compute_dT_RT_CGS
@@ -1095,11 +1095,11 @@ contains
            ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
     dT_3  =  I % CourantFactor_1D  *  dT_3
 
-    !-- Radiation interaction steps
+!    !-- Radiation interaction steps
 
-    call U % Compute_dT_RI_CGS ( dT_4, dT_5, iC, T_Option )
-    dT_4  =  U % InteractionFactor  *  dT_4
-    dT_5  =  U % InteractionFactor  *  dT_5
+!    call U % Compute_dT_RI_CGS ( dT_4, dT_5, iC, T_Option )
+!    dT_4  =  U % InteractionFactor  *  dT_4
+!    dT_5  =  U % InteractionFactor  *  dT_5
 
     !-- Radiative transfer steps
 
@@ -1107,15 +1107,15 @@ contains
     dT_6  =  U % InteractionFactor  *  dT_6
     dT_7  =  U % InteractionFactor  *  dT_7
 
-    !-- Reduce across radiation types
+   !-- Reduce across radiation types
 
-    call CO % Initialize &
-           ( I % Communicator_X_1D, nOutgoing = [ 5 ], &
-             nIncoming = [ 5 ] )
+   call CO % Initialize &
+          ( I % Communicator_X_1D, nOutgoing = [ 5 ], &
+            nIncoming = [ 5 ] )
 
-    CO % Outgoing % Value  =  I % dT_Candidate ( 3 : 7 )
-    call CO % Reduce ( REDUCTION % MIN )
-    I % dT_Candidate ( 3 : 7 )  =  CO % Incoming % Value
+   CO % Outgoing % Value  =  I % dT_Candidate ( 3 : 7 )
+   call CO % Reduce ( REDUCTION % MIN )
+   I % dT_Candidate ( 3 : 7 )  =  CO % Incoming % Value
 
     end associate !-- dT_1, etc.
     end select !-- I
