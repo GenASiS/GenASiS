@@ -500,6 +500,7 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
+      SqrtTiny, &
       TwoPi, FourPi, & 
       Factor_J_N, &
       Eta_Eq, &
@@ -515,6 +516,8 @@ contains
       UseDevice = UseDeviceOption
       
     nV  =  size ( J_Eq )
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
      TwoPi  =  2.0_KDR  *  CONSTANT % PI
     FourPi  =  4.0_KDR  *  CONSTANT % PI
@@ -532,7 +535,7 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( Factor_J_N ) &
+      !$OMP shared ( SqrtTiny, Factor_J_N ) &
       !$OMP private ( Eta_Eq, Fermi_2_Eq, Fermi_3_Eq ) &
       !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
@@ -549,6 +552,11 @@ contains
 
         N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  Fermi_2_Eq
         J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  Fermi_3_Eq
+
+        N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, N_Eq ( iV ) )
+        J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, J_Eq ( iV ) )
 
       end do
       !$OMP end parallel do

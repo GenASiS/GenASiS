@@ -14,7 +14,7 @@ module NeutrinoMoments_G__Form
   private
 
   integer ( KDI ), private, parameter :: &
-    N_FIELDS_NM    = 6, &
+    N_FIELDS_NM    = 7, &
     N_PRIMITIVE_NM = 1, &
     N_BALANCED_NM  = 1
 
@@ -26,6 +26,7 @@ module NeutrinoMoments_G__Form
     integer ( KDI ) :: &
       NUMBER_DENSITY_C    = 0, &  !-- Comoving
       NUMBER_DENSITY_C_EQ = 0, &
+      NUMBER_DENSITY_C_RD = 0, &  !-- Relative difference from equilibrium
       NUMBER_DENSITY_B    = 0     !-- Balanced
     integer ( KDI ) :: &
       DEGENERACY_GREY, &
@@ -119,13 +120,16 @@ module NeutrinoMoments_G__Form
       end subroutine Compute_SP_Kernel
  
       module subroutine Compute_Eq_Kernel &
-               ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign, UseDeviceOption )
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, Sign, &
+                 UseDeviceOption )
         !-- Compute_Equilibrium_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          J_Eq, N_Eq
+          J_Eq, N_Eq, &
+          J_RD, N_RD
         real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J, N, &
           T, &
           Mu_E, Mu_NP
         real ( KDR ), intent ( in ) :: &
@@ -201,10 +205,11 @@ contains
 
     RM % NUMBER_DENSITY_C     =  oF + 1
     RM % NUMBER_DENSITY_C_EQ  =  oF + 2
-    RM % NUMBER_DENSITY_B     =  oF + 3
-    RM % DEGENERACY_GREY      =  oF + 4
-    RM % ENERGY_AVERAGE       =  oF + 5
-    RM % OCCUPANCY_AVERAGE    =  oF + 6
+    RM % NUMBER_DENSITY_C_RD  =  oF + 3
+    RM % NUMBER_DENSITY_B     =  oF + 4
+    RM % DEGENERACY_GREY      =  oF + 5
+    RM % ENERGY_AVERAGE       =  oF + 6
+    RM % OCCUPANCY_AVERAGE    =  oF + 7
 
     nFields  =  oF  +  RM % N_FIELDS_NM
     if ( present ( nFieldsOption ) ) &
@@ -219,6 +224,7 @@ contains
     Field ( oF + 1 : oF + RM % N_FIELDS_NM ) &
       = [ 'NumberDensity_C   ', &
           'NumberDensity_C_Eq', &
+          'NumberDensity_C_RD', &
           'NumberDensity_B   ', &
           'DegeneracyGrey    ', &
           'EnergyAverage     ', &
@@ -314,12 +320,14 @@ contains
              iaSelectedOption &
                =  [ CS % ENERGY_DENSITY_C, &
                     CS % ENERGY_DENSITY_C_EQ, &
+                    CS % ENERGY_DENSITY_C_RD, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
                     CS % TEMPERATURE_GREY, &
                     CS % NUMBER_DENSITY_C, &
                     CS % NUMBER_DENSITY_C_EQ, &
+                    CS % NUMBER_DENSITY_C_RD, &
                     CS % DEGENERACY_GREY, &
                     CS % ENERGY_AVERAGE, &
                     CS % OCCUPANCY_AVERAGE ] )
@@ -533,6 +541,10 @@ contains
       associate &
         (  J_Eq  =>  RMV ( :, RM % ENERGY_DENSITY_C_EQ ), &
            N_Eq  =>  RMV ( :, RM % NUMBER_DENSITY_C_EQ ), &
+           J_RD  =>  RMV ( :, RM % ENERGY_DENSITY_C_RD ), &
+           N_RD  =>  RMV ( :, RM % NUMBER_DENSITY_C_RD ), &
+           J     =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
+           N     =>  RMV ( :, RM % NUMBER_DENSITY_C ), &
            T     =>   FV ( :,  F % TEMPERATURE ), &
           Mu_E   =>   FV ( :,  F % CHEMICAL_POTENTIAL_E ), &
           Mu_NP  =>   FV ( :,  F % CHEMICAL_POTENTIAL_N_P ) )
@@ -540,12 +552,12 @@ contains
       select case ( trim ( RM % RadiationType ) )
       case ( 'NEUTRINOS_E' )
         call Compute_Eq_Kernel &
-               ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign = +1.0_KDR, &
-                 UseDeviceOption = RM % DeviceMemory )
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
+                 Sign = +1.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
         call Compute_Eq_Kernel &
-               ( J_Eq, N_Eq, T, Mu_E, Mu_NP, Sign = -1.0_KDR, &
-                 UseDeviceOption = RM % DeviceMemory )
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
+                 Sign = -1.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case default
         call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
         call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
