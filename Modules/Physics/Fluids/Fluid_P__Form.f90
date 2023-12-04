@@ -235,10 +235,10 @@ contains
     end if !-- FieldOption
 
     do iC  =  1, nC
-      FieldUnit ( F % ENERGY_DENSITY_C, iC ) &
-        =  Units_F ( iC ) % EnergyDensity
-      FieldUnit ( F % ENERGY_DENSITY_B, iC ) &
-        =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % EnergyDensity
+!      FieldUnit ( F % ENERGY_DENSITY_C, iC ) &
+!        =  Units_F ( iC ) % EnergyDensity
+!      FieldUnit ( F % ENERGY_DENSITY_B, iC ) &
+!        =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % EnergyDensity
       FieldUnit ( F % PRESSURE, iC ) &
         =  Units_F ( iC ) % EnergyDensity
       FieldUnit ( F % TEMPERATURE, iC ) &
