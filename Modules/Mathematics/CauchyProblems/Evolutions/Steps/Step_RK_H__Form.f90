@@ -26,7 +26,8 @@ module Step_RK_H__Form
       iTimer_AS   = 0     !-- AccumulateSlope
     real ( KDR ), dimension ( : ), allocatable :: &
       C, &  !-- RungeKutta nodes
-      B     !-- RungeKutta weights
+      B, &  !-- RungeKutta weights
+      BE    !-- RungeKutta weights of embedded lower order solution for error
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
       A  !-- RungeKutta matrix
     character ( LDF ) :: &
@@ -131,7 +132,8 @@ contains
     real ( KDR ), dimension ( :, : ), allocatable :: &
       A  !-- RungeKutta matrix
     real ( KDR ), dimension ( : ), allocatable :: &
-      B  !-- RungeKutta weights
+      B, &  !-- RungeKutta weights
+      BE    !-- RungeKutta weights of embedded lower order solution for error
     real ( KDR ), dimension ( : ), allocatable :: &
       C  !-- RungeKutta nodes
 
@@ -151,6 +153,9 @@ contains
       B ( 2 )  =  0.5_KDR
       allocate ( C ( 2 : 2 ) )
       C ( 2 )  =  1.0_KDR
+      allocate ( BE ( 1 : 2 ) )
+      BE ( 1 )  =  1.0_KDR
+      BE ( 2 )  =  0.0_KDR
     case ( 3 )
       allocate ( A ( 3 : 3, 2 : 2 ) )
       A           =   0.0_KDR
@@ -164,6 +169,8 @@ contains
       allocate ( C ( 2 : 3 ) )
       C ( 2 )  =  0.5_KDR
       C ( 3 )  =  1.0_KDR
+      allocate ( BE ( 1 : 3 ) )
+      BE  =  0.0_KDR
     case ( 4 )
       allocate ( A ( 4 : 4, 3 : 3 ) )
       A           =  0.0_KDR
@@ -182,6 +189,8 @@ contains
       C ( 2 )  =  0.5_KDR
       C ( 3 )  =  0.5_KDR
       C ( 4 )  =  1.0_KDR
+      allocate ( BE ( 1 : 4 ) )
+      BE  =  0.0_KDR
     case default
       call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
       call Show ( S % nStages, 'Order', CONSOLE % ERROR )
@@ -214,6 +223,9 @@ contains
 
     allocate ( S % C ( 2 : nS ) )
     S % C  =  C
+
+    allocate ( S % BE ( nS ) )
+    S % BE  =  BE
 
     S % Atlas  =>  Atlas
 
@@ -449,11 +461,13 @@ contains
     end if
     if ( associated ( T_IS_B ) ) call T_IS_B % Start ( )
     do iS = 1, S % nStages
-      associate ( B  =>  S % B ( iS ) )
+      associate &
+        ( B   =>  S % B ( iS ), &
+          BE  =>  S % BE ( iS ) )
       !-- Set Y  =  Y  +  dT * B * K ( iS )
       if ( B /=  0.0_KDR ) & 
-        call S % IncrementSolution ( B, dT, iS )
-      end associate !-- B
+        call S % IncrementSolution ( B, BE, dT, iS )
+      end associate !-- B, BE
     end do !-- iS
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )
 
@@ -507,6 +521,8 @@ contains
       deallocate ( S % Slope )
     if ( allocated ( S % A ) ) &
       deallocate ( S % A )
+    if ( allocated ( S % BE ) ) &
+      deallocate ( S % BE )
     if ( allocated ( S % B ) ) &
       deallocate ( S % B )
     if ( allocated ( S % C ) ) &
@@ -599,12 +615,13 @@ contains
   end subroutine ComputeStage
 
 
-  subroutine IncrementSolution ( S, B, dT, iS )
+  subroutine IncrementSolution ( S, B, BE, dT, iS )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
        B, &
+       BE, &
       dT
     integer ( KDI ), intent ( in ) :: &
       iS

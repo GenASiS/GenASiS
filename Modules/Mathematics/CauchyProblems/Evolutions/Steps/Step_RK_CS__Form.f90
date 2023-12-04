@@ -20,7 +20,8 @@ module Step_RK_CS__Form
     type ( FieldSet_BM_Form ), allocatable :: &
       Balanced, &
       Intermediate, &
-      Solution
+      Solution, &
+      Error
     class ( CurrentSetForm ), pointer :: &
       CurrentSet
     class ( Coarsening_C_Form ), pointer :: &
@@ -105,7 +106,7 @@ contains
     associate ( CS_B  =>  S % Balanced )
     call CS_B % Initialize &
            ( CS, iaSelected = CS % iaBalanced, &
-             NameOption = 'Balanced', &
+             NameOption = trim ( CS % Name ) // 'Balanced', &
              IgnorabilityOption = CS % IGNORABILITY + 1 )
     end associate !-- CS_B
 
@@ -116,7 +117,7 @@ contains
     call Y_I % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Balanced, &
-             NameOption = 'Intermediate', &
+             NameOption = trim ( CS % Name ) // '_Intermediate', &
              DeviceMemoryOption = CS % DeviceMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
@@ -130,7 +131,21 @@ contains
     call Y % Initialize &
            ( CS % Atlas, &
              FieldOption = CS % Balanced, &
-             NameOption = 'Solution', &
+             NameOption = trim ( CS % Name ) // '_Solution', &
+             DeviceMemoryOption = CS % DeviceMemory, &
+             DevicesCommunicateOption = CS % DevicesCommunicate, &
+             nFieldsOption = CS % nBalanced, &
+             IgnorabilityOption = CS % IGNORABILITY + 1 )
+    end associate !-- Y
+
+    !-- Error storage
+
+    allocate ( S % Error )
+    associate ( E  =>  S % Error )
+    call E % Initialize &
+           ( CS % Atlas, &
+             FieldOption = CS % Balanced, &
+             NameOption = trim ( CS % Name ) // '_Error', &
              DeviceMemoryOption = CS % DeviceMemory, &
              DevicesCommunicateOption = CS % DevicesCommunicate, &
              nFieldsOption = CS % nBalanced, &
@@ -205,6 +220,7 @@ contains
     call S % SetStream_H ( Sm )
 
 !call SM % AddFieldSet ( S % RiemannSolver )
+call SM % AddFieldSet ( S % Error )
 
   end subroutine SetStream
 
@@ -264,6 +280,8 @@ contains
       deallocate ( S % DivergencePart )
     if ( allocated ( S % DivergenceTotal ) ) &
       deallocate ( S % DivergenceTotal )
+    if ( allocated ( S % Error ) ) &
+      deallocate ( S % Error )
     if ( allocated ( S % Solution ) ) &
       deallocate ( S % Solution )
     if ( allocated ( S % Intermediate ) ) &
@@ -283,9 +301,12 @@ contains
 
     associate &
       ( CS_B  =>  S % Balanced, &
-        Y     =>  S % Solution )
+        Y     =>  S % Solution, &
+        E     =>  S % Error )
 
     call CS_B % Copy ( Y )
+
+    call E % Clear ( )
 
     end associate !-- CS_B, etc.
 
@@ -436,12 +457,13 @@ contains
   end subroutine ComputeStage
 
 
-  subroutine IncrementSolution ( S, B, dT, iS )
+  subroutine IncrementSolution ( S, B, BE, dT, iS )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
        B, &
+       BE, &
       dT
     integer ( KDI ), intent ( in ) :: &
       iS
@@ -451,9 +473,11 @@ contains
 
     associate &
       ( Y  =>  S % Solution, &
+        E  =>  S % Error, &
         K  =>  S % SlopeStage ( iS ) % Element )
 
     call Y % MultiplyAdd ( K, dT * B )
+    call E % MultiplyAdd ( K, dT * ( B - BE ) )
 
     end associate !-- Y, etc.
 
