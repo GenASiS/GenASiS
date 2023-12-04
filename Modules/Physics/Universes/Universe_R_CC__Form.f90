@@ -666,10 +666,10 @@ contains
     I % dT_Label ( 1 )  =  'GravitationAcceleration'
     I % dT_Label ( 2 )  =  'FluidAdvection'
     I % dT_Label ( 3 )  =  'RadiationStreaming'
-    I % dT_Label ( 4 )  =  'RadiationEnergy'
-    I % dT_Label ( 5 )  =  'RadiationNumber'
-    I % dT_Label ( 6 )  =  'EnergyTransfer'
-    I % dT_Label ( 7 )  =  'ElectronNumberTransfer'
+    I % dT_Label ( 4 )  =  'EnergyTransfer'
+    I % dT_Label ( 5 )  =  'ElectronNumberTransfer'
+    I % dT_Label ( 6 )  =  'EnergyError'
+    I % dT_Label ( 7 )  =  'NumberError'
 
     U % GravityFactor  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -1095,17 +1095,17 @@ contains
            ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
     dT_3  =  I % CourantFactor_1D  *  dT_3
 
-!    !-- Radiation interaction steps
-
-!    call U % Compute_dT_RI_CGS ( dT_4, dT_5, iC, T_Option )
-!    dT_4  =  U % InteractionFactor  *  dT_4
-!    dT_5  =  U % InteractionFactor  *  dT_5
-
     !-- Radiative transfer steps
 
-    call U % Compute_dT_RT_CGS ( dT_6, dT_7, iC, T_Option )
-    dT_6  =  U % InteractionFactor  *  dT_6
-    dT_7  =  U % InteractionFactor  *  dT_7
+    call U % Compute_dT_RT_CGS ( dT_4, dT_5, iC, T_Option )
+    dT_4  =  U % InteractionFactor  *  dT_4
+    dT_5  =  U % InteractionFactor  *  dT_5
+
+!    !-- Radiation interaction steps
+
+!    call U % Compute_dT_RI_CGS ( dT_6, dT_7, iC, T_Option )
+!    dT_6  =  U % InteractionFactor  *  dT_6
+!    dT_7  =  U % InteractionFactor  *  dT_7
 
    !-- Reduce across radiation types
 
