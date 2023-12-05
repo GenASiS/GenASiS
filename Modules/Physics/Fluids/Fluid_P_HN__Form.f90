@@ -310,8 +310,8 @@ contains
     end if !-- FieldOption
 
     do iC  =  1, nC
-!      FieldUnit ( F % ELECTRON_DENSITY_B, iC ) &
-!        =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % NumberDensity
+      FieldUnit ( F % ELECTRON_DENSITY_B, iC ) &
+        =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % NumberDensity
       FieldUnit ( F % CHEMICAL_POTENTIAL_N_P, iC ) &
         =  Units_F ( iC ) % Temperature
       FieldUnit ( F % CHEMICAL_POTENTIAL_E, iC ) &
@@ -508,7 +508,6 @@ contains
                =  [ CS % BARYON_DENSITY_C, CS % VELOCITY_U, &
                     CS % ENERGY_DENSITY_C, CS % PRESSURE, CS % TEMPERATURE, &
                     CS % ENTROPY_PER_BARYON,  CS % ELECTRON_FRACTION, &
-                    CS % ELECTRON_DENSITY_B, CS % ENERGY_DENSITY_B, &
                     CS % MASS_FRACTION_PROTON, CS % MASS_FRACTION_NEUTRON, &
                     CS % MASS_FRACTION_ALPHA, CS % MASS_FRACTION_HEAVY, &
                     CS % ATOMIC_NUMBER_HEAVY, CS % MASS_NUMBER_HEAVY, &
