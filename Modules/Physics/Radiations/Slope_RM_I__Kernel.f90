@@ -28,14 +28,14 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then      
-          S_E   ( iV )  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  E ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
-          S_S_1 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_1 ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_2 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_3 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_E   ( iV )  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  E ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+          S_S_1 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_1 ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_S_2 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_S_3 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
         else
           S_E   ( iV )  =  0.0_KDR
           S_S_1 ( iV )  =  0.0_KDR
@@ -49,14 +49,14 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then      
-          S_E   ( iV )  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  E ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
-          S_S_1 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_1 ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_2 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_3 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV ) )  &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_E   ( iV )  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  E ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+          S_S_1 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_1 ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_S_2 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_2 ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_S_3 ( iV )  =  ( Xi_H ( iV )  -  Chi_H ( iV )  *  S_3 ( iV ) )  !&
+!                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
         else
           S_E   ( iV )  =  0.0_KDR
           S_S_1 ( iV )  =  0.0_KDR
