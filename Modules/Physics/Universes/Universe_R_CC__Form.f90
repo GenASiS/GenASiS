@@ -59,6 +59,8 @@ module Universe_R_CC__Form
       Compute_dT_RI_CGS
     procedure, public, pass ( U ) :: &
       Compute_dT_RT_CGS
+    procedure, public, pass ( U ) :: &
+      Compute_dT_RK_R_CGS
   end type Universe_R_CC_Form
 
     !-- FIXME: This is for a workaround in SetSlope routines below
@@ -78,7 +80,9 @@ module Universe_R_CC__Form
       SetSlope_NM_G_DFV_I
 
       private :: &
-        Compute_dT_RT_CGS_Kernel
+        Compute_dT_RI_CGS_Kernel, &
+        Compute_dT_RT_CGS_Kernel, &
+        Compute_dT_RK_R_CGS_Kernel
 
     interface
     
@@ -113,6 +117,24 @@ module Universe_R_CC__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_dT_RT_CGS_Kernel
+
+      module subroutine Compute_dT_RK_R_CGS_Kernel &
+               ( dT_E, dT_N, dT_S, ProperCell, E_E, E_N, E_S, E, N, S, dT, &
+                 UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT_E, dT_N, dT_S
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          E_E, E_N, E_S, &
+            E,   N,   S
+        real ( KDR ), intent ( in ) :: &
+          dT
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_RK_R_CGS_Kernel
 
     end interface
 
@@ -661,15 +683,16 @@ contains
     I % iCurrentSet  =  U % iRadiation
 
     I % nCurrentSets  =  size ( U % RadiationName )
-    allocate ( I % dT_Label ( 7 ) )
+    allocate ( I % dT_Label ( 8 ) )
 
     I % dT_Label ( 1 )  =  'GravitationAcceleration'
     I % dT_Label ( 2 )  =  'FluidAdvection'
     I % dT_Label ( 3 )  =  'RadiationStreaming'
     I % dT_Label ( 4 )  =  'EnergyTransfer'
     I % dT_Label ( 5 )  =  'ElectronNumberTransfer'
-    I % dT_Label ( 6 )  =  'EnergyError'
-    I % dT_Label ( 7 )  =  'NumberError'
+    I % dT_Label ( 6 )  =  'RadiationEnergyError'
+    I % dT_Label ( 7 )  =  'RadiationNumberError'
+    I % dT_Label ( 8 )  =  'RadiationMomentumError'
 
     U % GravityFactor  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -789,7 +812,7 @@ contains
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
-     select type ( S  =>  I % Step_X )
+    select type ( S  =>  I % Step_X )
       class is ( Step_RK_CS_CS_Form )
     select type ( S_F  =>  S % Step_CS_2 )
       class is ( Step_RK_CS_Form )
@@ -834,6 +857,63 @@ contains
     end select !-- I
 
   end subroutine Compute_dT_RT_CGS
+
+
+  subroutine Compute_dT_RK_R_CGS ( dT_E, dT_N, dT_S, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT_E, dT_N, dT_S
+    class ( Universe_R_CC_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B, iNumber_B, iMomentum_B
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( S_R  =>  S % Step_CS_1 )
+      class is ( Step_RK_CS_Form )
+    associate &
+      ( E  =>  S_R % Error )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( NeutrinoMoments_G_Form )
+    select type ( A  =>  R % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      (   C  =>  A % Chart_GS, &
+         EV  =>  E % Storage_GS % Value, &
+         RV  =>  R % Storage_GS % Value )
+
+    call Search ( R % iaBalanced, R % ENERGY_DENSITY_B,       iEnergy_B )
+    call Search ( R % iaBalanced, R % NUMBER_DENSITY_B,       iNumber_B )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B )
+
+    call Compute_dT_RK_R_CGS_Kernel &
+           ( dT_E, dT_N, dT_S, C % ProperCell, &
+             E_E  =  EV ( :, iEnergy_B ), &
+             E_N  =  EV ( :, iNumber_B ), &
+             E_S  =  EV ( :, iMomentum_B ), &
+             E    =  RV ( :, R % ENERGY_DENSITY_B ), &
+             N    =  RV ( :, R % NUMBER_DENSITY_B ), &
+             S    =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+             dT   =  I % dT, &
+             UseDeviceOption = R % DeviceMemory )
+
+    end associate !-- C, etc.
+    end select !-- A
+    end select !-- R
+    end associate !-- E
+    end select !-- S_R
+    end select !-- S
+    end select !-- I
+
+  end subroutine Compute_dT_RK_R_CGS
 
 
 !   subroutine ResolveCycle_R ( I )
@@ -1072,7 +1152,8 @@ contains
         dT_4  =>  dT_Candidate ( 4 ), &
         dT_5  =>  dT_Candidate ( 5 ), &
         dT_6  =>  dT_Candidate ( 6 ), &
-        dT_7  =>  dT_Candidate ( 7 ) )
+        dT_7  =>  dT_Candidate ( 7 ), &
+        dT_8  =>  dT_Candidate ( 8 ) )
 
     !-- Gravity step
 
@@ -1107,15 +1188,19 @@ contains
 !    dT_6  =  U % InteractionFactor  *  dT_6
 !    dT_7  =  U % InteractionFactor  *  dT_7
 
+    !-- Radiation error steps
+
+    call U % Compute_dT_RK_R_CGS ( dT_6, dT_7, dT_8, iC, T_Option )
+
    !-- Reduce across radiation types
 
    call CO % Initialize &
-          ( I % Communicator_X_1D, nOutgoing = [ 5 ], &
-            nIncoming = [ 5 ] )
+          ( I % Communicator_X_1D, nOutgoing = [ 6 ], &
+            nIncoming = [ 6 ] )
 
-   CO % Outgoing % Value  =  I % dT_Candidate ( 3 : 7 )
+   CO % Outgoing % Value  =  I % dT_Candidate ( 3 : 8 )
    call CO % Reduce ( REDUCTION % MIN )
-   I % dT_Candidate ( 3 : 7 )  =  CO % Incoming % Value
+   I % dT_Candidate ( 3 : 8 )  =  CO % Incoming % Value
 
     end associate !-- dT_1, etc.
     end select !-- I

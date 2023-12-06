@@ -41,6 +41,8 @@ contains
 
         if ( J ( iV )  <  SqrtTiny ) &
           J ( iV )  =  SqrtTiny
+        if ( N ( iV )  <  SqrtTiny ) &
+          N ( iV )  =  SqrtTiny
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
@@ -91,6 +93,8 @@ contains
 
         if ( J ( iV )  <  SqrtTiny ) &
           J ( iV )  =  SqrtTiny
+        if ( N ( iV )  <  SqrtTiny ) &
+          N ( iV )  =  SqrtTiny
 
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &

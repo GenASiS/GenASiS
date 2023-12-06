@@ -42,7 +42,8 @@ module Integrator_H__Form
       T_Finish              = 1.0_KDR, &
       T_CheckpointInterval  = 0.0_KDR, &
       T_Checkpoint          = 0.0_KDR, & 
-      T                     = 0.0_KDR
+      T                     = 0.0_KDR, &
+      dT                    = huge ( 1.0_KDR )
     type ( QuantityForm ) :: &
       Unit_T
     real ( KDR ) :: &   
@@ -954,7 +955,7 @@ contains
     call I % Compute_T_New ( T_New )
     call T_CTN % Stop ( )
 
-    associate ( dT  =>  T_New  -  I % T )    
+    I % dT  =  T_New  -  I % T    
 
     ! select type ( Chart => PS % Chart )
     ! class is ( Chart_SLD_Form )
@@ -965,7 +966,7 @@ contains
       associate ( S  =>  I % Step_X )
       T_S  =>  S % Timer ( Level = T_CC % Level + 1 )
       call T_S % Start ( )
-      call S % Compute ( I % T, dT, T_Option = T_S )
+      call S % Compute ( I % T, I % dT, T_Option = T_S )
       call T_S % Stop ( )
       end associate !-- S
     end if !-- allocated Step
@@ -977,8 +978,8 @@ contains
     !   call PROGRAM_HEADER % Abort ( )
     ! end select !-- C
 
-    I % iCycle  =  I % iCycle  +   1
-    I % T       =  I % T       +  dT
+    I % iCycle  =  I % iCycle  +  1
+    I % T       =  I % T       +  I % dT
 
     if ( I % T_CheckpointExact ) then
       if ( abs ( I % T_Checkpoint  -  I % T )  /  I % T_Checkpoint  &
@@ -986,11 +987,9 @@ contains
         I % CheckpointDue  =  .true.
     else 
       if ( I % T  >  I % T_Checkpoint &
-           .or. abs ( I % T_Checkpoint  -  I % T )  <  0.5_KDR * dT ) &
+           .or. abs ( I % T_Checkpoint  -  I % T )  <  0.5_KDR * I % dT ) &
         I % CheckpointDue  =  .true.
     end if
-
-    end associate !-- dT
 
   end subroutine ComputeCycle
 
