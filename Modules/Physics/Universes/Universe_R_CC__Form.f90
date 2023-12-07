@@ -902,7 +902,7 @@ contains
              E    =  RV ( :, R % ENERGY_DENSITY_B ), &
              N    =  RV ( :, R % NUMBER_DENSITY_B ), &
              S    =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
-             dT   =  I % dT, &
+             dT   =  I % dT  /  I % RampFactor, &
              UseDeviceOption = R % DeviceMemory )
 
     end associate !-- C, etc.
@@ -1190,7 +1190,8 @@ contains
 
     !-- Radiation error steps
 
-    call U % Compute_dT_RK_R_CGS ( dT_6, dT_7, dT_8, iC, T_Option )
+    if ( I % iCheckpoint  >  1 ) &
+      call U % Compute_dT_RK_R_CGS ( dT_6, dT_7, dT_8, iC, T_Option )
 
    !-- Reduce across radiation types
 
