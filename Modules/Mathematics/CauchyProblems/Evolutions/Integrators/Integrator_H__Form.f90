@@ -43,7 +43,8 @@ module Integrator_H__Form
       T_CheckpointInterval  = 0.0_KDR, &
       T_Checkpoint          = 0.0_KDR, & 
       T                     = 0.0_KDR, &
-      dT                    = huge ( 1.0_KDR )
+      dT                    = huge ( 1.0_KDR ), &
+      RampFactor            = 1.0_KDR
     type ( QuantityForm ) :: &
       Unit_T
     real ( KDR ) :: &   
@@ -1284,8 +1285,6 @@ contains
     integer ( KDI ) :: &
       iC, &  !-- iChart
       iTSC   !-- iTimeStepCandidate
-    real ( KDR ) :: &
-      RampFactor
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
 
@@ -1327,10 +1326,10 @@ contains
 
     dT  =  minval ( I % dT_Candidate )
 
-    RampFactor &
+    I % RampFactor &
       =  min ( real ( I % iCycle + 1, KDR ) / I % nRampCycles, 1.0_KDR )
-    if ( RampFactor  <  1.0_KDR ) then
-      dT  =  RampFactor * dT
+    if ( I % RampFactor  <  1.0_KDR ) then
+      dT  =  I % RampFactor  *  dT
       call Show ( dT, I % Unit_T, 'Ramped dT', I % IGNORABILITY + 1 )
     end if
 
