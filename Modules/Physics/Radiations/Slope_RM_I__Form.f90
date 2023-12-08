@@ -4,6 +4,7 @@ module Slope_RM_I__Form
 
   use Basics
   use Mathematics
+  use Gravitations
   use RadiationMoments_BM__Form
   use Interactions_BM__Form
 
@@ -43,8 +44,9 @@ module Slope_RM_I__Form
     interface
 
       module subroutine ComputeKernel &
-               ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, E, S_1, S_2, S_3, &
-                 dT, S_E, S_S_1, S_S_2, S_S_3, UseDeviceOption )
+               ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
+                 M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 UseDeviceOption )
         use Basics
         implicit none
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
@@ -52,8 +54,9 @@ module Slope_RM_I__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
            Xi_J,  Xi_H, &
           Chi_J, Chi_H, &
-          E, &
-          S_1, S_2, S_3
+          J, &
+          H_1, H_2, H_3, &
+          M_DD_11, M_DD_22, M_DD_33
         real ( KDR ), intent ( in ) :: &
           dT
         real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -155,19 +158,39 @@ contains
            Xi_H  =>  IV ( :, I % EMISSIVITY_H ), &
           Chi_J  =>  IV ( :, I % OPACITY_J ), &
           Chi_H  =>  IV ( :, I % OPACITY_H ), &
-            E    =>  RV ( :, R % ENERGY_DENSITY_B ), &
-            S_1  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
-            S_2  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
-            S_3  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
+            J    =>  RV ( :, R % ENERGY_DENSITY_C ), &
+            H_1  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
+            H_2  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
+            H_3  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
           S_E    =>  SV ( :, S % iEnergy_B ), &
           S_S_1  =>  SV ( :, S % iMomentum_B ( 1 ) ), &
           S_S_2  =>  SV ( :, S % iMomentum_B ( 2 ) ), &
           S_S_3  =>  SV ( :, S % iMomentum_B ( 3 ) ) )
 
-      call ComputeKernel &
-             ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, E, S_1, S_2, S_3, &
-               dT, S_E, S_S_1, S_S_2, S_S_3, &
-               UseDeviceOption = S % DeviceMemory )
+      select type ( G  =>  R % Geometry )
+      class is ( Gravitation_G_Form )
+
+        associate &
+          ( GSV  =>  G % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
+
+        call ComputeKernel &
+               ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
+                 M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 UseDeviceOption = S % DeviceMemory )
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Slope_RM_I__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- G
 
       end associate !-- Xi_J, etc.
       end associate !-- IV, etc.
