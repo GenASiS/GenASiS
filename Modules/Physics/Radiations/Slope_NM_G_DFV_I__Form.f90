@@ -17,6 +17,8 @@ module Slope_NM_G_DFV_I__Form
       InitializeAllocate_NM_G_DFV_I
     generic, public :: &
       Initialize => InitializeAllocate_NM_G_DFV_I
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Slope_NM_G_DFV_I_Form
@@ -85,6 +87,30 @@ contains
     end associate !-- nSC
 
   end subroutine InitializeAllocate_NM_G_DFV_I
+
+
+  subroutine Compute ( S, dT, T_Option )
+
+    class ( Slope_NM_G_DFV_I_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      dT
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( S_I  =>  S % Component ( 2 ) % Element )
+      class is ( Slope_NM_G_I_Form )
+    associate &
+      ( R  =>  S_I % Radiation )
+
+    call R % SetFluidVelocity ( )
+
+    end associate !-- R, F
+    end select !-- S_I
+
+    call S % Slope_H_Form % Compute ( dT, T_Option )
+
+  end subroutine Compute
 
 
   impure elemental subroutine Finalize ( S )
