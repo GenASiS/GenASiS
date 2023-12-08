@@ -63,6 +63,8 @@ module Universe_R_B__Form
       Compute_dT_R_E_CGS
     procedure, public, pass ( U ) :: &
       Compute_dT_ET_CGS
+    procedure, public, pass ( U ) :: &
+      Compute_dT_RK_R_CGS
   end type Universe_R_B_Form
 
     class ( Universe_R_B_Form ), private, pointer :: &
@@ -79,7 +81,9 @@ module Universe_R_B__Form
       SetSlope_RM_DFV_I
 
       private :: &
-        Compute_dT_ET_CGS_Kernel
+        Compute_dT_R_E_CGS_Kernel, & 
+        Compute_dT_ET_CGS_Kernel, &
+        Compute_dT_RK_R_CGS_Kernel
 
     interface
     
@@ -110,6 +114,24 @@ module Universe_R_B__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_dT_ET_CGS_Kernel
+
+      module subroutine Compute_dT_RK_R_CGS_Kernel &
+               ( dT_E, dT_S, ProperCell, E_E, E_S, E, S, dT, &
+                 UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT_E, dT_S
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          E_E, E_S, &
+            E,   S
+        real ( KDR ), intent ( in ) :: &
+          dT
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_RK_R_CGS_Kernel
 
     end interface
 
@@ -662,12 +684,13 @@ contains
     I % iCurrentSet  =  U % iRadiation
 
     I % nCurrentSets  =  size ( U % RadiationName )
-    allocate ( I % dT_Label ( 4 ) )
+    allocate ( I % dT_Label ( 5 ) )
 
     I % dT_Label ( 1 )  =  'FluidAdvection'
     I % dT_Label ( 2 )  =  'RadiationStreaming'
-    I % dT_Label ( 3 )  =  'RadiationEnergy'
-    I % dT_Label ( 4 )  =  'EnergyTransfer'
+    I % dT_Label ( 3 )  =  'EnergyTransfer'
+    I % dT_Label ( 4 )  =  'RadiationEnergyError'
+    I % dT_Label ( 5 )  =  'RadiationMomentum_1_Error'
 
     U % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -1005,6 +1028,60 @@ contains
   ! end subroutine ComputeSource_F
 
 
+  subroutine Compute_dT_RK_R_CGS ( dT_E, dT_S, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT_E, dT_S
+    class ( Universe_R_B_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B, iMomentum_B
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( S_R  =>  S % Step_CS_1 )
+      class is ( Step_RK_CS_Form )
+    associate &
+      ( E  =>  S_R % Error )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( A  =>  R % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      (   C  =>  A % Chart_GS, &
+         EV  =>  E % Storage_GS % Value, &
+         RV  =>  R % Storage_GS % Value )
+
+    call Search ( R % iaBalanced, R % ENERGY_DENSITY_B,       iEnergy_B )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B )
+
+    call Compute_dT_RK_R_CGS_Kernel &
+           ( dT_E, dT_S, C % ProperCell, &
+             E_E  =  EV ( :, iEnergy_B ), &
+             E_S  =  EV ( :, iMomentum_B ), &
+             E    =  RV ( :, R % ENERGY_DENSITY_B ), &
+             S    =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+             dT   =  I % dT  /  I % RampFactor, &
+             UseDeviceOption = R % DeviceMemory )
+
+    end associate !-- C, etc.
+    end select !-- A
+    end select !-- R
+    end associate !-- E
+    end select !-- S_R
+    end select !-- S
+    end select !-- I
+
+  end subroutine Compute_dT_RK_R_CGS
+
+
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )
 
     class ( Integrator_H_Form ), intent ( inout ), target :: &
@@ -1023,7 +1100,8 @@ contains
       ( dT_1  =>  dT_Candidate ( 1 ), &
         dT_2  =>  dT_Candidate ( 2 ), &
         dT_3  =>  dT_Candidate ( 3 ), &
-        dT_4  =>  dT_Candidate ( 4 ) )
+        dT_4  =>  dT_Candidate ( 4 ), &
+        dT_5  =>  dT_Candidate ( 5 ) )
 
     select type ( U  =>  I % System )
       class is ( Universe_R_B_Form )
@@ -1052,19 +1130,24 @@ contains
       ! end if
 
       if ( U % ApplyInteractions ) then
-        call U % Compute_dT_ET_CGS ( dT_4, iC, T_Option )
-        dT_4  =  U % InteractionFactor  *  dT_4
+        call U % Compute_dT_ET_CGS ( dT_3, iC, T_Option )
+        dT_3  =  U % InteractionFactor  *  dT_3
       end if
+
+      !-- Radiation error steps
+ 
+!      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_RK_R_CGS ( dT_4, dT_5, iC, T_Option )
 
       !-- Reduce across CS_1D
 
       call CO % Initialize &
-             ( I % Communicator_X_1D, nOutgoing = [ 3 ], &
-               nIncoming = [ 3 ] )
+             ( I % Communicator_X_1D, nOutgoing = [ 4 ], &
+               nIncoming = [ 4 ] )
 
-      CO % Outgoing % Value  =  I % dT_Candidate ( 2 : 4 )
+      CO % Outgoing % Value  =  I % dT_Candidate ( 2 : 5 )
       call CO % Reduce ( REDUCTION % MIN )
-      I % dT_Candidate ( 2 : 4 )  =  CO % Incoming % Value
+      I % dT_Candidate ( 2 : 5 )  =  CO % Incoming % Value
 
     end select !-- I
     end select !-- U
