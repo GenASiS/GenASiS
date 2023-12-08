@@ -12,7 +12,7 @@ module RadiationMoments_BM__Form
   private
 
   integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM    = 15, &
+      N_FIELDS_RM    = 16, &
       N_VECTORS_RM   =  3, &
       N_PRIMITIVE_RM =  7, &
       N_BALANCED_RM  =  4
@@ -39,8 +39,9 @@ module RadiationMoments_BM__Form
       MOMENTUM_DENSITY_C_U = 0, &
       MOMENTUM_DENSITY_B_D = 0
     integer ( KDI ) :: &
-      FLUX_FACTOR   = 0, &
-      STRESS_FACTOR = 0
+      FLUX_FACTOR      = 0, &
+      STRESS_FACTOR    = 0, &
+      STRESS_FACTOR_RD = 0     !-- Relative difference from 1/3 (diffusion)
     integer ( KDI ) :: &
       FLUID_VELOCITY_U_1 = 0, &
       FLUID_VELOCITY_U_2 = 0, &
@@ -87,7 +88,7 @@ module RadiationMoments_BM__Form
     interface
 
       module subroutine Compute_E_S_G_Kernel &
-                 ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, &
+                 ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, SF_RD, &
                    M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, UseDeviceOption )
         !-- Compute_BalancedEnergy_Momentum_Galileo_Kernel
         use Basics
@@ -98,7 +99,7 @@ module RadiationMoments_BM__Form
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           J, &
           H_1, H_2, H_3, &
-          FF, SF
+          FF, SF, SF_RD
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           M_DD_11, M_DD_22, M_DD_33, &
           V_1, V_2, V_3
@@ -107,7 +108,7 @@ module RadiationMoments_BM__Form
       end subroutine Compute_E_S_G_Kernel
 
       module subroutine Compute_J_H_G_Kernel &
-                 ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, & !RM, &
+                 ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, SF_RD, & !RM, &
                    M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
                    V_1, V_2, V_3, UseDeviceOption )
         !-- Compute_ComovingEnergy_Momentum_Galileo_Kernel
@@ -119,7 +120,7 @@ module RadiationMoments_BM__Form
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           E, &
           S_1, S_2, S_3, &
-          FF, SF
+          FF, SF, SF_RD
   !      class ( RadiationMomentsForm ), intent ( in ) :: &
   !        RM
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -236,9 +237,10 @@ contains
     RM % MOMENTUM_DENSITY_B_D_3  =  oF + 10
     RM % FLUX_FACTOR             =  oF + 11
     RM % STRESS_FACTOR           =  oF + 12
-    RM % FLUID_VELOCITY_U_1      =  oF + 13
-    RM % FLUID_VELOCITY_U_2      =  oF + 14
-    RM % FLUID_VELOCITY_U_3      =  oF + 15
+    RM % STRESS_FACTOR_RD        =  oF + 13
+    RM % FLUID_VELOCITY_U_1      =  oF + 14
+    RM % FLUID_VELOCITY_U_2      =  oF + 15
+    RM % FLUID_VELOCITY_U_3      =  oF + 16
 
     nFields  =  oF  +  RM % N_FIELDS_RM
     if ( present ( nFieldsOption ) ) &
@@ -275,6 +277,7 @@ contains
           'MomentumDensity_B_D_3', &
           'FluxFactor           ', &
           'StressFactor         ', &
+          'StressFactor_RD      ', &
           'FluidVelocity_U_1    ', &
           'FluidVelocity_U_2    ', &
           'FluidVelocity_U_3    ' ]
@@ -437,7 +440,8 @@ contains
                     CS % ENERGY_DENSITY_C_RD, &
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
-                    CS % STRESS_FACTOR ] )
+                    CS % STRESS_FACTOR, &
+                    CS % STRESS_FACTOR_RD ] )
 
   end subroutine SetStream
 
@@ -460,19 +464,20 @@ contains
       associate &
         ( CSV  =>  FS_CS % Storage ( iC ) % Value )
       associate &
-        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
-          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
-          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
-          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
-          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
-          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
-          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
-          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
-          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
-          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
-          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
-          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+        ( J      =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          E      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          FF     =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF     =>  CSV ( :, CS % STRESS_FACTOR ), &
+          SF_RD  =>  CSV ( :, CS % STRESS_FACTOR_RD ), &
+          V_1    =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2    =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
 
       select type ( G  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -485,7 +490,7 @@ contains
             M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
 
         call Compute_E_S_G_Kernel &
-               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, &
+               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, SF_RD, &
                  M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, &
                  UseDeviceOption = CS % DeviceMemory )
 
@@ -537,19 +542,20 @@ contains
       associate &
         ( CSV  =>  CS % Storage ( iC ) % Value )
       associate &
-        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
-          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
-          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
-          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
-          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
-          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
-          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
-          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
-          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
-          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
-          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
-          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+        ( J      =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          E      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          FF     =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF     =>  CSV ( :, CS % STRESS_FACTOR ), &
+          SF_RD  =>  CSV ( :, CS % STRESS_FACTOR_RD ), &
+          V_1    =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2    =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
 
       select type ( G  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -565,7 +571,7 @@ contains
             M_UU_33  =>  GSV ( :, G % METRIC_F_UU_33 ) )
 
         call Compute_J_H_G_Kernel &
-               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, & !RM, &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, SF_RD, & !RM, &
                  M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
                  V_1, V_2, V_3, UseDeviceOption = CS % DeviceMemory )
 

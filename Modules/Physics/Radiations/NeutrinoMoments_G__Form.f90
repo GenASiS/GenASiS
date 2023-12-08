@@ -58,7 +58,7 @@ module NeutrinoMoments_G__Form
     interface
 
       module subroutine Compute_E_S_G_G_Kernel &
-                 ( E, S_1, S_2, S_3, G, J, H_1, H_2, H_3, N, FF, SF, &
+                 ( E, S_1, S_2, S_3, G, J, H_1, H_2, H_3, N, FF, SF, SF_RD, &
                    M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, UseDeviceOption )
         !-- Compute_BalancedEnergy_Momentum_Galileo_Kernel
         use Basics
@@ -71,7 +71,7 @@ module NeutrinoMoments_G__Form
           J, &
           H_1, H_2, H_3, &
           N, &
-          FF, SF
+          FF, SF, SF_RD
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           M_DD_11, M_DD_22, M_DD_33, &
           V_1, V_2, V_3
@@ -80,9 +80,9 @@ module NeutrinoMoments_G__Form
       end subroutine Compute_E_S_G_G_Kernel
 
       module subroutine Compute_J_H_N_G_Kernel &
-                 ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, G, FF, SF, & !RM, &
-                   M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
-                   V_1, V_2, V_3, UseDeviceOption )
+               ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, G, FF, SF, SF_RD, &!RM,&
+                 M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
+                 V_1, V_2, V_3, UseDeviceOption )
         !-- Compute_ComovingEnergy_Momentum_Galileo_Kernel
         use Basics
         implicit none
@@ -94,7 +94,7 @@ module NeutrinoMoments_G__Form
           E, &
           S_1, S_2, S_3, &
           G, &
-          FF, SF
+          FF, SF, SF_RD
   !      class ( RadiationMomentsForm ), intent ( in ) :: &
   !        RM
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -324,6 +324,7 @@ contains
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
+                    CS % STRESS_FACTOR_RD, &
                     CS % TEMPERATURE_GREY, &
                     CS % NUMBER_DENSITY_C, &
                     CS % NUMBER_DENSITY_C_EQ, &
@@ -353,21 +354,22 @@ contains
       associate &
         ( CSV  =>  FS_CS % Storage ( iC ) % Value )
       associate &
-        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
-          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
-          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
-          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
-          N    =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
-          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
-          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
-          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
-          G    =>  CSV ( :, CS % NUMBER_DENSITY_B ), &
-          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
-          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
-          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
-          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
-          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+        ( J      =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          N      =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
+          E      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          G      =>  CSV ( :, CS % NUMBER_DENSITY_B ), &
+          FF     =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF     =>  CSV ( :, CS % STRESS_FACTOR ), &
+          SF_RD  =>  CSV ( :, CS % STRESS_FACTOR_RD ), &
+          V_1    =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2    =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
 
       select type ( Grvttn  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -380,7 +382,7 @@ contains
             M_DD_33  =>  GSV ( :, Grvttn % METRIC_F_DD_33 ) )
 
         call Compute_E_S_G_G_Kernel &
-               ( E, S_1, S_2, S_3, G, J, H_1, H_2, H_3, N, FF, SF, &
+               ( E, S_1, S_2, S_3, G, J, H_1, H_2, H_3, N, FF, SF, SF_RD, &
                  M_DD_11, M_DD_22, M_DD_33, V_1, V_2, V_3, &
                  UseDeviceOption = CS % DeviceMemory )
 
@@ -432,21 +434,22 @@ contains
       associate &
         ( CSV  =>  CS % Storage ( iC ) % Value )
       associate &
-        ( J    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
-          H_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
-          H_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
-          H_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
-          N    =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
-          E    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
-          S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
-          S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
-          S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
-          G    =>  CSV ( :, CS % NUMBER_DENSITY_B ), &
-          FF   =>  CSV ( :, CS % FLUX_FACTOR ), &
-          SF   =>  CSV ( :, CS % STRESS_FACTOR ), &
-          V_1  =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
-          V_2  =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
-          V_3  =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
+        ( J      =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+          H_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_1 ), &
+          H_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_2 ), &
+          H_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_C_U_3 ), &
+          N      =>  CSV ( :, CS % NUMBER_DENSITY_C ), &
+          E      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+          S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_1 ), &
+          S_2    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_2 ), &
+          S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_B_D_3 ), &
+          G      =>  CSV ( :, CS % NUMBER_DENSITY_B ), &
+          FF     =>  CSV ( :, CS % FLUX_FACTOR ), &
+          SF     =>  CSV ( :, CS % STRESS_FACTOR ), &
+          SF_RD  =>  CSV ( :, CS % STRESS_FACTOR_RD ), &
+          V_1    =>  CSV ( :, CS % FLUID_VELOCITY_U_1 ), &
+          V_2    =>  CSV ( :, CS % FLUID_VELOCITY_U_2 ), &
+          V_3    =>  CSV ( :, CS % FLUID_VELOCITY_U_3 ) )
 
       select type ( Grvttn  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -462,7 +465,7 @@ contains
             M_UU_33  =>  GSV ( :, Grvttn % METRIC_F_UU_33 ) )
 
         call Compute_J_H_N_G_Kernel &
-               ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, G, FF, SF, & !RM, &
+               ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, G, FF, SF, SF_RD, &!RM,&
                  M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
                  V_1, V_2, V_3, UseDeviceOption = CS % DeviceMemory )
 

@@ -195,6 +195,7 @@ contains
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
+                    CS % STRESS_FACTOR_RD, &
                     CS % TEMPERATURE_GREY ] )
 
   end subroutine SetStream

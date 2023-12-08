@@ -20,6 +20,8 @@ module Slope_RM_I__Form
       Communicator_X_1D  =>  null ( )
     type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
       CO_SplitSource
+    class ( Slope_DFV_F_DT_Form ), pointer :: &
+      Slope_DFV => null ( )
     class ( RadiationMoments_BM_Form ), pointer :: &
       Radiation => null ( )
     class ( Interactions_BM_Form ), pointer :: &
@@ -127,6 +129,8 @@ contains
 
     integer ( KDI ) :: &
       iC
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
 
     call Show ( 'Computing ' // trim ( S % Type ), S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
@@ -177,10 +181,28 @@ contains
             M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
             M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
 
-        call ComputeKernel &
-               ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
-                 M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
-                 UseDeviceOption = S % DeviceMemory )
+        if ( associated ( S % Slope_DFV ) ) then
+
+          call Search &
+            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum ( 1 ) )
+          call Search &
+            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum ( 2 ) )
+          call Search &
+            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum ( 3 ) )
+
+          call ComputeKernel &
+                 ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
+                   M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                   UseDeviceOption = S % DeviceMemory )
+
+        else
+
+          call ComputeKernel &
+                 ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
+                   M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                   UseDeviceOption = S % DeviceMemory )
+
+        end if
 
         end associate !-- M_DD_11, etc.
         end associate !-- GSV

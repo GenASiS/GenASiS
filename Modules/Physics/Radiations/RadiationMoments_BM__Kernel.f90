@@ -67,6 +67,9 @@ contains
                               * ( 3.0_KDR  -  FF ( iV )  &
                                   +  3.0_KDR  *  FF ( iV ) ** 2 ) )
 
+        SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                         / ( 1.0_KDR / 3.0_KDR )
+
         !-- FIXME: Add velocity dependence
 
         E ( iV )  =  J ( iV )
@@ -114,6 +117,9 @@ contains
                          *  ( FF ( iV ) ** 2  /  5.0_KDR  &
                               * ( 3.0_KDR  -  FF ( iV )  &
                                   +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+        SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                         / ( 1.0_KDR / 3.0_KDR )
 
         !-- FIXME: Add velocity dependence
 
@@ -221,6 +227,9 @@ contains
 
         end if
 
+        SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                         / ( 1.0_KDR / 3.0_KDR )
+
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
@@ -244,6 +253,9 @@ contains
                            *  ( FF ( iV ) ** 2  /  5.0_KDR  &
                                 * ( 3.0_KDR  -  FF ( iV )  &
                                     +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+          SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                           / ( 1.0_KDR / 3.0_KDR )
 
           !-- FIXME: Add velocity dependence
 
@@ -327,6 +339,9 @@ contains
 
         end if
 
+        SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                         / ( 1.0_KDR / 3.0_KDR )
+
         H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
                      +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                      +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
@@ -350,6 +365,9 @@ contains
                            *  ( FF ( iV ) ** 2  /  5.0_KDR  &
                                 * ( 3.0_KDR  -  FF ( iV )  &
                                     +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+          SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                           / ( 1.0_KDR / 3.0_KDR )
 
           !-- FIXME: Add velocity dependence
 

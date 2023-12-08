@@ -27,7 +27,7 @@ contains
 
   subroutine InitializeAllocate_RM_DFV_I ( S, RS, DF, DT, R )
 
-    class ( Slope_RM_DFV_I_Form ), intent ( inout ) :: &
+    class ( Slope_RM_DFV_I_Form ), intent ( inout ), target :: &
       S
     class ( RiemannSolver_HLL_Form ), intent ( in ) :: &
       RS
@@ -67,8 +67,6 @@ contains
 
     call SD % Initialize ( RS, DF, DT )
 
-    end select !-- SD
-
     !-- Slope component: Interactions
 
     nSC  =  nSC + 1
@@ -77,7 +75,9 @@ contains
       class is ( Slope_RM_I_Form )
 
     call SI % Initialize ( R )
+    SI % Slope_DFV  =>  SD
 
+    end select !-- SD
     end select !-- SI
 
     !-- Cleanup
