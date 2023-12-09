@@ -48,8 +48,9 @@ module Slope_RM_I__Form
 
       module subroutine ComputeKernel &
                ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
-                 M_DD_11, M_DD_22, M_DD_33, SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, &
-                 S_1, S_2, S_3, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 M_DD_11, M_DD_22, M_DD_33, J_RD, J_Eq, &
+                 SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, S_1, S_2, S_3, &
+                 dT, S_E, S_S_1, S_S_2, S_S_3, &
                  UseDeviceOption )
         use Basics
         implicit none
@@ -60,10 +61,12 @@ module Slope_RM_I__Form
           Chi_J, Chi_H, &
           J, &
           H_1, H_2, H_3, &
-          S_1, S_2, S_3, &
-          SF_RD, &
           M_DD_11, M_DD_22, M_DD_33, &
-          S_S_1_D, S_S_2_D, S_S_3_D  !-- Divergence
+          J_RD, &
+          J_Eq, &
+          SF_RD, &
+          S_S_1_D, S_S_2_D, S_S_3_D, &  !-- Slope_S_Divergence
+          S_1, S_2, S_3
         real ( KDR ), intent ( in ) :: &
           dT
         real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -221,7 +224,9 @@ contains
           associate &
             ( SDV  =>  S % Slope_DFV % Storage ( iC ) % Value )
           associate &
-            (    SF_RD  =>   RV ( :, R % STRESS_FACTOR_RD ), &
+            (     J_RD  =>   RV ( :, R % ENERGY_DENSITY_C_RD ), &
+                  J_Eq  =>   RV ( :, R % ENERGY_DENSITY_C_EQ ), &
+                 SF_RD  =>   RV ( :, R % STRESS_FACTOR_RD ), &
                S_S_1_D  =>  SDV ( :, iMomentum ( 1 ) ), &
                S_S_2_D  =>  SDV ( :, iMomentum ( 2 ) ), &
                S_S_3_D  =>  SDV ( :, iMomentum ( 3 ) ), &
@@ -231,8 +236,9 @@ contains
 
           call ComputeKernel &
                ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
-                 M_DD_11, M_DD_22, M_DD_33, SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, &
-                 S_1, S_2, S_3, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 M_DD_11, M_DD_22, M_DD_33, J_RD, J_Eq, &
+                 SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, S_1, S_2, S_3, &
+                 dT, S_E, S_S_1, S_S_2, S_S_3, &
                  UseDeviceOption = S % DeviceMemory )
 
           end associate !-- S_S_1_D

@@ -67,7 +67,11 @@ contains
                              -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) )!&
 !                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
 
-          if ( SF_RD ( iV )  <  1.0e-3_KDR ) then
+          if ( J_RD ( iV )  <  1.0e-6_KDR ) then
+            S_E ( iV )  =  ( J_Eq ( iV )  -  J ( iV ) )  /  dT
+          end if
+
+          if ( SF_RD ( iV )  <  1.0e-6_KDR ) then
             S_S_1 ( iV )  &
               =  ( S_S_1_D ( iV )  /  Chi_H ( iV )  -  S_1 ( iV ) )  /  dT  &
                  -  S_S_1_D ( iV )
