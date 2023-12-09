@@ -145,13 +145,17 @@ contains
 
           FE_E  =  max ( Tolerance * SqrtTiny, abs ( E_E ( iV ) ) )  &
                    /  max ( SqrtTiny, abs ( E ( iV ) ) )
-          FE_S  =  max ( Tolerance * SqrtTiny, abs ( E_S ( iV ) ) )  &
-                   /  max ( SqrtTiny, &
-                            1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
-!                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
+           F_E  =  sqrt ( Tolerance / FE_E )
+          dT_E  =  min ( dT_E, F_E * dT )
 
-          F_E  =  sqrt ( Tolerance / FE_E )
-          F_S  =  sqrt ( Tolerance / FE_S )
+!          if ( SF_RD ( iV )  >  1.0e-3_KDR ) then
+            FE_S  =  max ( Tolerance * SqrtTiny, abs ( E_S ( iV ) ) )  &
+                     /  max ( SqrtTiny, &
+                              1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
+  !                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
+             F_S  =  sqrt ( Tolerance / FE_S )
+            dT_S  =  min ( dT_S, F_S * dT )
+!          end if
 
 ! call Show ( iV, '>>> iV' )
 ! call Show ( F_E, '>>>>>> F_E' )
@@ -174,9 +178,6 @@ contains
           ! if ( F_S  <  1.0_KDR ) &
           !   F_S  =  max ( F_S, 0.2_KDR ) 
           
-          dT_E  =  min ( dT_E, F_E * dT )
-          dT_S  =  min ( dT_S, F_S * dT )
-
         end if
       end do
       !$OMP  end parallel do

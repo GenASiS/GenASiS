@@ -41,11 +41,39 @@ module Slope_RM_I__Form
       ComputeSource_F
 
     private :: &
-      ComputeKernel
+      ComputeKernel, &
+      ComputeSimpleKernel
 
     interface
 
       module subroutine ComputeKernel &
+               ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
+                 S_1, S_2, S_3, SF_RD, M_DD_11, M_DD_22, M_DD_33, &
+                 S_S_1_D, S_S_2_D, S_S_3_D, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 UseDeviceOption )
+        use Basics
+        implicit none
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+           Xi_J,  Xi_H, &
+          Chi_J, Chi_H, &
+          J, &
+          H_1, H_2, H_3, &
+          S_1, S_2, S_3, &
+          SF_RD, &
+          M_DD_11, M_DD_22, M_DD_33, &
+          S_S_1_D, S_S_2_D, S_S_3_D  !-- Divergence
+        real ( KDR ), intent ( in ) :: &
+          dT
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          S_E, &
+          S_S_1, S_S_2, S_S_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeKernel
+
+      module subroutine ComputeSimpleKernel &
                ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
                  M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
                  UseDeviceOption )
@@ -66,7 +94,7 @@ module Slope_RM_I__Form
           S_S_1, S_S_2, S_S_3
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeKernel
+      end subroutine ComputeSimpleKernel
 
     end interface
 
@@ -166,6 +194,9 @@ contains
             H_1  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
             H_2  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
             H_3  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
+            S_1  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+            S_2  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
+            S_3  =>  RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
           S_E    =>  SV ( :, S % iEnergy_B ), &
           S_S_1  =>  SV ( :, S % iMomentum_B ( 1 ) ), &
           S_S_2  =>  SV ( :, S % iMomentum_B ( 2 ) ), &
@@ -189,15 +220,27 @@ contains
             ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum ( 2 ) )
           call Search &
             ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum ( 3 ) )
+          
+          associate &
+            ( SDV  =>  S % Slope_DFV % Storage ( iC ) % Value )
+          associate &
+            ( SF_RD    =>   RV ( :, R % STRESS_FACTOR_RD ), &
+              S_S_1_D  =>  SDV ( :, iMomentum ( 1 ) ), &
+              S_S_2_D  =>  SDV ( :, iMomentum ( 2 ) ), &
+              S_S_3_D  =>  SDV ( :, iMomentum ( 3 ) ) )
 
           call ComputeKernel &
                  ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
-                   M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
+                   S_1, S_2, S_3, SF_RD, M_DD_11, M_DD_22, M_DD_33, &
+                   S_S_1_D, S_S_2_D, S_S_3_D, dT, S_E, S_S_1, S_S_2, S_S_3, &
                    UseDeviceOption = S % DeviceMemory )
+
+          end associate !-- S_S_1_D
+          end associate !-- SDV
 
         else
 
-          call ComputeKernel &
+          call ComputeSimpleKernel &
                  ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
                    M_DD_11, M_DD_22, M_DD_33, dT, S_E, S_S_1, S_S_2, S_S_3, &
                    UseDeviceOption = S % DeviceMemory )

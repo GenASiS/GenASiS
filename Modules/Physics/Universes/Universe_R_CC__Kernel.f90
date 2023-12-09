@@ -170,6 +170,7 @@ contains
           FE_S  =  max ( Tolerance * SqrtTiny, abs ( E_S ( iV ) ) )  &
                    /  max ( SqrtTiny, &
                             1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
+!                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
 
           F_E  =  sqrt ( Tolerance / FE_E )
           F_N  =  sqrt ( Tolerance / FE_N )
