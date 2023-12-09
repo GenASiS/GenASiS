@@ -116,7 +116,7 @@ module Universe_R_B__Form
       end subroutine Compute_dT_ET_CGS_Kernel
 
       module subroutine Compute_dT_RK_R_CGS_Kernel &
-               ( dT_E, dT_S, ProperCell, E_E, E_S, E, S, SF_RD, dT, &
+               ( dT_E, dT_S, ProperCell, E_E, E_S, E, S, J_RD, SF_RD, dT, &
                  UseDeviceOption )
         use Basics
         implicit none
@@ -127,7 +127,7 @@ module Universe_R_B__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           E_E, E_S, &
             E,   S, &
-          SF_RD
+          J_RD, SF_RD
         real ( KDR ), intent ( in ) :: &
           dT
         logical ( KDL ), intent ( in ), optional :: &
@@ -1069,6 +1069,7 @@ contains
               E_S   =  EV ( :, iMomentum_B ), &
               E     =  RV ( :, R % ENERGY_DENSITY_B ), &
               S     =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+              J_RD  =  RV ( :, R % ENERGY_DENSITY_C_RD ), &
              SF_RD  =  RV ( :, R % STRESS_FACTOR_RD ), &
              dT     =  I % dT  /  I % RampFactor, &
              UseDeviceOption = R % DeviceMemory )
