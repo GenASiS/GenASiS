@@ -1138,7 +1138,7 @@ contains
       end if
 
       !-- Radiation error steps
- 
+
 !      if ( I % iCheckpoint  >  1 ) &
         call U % Compute_dT_RK_R_CGS ( dT_4, dT_5, iC, T_Option )
 
