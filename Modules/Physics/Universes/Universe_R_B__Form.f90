@@ -1139,7 +1139,7 @@ contains
 
       !-- Radiation error steps
 
-!      if ( I % iCheckpoint  >  1 ) &
+      if ( I % iCheckpoint  >  1 ) &
         call U % Compute_dT_RK_R_CGS ( dT_4, dT_5, iC, T_Option )
 
       !-- Reduce across CS_1D
