@@ -196,6 +196,7 @@ contains
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
                     CS % STRESS_FACTOR_RD, &
+                    CS % DIFFUSION_INDICATOR, &
                     CS % TEMPERATURE_GREY ] )
 
   end subroutine SetStream

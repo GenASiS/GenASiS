@@ -12,7 +12,7 @@ module RadiationMoments_BM__Form
   private
 
   integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM    = 16, &
+      N_FIELDS_RM    = 17, &
       N_VECTORS_RM   =  3, &
       N_PRIMITIVE_RM =  7, &
       N_BALANCED_RM  =  4
@@ -39,9 +39,10 @@ module RadiationMoments_BM__Form
       MOMENTUM_DENSITY_C_U = 0, &
       MOMENTUM_DENSITY_B_D = 0
     integer ( KDI ) :: &
-      FLUX_FACTOR      = 0, &
-      STRESS_FACTOR    = 0, &
-      STRESS_FACTOR_RD = 0     !-- Relative difference from 1/3 (diffusion)
+      FLUX_FACTOR         = 0, &
+      STRESS_FACTOR       = 0, &
+      STRESS_FACTOR_RD    = 0, &  !-- Relative difference from 1/3 (diffusion)
+      DIFFUSION_INDICATOR = 0
     integer ( KDI ) :: &
       FLUID_VELOCITY_U_1 = 0, &
       FLUID_VELOCITY_U_2 = 0, &
@@ -238,9 +239,10 @@ contains
     RM % FLUX_FACTOR             =  oF + 11
     RM % STRESS_FACTOR           =  oF + 12
     RM % STRESS_FACTOR_RD        =  oF + 13
-    RM % FLUID_VELOCITY_U_1      =  oF + 14
-    RM % FLUID_VELOCITY_U_2      =  oF + 15
-    RM % FLUID_VELOCITY_U_3      =  oF + 16
+    RM % DIFFUSION_INDICATOR     =  oF + 14
+    RM % FLUID_VELOCITY_U_1      =  oF + 15
+    RM % FLUID_VELOCITY_U_2      =  oF + 16
+    RM % FLUID_VELOCITY_U_3      =  oF + 17
 
     nFields  =  oF  +  RM % N_FIELDS_RM
     if ( present ( nFieldsOption ) ) &
@@ -278,6 +280,7 @@ contains
           'FluxFactor           ', &
           'StressFactor         ', &
           'StressFactor_RD      ', &
+          'DiffusionIndicator   ', &
           'FluidVelocity_U_1    ', &
           'FluidVelocity_U_2    ', &
           'FluidVelocity_U_3    ' ]
@@ -441,7 +444,8 @@ contains
                     CS % MOMENTUM_DENSITY_C_U, &
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
-                    CS % STRESS_FACTOR_RD ] )
+                    CS % STRESS_FACTOR_RD, &
+                    CS % DIFFUSION_INDICATOR ] )
 
   end subroutine SetStream
 

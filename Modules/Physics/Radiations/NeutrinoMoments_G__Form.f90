@@ -325,6 +325,7 @@ contains
                     CS % FLUX_FACTOR, &
                     CS % STRESS_FACTOR, &
                     CS % STRESS_FACTOR_RD, &
+                    CS % DIFFUSION_INDICATOR, &
                     CS % TEMPERATURE_GREY, &
                     CS % NUMBER_DENSITY_C, &
                     CS % NUMBER_DENSITY_C_EQ, &
