@@ -511,9 +511,12 @@ contains
       dT_Ratio  &
         =  minval ( I % dT_Candidate ) &
              /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
-      if ( dT_Ratio  <  1.0e-6 ) then
-        call Show ( '>>> dT_Ratio small', CONSOLE % WARNING )
-        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
+      if ( dT_Ratio  <  1.0e-8 ) then
+        call I % AdministerCheckpoint ( )
+        call Show ( '>>> dT_Ratio small', CONSOLE % WARNING, &
+                    nLeadingLinesOption = 2 )
+        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING, &
+                    nTrailingLinesOption = 2 )
         call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
         call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY )
         call Show ( I % dT, I % Unit_T, 'dT', I % IGNORABILITY )
@@ -524,12 +527,8 @@ contains
                       trim ( I % dT_Label ( iTSC ) ) // ' dT', &
                       I % IGNORABILITY )
         end do !-- iTSC
-        if ( dT_Ratio  <  1.0e-9 ) then
-          call Show ( '>>> dT_Ratio prohibitively small', CONSOLE % WARNING, &
-                    nLeadingLinesOption = 2, nTrailingLinesOption = 2 )
-          call I % AdministerCheckpoint ( )
-          call PROGRAM_HEADER % Abort ( )
-        end if
+        call I % Communicator % Synchronize ( )
+        call PROGRAM_HEADER % Abort ( )
       end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then
