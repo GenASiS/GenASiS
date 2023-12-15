@@ -511,22 +511,25 @@ contains
       dT_Ratio  &
         =  minval ( I % dT_Candidate ) &
              /  max ( I % T_CheckpointInterval, sqrt ( tiny ( 0.0_KDR ) ) )
-      if ( dT_Ratio  <  1.0e-8  *  I % nWrite ) then
-!        call I % AdministerCheckpoint ( )
-!        call Show ( '*** dT_Ratio too small', CONSOLE % WARNING, &
-!                    nLeadingLinesOption = 2 )
-!        call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING, &
-!                    nTrailingLinesOption = 2 )
-!        exit
-        call Show ( '*** dT_Ratio small', CONSOLE % WARNING )
+      if ( dT_Ratio  <  1.0e-6 ) then
+        call Show ( '>>> dT_Ratio small', CONSOLE % WARNING )
         call Show ( dT_Ratio, 'dT_Ratio', CONSOLE % WARNING )
         call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
         call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY )
+        call Show ( I % dT, I % Unit_T, 'dT', I % IGNORABILITY )
+        call Show ( I % T_CheckpointInterval, I % Unit_T, &
+                    'T_CheckpointInterval', I % IGNORABILITY ) 
         do iTSC = 1, I % n_dT_Candidates
           call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
                       trim ( I % dT_Label ( iTSC ) ) // ' dT', &
                       I % IGNORABILITY )
         end do !-- iTSC
+        if ( dT_Ratio  <  1.0e-9 ) then
+          call Show ( '>>> dT_Ratio prohibitively small', CONSOLE % WARNING, &
+                    nLeadingLinesOption = 2, nTrailingLinesOption = 2 )
+          call I % AdministerCheckpoint ( )
+          call PROGRAM_HEADER % Abort ( )
+        end if
       end if
 
       if ( I % AllWrite  .and. .not. I % CheckpointDue ) then
