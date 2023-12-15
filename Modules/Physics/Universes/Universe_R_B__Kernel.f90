@@ -143,22 +143,24 @@ contains
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then
 
-          if ( J_RD ( iV )  >  1.0e-3_KDR .and. SF_RD ( iV )  >  1.0e-3_KDR ) &
-          then
+!          if ( J_RD ( iV )  >  1.0e-3_KDR .and. SF_RD ( iV )  >  1.0e-3_KDR ) &
+!          then
+!          if ( DI ( iV )  ==  0.0_KDR ) then
 
             FE_E  =  max ( Tolerance * SqrtTiny, abs ( E_E ( iV ) ) )  &
                    /  max ( SqrtTiny, abs ( E ( iV ) ) )
-             F_E  =  sqrt ( Tolerance / FE_E )
-            dT_E  =  min ( dT_E, F_E * dT )
-
             FE_S  =  max ( Tolerance * SqrtTiny, abs ( E_S ( iV ) ) )  &
                      /  max ( SqrtTiny, &
                               1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
   !                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
+
+             F_E  =  sqrt ( Tolerance / FE_E )
              F_S  =  sqrt ( Tolerance / FE_S )
+
+            dT_E  =  min ( dT_E, F_E * dT )
             dT_S  =  min ( dT_S, F_S * dT )
 
-          end if
+!          end if
 
 ! call Show ( iV, '>>> iV' )
 ! call Show ( F_E, '>>>>>> F_E' )

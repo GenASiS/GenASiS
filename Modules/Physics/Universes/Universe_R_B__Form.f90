@@ -116,7 +116,7 @@ module Universe_R_B__Form
       end subroutine Compute_dT_ET_CGS_Kernel
 
       module subroutine Compute_dT_RK_R_CGS_Kernel &
-               ( dT_E, dT_S, ProperCell, E_E, E_S, E, S, J_RD, SF_RD, dT, &
+               ( dT_E, dT_S, ProperCell, E_E, E_S, E, S, J_RD, SF_RD, DI, dT, &
                  UseDeviceOption )
         use Basics
         implicit none
@@ -127,7 +127,8 @@ module Universe_R_B__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           E_E, E_S, &
             E,   S, &
-          J_RD, SF_RD
+          J_RD, SF_RD, &
+          DI
         real ( KDR ), intent ( in ) :: &
           dT
         logical ( KDL ), intent ( in ), optional :: &
@@ -1071,6 +1072,7 @@ contains
               S     =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
               J_RD  =  RV ( :, R % ENERGY_DENSITY_C_RD ), &
              SF_RD  =  RV ( :, R % STRESS_FACTOR_RD ), &
+             DI     =  RV ( :, R % DIFFUSION_INDICATOR ), &
              dT     =  I % dT  /  I % RampFactor, &
              UseDeviceOption = R % DeviceMemory )
 
@@ -1139,7 +1141,7 @@ contains
 
       !-- Radiation error steps
 
-      if ( I % iCheckpoint  >  1 ) &
+!      if ( I % iCheckpoint  >  1 ) &
         call U % Compute_dT_RK_R_CGS ( dT_4, dT_5, iC, T_Option )
 
       !-- Reduce across CS_1D

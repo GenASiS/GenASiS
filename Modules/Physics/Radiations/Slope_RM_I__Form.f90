@@ -50,7 +50,7 @@ module Slope_RM_I__Form
                ( ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
                  M_DD_11, M_DD_22, M_DD_33, J_RD, J_Eq, &
                  SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, S_1, S_2, S_3, &
-                 dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 dT, S_E, S_S_1, S_S_2, S_S_3, DI, &
                  UseDeviceOption )
         use Basics
         implicit none
@@ -71,7 +71,8 @@ module Slope_RM_I__Form
           dT
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           S_E, &
-          S_S_1, S_S_2, S_S_3
+          S_S_1, S_S_2, S_S_3, &
+          DI
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeKernel
@@ -232,16 +233,17 @@ contains
                S_S_3_D  =>  SDV ( :, iMomentum ( 3 ) ), &
                  S_1    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
                  S_2    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
-                 S_3    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_3 ) )
+                 S_3    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
+                DI      =>   RV ( :, R % DIFFUSION_INDICATOR ) )
 
           call ComputeKernel &
                ( C % ProperCell, Xi_J, Xi_H, Chi_J, Chi_H, J, H_1, H_2, H_3, &
                  M_DD_11, M_DD_22, M_DD_33, J_RD, J_Eq, &
                  SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, S_1, S_2, S_3, &
-                 dT, S_E, S_S_1, S_S_2, S_S_3, &
+                 dT, S_E, S_S_1, S_S_2, S_S_3, DI, &
                  UseDeviceOption = S % DeviceMemory )
 
-          end associate !-- S_S_1_D
+          end associate !-- J_RD, etc.
           end associate !-- SDV
 
         else
@@ -290,6 +292,7 @@ contains
 
     nullify ( S % Interactions )
     nullify ( S % Radiation )
+    nullify ( S % Slope_DFV )
     
     if ( allocated ( S % CO_SplitSource ) ) &
       deallocate ( S % CO_SplitSource )
