@@ -119,17 +119,19 @@ module Universe_R_CC__Form
       end subroutine Compute_dT_RT_CGS_Kernel
 
       module subroutine Compute_dT_RK_R_CGS_Kernel &
-               ( dT_E, dT_N, dT_S, ProperCell, E_E, E_N, E_S, E, N, S, dT, &
-                 UseDeviceOption )
+               ( dT_E, dT_S, dT_N, ProperCell, E_E, E_S, E_N, E, S, N, &
+                 J_RD, SF_RD, N_RD, DI, dT, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), intent ( inout ) :: &
-          dT_E, dT_N, dT_S
+          dT_E, dT_S, dT_N
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           ProperCell
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          E_E, E_N, E_S, &
-            E,   N,   S
+          E_E, E_S, E_N, &
+            E,   S,   N, &   
+          J_RD, SF_RD, N_RD, &
+          DI
         real ( KDR ), intent ( in ) :: &
           dT
         logical ( KDL ), intent ( in ), optional :: &
@@ -691,8 +693,8 @@ contains
     I % dT_Label ( 4 )  =  'EnergyTransfer'
     I % dT_Label ( 5 )  =  'ElectronNumberTransfer'
     I % dT_Label ( 6 )  =  'RadiationEnergyError'
-    I % dT_Label ( 7 )  =  'RadiationNumberError'
-    I % dT_Label ( 8 )  =  'RadiationMomentumError'
+    I % dT_Label ( 7 )  =  'RadiationMomentumError'
+    I % dT_Label ( 8 )  =  'RadiationNumberError'
 
     U % GravityFactor  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -859,10 +861,10 @@ contains
   end subroutine Compute_dT_RT_CGS
 
 
-  subroutine Compute_dT_RK_R_CGS ( dT_E, dT_N, dT_S, U, iC, T_Option )
+  subroutine Compute_dT_RK_R_CGS ( dT_E, dT_S, dT_N, U, iC, T_Option )
 
     real ( KDR ), intent ( inout ) :: &
-      dT_E, dT_N, dT_S
+      dT_E, dT_S, dT_N
     class ( Universe_R_CC_Form ), intent ( in ) :: &
       U
     integer ( KDI ), intent ( in ) :: &
@@ -895,14 +897,18 @@ contains
     call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B )
 
     call Compute_dT_RK_R_CGS_Kernel &
-           ( dT_E, dT_N, dT_S, C % ProperCell, &
-             E_E  =  EV ( :, iEnergy_B ), &
-             E_N  =  EV ( :, iNumber_B ), &
-             E_S  =  EV ( :, iMomentum_B ), &
-             E    =  RV ( :, R % ENERGY_DENSITY_B ), &
-             N    =  RV ( :, R % NUMBER_DENSITY_B ), &
-             S    =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
-             dT   =  I % dT  /  I % RampFactor, &
+           ( dT_E, dT_S, dT_N, C % ProperCell, &
+             E_E    =  EV ( :, iEnergy_B ), &
+             E_S    =  EV ( :, iMomentum_B ), &
+             E_N    =  EV ( :, iNumber_B ), &
+             E      =  RV ( :, R % ENERGY_DENSITY_B ), &
+             S      =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+             N      =  RV ( :, R % NUMBER_DENSITY_B ), &
+             J_RD   =  RV ( :, R % ENERGY_DENSITY_C_RD ), &
+             SF_RD  =  RV ( :, R % STRESS_FACTOR_RD ), &
+             N_RD   =  RV ( :, R % NUMBER_DENSITY_C_RD ), &
+             DI     =  RV ( :, R % DIFFUSION_INDICATOR ), &
+             dT     =  I % dT  /  I % RampFactor, &
              UseDeviceOption = R % DeviceMemory )
 
     end associate !-- C, etc.

@@ -69,8 +69,6 @@ contains
 
     call SD % Initialize ( RS, DF, DT )
 
-    end select !-- SD
-
     !-- Slope component: Interactions
 
     nSC  =  nSC + 1
@@ -79,7 +77,9 @@ contains
       class is ( Slope_NM_G_I_Form )
 
     call SI % Initialize ( R )
+    SI % Slope_DFV  =>  SD
 
+    end select !-- SD
     end select !-- SI
 
     !-- Cleanup
@@ -103,7 +103,7 @@ contains
     associate &
       ( R  =>  S_I % Radiation )
 
-    call R % SetFluidVelocity ( )
+!    call R % SetFluidVelocity ( )
 
     end associate !-- R, F
     end select !-- S_I
