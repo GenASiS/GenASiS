@@ -6,6 +6,9 @@ submodule ( NeutrinoMoments_G__Form ) NeutrinoMoments_G__Kernel
   
   implicit none
 
+  real ( KDR ) :: &
+    Pi    =  CONSTANT % PI, &
+    Pi_2  =  CONSTANT % PI ** 2
 
 contains
 
@@ -416,15 +419,15 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      Pi, SixPi_2, EightPi_2, &
+      SixPi_2, EightPi_2, &
       OnePlusEpsilon, &
       Factor_ND, Factor_ED_1, Factor_ED_2, &
       LHS, &
       Eta_ND, Eta_ED, Eta, &
-      Fermi_2, Fermi_3, &
-      fdeta, fdeta2, &
-      fdtheta, fdtheta2, &
-      fdetadtheta
+      F_2, F_3!, &
+ !     fdeta, fdeta2, &
+ !     fdtheta, fdtheta2, &
+ !     fdetadtheta
     logical ( KDL ) :: &
       UseDevice, &
       Success
@@ -437,9 +440,8 @@ contains
 
     OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
 
-         Pi    =              CONSTANT % PI
-      SixPi_2  =  6.0_KDR  *  CONSTANT % PI ** 2
-    EightPi_2  =  8.0_KDR  *  CONSTANT % PI ** 2
+      SixPi_2  =  6.0_KDR  *  Pi_2
+    EightPi_2  =  8.0_KDR  *  Pi_2
 
     Factor_ND    =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
     Factor_ED_1  =  EightPi_2 ** ( 1.0_KDR / 4.0_KDR )  &
@@ -458,8 +460,8 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( OnePlusEpsilon, Factor_ND, Factor_ED_1, Factor_ED_2 ) &
-      !$OMP private ( LHS, Eta_ND, Eta_ED, Eta, Fermi_2, Fermi_3 ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta ) &
+      !$OMP private ( LHS, Eta_ND, Eta_ED, Eta, F_2, F_3 ) &
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta ) &
       !$OMP private ( Success )
       do iV = 1, nV
 
@@ -493,12 +495,14 @@ contains
           end if
         end if
 
-        call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, Fermi_2, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, Eta_R ( iV ), 0.0_KDR, Fermi_3, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_R ( iV ), 0.0_KDR, F_3, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        F_2  =  Fermi_2 ( Eta_R ( iV ) )
+        F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
-        T_R  ( iV )  =  J ( iV )  /  N ( iV )  *  Fermi_2 / Fermi_3
+        T_R  ( iV )  =  J ( iV )  /  N ( iV )  *  F_2 / F_3
 
         E_Ave ( iV )  &
           =  J ( iV )  /  N ( iV )
@@ -526,10 +530,10 @@ contains
       TwoPi, FourPi, & 
       Factor_J_N, &
       Eta_Eq, &
-      Fermi_2_Eq, Fermi_3_Eq, &
-      fdeta, fdeta2, &
-      fdtheta, fdtheta2, &
-      fdetadtheta
+      F_2_Eq, F_3_Eq!, &
+!      fdeta, fdeta2, &
+!      fdtheta, fdtheta2, &
+!      fdetadtheta
     logical ( KDL ) :: &
       UseDevice      
           
@@ -541,8 +545,8 @@ contains
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
-     TwoPi  =  2.0_KDR  *  CONSTANT % PI
-    FourPi  =  4.0_KDR  *  CONSTANT % PI
+     TwoPi  =  2.0_KDR  *  Pi
+    FourPi  =  4.0_KDR  *  Pi
 
     Factor_J_N   =  FourPi  /  TwoPi ** 3
 
@@ -558,8 +562,8 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( SqrtTiny, Factor_J_N ) &
-      !$OMP private ( Eta_Eq, Fermi_2_Eq, Fermi_3_Eq ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Eta_Eq, F_2_Eq, F_3_Eq ) !&
+ !     !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         if ( T ( iV )  <=  0.0_KDR ) &
@@ -567,13 +571,15 @@ contains
 
         Eta_Eq  =  Sign  *  ( Mu_E ( iV )  -  Mu_NP ( iV ) )  /  T ( iV )
         
-        call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, Fermi_2_Eq, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, Fermi_3_Eq, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, F_3_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        F_2_Eq  =  Fermi_2 ( Eta_Eq )
+        F_3_Eq  =  Fermi_3 ( Eta_Eq )
 
-        N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  Fermi_2_Eq
-        J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  Fermi_3_Eq
+        N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
+        J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
 
         N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
                          /  max ( SqrtTiny, N_Eq ( iV ) )
@@ -663,31 +669,61 @@ contains
       Result
 
     real ( KDR ) :: &
-      Pi, &
       Factor, &
       Eta, &
-      Fermi_2, Fermi_3, &
+      F_2, F_3, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
 
-    Pi      =  CONSTANT % PI
     Factor  =  ( 2  *  Pi ** 2 ) ** ( 1. / 12. )
 
     Eta  =  min ( EtaIn, log ( huge ( 1.0_KDR ) ) - 10.0_KDR )
 
-    call DFERMI ( 2.0_KDR, Eta, 0.0_KDR, Fermi_2, &
+    call DFERMI ( 2.0_KDR, Eta, 0.0_KDR, F_2, &
                   fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-    call DFERMI ( 3.0_KDR, Eta, 0.0_KDR, Fermi_3, &
+    call DFERMI ( 3.0_KDR, Eta, 0.0_KDR, F_3, &
                   fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
-    Fermi_2  =  max ( Fermi_2, tiny ( 0.0_KDR ) )
+    F_2  =  max ( F_2, tiny ( 0.0_KDR ) )
 
-    Result  =  Factor  *  Fermi_3 ** ( 1.0_KDR / 4.0_KDR )  &
-                  *  Fermi_2 ** ( - 1.0_KDR / 3.0_KDR ) &
+    Result  =  Factor  *  F_3 ** ( 1.0_KDR / 4.0_KDR )  &
+                  *  F_2 ** ( - 1.0_KDR / 3.0_KDR ) &
                -  LHS
 
   end subroutine EvaluateZero
 
-  
+
+  function Fermi_2 ( Eta ) result ( F_2 )
+
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ) :: &
+      F_2
+
+    if ( Eta  >  0.0_KDR ) then
+      F_2  =  Eta**3 / 3  +  4 * Eta  +  2 * exp ( -Eta )
+    else
+      F_2  =  2 * exp ( Eta )
+    end if
+
+  end function Fermi_2
+
+
+  function Fermi_3 ( Eta ) result ( F_3 )
+
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ) :: &
+      F_3
+
+    if ( Eta  >  0.0_KDR ) then
+      F_3  =  Eta**4 / 4  +  Pi_2 * Eta**2 / 2  +  12  -  6 * exp ( -Eta )
+    else
+      F_3  =  6 * exp ( Eta )
+    end if
+
+  end function Fermi_3
+
+
 end submodule NeutrinoMoments_G__Kernel
