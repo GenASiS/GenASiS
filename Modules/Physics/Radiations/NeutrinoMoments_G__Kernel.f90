@@ -419,11 +419,13 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      SixPi_2, EightPi_2, &
-      OnePlusEpsilon, &
-      Factor_ND, Factor_ED_1, Factor_ED_2, &
-      LHS, &
-      Eta_ND, Eta_ED, Eta, &
+!      SixPi_2, EightPi_2, &
+!      OnePlusEpsilon, &
+!      Factor_ND, Factor_ED_1, Factor_ED_2, &
+      Factor_ND, &
+!      LHS, &
+!      Eta_ND, Eta_ED, Eta, &
+      Eta_ND, &
       F_2, F_3!, &
  !     fdeta, fdeta2, &
  !     fdtheta, fdtheta2, &
@@ -438,15 +440,15 @@ contains
       
     nV  =  size ( J )
 
-    OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
+    ! OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
 
-      SixPi_2  =  6.0_KDR  *  Pi_2
-    EightPi_2  =  8.0_KDR  *  Pi_2
+    !   SixPi_2  =  6.0_KDR  *  Pi_2
+    ! EightPi_2  =  8.0_KDR  *  Pi_2
 
     Factor_ND    =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
-    Factor_ED_1  =  EightPi_2 ** ( 1.0_KDR / 4.0_KDR )  &
-                    /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
-    Factor_ED_2  =  6.0_KDR  /  Pi ** 2
+ !   Factor_ED_1  =  EightPi_2 ** ( 1.0_KDR / 4.0_KDR )  &
+ !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
+ !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
     if ( UseDevice ) then
   !     !$OMP OMP_TARGET_DIRECTIVE parallel do &
@@ -459,40 +461,53 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( OnePlusEpsilon, Factor_ND, Factor_ED_1, Factor_ED_2 ) &
-      !$OMP private ( LHS, Eta_ND, Eta_ED, Eta, F_2, F_3 ) &
+!      !$OMP shared ( OnePlusEpsilon, Factor_ND, Factor_ED_1, Factor_ED_2 ) &
+!      !$OMP private ( LHS, Eta_ND, Eta_ED, Eta, F_2, F_3 ) &
 !      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta ) &
-      !$OMP private ( Success )
+!      !$OMP private ( Success )
+      !$OMP shared ( Factor_ND ) &
+      !$OMP private ( Eta_ND, F_2, F_3, Success )
       do iV = 1, nV
 
         if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
           cycle
 
-        LHS  =  J ( iV ) ** ( 1.0_KDR / 4.0_KDR )  &
-                *  N ( iV ) ** ( - 1.0_KDR / 3.0_KDR )
-        LHS  =  max ( LHS, OnePlusEpsilon / Factor_ED_1 )
+        ! LHS  =  J ( iV ) ** ( 1.0_KDR / 4.0_KDR )  &
+        !         *  N ( iV ) ** ( - 1.0_KDR / 3.0_KDR )
+        ! LHS  =  max ( LHS, OnePlusEpsilon / Factor_ED_1 )
 
-        Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  LHS ** 4 )
-        Eta_ED  =  ( Factor_ED_2 * ( Factor_ED_1 * LHS  -  1.0_KDR ) ) &
-                   ** ( - 0.5_KDR )
+        ! Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  LHS ** 4 )
+        ! Eta_ED  =  ( Factor_ED_2 * ( Factor_ED_1 * LHS  -  1.0_KDR ) ) &
+        !            ** ( - 0.5_KDR )
 
-        if ( Eta_ND < -10.0_KDR ) then
+        ! if ( Eta_ND < -10.0_KDR ) then
+        !   Eta_R ( iV )  =  Eta_ND
+        ! else if ( Eta_ED > 50.0_KDR ) then
+        !   Eta_R ( iV )  =  Eta_ED
+        ! else
+        !   Eta  =  max ( Eta_ND, Eta_R ( iV ) )
+        !   call SolveSecant ( LHS, 0.99 * Eta, Eta, Success, Eta )
+        !   if ( Success ) then
+        !     Eta_R ( iV )  =  Eta
+        !   else
+        !     !-- crude last resort
+        !     if ( Eta_ND < 1.0_KDR ) then
+        !       Eta_R ( iV )  =  Eta_ND
+        !     else
+        !       Eta_R ( iV )  =  Eta_ED
+        !     end if
+        !   end if
+        ! end if
+
+        Eta_ND  =  - 3.0_KDR  &
+                     * log ( Factor_ND  *  J ( iV ) &
+                             *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR ) )
+
+        if ( Eta_ND  <=  0.0_KDR ) then
           Eta_R ( iV )  =  Eta_ND
-        else if ( Eta_ED > 50.0_KDR ) then
-          Eta_R ( iV )  =  Eta_ED
         else
-          Eta  =  max ( Eta_ND, Eta_R ( iV ) )
-          call SolveSecant ( LHS, 0.99 * Eta, Eta, Success, Eta )
-          if ( Success ) then
-            Eta_R ( iV )  =  Eta
-          else
-            !-- crude last resort
-            if ( Eta_ND < 1.0_KDR ) then
-              Eta_R ( iV )  =  Eta_ND
-            else
-              Eta_R ( iV )  =  Eta_ED
-            end if
-          end if
+          call SolveEtaBisection &
+                 ( J ( iV ), N ( iV ), Eta_ND, Success, Eta_R ( iV ) )
         end if
 
         ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
@@ -593,105 +608,215 @@ contains
   end procedure Compute_Eq_Kernel
 
 
-  subroutine SolveSecant ( LHS, Guess_1, Guess_2, Success, Root )
+!   subroutine SolveSecant ( LHS, Guess_1, Guess_2, Success, Root )
   
-    real ( KDR ), intent ( in ) :: &
-      LHS, &
-      Guess_1, &
-      Guess_2
+!     real ( KDR ), intent ( in ) :: &
+!       LHS, &
+!       Guess_1, &
+!       Guess_2
+!     logical ( KDL ), intent ( out ) :: &
+!       Success
+!     real ( KDR ), intent ( out ) :: &
+!       Root
+      
+!     integer ( KDI ) :: &
+!       iIteration, &
+!       MaxIterations
+!     real ( KDR ) :: &
+!       X, &
+!       X_0, X_1, &
+!       Y_0, Y_1, &
+!       RequestedAccuracy, &
+!       Accuracy, &
+!       AbsolutePrecision, &
+!       RelativePrecision
+      
+!     MaxIterations      =  20
+!     RequestedAccuracy  =  1.0e-10_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
+
+!     Success  =  .false.
+      
+!     X_0  =  Guess_1
+!     X_1  =  Guess_2
+    
+! !    call EvaluateZero ( LHS, X_0, Y_0 )
+! !    call EvaluateZero ( LHS, X_1, Y_1 )
+    
+!     do iIteration  =  1, MaxIterations
+      
+!       Root  =  X_1
+      
+!       Accuracy           =  abs ( Y_1 )
+!       AbsolutePrecision  =  abs ( X_1 - X_0 )
+!       RelativePrecision  =  abs ( ( X_1 - X_0 ) )  &
+!                             /  max ( abs ( X_1 ), tiny ( 0.0_KDR ) )
+
+!       if (      Accuracy           <=  RequestedAccuracy   &
+!            .or. AbsolutePrecision  <=  RequestedAccuracy   &
+!            .or. RelativePrecision  <=  RequestedAccuracy ) &
+!       then
+!         Success = .true. 
+!         exit
+!       end if
+      
+!       if ( Y_1 == Y_0 ) &
+!         exit
+
+!       X = X_1 - Y_1 * ( X_1 - X_0 ) / ( Y_1 - Y_0 )
+      
+!       X_0 = X_1
+!       Y_0 = Y_1
+      
+!       X_1 = X
+! !      call EvaluateZero ( LHS, X_1, Y_1 )
+
+!     end do
+    
+!   end subroutine SolveSecant
+  
+
+  subroutine SolveEtaBisection ( J, N, Eta_ND, Success, Eta )
+
+    real ( KDR ) :: &
+      J, N, Eta_ND
     logical ( KDL ), intent ( out ) :: &
       Success
     real ( KDR ), intent ( out ) :: &
-      Root
-      
+      Eta
+
     integer ( KDI ) :: &
       iIteration, &
       MaxIterations
     real ( KDR ) :: &
-      X, &
-      X_0, X_1, &
-      Y_0, Y_1, &
-      RequestedAccuracy, &
-      Accuracy, &
+      dX, &
+      X_0, X_1, X_M, &
+      Y_0, Y_1, Y_M, &
+      Factor, &
+      Tolerance, &
       AbsolutePrecision, &
       RelativePrecision
       
-    MaxIterations      =  20
-    RequestedAccuracy  =  1.0e-10_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
+    MaxIterations  =  20
+    Tolerance      =  1.0e-10_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
+    Factor         =  1.6_KDR
+
+    Eta  =  0.0_KDR
+
+    X_0  =  0.0_KDR
+    X_1  =  Factor * Eta_ND
+    
+    Y_0  =  ZeroEta ( J, N, X_0 )
+    Y_1  =  ZeroEta ( J, N, X_1 )
+
+    !-- Bracket root
 
     Success  =  .false.
       
-    X_0  =  Guess_1
-    X_1  =  Guess_2
-    
-    call EvaluateZero ( LHS, X_0, Y_0 )
-    call EvaluateZero ( LHS, X_1, Y_1 )
-    
     do iIteration  =  1, MaxIterations
-      
-      Root  =  X_1
-      
-      Accuracy           =  abs ( Y_1 )
-      AbsolutePrecision  =  abs ( X_1 - X_0 )
-      RelativePrecision  =  abs ( ( X_1 - X_0 ) )  &
-                            /  max ( abs ( X_1 ), tiny ( 0.0_KDR ) )
+      if ( Y_0 * Y_1  <  0.0_KDR ) then
+        Success  =  .true.
+        exit
+      end if
+      !-- Only move outer bound
+      X_1  =  Factor * X_1
+      Y_1  =  ZeroEta ( J, N, X_1 )
+    end do
 
-      if (      Accuracy           <=  RequestedAccuracy   &
-           .or. AbsolutePrecision  <=  RequestedAccuracy   &
-           .or. RelativePrecision  <=  RequestedAccuracy ) &
+    if ( .not. Success ) &
+      return
+
+    !-- Find root
+
+    Success  =  .false.
+
+    !-- Orient the search
+    if ( Y_0  <  0.0_KDR ) then
+      Eta  =  X_0
+       dX  =  X_1 - X_0
+    else !-- Y_1  <  0.0
+      Eta  =  X_1
+       dX  =  X_0 - X_1
+    end if
+
+    do iIteration  =  1, MaxIterations
+
+      AbsolutePrecision  =  abs ( dX )
+      RelativePrecision  =  abs ( dX )  &
+                            /  max ( abs ( Eta ), abs ( Eta + dX ) )
+
+      if (      AbsolutePrecision  <=  Tolerance   &
+           .or. RelativePrecision  <=  Tolerance ) &
       then
         Success = .true. 
         exit
       end if
-      
-      if ( Y_1 == Y_0 ) &
-        exit
 
-      X = X_1 - Y_1 * ( X_1 - X_0 ) / ( Y_1 - Y_0 )
+       dX  =  0.5_KDR * dX
+      X_M  =  Eta + dX
+      Y_M  =  ZeroEta ( J, N, X_M )
+      if ( Y_M  <  0.0_KDR ) &
+        Eta  =  X_M
       
-      X_0 = X_1
-      Y_0 = Y_1
-      
-      X_1 = X
-      call EvaluateZero ( LHS, X_1, Y_1 )
-
     end do
     
-  end subroutine SolveSecant
-  
+  end subroutine SolveEtaBisection
 
-  subroutine EvaluateZero ( LHS, EtaIn, Result )
+
+  ! subroutine EvaluateZero ( LHS, EtaIn, Result )
+
+  !   real ( KDR ), intent ( in ) :: &
+  !     LHS, &
+  !     EtaIn
+  !   real ( KDR ), intent ( out ) :: &
+  !     Result
+
+  !   real ( KDR ) :: &
+  !     Factor, &
+  !     Eta, &
+  !     F_2, F_3, &
+  !     fdeta, fdeta2, &
+  !     fdtheta, fdtheta2, &
+  !     fdetadtheta
+
+  !   Factor  =  ( 2  *  Pi ** 2 ) ** ( 1. / 12. )
+
+  !   Eta  =  min ( EtaIn, log ( huge ( 1.0_KDR ) ) - 10.0_KDR )
+
+  !   call DFERMI ( 2.0_KDR, Eta, 0.0_KDR, F_2, &
+  !                 fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+  !   call DFERMI ( 3.0_KDR, Eta, 0.0_KDR, F_3, &
+  !                 fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+  !   F_2  =  max ( F_2, tiny ( 0.0_KDR ) )
+
+  !   Result  =  Factor  *  F_3 ** ( 1.0_KDR / 4.0_KDR )  &
+  !                 *  F_2 ** ( - 1.0_KDR / 3.0_KDR ) &
+  !              -  LHS
+
+  ! end subroutine EvaluateZero
+
+
+  function ZeroEta ( J, N, Eta ) result ( ZE )
 
     real ( KDR ), intent ( in ) :: &
-      LHS, &
-      EtaIn
-    real ( KDR ), intent ( out ) :: &
-      Result
+      J, N, Eta
+    real ( KDR ) :: &
+      ZE
 
     real ( KDR ) :: &
+      FourThirds, &
       Factor, &
-      Eta, &
-      F_2, F_3, &
-      fdeta, fdeta2, &
-      fdtheta, fdtheta2, &
-      fdetadtheta
+      F_2, F_3
 
-    Factor  =  ( 2  *  Pi ** 2 ) ** ( 1. / 12. )
+    FourThirds  =  4.0_KDR / 3.0_KDR
+    Factor      =  ( 2 * Pi_2 ) ** ( 1.0_KDR / 3.0_KDR )
 
-    Eta  =  min ( EtaIn, log ( huge ( 1.0_KDR ) ) - 10.0_KDR )
+    F_2  =  Fermi_2 ( Eta )
+    F_3  =  Fermi_3 ( Eta )
 
-    call DFERMI ( 2.0_KDR, Eta, 0.0_KDR, F_2, &
-                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-    call DFERMI ( 3.0_KDR, Eta, 0.0_KDR, F_3, &
-                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-
-    F_2  =  max ( F_2, tiny ( 0.0_KDR ) )
-
-    Result  =  Factor  *  F_3 ** ( 1.0_KDR / 4.0_KDR )  &
-                  *  F_2 ** ( - 1.0_KDR / 3.0_KDR ) &
-               -  LHS
-
-  end subroutine EvaluateZero
+    ZE  =  J  *  F_2 ** FourThirds   -   Factor  *  N ** FourThirds  *  F_3
+   
+  end function ZeroEta
 
 
   function Fermi_2 ( Eta ) result ( F_2 )
