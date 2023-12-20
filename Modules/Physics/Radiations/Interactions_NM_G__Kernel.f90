@@ -6,6 +6,10 @@ submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
   
   implicit none
 
+  real ( KDR ) :: &
+    Pi    =  CONSTANT % PI, &
+    Pi_2  =  CONSTANT % PI ** 2
+
 contains
 
 
@@ -23,8 +27,8 @@ contains
       Factor_p, Q, Factor_A, Dlta, &
       N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, Xi, &
       Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
-      Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
-      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
+      Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp!, &
+!      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
     logical ( KDL ) :: &
       UseDevice      
           
@@ -60,8 +64,8 @@ contains
       !$OMP shared ( Factor_p, Q, Factor_A, Dlta ) &
       !$OMP private ( N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, Xi ) &
       !$OMP private ( Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q  ) &
-      !$OMP private ( Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp )!&
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         if ( T ( iV ) == 0.0_KDR ) &
@@ -71,14 +75,18 @@ contains
 
         Eta_e_Q  =  ( Mu_e ( iV )  -  Q )  /  T ( iV )
 
-        call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 4.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_4_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 4.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_4_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_2_e_Q  =  Fermi_2 ( Eta_e_Q )
+        Fermi_3_e_Q  =  Fermi_3 ( Eta_e_Q )
+        Fermi_4_e_Q  =  Fermi_4 ( Eta_e_Q )
+        Fermi_5_e_Q  =  Fermi_5 ( Eta_e_Q )
 
         N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
                 /  ( max ( A ( iV ), SqrtTiny ) * amu )
@@ -103,14 +111,18 @@ contains
 
         Eta_e_Qp  =  ( Mu_e ( iV )  -  Qp )  /  T ( iV )
 
-        call DFERMI ( 2.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_2_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_3_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 4.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_4_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_5_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_2_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_3_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 4.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_4_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_5_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_2_e_Qp  =  Fermi_2 ( Eta_e_Qp )
+        Fermi_3_e_Qp  =  Fermi_3 ( Eta_e_Qp )
+        Fermi_4_e_Qp  =  Fermi_4 ( Eta_e_Qp )
+        Fermi_5_e_Qp  =  Fermi_5 ( Eta_e_Qp )
 
         !--- Energy
 
@@ -168,8 +180,8 @@ contains
       !$OMP shared ( Factor_p, Q, Factor_A, Dlta ) &
       !$OMP private ( N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, Xi ) &
       !$OMP private ( Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q  ) &
-      !$OMP private ( Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp )!&
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         if ( T ( iV ) == 0.0_KDR ) &
@@ -179,14 +191,18 @@ contains
 
         Eta_e_Q  =  ( Mu_e ( iV )  -  Q )  /  T ( iV )
 
-        call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 4.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_4_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 4.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_4_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_2_e_Q  =  Fermi_2 ( Eta_e_Q )
+        Fermi_3_e_Q  =  Fermi_3 ( Eta_e_Q )
+        Fermi_4_e_Q  =  Fermi_4 ( Eta_e_Q )
+        Fermi_5_e_Q  =  Fermi_5 ( Eta_e_Q )
 
         N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
                 /  ( max ( A ( iV ), SqrtTiny ) * amu )
@@ -211,14 +227,18 @@ contains
 
         Eta_e_Qp  =  ( Mu_e ( iV )  -  Qp )  /  T ( iV )
 
-        call DFERMI ( 2.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_2_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_3_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 4.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_4_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_5_e_Qp, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_2_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_3_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 4.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_4_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, Eta_e_Qp, 0.0_KDR, Fermi_5_e_Qp, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_2_e_Qp  =  Fermi_2 ( Eta_e_Qp )
+        Fermi_3_e_Qp  =  Fermi_3 ( Eta_e_Qp )
+        Fermi_4_e_Qp  =  Fermi_4 ( Eta_e_Qp )
+        Fermi_5_e_Qp  =  Fermi_5 ( Eta_e_Qp )
 
         !--- Energy
 
@@ -286,8 +306,8 @@ contains
       G_F, g_A, m_n, m_p, amu, &
       Factor_n, Q, &
       N_n, Eta_e, Xi, &
-      Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
-      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
+      Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e!, &
+!      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
     logical ( KDL ) :: &
       UseDevice      
           
@@ -315,8 +335,8 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor_n, Q ) &
       !$OMP private ( N_n, Eta_e, Xi ) &
-      !$OMP private ( Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e ) !&
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         if ( T ( iV ) == 0.0_KDR ) &
@@ -325,14 +345,18 @@ contains
         N_n    =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
         Eta_e  =  Mu_e ( iV )  /  T ( iV )
 
-        call DFERMI ( 2.0_KDR, -Eta_e, 0.0_KDR, Fermi_2_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, -Eta_e, 0.0_KDR, Fermi_3_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 4.0_KDR, -Eta_e, 0.0_KDR, Fermi_4_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, -Eta_e, 0.0_KDR, Fermi_5_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, -Eta_e, 0.0_KDR, Fermi_2_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, -Eta_e, 0.0_KDR, Fermi_3_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 4.0_KDR, -Eta_e, 0.0_KDR, Fermi_4_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, -Eta_e, 0.0_KDR, Fermi_5_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_2_e  =  Fermi_2 ( -Eta_e )
+        Fermi_3_e  =  Fermi_3 ( -Eta_e )
+        Fermi_4_e  =  Fermi_4 ( -Eta_e )
+        Fermi_5_e  =  Fermi_5 ( -Eta_e )
 
         !--- Energy
 
@@ -375,8 +399,8 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( Pi, TwoPi, FourPi, G_F, g_A, m_n, m_p, amu, Factor_n, Q ) &
       !$OMP private ( N_n, Eta_e, Xi ) &
-      !$OMP private ( Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e ) !&
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         if ( T ( iV ) == 0.0_KDR ) &
@@ -385,14 +409,18 @@ contains
         N_n    =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
         Eta_e  =  Mu_e ( iV )  /  T ( iV )
 
-        call DFERMI ( 2.0_KDR, -Eta_e, 0.0_KDR, Fermi_2_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 3.0_KDR, -Eta_e, 0.0_KDR, Fermi_3_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 4.0_KDR, -Eta_e, 0.0_KDR, Fermi_4_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, -Eta_e, 0.0_KDR, Fermi_5_e, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 2.0_KDR, -Eta_e, 0.0_KDR, Fermi_2_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, -Eta_e, 0.0_KDR, Fermi_3_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 4.0_KDR, -Eta_e, 0.0_KDR, Fermi_4_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, -Eta_e, 0.0_KDR, Fermi_5_e, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_2_e  =  Fermi_2 ( -Eta_e )
+        Fermi_3_e  =  Fermi_3 ( -Eta_e )
+        Fermi_4_e  =  Fermi_4 ( -Eta_e )
+        Fermi_5_e  =  Fermi_5 ( -Eta_e )
 
         !--- Energy
 
@@ -448,8 +476,8 @@ contains
       G_F, Sin_2_Theta_W, g_A, Sin_2_Theta_W, amu, &
       Factor_n, Factor_p, Factor_A, &
       N_p, N_n, N_A, &
-      Fermi_3_nu, Fermi_5_nu, &
-      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
+      Fermi_3_nu, Fermi_5_nu!, &
+!      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
     logical ( KDL ) :: &
       UseDevice      
           
@@ -480,8 +508,8 @@ contains
       !$OMP shared ( SqrtTiny, Pi, G_F, Sin_2_Theta_W, g_A, amu ) &
       !$OMP shared ( Factor_n, Factor_p ) &
       !$OMP private ( Factor_A, N_p, N_n, N_A ) &
-      !$OMP private ( Fermi_3_nu, Fermi_5_nu ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Fermi_3_nu, Fermi_5_nu ) !&
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
@@ -493,10 +521,12 @@ contains
         N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
                 /  ( max ( A ( iV ), SqrtTiny ) * amu )
 
-        call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+        Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
 
         Chi_H ( iV )  &
           =  Chi_H ( iV )  &
@@ -511,8 +541,8 @@ contains
       !$OMP shared ( SqrtTiny, Pi, G_F, Sin_2_Theta_W, g_A, amu ) &
       !$OMP shared ( Factor_n, Factor_p ) &
       !$OMP private ( Factor_A, N_p, N_n, N_A ) &
-      !$OMP private ( Fermi_3_nu, Fermi_5_nu ) &
-      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      !$OMP private ( Fermi_3_nu, Fermi_5_nu ) !&
+!      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
       do iV = 1, nV
 
         Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
@@ -524,10 +554,12 @@ contains
         N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
                 /  ( max ( A ( iV ), SqrtTiny ) * amu )
 
-        call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-        call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
-                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+        Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
 
         Chi_H ( iV )  &
           =  Chi_H ( iV )  &
@@ -539,6 +571,72 @@ contains
     end if
 
   end procedure Compute_S_N_A_Kernel
+
+
+  function Fermi_2 ( Eta ) result ( F_2 )
+
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ) :: &
+      F_2
+
+    if ( Eta  >  0.0_KDR ) then
+      F_2  =  Eta**3 / 3.  +  4. * Eta  +  2. * exp ( -Eta )
+    else
+      F_2  =  2. * exp ( Eta )
+    end if
+
+  end function Fermi_2
+
+
+  function Fermi_3 ( Eta ) result ( F_3 )
+
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ) :: &
+      F_3
+
+    if ( Eta  >  0.0_KDR ) then
+      F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
+    else
+      F_3  =  6. * exp ( Eta )
+    end if
+
+  end function Fermi_3
+
+
+  function Fermi_4 ( Eta ) result ( F_4 )
+
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ) :: &
+      F_4
+
+    if ( Eta  >  0.0_KDR ) then
+      F_4  =  Eta**5 / 5.  +  2. * Pi_2 * Eta**3 / 3.  +  48. * Eta  &
+              +  24. * exp ( -Eta )
+    else
+      F_4  =  24. * exp ( Eta )
+    end if
+
+  end function Fermi_4
+
+
+  function Fermi_5 ( Eta ) result ( F_5 )
+
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ) :: &
+      F_5
+
+    if ( Eta  >  0.0_KDR ) then
+      F_5  =  Eta**6 / 6.  +  5. * Pi_2 * Eta**4 / 6.  +  110. * Eta**2  &
+              +  240.  -  120. * exp ( -Eta )
+    else
+      F_5  =  120. * exp ( Eta )
+    end if
+
+  end function Fermi_5
 
 
 end submodule Interactions_NM_G__Kernel

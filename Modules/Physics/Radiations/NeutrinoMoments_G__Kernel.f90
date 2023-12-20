@@ -425,14 +425,15 @@ contains
       Factor_ND, &
 !      LHS, &
 !      Eta_ND, Eta_ED, Eta, &
-      Eta_ND, &
+      Eta_ND, EtaMax, &
       F_2, F_3!, &
  !     fdeta, fdeta2, &
  !     fdtheta, fdtheta2, &
  !     fdetadtheta
     logical ( KDL ) :: &
       UseDevice, &
-      Success
+      Bracket, &
+      Converge
           
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
@@ -450,6 +451,8 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
+    EtaMax  =  100.
+
     if ( UseDevice ) then
   !     !$OMP OMP_TARGET_DIRECTIVE parallel do &
   !     !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
@@ -465,8 +468,8 @@ contains
 !      !$OMP private ( LHS, Eta_ND, Eta_ED, Eta, F_2, F_3 ) &
 !      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta ) &
 !      !$OMP private ( Success )
-      !$OMP shared ( Factor_ND ) &
-      !$OMP private ( Eta_ND, F_2, F_3, Success )
+      !$OMP shared ( Factor_ND, EtaMax ) &
+      !$OMP private ( Eta_ND, F_2, F_3, Bracket, Converge )
       do iV = 1, nV
 
         if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
@@ -506,8 +509,10 @@ contains
         if ( Eta_ND  <=  0.0_KDR ) then
           Eta_R ( iV )  =  Eta_ND
         else
+          Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
           call SolveEtaBisection &
-                 ( J ( iV ), N ( iV ), Eta_ND, Success, Eta_R ( iV ) )
+                 ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, Bracket, Converge )
+          Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
         end if
 
         ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
@@ -675,14 +680,17 @@ contains
 !   end subroutine SolveSecant
   
 
-  subroutine SolveEtaBisection ( J, N, Eta_ND, Success, Eta )
+  subroutine SolveEtaBisection ( Eta, J, N, EtaMax, Bracket, Converge )
 
-    real ( KDR ) :: &
-      J, N, Eta_ND
-    logical ( KDL ), intent ( out ) :: &
-      Success
-    real ( KDR ), intent ( out ) :: &
+    real ( KDR ), intent ( inout ) :: &
       Eta
+    real ( KDR ), intent ( in ) :: &
+      J, N
+    real ( KDR ), intent ( in ) :: &
+      EtaMax
+    logical ( KDL ), intent ( out ) :: &
+      Bracket, &
+      Converge
 
     integer ( KDI ) :: &
       iIteration, &
@@ -696,38 +704,43 @@ contains
       AbsolutePrecision, &
       RelativePrecision
       
-    MaxIterations  =  20
-    Tolerance      =  1.0e-10_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
+    MaxIterations  =  50
+    Tolerance      =  1.0e-4_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
     Factor         =  1.6_KDR
 
-    Eta  =  0.0_KDR
-
-    X_0  =  0.0_KDR
-    X_1  =  Factor * Eta_ND
+    X_0  =  0.0
+    X_1  =  2.0 * Eta
     
     Y_0  =  ZeroEta ( J, N, X_0 )
     Y_1  =  ZeroEta ( J, N, X_1 )
 
     !-- Bracket root
 
-    Success  =  .false.
+    Bracket  =  .false.
       
     do iIteration  =  1, MaxIterations
       if ( Y_0 * Y_1  <  0.0_KDR ) then
-        Success  =  .true.
+        Bracket  =  .true.
         exit
       end if
       !-- Only move outer bound
       X_1  =  Factor * X_1
       Y_1  =  ZeroEta ( J, N, X_1 )
+      if ( Y_1  >  EtaMax ) &
+        exit
     end do
 
-    if ( .not. Success ) &
+    if ( .not. Bracket ) then
+      ! call Show ( '>>> Failed to bracket Eta', CONSOLE % ERROR )
+      ! call Show ( J, 'J', CONSOLE % ERROR )
+      ! call Show ( N, 'N', CONSOLE % ERROR )
+      ! call Show ( Eta, 'Eta', CONSOLE % ERROR )
       return
+    end if
 
     !-- Find root
 
-    Success  =  .false.
+    Converge  =  .false.
 
     !-- Orient the search
     if ( Y_0  <  0.0_KDR ) then
@@ -744,10 +757,11 @@ contains
       RelativePrecision  =  abs ( dX )  &
                             /  max ( abs ( Eta ), abs ( Eta + dX ) )
 
-      if (      AbsolutePrecision  <=  Tolerance   &
-           .or. RelativePrecision  <=  Tolerance ) &
-      then
-        Success = .true. 
+!      if (      AbsolutePrecision  <=  Tolerance   &
+!           .or. RelativePrecision  <=  Tolerance ) &
+!      then
+      if ( RelativePrecision  <=  Tolerance ) then
+        Converge = .true. 
         exit
       end if
 
@@ -759,6 +773,16 @@ contains
       
     end do
     
+    if ( .not. Converge ) then
+      ! call Show ( '>>> Failed to converge Eta', CONSOLE % ERROR )
+      ! call Show ( J, 'J', CONSOLE % ERROR )
+      ! call Show ( N, 'N', CONSOLE % ERROR )
+      ! call Show ( Eta, 'Eta', CONSOLE % ERROR )
+      ! call Show ( AbsolutePrecision, 'AbsolutePrecision', CONSOLE % ERROR )
+      ! call Show ( RelativePrecision, 'RelativePrecision', CONSOLE % ERROR )
+      return
+    end if
+
   end subroutine SolveEtaBisection
 
 
@@ -827,9 +851,9 @@ contains
       F_2
 
     if ( Eta  >  0.0_KDR ) then
-      F_2  =  Eta**3 / 3  +  4 * Eta  +  2 * exp ( -Eta )
+      F_2  =  Eta**3 / 3.  +  4. * Eta  +  2. * exp ( -Eta )
     else
-      F_2  =  2 * exp ( Eta )
+      F_2  =  2. * exp ( Eta )
     end if
 
   end function Fermi_2
@@ -843,9 +867,9 @@ contains
       F_3
 
     if ( Eta  >  0.0_KDR ) then
-      F_3  =  Eta**4 / 4  +  Pi_2 * Eta**2 / 2  +  12  -  6 * exp ( -Eta )
+      F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
     else
-      F_3  =  6 * exp ( Eta )
+      F_3  =  6. * exp ( Eta )
     end if
 
   end function Fermi_3
