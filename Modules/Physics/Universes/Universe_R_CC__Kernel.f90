@@ -172,6 +172,10 @@ contains
             FE_E  =  max ( Tolerance * SqrtTiny, abs ( E_E ( iV ) ) )  &
                      /  max ( SqrtTiny, abs ( E ( iV ) ) )
             F_E  =  sqrt ( Tolerance / FE_E )
+            if ( F_E  >  1.0_KDR ) &
+              F_E  =  min ( F_E, 10.0_KDR ) 
+            if ( F_E  <  1.0_KDR ) &
+              F_E  =  max ( F_E, 0.2_KDR ) 
             dT_E  =  min ( dT_E, F_E * dT )
 !          end if
 
@@ -181,6 +185,11 @@ contains
                               1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
   !                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
             F_S  =  sqrt ( Tolerance / FE_S )
+            if ( F_S  >  1.0_KDR ) &
+              F_S  =  min ( F_S, 10.0_KDR ) 
+            if ( F_S  <  1.0_KDR ) &
+              F_S  =  max ( F_S, 0.2_KDR ) 
+          
             dT_S  =  min ( dT_S, F_S * dT )
 !          end if
 
@@ -188,6 +197,10 @@ contains
             FE_N  =  max ( Tolerance * SqrtTiny, abs ( E_N ( iV ) ) )  &
                      /  max ( SqrtTiny, abs ( N ( iV ) ) )
             F_N  =  sqrt ( Tolerance / FE_N )
+            if ( F_N  >  1.0_KDR ) &
+              F_N  =  min ( F_N, 10.0_KDR ) 
+            if ( F_N  <  1.0_KDR ) &
+              F_N  =  max ( F_N, 0.2_KDR ) 
             dT_N  =  min ( dT_N, F_N * dT )
 !          end if
 
@@ -200,19 +213,6 @@ contains
 ! call Show ( E_S ( iV ), '>>>>>> E_S ( iV )' )
 ! call Show ( S ( iV ), '>>>>>> S ( iV )' )
 
-          ! if ( F_E  >  1.0_KDR ) &
-          !   F_E  =  min ( F_E, 10.0_KDR ) 
-          ! if ( F_N  >  1.0_KDR ) &
-          !   F_N  =  min ( F_N, 10.0_KDR ) 
-          ! if ( F_S  >  1.0_KDR ) &
-          !   F_S  =  min ( F_S, 10.0_KDR ) 
-          
-          ! if ( F_E  <  1.0_KDR ) &
-          !   F_E  =  max ( F_E, 0.2_KDR ) 
-          ! if ( F_N  <  1.0_KDR ) &
-          !   F_N  =  max ( F_N, 0.2_KDR ) 
-          ! if ( F_S  <  1.0_KDR ) &
-          !   F_S  =  max ( F_S, 0.2_KDR ) 
           
         end if
       end do
