@@ -131,6 +131,74 @@ contains
   end procedure Compute_dT_RT_CGS_Kernel
 
 
+  module procedure Compute_dT_RK_F_CGS_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny, &
+      Tolerance, &
+      FE_E, FE_N, FE_S, &  !-- Fractional errors
+       F_E,  F_N,  F_S     !-- Factors
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice  =  .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice  =  UseDeviceOption
+      
+    nV  =  size ( E )
+    
+    SqrtTiny   =  sqrt ( tiny ( 0.0_KDR ) )
+    Tolerance  =  1.0e-4_KDR
+
+    if ( UseDevice ) then
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny ) &
+      !$OMP private ( FE_E, FE_N, FE_S, F_E, F_N, F_S ) &
+      !$OMP reduction ( min : dT_E, dT_N, dT_S )
+      do iV = 1, nV
+        if ( ProperCell ( iV ) ) then
+
+          FE_E  =  max ( Tolerance * SqrtTiny, abs ( E_E ( iV ) ) )  &
+                   /  max ( SqrtTiny, abs ( E ( iV ) ) )
+          F_E  =  sqrt ( Tolerance / FE_E )
+!          if ( F_E  >  1.0_KDR ) &
+!            F_E  =  min ( F_E, 10.0_KDR ) 
+          if ( F_E  <  1.0_KDR ) &
+            F_E  =  max ( F_E, 0.2_KDR ) 
+          dT_E  =  min ( dT_E, F_E * dT )
+
+          FE_S  =  max ( Tolerance * SqrtTiny, abs ( E_S ( iV ) ) )  &
+                   /  max ( SqrtTiny, &
+                            1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
+          F_S  =  sqrt ( Tolerance / FE_S )
+!          if ( F_S  >  1.0_KDR ) &
+!            F_S  =  min ( F_S, 10.0_KDR ) 
+          if ( F_S  <  1.0_KDR ) &
+            F_S  =  max ( F_S, 0.2_KDR )         
+          dT_S  =  min ( dT_S, F_S * dT )
+
+          FE_N  =  max ( Tolerance * SqrtTiny, abs ( E_N ( iV ) ) )  &
+                   /  max ( SqrtTiny, abs ( N ( iV ) ) )
+          F_N  =  sqrt ( Tolerance / FE_N )
+!          if ( F_N  >  1.0_KDR ) &
+!            F_N  =  min ( F_N, 10.0_KDR ) 
+          if ( F_N  <  1.0_KDR ) &
+            F_N  =  max ( F_N, 0.2_KDR ) 
+          dT_N  =  min ( dT_N, F_N * dT )
+        
+        end if
+      end do
+      !$OMP  end parallel do
+    end if
+      
+  end procedure Compute_dT_RK_F_CGS_Kernel
+
+
   module procedure Compute_dT_RK_R_CGS_Kernel
 
     integer ( KDI ) :: &
@@ -172,8 +240,8 @@ contains
             FE_E  =  max ( Tolerance * SqrtTiny, abs ( E_E ( iV ) ) )  &
                      /  max ( SqrtTiny, abs ( E ( iV ) ) )
             F_E  =  sqrt ( Tolerance / FE_E )
-            if ( F_E  >  1.0_KDR ) &
-              F_E  =  min ( F_E, 10.0_KDR ) 
+ !           if ( F_E  >  1.0_KDR ) &
+ !             F_E  =  min ( F_E, 10.0_KDR ) 
             if ( F_E  <  1.0_KDR ) &
               F_E  =  max ( F_E, 0.2_KDR ) 
             dT_E  =  min ( dT_E, F_E * dT )
@@ -185,8 +253,8 @@ contains
                               1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
   !                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
             F_S  =  sqrt ( Tolerance / FE_S )
-            if ( F_S  >  1.0_KDR ) &
-              F_S  =  min ( F_S, 10.0_KDR ) 
+!            if ( F_S  >  1.0_KDR ) &
+!              F_S  =  min ( F_S, 10.0_KDR ) 
             if ( F_S  <  1.0_KDR ) &
               F_S  =  max ( F_S, 0.2_KDR ) 
           
@@ -197,8 +265,8 @@ contains
             FE_N  =  max ( Tolerance * SqrtTiny, abs ( E_N ( iV ) ) )  &
                      /  max ( SqrtTiny, abs ( N ( iV ) ) )
             F_N  =  sqrt ( Tolerance / FE_N )
-            if ( F_N  >  1.0_KDR ) &
-              F_N  =  min ( F_N, 10.0_KDR ) 
+!            if ( F_N  >  1.0_KDR ) &
+!              F_N  =  min ( F_N, 10.0_KDR ) 
             if ( F_N  <  1.0_KDR ) &
               F_N  =  max ( F_N, 0.2_KDR ) 
             dT_N  =  min ( dT_N, F_N * dT )
