@@ -1302,13 +1302,13 @@ contains
 
     !-- Fluid error steps
 
-    if ( I % iCheckpoint  >  1 ) &
+!    if ( I % iCheckpoint  >  1 ) &
       call U % Compute_dT_RK_F_CGS &
              ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
 
     !-- Radiation error steps
 
-    if ( I % iCheckpoint  >  1 ) &
+!    if ( I % iCheckpoint  >  1 ) &
       call U % Compute_dT_RK_R_CGS &
              ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
 
