@@ -278,8 +278,7 @@ contains
 !            if ( F_S_1  >  1.0_KDR ) &
 !              F_S_1  =  min ( F_S_1, 10.0_KDR ) 
             if ( F_S_1  <  1.0_KDR ) &
-              F_S_1  =  max ( F_S_1, 0.2_KDR ) 
-          
+              F_S_1  =  max ( F_S_1, 0.2_KDR )           
             dT_S_1  =  min ( dT_S_1, F_S_1 * dT )
 !          end if
 
@@ -293,7 +292,6 @@ contains
 !              F_S_2  =  min ( F_S_2, 10.0_KDR ) 
             if ( F_S_2  <  1.0_KDR ) &
               F_S_2  =  max ( F_S_2, 0.2_KDR ) 
-          
             dT_S_2  =  min ( dT_S_2, F_S_2 * dT )
 !          end if
 
@@ -307,7 +305,6 @@ contains
 !              F_S_3  =  min ( F_S_3, 10.0_KDR ) 
             if ( F_S_3  <  1.0_KDR ) &
               F_S_3  =  max ( F_S_3, 0.2_KDR ) 
-          
             dT_S_3  =  min ( dT_S_3, F_S_3 * dT )
 !          end if
 
@@ -330,7 +327,6 @@ contains
 ! call Show ( F_S, '>>>>>> F_S' )
 ! call Show ( E_S ( iV ), '>>>>>> E_S ( iV )' )
 ! call Show ( S ( iV ), '>>>>>> S ( iV )' )
-
           
         end if
       end do

@@ -64,6 +64,8 @@ module Universe_R_B__Form
     procedure, public, pass ( U ) :: &
       Compute_dT_ET_CGS
     procedure, public, pass ( U ) :: &
+      Compute_dT_RK_F_CGS
+    procedure, public, pass ( U ) :: &
       Compute_dT_RK_R_CGS
   end type Universe_R_B_Form
 
@@ -114,6 +116,25 @@ module Universe_R_B__Form
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_dT_ET_CGS_Kernel
+
+      module subroutine Compute_dT_RK_F_CGS_Kernel &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, ProperCell, &
+                 E_E, E_S_1, E_S_2, E_S_3, E, S_1, S_2, S_3, &
+                 dT, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          dT_E, dT_S_1, dT_S_2, dT_S_3
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          ProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          E_E, E_S_1, E_S_2, E_S_3, &
+            E,   S_1,   S_2,   S_3
+        real ( KDR ), intent ( in ) :: &
+          dT
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_dT_RK_F_CGS_Kernel
 
       module subroutine Compute_dT_RK_R_CGS_Kernel &
                ( dT_E, dT_S_1, dT_S_2, dT_S_3, ProperCell, &
@@ -1036,6 +1057,68 @@ contains
   ! end subroutine ComputeSource_F
 
 
+  subroutine Compute_dT_RK_F_CGS &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT_E, dT_S_1, dT_S_2, dT_S_3
+    class ( Universe_R_B_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B, &
+      iMomentum_B_1, iMomentum_B_2, iMomentum_B_3
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( S_F  =>  S % Step_CS_2 )
+      class is ( Step_RK_CS_Form )
+    associate &
+      ( E  =>  S_F % Error )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
+    select type ( A  =>  F % Atlas )
+      class is ( Atlas_SCG_Form )
+    associate &
+      (   C  =>  A % Chart_GS, &
+         EV  =>  E % Storage_GS % Value, &
+         FV  =>  F % Storage_GS % Value )
+
+    call Search ( F % iaBalanced, F % ENERGY_DENSITY_B,       iEnergy_B )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B_1 )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B_2 )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B_3 )
+
+    call Compute_dT_RK_F_CGS_Kernel &
+           ( dT_E, dT_S_1, dT_S_2, dT_S_3, C % ProperCell, &
+              E_E   =  EV ( :, iEnergy_B ), &
+              E_S_1 =  EV ( :, iMomentum_B_1 ), &
+              E_S_2 =  EV ( :, iMomentum_B_2 ), &
+              E_S_3 =  EV ( :, iMomentum_B_3 ), &
+              E     =  FV ( :, F % ENERGY_DENSITY_B ), &
+              S_1   =  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
+              S_2   =  FV ( :, F % MOMENTUM_DENSITY_D_2 ), &
+              S_3   =  FV ( :, F % MOMENTUM_DENSITY_D_3 ), &
+             dT     =  I % dT  /  I % RampFactor, &
+             UseDeviceOption = F % DeviceMemory )
+
+    end associate !-- C, etc.
+    end select !-- A
+    end select !-- F
+    end associate !-- E
+    end select !-- S_F
+    end select !-- S
+    end select !-- I
+
+  end subroutine Compute_dT_RK_F_CGS
+
+
   subroutine Compute_dT_RK_R_CGS &
                ( dT_E, dT_S_1, dT_S_2, dT_S_3, U, iC, T_Option )
 
@@ -1157,6 +1240,11 @@ contains
       !   call U % Compute_dT_ET_CGS ( dT_3, iC, T_Option )
       !   dT_3  =  U % InteractionFactor  *  dT_3
       ! end if
+
+      !-- Fluid error steps
+
+!      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
 
       !-- Radiation error steps
 
