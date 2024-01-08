@@ -1315,14 +1315,14 @@ contains
    !-- Reduce across radiation types
 
    call CO % Initialize &
-          ( I % Communicator_X_1D, nOutgoing = [ 4 ], &
-            nIncoming = [ 4 ] )
+          ( I % Communicator_X_1D, nOutgoing = [ 6 ], &
+            nIncoming = [ 6 ] )
 
    CO % Outgoing % Value ( 1 )      =  I % dT_Candidate ( 3 )
-   CO % Outgoing % Value ( 2 : 4 )  =  I % dT_Candidate ( 7 : 9 )
+   CO % Outgoing % Value ( 2 : 6 )  =  I % dT_Candidate ( 9 : 13 )
    call CO % Reduce ( REDUCTION % MIN )
-   I % dT_Candidate ( 3 )      =  CO % Incoming % Value ( 1 )
-   I % dT_Candidate ( 7 : 9 )  =  CO % Incoming % Value ( 2 : 4 )
+   I % dT_Candidate ( 3 )       =  CO % Incoming % Value ( 1 )
+   I % dT_Candidate ( 9 : 13 )  =  CO % Incoming % Value ( 2 : 6 )
 
     end associate !-- dT_1, etc.
     end select !-- I
