@@ -122,17 +122,18 @@ module Universe_R_CC__Form
       end subroutine Compute_dT_RT_CGS_Kernel
 
       module subroutine Compute_dT_RK_F_CGS_Kernel &
-               ( dT_E, dT_S, dT_N, ProperCell, E_E, E_S, E_N, E, S, N, &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, ProperCell, &
+                 E_E, E_S_1, E_S_2, E_S_3, E_N, E, S_1, S_2, S_3, N, &
                  dT, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), intent ( inout ) :: &
-          dT_E, dT_S, dT_N
+          dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           ProperCell
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          E_E, E_S, E_N, &
-            E,   S,   N
+          E_E, E_S_1, E_S_2, E_S_3, E_N, &
+            E,   S_1,   S_2,   S_3,   N
         real ( KDR ), intent ( in ) :: &
           dT
         logical ( KDL ), intent ( in ), optional :: &
@@ -140,17 +141,18 @@ module Universe_R_CC__Form
       end subroutine Compute_dT_RK_F_CGS_Kernel
 
       module subroutine Compute_dT_RK_R_CGS_Kernel &
-               ( dT_E, dT_S, dT_N, ProperCell, E_E, E_S, E_N, E, S, N, &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, ProperCell, &
+                 E_E, E_S_1, E_S_2, E_S_3, E_N, E, S_1, S_2, S_3, N, &
                  J_RD, SF_RD, N_RD, DI, dT, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), intent ( inout ) :: &
-          dT_E, dT_S, dT_N
+          dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           ProperCell
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          E_E, E_S, E_N, &
-            E,   S,   N, &   
+          E_E, E_S_1, E_S_2, E_S_3, E_N, &
+            E,   S_1,   S_2,   S_3,   N, &   
           J_RD, SF_RD, N_RD, &
           DI
         real ( KDR ), intent ( in ) :: &
@@ -706,17 +708,21 @@ contains
     I % iCurrentSet  =  U % iRadiation
 
     I % nCurrentSets  =  size ( U % RadiationName )
-    allocate ( I % dT_Label ( 9 ) )
+    allocate ( I % dT_Label ( 13 ) )
 
-    I % dT_Label ( 1 )  =  'GravitationAcceleration'
-    I % dT_Label ( 2 )  =  'FluidAdvection'
-    I % dT_Label ( 3 )  =  'RadiationStreaming'
-    I % dT_Label ( 4 )  =  'FluidEnergyError'
-    I % dT_Label ( 5 )  =  'FluidMomentumError'
-    I % dT_Label ( 6 )  =  'FluidNumberError'
-    I % dT_Label ( 7 )  =  'RadiationEnergyError'
-    I % dT_Label ( 8 )  =  'RadiationMomentumError'
-    I % dT_Label ( 9 )  =  'RadiationNumberError'
+    I % dT_Label (  1 )  =  'GravitationAcceleration'
+    I % dT_Label (  2 )  =  'FluidAdvection'
+    I % dT_Label (  3 )  =  'RadiationStreaming'
+    I % dT_Label (  4 )  =  'FluidEnergyError'
+    I % dT_Label (  5 )  =  'FluidMomentum_1_Error'
+    I % dT_Label (  6 )  =  'FluidMomentum_2_Error'
+    I % dT_Label (  7 )  =  'FluidMomentum_3_Error'
+    I % dT_Label (  8 )  =  'FluidNumberError'
+    I % dT_Label (  9 )  =  'RadiationEnergyError'
+    I % dT_Label ( 10 )  =  'RadiationMomentum_1_Error'
+    I % dT_Label ( 11 )  =  'RadiationMomentum_2_Error'
+    I % dT_Label ( 12 )  =  'RadiationMomentum_3_Error'
+    I % dT_Label ( 13 )  =  'RadiationNumberError'
 
     U % GravityFactor  =  0.7_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -883,10 +889,11 @@ contains
   end subroutine Compute_dT_RT_CGS
 
 
-  subroutine Compute_dT_RK_F_CGS ( dT_E, dT_S, dT_N, U, iC, T_Option )
+  subroutine Compute_dT_RK_F_CGS &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, U, iC, T_Option )
 
     real ( KDR ), intent ( inout ) :: &
-      dT_E, dT_S, dT_N
+      dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
     class ( Universe_R_CC_Form ), intent ( in ) :: &
       U
     integer ( KDI ), intent ( in ) :: &
@@ -895,7 +902,8 @@ contains
       T_Option
 
     integer ( KDI ) :: &
-      iEnergy_B, iNumber_B, iMomentum_B
+      iEnergy_B, iNumber_B, &
+      iMomentum_B_1, iMomentum_B_2, iMomentum_B_3
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
@@ -916,15 +924,21 @@ contains
 
     call Search ( F % iaBalanced, F % ENERGY_DENSITY_B,     iEnergy_B )
     call Search ( F % iaBalanced, F % ELECTRON_DENSITY_B,   iNumber_B )
-    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B_1 )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B_2 )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B_3 )
 
     call Compute_dT_RK_F_CGS_Kernel &
-           ( dT_E, dT_S, dT_N, C % ProperCell, &
+           ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, C % ProperCell, &
              E_E    =  EV ( :, iEnergy_B ), &
-             E_S    =  EV ( :, iMomentum_B ), &
+             E_S_1  =  EV ( :, iMomentum_B_1 ), &
+             E_S_2  =  EV ( :, iMomentum_B_2 ), &
+             E_S_3  =  EV ( :, iMomentum_B_3 ), &
              E_N    =  EV ( :, iNumber_B ), &
              E      =  FV ( :, F % ENERGY_DENSITY_B ), &
-             S      =  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
+             S_1    =  FV ( :, F % MOMENTUM_DENSITY_D_1 ), &
+             S_2    =  FV ( :, F % MOMENTUM_DENSITY_D_2 ), &
+             S_3    =  FV ( :, F % MOMENTUM_DENSITY_D_3 ), &
              N      =  FV ( :, F % ELECTRON_DENSITY_B ), &
              dT     =  I % dT  /  I % RampFactor, &
              UseDeviceOption = F % DeviceMemory )
@@ -940,10 +954,11 @@ contains
   end subroutine Compute_dT_RK_F_CGS
 
 
-  subroutine Compute_dT_RK_R_CGS ( dT_E, dT_S, dT_N, U, iC, T_Option )
+  subroutine Compute_dT_RK_R_CGS &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, U, iC, T_Option )
 
     real ( KDR ), intent ( inout ) :: &
-      dT_E, dT_S, dT_N
+      dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
     class ( Universe_R_CC_Form ), intent ( in ) :: &
       U
     integer ( KDI ), intent ( in ) :: &
@@ -952,7 +967,8 @@ contains
       T_Option
 
     integer ( KDI ) :: &
-      iEnergy_B, iNumber_B, iMomentum_B
+      iEnergy_B, iNumber_B, &
+      iMomentum_B_1, iMomentum_B_2, iMomentum_B_3
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
@@ -973,15 +989,21 @@ contains
 
     call Search ( R % iaBalanced, R % ENERGY_DENSITY_B,       iEnergy_B )
     call Search ( R % iaBalanced, R % NUMBER_DENSITY_B,       iNumber_B )
-    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B_1 )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_B_2 )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_B_3 )
 
     call Compute_dT_RK_R_CGS_Kernel &
-           ( dT_E, dT_S, dT_N, C % ProperCell, &
+           ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, C % ProperCell, &
              E_E    =  EV ( :, iEnergy_B ), &
-             E_S    =  EV ( :, iMomentum_B ), &
+             E_S_1  =  EV ( :, iMomentum_B_1 ), &
+             E_S_2  =  EV ( :, iMomentum_B_2 ), &
+             E_S_3  =  EV ( :, iMomentum_B_3 ), &
              E_N    =  EV ( :, iNumber_B ), &
              E      =  RV ( :, R % ENERGY_DENSITY_B ), &
-             S      =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+             S_1    =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+             S_2    =  RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
+             S_3    =  RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
              N      =  RV ( :, R % NUMBER_DENSITY_B ), &
              J_RD   =  RV ( :, R % ENERGY_DENSITY_C_RD ), &
              SF_RD  =  RV ( :, R % STRESS_FACTOR_RD ), &
@@ -1231,15 +1253,19 @@ contains
     select type ( I )
       class is ( Integrator_CS_1D_BM_CS_Form )
     associate &  !-- See InitializeIntegrator subroutine herein
-      ( dT_1  =>  dT_Candidate ( 1 ), &
-        dT_2  =>  dT_Candidate ( 2 ), &
-        dT_3  =>  dT_Candidate ( 3 ), &
-        dT_4  =>  dT_Candidate ( 4 ), &
-        dT_5  =>  dT_Candidate ( 5 ), &
-        dT_6  =>  dT_Candidate ( 6 ), &
-        dT_7  =>  dT_Candidate ( 7 ), &
-        dT_8  =>  dT_Candidate ( 8 ), &
-        dT_9  =>  dT_Candidate ( 9 ) )
+      ( dT_1   =>  dT_Candidate (  1 ), &
+        dT_2   =>  dT_Candidate (  2 ), &
+        dT_3   =>  dT_Candidate (  3 ), &
+        dT_4   =>  dT_Candidate (  4 ), &
+        dT_5   =>  dT_Candidate (  5 ), &
+        dT_6   =>  dT_Candidate (  6 ), &
+        dT_7   =>  dT_Candidate (  7 ), &
+        dT_8   =>  dT_Candidate (  8 ), &
+        dT_9   =>  dT_Candidate (  9 ), &
+        dT_10  =>  dT_Candidate ( 10 ), &
+        dT_11  =>  dT_Candidate ( 11 ), &
+        dT_12  =>  dT_Candidate ( 12 ), &
+        dT_13  =>  dT_Candidate ( 13 ) )
 
     !-- Gravity step
 
@@ -1277,12 +1303,14 @@ contains
     !-- Fluid error steps
 
     if ( I % iCheckpoint  >  1 ) &
-      call U % Compute_dT_RK_F_CGS ( dT_4, dT_5, dT_6, iC, T_Option )
+      call U % Compute_dT_RK_F_CGS &
+             ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
 
     !-- Radiation error steps
 
     if ( I % iCheckpoint  >  1 ) &
-      call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, iC, T_Option )
+      call U % Compute_dT_RK_R_CGS &
+             ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
 
    !-- Reduce across radiation types
 
