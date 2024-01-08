@@ -116,17 +116,18 @@ module Universe_R_B__Form
       end subroutine Compute_dT_ET_CGS_Kernel
 
       module subroutine Compute_dT_RK_R_CGS_Kernel &
-               ( dT_E, dT_S, ProperCell, E_E, E_S, E, S, J_RD, SF_RD, DI, dT, &
-                 UseDeviceOption )
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, ProperCell, &
+                 E_E, E_S_1, E_S_2, E_S_3, E, S_1, S_2, S_3, &
+                 J_RD, SF_RD, DI, dT, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), intent ( inout ) :: &
-          dT_E, dT_S
+          dT_E, dT_S_1, dT_S_2, dT_S_3
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           ProperCell
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          E_E, E_S, &
-            E,   S, &
+          E_E, E_S_1, E_S_2, E_S_3, &
+            E,   S_1,   S_2,   S_3, &
           J_RD, SF_RD, &
           DI
         real ( KDR ), intent ( in ) :: &
@@ -686,13 +687,18 @@ contains
     I % iCurrentSet  =  U % iRadiation
 
     I % nCurrentSets  =  size ( U % RadiationName )
-    allocate ( I % dT_Label ( 5 ) )
+    allocate ( I % dT_Label ( 10 ) )
 
-    I % dT_Label ( 1 )  =  'FluidAdvection'
-    I % dT_Label ( 2 )  =  'RadiationStreaming'
-    I % dT_Label ( 3 )  =  'EnergyTransfer'
-    I % dT_Label ( 4 )  =  'RadiationEnergyError'
-    I % dT_Label ( 5 )  =  'RadiationMomentum_1_Error'
+    I % dT_Label (  1 )  =  'FluidAdvection'
+    I % dT_Label (  2 )  =  'RadiationStreaming'
+    I % dT_Label (  3 )  =  'FluidEnergyError'
+    I % dT_Label (  4 )  =  'FluidMomentum_1_Error'
+    I % dT_Label (  5 )  =  'FluidMomentum_2_Error'
+    I % dT_Label (  6 )  =  'FluidMomentum_3_Error'
+    I % dT_Label (  7 )  =  'RadiationEnergyError'
+    I % dT_Label (  8 )  =  'RadiationMomentum_1_Error'
+    I % dT_Label (  9 )  =  'RadiationMomentum_2_Error'
+    I % dT_Label ( 10 )  =  'RadiationMomentum_3_Error'
 
     U % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -1030,10 +1036,11 @@ contains
   ! end subroutine ComputeSource_F
 
 
-  subroutine Compute_dT_RK_R_CGS ( dT_E, dT_S, U, iC, T_Option )
+  subroutine Compute_dT_RK_R_CGS &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, U, iC, T_Option )
 
     real ( KDR ), intent ( inout ) :: &
-      dT_E, dT_S
+      dT_E, dT_S_1, dT_S_2, dT_S_3
     class ( Universe_R_B_Form ), intent ( in ) :: &
       U
     integer ( KDI ), intent ( in ) :: &
@@ -1042,7 +1049,8 @@ contains
       T_Option
 
     integer ( KDI ) :: &
-      iEnergy_B, iMomentum_B
+      iEnergy_B, &
+      iMomentum_B_1, iMomentum_B_2, iMomentum_B_3
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
@@ -1062,14 +1070,20 @@ contains
          RV  =>  R % Storage_GS % Value )
 
     call Search ( R % iaBalanced, R % ENERGY_DENSITY_B,       iEnergy_B )
-    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B_1 )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_B_2 )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_B_3 )
 
     call Compute_dT_RK_R_CGS_Kernel &
-           ( dT_E, dT_S, C % ProperCell, &
+           ( dT_E, dT_S_1, dT_S_2, dT_S_3, C % ProperCell, &
               E_E   =  EV ( :, iEnergy_B ), &
-              E_S   =  EV ( :, iMomentum_B ), &
+              E_S_1 =  EV ( :, iMomentum_B_1 ), &
+              E_S_2 =  EV ( :, iMomentum_B_2 ), &
+              E_S_3 =  EV ( :, iMomentum_B_3 ), &
               E     =  RV ( :, R % ENERGY_DENSITY_B ), &
-              S     =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+              S_1   =  RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
+              S_2   =  RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
+              S_3   =  RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
               J_RD  =  RV ( :, R % ENERGY_DENSITY_C_RD ), &
              SF_RD  =  RV ( :, R % STRESS_FACTOR_RD ), &
              DI     =  RV ( :, R % DIFFUSION_INDICATOR ), &
@@ -1102,11 +1116,16 @@ contains
       CO
 
     associate &
-      ( dT_1  =>  dT_Candidate ( 1 ), &
-        dT_2  =>  dT_Candidate ( 2 ), &
-        dT_3  =>  dT_Candidate ( 3 ), &
-        dT_4  =>  dT_Candidate ( 4 ), &
-        dT_5  =>  dT_Candidate ( 5 ) )
+      ( dT_1   =>  dT_Candidate (  1 ), &
+        dT_2   =>  dT_Candidate (  2 ), &
+        dT_3   =>  dT_Candidate (  3 ), &
+        dT_4   =>  dT_Candidate (  4 ), &
+        dT_5   =>  dT_Candidate (  5 ), &
+        dT_6   =>  dT_Candidate (  6 ), &
+        dT_7   =>  dT_Candidate (  7 ), &
+        dT_8   =>  dT_Candidate (  8 ), &
+        dT_9   =>  dT_Candidate (  9 ), &
+        dT_10  =>  dT_Candidate ( 10 ) )
 
     select type ( U  =>  I % System )
       class is ( Universe_R_B_Form )
@@ -1134,25 +1153,27 @@ contains
       !   dT_3  =  U % InteractionFactor  *  dT_3
       ! end if
 
-      if ( U % ApplyInteractions ) then
-        call U % Compute_dT_ET_CGS ( dT_3, iC, T_Option )
-        dT_3  =  U % InteractionFactor  *  dT_3
-      end if
+      ! if ( U % ApplyInteractions ) then
+      !   call U % Compute_dT_ET_CGS ( dT_3, iC, T_Option )
+      !   dT_3  =  U % InteractionFactor  *  dT_3
+      ! end if
 
       !-- Radiation error steps
 
 !      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_RK_R_CGS ( dT_4, dT_5, iC, T_Option )
+        call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
 
       !-- Reduce across CS_1D
 
       call CO % Initialize &
-             ( I % Communicator_X_1D, nOutgoing = [ 4 ], &
-               nIncoming = [ 4 ] )
+             ( I % Communicator_X_1D, nOutgoing = [ 5 ], &
+               nIncoming = [ 5 ] )
 
-      CO % Outgoing % Value  =  I % dT_Candidate ( 2 : 5 )
+      CO % Outgoing % Value ( 1 )      =  I % dT_Candidate ( 2 )
+      CO % Outgoing % Value ( 2 : 5 )  =  I % dT_Candidate ( 7 : 10 )
       call CO % Reduce ( REDUCTION % MIN )
-      I % dT_Candidate ( 2 : 5 )  =  CO % Incoming % Value
+      I % dT_Candidate ( 2 )       =  CO % Incoming % Value ( 1 )
+      I % dT_Candidate ( 7 : 10 )  =  CO % Incoming % Value ( 2 : 5 )
 
     end select !-- I
     end select !-- U

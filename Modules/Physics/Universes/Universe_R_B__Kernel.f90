@@ -119,8 +119,8 @@ contains
     real ( KDR ) :: &
       SqrtTiny, &
       Tolerance, &
-      FE_E, FE_N, FE_S, &  !-- Fractional errors
-       F_E,  F_N,  F_S     !-- Factors
+      FE_E, FE_S_1, FE_S_2, FE_S_3, &  !-- Fractional errors
+       F_E,  F_S_1,  F_S_2,  F_S_3     !-- Factors
     logical ( KDL ) :: &
       UseDevice
       
@@ -138,8 +138,9 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( SqrtTiny ) &
-      !$OMP private ( FE_E, FE_N, FE_S, F_E, F_N, F_S ) &
-      !$OMP reduction ( min : dT_E, dT_S )
+      !$OMP private ( FE_E, FE_S_1, FE_S_2, FE_S_3 ) &
+      !$OMP private ( F_E, F_S_1, F_S_2, F_S_3 ) &
+      !$OMP reduction ( min : dT_E, dT_S_1, dT_S_2, dT_S_3 )
       do iV = 1, nV
         if ( ProperCell ( iV ) ) then
 
@@ -149,16 +150,29 @@ contains
 
             FE_E  =  max ( Tolerance * SqrtTiny, abs ( E_E ( iV ) ) )  &
                    /  max ( SqrtTiny, abs ( E ( iV ) ) )
-            FE_S  =  max ( Tolerance * SqrtTiny, abs ( E_S ( iV ) ) )  &
-                     /  max ( SqrtTiny, &
-                              1.0e-4 * abs ( E ( iV ) )  +  abs ( S ( iV ) ) )
-  !                   /  max ( SqrtTiny, abs ( S ( iV ) ) )
-
              F_E  =  sqrt ( Tolerance / FE_E )
-             F_S  =  sqrt ( Tolerance / FE_S )
-
             dT_E  =  min ( dT_E, F_E * dT )
-            dT_S  =  min ( dT_S, F_S * dT )
+
+            FE_S_1  =  max ( Tolerance * SqrtTiny, abs ( E_S_1 ( iV ) ) )  &
+                     /  max ( SqrtTiny, &
+                              1.0e-4 * abs ( E ( iV ) )  +  abs ( S_1 ( iV ) ) )
+  !                   /  max ( SqrtTiny, abs ( S_1 ( iV ) ) )
+             F_S_1  =  sqrt ( Tolerance / FE_S_1 )
+            dT_S_1  =  min ( dT_S_1, F_S_1 * dT )
+
+            FE_S_2  =  max ( Tolerance * SqrtTiny, abs ( E_S_2 ( iV ) ) )  &
+                     /  max ( SqrtTiny, &
+                              1.0e-4 * abs ( E ( iV ) )  +  abs ( S_2 ( iV ) ) )
+  !                   /  max ( SqrtTiny, abs ( S_2 ( iV ) ) )
+             F_S_2  =  sqrt ( Tolerance / FE_S_2 )
+            dT_S_2  =  min ( dT_S_2, F_S_2 * dT )
+
+            FE_S_3  =  max ( Tolerance * SqrtTiny, abs ( E_S_3 ( iV ) ) )  &
+                     /  max ( SqrtTiny, &
+                              1.0e-4 * abs ( E ( iV ) )  +  abs ( S_3 ( iV ) ) )
+  !                   /  max ( SqrtTiny, abs ( S_3 ( iV ) ) )
+             F_S_3  =  sqrt ( Tolerance / FE_S_3 )
+            dT_S_3  =  min ( dT_S_3, F_S_3 * dT )
 
 !          end if
 
