@@ -989,7 +989,7 @@ contains
     allocate ( C % ProperCellStorage )
     call C % ProperCellStorage % Initialize &
            ( C % nCellsLocal, ClearOption = .true. )
-    C % ProperCell => C % ProperCellStorage % Value
+    C % ProperCell  =>  C % ProperCellStorage % Value
     
     associate &
       ( iaF  =>  C % iaFirst, &
@@ -1001,9 +1001,13 @@ contains
          iaF ( 3 ) : iaL ( 3 ) )  &
       =>  C % ProperCell
 
+    !-- Workaround for GCC 13.2.0
+!    associate &
+!      ( lB  =>  iaF + nGL, &
+!        uB  =>  iaL - nGL )
     associate &
-      ( lB  =>  iaF + nGL, &
-        uB  =>  iaL - nGL )
+      ( lB  =>  C % iaFirst  +  C % nGhostLayers, &
+        uB  =>  C % iaLast   -  C % nGhostLayers )
     !$OMP parallel do private collapse ( 3 )
     do kC = lB ( 3 ), uB ( 3 )
       do jC = lB ( 2 ), uB ( 2 )

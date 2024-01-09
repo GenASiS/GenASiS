@@ -754,8 +754,11 @@ contains
                     then
                       call iaCEF ( iPS ) % Initialize ( [ iC, jC, kC ] )
                     end if
-                    nCF ( iPS )  =  nCF ( iPS )  +  1
-                    nCT ( iPS )  =  nCT ( iPS )  +  1
+                    !-- Workaround for GCC 13.2.0
+                    !nCF ( iPS )  =  nCF ( iPS )  +  1
+                    !nCT ( iPS )  =  nCT ( iPS )  +  1
+                    nChunksFrom_F_S ( iPS )  =  nChunksFrom_F_S ( iPS )  +  1
+                    nChunksTo_S_F   ( iPS )  =  nChunksTo_S_F   ( iPS )  +  1
                   end if
                   if ( iF  ==  nFG ( iPF )  &
                        .or.  all ( [ iC, jC, kC ] == [ nC_1, nC_2, nC_3 ] ) ) &
@@ -780,7 +783,7 @@ contains
     nCT  =  nCT  *  nMS
     end associate !-- nCF, etc.
 
-    end associate !-- nP, etc.
+    end associate !-- MyRank, etc.
 
     !-- Initialize portals
 
