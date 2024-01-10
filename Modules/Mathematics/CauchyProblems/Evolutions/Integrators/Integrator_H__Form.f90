@@ -43,7 +43,7 @@ module Integrator_H__Form
       T_CheckpointInterval  = 0.0_KDR, &
       T_Checkpoint          = 0.0_KDR, & 
       T                     = 0.0_KDR, &
-      dT                    = huge ( 1.0_KDR ), &
+      dT                    = sqrt ( huge ( 1.0_KDR ) ), &
       RampFactor            = 1.0_KDR
     type ( QuantityForm ) :: &
       Unit_T
@@ -1290,7 +1290,7 @@ contains
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
 
-    I % dT_Candidate  =  huge ( 0.0_KDR )
+    I % dT_Candidate  =  sqrt ( huge ( 0.0_KDR ) )
 
     associate ( A  =>  I % X )
     do iC  =  1,  A % nCharts
