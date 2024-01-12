@@ -110,6 +110,7 @@ module Step_RK_H__Form
   end interface
 
     private :: &
+      SetCoefficientsExplicit, &
       SetSlope_H, &
       SetSlopeStage_H
 
@@ -128,76 +129,14 @@ contains
       OrderOption
 
     integer ( KDI ) :: &
-      iS
-    real ( KDR ), dimension ( :, : ), allocatable :: &
-      A  !-- RungeKutta matrix
-    real ( KDR ), dimension ( : ), allocatable :: &
-      B, &  !-- RungeKutta weights
-      BE    !-- RungeKutta weights of embedded lower order solution for error
-    real ( KDR ), dimension ( : ), allocatable :: &
-      C  !-- RungeKutta nodes
+      iS  !-- iStage
 
     S % IGNORABILITY  =  CONSOLE % INFO_1
 
     S % nStages  =  2
     if ( present ( OrderOption ) ) &
       S % nStages  =  OrderOption
-
-    select case ( S % nStages )
-    case ( 2 )
-      allocate ( A ( 2 : 2, 1 : 1 ) )
-      A           =  0.0_KDR
-      A ( 2, 1 )  =  1.0_KDR
-      allocate ( B ( 1 : 2 ) )
-      B ( 1 )  =  0.5_KDR
-      B ( 2 )  =  0.5_KDR
-      allocate ( C ( 2 : 2 ) )
-      C ( 2 )  =  1.0_KDR
-      allocate ( BE ( 1 : 2 ) )
-      BE ( 1 )  =  1.0_KDR
-      BE ( 2 )  =  0.0_KDR
-    case ( 3 )
-      allocate ( A ( 3 : 3, 2 : 2 ) )
-      A           =   0.0_KDR
-      A ( 2, 1 )  =   0.5_KDR
-      A ( 3, 1 )  =  -1.0_KDR
-      A ( 3, 2 )  =   2.0_KDR
-      allocate ( B ( 1 : 3 ) )
-      B ( 1 )  =  1.0_KDR / 6.0_KDR
-      B ( 2 )  =  2.0_KDR / 3.0_KDR
-      B ( 3 )  =  1.0_KDR / 6.0_KDR
-      allocate ( C ( 2 : 3 ) )
-      C ( 2 )  =  0.5_KDR
-      C ( 3 )  =  1.0_KDR
-      allocate ( BE ( 1 : 3 ) )
-      BE  =  0.0_KDR
-    case ( 4 )
-      allocate ( A ( 4 : 4, 3 : 3 ) )
-      A           =  0.0_KDR
-      A ( 2, 1 )  =  0.5_KDR
-      A ( 3, 1 )  =  0.0_KDR
-      A ( 4, 1 )  =  0.0_KDR
-      A ( 3, 2 )  =  0.5_KDR
-      A ( 4, 2 )  =  0.0_KDR
-      A ( 4, 3 )  =  1.0_KDR
-      allocate ( B ( 1 : 4 ) )
-      B ( 1 )  =  1.0_KDR / 6.0_KDR
-      B ( 2 )  =  1.0_KDR / 3.0_KDR
-      B ( 3 )  =  1.0_KDR / 3.0_KDR
-      B ( 4 )  =  1.0_KDR / 6.0_KDR
-      allocate ( C ( 2 : 4 ) )
-      C ( 2 )  =  0.5_KDR
-      C ( 3 )  =  0.5_KDR
-      C ( 4 )  =  1.0_KDR
-      allocate ( BE ( 1 : 4 ) )
-      BE  =  0.0_KDR
-    case default
-      call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
-      call Show ( S % nStages, 'Order', CONSOLE % ERROR )
-      call Show ( 'Step_RK_H__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Initialize_H', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- nStages
+    associate ( nS  =>  S % nStages )
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK' 
@@ -209,23 +148,7 @@ contains
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
-    S % nStages  =  size ( B )
-    associate ( nS  =>  S % nStages )
-
-    allocate ( S % A ( 2 : nS ) )
-    do iS  =  2,  nS
-      call S % A ( iS ) % Initialize ( iS - 1 )
-      S % A ( iS ) % Value  =  A ( iS, 1 : iS - 1 )
-    end do !-- iS
-
-    allocate ( S % B ( nS ) )
-    S % B  =  B
-
-    allocate ( S % C ( 2 : nS ) )
-    S % C  =  C
-
-    allocate ( S % BE ( nS ) )
-    S % BE  =  BE
+    call SetCoefficientsExplicit ( S )
 
     S % Atlas  =>  Atlas
 
@@ -645,6 +568,99 @@ contains
     call Show ( 'StoreSolution', 'subroutine', CONSOLE % WARNING )
 
   end subroutine StoreSolution
+
+
+  subroutine SetCoefficientsExplicit ( S )
+
+    class ( Step_RK_H_Form ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iS  !-- iStage
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      A  !-- RungeKutta matrix, explicit
+    real ( KDR ), dimension ( : ), allocatable :: &
+      B, &  !-- RungeKutta weights, explicit
+      BE    !-- RungeKutta weights, embedded lower order, explicit
+    real ( KDR ), dimension ( : ), allocatable :: &
+      C  !-- RungeKutta nodes, explicit
+
+    associate ( nS  =>  S % nStages )
+
+    select case ( nS )
+    case ( 2 )
+      allocate ( A ( 2 : 2, 1 : 1 ) )
+      A           =  0.0_KDR
+      A ( 2, 1 )  =  1.0_KDR
+      allocate ( B ( 1 : 2 ) )
+      B ( 1 )  =  0.5_KDR
+      B ( 2 )  =  0.5_KDR
+      allocate ( C ( 2 : 2 ) )
+      C ( 2 )  =  1.0_KDR
+      allocate ( BE ( 1 : 2 ) )
+      BE ( 1 )  =  1.0_KDR
+      BE ( 2 )  =  0.0_KDR
+    case ( 3 )
+      allocate ( A ( 3 : 3, 2 : 2 ) )
+      A           =   0.0_KDR
+      A ( 2, 1 )  =   0.5_KDR
+      A ( 3, 1 )  =  -1.0_KDR
+      A ( 3, 2 )  =   2.0_KDR
+      allocate ( B ( 1 : 3 ) )
+      B ( 1 )  =  1.0_KDR / 6.0_KDR
+      B ( 2 )  =  2.0_KDR / 3.0_KDR
+      B ( 3 )  =  1.0_KDR / 6.0_KDR
+      allocate ( C ( 2 : 3 ) )
+      C ( 2 )  =  0.5_KDR
+      C ( 3 )  =  1.0_KDR
+      allocate ( BE ( 1 : 3 ) )
+      BE  =  0.0_KDR
+    case ( 4 )
+      allocate ( A ( 4 : 4, 3 : 3 ) )
+      A           =  0.0_KDR
+      A ( 2, 1 )  =  0.5_KDR
+      A ( 3, 1 )  =  0.0_KDR
+      A ( 4, 1 )  =  0.0_KDR
+      A ( 3, 2 )  =  0.5_KDR
+      A ( 4, 2 )  =  0.0_KDR
+      A ( 4, 3 )  =  1.0_KDR
+      allocate ( B ( 1 : 4 ) )
+      B ( 1 )  =  1.0_KDR / 6.0_KDR
+      B ( 2 )  =  1.0_KDR / 3.0_KDR
+      B ( 3 )  =  1.0_KDR / 3.0_KDR
+      B ( 4 )  =  1.0_KDR / 6.0_KDR
+      allocate ( C ( 2 : 4 ) )
+      C ( 2 )  =  0.5_KDR
+      C ( 3 )  =  0.5_KDR
+      C ( 4 )  =  1.0_KDR
+      allocate ( BE ( 1 : 4 ) )
+      BE  =  0.0_KDR
+    case default
+      call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
+      call Show ( S % nStages, 'Order', CONSOLE % ERROR )
+      call Show ( 'Step_RK_H__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetCoefficientsExplicit', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- nStages
+
+    allocate ( S % A ( 2 : nS ) )
+    do iS  =  2,  nS
+      call S % A ( iS ) % Initialize ( iS - 1 )
+      S % A ( iS ) % Value  =  A ( iS, 1 : iS - 1 )
+    end do !-- iS
+
+    allocate ( S % B ( nS ) )
+    S % B  =  B
+
+    allocate ( S % C ( 2 : nS ) )
+    S % C  =  C
+
+    allocate ( S % BE ( nS ) )
+    S % BE  =  BE
+
+    end associate !-- nS
+
+  end subroutine SetCoefficientsExplicit
 
 
   subroutine SetSlope_H ( S, K )
