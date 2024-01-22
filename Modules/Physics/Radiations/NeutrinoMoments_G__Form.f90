@@ -240,16 +240,16 @@ contains
       allocate ( FieldUnit ( nFields, nC ) )
     end if !-- FieldOption
 
-    ! do iC  =  1, nC
-    !   FieldUnit ( RM % NUMBER_DENSITY_C, iC ) &
-    !     =  Units_R ( iC ) % NumberDensity
-    !   FieldUnit ( RM % NUMBER_DENSITY_C_EQ, iC ) &
-    !     =  Units_R ( iC ) % NumberDensity
-    !   FieldUnit ( RM % NUMBER_DENSITY_B, iC ) &
-    !     =  Units_R ( iC ) % NumberDensity
-    !   FieldUnit ( RM % ENERGY_AVERAGE, iC ) &
-    !     =  Units_R ( iC ) % Coordinate_MS ( 1 )
-    ! end do !-- iC
+    do iC  =  1, nC
+      FieldUnit ( RM % NUMBER_DENSITY_C, iC ) &
+        =  Units_R ( iC ) % NumberDensity
+      FieldUnit ( RM % NUMBER_DENSITY_C_EQ, iC ) &
+        =  Units_R ( iC ) % NumberDensity
+      FieldUnit ( RM % NUMBER_DENSITY_B, iC ) &
+        =  Units_R ( iC ) % NumberDensity
+      FieldUnit ( RM % ENERGY_AVERAGE, iC ) &
+        =  Units_R ( iC ) % Coordinate_MS ( 1 )
+    end do !-- iC
 
     end associate !-- nC
 
