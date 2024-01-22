@@ -596,12 +596,12 @@ contains
       U
 
     integer ( KDI ) :: &
-      EvolutionOrder
+      nStages
     character ( LDL ) :: &
       RiemannSolverType
 
-    EvolutionOrder  =  2
-    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+    nStages  =  2
+    call PROGRAM_HEADER % GetParameter ( nStages, 'nStages' )
 
     U % Coarsen  =  .true.
     call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
@@ -657,7 +657,7 @@ contains
       S_F % SetSlope  =>  SetSlope_F_P_DFV_N_SS
 
       !-- Combined step
-      call S % Initialize ( R, F, OrderOption = EvolutionOrder )
+      call S % Initialize ( R, F, nStagesOption = nStages )
 
       !-- Coarsening
       if ( U % Coarsen ) then

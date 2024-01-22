@@ -358,14 +358,14 @@ contains
       U
 
     integer ( KDI ) :: &
-      EvolutionOrder
+      nStages
     logical ( KDL ) :: &
       DivergenceParts
     character ( LDL ) :: &
       RiemannSolverType
 
-    EvolutionOrder  =  2
-    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+    nStages  =  2
+    call PROGRAM_HEADER % GetParameter ( nStages, 'nStages' )
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
@@ -446,7 +446,7 @@ contains
       end select !-- F
     end if  !-- DivergenceParts
 
-    call S % Initialize ( F, OrderOption = EvolutionOrder )
+    call S % Initialize ( F, nStagesOption = nStages )
 
     end select !-- S
 

@@ -583,18 +583,125 @@ contains
   ! end subroutine InitializeSteps
 
 
+  ! subroutine InitializeStep ( U )
+
+  !   class ( Universe_R_B_Form ), intent ( inout ) :: &
+  !     U
+
+  !   integer ( KDI ) :: &
+  !     EvolutionOrder
+  !   character ( LDL ) :: &
+  !     RiemannSolverType
+
+  !   EvolutionOrder  =  2
+  !   call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+
+  !   select type ( I  =>  U % Integrator )
+  !     class is ( Integrator_CS_1D_BM_CS_Form )
+  !   associate &
+  !     ( R  =>  I % CurrentSet_X_1D )
+
+  !     if ( .not. U % EvolveFluid ) then
+
+  !       allocate ( Step_RK_CS_Form :: I % Step_X )
+  !       select type ( S  =>  I % Step_X )
+  !         class is ( Step_RK_CS_Form )
+
+  !       if ( U % ApplyStreaming .and. .not. U % ApplyInteractions ) then
+
+  !         allocate ( DivergencePart_RM_Form :: S % DivergenceTotal )
+  !         associate ( DT  =>  S % DivergenceTotal )
+  !         call DT % Initialize ( R )
+  !         end associate !-- DT
+
+  !       else if ( U % ApplyInteractions .and. .not. U % ApplyStreaming ) then
+
+  !         S % SetSlope  =>  SetSlope_RM_I 
+
+  !       end if !-- Radiation operators
+
+  !       call S % Initialize ( R, OrderOption = EvolutionOrder )
+
+  !       end select !-- S
+
+  !     else !-- EvolveFluid
+
+  !       allocate ( Step_RK_CS_CS_Form :: I % Step_X )
+  !       select type ( S  =>  I % Step_X )
+  !         class is ( Step_RK_CS_CS_Form )
+
+  !       allocate ( S % Step_CS_1 )
+  !       allocate ( S % Step_CS_2 )
+  !       associate &
+  !         ( S_R  =>  S % Step_CS_1, &
+  !           S_F  =>  S % Step_CS_2 )
+
+  !       !-- Radiation
+  !       if ( U % ApplyStreaming .and. U % ApplyInteractions ) then
+
+  !         allocate ( DivergencePart_RM_Form :: S_R % DivergenceTotal )
+  !         associate ( DT  =>  S_R % DivergenceTotal )
+  !         call DT % Initialize ( R )
+  !         end associate !-- DT
+
+  !         allocate ( DiffusionFactor_RM_Form :: S_R % DiffusionFactor )
+  !         select type ( DF  =>  S_R % DiffusionFactor )
+  !         class is ( DiffusionFactor_RM_Form )
+  !           call DF % Initialize ( U % Interactions_BM )
+  !         end select !-- DF
+
+  !         S_R % SetSlope  =>  SetSlope_RM_DFV_I
+
+  !       end if !-- Radiation operators
+
+  !       !-- Fluid
+  !       associate &
+  !         ( F  =>  I % CurrentSet_X )
+
+  !       allocate ( DivergencePart_F_P_T_Form :: S_F % DivergenceTotal )
+  !       associate ( DT  =>  S_F % DivergenceTotal )
+  !         call DT % Initialize ( F )
+  !       end associate !-- DT
+
+  !       RiemannSolverType = 'HLLC'
+  !       call PROGRAM_HEADER % GetParameter &
+  !              ( RiemannSolverType, 'RiemannSolverType' )
+  !       if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+  !         allocate ( RiemannSolver_HLLC_P_Form :: S_F % RiemannSolver )
+  !         associate ( RS  =>  S_F % RiemannSolver )
+  !         call RS % Initialize ( F )
+  !         end associate !-- RS
+  !       end if
+
+  !       S_F % SetSlope  =>  SetSlope_F_P_DFV_SS
+
+  !       !-- Combined step
+  !       call S % Initialize ( R, F, OrderOption = EvolutionOrder )
+
+  !       end associate !-- F
+  !       end associate !-- S_R, S_F
+  !       end select !-- S
+
+  !     end if !-- EvolveFluid
+
+  !   end associate !-- R
+  !   end select !-- I
+
+  ! end subroutine InitializeStep
+
+
   subroutine InitializeStep ( U )
 
     class ( Universe_R_B_Form ), intent ( inout ) :: &
       U
 
     integer ( KDI ) :: &
-      EvolutionOrder
+      nStages
     character ( LDL ) :: &
       RiemannSolverType
 
-    EvolutionOrder  =  2
-    call PROGRAM_HEADER % GetParameter ( EvolutionOrder, 'EvolutionOrder' )
+    nStages  =  3  !-- IMEX
+    call PROGRAM_HEADER % GetParameter ( nStages, 'nStages' )
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
@@ -620,7 +727,10 @@ contains
 
         end if !-- Radiation operators
 
-        call S % Initialize ( R, OrderOption = EvolutionOrder )
+        call S % Initialize &
+               ( R, &
+                 ImplicitExplicitOption = .true., &
+                 nStagesOption = nStages )
 
         end select !-- S
 
@@ -676,7 +786,11 @@ contains
         S_F % SetSlope  =>  SetSlope_F_P_DFV_SS
 
         !-- Combined step
-        call S % Initialize ( R, F, OrderOption = EvolutionOrder )
+        call S % Initialize &
+              ( R, F, &
+!                ImplicitExplicitOption = .false., &
+                ImplicitExplicitOption = .true., &
+                nStagesOption = nStages )
 
         end associate !-- F
         end associate !-- S_R, S_F
@@ -1241,15 +1355,15 @@ contains
       !   dT_3  =  U % InteractionFactor  *  dT_3
       ! end if
 
-      !-- Fluid error steps
+      ! !-- Fluid error steps
 
-!      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
+      ! if ( I % iCheckpoint  >  1 ) &
+      !   call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
 
-      !-- Radiation error steps
+      ! !-- Radiation error steps
 
-!      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
+      ! if ( I % iCheckpoint  >  1 ) &
+      !   call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
 
       !-- Reduce across CS_1D
 

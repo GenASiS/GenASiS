@@ -71,7 +71,8 @@ module Step_RK_CS__Form
 contains
 
 
-  subroutine Initialize_CS ( S, CS, NameOption, OrderOption )
+  subroutine Initialize_CS &
+               ( S, CS, NameOption, ImplicitExplicitOption, nStagesOption )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
@@ -79,8 +80,10 @@ contains
       CS
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      ImplicitExplicitOption
     integer ( KDI ), intent ( in ), optional :: &
-      OrderOption
+      nStagesOption
 
     integer ( KDI ) :: &
       iS  !-- iStage
@@ -205,7 +208,8 @@ contains
     call S % Initialize_H &
            ( CS % Atlas, &
              NameOption = Name, &
-             OrderOption = OrderOption )
+             ImplicitExplicitOption = ImplicitExplicitOption, &
+             nStagesOption = nStagesOption )
 
   end subroutine Initialize_CS
 
@@ -477,7 +481,8 @@ call SM % AddFieldSet ( S % Error )
         K  =>  S % SlopeStage ( iS ) % Element )
 
     call Y % MultiplyAdd ( K, dT * B )
-    call E % MultiplyAdd ( K, dT * ( B - BE ) )
+    if ( S % EmbeddedMethod ) &
+      call E % MultiplyAdd ( K, dT * ( B - BE ) )
 
     end associate !-- Y, etc.
 

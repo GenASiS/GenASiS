@@ -48,7 +48,9 @@ module Step_RK_CS_CS__Form
 contains
 
 
-  subroutine Initialize_CS_CS ( S, CS_1, CS_2, NameOption, OrderOption )
+  subroutine Initialize_CS_CS &
+               ( S, CS_1, CS_2, NameOption, ImplicitExplicitOption, &
+                 nStagesOption )
 
     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
       S
@@ -57,8 +59,10 @@ contains
       CS_2
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      ImplicitExplicitOption
     integer ( KDI ), intent ( in ), optional :: &
-      OrderOption
+      nStagesOption
 
     character ( LDL ) :: &
       Name
@@ -73,15 +77,17 @@ contains
     call S % Initialize_H &
            ( CS_1 % Atlas, &
              NameOption = Name, &
-             OrderOption = OrderOption )
+             nStagesOption = nStagesOption )
 
     if ( .not. allocated ( S % Step_CS_1 ) ) &
       allocate ( S % Step_CS_1 )
     if ( .not. allocated ( S % Step_CS_2 ) ) &
       allocate ( S % Step_CS_2 )
 
-    call S % Step_CS_1 % Initialize ( CS_1, NameOption, OrderOption )
-    call S % Step_CS_2 % Initialize ( CS_2, NameOption, OrderOption )
+    call S % Step_CS_1 % Initialize &
+           ( CS_1, NameOption, ImplicitExplicitOption, nStagesOption )
+    call S % Step_CS_2 % Initialize &
+           ( CS_2, NameOption, ImplicitExplicitOption, nStagesOption )
 
   end subroutine Initialize_CS_CS
 
