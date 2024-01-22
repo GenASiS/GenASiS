@@ -234,9 +234,9 @@ contains
 
     !-- FinishTime
 
-    I % T_Finish  =  1.36e-7_KDR  *  UNIT % SECOND
+!    I % T_Finish  =  1.36e-7_KDR  *  UNIT % SECOND
 !-- More diffusive
-!    I % T_Finish  =  1.36e-6_KDR  *  UNIT % SECOND
+    I % T_Finish  =  1.36e-6_KDR  *  UNIT % SECOND
 
     !-- Parameters
 
@@ -255,9 +255,9 @@ contains
     Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_0        =  3.0e2_KDR   *  UNIT % KELVIN
     T_I        =  1.0e3_KDR   *  UNIT % KELVIN
-    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+!    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
 !-- More diffusive
-!    Kappa      =  1.0e4_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa      =  1.0e4_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     E_Max      =  0.620_KDR   *  UNIT % ELECTRON_VOLT
 
