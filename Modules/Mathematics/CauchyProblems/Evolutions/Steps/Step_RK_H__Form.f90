@@ -44,7 +44,8 @@ module Step_RK_H__Form
     type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
       SlopeStage
     procedure ( SS ), pointer :: &
-      SetSlope => null ( )
+      SetSlopeExplicit => null ( ), &
+      SetSlopeImplicit => null ( )
     procedure ( SSS ), pointer :: &
       SetSlopeStage => null ( )
   contains
@@ -173,12 +174,12 @@ contains
 
     S % Atlas  =>  Atlas
 
-    if ( .not. associated ( S % SetSlope ) ) &
-      S % SetSlope  =>  SetSlope_H
+    if ( .not. associated ( S % SetSlopeExplicit ) ) &
+      S % SetSlopeExplicit  =>  SetSlope_H
     if ( .not. associated ( S % SetSlopeStage ) ) &
       S % SetSlopeStage  =>  SetSlopeStage_H
 
-     call S % SetSlope ( S % Slope )
+    call S % SetSlopeExplicit ( S % Slope )
 
     allocate ( S % SlopeStage ( nS ) )
     do iS  =  1,  nS
@@ -201,7 +202,7 @@ contains
       iS  !-- iStage
 
     if ( .not. allocated ( S % SlopeSum ) ) then
-      call S % SetSlope ( S % SlopeSum )
+      call S % SetSlopeExplicit ( S % SlopeSum )
       associate ( K_Sum  =>  S % SlopeSum )
       call K_Sum % SetStream ( Sm )
       end associate !-- K_Sum

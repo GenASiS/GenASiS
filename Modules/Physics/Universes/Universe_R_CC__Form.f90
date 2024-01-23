@@ -633,7 +633,7 @@ contains
         call DF % Initialize ( U % Interactions_NM_G )
       end select !-- DF
 
-      S_R % SetSlope  =>  SetSlope_NM_G_DFV_I
+      S_R % SetSlopeExplicit  =>  SetSlope_NM_G_DFV_I
 
       !-- Fluid
       select type ( F  =>  I % CurrentSet_X )
@@ -654,7 +654,7 @@ contains
         end associate !-- RS
       end if        
 
-      S_F % SetSlope  =>  SetSlope_F_P_DFV_N_SS
+      S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N_SS
 
       !-- Combined step
       call S % Initialize ( R, F, nStagesOption = nStages )

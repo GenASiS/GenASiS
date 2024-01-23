@@ -200,8 +200,8 @@ contains
 
     !-- Header
 
-    if ( .not. associated ( S % SetSlope ) ) &
-      S % SetSlope  =>  SetSlope_CS
+    if ( .not. associated ( S % SetSlopeExplicit ) ) &
+      S % SetSlopeExplicit  =>  SetSlope_CS
     if ( .not. associated ( S % SetSlopeStage ) ) &
       S % SetSlopeStage  =>  SetSlopeStage_CS
 

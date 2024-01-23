@@ -723,7 +723,7 @@ contains
 
         else if ( U % ApplyInteractions .and. .not. U % ApplyStreaming ) then
 
-          S % SetSlope  =>  SetSlope_RM_I 
+          S % SetSlopeExplicit  =>  SetSlope_RM_I 
 
         end if !-- Radiation operators
 
@@ -760,7 +760,7 @@ contains
             call DF % Initialize ( U % Interactions_BM )
           end select !-- DF
 
-          S_R % SetSlope  =>  SetSlope_RM_DFV_I
+          S_R % SetSlopeExplicit  =>  SetSlope_RM_DFV_I
 
         end if !-- Radiation operators
 
@@ -783,7 +783,7 @@ contains
           end associate !-- RS
         end if
 
-        S_F % SetSlope  =>  SetSlope_F_P_DFV_SS
+        S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_SS
 
         !-- Combined step
         call S % Initialize &

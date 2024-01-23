@@ -380,7 +380,7 @@ contains
 
     select type ( G )
     class is ( Gravitation_N_H_Form )
-      S % SetSlope  =>  SetSlope_N
+      S % SetSlopeExplicit  =>  SetSlope_N
     end select !-- G
 
     DivergenceParts  =  .false.
