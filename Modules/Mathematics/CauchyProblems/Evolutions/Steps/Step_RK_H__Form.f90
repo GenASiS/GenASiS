@@ -385,27 +385,36 @@ contains
       call Show ( 'Computing a stage', S % IGNORABILITY + 3 )
       call Show ( iS, 'iStage', S % IGNORABILITY + 3 )
 
-      !-- Set  Y_I  =  Y
+      !-- Set  Q_(I-1)  =  Y
       if ( associated ( T_II ) ) call T_II % Start ( )
       call S % InitializeIntermediate ( iS )
       if ( associated ( T_II ) ) call T_II % Stop ( )
 
+      !-- Increment Q_(I-1) with previous updates
       do iK = 1, iS - 1
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
-        !-- Set Y_I  =  Y_I  +  dT * A * K ( iK )
+        !-- Set Q_(I-1)  =  Q_(I-1)  +  dT * A * K ( iK )
         if ( associated ( T_II_A ) ) call T_II_A % Start ( )
-        if ( A  /=  0.0_KDR ) & 
+        if ( S % ImplicitExplicit ) then
+          associate ( AA  =>  S % AA ( iS ) % Value ( iK ) )          
+          call S % IncrementIntermediate ( A, dT, iK, AA_Option = AA )
+          end associate !-- AA
+        else
           call S % IncrementIntermediate ( A, dT, iK )
+        end if
         if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
         end associate !-- A
-        if ( iK  ==  iS - 1 ) then
-          if ( associated ( T_SI ) ) call T_SI % Start ( )
-          call S % StoreIntermediate ( T_Option = T_SI )
-          if ( associated ( T_SI ) ) call T_SI % Stop ( )
-        end if
       end do !-- iK
 
-      !-- Compute K ( iS )  =  dY/dT ( Y_I )
+      !-- Obtain Y_(I) and KK ( iS ) = dY/dT_Implicit ( Y_(I) )
+      !   from nonlinear solve Y_(I) = Q_(I-1) + dt A_II KK ( iS )
+
+      !-- Store Y_(I) back to Y
+      if ( associated ( T_SI ) ) call T_SI % Start ( )
+        call S % StoreIntermediate ( T_Option = T_SI )
+      if ( associated ( T_SI ) ) call T_SI % Stop ( )
+
+      !-- Compute K ( iS )  =  dY/dT_Explicit ( Y_(I) )
       if ( present ( T_Option ) ) then
         T_CS  =>  PROGRAM_HEADER % Timer &
                     ( Handle = S % iTimer_CS, &
@@ -543,7 +552,7 @@ contains
   end subroutine InitializeIntermediate
 
 
-  subroutine IncrementIntermediate ( S, A, dT, iK )
+  subroutine IncrementIntermediate ( S, A, dT, iK, AA_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -552,6 +561,8 @@ contains
       dT
     integer ( KDI ), intent ( in ) :: &
       iK
+    real ( KDR ), intent ( in ), optional :: &
+      AA_Option
 
     call Show ( 'IncrementIntermediate should be overridden', &
                 CONSOLE % WARNING )
