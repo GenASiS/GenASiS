@@ -8,6 +8,12 @@ Series_CS__Form.o: \
   Series_B__Form.o \
   Series_CS__Form.f90
 
+Series_CS_1D__Form.o: \
+  Basics.o \
+  Fields.o \
+  Series_CS__Form.o \
+  Series_CS__Form.f90
+
 Integrator_H__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -53,6 +59,7 @@ Integrator_CS_1D_CB_CS__Form.o: \
 Integrators.o: \
   Series_B__Form.o \
   Series_CS__Form.o \
+  Series_CS_1D_CS__Form.o \
   Integrator_H__Form.o \
   Integrator_CS__Form.o \
   Integrator_CS_1D_CS__Form.o \
