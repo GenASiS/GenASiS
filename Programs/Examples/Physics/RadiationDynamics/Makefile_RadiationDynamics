@@ -1,6 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G MarshakWave_G #\
+all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G \
+  MarshakThermalization_G MarshakWave_G #\
       Thermalization_G_S MarshakWave_S
         #SineWaveDiffusion \
         HomogeneousSphere StreamingProfile
@@ -36,6 +37,14 @@ Thermalization_G: ThirdParty.a GenASiS.a Thermalization_G.o \
 	$(LINK) $(FLAGS) \
           -o Thermalization_G_$(MACHINE) \
           Thermalization_G.o Thermalization_Form.o \
+          $(INTERACTIONS_EXAMPLES) \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+MarshakThermalization_G: ThirdParty.a GenASiS.a MarshakThermalization_G.o \
+  $(INTERACTIONS_EXAMPLES)
+	$(LINK) $(FLAGS) \
+          -o MarshakThermalization_G_$(MACHINE) \
+          MarshakThermalization_G.o MarshakThermalization_Form.o \
           $(INTERACTIONS_EXAMPLES) \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
@@ -126,6 +135,18 @@ Interactions_MWV_3__Kernel.o: \
   Basics.o \
   Interactions_MWV_3__Form.o \
   Interactions_MWV_3__Kernel.f90
+
+MarshakThermalization_Form.o: \
+  GenASiS.o \
+  Interactions_MWV_1__Form.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.o \
+  MarshakThermalization_Form.f90
+
+MarshakThermalization_G.o: \
+  GenASiS.o \
+  MarshakThermalization_Form.o \
+  MarshakThermalization_G.f90
 
 MarshakWave_Form.o: \
   GenASiS.o \

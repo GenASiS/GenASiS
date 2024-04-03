@@ -697,10 +697,19 @@ contains
 
     integer ( KDI ) :: &
       nStages
+    logical ( KDL ) :: &
+      ImplicitExplicit
     character ( LDL ) :: &
       RiemannSolverType
 
-    nStages  =  3  !-- IMEX
+    ImplicitExplicit  =  .true.
+    call PROGRAM_HEADER % GetParameter ( ImplicitExplicit, 'ImplicitExplicit' )
+
+    if ( ImplicitExplicit ) then
+      nStages  =  3  !-- IMEX
+    else
+      nStages  =  2
+    end if
     call PROGRAM_HEADER % GetParameter ( nStages, 'nStages' )
 
     select type ( I  =>  U % Integrator )
@@ -729,7 +738,7 @@ contains
 
         call S % Initialize &
                ( R, &
-                 ImplicitExplicitOption = .true., &
+                 ImplicitExplicitOption = ImplicitExplicit, &
                  nStagesOption = nStages )
 
         end select !-- S
@@ -788,8 +797,7 @@ contains
         !-- Combined step
         call S % Initialize &
               ( R, F, &
-!                ImplicitExplicitOption = .false., &
-                ImplicitExplicitOption = .true., &
+                ImplicitExplicitOption = ImplicitExplicit, &
                 nStagesOption = nStages )
 
         end associate !-- F
@@ -1355,15 +1363,15 @@ contains
       !   dT_3  =  U % InteractionFactor  *  dT_3
       ! end if
 
-      ! !-- Fluid error steps
+      !-- Fluid error steps
 
-      ! if ( I % iCheckpoint  >  1 ) &
-      !   call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
+      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
 
-      ! !-- Radiation error steps
+      !-- Radiation error steps
 
-      ! if ( I % iCheckpoint  >  1 ) &
-      !   call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
+      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
 
       !-- Reduce across CS_1D
 

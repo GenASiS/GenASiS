@@ -45,13 +45,13 @@ module MarshakThermalization_Form
       InitializeUniverse, &
       SetInitial
 
-!      private :: &
-!        SetFluid, &
-!        SetRadiation
+     private :: &
+       SetFluid, &
+       SetRadiation
 
-!         private :: &
-!           SetFluidKernel, &
-!           SetRadiationKernel
+        private :: &
+          SetFluidKernel, &
+          SetRadiationKernel
 
 
 contains
@@ -232,12 +232,6 @@ contains
     select type ( I )
       class is ( Integrator_CS_1D_CS_Form )
 
-    !-- FinishTime
-
-!    I % T_Finish  =  1.36e-7_KDR  *  UNIT % SECOND
-!-- More diffusive
-    I % T_Finish  =  1.36e-6_KDR  *  UNIT % SECOND
-
     !-- Parameters
 
     associate &
@@ -255,9 +249,9 @@ contains
     Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_F        =  3.0e2_KDR   *  UNIT % KELVIN
     T_R        =  1.0e3_KDR   *  UNIT % KELVIN
-!    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
 !-- More diffusive
-    Kappa      =  1.0e4_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+!    Kappa      =  1.0e4_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     E_Max      =  0.620_KDR   *  UNIT % ELECTRON_VOLT
 
@@ -270,206 +264,190 @@ contains
     call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityMin' )
     call PROGRAM_HEADER % GetParameter ( E_Max,     'EnergyMax' )
 
-    end associate !-- Gamma, etc.
+    !-- FinishTime
 
-!     !-- Fluid
+    associate ( c  =>  CONSTANT % SPEED_OF_LIGHT )
+    I % T_Finish  =  100.0_KDR  *  1.0  /  ( c * Kappa * Rho_0 ) 
+    end associate !-- c
 
-!     select type ( F  =>  I % CurrentSet_X )
-!     class is ( Fluid_P_I_Form )
-!       call SetFluid ( MT, F )
-!       call F % SetUseInitialTemperature ( .true. )
-!     end select !-- F
+    !-- Fluid
 
-!     !-- Radiation
+    select type ( F  =>  I % CurrentSet_X )
+    class is ( Fluid_P_I_Form )
+      call SetFluid ( MT, F )
+      call F % SetUseInitialTemperature ( .true. )
+    end select !-- F
 
-!     select type ( I )
-!     class is ( Integrator_CS_1D_BM_CS_Form )
+    !-- Radiation
 
-!       select type ( R  =>  I % CurrentSet_X_1D )
-!         class is ( RadiationMoments_BM_Form )
+    select type ( I )
+    class is ( Integrator_CS_1D_BM_CS_Form )
 
-!       call SetRadiation ( MT, R )
+      select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( RadiationMoments_BM_Form )
 
-!       end select !-- R
+      call SetRadiation ( MT, R )
 
-!     class default
-!       call Show ( 'Integrator type not recognized', CONSOLE % ERROR )
-!       call Show ( 'MarshakThermalizationForm', 'module', CONSOLE % ERROR )
-!       call Show ( 'SetInitial', 'subroutine', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- I    
+      end select !-- R
 
-!     !-- Interactions
+    class default
+      call Show ( 'Integrator type not recognized', CONSOLE % ERROR )
+      call Show ( 'MarshakThermalizationForm', 'module', CONSOLE % ERROR )
+      call Show ( 'SetInitial', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- I    
 
-!     select type ( I )
-!       class is ( Integrator_CS_1D_BM_CS_Form )
-!     select type ( R  =>  I % CurrentSet_X_1D )
-!       class is ( PhotonMoments_G_Form )
+    !-- Interactions
 
-!     select type ( Intrctns  =>  MT % Interactions_BM )
-!     class is ( Interactions_MWV_3_Form )
-!        call Intrctns % SetSpecificOpacity ( MT % SpecificOpacity )
-!        call Intrctns % SetEnergyMax ( MT % EnergyMax )
-!        call Intrctns % SetTemperatureScale ( MT % Temperature )
-!     class is ( Interactions_MWV_2_Form )
-!        call Intrctns % SetSpecificOpacity ( MT % SpecificOpacity )
-!        call Intrctns % SetEnergyMax ( MT % EnergyMax )
-!     class is ( Interactions_MWV_1_Form )
-!        call Intrctns % SetSpecificOpacity ( MT % SpecificOpacity )
-!     end select !-- Intrctns
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( PhotonMoments_G_Form )
+
+    select type ( Intrctns  =>  MT % Interactions_BM )
+    class is ( Interactions_MWV_3_Form )
+       call Intrctns % SetSpecificOpacity ( MT % SpecificOpacity )
+       call Intrctns % SetEnergyMax ( MT % EnergyMax )
+       call Intrctns % SetTemperatureScale ( MT % TemperatureFluid )
+    class is ( Interactions_MWV_2_Form )
+       call Intrctns % SetSpecificOpacity ( MT % SpecificOpacity )
+       call Intrctns % SetEnergyMax ( MT % EnergyMax )
+    class is ( Interactions_MWV_1_Form )
+       call Intrctns % SetSpecificOpacity ( MT % SpecificOpacity )
+    end select !-- Intrctns
     
-!     end select !-- R
-!     end select !-- I
+    end select !-- R
+    end select !-- I
 
-!     !-- Cleanup
+    !-- Cleanup
 
+    end associate !-- Gamma, etc.
     end select !-- I
     end select !-- MT
 
   end subroutine SetInitial
 
 
-!   subroutine SetFluid ( MT, F )
+  subroutine SetFluid ( MT, F )
 
-!     class ( MarshakThermalizationForm ), intent ( inout ) :: &
-!       MT
-!     class ( Fluid_P_I_Form ), intent ( inout ) :: &
-!       F
+    class ( MarshakThermalizationForm ), intent ( inout ) :: &
+      MT
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
 
-!     real ( KDR ) :: &
-!       N_0, &
-!       E_0, &
-!       P_0
+    real ( KDR ) :: &
+      N_0, &
+      E_0, &
+      P_0
 
-!     associate &
-!       (     L      =>  MT % BoxLength, &
-!         Gamma      =>  MT % AdiabaticIndex, &
-!             C_V    =>  MT % SpecificHeatCapacity, &
-!           Rho_0    =>  MT % MassDensity, &
-!             T_0    =>  MT % Temperature, &
-!             c_s    =>  MT % SoundSpeed, &
-!             t_Dyn  =>  MT % DynamicalTime, &
-!             m_b    =>   F % BaryonMass )
-!     associate &
-!       ( FV  =>  F % Storage_GS % Value )
+    associate &
+      (     L      =>  MT % BoxLength, &
+        Gamma      =>  MT % AdiabaticIndex, &
+            C_V    =>  MT % SpecificHeatCapacity, &
+          Rho_0    =>  MT % MassDensity, &
+            T_0    =>  MT % TemperatureFluid, &
+            c_s    =>  MT % SoundSpeed, &
+            t_Dyn  =>  MT % DynamicalTime, &
+            m_b    =>   F % BaryonMass )
+    associate &
+      ( FV  =>  F % Storage_GS % Value )
 
-!     N_0  =  Rho_0 / m_b
-!     E_0  =  C_V * Rho_0 * T_0
-!     P_0  =  ( Gamma - 1.0_KDR ) * E_0
+    N_0  =  Rho_0 / m_b
+    E_0  =  C_V * Rho_0 * T_0
+    P_0  =  ( Gamma - 1.0_KDR ) * E_0
 
-!     c_s    =  sqrt ( Gamma * P_0 / Rho_0 )
-!     t_Dyn  =  L / c_s
+    c_s    =  sqrt ( Gamma * P_0 / Rho_0 )
+    t_Dyn  =  L / c_s
 
-!     call F % SetAdiabaticIndex ( Gamma )
-!     call F % SetSpecificHeatVolume ( C_V * m_b )
-!     call F % SetFiducialParameters ( N_0, P_0 )
+    call F % SetAdiabaticIndex ( Gamma )
+    call F % SetSpecificHeatVolume ( C_V * m_b )
+    call F % SetFiducialParameters ( N_0, P_0 )
 
-!     call SetFluidKernel &
-!            ( N    =  FV ( :, F % BARYON_DENSITY_C ), &
-!              V_1  =  FV ( :, F % VELOCITY_U_1 ), &
-!              V_2  =  FV ( :, F % VELOCITY_U_2 ), &
-!              V_3  =  FV ( :, F % VELOCITY_U_3 ), &
-!              T    =  FV ( :, F % TEMPERATURE ), &
-!              N_0  =  Rho_0 / m_b, &
-!              T_0  =  T_0 )
+    call SetFluidKernel &
+           ( N    =  FV ( :, F % BARYON_DENSITY_C ), &
+             V_1  =  FV ( :, F % VELOCITY_U_1 ), &
+             V_2  =  FV ( :, F % VELOCITY_U_2 ), &
+             V_3  =  FV ( :, F % VELOCITY_U_3 ), &
+             T    =  FV ( :, F % TEMPERATURE ), &
+             N_0  =  Rho_0 / m_b, &
+             T_0  =  T_0 )
 
-!     end associate !-- FV
-!     end associate !-- L, etc.
+    end associate !-- FV
+    end associate !-- L, etc.
 
-!   end subroutine SetFluid
-
-
-!   subroutine SetRadiation ( MT, R )
-
-!     class ( MarshakThermalizationForm ), intent ( inout ) :: &
-!       MT
-!     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
-!       R
-
-!     associate &
-!       ( G  =>  R % Geometry )
-!     associate &
-!       ( RV  =>  R % Storage_GS % Value, & 
-!         GV  =>  G % Storage_GS % Value )
-!     associate &
-!       (      L       =>  MT % BoxLength, &
-!            Rho_0     =>  MT % MassDensity, &
-!          Kappa       =>  MT % SpecificOpacity, &
-!         Lambda       =>  MT % MeanFreePath, &
-!            Tau       =>  MT % OpticalDepth, &
-!              t_Diff  =>  MT % DiffusionTime, &
-!              c       =>  CONSTANT % SPEED_OF_LIGHT )
-
-!     Lambda  =  1.0_KDR  /  ( Rho_0 * Kappa )
-!     Tau     =  L / Lambda
-!     t_Diff  =  L * Tau / c
-
-!     call SetRadiationKernel &
-!            ( J      =  RV ( :, R % ENERGY_DENSITY_C ), &
-!              H_1    =  RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
-!              H_2    =  RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
-!              H_3    =  RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
-!              X_1    =  GV ( :, G % CENTER_U_1 ), & 
-!              X_2    =  GV ( :, G % CENTER_U_2 ), & 
-!              X_3    =  GV ( :, G % CENTER_U_3 ), &
-!              X_Min  =  MT % MinCoordinate, &
-!              T_0    =  MT % Temperature, &
-!              T_I    =  MT % TemperatureInner, &
-!              a      =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN )
-
-!     end associate !-- L, etc.
-!     end associate !-- RV, etc.
-!     end associate !-- G
-
-!   end subroutine SetRadiation
+  end subroutine SetFluid
 
 
-!   subroutine SetFluidKernel ( N, V_1, V_2, V_3, T, N_0, T_0 )
+  subroutine SetRadiation ( MT, R )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       N, &
-!       V_1, V_2, V_3, &
-!       T
-!     real ( KDR ), intent ( in ) :: &
-!       N_0, &
-!       T_0
+    class ( MarshakThermalizationForm ), intent ( inout ) :: &
+      MT
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      R
 
-!     N    =  N_0
-!     V_1  =  0.0_KDR
-!     V_2  =  0.0_KDR
-!     V_3  =  0.0_KDR
-!     T    =  T_0
+    associate &
+      (      L       =>  MT % BoxLength, &
+           Rho_0     =>  MT % MassDensity, &
+         Kappa       =>  MT % SpecificOpacity, &
+        Lambda       =>  MT % MeanFreePath, &
+           Tau       =>  MT % OpticalDepth, &
+             t_Diff  =>  MT % DiffusionTime, &
+             c       =>  CONSTANT % SPEED_OF_LIGHT )
+    associate &
+      ( RV  =>  R % Storage_GS % Value )
 
-!   end subroutine SetFluidKernel
+    Lambda  =  1.0_KDR  /  ( Rho_0 * Kappa )
+    Tau     =  L / Lambda
+    t_Diff  =  L * Tau / c
+
+    call SetRadiationKernel &
+           ( J      =  RV ( :, R % ENERGY_DENSITY_C ), &
+             H_1    =  RV ( :, R % MOMENTUM_DENSITY_C_U_1 ), &
+             H_2    =  RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
+             H_3    =  RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
+             T_0    =  MT % TemperatureRadiation, &
+             a      =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN )
+
+    end associate !-- RV
+    end associate !-- L, etc.
+
+  end subroutine SetRadiation
 
 
-!   subroutine SetRadiationKernel &
-!                ( J, H_1, H_2, H_3, X_1, X_2, X_3, X_Min, T_0, T_I, a )
+  subroutine SetFluidKernel ( N, V_1, V_2, V_3, T, N_0, T_0 )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       J, &
-!       H_1, H_2, H_3
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       X_1, X_2, X_3
-!     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
-!       X_Min
-!     real ( KDR ), intent ( in ) :: &
-!       T_0, T_I, &
-!       a
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      V_1, V_2, V_3, &
+      T
+    real ( KDR ), intent ( in ) :: &
+      N_0, &
+      T_0
 
-!       where (      X_1  <  X_Min ( 1 )  &
-!              .or.  X_2  <  X_Min ( 2 )  &
-!              .or.  X_3  <  X_Min ( 3 ) )
+    N    =  N_0
+    V_1  =  0.0_KDR
+    V_2  =  0.0_KDR
+    V_3  =  0.0_KDR
+    T    =  T_0
 
-!         J  =  a  *  T_I ** 4
+  end subroutine SetFluidKernel
 
-!       elsewhere
 
-!         J  =  a  *  T_0 ** 4
+  subroutine SetRadiationKernel ( J, H_1, H_2, H_3, T_0, a )
 
-!       end where
-    
-!   end subroutine SetRadiationKernel
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J, &
+      H_1, H_2, H_3
+    real ( KDR ), intent ( in ) :: &
+      T_0, &
+      a
+
+    J    =  a  *  T_0 ** 4
+    H_1  =  0.0_KDR
+    H_2  =  0.0_KDR
+    H_3  =  0.0_KDR
+
+  end subroutine SetRadiationKernel
 
 
 end module MarshakThermalization_Form
