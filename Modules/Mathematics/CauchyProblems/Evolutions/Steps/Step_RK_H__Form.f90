@@ -42,12 +42,13 @@ module Step_RK_H__Form
       Slope, &
       SlopeSum
     type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
-      SlopeStage
+      SlopeStageImplicit, &  !-- storage of KK for various stages
+      SlopeStageExplicit     !-- storage of K for various stages
     procedure ( SS ), pointer :: &
-      SetSlopeExplicit => null ( ), &
-      SetSlopeImplicit => null ( )
+      SetSlopeImplicit => null ( ), &
+      SetSlopeExplicit => null ( )
     procedure ( SSS ), pointer :: &
-      SetSlopeStage => null ( )
+      SetSlopeStage => null ( )  !-- used to initialize either K or KK storage
   contains
     procedure, public, pass :: &
       Initialize_H  !-- Do not overload: needs overriding of SetSlope
@@ -183,9 +184,16 @@ contains
 
     call S % SetSlopeExplicit ( S % Slope )
 
-    allocate ( S % SlopeStage ( nS ) )
+    if ( S % ImplicitExplicit ) then
+      allocate ( S % SlopeStageImplicit ( nS ) )
+      do iS  =  1,  nS
+        call S % SetSlopeStage ( S % SlopeStageImplicit ( iS ) % Element, iS )
+      end do !-- iS
+    end if
+
+    allocate ( S % SlopeStageExplicit ( nS ) )
     do iS  =  1,  nS
-      call S % SetSlopeStage ( S % SlopeStage ( iS ) % Element, iS )
+      call S % SetSlopeStage ( S % SlopeStageExplicit ( iS ) % Element, iS )
     end do !-- iS
 
     end associate !-- nS
@@ -267,7 +275,7 @@ contains
     !-- Slopes
 
     do iS  =  1, S % nStages
-      call S % SlopeStage ( iS ) % Element % Show ( )
+      call S % SlopeStageExplicit ( iS ) % Element % Show ( )
     end do !-- iS
     if ( allocated ( S % SlopeSum ) ) &
       call S % SlopeSum % Show ( )
@@ -496,8 +504,10 @@ contains
     type ( Step_RK_H_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % SlopeStage ) ) &
-      deallocate ( S % SlopeStage )
+    if ( allocated ( S % SlopeStageExplicit ) ) &
+      deallocate ( S % SlopeStageExplicit )
+    if ( allocated ( S % SlopeStageImplicit ) ) &
+      deallocate ( S % SlopeStageImplicit )
     if ( allocated ( S % SlopeSum ) ) &
       deallocate ( S % SlopeSum )
     if ( allocated ( S % Slope ) ) &

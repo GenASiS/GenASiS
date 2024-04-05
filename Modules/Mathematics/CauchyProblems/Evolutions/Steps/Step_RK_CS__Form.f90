@@ -351,7 +351,7 @@ call SM % AddFieldSet ( S % Error )
 
     associate &
       ( Y_I  =>  S % Intermediate, &
-        K    =>  S % SlopeStage ( iK ) % Element )
+        K    =>  S % SlopeStageExplicit ( iK ) % Element )
 
     if ( A /= 0.0_KDR ) &
       call Y_I % MultiplyAdd ( K, dT * A )
@@ -403,7 +403,7 @@ call SM % AddFieldSet ( S % Error )
 
     associate &
       ( K  =>  S % Slope, &
-        K_Stage  =>  S % SlopeStage ( iS ) % Element )
+        K_Stage  =>  S % SlopeStageExplicit ( iS ) % Element )
 
     !-- Compute slope
     
@@ -486,7 +486,7 @@ call SM % AddFieldSet ( S % Error )
     associate &
       ( Y  =>  S % Solution, &
         E  =>  S % Error, &
-        K  =>  S % SlopeStage ( iS ) % Element )
+        K  =>  S % SlopeStageExplicit ( iS ) % Element )
 
     call Y % MultiplyAdd ( K, dT * B )
     if ( S % EmbeddedMethod ) &
