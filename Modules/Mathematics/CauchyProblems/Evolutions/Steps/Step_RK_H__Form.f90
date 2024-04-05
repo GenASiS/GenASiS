@@ -78,7 +78,9 @@ module Step_RK_H__Form
     procedure, public, pass :: &
       StoreIntermediate
     procedure, public, pass :: &
-      ComputeStage
+      ComputeStageImplicit
+    procedure, public, pass :: &
+      ComputeStageExplicit
     procedure, public, pass :: &
       IncrementSolution
     procedure, public, pass :: &
@@ -392,8 +394,9 @@ contains
 
       !-- Increment Q_(I-1) with previous updates
       do iK = 1, iS - 1
+        !-- Set Q_(I-1)  =  Q_(I-1)  +  dT * A  * K  ( iK )  
+        !                            +  dT * AA * KK ( iK ) 
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
-        !-- Set Q_(I-1)  =  Q_(I-1)  +  dT * A * K ( iK )
         if ( associated ( T_II_A ) ) call T_II_A % Start ( )
         if ( S % ImplicitExplicit ) then
           associate ( AA  =>  S % AA ( iS ) % Value ( iK ) )          
@@ -421,10 +424,10 @@ contains
                       Name = trim ( S % Name ) // '_CmptStg', &
                       Level = T_Option % Level + 1 )
         call T_CS % Start ( )
-        call S % ComputeStage ( T, dT, iS, T_Option = T_CS )
+        call S % ComputeStageExplicit ( T, dT, iS, T_Option = T_CS )
         call T_CS % Stop ( )
       else
-        call S % ComputeStage ( T, dT, iS )
+        call S % ComputeStageExplicit ( T, dT, iS )
       end if
 
     end do !-- iS
@@ -586,7 +589,7 @@ contains
   end subroutine StoreIntermediate
 
 
-  subroutine ComputeStage ( S, T, dT, iS, T_Option )
+  subroutine ComputeStageImplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -598,11 +601,30 @@ contains
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
-    call Show ( 'ComputeStage should be overridden', CONSOLE % WARNING )
+    call Show ( 'ComputeStageImplicit should be overridden', CONSOLE % WARNING )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
-    call Show ( 'ComputeStage', 'subroutine', CONSOLE % WARNING )
+    call Show ( 'ComputeStageImplicit', 'subroutine', CONSOLE % WARNING )
 
-  end subroutine ComputeStage
+  end subroutine ComputeStageImplicit
+
+
+  subroutine ComputeStageExplicit ( S, T, dT, iS, T_Option )
+
+    class ( Step_RK_H_Form ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+       T, &
+      dT
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iStage
+    type ( TimerForm ), intent ( inout ), optional :: &
+      T_Option
+
+    call Show ( 'ComputeStageExplicit should be overridden', CONSOLE % WARNING )
+    call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'ComputeStageExplicit', 'subroutine', CONSOLE % WARNING )
+
+  end subroutine ComputeStageExplicit
 
 
   subroutine IncrementSolution ( S, B, BE, dT, iS )
