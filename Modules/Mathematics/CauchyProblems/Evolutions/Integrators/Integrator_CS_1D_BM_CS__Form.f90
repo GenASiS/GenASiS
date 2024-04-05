@@ -9,6 +9,7 @@ module Integrator_CS_1D_BM_CS__Form
   use Basics
   use Fields
   use Steps
+  use Series_CS_1D_CS__Form
   use Integrator_H__Form
   use Integrator_CS_1D_CS__Form
 
@@ -41,6 +42,9 @@ module Integrator_CS_1D_BM_CS__Form
     procedure, private, pass :: &
       ComputeTally_1D
   end type Integrator_CS_1D_BM_CS_Form
+
+    private :: &
+      InitializeSeries_CS_1D_CS
 
 
 contains
@@ -132,10 +136,7 @@ contains
 
     !-- Series
 
-    ! select type ( TS  =>  I % TimeSeries )
-    ! type is ( TimeSeries_C_1D_C_Form )
-    !   I % InitializeTimeSeries  =>  InitializeTimeSeries_C_1D_PS
-    ! end select !-- TS
+    I % InitializeSeries  =>  InitializeSeries_CS_1D_CS
     
   end subroutine Initialize_H
 
@@ -274,6 +275,27 @@ contains
     end associate !-- CS
 
   end subroutine ComputeTally_1D
+
+
+  subroutine InitializeSeries_CS_1D_CS ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+
+    allocate ( Series_CS_1D_CS_Form :: I % Series )
+
+    select type ( I )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Series )
+      class is ( Series_CS_1D_CS_Form )
+    call S % Initialize &
+      ( I % CurrentSet_X_1D, I % CurrentSet_X, I % GridImageStream, &
+        I % dT_Label, I % Unit_T, I % dT_Candidate, I % T, &
+        I % Communicator % Rank, I % nWrite, I % iCycle )
+    end select !-- S
+    end select !-- I
+
+  end subroutine InitializeSeries_CS_1D_CS
 
 
 end module Integrator_CS_1D_BM_CS__Form

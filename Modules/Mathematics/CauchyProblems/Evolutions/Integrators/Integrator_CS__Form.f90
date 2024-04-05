@@ -44,7 +44,7 @@ module Integrator_CS__Form
 
     private :: &
       Compute_dT_Local, &
-      InitializeSeries
+      InitializeSeries_CS
 
       private :: &
         Compute_dT_CS_CGS_Kernel
@@ -120,7 +120,7 @@ contains
     !-- Integrator methods
 
     I % Compute_dT_Local  =>  Compute_dT_Local
-    I % InitializeSeries  =>  InitializeSeries
+    I % InitializeSeries  =>  InitializeSeries_CS
     I % Analyze           =>  Analyze_CS
 
     !-- CurrentSet, if necessary
@@ -396,7 +396,7 @@ contains
   end subroutine Compute_dT_Local
 
 
-  subroutine InitializeSeries ( I )
+  subroutine InitializeSeries_CS ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
@@ -414,7 +414,7 @@ contains
     end select !-- S
     end select !-- I
 
-  end subroutine InitializeSeries
+  end subroutine InitializeSeries_CS
 
 
 end module Integrator_CS__Form
