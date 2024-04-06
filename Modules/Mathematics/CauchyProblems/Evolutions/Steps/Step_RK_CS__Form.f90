@@ -357,8 +357,10 @@ call SM % AddFieldSet ( S % Error )
       call Y_I % MultiplyAdd ( K, dT * A )
 
     if ( present ( AA_Option ) ) then
+      associate ( KK  =>  S % SlopeStageImplicit ( iK ) % Element )
       if ( AA_Option /= 0.0_KDR ) &
-        call Y_I % MultiplyAdd ( K, dT * AA_Option )
+        call Y_I % MultiplyAdd ( KK, dT * AA_Option )
+      end associate !-- KK
     end if
 
     end associate !-- Y_I, etc.
@@ -402,7 +404,7 @@ call SM % AddFieldSet ( S % Error )
       T_AS     !-- AccumulateSlope
 
     associate &
-      ( K  =>  S % Slope, &
+      ( K  =>  S % SlopeExplicit, &
         K_Stage  =>  S % SlopeStageExplicit ( iS ) % Element )
 
     !-- Compute slope
@@ -469,7 +471,7 @@ call SM % AddFieldSet ( S % Error )
   end subroutine ComputeStageExplicit
 
 
-  subroutine IncrementSolution ( S, B, BE, dT, iS )
+  subroutine IncrementSolution ( S, B, BE, dT, iS, BB_Option, BBE_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
@@ -479,6 +481,9 @@ call SM % AddFieldSet ( S % Error )
       dT
     integer ( KDI ), intent ( in ) :: &
       iS
+    real ( KDR ), intent ( in ), optional :: &
+      BB_Option, &
+      BBE_Option
 
     integer ( KDI ) :: &
       iC  !-- iChart
@@ -491,6 +496,14 @@ call SM % AddFieldSet ( S % Error )
     call Y % MultiplyAdd ( K, dT * B )
     if ( S % EmbeddedMethod ) &
       call E % MultiplyAdd ( K, dT * ( B - BE ) )
+
+    if ( present ( BB_Option ) ) then
+      associate ( KK  =>  S % SlopeStageImplicit ( iS ) % Element )
+      call Y % MultiplyAdd ( KK, dT * BB_Option )
+      if ( present ( BBE_Option ) .and. S % EmbeddedMethod ) &
+        call E % MultiplyAdd ( KK, dT * ( BB_Option - BBE_Option ) )
+      end associate !-- KK
+    end if
 
     end associate !-- Y, etc.
 

@@ -39,8 +39,11 @@ module Step_RK_H__Form
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
     class ( Slope_H_Form ), allocatable :: &
-      Slope, &
-      SlopeSum
+      SlopeImplicit, &  !-- KK computation
+      SlopeExplicit     !-- K  computation
+    class ( Slope_H_Form ), allocatable :: &
+      SlopeSumImplicit, &  !-- KK sum for I/O
+      SlopeSumExplicit     !-- K  sum for I/O
     type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
       SlopeStageImplicit, &  !-- storage of KK for various stages
       SlopeStageExplicit     !-- storage of K for various stages
@@ -177,19 +180,27 @@ contains
 
     S % Atlas  =>  Atlas
 
-    if ( .not. associated ( S % SetSlopeExplicit ) ) &
-      S % SetSlopeExplicit  =>  SetSlope_H
     if ( .not. associated ( S % SetSlopeStage ) ) &
       S % SetSlopeStage  =>  SetSlopeStage_H
 
-    call S % SetSlopeExplicit ( S % Slope )
-
     if ( S % ImplicitExplicit ) then
+
+      if ( .not. associated ( S % SetSlopeImplicit ) ) &
+        S % SetSlopeImplicit  =>  SetSlope_H
+
+      call S % SetSlopeImplicit ( S % SlopeImplicit )
+
       allocate ( S % SlopeStageImplicit ( nS ) )
       do iS  =  1,  nS
         call S % SetSlopeStage ( S % SlopeStageImplicit ( iS ) % Element, iS )
       end do !-- iS
+
     end if
+
+    if ( .not. associated ( S % SetSlopeExplicit ) ) &
+      S % SetSlopeExplicit  =>  SetSlope_H
+
+    call S % SetSlopeExplicit ( S % SlopeExplicit )
 
     allocate ( S % SlopeStageExplicit ( nS ) )
     do iS  =  1,  nS
@@ -211,12 +222,21 @@ contains
     integer ( KDI ) :: &
       iS  !-- iStage
 
-    if ( .not. allocated ( S % SlopeSum ) ) then
-      call S % SetSlopeExplicit ( S % SlopeSum )
-      associate ( K_Sum  =>  S % SlopeSum )
+    if ( S % ImplicitExplicit ) then
+      if ( .not. allocated ( S % SlopeSumImplicit ) ) then
+        call S % SetSlopeImplicit ( S % SlopeSumImplicit )
+        associate ( K_Sum  =>  S % SlopeSumImplicit )
+        call K_Sum % SetStream ( Sm )
+        end associate !-- K_Sum
+      end if !-- allocated SlopeSumImplicit
+    end if
+
+    if ( .not. allocated ( S % SlopeSumExplicit ) ) then
+      call S % SetSlopeExplicit ( S % SlopeSumExplicit )
+      associate ( K_Sum  =>  S % SlopeSumExplicit )
       call K_Sum % SetStream ( Sm )
       end associate !-- K_Sum
-    end if !-- allocated SlopeSum
+    end if !-- allocated SlopeSumImplicit
     
   end subroutine SetStream_H
 
@@ -274,11 +294,19 @@ contains
 
     !-- Slopes
 
+    if ( S % ImplicitExplicit ) then
+      do iS  =  1, S % nStages
+        call S % SlopeStageImplicit ( iS ) % Element % Show ( )
+      end do !-- iS
+      if ( allocated ( S % SlopeSumImplicit ) ) &
+        call S % SlopeSumImplicit % Show ( )
+    end if
+
     do iS  =  1, S % nStages
       call S % SlopeStageExplicit ( iS ) % Element % Show ( )
     end do !-- iS
-    if ( allocated ( S % SlopeSum ) ) &
-      call S % SlopeSum % Show ( )
+    if ( allocated ( S % SlopeSumExplicit ) ) &
+      call S % SlopeSumExplicit % Show ( )
 
   end subroutine Show_S
 
@@ -419,6 +447,7 @@ contains
 
       !-- Obtain Y_(I) and KK ( iS ) = dY/dT_Implicit ( Y_(I) )
       !   from nonlinear solve Y_(I) = Q_(I-1) + dt A_II KK ( iS )
+      call S % ComputeStageImplicit ( T, dT, iS )
 
       !-- Store Y_(I) back to Y
       if ( associated ( T_SI ) ) call T_SI % Start ( )
@@ -455,9 +484,17 @@ contains
       associate &
         ( B   =>  S % B ( iS ), &
           BE  =>  S % BE ( iS ) )
-      !-- Set Y  =  Y  +  dT * B * K ( iS )
-      if ( B /=  0.0_KDR ) & 
+      !-- Set Y  =  Y  +  dT * B * K ( iS )  +  dT * BB * KK ( iS )
+      if ( S % ImplicitExplicit ) then
+        associate &
+          ( BB   =>  S % BB ( iS ), &
+            BBE  =>  S % BBE ( iS ) )
+        call S % IncrementSolution &
+               ( B, BE, dT, iS, BB_Option = BB, BBE_Option = BBE )
+        end associate !-- BB_Option, etc.
+      else
         call S % IncrementSolution ( B, BE, dT, iS )
+      end if
       end associate !-- B, BE
     end do !-- iS
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )
@@ -483,18 +520,33 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
 
-    if ( .not. allocated ( S % SlopeSum ) ) &
-      return
+    if ( S % ImplicitExplicit .and. allocated ( S % SlopeSumImplicit ) ) then
 
-    associate &
-      ( K_Sum  =>  S % SlopeSum, &
-        K      =>  S % Slope )
+      associate &
+        ( KK_Sum  =>  S % SlopeSumImplicit, &
+          KK      =>  S % SlopeImplicit )
 
-    if ( iS == 1 ) &
-      call K_Sum % ClearRecursive ( )
-    call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
+      if ( iS == 1 ) &
+        call KK_Sum % ClearRecursive ( )
+      call KK_Sum % MultiplyAddRecursive ( KK, S % BB ( iS ) )
 
-    end associate !-- K_Sum, etc.
+      end associate !-- K_Sum, etc.
+
+    end if !-- ImplicitExplicit and allocated SlopeSumImplicit
+
+    if ( allocated ( S % SlopeSumExplicit ) ) then
+
+      associate &
+        ( K_Sum  =>  S % SlopeSumExplicit, &
+          K      =>  S % SlopeExplicit )
+
+      if ( iS == 1 ) &
+        call K_Sum % ClearRecursive ( )
+      call K_Sum % MultiplyAddRecursive ( K, S % B ( iS ) )
+
+      end associate !-- K_Sum, etc.
+
+    end if !-- allocated SlopeSumExplicit
 
   end subroutine AccumulateSlope
 
@@ -508,10 +560,14 @@ contains
       deallocate ( S % SlopeStageExplicit )
     if ( allocated ( S % SlopeStageImplicit ) ) &
       deallocate ( S % SlopeStageImplicit )
-    if ( allocated ( S % SlopeSum ) ) &
-      deallocate ( S % SlopeSum )
-    if ( allocated ( S % Slope ) ) &
-      deallocate ( S % Slope )
+    if ( allocated ( S % SlopeSumExplicit ) ) &
+      deallocate ( S % SlopeSumExplicit )
+    if ( allocated ( S % SlopeSumImplicit ) ) &
+      deallocate ( S % SlopeSumImplicit )
+    if ( allocated ( S % SlopeExplicit ) ) &
+      deallocate ( S % SlopeExplicit )
+    if ( allocated ( S % SlopeImplicit ) ) &
+      deallocate ( S % SlopeImplicit )
     if ( allocated ( S % AA ) ) &
       deallocate ( S % AA )
     if ( allocated ( S % A ) ) &
@@ -637,7 +693,7 @@ contains
   end subroutine ComputeStageExplicit
 
 
-  subroutine IncrementSolution ( S, B, BE, dT, iS )
+  subroutine IncrementSolution ( S, B, BE, dT, iS, BB_Option, BBE_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -647,6 +703,9 @@ contains
       dT
     integer ( KDI ), intent ( in ) :: &
       iS
+    real ( KDR ), intent ( in ), optional :: &
+      BB_Option, &
+      BBE_Option
 
     call Show ( 'IncrementSolution should be overridden', CONSOLE % WARNING )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
