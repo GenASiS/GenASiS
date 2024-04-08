@@ -262,19 +262,6 @@ contains
 
     call Show ( S % nStages, 'nStages', S % IGNORABILITY )
 
-    !-- Explicit Butcher tableau
-
-    do iA  =  2, S % nStages
-      write ( Index, fmt = '(i1.1)' ) iA
-      call Show ( S % A ( iA ) % Value, 'A ( ' // Index // ' )' )
-    end do !-- iA
-
-    call Show ( S % B, 'B' )
-    if ( S % EmbeddedMethod ) &
-      call Show ( S % BE, 'BE' )
-
-    call Show ( S % C, 'C', lRealOption = 2 )
-
     if ( S % ImplicitExplicit ) then
 
       !-- Implicit Butcher tableau
@@ -291,6 +278,19 @@ contains
       call Show ( S % CC, 'CC', lRealOption = 2 )
 
     end if !-- ImplicitExplicit
+
+    !-- Explicit Butcher tableau
+
+    do iA  =  2, S % nStages
+      write ( Index, fmt = '(i1.1)' ) iA
+      call Show ( S % A ( iA ) % Value, 'A ( ' // Index // ' )' )
+    end do !-- iA
+
+    call Show ( S % B, 'B' )
+    if ( S % EmbeddedMethod ) &
+      call Show ( S % BE, 'BE' )
+
+    call Show ( S % C, 'C', lRealOption = 2 )
 
     !-- Slopes
 
@@ -443,16 +443,18 @@ contains
         end if
         if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
         end associate !-- A
+        if ( iK  == iS - 1 ) then
+          !-- Store Q_(I-1) back to Y
+          if ( associated ( T_SI ) ) call T_SI % Start ( )
+            call S % StoreIntermediate ( T_Option = T_SI )
+          if ( associated ( T_SI ) ) call T_SI % Stop ( )
+        end if
       end do !-- iK
 
-      !-- Obtain Y_(I) and KK ( iS ) = dY/dT_Implicit ( Y_(I) )
-      !   from nonlinear solve Y_(I) = Q_(I-1) + dt A_II KK ( iS )
-      call S % ComputeStageImplicit ( T, dT, iS )
-
-      !-- Store Y_(I) back to Y
-      if ( associated ( T_SI ) ) call T_SI % Start ( )
-        call S % StoreIntermediate ( T_Option = T_SI )
-      if ( associated ( T_SI ) ) call T_SI % Stop ( )
+      if ( S % ImplicitExplicit ) &
+        !-- Obtain Y_(I) and KK ( iS ) = dY/dT_Implicit ( Y_(I) )
+        !   from nonlinear solve Y_(I) = Q_(I-1) + dt A_II KK ( iS )
+        call S % ComputeStageImplicit ( T, dT, iS )
 
       !-- Compute K ( iS )  =  dY/dT_Explicit ( Y_(I) )
       if ( present ( T_Option ) ) then
