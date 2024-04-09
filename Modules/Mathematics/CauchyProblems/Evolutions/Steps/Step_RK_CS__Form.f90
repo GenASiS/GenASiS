@@ -472,38 +472,38 @@ call SM % AddFieldSet ( S % Error )
   end subroutine ComputeStageExplicit
 
 
-  subroutine IncrementSolution ( S, B, BE, dT, iS, BB_Option, BBE_Option )
+  subroutine IncrementSolution ( S, dT, iS )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       B, &
-       BE, &
       dT
     integer ( KDI ), intent ( in ) :: &
       iS
-    real ( KDR ), intent ( in ), optional :: &
-      BB_Option, &
-      BBE_Option
 
     integer ( KDI ) :: &
       iC  !-- iChart
 
     associate &
-      ( Y  =>  S % Solution, &
-        E  =>  S % Error, &
-        K  =>  S % SlopeStageExplicit ( iS ) % Element )
+      ( Y   =>  S % Solution, &
+        E   =>  S % Error, &
+        K   =>  S % SlopeStageExplicit ( iS ) % Element, &
+        B   =>  S % B ( iS ), &
+        BE  =>  S % BE ( iS ) )
 
     call Y % MultiplyAdd ( K, dT * B )
     if ( S % EmbeddedMethod ) &
       call E % MultiplyAdd ( K, dT * ( B - BE ) )
 
-    if ( present ( BB_Option ) ) then
-      associate ( KK  =>  S % SlopeStageImplicit ( iS ) % Element )
-      call Y % MultiplyAdd ( KK, dT * BB_Option )
-      if ( present ( BBE_Option ) .and. S % EmbeddedMethod ) &
-        call E % MultiplyAdd ( KK, dT * ( BB_Option - BBE_Option ) )
-      end associate !-- KK
+    if ( S % ImplicitExplicit ) then
+      associate &
+        ( KK   =>  S % SlopeStageImplicit ( iS ) % Element, &
+          BB   =>  S % BB ( iS ), &
+          BBE  =>  S % BBE ( iS ) )
+      call Y % MultiplyAdd ( KK, dT * BB )
+      if ( S % EmbeddedMethod ) &
+        call E % MultiplyAdd ( KK, dT * ( BB - BBE ) )
+      end associate !-- KK, etc.
     end if
 
     end associate !-- Y, etc.

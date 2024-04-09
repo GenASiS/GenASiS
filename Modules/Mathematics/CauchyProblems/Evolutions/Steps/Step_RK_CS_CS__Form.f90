@@ -236,22 +236,17 @@ contains
   end subroutine ComputeStageExplicit
 
 
-  subroutine IncrementSolution ( S, B, BE, dT, iS, BB_Option, BBE_Option )
+  subroutine IncrementSolution ( S, dT, iS )
 
     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       B, &
-       BE, &
       dT
     integer ( KDI ), intent ( in ) :: &
       iS
-    real ( KDR ), intent ( in ), optional :: &
-      BB_Option, &
-      BBE_Option
 
-    call S % Step_CS_1 % IncrementSolution ( B, BE, dT, iS )
-    call S % Step_CS_2 % IncrementSolution ( B, BE, dT, iS )
+    call S % Step_CS_1 % IncrementSolution ( dT, iS )
+    call S % Step_CS_2 % IncrementSolution ( dT, iS )
 
   end subroutine IncrementSolution
 

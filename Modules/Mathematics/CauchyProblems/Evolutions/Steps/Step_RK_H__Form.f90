@@ -475,21 +475,8 @@ contains
     end if
     if ( associated ( T_IS_B ) ) call T_IS_B % Start ( )
     do iS = 1, S % nStages
-      associate &
-        ( B   =>  S % B ( iS ), &
-          BE  =>  S % BE ( iS ) )
       !-- Set Y  =  Y  +  dT * B * K ( iS )  +  dT * BB * KK ( iS )
-      if ( S % ImplicitExplicit ) then
-        associate &
-          ( BB   =>  S % BB ( iS ), &
-            BBE  =>  S % BBE ( iS ) )
-        call S % IncrementSolution &
-               ( B, BE, dT, iS, BB_Option = BB, BBE_Option = BBE )
-        end associate !-- BB_Option, etc.
-      else
-        call S % IncrementSolution ( B, BE, dT, iS )
-      end if
-      end associate !-- B, BE
+      call S % IncrementSolution ( dT, iS )
     end do !-- iS
     if ( associated ( T_IS_B ) ) call T_IS_B % Stop ( )
 
@@ -685,19 +672,14 @@ contains
   end subroutine ComputeStageExplicit
 
 
-  subroutine IncrementSolution ( S, B, BE, dT, iS, BB_Option, BBE_Option )
+  subroutine IncrementSolution ( S, dT, iS )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       B, &
-       BE, &
       dT
     integer ( KDI ), intent ( in ) :: &
       iS
-    real ( KDR ), intent ( in ), optional :: &
-      BB_Option, &
-      BBE_Option
 
     call Show ( 'IncrementSolution should be overridden', CONSOLE % WARNING )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
