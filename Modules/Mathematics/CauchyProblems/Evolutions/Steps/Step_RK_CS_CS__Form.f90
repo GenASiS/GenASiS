@@ -174,20 +174,18 @@ contains
   end subroutine InitializeIntermediate
 
 
-  subroutine IncrementIntermediate ( S, A, dT, iK, AA_Option )
+  subroutine IncrementIntermediate ( S, dT, iS, iK )
 
     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       A, &
       dT
     integer ( KDI ), intent ( in ) :: &
+      iS, &
       iK
-    real ( KDR ), intent ( in ), optional :: &
-      AA_Option
 
-    call S % Step_CS_1 % IncrementIntermediate ( A, dT, iK, AA_Option )
-    call S % Step_CS_2 % IncrementIntermediate ( A, dT, iK, AA_Option )
+    call S % Step_CS_1 % IncrementIntermediate ( dT, iS, iK )
+    call S % Step_CS_2 % IncrementIntermediate ( dT, iS, iK )
 
   end subroutine IncrementIntermediate
 

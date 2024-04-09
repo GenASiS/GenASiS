@@ -337,30 +337,31 @@ call SM % AddFieldSet ( S % Error )
   end subroutine InitializeIntermediate
 
 
-  subroutine IncrementIntermediate ( S, A, dT, iK, AA_Option )
+  subroutine IncrementIntermediate ( S, dT, iS, iK )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       A, &
       dT
     integer ( KDI ), intent ( in ) :: &
+      iS, &
       iK
-    real ( KDR ), intent ( in ), optional :: &
-      AA_Option
 
     associate &
       ( Y_I  =>  S % Intermediate, &
-        K    =>  S % SlopeStageExplicit ( iK ) % Element )
+        K    =>  S % SlopeStageExplicit ( iK ) % Element, &
+        A    =>  S % A ( iS ) % Value ( iK ) )
 
     if ( A /= 0.0_KDR ) &
       call Y_I % MultiplyAdd ( K, dT * A )
 
-    if ( present ( AA_Option ) ) then
-      associate ( KK  =>  S % SlopeStageImplicit ( iK ) % Element )
-      if ( AA_Option /= 0.0_KDR ) &
-        call Y_I % MultiplyAdd ( KK, dT * AA_Option )
-      end associate !-- KK
+    if ( S % ImplicitExplicit ) then
+      associate &
+        ( KK  =>  S % SlopeStageImplicit ( iK ) % Element, &
+          AA  =>  S % AA ( iS ) % Value ( iK ) )          
+      if ( AA /= 0.0_KDR ) &
+        call Y_I % MultiplyAdd ( KK, dT * AA )
+      end associate !-- KK, etc.
     end if
 
     end associate !-- Y_I, etc.

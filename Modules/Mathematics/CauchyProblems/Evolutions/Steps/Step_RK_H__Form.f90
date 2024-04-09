@@ -432,17 +432,9 @@ contains
       do iK = 1, iS - 1
         !-- Set Q_(I-1)  =  Q_(I-1)  +  dT * A  * K  ( iK )  
         !                            +  dT * AA * KK ( iK ) 
-        associate ( A  =>  S % A ( iS ) % Value ( iK ) )
         if ( associated ( T_II_A ) ) call T_II_A % Start ( )
-        if ( S % ImplicitExplicit ) then
-          associate ( AA  =>  S % AA ( iS ) % Value ( iK ) )          
-          call S % IncrementIntermediate ( A, dT, iK, AA_Option = AA )
-          end associate !-- AA
-        else
-          call S % IncrementIntermediate ( A, dT, iK )
-        end if
+        call S % IncrementIntermediate ( dT, iS, iK )
         if ( associated ( T_II_A ) ) call T_II_A % Stop ( )
-        end associate !-- A
         if ( iK  == iS - 1 ) then
           !-- Store Q_(I-1) back to Y
           if ( associated ( T_SI ) ) call T_SI % Start ( )
@@ -623,17 +615,15 @@ contains
   end subroutine InitializeIntermediate
 
 
-  subroutine IncrementIntermediate ( S, A, dT, iK, AA_Option )
+  subroutine IncrementIntermediate ( S, dT, iS, iK )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
-       A, &
       dT
     integer ( KDI ), intent ( in ) :: &
+      iS, &
       iK
-    real ( KDR ), intent ( in ), optional :: &
-      AA_Option
 
     call Show ( 'IncrementIntermediate should be overridden', &
                 CONSOLE % WARNING )
