@@ -79,6 +79,7 @@ contains
     call S % Initialize_H &
            ( CS_1 % Atlas, &
              NameOption = Name, &
+             ImplicitExplicitOption = ImplicitExplicitOption, &
              nStagesOption = nStagesOption )
 
     if ( .not. allocated ( S % Step_CS_1 ) ) &
@@ -130,6 +131,8 @@ contains
 
     class ( Step_RK_CS_CS_Form ), intent ( in ) :: &
       S
+
+    call S % Step_RK_H_Form % Show ( )
 
     call S % Step_CS_1 % Show ( )
     call S % Step_CS_2 % Show ( )
@@ -214,6 +217,69 @@ contains
       iS  !-- iStage
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
+
+    integer ( KDI ) :: &
+      iNS, &  !-- iNonlinearSolve
+      maxNS    
+
+    if ( iS  ==  1 ) &
+      return
+
+    associate &
+      ( S_1  =>  S % Step_CS_1, &
+        S_2  =>  S % Step_CS_2 )
+    associate &
+      ( AA     =>  S_1 % AA ( iS ) % Value ( iS ), &          
+        Y_I_1  =>  S_1 % Intermediate, &
+        Y_I_2  =>  S_2 % Intermediate, &
+        KK_1   =>  S_1 % SlopeImplicit, &
+        KK_2   =>  S_2 % SlopeImplicit, &
+        KK_1_Stage  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
+        KK_2_Stage  =>  S_2 % SlopeStageImplicit ( iS ) % Element )
+
+    if ( AA == 0.0_KDR ) &
+      return
+
+    !-- Upon entry, Y_I = Q_(I-1)
+!-- FIXME: for maxNS > 1, an additional Y_I_Star needed for iteration
+
+    maxNS  =  1
+      iNS  =  0
+    do 
+
+      iNS  =  iNS + 1
+
+      !-- Assume CS_1 is to be solved implicitly using "explicit" CS_2
+      call KK_1 % Compute ( dT )!, T_Option = T_CS )
+
+      !-- Update CS_2 according to solution of CS_1
+      call KK_2 % Compute ( dT )!, T_Option = T_CS )
+
+      !-- Exit criterion
+      if ( iNS  ==  maxNS ) exit
+
+    end do !-- iNS
+
+    !-- Assume SlopeImplicit local: no ghost exchange in loop above 
+    call KK_1 % ExchangeGhostData ( )
+    call KK_2 % ExchangeGhostData ( )
+
+    call KK_1 % Copy ( KK_1_Stage )
+    call KK_2 % Copy ( KK_2_Stage )
+
+!-- FIXME: separate AccumulateSlope implicit and explicit
+!    call S_1 % AccumulateSlope ( iS )
+!    call S_2 % AccumulateSlope ( iS )
+    
+    !-- Upon exit, Y_I = Q_(I-1)  +  dT * AA ( iS ) * KK
+    call Y_I_1 % MultiplyAdd ( KK_1, dT * AA )
+    call Y_I_2 % MultiplyAdd ( KK_2, dT * AA )
+
+    call S_1 % StoreIntermediate ( ) !T_Option )
+    call S_2 % StoreIntermediate ( ) !T_Option )
+
+    end associate !-- KK_1, etc.
+    end associate !-- S_1, etc.
 
   end subroutine ComputeStageImplicit
 
