@@ -7,7 +7,6 @@ module Radiations
   use DiffusionFactor_RM__Form
   use Slope_RM_I__Form
   use Slope_RM_DFV_I__Form
-  use Slope_RM_I_I__Form
   use PhotonMoments_G__Form
   use NeutrinoMoments_G__Form
   use Interactions_NM_G__Form

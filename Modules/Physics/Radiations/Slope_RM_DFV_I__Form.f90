@@ -75,7 +75,6 @@ contains
       class is ( Slope_RM_I_Form )
 
     call SI % Initialize ( R )
-    SI % Slope_DFV  =>  SD
 
     end select !-- SD
     end select !-- SI
