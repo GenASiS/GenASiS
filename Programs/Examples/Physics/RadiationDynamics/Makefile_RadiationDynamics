@@ -64,6 +64,7 @@ clean: clean_ThirdParty
 clobber: clean
 	rm -f SineWaveStreaming_*
 	rm -f Thermalization_*
+	rm -f MarshakThermalization_*
 	rm -f MarshakWave_*
 	# rm -f SineWaveDiffusion_*
 	# rm -f HomogeneousSphere_*

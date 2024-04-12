@@ -736,13 +736,13 @@ contains
     case ( 3 )
       allocate ( A ( 2 : 3, 1 : 2 ) )
       A           =   0.0_KDR
-      A ( 2, 1 )  =   0.5_KDR
-      A ( 3, 1 )  =  -1.0_KDR
-      A ( 3, 2 )  =   2.0_KDR
+      A ( 2, 1 )  =   1.0_KDR / 3.0_KDR
+      A ( 3, 1 )  =   0.0_KDR
+      A ( 3, 2 )  =   2.0_KDR / 3.0_KDR
       allocate ( B ( 1 : 3 ) )
-      B ( 1 )  =  1.0_KDR / 6.0_KDR
-      B ( 2 )  =  2.0_KDR / 3.0_KDR
-      B ( 3 )  =  1.0_KDR / 6.0_KDR
+      B ( 1 )  =  1.0_KDR / 4.0_KDR
+      B ( 2 )  =  0.0_KDR
+      B ( 3 )  =  3.0_KDR / 4.0_KDR
       allocate ( C ( 2 : 3 ) )
       C ( 2 )  =  0.5_KDR
       C ( 3 )  =  1.0_KDR
@@ -818,6 +818,33 @@ contains
     associate ( nS  =>  S % nStages )
 
     select case ( nS )
+    case ( 2 )
+      allocate ( A ( 2 : 2, 1 : 1 ) )
+      A           =  0.0_KDR
+      A ( 2, 1 )  =  1.0_KDR
+      allocate ( AA ( 2 : 2, 1 : 2 ) )
+      AA           =  0.0_KDR
+      AA ( 2, 1 )  =  0.5_KDR
+      AA ( 2, 2 )  =  0.5_KDR
+      allocate ( B ( 1 : 2 ) )
+      B ( 1 )  =  0.5_KDR
+      B ( 2 )  =  0.5_KDR
+      allocate ( BB ( 1 : 2 ) )
+      BB ( 1 )  =  0.5_KDR
+      BB ( 2 )  =  0.5_KDR
+      allocate ( C ( 2 : 2 ) )
+      C ( 2 )  =  1.0_KDR
+      allocate ( CC ( 2 : 2 ) )
+      CC ( 2 )  =  1.0_KDR
+      allocate ( BE ( 1 : 2 ) )
+      BE  =  0.0_KDR
+!      BE ( 1 )  =  1.0_KDR
+!      BE ( 2 )  =  0.0_KDR
+      allocate ( BBE ( 1 : 2 ) )
+      BBE  =  0.0_KDR
+!      BE ( 1 )  =  1.0_KDR
+!      BE ( 2 )  =  0.0_KDR
+      S % EmbeddedMethod  =  .false.
     case ( 3 )
       !-- Giraldo et al. 2013, SIAM J. Sci. Comput. 35, B1162
       allocate ( A ( 2 : 3, 1 : 2 ) )

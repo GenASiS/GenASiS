@@ -12,6 +12,9 @@ module Step_RK_CS_CS__Form
   private
 
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_CS_Form
+    type ( FieldSet_BM_Form ), allocatable :: &
+      Implicit_1, &
+      Implicit_2   
     class ( Step_RK_CS_Form ), allocatable :: &
       Step_CS_1, &
       Step_CS_2
@@ -82,6 +85,33 @@ contains
              ImplicitExplicitOption = ImplicitExplicitOption, &
              nStagesOption = nStagesOption )
 
+    !-- Storage used in implicit solver
+
+    allocate ( S % Implicit_1 )
+    allocate ( S % Implicit_2 )
+    associate &
+      ( Y_S_1  =>  S % Implicit_1, &  !-- Y_Star
+        Y_S_2  =>  S % Implicit_2 )
+    call Y_S_1 % Initialize &
+           ( CS_1 % Atlas, &
+             FieldOption = CS_1 % Balanced, &
+             NameOption = trim ( CS_1 % Name ) // '_Implicit', &
+             DeviceMemoryOption = CS_1 % DeviceMemory, &
+             DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
+             nFieldsOption = CS_1 % nBalanced, &
+             IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
+    call Y_S_2 % Initialize &
+           ( CS_2 % Atlas, &
+             FieldOption = CS_2 % Balanced, &
+             NameOption = trim ( CS_2 % Name ) // '_Implicit', &
+             DeviceMemoryOption = CS_2 % DeviceMemory, &
+             DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
+             nFieldsOption = CS_2 % nBalanced, &
+             IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
+    end associate !-- Y_S_1, etc.
+
+    !-- Steps
+
     if ( .not. allocated ( S % Step_CS_1 ) ) &
       allocate ( S % Step_CS_1 )
     if ( .not. allocated ( S % Step_CS_2 ) ) &
@@ -149,6 +179,8 @@ contains
       deallocate ( S % Step_CS_2 )
     if ( allocated ( S % Step_CS_1 ) ) &
       deallocate ( S % Step_CS_1 )
+    if ( allocated ( S % Implicit_1 ) ) &
+      deallocate ( S % Implicit_2 )
 
   end subroutine Finalize
 
@@ -206,6 +238,97 @@ contains
   end subroutine StoreIntermediate
 
 
+!   subroutine ComputeStageImplicit ( S, T, dT, iS, T_Option )
+
+!     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
+!       S
+!     real ( KDR ), intent ( in ) :: &
+!        T, &
+!       dT
+!     integer ( KDI ), intent ( in ) :: &
+!       iS  !-- iStage
+!     type ( TimerForm ), intent ( inout ), optional :: &
+!       T_Option
+
+!     integer ( KDI ) :: &
+!       iNS, &  !-- iNonlinearSolve
+!       maxNS    
+
+!     if ( iS  ==  1 ) &
+!       return
+
+!     associate &
+!       ( S_1  =>  S % Step_CS_1, &
+!         S_2  =>  S % Step_CS_2 )
+!     associate &
+!       ( AA      =>  S_1 % AA ( iS ) % Value ( iS ), &          
+!         Y_I_1   =>  S_1 % Intermediate, &
+!         Y_I_2   =>  S_2 % Intermediate, &
+!         Y_S_1   =>  S   % Implicit_1, &
+!         Y_S_2   =>  S   % Implicit_2, &
+!         CS_B_2  =>  S_2 % Balanced, &
+!         CS_2    =>  S_2 % CurrentSet, &
+!         KK_1    =>  S_1 % SlopeImplicit, &
+!         KK_2    =>  S_2 % SlopeImplicit, &
+!         KK_1_Stage  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
+!         KK_2_Stage  =>  S_2 % SlopeStageImplicit ( iS ) % Element )
+
+!     if ( AA == 0.0_KDR ) &
+!       return
+
+!     !-- Upon entry, Y_I = Q_(I-1)
+! !-- FIXME: for maxNS > 1, an additional Y_S = Y_Star needed for iteration
+!     call Y_I_1 % Copy ( Y_S_1 )
+!     call Y_I_2 % Copy ( Y_S_2 )
+
+!     maxNS  =  1
+!       iNS  =  0
+!     do 
+
+!       iNS  =  iNS + 1
+! !call Show ( iNS, '>>> iNS' )
+
+!       !-- Assume CS_1 is to be solved implicitly using "explicit" CS_2
+!       call KK_1 % Compute ( dT )!, T_Option = T_CS )
+
+!       !-- Update CS_2 according to solution of CS_1
+!       call KK_2 % Compute ( dT )!, T_Option = T_CS )
+! !call Show ( KK_2 % Storage_GS % Value ( :, 5 ), '>>> KK_2' )
+
+!       !-- Exit criterion
+!       if ( iNS  ==  maxNS ) exit
+
+!       !-- Iterated value of CS_2
+!       call Y_S_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
+!       call Y_S_2 % Copy ( CS_B_2 )
+!       call CS_2 % ComputeFromBalanced ( )
+
+!     end do !-- iNS
+
+!     !-- Assume SlopeImplicit local: no ghost exchange in loop above 
+!     call KK_1 % ExchangeGhostData ( )
+!     call KK_2 % ExchangeGhostData ( )
+
+!     call KK_1 % Copy ( KK_1_Stage )
+!     call KK_2 % Copy ( KK_2_Stage )
+
+! !-- FIXME: separate AccumulateSlope implicit and explicit
+! !    call S_1 % AccumulateSlope ( iS )
+! !    call S_2 % AccumulateSlope ( iS )
+    
+!     !-- Upon exit, Y_I = Q_(I-1)  +  dT * AA ( iS ) * KK
+!     call Y_I_1 % MultiplyAdd ( KK_1, dT * AA )
+!     call Y_I_2 % MultiplyAdd ( KK_2, dT * AA )
+
+!     call S_1 % StoreIntermediate ( ) !T_Option )
+!     call S_2 % StoreIntermediate ( ) !T_Option )
+
+!     end associate !-- KK_1, etc.
+!     end associate !-- S_1, etc.
+
+!   end subroutine ComputeStageImplicit
+
+
   subroutine ComputeStageImplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
@@ -229,11 +352,17 @@ contains
       ( S_1  =>  S % Step_CS_1, &
         S_2  =>  S % Step_CS_2 )
     associate &
-      ( AA     =>  S_1 % AA ( iS ) % Value ( iS ), &          
-        Y_I_1  =>  S_1 % Intermediate, &
-        Y_I_2  =>  S_2 % Intermediate, &
-        KK_1   =>  S_1 % SlopeImplicit, &
-        KK_2   =>  S_2 % SlopeImplicit, &
+      ( AA      =>  S_1 % AA ( iS ) % Value ( iS ), &          
+        Y_I_1   =>  S_1 % Intermediate, &
+        Y_I_2   =>  S_2 % Intermediate, &
+        Y_S_1   =>  S   % Implicit_1, &
+        Y_S_2   =>  S   % Implicit_2, &
+        CS_B_1  =>  S_1 % Balanced, &
+        CS_B_2  =>  S_2 % Balanced, &
+        CS_1    =>  S_1 % CurrentSet, &
+        CS_2    =>  S_2 % CurrentSet, &
+        KK_1    =>  S_1 % SlopeImplicit, &
+        KK_2    =>  S_2 % SlopeImplicit, &
         KK_1_Stage  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
         KK_2_Stage  =>  S_2 % SlopeStageImplicit ( iS ) % Element )
 
@@ -241,22 +370,32 @@ contains
       return
 
     !-- Upon entry, Y_I = Q_(I-1)
-!-- FIXME: for maxNS > 1, an additional Y_I_Star needed for iteration
+!-- FIXME: for maxNS > 1, an additional Y_S = Y_Star needed for iteration
+    call Y_I_1 % Copy ( Y_S_1 )
+    call Y_I_2 % Copy ( Y_S_2 )
 
-    maxNS  =  1
+    maxNS  =  20
       iNS  =  0
     do 
 
       iNS  =  iNS + 1
+!call Show ( iNS, '>>> iNS' )
 
-      !-- Assume CS_1 is to be solved implicitly using "explicit" CS_2
       call KK_1 % Compute ( dT )!, T_Option = T_CS )
 
-      !-- Update CS_2 according to solution of CS_1
       call KK_2 % Compute ( dT )!, T_Option = T_CS )
+!call Show ( KK_2 % Storage_GS % Value ( :, 5 ), '>>> KK_2' )
 
       !-- Exit criterion
       if ( iNS  ==  maxNS ) exit
+
+      call Y_S_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
+      call Y_S_1 % Copy ( CS_B_1 )
+      call CS_1 % ComputeFromBalanced ( )
+
+      call Y_S_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
+      call Y_S_2 % Copy ( CS_B_2 )
+      call CS_2 % ComputeFromBalanced ( )
 
     end do !-- iNS
 

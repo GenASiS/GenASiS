@@ -1376,13 +1376,13 @@ contains
 
       !-- Fluid error steps
 
-      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
+! !      if ( I % iCheckpoint  >  1 ) &
+!         call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
 
-      !-- Radiation error steps
+!       !-- Radiation error steps
 
-      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
+! !      if ( I % iCheckpoint  >  1 ) &
+!         call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
 
       !-- Reduce across CS_1D
 
