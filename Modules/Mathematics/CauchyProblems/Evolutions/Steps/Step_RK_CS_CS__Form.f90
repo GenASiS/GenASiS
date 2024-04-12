@@ -40,9 +40,9 @@ module Step_RK_CS_CS__Form
     procedure, public, pass :: &
       StoreIntermediate
     procedure, public, pass :: &
-      ComputeStageImplicit
+      ComputeUpdateImplicit
     procedure, public, pass :: &
-      ComputeStageExplicit
+      ComputeUpdateExplicit
     procedure, public, pass :: &
       IncrementSolution
     procedure, public, pass :: &
@@ -238,7 +238,7 @@ contains
   end subroutine StoreIntermediate
 
 
-!   subroutine ComputeStageImplicit ( S, T, dT, iS, T_Option )
+!   subroutine ComputeUpdateImplicit ( S, T, dT, iS, T_Option )
 
 !     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
 !       S
@@ -326,10 +326,10 @@ contains
 !     end associate !-- KK_1, etc.
 !     end associate !-- S_1, etc.
 
-!   end subroutine ComputeStageImplicit
+!   end subroutine ComputeUpdateImplicit
 
 
-  subroutine ComputeStageImplicit ( S, T, dT, iS, T_Option )
+  subroutine ComputeUpdateImplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
       S
@@ -420,10 +420,10 @@ contains
     end associate !-- KK_1, etc.
     end associate !-- S_1, etc.
 
-  end subroutine ComputeStageImplicit
+  end subroutine ComputeUpdateImplicit
 
 
-  subroutine ComputeStageExplicit ( S, T, dT, iS, T_Option )
+  subroutine ComputeUpdateExplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
       S
@@ -435,10 +435,10 @@ contains
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
-    call S % Step_CS_1 % ComputeStageExplicit ( T, dT, iS, T_Option )
-    call S % Step_CS_2 % ComputeStageExplicit ( T, dT, iS, T_Option )
+    call S % Step_CS_1 % ComputeUpdateExplicit ( T, dT, iS, T_Option )
+    call S % Step_CS_2 % ComputeUpdateExplicit ( T, dT, iS, T_Option )
 
-  end subroutine ComputeStageExplicit
+  end subroutine ComputeUpdateExplicit
 
 
   subroutine IncrementSolution ( S, dT, iS )

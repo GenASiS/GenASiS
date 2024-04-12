@@ -82,9 +82,9 @@ module Step_RK_H__Form
     procedure, public, pass :: &
       StoreIntermediate
     procedure, public, pass :: &
-      ComputeStageImplicit
+      ComputeUpdateImplicit
     procedure, public, pass :: &
-      ComputeStageExplicit
+      ComputeUpdateExplicit
     procedure, public, pass :: &
       IncrementSolution
     procedure, public, pass :: &
@@ -446,7 +446,7 @@ contains
       if ( S % ImplicitExplicit ) &
         !-- Obtain Y_(I) and KK ( iS ) = dY/dT_Implicit ( Y_(I) )
         !   from nonlinear solve Y_(I) = Q_(I-1) + dt A_II KK ( iS )
-        call S % ComputeStageImplicit ( T, dT, iS )
+        call S % ComputeUpdateImplicit ( T, dT, iS )
 
       !-- Compute K ( iS )  =  dY/dT_Explicit ( Y_(I) )
       if ( present ( T_Option ) ) then
@@ -455,10 +455,10 @@ contains
                       Name = trim ( S % Name ) // '_CmptStg', &
                       Level = T_Option % Level + 1 )
         call T_CS % Start ( )
-        call S % ComputeStageExplicit ( T, dT, iS, T_Option = T_CS )
+        call S % ComputeUpdateExplicit ( T, dT, iS, T_Option = T_CS )
         call T_CS % Stop ( )
       else
-        call S % ComputeStageExplicit ( T, dT, iS )
+        call S % ComputeUpdateExplicit ( T, dT, iS )
       end if
 
     end do !-- iS
@@ -634,7 +634,7 @@ contains
   end subroutine StoreIntermediate
 
 
-  subroutine ComputeStageImplicit ( S, T, dT, iS, T_Option )
+  subroutine ComputeUpdateImplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -646,14 +646,14 @@ contains
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
-    call Show ( 'ComputeStageImplicit should be overridden', CONSOLE % WARNING )
+    call Show ( 'ComputeUpdateImplicit should be overridden', CONSOLE % WARNING )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
-    call Show ( 'ComputeStageImplicit', 'subroutine', CONSOLE % WARNING )
+    call Show ( 'ComputeUpdateImplicit', 'subroutine', CONSOLE % WARNING )
 
-  end subroutine ComputeStageImplicit
+  end subroutine ComputeUpdateImplicit
 
 
-  subroutine ComputeStageExplicit ( S, T, dT, iS, T_Option )
+  subroutine ComputeUpdateExplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -665,11 +665,11 @@ contains
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
-    call Show ( 'ComputeStageExplicit should be overridden', CONSOLE % WARNING )
+    call Show ( 'ComputeUpdateExplicit should be overridden', CONSOLE % WARNING )
     call Show ( 'Step_RK_H_Form', 'module', CONSOLE % WARNING )
-    call Show ( 'ComputeStageExplicit', 'subroutine', CONSOLE % WARNING )
+    call Show ( 'ComputeUpdateExplicit', 'subroutine', CONSOLE % WARNING )
 
-  end subroutine ComputeStageExplicit
+  end subroutine ComputeUpdateExplicit
 
 
   subroutine IncrementSolution ( S, dT, iS )
@@ -818,33 +818,35 @@ contains
     associate ( nS  =>  S % nStages )
 
     select case ( nS )
-    case ( 2 )
-      allocate ( A ( 2 : 2, 1 : 1 ) )
-      A           =  0.0_KDR
-      A ( 2, 1 )  =  1.0_KDR
-      allocate ( AA ( 2 : 2, 1 : 2 ) )
-      AA           =  0.0_KDR
-      AA ( 2, 1 )  =  0.5_KDR
-      AA ( 2, 2 )  =  0.5_KDR
-      allocate ( B ( 1 : 2 ) )
-      B ( 1 )  =  0.5_KDR
-      B ( 2 )  =  0.5_KDR
-      allocate ( BB ( 1 : 2 ) )
-      BB ( 1 )  =  0.5_KDR
-      BB ( 2 )  =  0.5_KDR
-      allocate ( C ( 2 : 2 ) )
-      C ( 2 )  =  1.0_KDR
-      allocate ( CC ( 2 : 2 ) )
-      CC ( 2 )  =  1.0_KDR
-      allocate ( BE ( 1 : 2 ) )
-      BE  =  0.0_KDR
-!      BE ( 1 )  =  1.0_KDR
-!      BE ( 2 )  =  0.0_KDR
-      allocate ( BBE ( 1 : 2 ) )
-      BBE  =  0.0_KDR
-!      BE ( 1 )  =  1.0_KDR
-!      BE ( 2 )  =  0.0_KDR
-      S % EmbeddedMethod  =  .false.
+!-- This speculative combination of Heun's method explicit and Crank-Nicholson
+!   implicit (see Wikipedia "List of Runge-Kutta Methods" seems invalid.
+!     case ( 2 )
+!       allocate ( A ( 2 : 2, 1 : 1 ) )
+!       A           =  0.0_KDR
+!       A ( 2, 1 )  =  1.0_KDR
+!       allocate ( AA ( 2 : 2, 1 : 2 ) )
+!       AA           =  0.0_KDR
+!       AA ( 2, 1 )  =  0.5_KDR
+!       AA ( 2, 2 )  =  0.5_KDR
+!       allocate ( B ( 1 : 2 ) )
+!       B ( 1 )  =  0.5_KDR
+!       B ( 2 )  =  0.5_KDR
+!       allocate ( BB ( 1 : 2 ) )
+!       BB ( 1 )  =  0.5_KDR
+!       BB ( 2 )  =  0.5_KDR
+!       allocate ( C ( 2 : 2 ) )
+!       C ( 2 )  =  1.0_KDR
+!       allocate ( CC ( 2 : 2 ) )
+!       CC ( 2 )  =  1.0_KDR
+!       allocate ( BE ( 1 : 2 ) )
+!       BE  =  0.0_KDR
+! !      BE ( 1 )  =  1.0_KDR
+! !      BE ( 2 )  =  0.0_KDR
+!       allocate ( BBE ( 1 : 2 ) )
+!       BBE  =  0.0_KDR
+! !      BE ( 1 )  =  1.0_KDR
+! !      BE ( 2 )  =  0.0_KDR
+!       S % EmbeddedMethod  =  .false.
     case ( 3 )
       !-- Giraldo et al. 2013, SIAM J. Sci. Comput. 35, B1162
       allocate ( A ( 2 : 3, 1 : 2 ) )

@@ -56,7 +56,7 @@ module Step_RK_CS__Form
     procedure, public, pass :: &
       StoreIntermediate
     procedure, public, pass :: &
-      ComputeStageExplicit
+      ComputeUpdateExplicit
     procedure, public, pass :: &
       IncrementSolution
     procedure, public, pass :: &
@@ -383,7 +383,7 @@ call SM % AddFieldSet ( S % Error )
   end subroutine StoreIntermediate
 
 
-  subroutine ComputeStageExplicit ( S, T, dT, iS, T_Option )
+  subroutine ComputeUpdateExplicit ( S, T, dT, iS, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
@@ -469,7 +469,7 @@ call SM % AddFieldSet ( S % Error )
 
     end associate !-- K, etc.
 
-  end subroutine ComputeStageExplicit
+  end subroutine ComputeUpdateExplicit
 
 
   subroutine IncrementSolution ( S, dT, iS )
