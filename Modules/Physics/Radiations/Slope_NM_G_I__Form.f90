@@ -22,8 +22,6 @@ module Slope_NM_G_I__Form
       Communicator_X_1D  =>  null ( )
     type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
       CO_SplitSource
-    class ( Slope_DFV_F_DT_Form ), pointer :: &
-      Slope_DFV => null ( )
     class ( NeutrinoMoments_G_Form ), pointer :: &
       Radiation => null ( )
     class ( Interactions_NM_G_Form ), pointer :: &
@@ -43,46 +41,11 @@ module Slope_NM_G_I__Form
       ComputeSource_F
 
     private :: &
-      ComputeKernel, &
-      ComputeSimpleKernel
+      ComputeKernel
 
     interface
 
       module subroutine ComputeKernel &
-               ( ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, J_RD, J_Eq, &
-                 SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, S_1, S_2, S_3, N_RD, N_Eq, &
-                 dT, S_E, S_S_1, S_S_2, S_S_3, S_D, DI, UseDeviceOption )
-        use Basics
-        implicit none
-        logical ( KDL ), dimension ( : ), intent ( in ) :: &
-          ProperCell
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-           Xi_J,  Xi_H,  Xi_N, &
-          Chi_J, Chi_H, Chi_N, &
-          J, &
-          H_1, H_2, H_3, &
-          N, &
-          M_DD_11, M_DD_22, M_DD_33, &
-          J_RD, &
-          J_Eq, &
-          SF_RD, &
-          S_S_1_D, S_S_2_D, S_S_3_D, &  !-- Slope_S_Divergence
-          S_1, S_2, S_3, &
-          N_RD, &
-          N_Eq
-        real ( KDR ), intent ( in ) :: &
-          dT
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
-          S_E, &
-          S_S_1, S_S_2, S_S_3, &
-          S_D, &
-          DI
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine ComputeKernel
-
-      module subroutine ComputeSimpleKernel &
                ( ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, dT, &
                  S_E, S_S_1, S_S_2, S_S_3, S_D, UseDeviceOption )
@@ -105,7 +68,7 @@ module Slope_NM_G_I__Form
           S_D
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeSimpleKernel
+      end subroutine ComputeKernel
 
     end interface
 
@@ -233,50 +196,11 @@ contains
             M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
             M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
 
-        if ( associated ( S % Slope_DFV ) ) then
-
-          call Search &
-            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum ( 1 ) )
-          call Search &
-            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum ( 2 ) )
-          call Search &
-            ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum ( 3 ) )
-          
-          associate &
-            ( SDV  =>  S % Slope_DFV % Storage ( iC ) % Value )
-          associate &
-            (     J_RD  =>   RV ( :, R % ENERGY_DENSITY_C_RD ), &
-                  J_Eq  =>   RV ( :, R % ENERGY_DENSITY_C_EQ ), &
-                 SF_RD  =>   RV ( :, R % STRESS_FACTOR_RD ), &
-               S_S_1_D  =>  SDV ( :, iMomentum ( 1 ) ), &
-               S_S_2_D  =>  SDV ( :, iMomentum ( 2 ) ), &
-               S_S_3_D  =>  SDV ( :, iMomentum ( 3 ) ), &
-                 S_1    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
-                 S_2    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
-                 S_3    =>   RV ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
-                  N_RD  =>   RV ( :, R % NUMBER_DENSITY_C_RD ), &
-                  N_Eq  =>   RV ( :, R % NUMBER_DENSITY_C_EQ ), &
-                DI      =>   RV ( :, R % DIFFUSION_INDICATOR ) )
-
-          call ComputeKernel &
+        call ComputeKernel &
                ( C % ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, J_RD, J_Eq, &
-                 SF_RD, S_S_1_D, S_S_2_D, S_S_3_D, S_1, S_2, S_3, N_RD, N_Eq, &
-                 dT, S_E, S_S_1, S_S_2, S_S_3, S_D, DI, &
+                 J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, dT, &
+                 S_E, S_S_1, S_S_2, S_S_3, S_D, &
                  UseDeviceOption = S % DeviceMemory )
-
-          end associate !-- J_RD, etc.
-          end associate !-- SDV
-
-        else
-
-          call ComputeSimpleKernel &
-                 ( C % ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                   J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, dT, &
-                   S_E, S_S_1, S_S_2, S_S_3, S_D, &
-                   UseDeviceOption = S % DeviceMemory )
-
-        end if
 
         end associate !-- M_DD_11, etc.
         end associate !-- GSV
@@ -315,7 +239,6 @@ contains
 
     nullify ( S % Interactions )
     nullify ( S % Radiation )
-    nullify ( S % Slope_DFV )
     
     if ( allocated ( S % CO_SplitSource ) ) &
       deallocate ( S % CO_SplitSource )

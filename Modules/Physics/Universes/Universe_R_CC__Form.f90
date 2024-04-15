@@ -4,6 +4,7 @@ module Universe_R_CC__Form
 
   use Basics
   use Mathematics
+  use Gravitations
   use Fluids
   use Radiations
   use Universe_F_CC__Form
@@ -77,6 +78,8 @@ module Universe_R_CC__Form
       InitializeSeries, &
       Analyze, &
       Set_T_CheckpointInterval, &
+      SetSlope_F_P_SS, &      
+      SetSlope_F_P_DFV_N, &
       SetSlope_F_P_DFV_N_SS, &
       SetSlope_NM_G_I, &
       SetSlope_NM_G_DFV_I
@@ -597,10 +600,19 @@ contains
 
     integer ( KDI ) :: &
       nStages
+    logical ( KDL ) :: &
+      ImplicitExplicit
     character ( LDL ) :: &
       RiemannSolverType
 
-    nStages  =  2
+    ImplicitExplicit  =  .true.
+    call PROGRAM_HEADER % GetParameter ( ImplicitExplicit, 'ImplicitExplicit' )
+
+    if ( ImplicitExplicit ) then
+      nStages  =  3  !-- IMEX
+    else
+      nStages  =  2
+    end if
     call PROGRAM_HEADER % GetParameter ( nStages, 'nStages' )
 
     U % Coarsen  =  .true.
@@ -633,7 +645,12 @@ contains
         call DF % Initialize ( U % Interactions_NM_G )
       end select !-- DF
 
-      S_R % SetSlopeExplicit  =>  SetSlope_NM_G_DFV_I
+      if ( ImplicitExplicit ) then
+        !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
+        S_R % SetSlopeImplicit  =>  SetSlope_NM_G_I
+      else
+        S_R % SetSlopeExplicit  =>  SetSlope_NM_G_DFV_I
+      end if
 
       !-- Fluid
       select type ( F  =>  I % CurrentSet_X )
@@ -654,10 +671,18 @@ contains
         end associate !-- RS
       end if        
 
-      S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N_SS
+      if ( ImplicitExplicit ) then
+        S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N
+        S_F % SetSlopeImplicit  =>  SetSlope_F_P_SS
+      else
+        S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N_SS
+      end if
 
       !-- Combined step
-      call S % Initialize ( R, F, nStagesOption = nStages )
+      call S % Initialize &
+             ( R, F, &
+               ImplicitExplicitOption = ImplicitExplicit, &
+               nStagesOption = nStages )
 
       !-- Coarsening
       if ( U % Coarsen ) then
@@ -1300,17 +1325,17 @@ contains
 !    dT_6  =  U % InteractionFactor  *  dT_6
 !    dT_7  =  U % InteractionFactor  *  dT_7
 
-    !-- Fluid error steps
+!     !-- Fluid error steps
 
-!    if ( I % iCheckpoint  >  1 ) &
-      call U % Compute_dT_RK_F_CGS &
-             ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
+! !    if ( I % iCheckpoint  >  1 ) &
+!       call U % Compute_dT_RK_F_CGS &
+!              ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
 
-    !-- Radiation error steps
+!     !-- Radiation error steps
 
-!    if ( I % iCheckpoint  >  1 ) &
-      call U % Compute_dT_RK_R_CGS &
-             ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
+! !    if ( I % iCheckpoint  >  1 ) &
+!       call U % Compute_dT_RK_R_CGS &
+!              ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
 
    !-- Reduce across radiation types
 
@@ -1380,6 +1405,107 @@ contains
   end subroutine Set_T_CheckpointInterval
 
 
+  subroutine SetSlope_F_P_SS ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_F_P_SS_Form :: K )
+    select type ( K )
+      class is ( Slope_F_P_SS_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_P_Form )
+
+    call K % Initialize ( F )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    end select !-- F
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_F_P_SS
+
+
+  subroutine SetSlope_F_P_DFV_N ( S, K )
+
+    !-- Compare SetSlope_N in Universe_F_C__Form
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    integer ( KDI ) :: &
+      iEnergy_B
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum_B
+    character ( 1 ) :: &
+      StageNumber
+
+!    select type ( S )
+!      class is ( Step_RK_CS_Form )
+!    select type ( F  =>  S % CurrentSet )
+!    class is ( Fluid_P_HN_Form )
+!      allocate ( Slope_DFV_N_F_P_HN_Form :: K )
+!    class default
+      allocate ( Slope_DFV_N_Form :: K )
+!    end select !-- F
+!    end select !-- S
+
+    select type ( K )
+      class is ( Slope_DFV_N_Form )
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+    select type ( F  =>  S % CurrentSet )
+      class is ( Fluid_D_Form ) 
+
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B ( 1 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B ( 2 ) )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B ( 3 ) )
+
+    !-- Dust
+    iEnergy_B  =  0
+
+    !-- Perfect fluid
+    select type ( F )
+    class is ( Fluid_P_Form )
+      call Search ( F % iaBalanced, F % ENERGY_DENSITY_B, iEnergy_B )
+    end select !-- F
+
+    if ( allocated ( S % DivergenceTotal ) ) then
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               S % DiffusionFactor, &
+               S % DivergenceTotal, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
+    else if ( allocated ( S % DivergencePart ) ) then
+      call K % Initialize &
+             ( S % RiemannSolver, &
+               S % DiffusionFactor, &
+               S % DivergencePart, &
+               iVelocity_F = F % VELOCITY_U, &
+               iMomentum_B = iMomentum_B, &
+               iBaryonMass_F = F % BARYON_MASS, &
+               iBaryonDensity_F = F % BARYON_DENSITY_B, &
+               iEnergy_B = iEnergy_B )
+    end if  !-- DivergenceTotal
+
+    end select !-- F
+    end select !-- S
+    end select !-- K
+
+  end subroutine SetSlope_F_P_DFV_N
+
+
   subroutine SetSlope_F_P_DFV_N_SS ( S, K )
 
     class ( Step_RK_H_Form ), intent ( in ) :: &
@@ -1445,6 +1571,10 @@ contains
     !-- FIXME: This is a workaround because the correct type of 
     !          R % Interactions is not being recognized in K % Initialize
     K % Interactions  =>  UNIVERSE % Interactions_NM_G
+    select type ( I  =>  UNIVERSE % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+      K % Communicator_X_1D  =>  I % Communicator_X_1D
+    end select !-- I
 
     end select !-- R
     end select !-- K
