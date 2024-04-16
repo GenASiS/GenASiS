@@ -283,7 +283,8 @@ contains
     call Y_I_1 % Copy ( Y_S_1 )
     call Y_I_2 % Copy ( Y_S_2 )
 
-    maxNS  =  20
+!    maxNS  =  20
+    maxNS  =  10
       iNS  =  0
     do 
 
