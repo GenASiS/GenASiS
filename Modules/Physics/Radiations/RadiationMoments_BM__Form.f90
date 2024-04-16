@@ -75,7 +75,7 @@ module RadiationMoments_BM__Form
       ComputeEigenspeeds
     procedure, public, pass :: &
       ComputeEquilibrium
-    procedure, public, pass :: &
+    procedure, public, pass ( RM ) :: &
       SetFluidVelocity
     final :: &
       Finalize
@@ -463,6 +463,8 @@ contains
     call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
 
+    call CS % SetFluidVelocity ( FS_CS )
+
     do iC  =  1, CS % Atlas % nCharts
 
       associate &
@@ -530,6 +532,8 @@ contains
 
     call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
+
+    call CS % SetFluidVelocity ( CS )
 
     if ( present ( T_Option ) ) then
       T_K  =>  PROGRAM_HEADER % Timer &
@@ -656,9 +660,11 @@ contains
   end subroutine ComputeEquilibrium
 
 
-  subroutine SetFluidVelocity ( RM )
+  subroutine SetFluidVelocity ( FS_RM, RM )
 
-    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
+      FS_RM
+    class ( RadiationMoments_BM_Form ), intent ( in ) :: &
       RM
 
     integer ( KDI ) :: &
@@ -667,8 +673,8 @@ contains
     associate ( F  =>  RM % Fluid )
     do iC  =  1, RM % Atlas % nCharts
       associate &
-        ( RSV  =>  RM % Storage ( iC ) % Value, &
-          FSV  =>  F  % Storage ( iC ) % Value )
+        ( RSV  =>  FS_RM % Storage ( iC ) % Value, &
+          FSV  =>   F    % Storage ( iC ) % Value )
 
       call Copy ( FSV ( :,   F  % VELOCITY_U_1  &
                            : F  % VELOCITY_U_3 ), &
