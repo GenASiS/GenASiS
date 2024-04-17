@@ -847,44 +847,77 @@ contains
 ! !      BE ( 1 )  =  1.0_KDR
 ! !      BE ( 2 )  =  0.0_KDR
 !       S % EmbeddedMethod  =  .false.
+    ! case ( 3 )
+    !   !-- Giraldo et al. 2013, SIAM J. Sci. Comput. 35, B1162
+    !   allocate ( A ( 2 : 3, 1 : 2 ) )
+    !   A_32        =  ( 3.0_KDR  +  2.0_KDR * sqrt ( 2.0_KDR ) )  /  6.0_KDR
+    !   A           =  0.0_KDR
+    !   A ( 2, 1 )  =  2.0_KDR  -  sqrt ( 2.0_KDR )
+    !   A ( 3, 1 )  =  1.0_KDR  -  A_32
+    !   A ( 3, 2 )  =  A_32
+    !   allocate ( AA ( 2 : 3, 1 : 3 ) )
+    !   AA           =  0.0_KDR
+    !   AA ( 2, 1 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+    !   AA ( 2, 2 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+    !   AA ( 3, 1 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   AA ( 3, 2 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   AA ( 3, 3 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+    !   allocate ( B ( 1 : 3 ) )
+    !   B ( 1 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   B ( 2 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   B ( 3 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+    !   allocate ( BB ( 1 : 3 ) )
+    !   BB ( 1 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   BB ( 2 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   BB ( 3 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+    !   allocate ( C ( 2 : 3 ) )
+    !   C ( 2 )  =  2.0_KDR  -  sqrt ( 2.0_KDR )
+    !   C ( 3 )  =  1.0_KDR
+    !   allocate ( CC ( 2 : 3 ) )
+    !   CC ( 2 )  =  2.0_KDR  -  sqrt ( 2.0_KDR )
+    !   CC ( 3 )  =  1.0_KDR
+    !   allocate ( BE ( 1 : 3 ) )
+    !   BE ( 1 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
+    !   BE ( 2 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
+    !   BE ( 3 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   allocate ( BBE ( 1 : 3 ) )
+    !   BBE ( 1 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
+    !   BBE ( 2 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
+    !   BBE ( 3 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+    !   S % EmbeddedMethod  =  .true.
     case ( 3 )
-      !-- Giraldo et al. 2013, SIAM J. Sci. Comput. 35, B1162
+      !-- Ran Chu thesis
       allocate ( A ( 2 : 3, 1 : 2 ) )
-      A_32        =  ( 3.0_KDR  +  2.0_KDR * sqrt ( 2.0_KDR ) )  /  6.0_KDR
       A           =  0.0_KDR
-      A ( 2, 1 )  =  2.0_KDR  -  sqrt ( 2.0_KDR )
-      A ( 3, 1 )  =  1.0_KDR  -  A_32
-      A ( 3, 2 )  =  A_32
+      A ( 2, 1 )  =  1.0_KDR
+      A ( 3, 1 )  =  0.5_KDR
+      A ( 3, 2 )  =  0.5_KDR
       allocate ( AA ( 2 : 3, 1 : 3 ) )
       AA           =  0.0_KDR
-      AA ( 2, 1 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
-      AA ( 2, 2 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
-      AA ( 3, 1 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      AA ( 3, 2 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      AA ( 3, 3 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+      AA ( 2, 1 )  =  0.0_KDR
+      AA ( 2, 2 )  =  1.0_KDR
+      AA ( 3, 1 )  =  0.0_KDR
+      AA ( 3, 2 )  =  0.5_KDR
+      AA ( 3, 3 )  =  0.5_KDR
       allocate ( B ( 1 : 3 ) )
-      B ( 1 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      B ( 2 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      B ( 3 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+      B ( 1 )  =  0.5_KDR
+      B ( 2 )  =  0.5_KDR
+      B ( 3 )  =  0.0_KDR
       allocate ( BB ( 1 : 3 ) )
-      BB ( 1 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      BB ( 2 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      BB ( 3 )  =  1.0_KDR  -  1.0_KDR / sqrt ( 2.0_KDR )
+      BB ( 1 )  =  0.0_KDR
+      BB ( 2 )  =  0.5_KDR
+      BB ( 3 )  =  0.5_KDR
       allocate ( C ( 2 : 3 ) )
-      C ( 2 )  =  2.0_KDR  -  sqrt ( 2.0_KDR )
+      C ( 2 )  =  1.0_KDR
       C ( 3 )  =  1.0_KDR
       allocate ( CC ( 2 : 3 ) )
-      CC ( 2 )  =  2.0_KDR  -  sqrt ( 2.0_KDR )
+      CC ( 2 )  =  1.0_KDR
       CC ( 3 )  =  1.0_KDR
       allocate ( BE ( 1 : 3 ) )
-      BE ( 1 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
-      BE ( 2 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
-      BE ( 3 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
+      BE  =  0.0_KDR
       allocate ( BBE ( 1 : 3 ) )
-      BBE ( 1 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
-      BBE ( 2 )  =  ( 4.0_KDR - sqrt ( 2.0_KDR ) ) / 8.0_KDR
-      BBE ( 3 )  =  1.0_KDR / ( 2.0_KDR * sqrt ( 2.0_KDR ) )
-      S % EmbeddedMethod  =  .true.
+      BBE  =  0.0_KDR
+      S % EmbeddedMethod  =  .false.
     case default
       call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
       call Show ( S % nStages, 'nStages', CONSOLE % ERROR )
