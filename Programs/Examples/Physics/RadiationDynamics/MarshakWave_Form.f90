@@ -227,16 +227,13 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
+    real ( KDR ) :: &
+      Kappa_CGS
+
     select type ( MW  =>  I % System )
       class is ( MarshakWaveForm )
     select type ( I )
       class is ( Integrator_CS_1D_CS_Form )
-
-    !-- FinishTime
-
-!    I % T_Finish  =  1.36e-7_KDR  *  UNIT % SECOND
-!-- More diffusive
-    I % T_Finish  =  1.36e-6_KDR  *  UNIT % SECOND
 
     !-- Parameters
 
@@ -255,9 +252,6 @@ contains
     Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_0        =  3.0e2_KDR   *  UNIT % KELVIN
     T_I        =  1.0e3_KDR   *  UNIT % KELVIN
-!    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
-!-- More diffusive
-    Kappa      =  1.0e4_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     E_Max      =  0.620_KDR   *  UNIT % ELECTRON_VOLT
 
@@ -266,11 +260,18 @@ contains
     call PROGRAM_HEADER % GetParameter ( Rho_0,     'MassDensity' )
     call PROGRAM_HEADER % GetParameter ( T_0,       'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,       'TemperatureInner' )
-    call PROGRAM_HEADER % GetParameter ( Kappa,     'SpecificOpacity' )
     call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityMin' )
     call PROGRAM_HEADER % GetParameter ( E_Max,     'EnergyMax' )
 
-    end associate !-- Gamma, etc.
+    Kappa_CGS  =  1.0e3_KDR
+    call PROGRAM_HEADER % GetParameter ( Kappa_CGS, 'SpecificOpacityCGS' )
+
+    Kappa  =  Kappa_CGS  *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+
+    !-- FinishTime
+
+    I % T_Finish  =  1.36e-7_KDR  *  UNIT % SECOND  &
+                     *  ( Kappa_CGS / 1.0e3_KDR )
 
     !-- Fluid
 
@@ -323,6 +324,7 @@ contains
 
     !-- Cleanup
 
+    end associate !-- Gamma, etc.
     end select !-- I
     end select !-- MW
 
