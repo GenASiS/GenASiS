@@ -91,7 +91,11 @@ contains
 
     !-- Courant factor
 
-    I % CourantFactor_1D  =  0.7_KDR
+    if ( I % Step_X % ImplicitExplicit ) then
+      I % CourantFactor_1D  =  0.2_KDR
+    else
+      I % CourantFactor_1D  =  0.7_KDR
+    end if
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor_1D, 'CourantFactor_1D' )
 
