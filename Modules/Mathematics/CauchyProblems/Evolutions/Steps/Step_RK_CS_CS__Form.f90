@@ -12,6 +12,8 @@ module Step_RK_CS_CS__Form
   private
 
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_CS_Form
+    integer ( KDI ) :: &
+      MaxImplicitIterations
     type ( FieldSet_BM_Form ), allocatable :: &
       Implicit_1, &
       Implicit_2   
@@ -86,6 +88,10 @@ contains
              nStagesOption = nStagesOption )
 
     !-- Storage used in implicit solver
+
+    S % MaxImplicitIterations  =  10
+    call PROGRAM_HEADER % GetParameter &
+           ( S % MaxImplicitIterations, 'MaxImplicitIterations' )
 
     allocate ( S % Implicit_1 )
     allocate ( S % Implicit_2 )
@@ -163,6 +169,8 @@ contains
       S
 
     call S % Step_RK_H_Form % Show ( )
+    call Show ( S % MaxImplicitIterations, 'MaxImplicitIterations', &
+                S % IGNORABILITY )
 
     call S % Step_CS_1 % Show ( )
     call S % Step_CS_2 % Show ( )
@@ -251,8 +259,7 @@ contains
       T_Option
 
     integer ( KDI ) :: &
-      iNS, &  !-- iNonlinearSolve
-      maxNS    
+      iIS  !-- iImplicitSolve
 
     if ( iS  ==  1 ) &
       return
@@ -279,25 +286,20 @@ contains
       return
 
     !-- Upon entry, Y_I = Q_(I-1)
-!-- FIXME: for maxNS > 1, an additional Y_S = Y_Star needed for iteration
     call Y_I_1 % Copy ( Y_S_1 )
     call Y_I_2 % Copy ( Y_S_2 )
 
-!    maxNS  =  20
-    maxNS  =  10
-      iNS  =  0
+    iIS  =  0
     do 
 
-      iNS  =  iNS + 1
-!call Show ( iNS, '>>> iNS' )
+      iIS  =  iIS + 1
 
       call KK_1 % Compute ( dT )!, T_Option = T_CS )
 
       call KK_2 % Compute ( dT )!, T_Option = T_CS )
-!call Show ( KK_2 % Storage_GS % Value ( :, 5 ), '>>> KK_2' )
 
       !-- Exit criterion
-      if ( iNS  ==  maxNS ) exit
+      if ( iIS  ==  S % MaxImplicitIterations ) exit
 
       call Y_S_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
       call Y_S_1 % Copy ( CS_B_1 )
@@ -307,7 +309,7 @@ contains
       call Y_S_2 % Copy ( CS_B_2 )
       call CS_2 % ComputeFromBalanced ( )
 
-    end do !-- iNS
+    end do !-- iIS
 
     !-- Assume SlopeImplicit local: no ghost exchange in loop above 
     call KK_1 % ExchangeGhostData ( )
