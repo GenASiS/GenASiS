@@ -1346,7 +1346,9 @@ contains
       class is ( Universe_R_B_Form )
     select type ( I )
       class is ( Integrator_CS_1D_BM_CS_Form )
-     
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_H_Form )
+
       !-- CS ( Fluid )
 
       if ( U % EvolveFluid ) then
@@ -1373,15 +1375,19 @@ contains
       !   dT_3  =  U % InteractionFactor  *  dT_3
       ! end if
 
-      !-- Fluid error steps
+      if ( S % EmbeddedMethod ) then
 
-! !      if ( I % iCheckpoint  >  1 ) &
-!         call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
+        !-- Fluid error steps
 
-!       !-- Radiation error steps
+  !      if ( I % iCheckpoint  >  1 ) &
+          call U % Compute_dT_RK_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
 
-! !      if ( I % iCheckpoint  >  1 ) &
-!         call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
+        !-- Radiation error steps
+
+  !      if ( I % iCheckpoint  >  1 ) &
+          call U % Compute_dT_RK_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
+
+      end if
 
       !-- Reduce across CS_1D
 
@@ -1395,6 +1401,7 @@ contains
       I % dT_Candidate ( 2 )       =  CO % Incoming % Value ( 1 )
       I % dT_Candidate ( 7 : 10 )  =  CO % Incoming % Value ( 2 : 5 )
 
+    end select !-- S
     end select !-- I
     end select !-- U
     end associate !-- dT_1, etc.

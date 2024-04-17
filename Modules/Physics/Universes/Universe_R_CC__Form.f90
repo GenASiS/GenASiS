@@ -1277,6 +1277,8 @@ contains
       class is ( Universe_R_CC_Form )
     select type ( I )
       class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_H_Form )
     associate &  !-- See InitializeIntegrator subroutine herein
       ( dT_1   =>  dT_Candidate (  1 ), &
         dT_2   =>  dT_Candidate (  2 ), &
@@ -1325,17 +1327,21 @@ contains
 !    dT_6  =  U % InteractionFactor  *  dT_6
 !    dT_7  =  U % InteractionFactor  *  dT_7
 
-!     !-- Fluid error steps
+    if ( S % EmbeddedMethod ) then
 
-! !    if ( I % iCheckpoint  >  1 ) &
-!       call U % Compute_dT_RK_F_CGS &
-!              ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
+    !-- Fluid error steps
 
-!     !-- Radiation error steps
+!      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_RK_F_CGS &
+               ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
 
-! !    if ( I % iCheckpoint  >  1 ) &
-!       call U % Compute_dT_RK_R_CGS &
-!              ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
+      !-- Radiation error steps
+
+!      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_RK_R_CGS &
+               ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
+
+   end if
 
    !-- Reduce across radiation types
 
@@ -1350,6 +1356,7 @@ contains
    I % dT_Candidate ( 9 : 13 )  =  CO % Incoming % Value ( 2 : 6 )
 
     end associate !-- dT_1, etc.
+    end select !-- S
     end select !-- I
     end select !-- U
 

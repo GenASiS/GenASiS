@@ -120,8 +120,8 @@ module Step_RK_H__Form
   end interface
 
     private :: &
-      SetCoefficientsImplicitExplicit, &
-      SetCoefficientsExplicit, &
+      SetTableauImplicitExplicit, &
+      SetTableauExplicit, &
       SetSlope_H, &
       SetSlopeStage_H
 
@@ -151,8 +151,6 @@ contains
     if ( present ( ImplicitExplicitOption ) ) &
       S % ImplicitExplicit  =  ImplicitExplicitOption
 
-    S % EmbeddedMethod  =  .false.
-
     if ( S % ImplicitExplicit ) then
       S % nStages  =  3
     else
@@ -173,10 +171,13 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
     if ( S % ImplicitExplicit ) then
-      call SetCoefficientsImplicitExplicit ( S )
+      call SetTableauImplicitExplicit ( S )
     else
-      call SetCoefficientsExplicit ( S )
+      call SetTableauExplicit ( S )
     end if
+    !-- S % EmbeddedMethod set in SetTableau routines; but for those schemes
+    !   where an embedded method exists, allow it to be turned off.
+    call PROGRAM_HEADER % GetParameter ( S % EmbeddedMethod, 'EmbeddedMethod' )
 
     S % Atlas  =>  Atlas
 
@@ -702,7 +703,7 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine SetCoefficientsExplicit ( S )
+  subroutine SetTableauExplicit ( S )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -774,7 +775,7 @@ contains
       call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
       call Show ( S % nStages, 'nStages', CONSOLE % ERROR )
       call Show ( 'Step_RK_H__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SetCoefficientsExplicit', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'SetTableauExplicit', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- nStages
 
@@ -795,10 +796,10 @@ contains
  
     end associate !-- nS
 
-  end subroutine SetCoefficientsExplicit
+  end subroutine SetTableauExplicit
 
 
-  subroutine SetCoefficientsImplicitExplicit ( S )
+  subroutine SetTableauImplicitExplicit ( S )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
       S
@@ -922,7 +923,7 @@ contains
       call Show ( 'RungeKutta order not implemented', CONSOLE % ERROR )
       call Show ( S % nStages, 'nStages', CONSOLE % ERROR )
       call Show ( 'Step_RK_H__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SetCoefficientsImplicitExplicit', 'subroutine', &
+      call Show ( 'SetTableauImplicitExplicit', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- nStages
@@ -953,7 +954,7 @@ contains
 
     end associate !-- nS
 
-  end subroutine SetCoefficientsImplicitExplicit
+  end subroutine SetTableauImplicitExplicit
 
 
   subroutine SetSlope_H ( S, K )
