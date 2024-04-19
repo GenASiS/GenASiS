@@ -30,6 +30,10 @@ MultiplyAdd_Command.o: \
   Devices.o \
   MultiplyAdd_Command.f90
 
+RelativeDifference_Command.o: \
+  Specifiers.o \
+  RelativeDifference_Command.f90
+
 ArrayOperations.o: \
   Clear_Command.o \
   Copy_Command.o \
@@ -38,6 +42,7 @@ ArrayOperations.o: \
   Add_Command.o \
   Multiply_Command.o \
   MultiplyAdd_Command.o \
+  RelativeDifference_Command.o \
   ArrayOperations.f90
 
 ArrayOperations.a: $(ARRAY_OPERATIONS)

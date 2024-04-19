@@ -1,5 +1,6 @@
 ARRAY_OPERATIONS = \
   ArrayOperations.o \
+  RelativeDifference_Command.o \
   MultiplyAdd_Command.o \
   Multiply_Command.o \
   Add_Command.o \

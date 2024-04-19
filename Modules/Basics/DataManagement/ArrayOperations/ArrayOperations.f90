@@ -7,5 +7,6 @@ module ArrayOperations
   use Add_Command
   use Multiply_Command
   use MultiplyAdd_Command
+  use RelativeDifference_Command
 
 end module ArrayOperations
