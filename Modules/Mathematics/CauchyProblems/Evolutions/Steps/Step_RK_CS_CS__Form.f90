@@ -14,9 +14,15 @@ module Step_RK_CS_CS__Form
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_CS_Form
     integer ( KDI ) :: &
       MaxImplicitIterations
+    real ( KDR ) :: &
+      ImplicitTolerance
     type ( FieldSet_BM_Form ), allocatable :: &
       Implicit_1, &
-      Implicit_2   
+      Implicit_2, &
+      SlopeOld_1, &
+      SlopeOld_2, &
+      RelativeDifference_1, &
+      RelativeDifference_2
     class ( Step_RK_CS_Form ), allocatable :: &
       Step_CS_1, &
       Step_CS_2
@@ -89,9 +95,13 @@ contains
 
     !-- Storage used in implicit solver
 
-    S % MaxImplicitIterations  =  10
+    S % MaxImplicitIterations  =  20
     call PROGRAM_HEADER % GetParameter &
            ( S % MaxImplicitIterations, 'MaxImplicitIterations' )
+
+    S % ImplicitTolerance  =  1.0e-6_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( S % ImplicitTolerance, 'ImplicitTolerance' )
 
     allocate ( S % Implicit_1 )
     allocate ( S % Implicit_2 )
@@ -115,6 +125,52 @@ contains
              nFieldsOption = CS_2 % nBalanced, &
              IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
     end associate !-- Y_S_1, etc.
+
+    allocate ( S % SlopeOld_1 )
+    allocate ( S % SlopeOld_2 )
+    associate &
+      ( KK_O_1  =>  S % SlopeOld_1, &
+        KK_O_2  =>  S % SlopeOld_2 )
+    call KK_O_1 % Initialize &
+           ( CS_1 % Atlas, &
+             FieldOption = CS_1 % Balanced, &
+             NameOption = trim ( CS_1 % Name ) // '_SlopeOld', &
+             DeviceMemoryOption = CS_1 % DeviceMemory, &
+             DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
+             nFieldsOption = CS_1 % nBalanced, &
+             IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
+    call KK_O_2 % Initialize &
+           ( CS_2 % Atlas, &
+             FieldOption = CS_2 % Balanced, &
+             NameOption = trim ( CS_2 % Name ) // '_SlopeOld', &
+             DeviceMemoryOption = CS_2 % DeviceMemory, &
+             DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
+             nFieldsOption = CS_2 % nBalanced, &
+             IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
+    end associate !-- KK_O_1, etc.
+
+    allocate ( S % RelativeDifference_1 )
+    allocate ( S % RelativeDifference_2 )
+    associate &
+      ( RD_1  =>  S % RelativeDifference_1, &
+        RD_2  =>  S % RelativeDifference_2 )
+    call RD_1 % Initialize &
+           ( CS_1 % Atlas, &
+             FieldOption = CS_1 % Balanced, &
+             NameOption = trim ( CS_1 % Name ) // '_RelativeDifference', &
+             DeviceMemoryOption = CS_1 % DeviceMemory, &
+             DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
+             nFieldsOption = CS_1 % nBalanced, &
+             IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
+    call RD_2 % Initialize &
+           ( CS_2 % Atlas, &
+             FieldOption = CS_2 % Balanced, &
+             NameOption = trim ( CS_2 % Name ) // '_RelativeDifference', &
+             DeviceMemoryOption = CS_2 % DeviceMemory, &
+             DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
+             nFieldsOption = CS_2 % nBalanced, &
+             IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
+    end associate !-- RD_1, etc.
 
     !-- Steps
 
@@ -187,8 +243,18 @@ contains
       deallocate ( S % Step_CS_2 )
     if ( allocated ( S % Step_CS_1 ) ) &
       deallocate ( S % Step_CS_1 )
-    if ( allocated ( S % Implicit_1 ) ) &
+    if ( allocated ( S % RelativeDifference_2 ) ) &
+      deallocate ( S % RelativeDifference_2 )
+    if ( allocated ( S % RelativeDifference_1 ) ) &
+      deallocate ( S % RelativeDifference_1 )
+    if ( allocated ( S % SlopeOld_2 ) ) &
+      deallocate ( S % SlopeOld_2 )
+    if ( allocated ( S % SlopeOld_1 ) ) &
+      deallocate ( S % SlopeOld_1 )
+    if ( allocated ( S % Implicit_2 ) ) &
       deallocate ( S % Implicit_2 )
+    if ( allocated ( S % Implicit_1 ) ) &
+      deallocate ( S % Implicit_1 )
 
   end subroutine Finalize
 
@@ -260,6 +326,9 @@ contains
 
     integer ( KDI ) :: &
       iIS  !-- iImplicitSolve
+    real ( KDR ) :: &
+      Error_1, &
+      Error_2
 
     if ( iS  ==  1 ) &
       return
@@ -279,6 +348,10 @@ contains
         CS_2    =>  S_2 % CurrentSet, &
         KK_1    =>  S_1 % SlopeImplicit, &
         KK_2    =>  S_2 % SlopeImplicit, &
+        KK_O_1  =>  S   % SlopeOld_1, &
+        KK_O_2  =>  S   % SlopeOld_2, &
+        RD_1    =>  S   % RelativeDifference_1, &
+        RD_2    =>  S   % RelativeDifference_2, &
         KK_1_Stage  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
         KK_2_Stage  =>  S_2 % SlopeStageImplicit ( iS ) % Element )
 
@@ -290,16 +363,49 @@ contains
     call Y_I_2 % Copy ( Y_S_2 )
 
     iIS  =  0
+    call KK_O_1 % Clear ( )
+    call KK_O_2 % Clear ( )
     do 
 
       iIS  =  iIS + 1
 
       call KK_1 % Compute ( dT )!, T_Option = T_CS )
-
       call KK_2 % Compute ( dT )!, T_Option = T_CS )
 
-      !-- Exit criterion
-      if ( iIS  ==  S % MaxImplicitIterations ) exit
+      call RD_1 % RelativeDifference ( KK_O_1, KK_1 )
+      call RD_2 % RelativeDifference ( KK_O_2, KK_2 )
+
+!call Show ( iIS, '>>> iIS' )
+!call Show ( RD_1 % Storage ( 1 ) % Value, '>>> RD_1' )
+!call Show ( RD_2 % Storage ( 1 ) % Value, '>>> RD_2' )
+
+      !-- Exit criteria
+
+      Error_1  =  maxval ( RD_1 % Storage_GS % Value )
+      Error_2  =  maxval ( RD_2 % Storage_GS % Value )
+
+      if (       Error_1  <  S % ImplicitTolerance &
+           .and. Error_2  <  S % ImplicitTolerance ) &
+      then
+call Show ( '>>> Implicit solve success' )
+call Show ( iIS, 'iIS' )
+call Show ( Error_1, 'Error_1' )
+call Show ( Error_2, 'Error_2' )
+        exit
+      end if
+
+      if ( iIS  ==  S % MaxImplicitIterations ) then
+call Show ( '>>> Implicit solve FAIL' )
+call Show ( iIS, 'iIS' )
+call Show ( Error_1, 'Error_1' )
+call Show ( Error_2, 'Error_2' )
+        exit
+      end if
+
+      !-- Set up next iteration
+
+      call KK_1 % Copy ( KK_O_1 )
+      call KK_2 % Copy ( KK_O_2 )
 
       call Y_S_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
       call Y_S_1 % Copy ( CS_B_1 )
