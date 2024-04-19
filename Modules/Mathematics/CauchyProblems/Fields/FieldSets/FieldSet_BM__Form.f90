@@ -74,6 +74,8 @@ module FieldSet_BM__Form
     generic, public :: &
       MultiplyAdd => MultiplyAdd_FS, MultiplyAddInPlace_FS
     procedure, public, pass :: &
+      RelativeDifference => RelativeDifference_FS
+    procedure, public, pass :: &
       ExchangeGhostData
     procedure, public, pass :: &
       StartGhostExchange
@@ -669,6 +671,48 @@ contains
     end do !-- iC
 
   end subroutine MultiplyAddInPlace_FS
+
+
+  subroutine RelativeDifference_FS ( FS_C, FS_A, FS_B, UseDeviceOption )
+
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
+      FS_C
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
+      FS_A, &
+      FS_B
+    logical ( KDL ), intent ( in ), optional :: &
+       UseDeviceOption
+    
+    integer ( KDI ) :: &
+      iC, &    !-- iChart
+      iS, &    !-- iSelected
+      iF_A, &  !-- iField
+      iF_B, &
+      iF_C
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = FS_C % DeviceMemory
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    do iC  =  1,  FS_A % Atlas % nCharts
+      associate &
+        ( A  =>  FS_A % Storage ( iC ) % Value, &
+          B  =>  FS_B % Storage ( iC ) % Value, &
+          C  =>  FS_C % Storage ( iC ) % Value )
+      do iS  =  1,  FS_C % nFields
+        iF_A  =  FS_A % iaSelected ( iS )
+        iF_B  =  FS_B % iaSelected ( iS )
+        iF_C  =  FS_C % iaSelected ( iS )
+        call RelativeDifference &
+               ( A ( :, iF_A ), B ( :, iF_B ), C ( :, iF_C ), &
+                 UseDeviceOption = UseDevice )
+      end do !-- iS
+      end associate !-- A, etc.
+    end do !-- iC
+
+  end subroutine RelativeDifference_FS
 
 
   subroutine ExchangeGhostData ( FS, T_Option )
