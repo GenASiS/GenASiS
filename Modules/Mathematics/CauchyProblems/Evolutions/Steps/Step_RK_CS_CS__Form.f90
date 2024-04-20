@@ -32,10 +32,10 @@ module Step_RK_CS_CS__Form
     type ( CollectiveOperation_I_Form ), allocatable :: &
       CO_Quality
     type ( FieldSet_BM_Form ), allocatable :: &
-      ImplicitIteration_1, &
-      ImplicitIteration_2, &
-      SlopePrevious_1, &
-      SlopePrevious_2, &
+      Iteration_1, &
+      Iteration_2, &
+      IterationPrevious_1, &
+      IterationPrevious_2, &
       RelativeDifference_1, &
       RelativeDifference_2
     class ( Step_RK_CS_Form ), allocatable :: &
@@ -146,12 +146,12 @@ contains
     end associate !-- nS
 
     !-- Iterated field values
-    allocate ( S % ImplicitIteration_1 )
-    allocate ( S % ImplicitIteration_2 )
+    allocate ( S % Iteration_1 )
+    allocate ( S % Iteration_2 )
     associate &
-      ( Y_II_1  =>  S % ImplicitIteration_1, &
-        Y_II_2  =>  S % ImplicitIteration_2 )
-    call Y_II_1 % Initialize &
+      ( Y_1  =>  S % Iteration_1, &
+        Y_2  =>  S % Iteration_2 )
+    call Y_1 % Initialize &
            ( CS_1 % Atlas, &
              FieldOption = CS_1 % Balanced, &
              NameOption = trim ( CS_1 % Name ) // '_Implicit', &
@@ -159,7 +159,7 @@ contains
              DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
              nFieldsOption = CS_1 % nBalanced, &
              IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
-    call Y_II_2 % Initialize &
+    call Y_2 % Initialize &
            ( CS_2 % Atlas, &
              FieldOption = CS_2 % Balanced, &
              NameOption = trim ( CS_2 % Name ) // '_Implicit', &
@@ -167,18 +167,18 @@ contains
              DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
              nFieldsOption = CS_2 % nBalanced, &
              IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
-    end associate !-- Y_II_1, etc.
+    end associate !-- Y_1, etc.
 
     !-- Implicit slope computed in the previous iteration 
-    allocate ( S % SlopePrevious_1 )
-    allocate ( S % SlopePrevious_2 )
+    allocate ( S % IterationPrevious_1 )
+    allocate ( S % IterationPrevious_2 )
     associate &
-      ( KK_P_1  =>  S % SlopePrevious_1, &
-        KK_P_2  =>  S % SlopePrevious_2 )
+      ( KK_P_1  =>  S % IterationPrevious_1, &
+        KK_P_2  =>  S % IterationPrevious_2 )
     call KK_P_1 % Initialize &
            ( CS_1 % Atlas, &
              FieldOption = CS_1 % Balanced, &
-             NameOption = trim ( CS_1 % Name ) // '_SlopePrevious', &
+             NameOption = trim ( CS_1 % Name ) // '_IterationPrevious', &
              DeviceMemoryOption = CS_1 % DeviceMemory, &
              DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
              nFieldsOption = CS_1 % nBalanced, &
@@ -186,7 +186,7 @@ contains
     call KK_P_2 % Initialize &
            ( CS_2 % Atlas, &
              FieldOption = CS_2 % Balanced, &
-             NameOption = trim ( CS_2 % Name ) // '_SlopePrevious', &
+             NameOption = trim ( CS_2 % Name ) // '_IterationPrevious', &
              DeviceMemoryOption = CS_2 % DeviceMemory, &
              DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
              nFieldsOption = CS_2 % nBalanced, &
@@ -292,14 +292,14 @@ contains
       deallocate ( S % RelativeDifference_2 )
     if ( allocated ( S % RelativeDifference_1 ) ) &
       deallocate ( S % RelativeDifference_1 )
-    if ( allocated ( S % SlopePrevious_2 ) ) &
-      deallocate ( S % SlopePrevious_2 )
-    if ( allocated ( S % SlopePrevious_1 ) ) &
-      deallocate ( S % SlopePrevious_1 )
-    if ( allocated ( S % ImplicitIteration_2 ) ) &
-      deallocate ( S % ImplicitIteration_2 )
-    if ( allocated ( S % ImplicitIteration_1 ) ) &
-      deallocate ( S % ImplicitIteration_1 )
+    if ( allocated ( S % IterationPrevious_2 ) ) &
+      deallocate ( S % IterationPrevious_2 )
+    if ( allocated ( S % IterationPrevious_1 ) ) &
+      deallocate ( S % IterationPrevious_1 )
+    if ( allocated ( S % Iteration_2 ) ) &
+      deallocate ( S % Iteration_2 )
+    if ( allocated ( S % Iteration_1 ) ) &
+      deallocate ( S % Iteration_1 )
     if ( allocated ( S % CO_Quality ) ) &
       deallocate ( S % CO_Quality )
     if ( allocated ( S % ImplicitError ) ) &
@@ -391,20 +391,20 @@ contains
       ( AA      =>  S_1 % AA ( iS ) % Value ( iS ), &          
         Y_I_1   =>  S_1 % Intermediate, &
         Y_I_2   =>  S_2 % Intermediate, &
-        Y_II_1   =>  S   % ImplicitIteration_1, &
-        Y_II_2   =>  S   % ImplicitIteration_2, &
         CS_B_1  =>  S_1 % Balanced, &
         CS_B_2  =>  S_2 % Balanced, &
         CS_1    =>  S_1 % CurrentSet, &
         CS_2    =>  S_2 % CurrentSet, &
         KK_1    =>  S_1 % SlopeImplicit, &
         KK_2    =>  S_2 % SlopeImplicit, &
-        KK_P_1  =>  S   % SlopePrevious_1, &
-        KK_P_2  =>  S   % SlopePrevious_2, &
-        RD_1    =>  S   % RelativeDifference_1, &
-        RD_2    =>  S   % RelativeDifference_2, &
         KK_1_S  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
         KK_2_S  =>  S_2 % SlopeStageImplicit ( iS ) % Element, &
+        Y_1     =>  S   % Iteration_1, &
+        Y_2     =>  S   % Iteration_2, &
+        Y_P_1   =>  S   % IterationPrevious_1, &
+        Y_P_2   =>  S   % IterationPrevious_2, &
+        RD_1    =>  S   % RelativeDifference_1, &
+        RD_2    =>  S   % RelativeDifference_2, &
            nII  =>  S % nImplicitIterations ( iS ), &
          MaxII  =>  S % MaxImplicitIterations )
 
@@ -412,8 +412,8 @@ contains
       return
 
     !-- Upon entry, Y_I = Q_(I-1)
-    call Y_I_1 % Copy ( Y_II_1 )
-    call Y_I_2 % Copy ( Y_II_2 )
+    call Y_I_1 % Copy ( Y_1 )
+    call Y_I_2 % Copy ( Y_2 )
 
 call Show ( iS, '>>> iS' )
 call Show ( Y_I_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_I_1' ) 
@@ -421,8 +421,8 @@ call Show ( Y_I_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_I_2' )
 
     nII  =  0
     S % ImplicitError ( iS ) % Value  =  0.0_KDR
-    call KK_P_1 % Clear ( )
-    call KK_P_2 % Clear ( )
+    call Y_1 % Copy ( Y_P_1 )
+    call Y_2 % Copy ( Y_P_2 )
     do 
 
       nII  =  nII + 1
@@ -430,12 +430,19 @@ call Show ( Y_I_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_I_2' )
       call KK_1 % Compute ( dT )!, T_Option = T_CS )
       call KK_2 % Compute ( dT )!, T_Option = T_CS )
 
-      call RD_1 % RelativeDifference ( KK_P_1, KK_1 )
-      call RD_2 % RelativeDifference ( KK_P_2, KK_2 )
+!      call RD_1 % RelativeDifference ( Y_P_1, KK_1 )!, Y_I_1 )
+!      call RD_2 % RelativeDifference ( Y_P_2, KK_2 )!, Y_I_2 )
+
+      call Y_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
+      call Y_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
+      call RD_1 % RelativeDifference ( Y_P_1, Y_1 )
+      call RD_2 % RelativeDifference ( Y_P_2, Y_2 )
 
 call Show ( nII, '>>> nII' )
-call Show ( dT * AA * KK_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> dT * AA * KK_1' )
-call Show ( dT * AA * KK_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> dT * AA * KK_2' )
+! call Show ( dT * AA * KK_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> dT * AA * KK_1' )
+! call Show ( dT * AA * KK_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> dT * AA * KK_2' )
+call Show ( Y_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_1' )
+call Show ( Y_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_2' )
 !call Show ( RD_1 % Storage ( 1 ) % Value, '>>> RD_1' )
 !call Show ( RD_2 % Storage ( 1 ) % Value, '>>> RD_2' )
 
@@ -471,6 +478,10 @@ call Show ( dT * AA * KK_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> dT * AA * KK_2
           exit
         else if ( nII  >  2 .and. IE  >  IE_P ) then  !-- Diverging
           IQ  =  S % IMPLICIT_POOR
+!          call KK_1 % Clear ( )
+!          call KK_2 % Clear ( )
+!          call Y_P_1 % Copy ( Y_1 )
+!          call Y_P_2 % Copy ( Y_2 )
           exit
         else if ( nII  ==  MaxII ) then  !-- Converging slowly
           IQ  =  S % IMPLICIT_FAIR
@@ -483,15 +494,13 @@ call Show ( dT * AA * KK_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> dT * AA * KK_2
 
       !-- Set up next iteration
 
-      call KK_1 % Copy ( KK_P_1 )
-      call KK_2 % Copy ( KK_P_2 )
+      call Y_1 % Copy ( Y_P_1 )
+      call Y_2 % Copy ( Y_P_2 )
 
-      call Y_II_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
-      call Y_II_1 % Copy ( CS_B_1 )
+      call Y_1 % Copy ( CS_B_1 )
       call CS_1 % ComputeFromBalanced ( )
 
-      call Y_II_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
-      call Y_II_2 % Copy ( CS_B_2 )
+      call Y_2 % Copy ( CS_B_2 )
       call CS_2 % ComputeFromBalanced ( )
 
     end do !-- nII
