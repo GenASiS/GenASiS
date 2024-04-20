@@ -3,6 +3,7 @@ module Step_RK_CS_CS__Form
   !-- Step_RungeKutta_CurrentSet_CurrentSet_Form
 
   use Basics
+  use Manifolds
   use Fields
   use Slopes
   use Step_RK_H__Form
@@ -13,14 +14,28 @@ module Step_RK_CS_CS__Form
 
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_CS_Form
     integer ( KDI ) :: &
+      IMPLICIT_EXCELLENT = 1, &
+      IMPLICIT_GOOD      = 2, &
+      IMPLICIT_FAIR      = 3, &
+      IMPLICIT_POOR      = 4
+    integer ( KDI ) :: &
       MaxImplicitIterations
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      nImplicitIterations, &
+      ImplicitQuality
     real ( KDR ) :: &
       ImplicitTolerance
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      ImplicitError
+    character ( LDL ), dimension ( 4 ) :: &
+      QUALITY  =  [ 'EXCELLENT', 'GOOD     ', 'FAIR     ', 'POOR     ' ]
+    type ( CollectiveOperation_I_Form ), allocatable :: &
+      CO_Quality
     type ( FieldSet_BM_Form ), allocatable :: &
-      Implicit_1, &
-      Implicit_2, &
-      SlopeOld_1, &
-      SlopeOld_2, &
+      ImplicitIteration_1, &
+      ImplicitIteration_2, &
+      SlopePrevious_1, &
+      SlopePrevious_2, &
       RelativeDifference_1, &
       RelativeDifference_2
     class ( Step_RK_CS_Form ), allocatable :: &
@@ -77,6 +92,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
+    integer ( KDI ) :: &
+      iS  !-- iStage
     character ( LDL ) :: &
       Name
 
@@ -103,12 +120,38 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( S % ImplicitTolerance, 'ImplicitTolerance' )
 
-    allocate ( S % Implicit_1 )
-    allocate ( S % Implicit_2 )
+    associate ( nS  =>  S % nStages )
+
+    allocate ( S % nImplicitIterations ( 2 : nS ) )
+    allocate ( S % ImplicitQuality ( 2 : nS ) )
+    allocate ( S % ImplicitError ( 2 : nS ) )
+    do iS  =  2, nS
+      call S % ImplicitError ( iS ) % Initialize ( S % MaxImplicitIterations )
+    end do
+
+    !-- FIXME: Assumes single chart
+    select type ( A  =>  S % Atlas )
+    class is ( Atlas_SCG_Form )
+      allocate ( S % CO_Quality )
+      call S % CO_Quality % Initialize &
+             ( A % Chart_GS % Communicator, &
+               nOutgoing = [ nS - 1 ], nIncoming = [ nS - 1 ] )
+    class default
+      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+      call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Initialize_CS_CS', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- A
+
+    end associate !-- nS
+
+    !-- Iterated field values
+    allocate ( S % ImplicitIteration_1 )
+    allocate ( S % ImplicitIteration_2 )
     associate &
-      ( Y_S_1  =>  S % Implicit_1, &  !-- Y_Star
-        Y_S_2  =>  S % Implicit_2 )
-    call Y_S_1 % Initialize &
+      ( Y_II_1  =>  S % ImplicitIteration_1, &
+        Y_II_2  =>  S % ImplicitIteration_2 )
+    call Y_II_1 % Initialize &
            ( CS_1 % Atlas, &
              FieldOption = CS_1 % Balanced, &
              NameOption = trim ( CS_1 % Name ) // '_Implicit', &
@@ -116,7 +159,7 @@ contains
              DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
              nFieldsOption = CS_1 % nBalanced, &
              IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
-    call Y_S_2 % Initialize &
+    call Y_II_2 % Initialize &
            ( CS_2 % Atlas, &
              FieldOption = CS_2 % Balanced, &
              NameOption = trim ( CS_2 % Name ) // '_Implicit', &
@@ -124,31 +167,33 @@ contains
              DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
              nFieldsOption = CS_2 % nBalanced, &
              IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
-    end associate !-- Y_S_1, etc.
+    end associate !-- Y_II_1, etc.
 
-    allocate ( S % SlopeOld_1 )
-    allocate ( S % SlopeOld_2 )
+    !-- Implicit slope computed in the previous iteration 
+    allocate ( S % SlopePrevious_1 )
+    allocate ( S % SlopePrevious_2 )
     associate &
-      ( KK_O_1  =>  S % SlopeOld_1, &
-        KK_O_2  =>  S % SlopeOld_2 )
-    call KK_O_1 % Initialize &
+      ( KK_P_1  =>  S % SlopePrevious_1, &
+        KK_P_2  =>  S % SlopePrevious_2 )
+    call KK_P_1 % Initialize &
            ( CS_1 % Atlas, &
              FieldOption = CS_1 % Balanced, &
-             NameOption = trim ( CS_1 % Name ) // '_SlopeOld', &
+             NameOption = trim ( CS_1 % Name ) // '_SlopePrevious', &
              DeviceMemoryOption = CS_1 % DeviceMemory, &
              DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
              nFieldsOption = CS_1 % nBalanced, &
              IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
-    call KK_O_2 % Initialize &
+    call KK_P_2 % Initialize &
            ( CS_2 % Atlas, &
              FieldOption = CS_2 % Balanced, &
-             NameOption = trim ( CS_2 % Name ) // '_SlopeOld', &
+             NameOption = trim ( CS_2 % Name ) // '_SlopePrevious', &
              DeviceMemoryOption = CS_2 % DeviceMemory, &
              DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
              nFieldsOption = CS_2 % nBalanced, &
              IgnorabilityOption = CS_2 % IGNORABILITY + 1 )
-    end associate !-- KK_O_1, etc.
+    end associate !-- KK_P_1, etc.
 
+    !-- Relative difference in implicit slopes in this and previous iterations
     allocate ( S % RelativeDifference_1 )
     allocate ( S % RelativeDifference_2 )
     associate &
@@ -247,14 +292,22 @@ contains
       deallocate ( S % RelativeDifference_2 )
     if ( allocated ( S % RelativeDifference_1 ) ) &
       deallocate ( S % RelativeDifference_1 )
-    if ( allocated ( S % SlopeOld_2 ) ) &
-      deallocate ( S % SlopeOld_2 )
-    if ( allocated ( S % SlopeOld_1 ) ) &
-      deallocate ( S % SlopeOld_1 )
-    if ( allocated ( S % Implicit_2 ) ) &
-      deallocate ( S % Implicit_2 )
-    if ( allocated ( S % Implicit_1 ) ) &
-      deallocate ( S % Implicit_1 )
+    if ( allocated ( S % SlopePrevious_2 ) ) &
+      deallocate ( S % SlopePrevious_2 )
+    if ( allocated ( S % SlopePrevious_1 ) ) &
+      deallocate ( S % SlopePrevious_1 )
+    if ( allocated ( S % ImplicitIteration_2 ) ) &
+      deallocate ( S % ImplicitIteration_2 )
+    if ( allocated ( S % ImplicitIteration_1 ) ) &
+      deallocate ( S % ImplicitIteration_1 )
+    if ( allocated ( S % CO_Quality ) ) &
+      deallocate ( S % CO_Quality )
+    if ( allocated ( S % ImplicitError ) ) &
+      deallocate ( S % ImplicitError )
+    if ( allocated ( S % ImplicitQuality ) ) &
+      deallocate ( S % ImplicitQuality )
+    if ( allocated ( S % nImplicitIterations ) ) &
+      deallocate ( S % nImplicitIterations )
 
   end subroutine Finalize
 
@@ -324,8 +377,6 @@ contains
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
-    integer ( KDI ) :: &
-      iIS  !-- iImplicitSolve
     real ( KDR ) :: &
       Error_1, &
       Error_2
@@ -340,89 +391,117 @@ contains
       ( AA      =>  S_1 % AA ( iS ) % Value ( iS ), &          
         Y_I_1   =>  S_1 % Intermediate, &
         Y_I_2   =>  S_2 % Intermediate, &
-        Y_S_1   =>  S   % Implicit_1, &
-        Y_S_2   =>  S   % Implicit_2, &
+        Y_II_1   =>  S   % ImplicitIteration_1, &
+        Y_II_2   =>  S   % ImplicitIteration_2, &
         CS_B_1  =>  S_1 % Balanced, &
         CS_B_2  =>  S_2 % Balanced, &
         CS_1    =>  S_1 % CurrentSet, &
         CS_2    =>  S_2 % CurrentSet, &
         KK_1    =>  S_1 % SlopeImplicit, &
         KK_2    =>  S_2 % SlopeImplicit, &
-        KK_O_1  =>  S   % SlopeOld_1, &
-        KK_O_2  =>  S   % SlopeOld_2, &
+        KK_P_1  =>  S   % SlopePrevious_1, &
+        KK_P_2  =>  S   % SlopePrevious_2, &
         RD_1    =>  S   % RelativeDifference_1, &
         RD_2    =>  S   % RelativeDifference_2, &
-        KK_1_Stage  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
-        KK_2_Stage  =>  S_2 % SlopeStageImplicit ( iS ) % Element )
+        KK_1_S  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
+        KK_2_S  =>  S_2 % SlopeStageImplicit ( iS ) % Element, &
+           nII  =>  S % nImplicitIterations ( iS ), &
+         MaxII  =>  S % MaxImplicitIterations )
 
     if ( AA == 0.0_KDR ) &
       return
 
     !-- Upon entry, Y_I = Q_(I-1)
-    call Y_I_1 % Copy ( Y_S_1 )
-    call Y_I_2 % Copy ( Y_S_2 )
+    call Y_I_1 % Copy ( Y_II_1 )
+    call Y_I_2 % Copy ( Y_II_2 )
 
-    iIS  =  0
-    call KK_O_1 % Clear ( )
-    call KK_O_2 % Clear ( )
+call Show ( iS, '>>> iS' )
+call Show ( Y_I_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_I_1' ) 
+call Show ( Y_I_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_I_2' ) 
+
+    nII  =  0
+    S % ImplicitError ( iS ) % Value  =  0.0_KDR
+    call KK_P_1 % Clear ( )
+    call KK_P_2 % Clear ( )
     do 
 
-      iIS  =  iIS + 1
+      nII  =  nII + 1
 
       call KK_1 % Compute ( dT )!, T_Option = T_CS )
       call KK_2 % Compute ( dT )!, T_Option = T_CS )
 
-      call RD_1 % RelativeDifference ( KK_O_1, KK_1 )
-      call RD_2 % RelativeDifference ( KK_O_2, KK_2 )
+      call RD_1 % RelativeDifference ( KK_P_1, KK_1 )
+      call RD_2 % RelativeDifference ( KK_P_2, KK_2 )
 
-!call Show ( iIS, '>>> iIS' )
+call Show ( nII, '>>> nII' )
+call Show ( dT * AA * KK_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> dT * AA * KK_1' )
+call Show ( dT * AA * KK_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> dT * AA * KK_2' )
 !call Show ( RD_1 % Storage ( 1 ) % Value, '>>> RD_1' )
 !call Show ( RD_2 % Storage ( 1 ) % Value, '>>> RD_2' )
 
-      !-- Exit criteria
+      if ( nII  >  1 ) then
 
-      Error_1  =  maxval ( RD_1 % Storage_GS % Value )
-      Error_2  =  maxval ( RD_2 % Storage_GS % Value )
+        !-- Exit criteria
 
-      if (       Error_1  <  S % ImplicitTolerance &
-           .and. Error_2  <  S % ImplicitTolerance ) &
-      then
-call Show ( '>>> Implicit solve success' )
-call Show ( iIS, 'iIS' )
-call Show ( Error_1, 'Error_1' )
-call Show ( Error_2, 'Error_2' )
-        exit
-      end if
+        !-- FIXME: Assumes single chart
+        select type ( A  =>  S % Atlas )
+        class is ( Atlas_SCG_Form )
+          Error_1  =  maxval ( RD_1 % Storage_GS % Value )
+          Error_2  =  maxval ( RD_2 % Storage_GS % Value )
+        class default
+          call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+          call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'ComputeUpdateImplicit', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- A
 
-      if ( iIS  ==  S % MaxImplicitIterations ) then
-call Show ( '>>> Implicit solve FAIL' )
-call Show ( iIS, 'iIS' )
-call Show ( Error_1, 'Error_1' )
-call Show ( Error_2, 'Error_2' )
-        exit
-      end if
+        associate &
+          ( IE    =>  S % ImplicitError ( iS ) % Value ( nII ), &
+            IE_P  =>  S % ImplicitError ( iS ) % Value ( nII - 1 ), &
+            IQ    =>  S % ImplicitQuality ( iS ) )
+
+        IE  =  max ( Error_1, Error_2 )
+
+        if ( IE  <  S % ImplicitTolerance ) then  !-- Converged
+          if ( nII  <  MaxII / 2 ) then
+            IQ  =  S % IMPLICIT_EXCELLENT
+          else
+            IQ  =  S % IMPLICIT_GOOD
+          end if
+          exit
+        else if ( nII  >  2 .and. IE  >  IE_P ) then  !-- Diverging
+          IQ  =  S % IMPLICIT_POOR
+          exit
+        else if ( nII  ==  MaxII ) then  !-- Converging slowly
+          IQ  =  S % IMPLICIT_FAIR
+          exit
+        end if
+
+        end associate !-- IE, etc.
+
+      end if !-- nII > 1
 
       !-- Set up next iteration
 
-      call KK_1 % Copy ( KK_O_1 )
-      call KK_2 % Copy ( KK_O_2 )
+      call KK_1 % Copy ( KK_P_1 )
+      call KK_2 % Copy ( KK_P_2 )
 
-      call Y_S_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
-      call Y_S_1 % Copy ( CS_B_1 )
+      call Y_II_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
+      call Y_II_1 % Copy ( CS_B_1 )
       call CS_1 % ComputeFromBalanced ( )
 
-      call Y_S_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
-      call Y_S_2 % Copy ( CS_B_2 )
+      call Y_II_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
+      call Y_II_2 % Copy ( CS_B_2 )
       call CS_2 % ComputeFromBalanced ( )
 
-    end do !-- iIS
+    end do !-- nII
 
     !-- Assume SlopeImplicit local: no ghost exchange in loop above 
     call KK_1 % ExchangeGhostData ( )
     call KK_2 % ExchangeGhostData ( )
 
-    call KK_1 % Copy ( KK_1_Stage )
-    call KK_2 % Copy ( KK_2_Stage )
+    call KK_1 % Copy ( KK_1_S )
+    call KK_2 % Copy ( KK_2_S )
 
 !-- FIXME: separate AccumulateSlope implicit and explicit
 !    call S_1 % AccumulateSlope ( iS )
@@ -481,8 +560,27 @@ call Show ( Error_2, 'Error_2' )
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
+    integer ( KDI ) :: &
+      iS
+
     call S % Step_CS_1 % StoreSolution ( T_Option )
     call S % Step_CS_2 % StoreSolution ( T_Option )
+
+    !-- Reduce ImplicitQuality over base manifold domains
+    associate ( CO => S % CO_Quality )
+    CO % Outgoing % Value  =  S % ImplicitQuality
+    call CO % Reduce ( REDUCTION % MAX )
+    S % ImplicitQuality  =  CO % Incoming % Value
+    end associate !-- CO
+
+do iS  =  2, S % nStages
+  call Show ( iS, '>>> iS' )
+  call Show ( S % QUALITY ( S % ImplicitQuality ( iS ) ), &
+              '>>> ImplicitQuality' )
+  associate ( nII  =>  S % nImplicitIterations ( iS ) )
+  call Show ( S % ImplicitError ( iS ) % Value ( : nII ), '>>> ImplicitError' )
+  end associate !-- nII
+end do
 
   end subroutine StoreSolution
 

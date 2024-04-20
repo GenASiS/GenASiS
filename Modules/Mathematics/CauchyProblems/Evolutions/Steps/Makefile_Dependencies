@@ -15,6 +15,7 @@ Step_RK_CS__Form.o: \
 
 Step_RK_CS_CS__Form.o: \
   Basics.o \
+  Manifolds.o \
   Fields.o \
   Slopes.o \
   Step_RK_H__Form.o \
