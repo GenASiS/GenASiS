@@ -14,23 +14,28 @@ module Step_RK_CS_CS__Form
 
   type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_CS_Form
     integer ( KDI ) :: &
-      IMPLICIT_EXCELLENT = 1, &
-      IMPLICIT_GOOD      = 2, &
+      IMPLICIT_UNSET     = 1, &
+      IMPLICIT_POOR      = 2, &
       IMPLICIT_FAIR      = 3, &
-      IMPLICIT_POOR      = 4
+      IMPLICIT_GOOD      = 4, &
+      IMPLICIT_EXCELLENT = 5
     integer ( KDI ) :: &
       MaxImplicitIterations
     integer ( KDI ), dimension ( : ), allocatable :: &
-      nImplicitIterations, &
-      ImplicitQuality
+      nImplicitIterations
+    integer ( KDI ), dimension ( :, : ), allocatable :: &
+      ImplicitQuality_1, &
+      ImplicitQuality_2
     real ( KDR ) :: &
       ImplicitTolerance
-    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
-      ImplicitError
-    character ( LDL ), dimension ( 4 ) :: &
-      QUALITY  =  [ 'EXCELLENT', 'GOOD     ', 'FAIR     ', 'POOR     ' ]
-    type ( CollectiveOperation_I_Form ), allocatable :: &
-      CO_Quality
+    real ( KDR ), dimension ( :, :, : ), allocatable :: &
+      ImplicitError_1, &
+      ImplicitError_2
+    character ( LDL ), dimension ( 5 ) :: &
+      QUALITY  =  [ 'UNSET    ', 'POOR     ', 'FAIR     ', 'GOOD     ', &
+                    'EXCELLENT' ]
+!    type ( CollectiveOperation_I_Form ), allocatable :: &
+!      CO_Quality
     type ( FieldSet_BM_Form ), allocatable :: &
       Iteration_1, &
       Iteration_2, &
@@ -72,6 +77,8 @@ module Step_RK_CS_CS__Form
       StoreSolution
   end type Step_RK_CS_CS_Form
 
+    private :: &
+      TestImplicitQuality
 
 contains
 
@@ -120,28 +127,32 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( S % ImplicitTolerance, 'ImplicitTolerance' )
 
-    associate ( nS  =>  S % nStages )
+    associate &
+      ( nS    =>  S % nStages, &
+        mII   =>  S % MaxImplicitIterations, &
+        nB_1  =>  CS_1 % nBalanced, &
+        nB_2  =>  CS_2 % nBalanced )
 
     allocate ( S % nImplicitIterations ( 2 : nS ) )
-    allocate ( S % ImplicitQuality ( 2 : nS ) )
-    allocate ( S % ImplicitError ( 2 : nS ) )
-    do iS  =  2, nS
-      call S % ImplicitError ( iS ) % Initialize ( S % MaxImplicitIterations )
-    end do
+    allocate ( S % ImplicitQuality_1 ( nB_1, 2 : nS ) )
+    allocate ( S % ImplicitQuality_2 ( nB_2, 2 : nS ) )
+    allocate ( S % ImplicitError_1 ( mII, nB_1, 2 : nS ) )
+    allocate ( S % ImplicitError_2 ( mII, nB_2, 2 : nS ) )
 
-    !-- FIXME: Assumes single chart
-    select type ( A  =>  S % Atlas )
-    class is ( Atlas_SCG_Form )
-      allocate ( S % CO_Quality )
-      call S % CO_Quality % Initialize &
-             ( A % Chart_GS % Communicator, &
-               nOutgoing = [ nS - 1 ], nIncoming = [ nS - 1 ] )
-    class default
-      call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Initialize_CS_CS', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- A
+    ! !-- FIXME: Assumes single chart
+    ! select type ( A  =>  S % Atlas )
+    ! class is ( Atlas_SCG_Form )
+    !   allocate ( S % CO_Quality )
+    !   call S % CO_Quality % Initialize &
+    !          ( A % Chart_GS % Communicator, &
+    !            nOutgoing = [ ( nB_1 + nB_2 ) * ( nS - 1 ) ], &
+    !            nIncoming = [ ( nB_1 + nB_2 ) * ( nS - 1 ) ] )
+    ! class default
+    !   call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+    !   call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
+    !   call Show ( 'Initialize_CS_CS', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select !-- A
 
     end associate !-- nS
 
@@ -300,12 +311,16 @@ contains
       deallocate ( S % Iteration_2 )
     if ( allocated ( S % Iteration_1 ) ) &
       deallocate ( S % Iteration_1 )
-    if ( allocated ( S % CO_Quality ) ) &
-      deallocate ( S % CO_Quality )
-    if ( allocated ( S % ImplicitError ) ) &
-      deallocate ( S % ImplicitError )
-    if ( allocated ( S % ImplicitQuality ) ) &
-      deallocate ( S % ImplicitQuality )
+!    if ( allocated ( S % CO_Quality ) ) &
+!      deallocate ( S % CO_Quality )
+    if ( allocated ( S % ImplicitError_2 ) ) &
+      deallocate ( S % ImplicitError_2 )
+    if ( allocated ( S % ImplicitError_1 ) ) &
+      deallocate ( S % ImplicitError_1 )
+    if ( allocated ( S % ImplicitQuality_2 ) ) &
+      deallocate ( S % ImplicitQuality_2 )
+    if ( allocated ( S % ImplicitQuality_1 ) ) &
+      deallocate ( S % ImplicitQuality_1 )
     if ( allocated ( S % nImplicitIterations ) ) &
       deallocate ( S % nImplicitIterations )
 
@@ -377,10 +392,6 @@ contains
     type ( TimerForm ), intent ( inout ), optional :: &
       T_Option
 
-    real ( KDR ) :: &
-      Error_1, &
-      Error_2
-
     if ( iS  ==  1 ) &
       return
 
@@ -399,14 +410,11 @@ contains
         KK_2    =>  S_2 % SlopeImplicit, &
         KK_1_S  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
         KK_2_S  =>  S_2 % SlopeStageImplicit ( iS ) % Element, &
-        Y_1     =>  S   % Iteration_1, &
-        Y_2     =>  S   % Iteration_2, &
-        Y_P_1   =>  S   % IterationPrevious_1, &
-        Y_P_2   =>  S   % IterationPrevious_2, &
-        RD_1    =>  S   % RelativeDifference_1, &
-        RD_2    =>  S   % RelativeDifference_2, &
-           nII  =>  S % nImplicitIterations ( iS ), &
-         MaxII  =>  S % MaxImplicitIterations )
+        Y_1     =>  S % Iteration_1, &
+        Y_2     =>  S % Iteration_2, &
+        Y_P_1   =>  S % IterationPrevious_1, &
+        Y_P_2   =>  S % IterationPrevious_2, &
+         iII    =>  S % nImplicitIterations ( iS ) )
 
     if ( AA == 0.0_KDR ) &
       return
@@ -415,82 +423,57 @@ contains
     call Y_I_1 % Copy ( Y_1 )
     call Y_I_2 % Copy ( Y_2 )
 
-call Show ( iS, '>>> iS' )
-call Show ( Y_I_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_I_1' ) 
-call Show ( Y_I_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_I_2' ) 
+!call Show ( iS, '>>> iS' )
+!call Show ( Y_I_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_I_1' ) 
+!call Show ( Y_I_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_I_2' ) 
 
-    nII  =  0
-    S % ImplicitError ( iS ) % Value  =  0.0_KDR
-    call Y_1 % Copy ( Y_P_1 )
-    call Y_2 % Copy ( Y_P_2 )
+    iII  =  0
     do 
 
-      nII  =  nII + 1
+      iII  =  iII + 1
 
       call KK_1 % Compute ( dT )!, T_Option = T_CS )
       call KK_2 % Compute ( dT )!, T_Option = T_CS )
 
-!      call RD_1 % RelativeDifference ( Y_P_1, KK_1 )!, Y_I_1 )
-!      call RD_2 % RelativeDifference ( Y_P_2, KK_2 )!, Y_I_2 )
-
       call Y_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
       call Y_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
-      call RD_1 % RelativeDifference ( Y_P_1, Y_1 )
-      call RD_2 % RelativeDifference ( Y_P_2, Y_2 )
 
-call Show ( nII, '>>> nII' )
-! call Show ( dT * AA * KK_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> dT * AA * KK_1' )
-! call Show ( dT * AA * KK_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> dT * AA * KK_2' )
-call Show ( Y_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_1' )
-call Show ( Y_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_2' )
-!call Show ( RD_1 % Storage ( 1 ) % Value, '>>> RD_1' )
-!call Show ( RD_2 % Storage ( 1 ) % Value, '>>> RD_2' )
+! call Show ( iII, '>>> iII' )
+! call Show ( Y_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_1' )
+! call Show ( Y_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_2' )
 
-      if ( nII  >  1 ) then
+      if ( iII  >  1 ) then
 
-        !-- Exit criteria
-
-        !-- FIXME: Assumes single chart
-        select type ( A  =>  S % Atlas )
-        class is ( Atlas_SCG_Form )
-          Error_1  =  maxval ( RD_1 % Storage_GS % Value )
-          Error_2  =  maxval ( RD_2 % Storage_GS % Value )
-        class default
-          call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-          call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
-          call Show ( 'ComputeUpdateImplicit', 'subroutine', CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end select !-- A
+        !-- Exit conditions
 
         associate &
-          ( IE    =>  S % ImplicitError ( iS ) % Value ( nII ), &
-            IE_P  =>  S % ImplicitError ( iS ) % Value ( nII - 1 ), &
-            IQ    =>  S % ImplicitQuality ( iS ) )
+          ( RD_1  =>  S % RelativeDifference_1, &
+            RD_2  =>  S % RelativeDifference_2, &
+            IE_1  =>  S % ImplicitError_1 ( :, :, iS ), &
+            IE_2  =>  S % ImplicitError_2 ( :, :, iS ), &
+            IQ_1  =>  S % ImplicitQuality_1 ( :, iS ), &
+            IQ_2  =>  S % ImplicitQuality_2 ( :, iS ) )
 
-        IE  =  max ( Error_1, Error_2 )
+        call TestImplicitQuality ( S, RD_1, IE_1, IQ_1, Y_1, Y_P_1, iII )
+        call TestImplicitQuality ( S, RD_2, IE_2, IQ_2, Y_2, Y_P_2, iII )
 
-        if ( IE  <  S % ImplicitTolerance ) then  !-- Converged
-          if ( nII  <  MaxII / 2 ) then
-            IQ  =  S % IMPLICIT_EXCELLENT
-          else
-            IQ  =  S % IMPLICIT_GOOD
-          end if
-          exit
-        else if ( nII  >  2 .and. IE  >  IE_P ) then  !-- Diverging
-          IQ  =  S % IMPLICIT_POOR
-!          call KK_1 % Clear ( )
-!          call KK_2 % Clear ( )
-!          call Y_P_1 % Copy ( Y_1 )
-!          call Y_P_2 % Copy ( Y_2 )
-          exit
-        else if ( nII  ==  MaxII ) then  !-- Converging slowly
-          IQ  =  S % IMPLICIT_FAIR
-          exit
+        if (      any ( IQ_1  ==  S % IMPLICIT_POOR ) &
+             .or. any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
+        then
+!call Show ( '>>> Exit diverging' )
+          exit  !-- Diverging
         end if
 
-        end associate !-- IE, etc.
+        if (       all ( IQ_1  /=  S % IMPLICIT_UNSET ) &
+             .and. all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
+        then
+!call Show ( '>>> Exit converging' )
+          exit  !-- Converged, or converging
+        end if
 
-      end if !-- nII > 1
+        end associate !-- RD_1, etc.
+
+      end if !-- iII > 1
 
       !-- Set up next iteration
 
@@ -503,7 +486,7 @@ call Show ( Y_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_2' )
       call Y_2 % Copy ( CS_B_2 )
       call CS_2 % ComputeFromBalanced ( )
 
-    end do !-- nII
+    end do !-- iII
 
     !-- Assume SlopeImplicit local: no ghost exchange in loop above 
     call KK_1 % ExchangeGhostData ( )
@@ -570,28 +553,104 @@ call Show ( Y_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_2' )
       T_Option
 
     integer ( KDI ) :: &
-      iS
+      iS, &
+      iF
 
     call S % Step_CS_1 % StoreSolution ( T_Option )
     call S % Step_CS_2 % StoreSolution ( T_Option )
 
-    !-- Reduce ImplicitQuality over base manifold domains
-    associate ( CO => S % CO_Quality )
-    CO % Outgoing % Value  =  S % ImplicitQuality
-    call CO % Reduce ( REDUCTION % MAX )
-    S % ImplicitQuality  =  CO % Incoming % Value
-    end associate !-- CO
+!     !-- Reduce ImplicitQuality over base manifold domains
+!     associate ( CO => S % CO_Quality )
+!     CO % Outgoing % Value  =  S % ImplicitQuality
+!     call CO % Reduce ( REDUCTION % MAX )
+!     S % ImplicitQuality  =  CO % Incoming % Value
+!     end associate !-- CO
 
-do iS  =  2, S % nStages
-  call Show ( iS, '>>> iS' )
-  call Show ( S % QUALITY ( S % ImplicitQuality ( iS ) ), &
-              '>>> ImplicitQuality' )
-  associate ( nII  =>  S % nImplicitIterations ( iS ) )
-  call Show ( S % ImplicitError ( iS ) % Value ( : nII ), '>>> ImplicitError' )
-  end associate !-- nII
-end do
+! do iS  =  2, S % nStages
+!   call Show ( iS, '>>> iS' )
+!   associate ( nII  =>  S % nImplicitIterations ( iS ) )
+!   call Show ( nII, '>>> nImplicitIterations' )
+!   call Show ( S % ImplicitError_1 ( nII, :, iS ), '>>> ImplicitError_1' )
+!   call Show ( S % ImplicitError_2 ( nII, :, iS ), '>>> ImplicitError_2' )
+!   end associate !-- nII
+!   call Show ( [ ( S % QUALITY ( S % ImplicitQuality_1 ( iF, iS ) ), &
+!                   iF = 1, size ( S % ImplicitQuality_1, dim = 1 ) ) ], &
+!                 '>>> ImplicitQuality_1' )
+!   call Show ( [ ( S % QUALITY ( S % ImplicitQuality_2 ( iF, iS ) ), &
+!                   iF = 1, size ( S % ImplicitQuality_2, dim = 1 ) ) ], &
+!                 '>>> ImplicitQuality_2' )
+! end do
 
   end subroutine StoreSolution
+
+
+  subroutine TestImplicitQuality ( S, RD, IE, IQ, Y, Y_P, iII )
+
+    class ( Step_RK_CS_CS_Form ), intent ( in ) :: &
+      S
+    class ( FieldSet_BM_Form ), intent ( inout ) :: &
+      RD  !-- RelativeDifference
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      IE  !-- ImplicitError
+    integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+      IQ  !-- ImplicitQuality
+    class ( FieldSet_BM_Form ), intent ( in ) :: &
+      Y, Y_P  !-- Fields for current and previous iterations
+    integer ( KDI ), intent ( in ) :: &
+      iII  !-- iImplicitIterations
+
+    integer ( KDI ) :: &
+      iF
+
+    !-- First tested iteration
+    if ( iII  ==  2 ) then
+      IE  =  0.0_KDR
+      IQ  =  S % IMPLICIT_UNSET
+    end if
+
+    call RD % RelativeDifference ( Y, Y_P )
+
+    do iF  =  1, Y % nFields
+
+      associate &
+        ( IEV   =>  IE ( iII,     iF ), &
+          IEPV  =>  IE ( iII - 1, iF ), &
+          IQV   =>  IQ ( iF ) )
+
+      !-- FIXME: Assumes single chart
+      select type ( A  =>  S % Atlas )
+      class is ( Atlas_SCG_Form )
+        IEV  =  maxval ( RD % Storage_GS % Value ( :, iF ) )
+      class default
+        call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
+        call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'TestImplicitQuality', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- A
+
+      if ( IQV  /=  S % IMPLICIT_UNSET )  &
+        cycle
+
+      if ( IEV  <  S % ImplicitTolerance ) then
+        !-- Converged
+        if ( iII  <  S % MaxImplicitIterations / 2 ) then
+          IQV  =  S % IMPLICIT_EXCELLENT
+        else
+          IQV  =  S % IMPLICIT_GOOD
+        end if
+      else if ( iII  >  2 .and. IEV  >  IEPV ) then  
+        !-- Diverging
+        IQV  =  S % IMPLICIT_POOR
+      else if ( iII  ==  S % MaxImplicitIterations ) then  
+        !-- Converging slowly
+        IQV  =  S % IMPLICIT_FAIR
+      end if
+
+      end associate !-- IEV, etc.
+
+    end do !-- iF
+
+  end subroutine TestImplicitQuality
 
 
 end module Step_RK_CS_CS__Form
