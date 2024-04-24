@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Slope_NM_G_I__Form ) Slope_NM_G_I__Kernel
+submodule ( Slope_NM_G_I_I__Form ) Slope_NM_G_I_I__Kernel
   
   use Basics
   
@@ -82,4 +82,4 @@ contains
   end procedure ComputeKernel
 
 
-end submodule Slope_NM_G_I__Kernel
+end submodule Slope_NM_G_I_I__Kernel
