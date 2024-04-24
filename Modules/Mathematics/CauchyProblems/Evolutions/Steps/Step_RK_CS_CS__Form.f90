@@ -139,6 +139,9 @@ contains
     allocate ( S % ImplicitError_1 ( mII, nB_1, 2 : nS ) )
     allocate ( S % ImplicitError_2 ( mII, nB_2, 2 : nS ) )
 
+    S % ImplicitQuality_1  =  S % IMPLICIT_UNSET
+    S % ImplicitQuality_2  =  S % IMPLICIT_UNSET
+
     ! !-- FIXME: Assumes single chart
     ! select type ( A  =>  S % Atlas )
     ! class is ( Atlas_SCG_Form )
@@ -281,7 +284,10 @@ contains
       S
 
     call S % Step_RK_H_Form % Show ( )
+
     call Show ( S % MaxImplicitIterations, 'MaxImplicitIterations', &
+                S % IGNORABILITY )
+    call Show ( S % ImplicitTolerance, 'ImplicitTolerance', &
                 S % IGNORABILITY )
 
     call S % Step_CS_1 % Show ( )
@@ -457,15 +463,17 @@ contains
         call TestImplicitQuality ( S, RD_1, IE_1, IQ_1, Y_1, Y_P_1, iII )
         call TestImplicitQuality ( S, RD_2, IE_2, IQ_2, Y_2, Y_P_2, iII )
 
-        if (      any ( IQ_1  ==  S % IMPLICIT_POOR ) &
-             .or. any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
+        if (&!     any ( IQ_1  ==  S % IMPLICIT_POOR ) &
+            !.or. any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
+             any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
         then
 !call Show ( '>>> Exit diverging' )
           exit  !-- Diverging
         end if
 
-        if (       all ( IQ_1  /=  S % IMPLICIT_UNSET ) &
-             .and. all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
+        if (&!      all ( IQ_1  /=  S % IMPLICIT_UNSET ) &
+            !.and. all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
+            all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
         then
 !call Show ( '>>> Exit converging' )
           exit  !-- Converged, or converging
@@ -627,6 +635,12 @@ contains
         call Show ( 'TestImplicitQuality', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- A
+
+!-- For testing, exclude momentum
+! if ( iF == 2 ) then
+!   IQV  =  S % IMPLICIT_EXCELLENT
+!   cycle
+! end if
 
       if ( IQV  /=  S % IMPLICIT_UNSET )  &
         cycle
