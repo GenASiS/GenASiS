@@ -817,8 +817,13 @@ contains
       T_Option
 
     integer ( KDI ) :: &
+      iS, &    !-- iStage
+      iF, &    !-- iField
       iTSC, &  !-- iTimeStepCandidates
-      Ignorability
+      Ignorability, &
+      MaxIterations
+    type ( CollectiveOperation_I_Form ), allocatable :: &
+      CO_I
     type ( TimerForm ), pointer :: &
       T_UH, &
       T_A, &
@@ -829,11 +834,49 @@ contains
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( I % T, I % Unit_T, 'T', I % IGNORABILITY )
     if ( .not. I % Start  .and.  .not. I % Restart ) then
+
       do iTSC = 1, I % n_dT_Candidates
         call Show ( I % dT_Candidate ( iTSC ), I % Unit_T, &
                     trim ( I % dT_Label ( iTSC ) ) // ' dT', &
                     I % IGNORABILITY )
       end do !-- iTSC
+
+      select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+        if ( S % ImplicitExplicit ) then
+          call Show ( 'ImplicitSolver' )
+          select type ( A  =>  S % Atlas )
+            class is ( Atlas_SCG_Form )
+          allocate ( CO_I )
+          call CO_I % Initialize &
+                 ( A % Chart_GS % Communicator, &
+                   nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+          do iS  =  2, S % nStages
+            call Show ( iS, 'iStage' )
+            associate ( MyIterations  =>  S % nImplicitIterations ( iS ) )
+            CO_I % Outgoing % Value ( 1 )  =  MyIterations
+            call CO_I % Reduce ( REDUCTION % MAX )
+            MaxIterations  =  CO_I % Incoming % Value ( 1 )            
+            call Show ( MaxIterations, 'Max nImplicitIterations' )
+            ! call Show ( S % ImplicitError_2 ( nII, :, iS ), &
+            !             'ImplicitError_2' )
+            ! call Show ( S % ImplicitError_1 ( nII, :, iS ), &
+            !             'ImplicitError_1' )
+            end associate !-- MyIterations
+            ! call Show ( [ ( S % QUALITY ( S % ImplicitQuality_2 ( iF, iS ) ), &
+            !                 iF = 1, &
+            !                 size ( S % ImplicitQuality_2, dim = 1 ) ) ], &
+            !                 'ImplicitQuality_2' )
+            ! call Show ( [ ( S % QUALITY ( S % ImplicitQuality_1 ( iF, iS ) ), &
+            !                 iF = 1, &
+            !                 size ( S % ImplicitQuality_1, dim = 1 ) ) ], &
+            !                 'ImplicitQuality_1' )
+          end do
+          deallocate ( CO_I )
+          end select !-- A
+        end if !-- ImplicitExplicit
+      end select !-- S
+
     end if
 
     if ( I % Start  .or.  I % Restart  &
