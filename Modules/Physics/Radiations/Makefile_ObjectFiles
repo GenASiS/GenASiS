@@ -1,6 +1,8 @@
 RADIATIONS = \
   Radiations.o \
   Slope_NM_G_DFV_I__Form.o \
+  Slope_NM_G_I_I__Kernel.o \
+  Slope_NM_G_I_I__Form.o \
   Slope_NM_G_I__Kernel.o \
   Slope_NM_G_I__Form.o \
   DivergencePart_NM_G__Kernel.o \
@@ -12,6 +14,8 @@ RADIATIONS = \
   PhotonMoments_G__Kernel.o \
   PhotonMoments_G__Form.o \
   Slope_RM_DFV_I__Form.o \
+  Slope_RM_I_I__Kernel.o \
+  Slope_RM_I_I__Form.o \
   Slope_RM_I__Kernel.o \
   Slope_RM_I__Form.o \
   DiffusionFactor_RM__Kernel.o \

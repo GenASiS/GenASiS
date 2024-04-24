@@ -61,6 +61,19 @@ Slope_RM_I__Kernel.o: \
   Slope_RM_I__Form.o \
   Slope_RM_I__Kernel.f90
 
+Slope_RM_I_I__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  RadiationMoments_BM__Form.o \
+  Interactions_BM__Form.o \
+  Slope_RM_I_I__Form.f90
+
+Slope_RM_I_I__Kernel.o: \
+  Basics.o \
+  Slope_RM_I_I__Form.o \
+  Slope_RM_I_I__Kernel.f90
+
 Slope_RM_DFV_I__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -140,6 +153,20 @@ Slope_NM_G_I__Kernel.o: \
   Slope_NM_G_I__Form.o \
   Slope_NM_G_I__Kernel.f90
 
+Slope_NM_G_I_I__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  Fluids.o \
+  NeutrinoMoments_G__Form.o \
+  Interactions_NM_G__Form.o \
+  Slope_NM_G_I_I__Form.f90
+
+Slope_NM_G_I_I__Kernel.o: \
+  Basics.o \
+  Slope_NM_G_I_I__Form.o \
+  Slope_NM_G_I_I__Kernel.f90
+
 Slope_NM_G_DFV_I__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -155,12 +182,14 @@ Radiations.o: \
   DivergencePart_RM__Form.o \
   DiffusionFactor_RM__Form.o \
   Slope_RM_I__Form.o \
+  Slope_RM_I_I__Form.o \
   Slope_RM_DFV_I__Form.o \
   PhotonMoments_G__Form.o \
   NeutrinoMoments_G__Form.o \
   Interactions_NM_G__Form.o \
   DivergencePart_NM_G__Form.o \
   Slope_NM_G_I__Form.o \
+  Slope_NM_G_I_I__Form.o \
   Slope_NM_G_DFV_I__Form.o \
   Radiations.f90
 
