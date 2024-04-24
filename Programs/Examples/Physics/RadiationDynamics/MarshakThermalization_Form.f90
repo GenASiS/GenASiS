@@ -268,6 +268,7 @@ contains
 
     associate ( c  =>  CONSTANT % SPEED_OF_LIGHT )
     I % T_Finish  =  100.0_KDR  *  1.0  /  ( c * Kappa * Rho_0 ) 
+!    I % T_Finish  =  1.0e4_KDR  *  1.0  /  ( c * Kappa * Rho_0 ) 
     end associate !-- c
 
     !-- Fluid

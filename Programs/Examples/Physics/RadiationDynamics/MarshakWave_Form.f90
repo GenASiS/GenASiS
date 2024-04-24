@@ -263,7 +263,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityMin' )
     call PROGRAM_HEADER % GetParameter ( E_Max,     'EnergyMax' )
 
-    Kappa_CGS  =  1.0e3_KDR
+!    Kappa_CGS  =  1.0e3_KDR  !-- Standard value from Vaytet et al.
+    Kappa_CGS  =  1.0e4_KDR  !-- More diffusive
     call PROGRAM_HEADER % GetParameter ( Kappa_CGS, 'SpecificOpacityCGS' )
 
     Kappa  =  Kappa_CGS  *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
