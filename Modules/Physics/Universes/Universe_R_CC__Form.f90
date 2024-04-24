@@ -64,6 +64,10 @@ module Universe_R_CC__Form
       Compute_dT_RK_F_CGS
     procedure, public, pass ( U ) :: &
       Compute_dT_RK_R_CGS
+    procedure, public, pass ( U ) :: &
+      Compute_dT_IS_F_CGS
+    procedure, public, pass ( U ) :: &
+      Compute_dT_IS_R_CGS
   end type Universe_R_CC_Form
 
     !-- FIXME: This is for a workaround in SetSlope routines below
@@ -82,6 +86,7 @@ module Universe_R_CC__Form
       SetSlope_F_P_DFV_N, &
       SetSlope_F_P_DFV_N_SS, &
       SetSlope_NM_G_I, &
+      SetSlope_NM_G_I_I, &
       SetSlope_NM_G_DFV_I
 
       private :: &
@@ -647,7 +652,7 @@ contains
 
       if ( ImplicitExplicit ) then
         !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
-        S_R % SetSlopeImplicit  =>  SetSlope_NM_G_I
+        S_R % SetSlopeImplicit  =>  SetSlope_NM_G_I_I
       else
         S_R % SetSlopeExplicit  =>  SetSlope_NM_G_DFV_I
       end if
@@ -1048,6 +1053,240 @@ contains
   end subroutine Compute_dT_RK_R_CGS
 
 
+  subroutine Compute_dT_IS_F_CGS &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
+    class ( Universe_R_CC_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B, &
+      iMomentum_B_1, iMomentum_B_2, iMomentum_B_3, &
+      iNumber_B
+    real ( KDR ) :: &
+      FactorPoor, &
+      FactorFair, &
+      FactorGood, &
+      FactorExcellent, &
+      Factor
+
+    FactorPoor       =  0.5_KDR
+    FactorFair       =  0.8_KDR
+    FactorGood       =  1.0_KDR
+    FactorExcellent  =  1.1_KDR
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_HN_Form )
+
+    call Search ( F % iaBalanced, F % ENERGY_DENSITY_B,       iEnergy_B )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_1, iMomentum_B_1 )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_2, iMomentum_B_2 )
+    call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B_3 )
+    call Search ( F % iaBalanced, F % ELECTRON_DENSITY_B,   iNumber_B )
+
+    associate ( IQ_E  =>  S % ImplicitQuality_2 ( iEnergy_B, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_E
+    dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_S_1  =>  S % ImplicitQuality_2 ( iMomentum_B_1, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_1
+    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_S_2  =>  S % ImplicitQuality_2 ( iMomentum_B_2, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_1
+    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_S_3  =>  S % ImplicitQuality_2 ( iMomentum_B_3, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_3
+    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_N  =>  S % ImplicitQuality_2 ( iEnergy_B, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_N  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_N
+    dT_N  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    end select !-- F
+    end select !-- S
+    end select !-- I
+
+  end subroutine Compute_dT_IS_F_CGS
+
+
+  subroutine Compute_dT_IS_R_CGS &
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, U, iC, T_Option )
+
+    real ( KDR ), intent ( inout ) :: &
+      dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
+    class ( Universe_R_CC_Form ), intent ( in ) :: &
+      U
+    integer ( KDI ), intent ( in ) :: &
+      iC
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    integer ( KDI ) :: &
+      iEnergy_B, &
+      iMomentum_B_1, iMomentum_B_2, iMomentum_B_3, &
+      iNumber_B
+    real ( KDR ) :: &
+      FactorPoor, &
+      FactorFair, &
+      FactorGood, &
+      FactorExcellent, &
+      Factor
+
+    FactorPoor       =  0.5_KDR
+    FactorFair       =  0.8_KDR
+    FactorGood       =  1.0_KDR
+    FactorExcellent  =  1.1_KDR
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_BM_CS_Form )
+    select type ( S  =>  I % Step_X )
+      class is ( Step_RK_CS_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( NeutrinoMoments_G_Form )
+
+    call Search ( R % iaBalanced, R % ENERGY_DENSITY_B,       iEnergy_B )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_1, iMomentum_B_1 )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_2, iMomentum_B_2 )
+    call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_B_3 )
+    call Search ( R % iaBalanced, R % NUMBER_DENSITY_B,       iNumber_B )
+
+    associate ( IQ_E  =>  S % ImplicitQuality_1 ( iEnergy_B, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_E
+    dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_S_1  =>  S % ImplicitQuality_1 ( iMomentum_B_1, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_1
+    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_S_2  =>  S % ImplicitQuality_1 ( iMomentum_B_2, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_1
+    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_S_3  =>  S % ImplicitQuality_1 ( iMomentum_B_3, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_3
+    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    associate ( IQ_N  =>  S % ImplicitQuality_1 ( iEnergy_B, : ) )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_N  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_N
+    dT_N  =  Factor  *  ( I % dT  /  I % RampFactor )
+
+    end select !-- R
+    end select !-- S
+    end select !-- I
+
+  end subroutine Compute_dT_IS_R_CGS
+
+
 !   subroutine ResolveCycle_R ( I )
 
 !     class ( Integrator_H_Form ), intent ( inout ) :: &
@@ -1329,7 +1568,7 @@ contains
 
     if ( S % EmbeddedMethod ) then
 
-    !-- Fluid error steps
+      !-- Fluid error steps
 
 !      if ( I % iCheckpoint  >  1 ) &
         call U % Compute_dT_RK_F_CGS &
@@ -1341,7 +1580,21 @@ contains
         call U % Compute_dT_RK_R_CGS &
                ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
 
-   end if
+    else if ( S % ImplicitExplicit ) then
+
+!       !-- Fluid implicit solver steps
+
+! !      if ( I % iCheckpoint  >  1 ) &
+!         call U % Compute_dT_IS_F_CGS &
+!                ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
+
+!       !-- Radiation implicit solver steps
+
+! !      if ( I % iCheckpoint  >  1 ) &
+!         call U % Compute_dT_IS_R_CGS &
+!                ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
+
+    end if
 
    !-- Reduce across radiation types
 
@@ -1588,6 +1841,56 @@ contains
     end select !-- S
 
   end subroutine SetSlope_NM_G_I
+
+
+  subroutine SetSlope_NM_G_I_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_NM_G_I_I_Form :: K )
+    select type ( K )
+      class is ( Slope_NM_G_I_I_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( NeutrinoMoments_G_Form )
+
+!     select type ( I  =>  R % Interactions )
+!     class is ( Interactions_BM_Form )
+! call Show ( '>>> Interactions_BM SetSlope_NM_G_I_I' )
+!     end select
+
+!     select type ( I  =>  R % Interactions )
+!     type is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G SetSlope_NM_G_I_I' )
+!     end select
+
+!     select type ( I  =>  UNIVERSE % Interactions_NM_G )
+!     class is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G SetSlope_NM_G_I_I UNIVERSE' )
+!     end select
+
+    call K % Initialize &
+           ( R )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    !-- FIXME: This is a workaround because the correct type of 
+    !          R % Interactions is not being recognized in K % Initialize
+    K % Interactions  =>  UNIVERSE % Interactions_NM_G
+    select type ( I  =>  UNIVERSE % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+      K % Communicator_X_1D  =>  I % Communicator_X_1D
+    end select !-- I
+
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_NM_G_I_I
 
 
   subroutine SetSlope_NM_G_DFV_I ( S, K )

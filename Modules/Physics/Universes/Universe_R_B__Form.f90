@@ -84,6 +84,7 @@ module Universe_R_B__Form
       SetSlope_F_P_DFV_SS, &
       SetSlope_F_P_SS, &
       SetSlope_RM_I, &
+      SetSlope_RM_I_I, &
       SetSlope_RM_DFV_I
 
       private :: &
@@ -775,7 +776,7 @@ contains
 
           if ( ImplicitExplicit ) then
             !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
-            S_R % SetSlopeImplicit  =>  SetSlope_RM_I
+            S_R % SetSlopeImplicit  =>  SetSlope_RM_I_I
           else
             S_R % SetSlopeExplicit  =>  SetSlope_RM_DFV_I
           end if
@@ -1338,10 +1339,13 @@ contains
     real ( KDR ) :: &
       FactorPoor, &
       FactorFair, &
-      FactorExcellent
+      FactorGood, &
+      FactorExcellent, &
+      Factor
 
-    FactorPoor       =  0.2_KDR
-    FactorFair       =  0.7_KDR
+    FactorPoor       =  0.5_KDR
+    FactorFair       =  0.8_KDR
+    FactorGood       =  1.0_KDR
     FactorExcellent  =  1.1_KDR
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
@@ -1356,40 +1360,60 @@ contains
     call Search ( F % iaBalanced, F % MOMENTUM_DENSITY_D_3, iMomentum_B_3 )
 
     associate ( IQ_E  =>  S % ImplicitQuality_2 ( iEnergy_B, : ) )
-    if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) &
-      dT_E  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) &
-      dT_E  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_E  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
     end associate !-- IQ_E
+    dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     associate ( IQ_S_1  =>  S % ImplicitQuality_2 ( iMomentum_B_1, : ) )
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) &
-      dT_S_1  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) &
-      dT_S_1  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_S_1  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
     end associate !-- IQ_S_1
+    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     associate ( IQ_S_2  =>  S % ImplicitQuality_2 ( iMomentum_B_2, : ) )
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) &
-      dT_S_2  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) &
-      dT_S_2  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_S_2  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
-    end associate !-- IQ_S_2
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_1
+    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     associate ( IQ_S_3  =>  S % ImplicitQuality_2 ( iMomentum_B_3, : ) )
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) &
-      dT_S_3  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) &
-      dT_S_3  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_S_3  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
     end associate !-- IQ_S_3
+    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     end select !-- F
     end select !-- S
@@ -1416,10 +1440,13 @@ contains
     real ( KDR ) :: &
       FactorPoor, &
       FactorFair, &
-      FactorExcellent
+      FactorGood, &
+      FactorExcellent, &
+      Factor
 
-    FactorPoor       =  0.2_KDR
-    FactorFair       =  0.7_KDR
+    FactorPoor       =  0.5_KDR
+    FactorFair       =  0.8_KDR
+    FactorGood       =  1.0_KDR
     FactorExcellent  =  1.1_KDR
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_BM_CS_Form )
@@ -1434,40 +1461,60 @@ contains
     call Search ( R % iaBalanced, R % MOMENTUM_DENSITY_B_D_3, iMomentum_B_3 )
 
     associate ( IQ_E  =>  S % ImplicitQuality_1 ( iEnergy_B, : ) )
-    if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) &
-      dT_E  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) &
-      dT_E  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_E  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
     end associate !-- IQ_E
+    dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     associate ( IQ_S_1  =>  S % ImplicitQuality_1 ( iMomentum_B_1, : ) )
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) &
-      dT_S_1  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) &
-      dT_S_1  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_S_1  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
     end associate !-- IQ_S_1
+    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     associate ( IQ_S_2  =>  S % ImplicitQuality_1 ( iMomentum_B_2, : ) )
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) &
-      dT_S_2  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) &
-      dT_S_2  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_S_2  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
-    end associate !-- IQ_S_2
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
+    end associate !-- IQ_S_1
+    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     associate ( IQ_S_3  =>  S % ImplicitQuality_1 ( iMomentum_B_3, : ) )
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) &
-      dT_S_3  =  FactorPoor  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) &
-      dT_S_3  =  FactorFair  *  ( I % dT  /  I % RampFactor )
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) &
-      dT_S_3  =  FactorExcellent  *  ( I % dT  /  I % RampFactor )
+    Factor  =  1.0_KDR
+    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+      Factor  =  FactorPoor
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
+    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+      Factor  =  FactorExcellent
+    end if
     end associate !-- IQ_S_3
+    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     end select !-- R
     end select !-- S
@@ -1549,15 +1596,15 @@ contains
 
       else if ( S % ImplicitExplicit ) then
 
-        !-- Fluid implicit solver steps
+  !       !-- Fluid implicit solver steps
 
-  !      if ( I % iCheckpoint  >  1 ) &
-          call U % Compute_dT_IS_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
+  ! !      if ( I % iCheckpoint  >  1 ) &
+  !         call U % Compute_dT_IS_F_CGS ( dT_3, dT_4, dT_5, dT_6, iC, T_Option )
 
-        !-- Radiation implicit solver steps
+  !       !-- Radiation implicit solver steps
 
-  !      if ( I % iCheckpoint  >  1 ) &
-          call U % Compute_dT_IS_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
+  ! !      if ( I % iCheckpoint  >  1 ) &
+  !         call U % Compute_dT_IS_R_CGS ( dT_7, dT_8, dT_9, dT_10, iC, T_Option )
 
       end if
 
@@ -1665,6 +1712,39 @@ contains
     end select !-- S
 
   end subroutine SetSlope_RM_I
+
+
+  subroutine SetSlope_RM_I_I ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_RM_I_I_Form :: K )
+    select type ( K )
+      class is ( Slope_RM_I_I_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( RadiationMoments_BM_Form )
+
+    call K % Initialize &
+           ( R )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    K % Interactions  =>  UNIVERSE % Interactions_BM
+    select type ( I  =>  UNIVERSE % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+      K % Communicator_X_1D  =>  I % Communicator_X_1D
+    end select !-- I
+
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_RM_I_I
 
 
   subroutine SetSlope_RM_DFV_I ( S, K )
