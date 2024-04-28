@@ -463,17 +463,17 @@ contains
         call TestImplicitQuality ( S, RD_1, IE_1, IQ_1, Y_1, Y_P_1, iII )
         call TestImplicitQuality ( S, RD_2, IE_2, IQ_2, Y_2, Y_P_2, iII )
 
-        if (&!     any ( IQ_1  ==  S % IMPLICIT_POOR ) &
-            !.or. any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
-             any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
+        if (     any ( IQ_1  ==  S % IMPLICIT_POOR ) &
+            .or. any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
+            ! any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
         then
 !call Show ( '>>> Exit diverging' )
           exit  !-- Diverging
         end if
 
-        if (&!      all ( IQ_1  /=  S % IMPLICIT_UNSET ) &
-            !.and. all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
-            all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
+        if (      all ( IQ_1  /=  S % IMPLICIT_UNSET ) &
+            .and. all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
+            !all ( IQ_2  /=  S % IMPLICIT_UNSET ) ) &
         then
 !call Show ( '>>> Exit converging' )
           exit  !-- Converged, or converging
@@ -637,10 +637,10 @@ contains
       end select !-- A
 
 !-- For testing, exclude momentum
-! if ( iF == 2 ) then
-!   IQV  =  S % IMPLICIT_EXCELLENT
-!   cycle
-! end if
+if ( iF == 2 .or. iF == 3 .or. iF == 4 ) then
+  IQV  =  S % IMPLICIT_EXCELLENT
+  cycle
+end if
 
       if ( IQV  /=  S % IMPLICIT_UNSET )  &
         cycle
@@ -653,6 +653,7 @@ contains
           IQV  =  S % IMPLICIT_GOOD
         end if
       else if ( iII  >  2 .and. IEV  >  IEPV ) then  
+!      else if ( iII  >  2 .and. IEV  >  IEPV .and. IEV  >  1.0e-2 ) then  
         !-- Diverging
         IQV  =  S % IMPLICIT_POOR
       else if ( iII  ==  S % MaxImplicitIterations ) then  

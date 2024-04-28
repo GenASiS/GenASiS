@@ -1054,7 +1054,7 @@ contains
 
 
   subroutine Compute_dT_IS_F_CGS &
-               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, U, iC, T_Option )
+               ( dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N, U, dT_RS, iC, T_Option )
 
     real ( KDR ), intent ( inout ) :: &
       dT_E, dT_S_1, dT_S_2, dT_S_3, dT_N
@@ -1062,6 +1062,8 @@ contains
       U
     integer ( KDI ), intent ( in ) :: &
       iC
+    real ( KDR ), intent ( in ) :: &
+      dT_RS  !-- RadiationStreaming
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
@@ -1106,62 +1108,66 @@ contains
     end if
     end associate !-- IQ_E
     dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
+!    dT_E  =  max ( Factor  *  ( I % dT  /  I % RampFactor ), &
+!                   0.1_KDR  *  dT_RS )
 
-    associate ( IQ_S_1  =>  S % ImplicitQuality_2 ( iMomentum_B_1, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_1  =>  S % ImplicitQuality_2 ( iMomentum_B_1, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+    ! !   Factor  =  FactorFair
+    ! ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+    ! !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_2  =>  S % ImplicitQuality_2 ( iMomentum_B_2, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_2  =>  S % ImplicitQuality_2 ( iMomentum_B_2, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+    ! !   Factor  =  FactorFair
+    ! ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+    ! !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_3  =>  S % ImplicitQuality_2 ( iMomentum_B_3, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_3
-    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_3  =>  S % ImplicitQuality_2 ( iMomentum_B_3, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+    ! !   Factor  =  FactorFair
+    ! ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+    ! !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_3
+    ! dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_N  =>  S % ImplicitQuality_2 ( iEnergy_B, : ) )
+    associate ( IQ_N  =>  S % ImplicitQuality_2 ( iNumber_B, : ) )
     Factor  =  1.0_KDR
     if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
-    else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
+    ! else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
     else if ( all ( IQ_N  ==  S % IMPLICIT_EXCELLENT ) ) then
       Factor  =  FactorExcellent
     end if
     end associate !-- IQ_N
     dT_N  =  Factor  *  ( I % dT  /  I % RampFactor )
+!    dT_N  =  max ( Factor  *  ( I % dT  /  I % RampFactor ), &
+!                   0.1_KDR  *  dT_RS )
 
     end select !-- F
     end select !-- S
@@ -1214,66 +1220,66 @@ contains
     Factor  =  1.0_KDR
     if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
-    else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
+    ! else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
     else if ( all ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) then
       Factor  =  FactorExcellent
     end if
     end associate !-- IQ_E
     dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_1  =>  S % ImplicitQuality_1 ( iMomentum_B_1, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_1  =>  S % ImplicitQuality_1 ( iMomentum_B_1, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+    ! !   Factor  =  FactorFair
+    ! ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+    ! !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_2  =>  S % ImplicitQuality_1 ( iMomentum_B_2, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_2  =>  S % ImplicitQuality_1 ( iMomentum_B_2, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+    ! !   Factor  =  FactorFair
+    ! ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+    ! !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_3  =>  S % ImplicitQuality_1 ( iMomentum_B_3, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_3
-    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_3  =>  S % ImplicitQuality_1 ( iMomentum_B_3, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+    ! !   Factor  =  FactorFair
+    ! ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+    ! !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_3
+    ! dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_N  =>  S % ImplicitQuality_1 ( iEnergy_B, : ) )
+    associate ( IQ_N  =>  S % ImplicitQuality_1 ( iNumber_B, : ) )
     Factor  =  1.0_KDR
     if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
-    else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
+    ! else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
     else if ( all ( IQ_N  ==  S % IMPLICIT_EXCELLENT ) ) then
       Factor  =  FactorExcellent
     end if
@@ -1582,17 +1588,17 @@ contains
 
     else if ( S % ImplicitExplicit ) then
 
-!       !-- Fluid implicit solver steps
+      !-- Fluid implicit solver steps
 
-! !      if ( I % iCheckpoint  >  1 ) &
-!         call U % Compute_dT_IS_F_CGS &
-!                ( dT_4, dT_5, dT_6, dT_7, dT_8, iC, T_Option )
+!      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_IS_F_CGS &
+               ( dT_4, dT_5, dT_6, dT_7, dT_8, dT_3, iC, T_Option )
 
-!       !-- Radiation implicit solver steps
+      !-- Radiation implicit solver steps
 
-! !      if ( I % iCheckpoint  >  1 ) &
-!         call U % Compute_dT_IS_R_CGS &
-!                ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
+!      if ( I % iCheckpoint  >  1 ) &
+        call U % Compute_dT_IS_R_CGS &
+               ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
 
     end if
 
