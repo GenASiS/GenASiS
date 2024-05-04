@@ -653,7 +653,6 @@ end if
           IQV  =  S % IMPLICIT_GOOD
         end if
       else if ( iII  >  2 .and. IEV  >  IEPV ) then  
-!      else if ( iII  >  2 .and. IEV  >  IEPV .and. IEV  >  1.0e-2 ) then  
         !-- Diverging
         IQV  =  S % IMPLICIT_POOR
       else if ( iII  ==  S % MaxImplicitIterations ) then  

@@ -1373,47 +1373,47 @@ contains
     end associate !-- IQ_E
     dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_1  =>  S % ImplicitQuality_2 ( iMomentum_B_1, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_1  =>  S % ImplicitQuality_2 ( iMomentum_B_1, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_2  =>  S % ImplicitQuality_2 ( iMomentum_B_2, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_2  =>  S % ImplicitQuality_2 ( iMomentum_B_2, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_3  =>  S % ImplicitQuality_2 ( iMomentum_B_3, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_3
-    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_3  =>  S % ImplicitQuality_2 ( iMomentum_B_3, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_3
+    ! dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     end select !-- F
     end select !-- S
@@ -1474,47 +1474,47 @@ contains
     end associate !-- IQ_E
     dT_E  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_1  =>  S % ImplicitQuality_1 ( iMomentum_B_1, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_1  =>  S % ImplicitQuality_1 ( iMomentum_B_1, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_1  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_S_1  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_1  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_1  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_2  =>  S % ImplicitQuality_1 ( iMomentum_B_2, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_1
-    dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_2  =>  S % ImplicitQuality_1 ( iMomentum_B_2, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_2  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_S_2  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_2  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_1
+    ! dT_S_2  =  Factor  *  ( I % dT  /  I % RampFactor )
 
-    associate ( IQ_S_3  =>  S % ImplicitQuality_1 ( iMomentum_B_3, : ) )
-    Factor  =  1.0_KDR
-    if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
-      Factor  =  FactorPoor
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
-    else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
-      Factor  =  FactorExcellent
-    end if
-    end associate !-- IQ_S_3
-    dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
+    ! associate ( IQ_S_3  =>  S % ImplicitQuality_1 ( iMomentum_B_3, : ) )
+    ! Factor  =  1.0_KDR
+    ! if ( any ( IQ_S_3  ==  S % IMPLICIT_POOR ) ) then
+    !   Factor  =  FactorPoor
+    ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_S_3  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
+    ! else if ( all ( IQ_S_3  ==  S % IMPLICIT_EXCELLENT ) ) then
+    !   Factor  =  FactorExcellent
+    ! end if
+    ! end associate !-- IQ_S_3
+    ! dT_S_3  =  Factor  *  ( I % dT  /  I % RampFactor )
 
     end select !-- R
     end select !-- S

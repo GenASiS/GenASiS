@@ -1157,10 +1157,10 @@ contains
     Factor  =  1.0_KDR
     if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
-    ! else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
-    !   Factor  =  FactorFair
-    ! else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
-    !   Factor  =  FactorGood
+    else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
+      Factor  =  FactorFair
+    else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
+      Factor  =  FactorGood
     else if ( all ( IQ_N  ==  S % IMPLICIT_EXCELLENT ) ) then
       Factor  =  FactorExcellent
     end if
@@ -1588,17 +1588,17 @@ contains
 
     else if ( S % ImplicitExplicit ) then
 
-      !-- Fluid implicit solver steps
+!       !-- Fluid implicit solver steps
 
-!      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_IS_F_CGS &
-               ( dT_4, dT_5, dT_6, dT_7, dT_8, dT_3, iC, T_Option )
+! !      if ( I % iCheckpoint  >  1 ) &
+!         call U % Compute_dT_IS_F_CGS &
+!                ( dT_4, dT_5, dT_6, dT_7, dT_8, dT_3, iC, T_Option )
 
-      !-- Radiation implicit solver steps
+!       !-- Radiation implicit solver steps
 
-!      if ( I % iCheckpoint  >  1 ) &
-        call U % Compute_dT_IS_R_CGS &
-               ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
+! !      if ( I % iCheckpoint  >  1 ) &
+!         call U % Compute_dT_IS_R_CGS &
+!                ( dT_9, dT_10, dT_11, dT_12, dT_13, iC, T_Option )
 
     end if
 
