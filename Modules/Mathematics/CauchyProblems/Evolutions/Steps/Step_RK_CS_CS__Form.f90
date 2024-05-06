@@ -412,6 +412,8 @@ contains
         CS_B_2  =>  S_2 % Balanced, &
         CS_1    =>  S_1 % CurrentSet, &
         CS_2    =>  S_2 % CurrentSet, &
+        KK_I_1  =>  S_1 % SlopeImplicitIterate, &
+        KK_I_2  =>  S_2 % SlopeImplicitIterate, &
         KK_1    =>  S_1 % SlopeImplicit, &
         KK_2    =>  S_2 % SlopeImplicit, &
         KK_1_S  =>  S_1 % SlopeStageImplicit ( iS ) % Element, &
@@ -433,16 +435,29 @@ contains
 !call Show ( Y_I_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_I_1' ) 
 !call Show ( Y_I_2 % Storage ( 1 ) % Value ( 3, 5 ), '>>> Y_I_2' ) 
 
+    !-- Iterate on subset of balanced fields
+
     iII  =  0
     do 
 
       iII  =  iII + 1
 
-      call KK_1 % Compute ( dT )!, T_Option = T_CS )
-      call KK_2 % Compute ( dT )!, T_Option = T_CS )
+!      call KK_1 % Compute ( dT )!, T_Option = T_CS )
+!      call KK_2 % Compute ( dT )!, T_Option = T_CS )
+      call KK_I_1 % Compute ( dT )!, T_Option = T_CS )
+      call KK_I_2 % Compute ( dT )!, T_Option = T_CS )
 
-      call Y_1 % MultiplyAdd ( Y_I_1, KK_1, dT * AA )      
-      call Y_2 % MultiplyAdd ( Y_I_2, KK_2, dT * AA )      
+      call Y_1 % MultiplyAdd ( Y_I_1, KK_I_1, dT * AA )      
+      call Y_2 % MultiplyAdd ( Y_I_2, KK_I_2, dT * AA )      
+
+      !-- Fill out fields for next iteration of subset of balanced fields, 
+      !   or update of all balanced fields after exit
+
+      call Y_1 % Copy ( CS_B_1 )
+      call CS_1 % ComputeFromBalanced ( )
+
+      call Y_2 % Copy ( CS_B_2 )
+      call CS_2 % ComputeFromBalanced ( )
 
 ! call Show ( iII, '>>> iII' )
 ! call Show ( Y_1 % Storage ( 1 ) % Value ( 3, 1 ), '>>> Y_1' )
@@ -483,23 +498,34 @@ contains
 
       end if !-- iII > 1
 
-      !-- Set up next iteration
+      ! !-- Set up next iteration
+
+      ! call Y_1 % Copy ( Y_P_1 )
+      ! call Y_2 % Copy ( Y_P_2 )
+
+      ! call Y_1 % Copy ( CS_B_1 )
+      ! call CS_1 % ComputeFromBalanced ( )
+
+      ! call Y_2 % Copy ( CS_B_2 )
+      ! call CS_2 % ComputeFromBalanced ( )
+
+      !-- Set up for exit test next iteration
 
       call Y_1 % Copy ( Y_P_1 )
       call Y_2 % Copy ( Y_P_2 )
 
-      call Y_1 % Copy ( CS_B_1 )
-      call CS_1 % ComputeFromBalanced ( )
-
-      call Y_2 % Copy ( CS_B_2 )
-      call CS_2 % ComputeFromBalanced ( )
-
     end do !-- iII
+
+    !-- After convergence of subset, compute update of all fields
+
+    call KK_1 % Compute ( dT )!, T_Option = T_CS )
+    call KK_2 % Compute ( dT )!, T_Option = T_CS )
 
     !-- Assume SlopeImplicit local: no ghost exchange in loop above 
     call KK_1 % ExchangeGhostData ( )
     call KK_2 % ExchangeGhostData ( )
 
+    !-- Copy to stage storage
     call KK_1 % Copy ( KK_1_S )
     call KK_2 % Copy ( KK_2_S )
 

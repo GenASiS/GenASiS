@@ -39,8 +39,9 @@ module Step_RK_H__Form
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
     class ( Slope_H_Form ), allocatable :: &
-      SlopeImplicit, &  !-- KK computation
-      SlopeExplicit     !-- K  computation
+      SlopeImplicitIterate, &  !-- Subset of KK on which to iterate
+      SlopeImplicit, &         !-- KK computation
+      SlopeExplicit            !-- K  computation
     class ( Slope_H_Form ), allocatable :: &
       SlopeSumImplicit, &  !-- KK sum for I/O
       SlopeSumExplicit     !-- K  sum for I/O
@@ -48,6 +49,7 @@ module Step_RK_H__Form
       SlopeStageImplicit, &  !-- storage of KK for various stages
       SlopeStageExplicit     !-- storage of K for various stages
     procedure ( SS ), pointer :: &
+      SetSlopeImplicitIterate => null ( ), &
       SetSlopeImplicit => null ( ), &
       SetSlopeExplicit => null ( )
     procedure ( SSS ), pointer :: &
@@ -186,9 +188,12 @@ contains
 
     if ( S % ImplicitExplicit ) then
 
+      if ( .not. associated ( S % SetSlopeImplicitIterate ) ) &
+        S % SetSlopeImplicitIterate  =>  SetSlope_H
       if ( .not. associated ( S % SetSlopeImplicit ) ) &
         S % SetSlopeImplicit  =>  SetSlope_H
 
+      call S % SetSlopeImplicitIterate ( S % SlopeImplicitIterate )
       call S % SetSlopeImplicit ( S % SlopeImplicit )
 
       allocate ( S % SlopeStageImplicit ( nS ) )
@@ -550,6 +555,8 @@ contains
       deallocate ( S % SlopeExplicit )
     if ( allocated ( S % SlopeImplicit ) ) &
       deallocate ( S % SlopeImplicit )
+    if ( allocated ( S % SlopeImplicitIterate ) ) &
+      deallocate ( S % SlopeImplicitIterate )
     if ( allocated ( S % AA ) ) &
       deallocate ( S % AA )
     if ( allocated ( S % A ) ) &

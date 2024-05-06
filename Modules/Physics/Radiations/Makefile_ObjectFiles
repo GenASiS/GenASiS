@@ -14,6 +14,8 @@ RADIATIONS = \
   PhotonMoments_G__Kernel.o \
   PhotonMoments_G__Form.o \
   Slope_RM_DFV_I__Form.o \
+  Slope_RM_I_I_J__Kernel.o \
+  Slope_RM_I_I_J__Form.o \
   Slope_RM_I_I__Kernel.o \
   Slope_RM_I_I__Form.o \
   Slope_RM_I__Kernel.o \

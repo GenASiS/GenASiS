@@ -85,6 +85,7 @@ module Universe_R_B__Form
       SetSlope_F_P_SS, &
       SetSlope_RM_I, &
       SetSlope_RM_I_I, &
+      SetSlope_RM_I_I_J, &
       SetSlope_RM_DFV_I
 
       private :: &
@@ -776,7 +777,8 @@ contains
 
           if ( ImplicitExplicit ) then
             !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
-            S_R % SetSlopeImplicit  =>  SetSlope_RM_I_I
+            S_R % SetSlopeImplicitIterate  =>  SetSlope_RM_I_I_J
+            S_R % SetSlopeImplicit         =>  SetSlope_RM_I_I
           else
             S_R % SetSlopeExplicit  =>  SetSlope_RM_DFV_I
           end if
@@ -804,7 +806,8 @@ contains
 
         if ( ImplicitExplicit ) then
           !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
-          S_F % SetSlopeImplicit  =>  SetSlope_F_P_SS
+          S_F % SetSlopeImplicitIterate  =>  SetSlope_F_P_SS
+          S_F % SetSlopeImplicit         =>  SetSlope_F_P_SS
         else
           S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_SS
         end if
@@ -1745,6 +1748,39 @@ contains
     end select !-- S
 
   end subroutine SetSlope_RM_I_I
+
+
+  subroutine SetSlope_RM_I_I_J ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_RM_I_I_J_Form :: K )
+    select type ( K )
+      class is ( Slope_RM_I_I_J_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( RadiationMoments_BM_Form )
+
+    call K % Initialize &
+           ( R )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    K % Interactions  =>  UNIVERSE % Interactions_BM
+    select type ( I  =>  UNIVERSE % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+      K % Communicator_X_1D  =>  I % Communicator_X_1D
+    end select !-- I
+
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_RM_I_I_J
 
 
   subroutine SetSlope_RM_DFV_I ( S, K )

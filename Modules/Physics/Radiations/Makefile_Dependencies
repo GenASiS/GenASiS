@@ -74,6 +74,19 @@ Slope_RM_I_I__Kernel.o: \
   Slope_RM_I_I__Form.o \
   Slope_RM_I_I__Kernel.f90
 
+Slope_RM_I_I_J__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Gravitations.o \
+  RadiationMoments_BM__Form.o \
+  Interactions_BM__Form.o \
+  Slope_RM_I_I_J__Form.f90
+
+Slope_RM_I_I_J__Kernel.o: \
+  Basics.o \
+  Slope_RM_I_I_J__Form.o \
+  Slope_RM_I_I_J__Kernel.f90
+
 Slope_RM_DFV_I__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -183,6 +196,7 @@ Radiations.o: \
   DiffusionFactor_RM__Form.o \
   Slope_RM_I__Form.o \
   Slope_RM_I_I__Form.o \
+  Slope_RM_I_I_J__Form.o \
   Slope_RM_DFV_I__Form.o \
   PhotonMoments_G__Form.o \
   NeutrinoMoments_G__Form.o \
