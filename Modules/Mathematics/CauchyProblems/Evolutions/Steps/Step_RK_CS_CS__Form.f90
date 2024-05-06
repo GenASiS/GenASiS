@@ -41,8 +41,8 @@ module Step_RK_CS_CS__Form
       Iteration_2, &
       IterationPrevious_1, &
       IterationPrevious_2, &
-      RelativeDifference_1, &
-      RelativeDifference_2
+      Residual_1, &
+      Residual_2
     class ( Step_RK_CS_Form ), allocatable :: &
       Step_CS_1, &
       Step_CS_2
@@ -208,23 +208,23 @@ contains
     end associate !-- KK_P_1, etc.
 
     !-- Relative difference in implicit slopes in this and previous iterations
-    allocate ( S % RelativeDifference_1 )
-    allocate ( S % RelativeDifference_2 )
+    allocate ( S % Residual_1 )
+    allocate ( S % Residual_2 )
     associate &
-      ( RD_1  =>  S % RelativeDifference_1, &
-        RD_2  =>  S % RelativeDifference_2 )
-    call RD_1 % Initialize &
+      ( R_1  =>  S % Residual_1, &
+        R_2  =>  S % Residual_2 )
+    call R_1 % Initialize &
            ( CS_1 % Atlas, &
              FieldOption = CS_1 % Balanced, &
-             NameOption = trim ( CS_1 % Name ) // '_RelativeDifference', &
+             NameOption = trim ( CS_1 % Name ) // '_Residual', &
              DeviceMemoryOption = CS_1 % DeviceMemory, &
              DevicesCommunicateOption = CS_1 % DevicesCommunicate, &
              nFieldsOption = CS_1 % nBalanced, &
              IgnorabilityOption = CS_1 % IGNORABILITY + 1 )
-    call RD_2 % Initialize &
+    call R_2 % Initialize &
            ( CS_2 % Atlas, &
              FieldOption = CS_2 % Balanced, &
-             NameOption = trim ( CS_2 % Name ) // '_RelativeDifference', &
+             NameOption = trim ( CS_2 % Name ) // '_Residual', &
              DeviceMemoryOption = CS_2 % DeviceMemory, &
              DevicesCommunicateOption = CS_2 % DevicesCommunicate, &
              nFieldsOption = CS_2 % nBalanced, &
@@ -305,10 +305,10 @@ contains
       deallocate ( S % Step_CS_2 )
     if ( allocated ( S % Step_CS_1 ) ) &
       deallocate ( S % Step_CS_1 )
-    if ( allocated ( S % RelativeDifference_2 ) ) &
-      deallocate ( S % RelativeDifference_2 )
-    if ( allocated ( S % RelativeDifference_1 ) ) &
-      deallocate ( S % RelativeDifference_1 )
+    if ( allocated ( S % Residual_2 ) ) &
+      deallocate ( S % Residual_2 )
+    if ( allocated ( S % Residual_1 ) ) &
+      deallocate ( S % Residual_1 )
     if ( allocated ( S % IterationPrevious_2 ) ) &
       deallocate ( S % IterationPrevious_2 )
     if ( allocated ( S % IterationPrevious_1 ) ) &
@@ -453,15 +453,15 @@ contains
         !-- Exit conditions
 
         associate &
-          ( RD_1  =>  S % RelativeDifference_1, &
-            RD_2  =>  S % RelativeDifference_2, &
+          ( R_1   =>  S % Residual_1, &
+            R_2   =>  S % Residual_2, &
             IE_1  =>  S % ImplicitError_1 ( :, :, iS ), &
             IE_2  =>  S % ImplicitError_2 ( :, :, iS ), &
             IQ_1  =>  S % ImplicitQuality_1 ( :, iS ), &
             IQ_2  =>  S % ImplicitQuality_2 ( :, iS ) )
 
-        call TestImplicitQuality ( S, RD_1, IE_1, IQ_1, Y_1, Y_P_1, iII )
-        call TestImplicitQuality ( S, RD_2, IE_2, IQ_2, Y_2, Y_P_2, iII )
+        call TestImplicitQuality ( S, R_1, IE_1, IQ_1, Y_1, Y_P_1, Y_I_1, iII )
+        call TestImplicitQuality ( S, R_2, IE_2, IQ_2, Y_2, Y_P_2, Y_I_2, iII )
 
         if (     any ( IQ_1  ==  S % IMPLICIT_POOR ) &
             .or. any ( IQ_2  ==  S % IMPLICIT_POOR ) ) &
@@ -592,18 +592,20 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine TestImplicitQuality ( S, RD, IE, IQ, Y, Y_P, iII )
+  subroutine TestImplicitQuality ( S, R, IE, IQ, Y, Y_P, Y_I, iII )
 
     class ( Step_RK_CS_CS_Form ), intent ( in ) :: &
       S
     class ( FieldSet_BM_Form ), intent ( inout ) :: &
-      RD  !-- RelativeDifference
+      R  !-- Residual
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       IE  !-- ImplicitError
     integer ( KDI ), dimension ( : ), intent ( inout ) :: &
       IQ  !-- ImplicitQuality
     class ( FieldSet_BM_Form ), intent ( in ) :: &
-      Y, Y_P  !-- Fields for current and previous iterations
+      Y, &    !-- current iteration
+      Y_P, &  !-- previous iteration
+      Y_I     !-- upon entry to implicit solver
     integer ( KDI ), intent ( in ) :: &
       iII  !-- iImplicitIterations
 
@@ -616,7 +618,7 @@ contains
       IQ  =  S % IMPLICIT_UNSET
     end if
 
-    call RD % RelativeDifference ( Y, Y_P )
+    call R % RelativeDifference ( Y, Y_P, Y_I )
 
     do iF  =  1, Y % nFields
 
@@ -628,7 +630,7 @@ contains
       !-- FIXME: Assumes single chart
       select type ( A  =>  S % Atlas )
       class is ( Atlas_SCG_Form )
-        IEV  =  maxval ( RD % Storage_GS % Value ( :, iF ) )
+        IEV  =  maxval ( R % Storage_GS % Value ( :, iF ) )
       class default
         call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
         call Show ( 'Step_RK_CS_CS_Form', 'module', CONSOLE % ERROR )
@@ -636,11 +638,11 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- A
 
-!-- For testing, exclude momentum
-if ( iF == 2 .or. iF == 3 .or. iF == 4 ) then
-  IQV  =  S % IMPLICIT_EXCELLENT
-  cycle
-end if
+! !-- For testing, exclude momentum
+! if ( iF == 2 .or. iF == 3 .or. iF == 4 ) then
+!   IQV  =  S % IMPLICIT_EXCELLENT
+!   cycle
+! end if
 
       if ( IQV  /=  S % IMPLICIT_UNSET )  &
         cycle
