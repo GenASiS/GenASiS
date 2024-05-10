@@ -303,7 +303,8 @@ contains
       FieldUnit ( RM % ENERGY_DENSITY_B, iC ) &
         =  Units_R ( iC ) % EnergyDensity
       FieldUnit ( RM % MOMENTUM_DENSITY_C_U_1, iC ) &
-        =  Units_R ( iC ) % MomentumDensity_U ( 1 )
+!        =  Units_R ( iC ) % MomentumDensity_U ( 1 )
+        =  Units_R ( iC ) % EnergyDensity
       FieldUnit ( RM % MOMENTUM_DENSITY_C_U_2, iC ) &
         =  Units_R ( iC ) % MomentumDensity_U ( 2 )
       FieldUnit ( RM % MOMENTUM_DENSITY_C_U_3, iC ) &

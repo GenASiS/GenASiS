@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( Slope_NM_G_I_I__Form ) Slope_NM_G_I_I__Kernel
+submodule ( Slope_NM_G_I_I_J_N__Form ) Slope_NM_G_I_I_J_N__Kernel
   
   use Basics
   
@@ -31,15 +31,9 @@ contains
 
           S_E   ( iV )  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
                            /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
-          S_S_1 ( iV )  =  ( Xi_H ( iV )  &
-                             -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_2 ( iV )  =  ( Xi_H ( iV )  &
-                             -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_3 ( iV )  =  ( Xi_H ( iV )  &
-                             -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_S_1 ( iV )  =  0.0_KDR
+          S_S_2 ( iV )  =  0.0_KDR
+          S_S_3 ( iV )  =  0.0_KDR
           S_D   ( iV )  =  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
                            /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
 
@@ -73,15 +67,9 @@ contains
 
           S_E   ( iV )  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
                            /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
-          S_S_1 ( iV )  =  ( Xi_H ( iV )  &
-                             -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_2 ( iV )  =  ( Xi_H ( iV )  &
-                             -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-          S_S_3 ( iV )  =  ( Xi_H ( iV )  &
-                             -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
-                           /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+          S_S_1 ( iV )  =  0.0_KDR
+          S_S_2 ( iV )  =  0.0_KDR
+          S_S_3 ( iV )  =  0.0_KDR
           S_D   ( iV )  =  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
                            /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
 
@@ -112,4 +100,4 @@ contains
   end procedure ComputeKernel
 
 
-end submodule Slope_NM_G_I_I__Kernel
+end submodule Slope_NM_G_I_I_J_N__Kernel

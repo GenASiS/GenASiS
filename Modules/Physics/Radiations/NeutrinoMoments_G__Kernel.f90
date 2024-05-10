@@ -774,12 +774,12 @@ contains
     end do
     
     if ( .not. Converge ) then
-      ! call Show ( '>>> Failed to converge Eta', CONSOLE % ERROR )
-      ! call Show ( J, 'J', CONSOLE % ERROR )
-      ! call Show ( N, 'N', CONSOLE % ERROR )
-      ! call Show ( Eta, 'Eta', CONSOLE % ERROR )
-      ! call Show ( AbsolutePrecision, 'AbsolutePrecision', CONSOLE % ERROR )
-      ! call Show ( RelativePrecision, 'RelativePrecision', CONSOLE % ERROR )
+      call Show ( '>>> Failed to converge Eta', CONSOLE % ERROR )
+      call Show ( J, 'J', CONSOLE % ERROR )
+      call Show ( N, 'N', CONSOLE % ERROR )
+      call Show ( Eta, 'Eta', CONSOLE % ERROR )
+      call Show ( AbsolutePrecision, 'AbsolutePrecision', CONSOLE % ERROR )
+      call Show ( RelativePrecision, 'RelativePrecision', CONSOLE % ERROR )
       return
     end if
 

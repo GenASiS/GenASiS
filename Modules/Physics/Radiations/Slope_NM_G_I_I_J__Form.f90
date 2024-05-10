@@ -1,4 +1,4 @@
-module Slope_NM_G_I_I__Form
+module Slope_NM_G_I_I_J__Form
 
   !-- Slope_NeutrinoMoments_Interactions_Implicit__Form
 
@@ -12,7 +12,7 @@ module Slope_NM_G_I_I__Form
   implicit none
   private
 
-  type, public, extends ( Slope_H_Form ) :: Slope_NM_G_I_I_Form
+  type, public, extends ( Slope_H_Form ) :: Slope_NM_G_I_I_J_Form
     integer ( KDI ) :: &
       iEnergy_B, &
       iNumber_B
@@ -28,14 +28,14 @@ module Slope_NM_G_I_I__Form
       Interactions => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_NM_G_I_I
+      InitializeAllocate_NM_G_I_I_J
     generic, public :: &
-      Initialize => InitializeAllocate_NM_G_I_I
+      Initialize => InitializeAllocate_NM_G_I_I_J
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
-  end type Slope_NM_G_I_I_Form
+  end type Slope_NM_G_I_I_J_Form
 
     private :: &
       ComputeSource_F
@@ -47,8 +47,7 @@ module Slope_NM_G_I_I__Form
 
       module subroutine ComputeKernel &
                ( ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J, H_1, H_2, H_3, N, E_F, Y_F, N_F, &
-                 M_DD_11, M_DD_22, M_DD_33, dT, &
+                 J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, dT, &
                  S_E, S_S_1, S_S_2, S_S_3, S_D, UseDeviceOption )
         use Basics
         implicit none
@@ -60,7 +59,6 @@ module Slope_NM_G_I_I__Form
           J, &
           H_1, H_2, H_3, &
           N, &
-          E_F, Y_F, N_F, &
           M_DD_11, M_DD_22, M_DD_33
         real ( KDR ), intent ( in ) :: &
           dT
@@ -78,9 +76,9 @@ module Slope_NM_G_I_I__Form
 contains
 
 
-  subroutine InitializeAllocate_NM_G_I_I ( S, R )
+  subroutine InitializeAllocate_NM_G_I_I_J ( S, R )
 
-    class ( Slope_NM_G_I_I_Form ), intent ( inout ) :: &
+    class ( Slope_NM_G_I_I_J_Form ), intent ( inout ) :: &
       S
     class ( NeutrinoMoments_G_Form ), intent ( in ), target :: &
       R
@@ -89,7 +87,7 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Slope_NM_G_I_I' 
+      S % Type  =  'a Slope_NM_G_I_I_J' 
     
     Name  =  trim ( R % Name ) // '_Slp_NM_I'
 
@@ -102,8 +100,8 @@ contains
     !   S % Interactions  =>  I
     ! class default
     !   call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
-    !   call Show ( 'Slope_NM_G_I_I__Form', 'module', CONSOLE % ERROR )
-    !   call Show ( 'InitializeAllocate_NM_G_I_I', 'subroutine', CONSOLE % ERROR )
+    !   call Show ( 'Slope_NM_G_I_I_J__Form', 'module', CONSOLE % ERROR )
+    !   call Show ( 'InitializeAllocate_NM_G_I_I_J', 'subroutine', CONSOLE % ERROR )
     !   call PROGRAM_HEADER % Abort ( )
     ! end select
 
@@ -128,12 +126,12 @@ contains
              nFieldsOption = R % nBalanced, &
              IgnorabilityOption = R % IGNORABILITY + 1 )
 
-  end subroutine InitializeAllocate_NM_G_I_I
+  end subroutine InitializeAllocate_NM_G_I_I_J
 
 
   subroutine Compute ( S, dT, T_Option )
 
-    class ( Slope_NM_G_I_I_Form ), intent ( inout ) :: &
+    class ( Slope_NM_G_I_I_J_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       dT
@@ -151,7 +149,7 @@ contains
     if ( .not. associated ( S % Interactions ) ) then
       call Show ( 'Please set Interactions', &
                   CONSOLE % ERROR )
-      call Show ( 'Slope_NM_G_I_I__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Slope_NM_G_I_I_J__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -159,8 +157,6 @@ contains
     associate &
       (  I  =>  S % Interactions, &
          R  =>  S % Radiation )
-    select type ( F  =>  R % Fluid )
-      class is ( Fluid_P_HN_Form )
 
     call I % Compute ( )
 
@@ -171,7 +167,6 @@ contains
       associate &
         ( IV  =>  I % Storage ( iC ) % Value, &
           RV  =>  R % Storage ( iC ) % Value, &
-          FV  =>  F % Storage ( iC ) % Value, &
           SV  =>  S % Storage ( iC ) % Value )
       associate &
         (  Xi_J  =>  IV ( :, I % EMISSIVITY_J ), &
@@ -185,9 +180,6 @@ contains
             H_2  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_2 ), &
             H_3  =>  RV ( :, R % MOMENTUM_DENSITY_C_U_3 ), &
             N    =>  RV ( :, R % NUMBER_DENSITY_C ), &
-            E_F  =>  FV ( :, F % ENERGY_DENSITY_C ), &
-            Y_F  =>  FV ( :, F % ELECTRON_FRACTION ), &
-            N_F  =>  FV ( :, F % BARYON_DENSITY_C ), &
           S_E    =>  SV ( :, S % iEnergy_B ), &
           S_S_1  =>  SV ( :, S % iMomentum_B ( 1 ) ), &
           S_S_2  =>  SV ( :, S % iMomentum_B ( 2 ) ), &
@@ -206,8 +198,7 @@ contains
 
         call ComputeKernel &
                ( C % ProperCell, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J, H_1, H_2, H_3, N, E_F, Y_F, N_F, &
-                 M_DD_11, M_DD_22, M_DD_33, dT, &
+                 J, H_1, H_2, H_3, N, M_DD_11, M_DD_22, M_DD_33, dT, &
                  S_E, S_S_1, S_S_2, S_S_3, S_D, &
                  UseDeviceOption = S % DeviceMemory )
 
@@ -216,7 +207,7 @@ contains
 
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
-        call Show ( 'Slope_NM_G_I_I__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Slope_NM_G_I_I_J__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- G
@@ -226,13 +217,12 @@ contains
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Slope_NM_G_I_I__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Slope_NM_G_I_I_J__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- C
     end do !-- iC
 
-    end select !-- F
     end associate !-- I, etc.
 
     if ( associated ( S % Communicator_X_1D ) ) then
@@ -244,7 +234,7 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Slope_NM_G_I_I_Form ), intent ( inout ) :: &
+    type ( Slope_NM_G_I_I_J_Form ), intent ( inout ) :: &
       S
 
     nullify ( S % Interactions )
@@ -260,7 +250,7 @@ contains
 
   subroutine ComputeSource_F ( S )
 
-    class ( Slope_NM_G_I_I_Form ), intent ( inout ) :: &
+    class ( Slope_NM_G_I_I_J_Form ), intent ( inout ) :: &
       S
 
     integer ( KDI ) :: &
@@ -399,4 +389,4 @@ contains
   end subroutine ComputeSource_F
 
 
-end module Slope_NM_G_I_I__Form
+end module Slope_NM_G_I_I_J__Form

@@ -1,6 +1,8 @@
 RADIATIONS = \
   Radiations.o \
   Slope_NM_G_DFV_I__Form.o \
+  Slope_NM_G_I_I_J_N__Kernel.o \
+  Slope_NM_G_I_I_J_N__Form.o \
   Slope_NM_G_I_I__Kernel.o \
   Slope_NM_G_I_I__Form.o \
   Slope_NM_G_I__Kernel.o \

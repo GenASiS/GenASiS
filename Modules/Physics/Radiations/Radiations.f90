@@ -15,6 +15,7 @@ module Radiations
   use DivergencePart_NM_G__Form
   use Slope_NM_G_I__Form
   use Slope_NM_G_I_I__Form
+  use Slope_NM_G_I_I_J_N__Form
   use Slope_NM_G_DFV_I__Form
 
 end module Radiations

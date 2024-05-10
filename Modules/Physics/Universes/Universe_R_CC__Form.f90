@@ -87,6 +87,7 @@ module Universe_R_CC__Form
       SetSlope_F_P_DFV_N_SS, &
       SetSlope_NM_G_I, &
       SetSlope_NM_G_I_I, &
+      SetSlope_NM_G_I_I_J_N, &
       SetSlope_NM_G_DFV_I
 
       private :: &
@@ -652,7 +653,8 @@ contains
 
       if ( ImplicitExplicit ) then
         !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
-        S_R % SetSlopeImplicit  =>  SetSlope_NM_G_I_I
+        S_R % SetSlopeImplicitIterate  =>  SetSlope_NM_G_I_I_J_N
+        S_R % SetSlopeImplicit         =>  SetSlope_NM_G_I_I
       else
         S_R % SetSlopeExplicit  =>  SetSlope_NM_G_DFV_I
       end if
@@ -677,8 +679,9 @@ contains
       end if        
 
       if ( ImplicitExplicit ) then
-        S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N
-        S_F % SetSlopeImplicit  =>  SetSlope_F_P_SS
+        S_F % SetSlopeExplicit         =>  SetSlope_F_P_DFV_N
+        S_F % SetSlopeImplicitIterate  =>  SetSlope_F_P_SS
+        S_F % SetSlopeImplicit         =>  SetSlope_F_P_SS
       else
         S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N_SS
       end if
@@ -1099,10 +1102,13 @@ contains
     Factor  =  1.0_KDR
     if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
-    else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
+call Show ( '>>> Fluid Energy POOR' )
+call Show ( I % iCycle, '>>> iCycle' )
+call Show ( I % dT, I % Unit_T, '>>> dT' )
+    ! else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
     else if ( all ( IQ_E  ==  S % IMPLICIT_EXCELLENT ) ) then
       Factor  =  FactorExcellent
     end if
@@ -1157,10 +1163,13 @@ contains
     Factor  =  1.0_KDR
     if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
-    else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
-      Factor  =  FactorFair
-    else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
-      Factor  =  FactorGood
+call Show ( '>>> Fluid Number POOR' )
+call Show ( I % iCycle, '>>> iCycle' )
+call Show ( I % dT, I % Unit_T, '>>> dT' )
+    ! else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
+    !   Factor  =  FactorFair
+    ! else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
+    !   Factor  =  FactorGood
     else if ( all ( IQ_N  ==  S % IMPLICIT_EXCELLENT ) ) then
       Factor  =  FactorExcellent
     end if
@@ -1220,6 +1229,9 @@ contains
     Factor  =  1.0_KDR
     if ( any ( IQ_E  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
+call Show ( '>>> Radiation Energy POOR' )
+call Show ( I % iCycle, '>>> iCycle' )
+call Show ( I % dT, I % Unit_T, '>>> dT' )
     ! else if ( any ( IQ_E  ==  S % IMPLICIT_FAIR ) ) then
     !   Factor  =  FactorFair
     ! else if ( any ( IQ_E  ==  S % IMPLICIT_GOOD ) ) then
@@ -1276,6 +1288,9 @@ contains
     Factor  =  1.0_KDR
     if ( any ( IQ_N  ==  S % IMPLICIT_POOR ) ) then
       Factor  =  FactorPoor
+call Show ( '>>> Radiation Number POOR' )
+call Show ( I % iCycle, '>>> iCycle' )
+call Show ( I % dT, I % Unit_T, '>>> dT' )
     ! else if ( any ( IQ_N  ==  S % IMPLICIT_FAIR ) ) then
     !   Factor  =  FactorFair
     ! else if ( any ( IQ_N  ==  S % IMPLICIT_GOOD ) ) then
@@ -1897,6 +1912,56 @@ contains
     end select !-- S
 
   end subroutine SetSlope_NM_G_I_I
+
+
+  subroutine SetSlope_NM_G_I_I_J_N ( S, K )
+
+    class ( Step_RK_H_Form ), intent ( in ) :: &
+      S
+    class ( Slope_H_Form ), intent ( out ), allocatable :: &
+      K
+
+    select type ( S )
+      class is ( Step_RK_CS_Form )
+
+    allocate ( Slope_NM_G_I_I_J_N_Form :: K )
+    select type ( K )
+      class is ( Slope_NM_G_I_I_J_N_Form )
+    select type ( R  =>  S % CurrentSet )
+      class is ( NeutrinoMoments_G_Form )
+
+!     select type ( I  =>  R % Interactions )
+!     class is ( Interactions_BM_Form )
+! call Show ( '>>> Interactions_BM SetSlope_NM_G_I_I_J_N' )
+!     end select
+
+!     select type ( I  =>  R % Interactions )
+!     type is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G SetSlope_NM_G_I_I_J_N' )
+!     end select
+
+!     select type ( I  =>  UNIVERSE % Interactions_NM_G )
+!     class is ( Interactions_NM_G_Form )
+! call Show ( '>>> Interactions_NM_G SetSlope_NM_G_I_I_J_N UNIVERSE' )
+!     end select
+
+    call K % Initialize &
+           ( R )!, &
+!             IgnorabilityOption = S % IGNORABILITY )
+
+    !-- FIXME: This is a workaround because the correct type of 
+    !          R % Interactions is not being recognized in K % Initialize
+    K % Interactions  =>  UNIVERSE % Interactions_NM_G
+    select type ( I  =>  UNIVERSE % Integrator )
+    class is ( Integrator_CS_1D_BM_CS_Form )
+      K % Communicator_X_1D  =>  I % Communicator_X_1D
+    end select !-- I
+
+    end select !-- R
+    end select !-- K
+    end select !-- S
+
+  end subroutine SetSlope_NM_G_I_I_J_N
 
 
   subroutine SetSlope_NM_G_DFV_I ( S, K )
