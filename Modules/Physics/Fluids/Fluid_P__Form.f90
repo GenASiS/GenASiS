@@ -128,8 +128,8 @@ module Fluid_P__Form
 
     module subroutine Compute_N_V_E_G_S_Kernel &
              ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, iV, N, V_1, V_2, V_3, E, UseDeviceOption )
-      !-- Compute_DensityC_Velocity_EnergyC_Galileo_All_Kernel
+               N_Min, E_Min, iV, N, V_1, V_2, V_3, E )
+      !-- Compute_DensityC_Velocity_EnergyC_Galileo_Single_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -148,8 +148,6 @@ module Fluid_P__Form
         N, &
         V_1, V_2, V_3, &
         E
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
     end subroutine Compute_N_V_E_G_S_Kernel
 
     module subroutine Compute_ES_G_Kernel &

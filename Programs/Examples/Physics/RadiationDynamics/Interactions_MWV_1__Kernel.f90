@@ -48,19 +48,9 @@ contains
 
   module procedure ComputeSingleKernel
 
-    logical ( KDL ) :: &
-      UseDevice      
-          
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-      
-    if ( UseDevice ) then
-    else
-       Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  J_Eq ( iV )
-      Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
-      Chi_H ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
-    end if
+     Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  J_Eq ( iV )
+    Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
+    Chi_H ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
 
   end procedure ComputeSingleKernel
 

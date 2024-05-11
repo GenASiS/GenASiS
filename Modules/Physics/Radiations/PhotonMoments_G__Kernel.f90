@@ -56,19 +56,10 @@ contains
 
     real ( KDR ) :: &
       a
-    logical ( KDL ) :: &
-      UseDevice      
-          
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
       
     a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
 
-    if ( UseDevice ) then
-    else
-      T_R ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
-    end if
+    T_R ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
 
   end procedure Compute_SP_S_Kernel
 
@@ -128,23 +119,14 @@ contains
     real ( KDR ) :: &
       SqrtTiny, &
       a
-    logical ( KDL ) :: &
-      UseDevice      
-          
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
       
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
 
-    if ( UseDevice ) then
-    else
-      J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
-      J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
-                       /  max ( SqrtTiny, J_Eq ( iV ) )
-    end if
+    J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+    J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                     /  max ( SqrtTiny, J_Eq ( iV ) )
 
   end procedure Compute_Eq_S_Kernel
 

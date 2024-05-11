@@ -24,7 +24,8 @@ module Interactions_MWV_1__Form
   end type Interactions_MWV_1_Form
 
     private :: &
-      ComputeAllKernel
+      ComputeAllKernel, &
+      ComputeSingleKernel
 
   interface
 

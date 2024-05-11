@@ -36,7 +36,8 @@ module Interactions_BM__Form
     procedure, private, pass :: &
       ComputeSingle
     generic, public :: &
-      Compute  =>  ComputeAll, ComputeSingle
+      Compute  =>  ComputeAll, &
+                   ComputeSingle
     final :: &
       Finalize
   end type Interactions_BM_Form

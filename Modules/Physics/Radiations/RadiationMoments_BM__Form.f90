@@ -80,7 +80,8 @@ module RadiationMoments_BM__Form
     procedure, private, pass :: &
       ComputeEquilibriumSingle
     generic, public :: &
-      ComputeEquilibrium => ComputeEquilibriumAll, ComputeEquilibriumSingle
+      ComputeEquilibrium => ComputeEquilibriumAll, &
+                            ComputeEquilibriumSingle
     procedure, public, pass ( RM ) :: &
       SetFluidVelocity
     final :: &
@@ -142,7 +143,7 @@ module RadiationMoments_BM__Form
       module subroutine Compute_J_H_G_S_Kernel &
                  ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, SF_RD, & !RM, &
                    M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
-                   V_1, V_2, V_3, iV, UseDeviceOption )
+                   V_1, V_2, V_3, iV )
         !-- Compute_ComovingEnergy_Momentum_Galileo_Single_Kernel
         use Basics
         implicit none
@@ -161,8 +162,6 @@ module RadiationMoments_BM__Form
           V_1, V_2, V_3
         integer ( KDI ), intent ( in ) :: &
           iV
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
       end subroutine Compute_J_H_G_S_Kernel
 
       module subroutine Compute_ES_G_Kernel &
@@ -699,7 +698,7 @@ contains
       call Compute_J_H_G_S_Kernel &
              ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, SF_RD, & !RM, &
                M_DD_11, M_DD_22, M_DD_33, M_UU_11, M_UU_22, M_UU_33, &
-               V_1, V_2, V_3, iV, UseDeviceOption = CS % DeviceMemory )
+               V_1, V_2, V_3, iV )
 
       end associate !-- M_DD_11, etc.
       end associate !-- GSV

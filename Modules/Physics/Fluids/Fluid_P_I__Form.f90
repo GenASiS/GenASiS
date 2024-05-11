@@ -113,7 +113,7 @@ module Fluid_P_I__Form
 
     module subroutine Apply_EOS_I_E_S_Kernel &
              ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
-               iV, UseDeviceOption )
+               iV )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         M, &
@@ -133,8 +133,6 @@ module Fluid_P_I__Form
         P0
       integer ( KDI ), intent ( in ) :: &
         iV
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
     end subroutine Apply_EOS_I_E_S_Kernel
 
  end interface
@@ -689,8 +687,7 @@ contains
 
       call CS % Compute_N_V_E_G_S_Kernel &
              ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, iV, N, V_1, V_2, V_3, E, &
-               UseDeviceOption = CS % DeviceMemory )
+               N_Min, E_Min, iV, N, V_1, V_2, V_3, E )
 
       end associate !-- M_UU_11, etc.
       end associate !-- GSV
@@ -704,7 +701,7 @@ contains
 
     call Apply_EOS_I_E_S_Kernel &
            ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
-             N_0, P_0, iV, UseDeviceOption = CS % DeviceMemory )
+             N_0, P_0, iV )
 
     end associate !-- M, etc.
     end associate !-- CSV, etc.

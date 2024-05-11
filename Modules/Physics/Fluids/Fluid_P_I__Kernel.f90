@@ -156,34 +156,21 @@ contains
 
   module procedure Apply_EOS_I_E_S_Kernel
 
-    logical ( KDL ) :: &
-      UseDevice
+    M ( iV )  =  M_Ref
 
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
+    if ( N ( iV )  <  N_Min ) &
+      N ( iV )  =  N_Min
+    if ( E ( iV )  <  E_Min ) &
+      E ( iV )  =  E_Min
 
-    if ( UseDevice ) then
-      
-    else
+    P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-      M ( iV )  =  M_Ref
+    T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
 
-      if ( N ( iV )  <  N_Min ) &
-        N ( iV )  =  N_Min
-      if ( E ( iV )  <  E_Min ) &
-        E ( iV )  =  E_Min
+    SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                *  ( N0 / N ( iV ) ) ** Gamma ) 
 
-      P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
-
-      T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
-
-      SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                  *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-      SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-    end if
+    SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
   end procedure Apply_EOS_I_E_S_Kernel
 

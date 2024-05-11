@@ -72,7 +72,8 @@ module CurrentSet_Form
     procedure, private, pass :: &
       ComputeFromBalancedSingle
     generic, public :: &
-      ComputeFromBalanced => ComputeFromBalancedAll, ComputeFromBalancedSingle
+      ComputeFromBalanced => ComputeFromBalancedAll, &
+                             ComputeFromBalancedSingle
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
     procedure, private, pass :: &

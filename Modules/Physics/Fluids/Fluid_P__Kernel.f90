@@ -169,39 +169,26 @@ contains
 
     !-- Compute_DensityC_Velocity_EnergyC_Galileo_Single
 
-    logical ( KDL ) :: &
-      UseDevice
-
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    if ( UseDevice ) then
-
-    else
-
-      if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
-        D   ( iV )  =  N_Min
-        S_1 ( iV )  =  0.0_KDR
-        S_2 ( iV )  =  0.0_KDR
-        S_3 ( iV )  =  0.0_KDR
-        G   ( iV )  =  E_Min
-      end if
-
-      N ( iV )    =  D ( iV )
-
-      V_1 ( iV )  =  M_UU_11 ( iV )  &
-                     *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
-      V_2 ( iV )  =  M_UU_22 ( iV )  &
-                     *  S_2 ( iV )  /  ( M ( iV )  *  D ( iV ) )
-      V_3 ( iV )  =  M_UU_33 ( iV )  &
-                     *  S_3 ( iV )  /  ( M ( iV )  *  D ( iV ) )
-
-      E ( iV )    =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                              +  S_2 ( iV ) * V_2 ( iV ) &
-                                              +  S_3 ( iV ) * V_3 ( iV ) )
-
+    if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
+      D   ( iV )  =  N_Min
+      S_1 ( iV )  =  0.0_KDR
+      S_2 ( iV )  =  0.0_KDR
+      S_3 ( iV )  =  0.0_KDR
+      G   ( iV )  =  E_Min
     end if
+
+    N ( iV )    =  D ( iV )
+
+    V_1 ( iV )  =  M_UU_11 ( iV )  &
+                   *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+    V_2 ( iV )  =  M_UU_22 ( iV )  &
+                   *  S_2 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+    V_3 ( iV )  =  M_UU_33 ( iV )  &
+                   *  S_3 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+
+    E ( iV )    =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
 
   end procedure Compute_N_V_E_G_S_Kernel
 

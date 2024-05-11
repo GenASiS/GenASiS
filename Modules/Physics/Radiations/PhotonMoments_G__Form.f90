@@ -42,7 +42,9 @@ module PhotonMoments_G__Form
 
     private :: &
       Compute_SP_A_Kernel, &
-      Compute_Eq_A_Kernel
+      Compute_SP_S_Kernel, &
+      Compute_Eq_A_Kernel, &
+      Compute_Eq_S_Kernel
     
     interface
 
@@ -58,7 +60,7 @@ module PhotonMoments_G__Form
           UseDeviceOption
       end subroutine Compute_SP_A_Kernel
  
-      module subroutine Compute_SP_S_Kernel ( T_R, J, iV, UseDeviceOption )
+      module subroutine Compute_SP_S_Kernel ( T_R, J, iV )
         !-- Compute_SpectralParameters_Single_Kernel
         use Basics
         implicit none
@@ -68,8 +70,6 @@ module PhotonMoments_G__Form
           J
         integer ( KDI ), intent ( in ) :: &
           iV
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
       end subroutine Compute_SP_S_Kernel
  
       module subroutine Compute_Eq_A_Kernel &
@@ -87,7 +87,7 @@ module PhotonMoments_G__Form
       end subroutine Compute_Eq_A_Kernel
 
       module subroutine Compute_Eq_S_Kernel &
-               ( J_Eq, J_RD, J, T, iV, UseDeviceOption )
+               ( J_Eq, J_RD, J, T, iV )
         !-- Compute_Equilibrium_Single_Kernel
         use Basics
         implicit none
@@ -98,8 +98,6 @@ module PhotonMoments_G__Form
           T
         integer ( KDI ), intent ( in ) :: &
           iV
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
       end subroutine Compute_Eq_S_Kernel
 
     end interface
@@ -306,8 +304,7 @@ contains
         T     =>   FV ( :,  F % TEMPERATURE ) )
              
     call Compute_Eq_S_Kernel &
-           ( J_Eq, J_RD, J, T, iV, &
-             UseDeviceOption = RM % DeviceMemory )
+           ( J_Eq, J_RD, J, T, iV )
 
     end associate !-- T_R, etc.
     end associate !-- RV, etc.
@@ -364,9 +361,7 @@ contains
       ( T_R  =>  RMV ( :, RM % TEMPERATURE_GREY ), &
         J    =>  RMV ( :, RM % ENERGY_DENSITY_C ) )
              
-    call Compute_SP_S_Kernel &
-           ( T_R, J, iV, &
-             UseDeviceOption  =  RM % DeviceMemory )
+    call Compute_SP_S_Kernel ( T_R, J, iV )
 
     end associate !-- T_R, etc.
     end associate !-- RV, etc.
