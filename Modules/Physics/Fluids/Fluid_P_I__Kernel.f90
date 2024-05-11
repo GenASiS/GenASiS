@@ -83,7 +83,7 @@ contains
   end procedure Apply_EOS_I_T_Kernel
 
 
-  module procedure Apply_EOS_I_E_Kernel
+  module procedure Apply_EOS_I_E_A_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -151,7 +151,41 @@ contains
     
     end if
 
-  end procedure Apply_EOS_I_E_Kernel
+  end procedure Apply_EOS_I_E_A_Kernel
+
+
+  module procedure Apply_EOS_I_E_S_Kernel
+
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    if ( UseDevice ) then
+      
+    else
+
+      M ( iV )  =  M_Ref
+
+      if ( N ( iV )  <  N_Min ) &
+        N ( iV )  =  N_Min
+      if ( E ( iV )  <  E_Min ) &
+        E ( iV )  =  E_Min
+
+      P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
+
+      T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
+
+      SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                  *  ( N0 / N ( iV ) ) ** Gamma ) 
+
+      SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+
+    end if
+
+  end procedure Apply_EOS_I_E_S_Kernel
 
 
 end submodule Fluid_P_I__Kernel

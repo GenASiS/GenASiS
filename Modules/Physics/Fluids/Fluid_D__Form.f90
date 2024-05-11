@@ -60,8 +60,8 @@ module Fluid_D__Form
       ComputeFromInitial
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, public, pass :: &
-      ComputeFromBalanced
+    procedure, private, pass :: &
+      ComputeFromBalancedAll
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
     final :: &
@@ -71,7 +71,7 @@ module Fluid_D__Form
     private :: &
       Compute_M_Kernel, &
       Compute_D_S_G_Kernel, &
-      Compute_N_V_G_Kernel, &
+      Compute_N_V_G_A_Kernel, &
       Compute_ES_G_Kernel
 
   interface
@@ -110,10 +110,10 @@ module Fluid_D__Form
         UseDeviceOption
     end subroutine Compute_D_S_G_Kernel 	 	 
 
-    module subroutine Compute_N_V_G_Kernel &
+    module subroutine Compute_N_V_G_A_Kernel &
              ( D, S_1, S_2, S_3, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
                N, V_1, V_2, V_3, UseDeviceOption )
-      !-- Compute_DensityC_Velocity_Galileo_Kernel
+      !-- Compute_DensityC_Velocity_Galileo_All_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -129,7 +129,7 @@ module Fluid_D__Form
         V_1, V_2, V_3
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Compute_N_V_G_Kernel
+    end subroutine Compute_N_V_G_A_Kernel
 
     module subroutine Compute_ES_G_Kernel &
              ( V_Dim, EF_P, EF_M, UseDeviceOption )
@@ -552,7 +552,7 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       CS
@@ -564,7 +564,7 @@ contains
     type ( TimerForm ), pointer :: &
       T_K
 
-    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromBalancedAll', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     if ( present ( T_Option ) ) then
@@ -604,7 +604,7 @@ contains
             M_UU_22  =>  GSV ( :, G % METRIC_F_UU_22 ), &
             M_UU_33  =>  GSV ( :, G % METRIC_F_UU_33 ) )
 
-        call Compute_N_V_G_Kernel &
+        call Compute_N_V_G_A_Kernel &
                ( D, S_1, S_2, S_3, M, M_UU_11, M_UU_22, M_UU_33, N_Min, &
                  N, V_1, V_2, V_3, UseDeviceOption = CS % DeviceMemory )
 
@@ -614,7 +614,7 @@ contains
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
         call Show ( 'Fluid_D__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- G
 
@@ -627,7 +627,7 @@ contains
     end do !-- iC
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-  end subroutine ComputeFromBalanced
+  end subroutine ComputeFromBalancedAll
 
 
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )

@@ -105,6 +105,8 @@ contains
              nFieldsOption = nFieldsOption, &
              IgnorabilityOption = IgnorabilityOption )
 
+   call R % SetInteractions ( I )
+
   end subroutine InitializeAllocate_I
 
 

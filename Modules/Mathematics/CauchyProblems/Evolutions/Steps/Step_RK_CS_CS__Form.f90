@@ -121,7 +121,7 @@ contains
 
     !-- Storage used in implicit solver
 
-    S % MaxImplicitIterations  =  20
+    S % MaxImplicitIterations  =  50
     call PROGRAM_HEADER % GetParameter &
            ( S % MaxImplicitIterations, 'MaxImplicitIterations' )
 

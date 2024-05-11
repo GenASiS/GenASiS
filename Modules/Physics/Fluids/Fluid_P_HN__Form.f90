@@ -60,8 +60,8 @@ module Fluid_P_HN__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, public, pass :: &
-      ComputeFromBalanced
+    procedure, private, pass :: &
+      ComputeFromBalancedAll
     final :: &
       Finalize
 !     procedure, public, pass ( C ) :: &
@@ -726,7 +726,7 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option )
 
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       CS
@@ -739,7 +739,7 @@ contains
       T_G, &
       T_K
 
-    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromBalancedAll', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     if ( present ( T_Option ) ) then
@@ -804,7 +804,7 @@ contains
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
         call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
 
@@ -832,7 +832,7 @@ contains
     end do !-- iC
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-  end subroutine ComputeFromBalanced
+  end subroutine ComputeFromBalancedAll
 
 
   impure elemental subroutine Finalize ( F )

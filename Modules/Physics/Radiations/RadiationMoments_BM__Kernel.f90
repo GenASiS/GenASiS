@@ -137,9 +137,9 @@ contains
   end procedure Compute_E_S_G_Kernel
 
 
-  module procedure Compute_J_H_G_Kernel
+  module procedure Compute_J_H_G_A_Kernel
 
-    !-- Compute_ComovingEnergy_Momentum_Galileo_Kernel
+    !-- Compute_ComovingEnergy_Momentum_Galileo_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -384,7 +384,133 @@ contains
 
     end if
 
-  end procedure Compute_J_H_G_Kernel
+  end procedure Compute_J_H_G_A_Kernel
+
+
+  module procedure Compute_J_H_G_S_Kernel
+
+    !-- Compute_ComovingEnergy_Momentum_Galileo_Single_Kernel
+
+    real ( KDR ) :: &
+      H, &
+      SqrtTiny
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    if ( UseDevice ) then
+
+    else 
+
+      if ( E ( iV )  >  0.0_KDR ) then
+
+        ! call ComputeComovingNonlinearSolve &
+        !        ( J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), FF ( iV ), &
+        !          SF ( iV ), E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
+        !          M_DD_22 ( iV ), M_DD_33 ( iV ), M_UU_22 ( iV ), &
+        !          M_UU_33 ( iV ), V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
+        !          Success, Delta_J_J, Delta_H_H )
+        ! if ( .not. Success ) then
+        !   call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
+        !   call Show ( RM % Name, '>>> Species', CONSOLE % ERROR )
+        !   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+        !               CONSOLE % ERROR )
+        !   call Show ( iV, '>>> iV', CONSOLE % ERROR )
+        !   call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+        !   call Show ( H_1 ( iV ), '>>> H_1', CONSOLE % ERROR )
+        !   call Show ( H_2 ( iV ), '>>> H_2', CONSOLE % ERROR )
+        !   call Show ( H_3 ( iV ), '>>> H_3', CONSOLE % ERROR )
+        !   call Show ( Delta_J_J, '>>> Delta_J_J', CONSOLE % ERROR )
+        !   call Show ( Delta_H_H, '>>> Delta_H_H', CONSOLE % ERROR )
+        ! end if
+
+        !-- FIXME: Do solve above
+
+        J ( iV )  =  max ( E ( iV ), SqrtTiny )
+        
+        H_1 ( iV )  =  M_UU_11 ( iV )  *  S_1 ( iV )
+        H_2 ( iV )  =  M_UU_22 ( iV )  *  S_2 ( iV )
+        H_3 ( iV )  =  M_UU_33 ( iV )  *  S_3 ( iV )          
+
+        !-- Moment factors ( Minerbo SF )
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+        FF ( iV )  =  H  /  J ( iV )
+
+        SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                      +  2.0_KDR / 3.0_KDR &
+                         *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                              * ( 3.0_KDR  -  FF ( iV )  &
+                                  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+      else
+
+        J   ( iV )  =  SqrtTiny
+        H_1 ( iV )  =  0.0_KDR
+        H_2 ( iV )  =  0.0_KDR
+        H_3 ( iV )  =  0.0_KDR
+        E   ( iV )  =  SqrtTiny
+        S_1 ( iV )  =  0.0_KDR
+        S_2 ( iV )  =  0.0_KDR
+        S_3 ( iV )  =  0.0_KDR
+        FF  ( iV )  =  0.0_KDR
+        SF  ( iV )  =  1.0_KDR / 3.0_KDR
+
+        return
+
+      end if
+
+      SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                       / ( 1.0_KDR / 3.0_KDR )
+
+      H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                   +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                   +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+      
+      if ( H  >  J ( iV ) ) then
+
+        H_1 ( iV )  =  ( H_1 ( iV )  /  H )  *  J ( iV )
+        H_2 ( iV )  =  ( H_2 ( iV )  /  H )  *  J ( iV )
+        H_3 ( iV )  =  ( H_3 ( iV )  /  H )  *  J ( iV )
+
+        H  =  sqrt (    M_DD_11 ( iV )  *  H_1 ( iV ) ** 2  &
+                     +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                     +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+
+        !-- Moment factors ( Minerbo SF )
+
+        FF ( iV )  =  H  /  J ( iV )
+
+        SF ( iV )  =  1.0_KDR / 3.0_KDR &
+                      +  2.0_KDR / 3.0_KDR &
+                         *  ( FF ( iV ) ** 2  /  5.0_KDR  &
+                              * ( 3.0_KDR  -  FF ( iV )  &
+                                  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
+
+        SF_RD ( iV )  =  abs ( SF ( iV )  -  1.0_KDR / 3.0_KDR )  &
+                         / ( 1.0_KDR / 3.0_KDR )
+
+        !-- FIXME: Add velocity dependence
+
+        E ( iV )  =  J ( iV )
+
+        S_1 ( iV )  =  M_DD_11 ( iV )  *  H_1 ( iV )
+        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
+        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+      end if
+
+    end if
+
+  end procedure Compute_J_H_G_S_Kernel
 
 
   module procedure Compute_ES_G_Kernel

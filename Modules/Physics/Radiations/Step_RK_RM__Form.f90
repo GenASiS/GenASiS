@@ -4,6 +4,7 @@ module Step_RK_RM__Form
 
   use Basics
   use Mathematics
+  use Gravitations
   use Fluids
   use RadiationMoments_BM__Form
   use Interactions_BM__Form
@@ -12,6 +13,9 @@ module Step_RK_RM__Form
   private
 
   type, public, extends ( Step_RK_CS_CS_Form ) :: Step_RK_RM_Form
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Residual_R_E, &
+      Residual_F_E
   contains
     procedure, private, pass :: &
       Initialize_CS_CS
@@ -47,6 +51,11 @@ contains
     call S % Step_RK_CS_CS_Form % Initialize &
            ( CS_1, CS_2, NameOption, ImplicitExplicitOption, nStagesOption )
 
+    allocate ( S % Residual_R_E ( S % MaxImplicitIterations ) )
+    allocate ( S % Residual_F_E ( S % MaxImplicitIterations ) )
+    S % Residual_R_E  =  0.0_KDR
+    S % Residual_F_E  =  0.0_KDR
+
   end subroutine Initialize_CS_CS
 
 
@@ -54,6 +63,11 @@ contains
 
     type ( Step_RK_RM_Form ), intent ( inout ) :: &
       S
+
+    if ( allocated ( S % Residual_F_E ) ) &
+      deallocate ( S % Residual_F_E )
+    if ( allocated ( S % Residual_R_E ) ) &
+      deallocate ( S % Residual_R_E )
 
   end subroutine Finalize
 
@@ -98,13 +112,15 @@ contains
     select type ( I  =>  R % Interactions )
       class is ( Interactions_BM_Form )
     associate &
-      ( Y_I_R   =>  S_R % Intermediate, &
-        Y_I_F   =>  S_F % Intermediate, &
-         KK_R   =>  S_R % SlopeStageImplicit ( iS ) % Element, &
-         KK_F   =>  S_F % SlopeStageImplicit ( iS ) % Element, &
-         AA     =>  S_R % AA ( iS ) % Value ( iS ), &
-         Tol    =>  S   % ImplicitTolerance, &
-         Max_I  =>  S   % MaxImplicitIterations )
+      ( Y_I_R     =>  S_R % Intermediate, &
+        Y_I_F     =>  S_F % Intermediate, &
+         KK_R     =>  S_R % SlopeStageImplicit ( iS ) % Element, &
+         KK_F     =>  S_F % SlopeStageImplicit ( iS ) % Element, &
+         AA       =>  S_R % AA ( iS ) % Value ( iS ), &
+         Tol      =>  S   % ImplicitTolerance, &
+         Max_I    =>  S   % MaxImplicitIterations, &
+         Res_R_E  =>  S   % Residual_R_E, &
+         Res_F_E  =>  S   % Residual_F_E )
 
     call Search &
            ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
@@ -169,79 +185,145 @@ contains
           KK_F_S_3    =>  KK_F_V ( :, iMomentum_F ( 3 ) ), &
           ProperCell  =>  C % ProperCell )
 
-      nV  =  size ( ProperCell )
+      select type ( G  =>  R % Geometry )
+      class is ( Gravitation_G_Form )
 
-      do iV = 1, nV
-        if ( ProperCell ( iV ) ) then      
+        associate &
+          ( GSV  =>  G % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
 
-          iI  =  0
-          Implicit: do 
+        nV  =  size ( ProperCell )
 
-            iI  =  iI + 1
+!call Show ( '>>> Stage' )
+!call Show ( iS, '>>> iS' )
 
-            !-- Compute interactions
+        do iV = 1, nV
+          if ( ProperCell ( iV ) ) then      
 
-            call I % Compute ( iC, iV )
+!if ( iV == 3 ) &
+!  call Show ( iV, '>>> iV' )
 
-            !-- Compute energy updates
+            !-- Iterate radiation and fluid energy to convergence
 
-            KK_R_E ( iV )  &
-              =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+            iI  =  0
+            Implicit: do 
 
-            KK_F_E ( iV )  =  - KK_R_E ( iV )
+              iI  =  iI + 1
 
-            !-- Apply energy updates
+!if ( iV == 3 ) then
+!  call Show ( '>>> Iteration' )
+!  call Show ( iI, '>>> iI' )
+!end if
 
-            E_R ( iV )  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )
-            E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
+              !-- Compute interactions
 
-            !-- Exit test
+              call I % Compute ( iC, iV )
 
-            if ( iI  >  1 ) then
+              !-- Compute energy updates
 
-              dE_R  =  abs ( E_R ( iV )  -  E_R_P )  &
-                       /  max ( abs ( E_R_0 ( iV ) ), SqrtTiny )
-              dE_F  =  abs ( E_F ( iV )  -  E_F_P )  &
-                       /  max ( abs ( E_F_0 ( iV ) ), SqrtTiny )
+              KK_R_E ( iV )  &
+                =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
+                   /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
 
-              if ( dE_R  <  Tol .and. dE_F  <  Tol ) &
-                exit Implicit
+              KK_F_E ( iV )  =  - KK_R_E ( iV )
 
-              if ( iI  ==  Max_I ) then
-                call Show ( 'Max iterations reached', CONSOLE % ERROR )
-                call Show ( iV, 'iV', CONSOLE % ERROR )
-                call Show ( 'Step_RK_RM__Form', 'subroutine', &
-                            CONSOLE % ERROR )
-                call Show ( 'SolveUpdateImplicit', 'subroutine', &
-                            CONSOLE % ERROR )
-                call PROGRAM_HEADER % Abort ( )
+              !-- Apply energy updates
+
+              E_R ( iV )  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )
+              E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
+
+              !-- Exit test
+
+              if ( iI  >  1 ) then
+
+                dE_R  =  abs ( E_R ( iV )  -  E_R_P )  &
+                         /  max ( abs ( E_R_0 ( iV ) ), SqrtTiny )
+                dE_F  =  abs ( E_F ( iV )  -  E_F_P )  &
+                         /  max ( abs ( E_F_0 ( iV ) ), SqrtTiny )
+
+                Res_R_E ( iI )  =  dE_R
+                Res_F_E ( iI )  =  dE_F
+
+!if ( iV == 3 ) then
+!  call Show ( dE_R, '>>> dE_R' )
+!  call Show ( dE_F, '>>> dE_F' )
+!end if
+
+                if ( dE_R  <  Tol .and. dE_F  <  Tol ) then
+!if ( iV == 3 ) then
+!  call Show ( '>>> Solution reached' )
+!  call Show ( iI, '>>> iI' )
+!end if
+                  exit Implicit
+                end if
+
+                if ( iI  ==  Max_I ) then
+                  call Show ( 'Max iterations reached', CONSOLE % ERROR )
+                  call Show ( iV, 'iV', CONSOLE % ERROR )
+                  call Show ( Res_R_E ( : iI ), 'Residual_R_E' )
+                  call Show ( Res_F_E ( : iI ), 'Residual_F_E' )
+                  call Show ( 'Step_RK_RM__Form', 'subroutine', &
+                              CONSOLE % ERROR )
+                  call Show ( 'SolveUpdateImplicit', 'subroutine', &
+                              CONSOLE % ERROR )
+                  call PROGRAM_HEADER % Abort ( )
+                end if
+
               end if
 
-            end if
+              !-- Prepare for next iteration
 
-            !-- Prepare for next iteration
+              E_R_P  =  E_R ( iV )
+              E_F_P  =  E_F ( iV )
 
-            E_R_P  =  E_R ( iV )
-            E_F_P  =  E_F ( iV )
+              call R % ComputeFromBalanced ( iC, iV )
+              call F % ComputeFromBalanced ( iC, iV )
 
-!           FIXME: call EOS
+            end do Implicit
 
-          end do Implicit
+            !--- Momentum update
 
-        else
-          KK_R_E   ( iV )  =  0.0_KDR
-          KK_R_S_1 ( iV )  =  0.0_KDR
-          KK_R_S_2 ( iV )  =  0.0_KDR
-          KK_R_S_3 ( iV )  =  0.0_KDR
-          KK_F_E   ( iV )  =  0.0_KDR
-          KK_F_S_1 ( iV )  =  0.0_KDR
-          KK_F_S_2 ( iV )  =  0.0_KDR
-          KK_F_S_3 ( iV )  =  0.0_KDR
-        end if !-- ProperCell
-      end do !-- iV
+            KK_R_S_1 ( iV )  &
+              =  ( Xi_H ( iV )  &
+                   -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            KK_R_S_2 ( iV )  &
+              =  ( Xi_H ( iV )  &
+                   -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            KK_R_S_3 ( iV )  &
+              =  ( Xi_H ( iV )  &
+                   -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
 
-      !--- Momentum update
+            KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
+            KK_F_S_2 ( iV )  =  - KK_R_S_2 ( iV )
+            KK_F_S_3 ( iV )  =  - KK_R_S_3 ( iV )
+
+          else
+            KK_R_E   ( iV )  =  0.0_KDR
+            KK_R_S_1 ( iV )  =  0.0_KDR
+            KK_R_S_2 ( iV )  =  0.0_KDR
+            KK_R_S_3 ( iV )  =  0.0_KDR
+            KK_F_E   ( iV )  =  0.0_KDR
+            KK_F_S_1 ( iV )  =  0.0_KDR
+            KK_F_S_2 ( iV )  =  0.0_KDR
+            KK_F_S_3 ( iV )  =  0.0_KDR
+          end if !-- ProperCell
+        end do !-- iV
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Step_RK_RM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SolveUpdateImplicit', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- G
 
       end associate !-- Xi_J, etc.
       end associate !-- IntV, etc.

@@ -41,8 +41,8 @@ module NeutrinoMoments_G__Form
       SetStream
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, public, pass :: &
-      ComputeFromBalanced
+    procedure, private, pass :: &
+      ComputeFromBalancedAll
     procedure, private, pass :: &
       ComputeSpectralParametersAll
     procedure, public, pass :: &
@@ -407,7 +407,7 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       CS
@@ -419,7 +419,7 @@ contains
     type ( TimerForm ), pointer :: &
       T_K
 
-    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromBalancedAll', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
 
 !    call CS % SetFluidVelocity ( CS )
@@ -480,7 +480,7 @@ contains
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
         call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- G
 
@@ -490,7 +490,7 @@ contains
     end do !-- iC
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-  end subroutine ComputeFromBalanced
+  end subroutine ComputeFromBalancedAll
 
 
   subroutine ComputeSpectralParametersAll ( RM )

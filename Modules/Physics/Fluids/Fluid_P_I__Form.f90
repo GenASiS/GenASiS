@@ -49,15 +49,17 @@ module Fluid_P_I__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, public, pass :: &
-      ComputeFromBalanced
+    procedure, private, pass :: &
+      ComputeFromBalancedAll
+    procedure, private, pass :: &
+      ComputeFromBalancedSingle
     final :: &
       Finalize
   end type Fluid_P_I_Form
 
     private :: &
       Apply_EOS_I_T_Kernel, &
-      Apply_EOS_I_E_Kernel
+      Apply_EOS_I_E_A_Kernel
       
   interface
   
@@ -85,7 +87,7 @@ module Fluid_P_I__Form
         UseDeviceOption
     end subroutine Apply_EOS_I_T_Kernel
 
-    module subroutine Apply_EOS_I_E_Kernel &
+    module subroutine Apply_EOS_I_E_A_Kernel &
              ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
                UseDeviceOption )
       use Basics
@@ -107,7 +109,33 @@ module Fluid_P_I__Form
         P0
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Apply_EOS_I_E_Kernel
+    end subroutine Apply_EOS_I_E_A_Kernel
+
+    module subroutine Apply_EOS_I_E_S_Kernel &
+             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
+               iV, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M, &
+        N, &
+        E, &
+        P, &
+        T, &
+        SB, &
+        SS
+      real ( KDR ), intent ( in ) :: &
+        M_Ref, &
+        N_Min, &
+        E_Min, &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      integer ( KDI ), intent ( in ) :: &
+        iV
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_E_S_Kernel
 
  end interface
 
@@ -467,7 +495,7 @@ contains
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
           SS   =>  CSV ( :, CS % SOUND_SPEED ) )
 
-      call Apply_EOS_I_E_Kernel &
+      call Apply_EOS_I_E_A_Kernel &
              ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
                N_0, P_0, UseDeviceOption = CS % DeviceMemory )
 
@@ -504,7 +532,7 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option )
 
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       CS
@@ -517,7 +545,7 @@ contains
       T_G, &
       T_K
 
-    call Show ( 'ComputeFromBalanced', CONSOLE % INFO_6 )
+    call Show ( 'ComputeFromBalancedAll', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
 
     if ( present ( T_Option ) ) then
@@ -568,7 +596,7 @@ contains
             M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
             M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
 
-        call CS % Compute_N_V_E_G_Kernel &
+        call CS % Compute_N_V_E_G_A_Kernel &
                ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
                  N_Min, E_Min, N, V_1, V_2, V_3, E, &
                  UseDeviceOption = CS % DeviceMemory )
@@ -579,11 +607,11 @@ contains
       class default
         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
         call Show ( 'Fluid_P_I__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeFromBalanced', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
 
-      call Apply_EOS_I_E_Kernel &
+      call Apply_EOS_I_E_A_Kernel &
              ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
                N_0, P_0, UseDeviceOption = CS % DeviceMemory )
 
@@ -593,7 +621,97 @@ contains
     end do !-- iC
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
-  end subroutine ComputeFromBalanced
+  end subroutine ComputeFromBalancedAll
+
+
+  subroutine ComputeFromBalancedSingle ( CS, iC, iV, T_Option )
+
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      CS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+    type ( TimerForm ), pointer :: &
+      T_K
+
+    call Show ( 'ComputeFromBalancedAll', CONSOLE % INFO_6 )
+    call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    if ( present ( T_Option ) ) then
+      T_K  =>  PROGRAM_HEADER % Timer &
+                 ( Handle = CS % iTimer_CFB, &
+                   Name = trim ( T_Option % Name ) // '_Krnl', &
+                   Level = T_Option % Level + 1 )
+    else
+      T_K  =>  null ( )
+    end if
+
+    if ( associated ( T_K ) ) call T_K % Start ( )
+
+    associate &
+      (   CSV  =>  CS % Storage ( iC ) % Value, &
+        M_Ref  =>  CS % BaryonMass, &
+        N_Min  =>  CS % BaryonDensityMin, &
+        E_Min  =>  CS % EnergyDensityMin, &
+        Gamma  =>  CS % AdiabaticIndex, &
+        C_V    =>  CS % SpecificHeatVolume, &
+        N_0    =>  CS % FiducialBaryonDensity, &
+        P_0    =>  CS % FiducialPressure )
+    associate &
+      ( M    =>  CSV ( :, CS % BARYON_MASS ), &
+        N    =>  CSV ( :, CS % BARYON_DENSITY_C ), &
+        V_1  =>  CSV ( :, CS % VELOCITY_U_1 ), &
+        V_2  =>  CSV ( :, CS % VELOCITY_U_2 ), &
+        V_3  =>  CSV ( :, CS % VELOCITY_U_3 ), &
+        D    =>  CSV ( :, CS % BARYON_DENSITY_B ), &
+        S_1  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
+        S_2  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+        S_3  =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+        E    =>  CSV ( :, CS % ENERGY_DENSITY_C ), &
+        G    =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
+        P    =>  CSV ( :, CS % PRESSURE ), &
+        T    =>  CSV ( :, CS % TEMPERATURE ), &
+        SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+        SS   =>  CSV ( :, CS % SOUND_SPEED ) )
+ 
+    select type ( Gn  =>  CS % Geometry )
+    class is ( Gravitation_G_Form )
+
+      associate &
+        ( GSV  =>  Gn % Storage ( iC ) % Value )
+      associate &
+        ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
+          M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
+          M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+
+      call CS % Compute_N_V_E_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, iV, N, V_1, V_2, V_3, E, &
+               UseDeviceOption = CS % DeviceMemory )
+
+      end associate !-- M_UU_11, etc.
+      end associate !-- GSV
+
+    class default
+      call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_I__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeFromBalancedSingle', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Gn
+
+    call Apply_EOS_I_E_S_Kernel &
+           ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
+             N_0, P_0, iV, UseDeviceOption = CS % DeviceMemory )
+
+    end associate !-- M, etc.
+    end associate !-- CSV, etc.
+
+    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+  end subroutine ComputeFromBalancedSingle
 
 
   impure elemental subroutine Finalize ( F )

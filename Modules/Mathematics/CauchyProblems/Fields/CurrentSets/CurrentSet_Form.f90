@@ -67,8 +67,12 @@ module CurrentSet_Form
       ComputeFromInitial
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, public, pass :: &
-      ComputeFromBalanced
+    procedure, private, pass :: &
+      ComputeFromBalancedAll
+    procedure, private, pass :: &
+      ComputeFromBalancedSingle
+    generic, public :: &
+      ComputeFromBalanced => ComputeFromBalancedAll, ComputeFromBalancedSingle
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
     procedure, private, pass :: &
@@ -392,17 +396,45 @@ contains
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
 
+    call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'CurrentSet_Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeFromPrimitive', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalanced ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
-  end subroutine ComputeFromBalanced
+    call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'CurrentSet_Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeFromBalancedAll
+
+
+  subroutine ComputeFromBalancedSingle ( CS, iC, iV, T_Option )
+
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'CurrentSet_Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeFromBalancedSingle', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeFromBalancedSingle
 
 
   subroutine ComputeEigenspeeds ( ES, CS, FS_CS, iaEigenspeeds, iC, iD )

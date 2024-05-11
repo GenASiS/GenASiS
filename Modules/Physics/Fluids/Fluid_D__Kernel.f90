@@ -113,9 +113,9 @@ contains
   end procedure Compute_D_S_G_Kernel 	 	 
 
 
-  module procedure Compute_N_V_G_Kernel
+  module procedure Compute_N_V_G_A_Kernel
 
-    !-- Compute_DensityC_Velocity_Galileo
+    !-- Compute_DensityC_Velocity_Galileo_All
 
     integer ( KDI ) :: &
       iV, &
@@ -181,7 +181,7 @@ contains
     
     end if
 
-  end procedure Compute_N_V_G_Kernel
+  end procedure Compute_N_V_G_A_Kernel
 
 
   module procedure Compute_ES_G_Kernel

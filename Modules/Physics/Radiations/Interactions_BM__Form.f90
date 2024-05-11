@@ -87,8 +87,6 @@ contains
     I % Fluid      =>  F
     I % Radiation  =>  R
 
-    call R % SetInteractions ( I )
-
     !-- Field indices
 
     I % EMISSIVITY_J  =  1
