@@ -27,20 +27,27 @@ module PhotonMoments_G__Form
       Finalize
     procedure, public, pass ( CS ) :: &
       SetStream
-    procedure, public, pass :: &
-      ComputeSpectralParameters
-    procedure, public, pass :: &
-      ComputeEquilibrium
+    procedure, private, pass :: &
+      ComputeSpectralParametersAll
+    procedure, private, pass :: &
+      ComputeSpectralParametersSingle
+    generic, public :: &
+      ComputeSpectralParameters => ComputeSpectralParametersAll, &
+                                   ComputeSpectralParametersSingle
+    procedure, private, pass :: &
+      ComputeEquilibriumAll
+    procedure, private, pass :: &
+      ComputeEquilibriumSingle
   end type PhotonMoments_G_Form
 
     private :: &
-      Compute_SP_Kernel, &
-      Compute_Eq_Kernel
+      Compute_SP_A_Kernel, &
+      Compute_Eq_A_Kernel
     
     interface
 
-      module subroutine Compute_SP_Kernel ( T_R, J, UseDeviceOption )
-        !-- Compute_SpectralParameters_Kernel
+      module subroutine Compute_SP_A_Kernel ( T_R, J, UseDeviceOption )
+        !-- Compute_SpectralParameters_All_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -49,10 +56,25 @@ module PhotonMoments_G__Form
           J
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_SP_Kernel
+      end subroutine Compute_SP_A_Kernel
  
-      module subroutine Compute_Eq_Kernel ( J_Eq, J_RD, J, T, UseDeviceOption )
-        !-- Compute_Equilibrium_Kernel
+      module subroutine Compute_SP_S_Kernel ( T_R, J, iV, UseDeviceOption )
+        !-- Compute_SpectralParameters_Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          T_R
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J
+        integer ( KDI ), intent ( in ) :: &
+          iV
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_SP_S_Kernel
+ 
+      module subroutine Compute_Eq_A_Kernel &
+               ( J_Eq, J_RD, J, T, UseDeviceOption )
+        !-- Compute_Equilibrium_All_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -62,7 +84,23 @@ module PhotonMoments_G__Form
           T
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_Eq_Kernel
+      end subroutine Compute_Eq_A_Kernel
+
+      module subroutine Compute_Eq_S_Kernel &
+               ( J_Eq, J_RD, J, T, iV, UseDeviceOption )
+        !-- Compute_Equilibrium_Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq, J_RD
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J, &
+          T
+        integer ( KDI ), intent ( in ) :: &
+          iV
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_Eq_S_Kernel
 
     end interface
 
@@ -202,7 +240,7 @@ contains
   end subroutine SetStream
 
 
-  subroutine ComputeEquilibrium ( RM )
+  subroutine ComputeEquilibriumAll ( RM )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -210,7 +248,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'ComputeEquilibrium', CONSOLE % INFO_6 )
+    call Show ( 'ComputeEquilibriumAll', CONSOLE % INFO_6 )
     call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
 
     select type ( I  =>  RM % Interactions )
@@ -228,7 +266,7 @@ contains
           J     =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
           T     =>   FV ( :,  F % TEMPERATURE ) )
                
-      call Compute_Eq_Kernel &
+      call Compute_Eq_A_Kernel &
              ( J_Eq, J_RD, J, T, &
                UseDeviceOption = RM % DeviceMemory )
 
@@ -239,10 +277,48 @@ contains
     end associate !-- F
     end select !-- I
 
-  end subroutine ComputeEquilibrium
+  end subroutine ComputeEquilibriumAll
 
 
-  subroutine ComputeSpectralParameters ( RM )
+  subroutine ComputeEquilibriumSingle ( RM, iC, iV )
+
+    class ( PhotonMoments_G_Form ), intent ( inout ) :: &
+      RM
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+!    call Show ( 'ComputeEquilibriumAll', CONSOLE % INFO_6 )
+!    call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
+
+    select type ( I  =>  RM % Interactions )
+      class is ( Interactions_BM_Form )
+    associate &
+      ( F  =>  I % Fluid )
+
+    associate &
+      ( RMV  =>  RM % Storage ( iC ) % Value, &
+         FV  =>   F % Storage ( iC ) % Value )
+    associate &
+      ( J_Eq  =>  RMV ( :, RM % ENERGY_DENSITY_C_EQ ), &
+        J_RD  =>  RMV ( :, RM % ENERGY_DENSITY_C_RD ), &
+        J     =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
+        T     =>   FV ( :,  F % TEMPERATURE ) )
+             
+    call Compute_Eq_S_Kernel &
+           ( J_Eq, J_RD, J, T, iV, &
+             UseDeviceOption = RM % DeviceMemory )
+
+    end associate !-- T_R, etc.
+    end associate !-- RV, etc.
+
+    end associate !-- F
+    end select !-- I
+
+  end subroutine ComputeEquilibriumSingle
+
+
+  subroutine ComputeSpectralParametersAll ( RM )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -250,7 +326,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'ComputeSpectralParameters', CONSOLE % INFO_6 )
+    call Show ( 'ComputeSpectralParametersAll', CONSOLE % INFO_6 )
     call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
 
     do iC  =  1, RM % Atlas % nCharts
@@ -260,7 +336,7 @@ contains
         ( T_R  =>  RMV ( :, RM % TEMPERATURE_GREY ), &
           J    =>  RMV ( :, RM % ENERGY_DENSITY_C ) )
                
-      call Compute_SP_Kernel &
+      call Compute_SP_A_Kernel &
              ( T_R, J, &
                UseDeviceOption  =  RM % DeviceMemory )
 
@@ -268,7 +344,34 @@ contains
       end associate !-- RV, etc.
     end do !-- iC
 
-  end subroutine ComputeSpectralParameters
+  end subroutine ComputeSpectralParametersAll
+
+
+  subroutine ComputeSpectralParametersSingle ( RM, iC, iV )
+
+    class ( PhotonMoments_G_Form ), intent ( inout ) :: &
+      RM
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+!    call Show ( 'ComputeSpectralParametersAll', CONSOLE % INFO_6 )
+!    call Show ( RM % Name, 'PhotonMoments', CONSOLE % INFO_6 )
+
+    associate &
+      ( RMV  =>  RM % Storage ( iC ) % Value )
+    associate &
+      ( T_R  =>  RMV ( :, RM % TEMPERATURE_GREY ), &
+        J    =>  RMV ( :, RM % ENERGY_DENSITY_C ) )
+             
+    call Compute_SP_S_Kernel &
+           ( T_R, J, iV, &
+             UseDeviceOption  =  RM % DeviceMemory )
+
+    end associate !-- T_R, etc.
+    end associate !-- RV, etc.
+
+  end subroutine ComputeSpectralParametersSingle
 
 
 end module PhotonMoments_G__Form

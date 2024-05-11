@@ -73,8 +73,12 @@ module RadiationMoments_BM__Form
       ComputeFromBalanced
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
-    procedure, public, pass :: &
-      ComputeEquilibrium
+    procedure, private, pass :: &
+      ComputeEquilibriumAll
+    procedure, private, pass :: &
+      ComputeEquilibriumSingle
+    generic, public :: &
+      ComputeEquilibrium => ComputeEquilibriumAll, ComputeEquilibriumSingle
     procedure, public, pass ( RM ) :: &
       SetFluidVelocity
     final :: &
@@ -648,17 +652,33 @@ contains
   end subroutine ComputeEigenspeeds
 
 
-  subroutine ComputeEquilibrium ( RM )
+  subroutine ComputeEquilibriumAll ( RM )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
 
     call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
     call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
-    call Show ( 'ComputeEquilibrium', 'subroutine', CONSOLE % ERROR )
+    call Show ( 'ComputeEquilibriumAll', 'subroutine', CONSOLE % ERROR )
     call PROGRAM_HEADER % Abort ( )
 
-  end subroutine ComputeEquilibrium
+  end subroutine ComputeEquilibriumAll
+
+
+  subroutine ComputeEquilibriumSingle ( RM, iC, iV )
+
+    class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
+      RM
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+    call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'RadiationMoments_BM__Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeEquilibriumSingle', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeEquilibriumSingle
 
 
   subroutine SetFluidVelocity ( FS_RM, RM )

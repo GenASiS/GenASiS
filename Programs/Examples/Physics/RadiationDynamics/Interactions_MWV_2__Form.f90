@@ -17,8 +17,8 @@ module Interactions_MWV_2__Form
       InitializeAllocate_I
     procedure, public, pass :: &
       SetEnergyMax
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      ComputeAll
     final :: &
       Finalize
   end type Interactions_MWV_2_Form
@@ -116,7 +116,7 @@ contains
   end subroutine SetEnergyMax
 
 
-  subroutine Compute ( I )
+  subroutine ComputeAll ( I )
 
     class ( Interactions_MWV_2_Form ), intent ( inout ) :: &
       I
@@ -163,7 +163,7 @@ contains
     end associate !-- F
     end select !-- R
 
-  end subroutine Compute
+  end subroutine ComputeAll
 
 
   impure elemental subroutine Finalize ( I )

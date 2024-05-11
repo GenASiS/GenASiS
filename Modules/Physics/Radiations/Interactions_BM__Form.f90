@@ -31,8 +31,12 @@ module Interactions_BM__Form
       Initialize => InitializeAllocate_I
     procedure, public, pass ( I ) :: &
       SetStream
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      ComputeAll
+    procedure, private, pass :: &
+      ComputeSingle
+    generic, public :: &
+      Compute  =>  ComputeAll, ComputeSingle
     final :: &
       Finalize
   end type Interactions_BM_Form
@@ -182,17 +186,33 @@ contains
   end subroutine SetStream
 
 
-  subroutine Compute ( I )
+  subroutine ComputeAll ( I )
 
     class ( Interactions_BM_Form ), intent ( inout ) :: &
       I
 
     call Show ( 'Must be replaced by extension', CONSOLE % ERROR )
     call Show ( 'Interactions_BM__Form', 'module', CONSOLE % ERROR )
-    call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+    call Show ( 'ComputeAll', 'subroutine', CONSOLE % ERROR )
     call PROGRAM_HEADER % Abort ( )
 
-  end subroutine Compute
+  end subroutine ComputeAll
+
+
+  subroutine ComputeSingle ( I, iC, iV )
+
+    class ( Interactions_BM_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+    call Show ( 'Must be replaced by extension', CONSOLE % ERROR )
+    call Show ( 'Interactions_BM__Form', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeSingle', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeSingle
 
 
   impure elemental subroutine Finalize ( I )

@@ -43,10 +43,10 @@ module NeutrinoMoments_G__Form
       ComputeFromPrimitive
     procedure, public, pass :: &
       ComputeFromBalanced
+    procedure, private, pass :: &
+      ComputeSpectralParametersAll
     procedure, public, pass :: &
-      ComputeSpectralParameters
-    procedure, public, pass :: &
-      ComputeEquilibrium
+      ComputeEquilibriumAll
   end type NeutrinoMoments_G_Form
 
     private :: &
@@ -493,7 +493,7 @@ contains
   end subroutine ComputeFromBalanced
 
 
-  subroutine ComputeSpectralParameters ( RM )
+  subroutine ComputeSpectralParametersAll ( RM )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -501,7 +501,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'ComputeSpectralParameters', CONSOLE % INFO_6 )
+    call Show ( 'ComputeSpectralParametersAll', CONSOLE % INFO_6 )
     call Show ( RM % Name, 'NeutrinoMoments', CONSOLE % INFO_6 )
 
     do iC  =  1, RM % Atlas % nCharts
@@ -523,10 +523,10 @@ contains
       end associate !-- RV, etc.
     end do !-- iC
 
-  end subroutine ComputeSpectralParameters
+  end subroutine ComputeSpectralParametersAll
 
 
-  subroutine ComputeEquilibrium ( RM )
+  subroutine ComputeEquilibriumAll ( RM )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -534,7 +534,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'ComputeEquilibrium', CONSOLE % INFO_6 )
+    call Show ( 'ComputeEquilibriumAll', CONSOLE % INFO_6 )
     call Show ( RM % Name, 'NeutrinoMoments', CONSOLE % INFO_6 )
 
     select type ( I  =>  RM % Interactions )
@@ -570,7 +570,7 @@ contains
         call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
         call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
         call Show ( 'NeutrinoMoments_G__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'ComputeEquilibrium', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'ComputeEquilibriumAll', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- Name
 
@@ -581,7 +581,7 @@ contains
     end select !-- F
     end select !-- I
 
-  end subroutine ComputeEquilibrium
+  end subroutine ComputeEquilibriumAll
 
 
 end module NeutrinoMoments_G__Form

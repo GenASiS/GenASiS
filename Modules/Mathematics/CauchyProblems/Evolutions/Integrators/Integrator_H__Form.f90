@@ -841,41 +841,41 @@ contains
                     I % IGNORABILITY )
       end do !-- iTSC
 
-      select type ( S  =>  I % Step_X )
-      class is ( Step_RK_CS_CS_Form )
-        if ( S % ImplicitExplicit ) then
-          call Show ( 'ImplicitSolver' )
-          select type ( A  =>  S % Atlas )
-            class is ( Atlas_SCG_Form )
-          allocate ( CO_I )
-          call CO_I % Initialize &
-                 ( A % Chart_GS % Communicator, &
-                   nOutgoing = [ 1 ], nIncoming = [ 1 ] )
-          do iS  =  2, S % nStages
-            call Show ( iS, 'iStage' )
-            associate ( MyIterations  =>  S % nImplicitIterations ( iS ) )
-            CO_I % Outgoing % Value ( 1 )  =  MyIterations
-            call CO_I % Reduce ( REDUCTION % MAX )
-            MaxIterations  =  CO_I % Incoming % Value ( 1 )            
-            call Show ( MaxIterations, 'Max nImplicitIterations' )
-            call Show ( S % ImplicitError_2 ( MaxIterations, :, iS ), &
-                        'ImplicitError_2' )
-            call Show ( S % ImplicitError_1 ( MaxIterations, :, iS ), &
-                        'ImplicitError_1' )
-            end associate !-- MyIterations
-            call Show ( [ ( S % QUALITY ( S % ImplicitQuality_2 ( iF, iS ) ), &
-                            iF = 1, &
-                            size ( S % ImplicitQuality_2, dim = 1 ) ) ], &
-                            'ImplicitQuality_2' )
-            call Show ( [ ( S % QUALITY ( S % ImplicitQuality_1 ( iF, iS ) ), &
-                            iF = 1, &
-                            size ( S % ImplicitQuality_1, dim = 1 ) ) ], &
-                            'ImplicitQuality_1' )
-          end do
-          deallocate ( CO_I )
-          end select !-- A
-        end if !-- ImplicitExplicit
-      end select !-- S
+      ! select type ( S  =>  I % Step_X )
+      ! class is ( Step_RK_CS_CS_Form )
+      !   if ( S % ImplicitExplicit ) then
+      !     call Show ( 'ImplicitSolver' )
+      !     select type ( A  =>  S % Atlas )
+      !       class is ( Atlas_SCG_Form )
+      !     allocate ( CO_I )
+      !     call CO_I % Initialize &
+      !            ( A % Chart_GS % Communicator, &
+      !              nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+      !     do iS  =  2, S % nStages
+      !       call Show ( iS, 'iStage' )
+      !       associate ( MyIterations  =>  S % nImplicitIterations ( iS ) )
+      !       CO_I % Outgoing % Value ( 1 )  =  MyIterations
+      !       call CO_I % Reduce ( REDUCTION % MAX )
+      !       MaxIterations  =  CO_I % Incoming % Value ( 1 )            
+      !       call Show ( MaxIterations, 'Max nImplicitIterations' )
+      !       call Show ( S % ImplicitError_2 ( MaxIterations, :, iS ), &
+      !                   'ImplicitError_2' )
+      !       call Show ( S % ImplicitError_1 ( MaxIterations, :, iS ), &
+      !                   'ImplicitError_1' )
+      !       end associate !-- MyIterations
+      !       call Show ( [ ( S % QUALITY ( S % ImplicitQuality_2 ( iF, iS ) ), &
+      !                       iF = 1, &
+      !                       size ( S % ImplicitQuality_2, dim = 1 ) ) ], &
+      !                       'ImplicitQuality_2' )
+      !       call Show ( [ ( S % QUALITY ( S % ImplicitQuality_1 ( iF, iS ) ), &
+      !                       iF = 1, &
+      !                       size ( S % ImplicitQuality_1, dim = 1 ) ) ], &
+      !                       'ImplicitQuality_1' )
+      !     end do
+      !     deallocate ( CO_I )
+      !     end select !-- A
+      !   end if !-- ImplicitExplicit
+      ! end select !-- S
 
     end if
 

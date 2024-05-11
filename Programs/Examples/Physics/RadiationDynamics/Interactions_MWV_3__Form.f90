@@ -17,7 +17,7 @@ module Interactions_MWV_3__Form
     procedure, public, pass :: &
       SetTemperatureScale
     procedure, public, pass :: &
-      Compute
+      ComputeAll
     final :: &
       Finalize
   end type Interactions_MWV_3_Form
@@ -116,7 +116,7 @@ contains
   end subroutine SetTemperatureScale
 
 
-  subroutine Compute ( I )
+  subroutine ComputeAll ( I )
 
     class ( Interactions_MWV_3_Form ), intent ( inout ) :: &
       I
@@ -124,7 +124,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'Compute', CONSOLE % INFO_6 )
+    call Show ( 'ComputeAll', CONSOLE % INFO_6 )
     call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
     select type ( R  =>  I % Radiation )
@@ -163,7 +163,7 @@ contains
     end associate !-- F
     end select !-- R
 
-  end subroutine Compute
+  end subroutine ComputeAll
 
 
   impure elemental subroutine Finalize ( I )

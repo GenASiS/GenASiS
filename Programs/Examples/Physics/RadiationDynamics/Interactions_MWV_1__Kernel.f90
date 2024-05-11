@@ -9,7 +9,7 @@ submodule ( Interactions_MWV_1__Form ) Interactions_MWV_1__Kernel
 contains
 
 
-  module procedure ComputeKernel
+  module procedure ComputeAllKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -43,7 +43,26 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure ComputeKernel
+  end procedure ComputeAllKernel
+
+
+  module procedure ComputeSingleKernel
+
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    if ( UseDevice ) then
+    else
+       Xi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  J_Eq ( iV )
+      Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
+      Chi_H ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )
+    end if
+
+  end procedure ComputeSingleKernel
 
 
 end submodule Interactions_MWV_1__Kernel

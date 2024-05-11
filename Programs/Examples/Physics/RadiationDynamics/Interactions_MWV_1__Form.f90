@@ -15,18 +15,20 @@ module Interactions_MWV_1__Form
       InitializeAllocate_I
     procedure, public, pass :: &
       SetSpecificOpacity
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      ComputeAll
+    procedure, private, pass :: &
+      ComputeSingle
     final :: &
       Finalize
   end type Interactions_MWV_1_Form
 
     private :: &
-      ComputeKernel
+      ComputeAllKernel
 
   interface
 
-    module subroutine ComputeKernel &
+    module subroutine ComputeAllKernel &
              ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa, UseDeviceOption )
       use Basics
       implicit none
@@ -42,7 +44,27 @@ module Interactions_MWV_1__Form
         Kappa
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeKernel
+    end subroutine ComputeAllKernel
+
+    module subroutine ComputeSingleKernel &
+             ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa, iV, UseDeviceOption )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+         Xi_J, &
+        Chi_J, &
+        Chi_H
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        J_Eq
+      real ( KDR ), intent ( in ) :: &
+        Kappa
+      integer ( KDI ), intent ( in ) :: &
+        iV
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeSingleKernel
 
   end interface
 
@@ -105,7 +127,7 @@ contains
   end subroutine SetSpecificOpacity
 
 
-  subroutine Compute ( I )
+  subroutine ComputeAll ( I )
 
     class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
@@ -113,7 +135,7 @@ contains
     integer ( KDI ) :: &
       iC
 
-    call Show ( 'Compute', CONSOLE % INFO_6 )
+    call Show ( 'ComputeAll', CONSOLE % INFO_6 )
     call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
     select type ( R  =>  I % Radiation )
@@ -137,7 +159,7 @@ contains
           Chi_H   =>  IV ( :, I % OPACITY_H ), &
             J_Eq  =>  RV ( :, R % ENERGY_DENSITY_C_EQ ) )
 
-      call ComputeKernel &
+      call ComputeAllKernel &
              ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa = I % SpecificOpacity, &
                UseDeviceOption = I % DeviceMemory )
              
@@ -148,7 +170,51 @@ contains
     end associate !-- F
     end select !-- R
 
-  end subroutine Compute
+  end subroutine ComputeAll
+
+
+  subroutine ComputeSingle ( I, iC, iV )
+
+    class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+!    call Show ( 'ComputeAll', CONSOLE % INFO_6 )
+!    call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
+
+    select type ( R  =>  I % Radiation )
+      class is ( PhotonMoments_G_Form )
+    associate &
+      ( F  =>  I % Fluid )
+
+    associate &
+      ( I_V  =>  I % Storage ( iC ) % Value, &
+        R_V  =>  R % Storage ( iC ) % Value, &
+        F_V  =>  F % Storage ( iC ) % Value )
+    associate &
+      (   M     =>  F_V ( :, F % BARYON_MASS ), &
+          N     =>  F_V ( :, F % BARYON_DENSITY_C ), &
+         Xi_J   =>  I_V ( :, I % EMISSIVITY_J ), &
+        Chi_J   =>  I_V ( :, I % OPACITY_J ), &
+        Chi_H   =>  I_V ( :, I % OPACITY_H ), &
+          J_Eq  =>  R_V ( :, R % ENERGY_DENSITY_C_EQ ) )
+
+    call R % ComputeSpectralParameters ( iC, iV )
+    call R % ComputeEquilibrium ( iC, iV )
+
+    call ComputeSingleKernel &
+           ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, I % SpecificOpacity, iV, &
+             UseDeviceOption = I % DeviceMemory )
+           
+    end associate !-- T, etc.
+    end associate !-- FV, etc.
+
+    end associate !-- F
+    end select !-- R
+
+  end subroutine ComputeSingle
 
 
   impure elemental subroutine Finalize ( I )

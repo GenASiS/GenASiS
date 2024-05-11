@@ -9,9 +9,9 @@ submodule ( PhotonMoments_G__Form ) PhotonMoments_G__Kernel
 contains
 
 
-  module procedure Compute_SP_Kernel
+  module procedure Compute_SP_A_Kernel
 
-    !-- Compute_SpectralParameters_Kernel
+    !-- Compute_SpectralParameters_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -47,12 +47,35 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure Compute_SP_Kernel
+  end procedure Compute_SP_A_Kernel
 
 
-  module procedure Compute_Eq_Kernel
+  module procedure Compute_SP_S_Kernel
 
-    !-- Compute_Equilibrium_Kernel
+    !-- Compute_SpectralParameters_Single_Kernel
+
+    real ( KDR ) :: &
+      a
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
+
+    if ( UseDevice ) then
+    else
+      T_R ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
+    end if
+
+  end procedure Compute_SP_S_Kernel
+
+
+  module procedure Compute_Eq_A_Kernel
+
+    !-- Compute_Equilibrium_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -95,7 +118,35 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure Compute_Eq_Kernel
+  end procedure Compute_Eq_A_Kernel
+
+
+  module procedure Compute_Eq_S_Kernel
+
+    !-- Compute_Equilibrium_Single_Kernel
+
+    real ( KDR ) :: &
+      SqrtTiny, &
+      a
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
+
+    if ( UseDevice ) then
+    else
+      J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+      J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                       /  max ( SqrtTiny, J_Eq ( iV ) )
+    end if
+
+  end procedure Compute_Eq_S_Kernel
 
 
 end submodule PhotonMoments_G__Kernel
