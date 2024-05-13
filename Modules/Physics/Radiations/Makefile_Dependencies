@@ -95,6 +95,11 @@ Slope_RM_DFV_I__Form.o: \
   Slope_RM_I__Form.o \
   Slope_RM_DFV_I__Form.f90
 
+ImplicitDiagnostics_RM__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  ImplicitDiagnostics_RM__Form.f90
+
 Step_RK_RM__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -102,6 +107,7 @@ Step_RK_RM__Form.o: \
   Fluids.o \
   RadiationMoments_BM__Form.o \
   Interactions_BM__Form.o \
+  ImplicitDiagnostics_RM__Form.o \
   Step_RK_RM__Form.f90
 
 PhotonMoments_G__Form.o: \
@@ -221,6 +227,7 @@ Radiations.o: \
   Slope_RM_I_I__Form.o \
   Slope_RM_I_I_J__Form.o \
   Slope_RM_DFV_I__Form.o \
+  ImplicitDiagnostics_RM__Form.o \
   Step_RK_RM__Form.o \
   PhotonMoments_G__Form.o \
   NeutrinoMoments_G__Form.o \

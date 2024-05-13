@@ -132,20 +132,18 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( S % ImplicitTolerance, 'ImplicitTolerance' )
 
-    if ( .not. allocated ( S % ImplicitDiagnostics ) ) then
-      associate ( nS  =>  S % nStages )
-      allocate ( ImplicitDiagnosticsForm :: S % ImplicitDiagnostics ( 2 : nS ) )
-      do iS  =  2, nS
-        associate ( ID  =>  S % ImplicitDiagnostics ( iS ) )
-        call ID % Initialize &
-               ( S % Atlas, iS, &
-                 DeviceMemoryOption = CS_1 % DeviceMemory, &
-                 PinnedMemoryOption = CS_1 % PinnedMemory, &
-                 DevicesCommunicateOption = CS_1 % DevicesCommunicate )
-        end associate !-- ID
-      end do !-- iS
-      end associate !-- nS
-    end if
+    associate ( nS  =>  S % nStages )
+    allocate ( ImplicitDiagnosticsForm :: S % ImplicitDiagnostics ( 2 : nS ) )
+    do iS  =  2, nS
+      associate ( ID  =>  S % ImplicitDiagnostics ( iS ) )
+      call ID % Initialize &
+             ( S % Atlas, iS, &
+               DeviceMemoryOption = CS_1 % DeviceMemory, &
+               PinnedMemoryOption = CS_1 % PinnedMemory, &
+               DevicesCommunicateOption = CS_1 % DevicesCommunicate )
+      end associate !-- ID
+    end do !-- iS
+    end associate !-- nS
 
     ! associate &
     !   ( nS    =>  S % nStages, &

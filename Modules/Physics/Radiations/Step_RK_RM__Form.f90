@@ -8,6 +8,7 @@ module Step_RK_RM__Form
   use Fluids
   use RadiationMoments_BM__Form
   use Interactions_BM__Form
+  use ImplicitDiagnostics_RM__Form
 
   implicit none
   private
@@ -45,11 +46,31 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
+    integer ( KDI ) :: &
+      iS
+
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Step_RK_RM'
 
     call S % Step_RK_CS_CS_Form % Initialize &
            ( CS_1, CS_2, NameOption, ImplicitExplicitOption, nStagesOption )
+
+    if ( allocated ( S % ImplicitDiagnostics ) ) &
+      deallocate ( S % ImplicitDiagnostics )
+    associate ( nS  =>  S % nStages )
+    allocate ( ImplicitDiagnostics_RM_Form &
+               :: S % ImplicitDiagnostics ( 2 : nS ) )
+    do iS  =  2, nS
+      select type ( ID  =>  S % ImplicitDiagnostics ( iS ) )
+        class is ( ImplicitDiagnostics_RM_Form )
+      call ID % Initialize &
+             ( S % Atlas, iS, &
+               DeviceMemoryOption = CS_1 % DeviceMemory, &
+               PinnedMemoryOption = CS_1 % PinnedMemory, &
+               DevicesCommunicateOption = CS_1 % DevicesCommunicate )
+      end select !-- ID
+    end do !-- iS
+    end associate !-- nS
 
     allocate ( S % Residual_R_E ( S % MaxImplicitIterations ) )
     allocate ( S % Residual_F_E ( S % MaxImplicitIterations ) )
@@ -96,8 +117,6 @@ contains
     real ( KDR ) :: &
        E_R_P, &
        E_F_P, &
-      dE_R, &
-      dE_F, &
       SqrtTiny
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
@@ -120,8 +139,9 @@ contains
          Tol      =>  S   % ImplicitTolerance, &
          Max_I    =>  S   % MaxImplicitIterations, &
          Res_R_E  =>  S   % Residual_R_E, &
-         Res_F_E  =>  S   % Residual_F_E, &
-         ID       =>  S   % ImplicitDiagnostics ( iS ) )
+         Res_F_E  =>  S   % Residual_F_E )
+    select type ( ID  =>  S   % ImplicitDiagnostics ( iS ) )
+      class is ( ImplicitDiagnostics_RM_Form )
 
     call Search &
            ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
@@ -185,8 +205,11 @@ contains
           KK_F_S_1    =>  KK_F_V ( :, iMomentum_F ( 1 ) ), &
           KK_F_S_2    =>  KK_F_V ( :, iMomentum_F ( 2 ) ), &
           KK_F_S_3    =>  KK_F_V ( :, iMomentum_F ( 3 ) ), &
+             Err      =>  ID_V ( :, ID % ERROR ), &
              N_I      =>  ID_V ( :, ID % N_ITERATIONS ), &
              R_Max    =>  ID_V ( :, ID % RESIDUAL_MAX ), &
+             R_R_E    =>  ID_V ( :, ID % RESIDUAL_RADIATION_ENERGY ), &
+             R_F_E    =>  ID_V ( :, ID % RESIDUAL_FLUID_ENERGY ), &
           ProperCell  =>  C % ProperCell )
 
       select type ( G  =>  R % Geometry )
@@ -201,26 +224,16 @@ contains
 
         nV  =  size ( ProperCell )
 
-!call Show ( '>>> Stage' )
-!call Show ( iS, '>>> iS' )
-
         do iV = 1, nV
           if ( ProperCell ( iV ) ) then      
-
-!if ( iV == 3 ) &
-!  call Show ( iV, '>>> iV' )
 
             !-- Iterate radiation and fluid energy to convergence
 
             iI  =  0
+            Err ( iV )  =  - huge ( 1.0_KDR )
             Implicit: do 
 
               iI  =  iI + 1
-
-!if ( iV == 3 ) then
-!  call Show ( '>>> Iteration' )
-!  call Show ( iI, '>>> iI' )
-!end if
 
               !-- Compute interactions
 
@@ -243,44 +256,57 @@ contains
 
               if ( iI  >  1 ) then
 
+                associate &
+                  ( dE_R    =>  Res_R_E ( iI ), &
+                    dE_F    =>  Res_F_E ( iI ), &
+                    dE_R_P  =>  Res_R_E ( iI - 1 ), &
+                    dE_F_P  =>  Res_F_E ( iI - 1 ) )
+
                 dE_R  =  abs ( E_R ( iV )  -  E_R_P )  &
                          /  max ( abs ( E_R_0 ( iV ) ), SqrtTiny )
                 dE_F  =  abs ( E_F ( iV )  -  E_F_P )  &
                          /  max ( abs ( E_F_0 ( iV ) ), SqrtTiny )
 
-                Res_R_E ( iI )  =  dE_R
-                Res_F_E ( iI )  =  dE_F
-
-!if ( iV == 3 ) then
-!  call Show ( dE_R, '>>> dE_R' )
-!  call Show ( dE_F, '>>> dE_F' )
-!end if
+                N_I   ( iV )  =  iI
+                R_Max ( iV )  =  max ( dE_R, dE_F )
+                R_R_E ( iV )  =  dE_R
+                R_F_E ( iV )  =  dE_R
 
                 if ( dE_R  <  Tol .and. dE_F  <  Tol ) then
-!                if ( dE_F  <  Tol ) then
-!if ( iV == 3 ) then
-!  call Show ( '>>> Solution reached' )
-!  call Show ( iI, '>>> iI' )
-!end if
-                  N_I   ( iV )  =  iI
-                  R_Max ( iV )  =  max ( dE_R, dE_F )
+                  Err ( iV )  =  0  !-- Converged
+                else if ( iI  ==  Max_I  &
+                          .and. ( dE_R  <  dE_R_P .and. dE_F  <  dE_F_P ) ) &
+                then
+                  Err ( iV )  =  1  !-- Converging slowly
+                  call Show ( 'Implicit solve converging slowly', &
+                              CONSOLE % WARNING )
+                  call Show ( iV, 'iV', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
+                else if ( iI  >  2  &
+                          .and. ( dE_R  >  dE_R_P .or. dE_F  >  dE_F_P ) ) &
+                then
+                  Err ( iV )  =  2  !-- Diverging
+                  call Show ( 'Implicit solve diverging', &
+                              CONSOLE % WARNING )
+                  call Show ( iV, 'iV', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
+                  !-- Discard updates and do nothing
+                  KK_R_E ( iV )  =  0.0_KDR
+                  KK_F_E ( iV )  =  0.0_KDR
+                end if
 
+                if ( Err ( iV )  >=  0.0_KDR ) &
                   exit Implicit
-                end if
 
-                if ( iI  ==  Max_I ) then
-                  call Show ( 'Max iterations reached', CONSOLE % ERROR )
-                  call Show ( iV, 'iV', CONSOLE % ERROR )
-                  call Show ( Res_R_E ( : iI ), 'Residual_R_E' )
-                  call Show ( Res_F_E ( : iI ), 'Residual_F_E' )
-                  call Show ( 'Step_RK_RM__Form', 'subroutine', &
-                              CONSOLE % ERROR )
-                  call Show ( 'SolveUpdateImplicit', 'subroutine', &
-                              CONSOLE % ERROR )
-                  call PROGRAM_HEADER % Abort ( )
-                end if
+                end associate !-- dE_R, etc.
 
-              end if
+              end if !-- iI > 1
 
               !-- Prepare for next iteration
 
@@ -344,6 +370,7 @@ contains
       end select !-- C
     end do !-- iC
 
+    end select !-- ID
     end associate !-- KK_R, etc.
     end select !-- I
     end select !-- F
