@@ -44,7 +44,7 @@ module Step_RK_CS_CS__Form
 !       IterationPrevious_2, &
 !       Residual_1, &
 !       Residual_2
-    class ( ImplicitDiagnosticsForm ), dimension ( : ), allocatable :: &
+    type ( FieldSet_BM_Element ), dimension ( : ), allocatable :: &
       ImplicitDiagnostics
     class ( Step_RK_CS_Form ), allocatable :: &
       Step_CS_1, &
@@ -132,18 +132,18 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( S % ImplicitTolerance, 'ImplicitTolerance' )
 
-    associate ( nS  =>  S % nStages )
-    allocate ( ImplicitDiagnosticsForm :: S % ImplicitDiagnostics ( 2 : nS ) )
-    do iS  =  2, nS
-      associate ( ID  =>  S % ImplicitDiagnostics ( iS ) )
-      call ID % Initialize &
-             ( S % Atlas, iS, &
-               DeviceMemoryOption = CS_1 % DeviceMemory, &
-               PinnedMemoryOption = CS_1 % PinnedMemory, &
-               DevicesCommunicateOption = CS_1 % DevicesCommunicate )
-      end associate !-- ID
-    end do !-- iS
-    end associate !-- nS
+    ! associate ( nS  =>  S % nStages )
+    ! allocate ( ImplicitDiagnosticsForm :: S % ImplicitDiagnostics ( 2 : nS ) )
+    ! do iS  =  2, nS
+    !   associate ( ID  =>  S % ImplicitDiagnostics ( iS ) )
+    !   call ID % Initialize &
+    !          ( S % Atlas, iS, &
+    !            DeviceMemoryOption = CS_1 % DeviceMemory, &
+    !            PinnedMemoryOption = CS_1 % PinnedMemory, &
+    !            DevicesCommunicateOption = CS_1 % DevicesCommunicate )
+    !   end associate !-- ID
+    ! end do !-- iS
+    ! end associate !-- nS
 
     ! associate &
     !   ( nS    =>  S % nStages, &
@@ -278,7 +278,7 @@ contains
     call S % Step_CS_2 % SetStream ( Sm )
 
     do iS = 2, S % nStages
-      call Sm % AddFieldSet ( S % ImplicitDiagnostics ( iS ) )
+      call Sm % AddFieldSet ( S % ImplicitDiagnostics ( iS ) % Element )
     end do
 
   end subroutine SetStream

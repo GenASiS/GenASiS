@@ -55,13 +55,12 @@ contains
     call S % Step_RK_CS_CS_Form % Initialize &
            ( CS_1, CS_2, NameOption, ImplicitExplicitOption, nStagesOption )
 
-    if ( allocated ( S % ImplicitDiagnostics ) ) &
-      deallocate ( S % ImplicitDiagnostics )
     associate ( nS  =>  S % nStages )
-    allocate ( ImplicitDiagnostics_RM_Form &
-               :: S % ImplicitDiagnostics ( 2 : nS ) )
+    allocate ( S % ImplicitDiagnostics ( 2 : nS ) )
     do iS  =  2, nS
-      select type ( ID  =>  S % ImplicitDiagnostics ( iS ) )
+      allocate ( ImplicitDiagnostics_RM_Form &
+                 :: S % ImplicitDiagnostics ( iS ) % Element )
+      select type ( ID  =>  S % ImplicitDiagnostics ( iS ) % Element )
         class is ( ImplicitDiagnostics_RM_Form )
       call ID % Initialize &
              ( S % Atlas, iS, &
@@ -140,7 +139,7 @@ contains
          Max_I    =>  S   % MaxImplicitIterations, &
          Res_R_E  =>  S   % Residual_R_E, &
          Res_F_E  =>  S   % Residual_F_E )
-    select type ( ID  =>  S   % ImplicitDiagnostics ( iS ) )
+    select type ( ID  =>  S % ImplicitDiagnostics ( iS ) % Element )
       class is ( ImplicitDiagnostics_RM_Form )
 
     call Search &
