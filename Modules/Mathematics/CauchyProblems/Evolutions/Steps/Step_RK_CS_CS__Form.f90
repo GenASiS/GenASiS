@@ -308,6 +308,9 @@ contains
     class ( Step_RK_CS_CS_Form ), intent ( in ) :: &
       S
 
+    integer ( KDI ) :: &
+      iS
+
     call S % Step_RK_H_Form % Show ( )
 
     call Show ( S % MaxImplicitIterations, 'MaxImplicitIterations', &
@@ -317,6 +320,10 @@ contains
 
     call S % Step_CS_1 % Show ( )
     call S % Step_CS_2 % Show ( )
+
+    do iS = 2, S % nStages
+      call S % ImplicitDiagnostics ( iS ) % Element % Show ( )
+    end do !-- iS
 
   end subroutine Show_S
 

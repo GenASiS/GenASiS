@@ -269,7 +269,7 @@ contains
                 N_I   ( iV )  =  iI
                 R_Max ( iV )  =  max ( dE_R, dE_F )
                 R_R_E ( iV )  =  dE_R
-                R_F_E ( iV )  =  dE_R
+                R_F_E ( iV )  =  dE_F
 
                 if ( dE_R  <  Tol .and. dE_F  <  Tol ) then
                   Err ( iV )  =  0  !-- Converged

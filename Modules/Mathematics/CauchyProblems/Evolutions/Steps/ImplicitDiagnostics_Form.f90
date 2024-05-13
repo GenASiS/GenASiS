@@ -72,17 +72,13 @@ contains
 
     !-- Field indices
 
-    if ( present ( nFieldsOption ) ) then
+    ID % ERROR         =  1
+    ID % N_ITERATIONS  =  2
+    ID % RESIDUAL_MAX  =  3
+
+    nFields  =  ID % N_FIELDS_ID
+    if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
-    else
-
-      ID % ERROR         =  1
-      ID % N_ITERATIONS  =  2
-      ID % RESIDUAL_MAX  =  3
-
-      nFields  =  ID % N_FIELDS_ID
-
-    end if
 
     !-- Field names
 
