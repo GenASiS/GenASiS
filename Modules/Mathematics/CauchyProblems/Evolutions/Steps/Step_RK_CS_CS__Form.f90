@@ -6,6 +6,7 @@ module Step_RK_CS_CS__Form
   use Manifolds
   use Fields
   use Slopes
+  use ImplicitDiagnostics_Form
   use Step_RK_H__Form
   use Step_RK_CS__Form
 
@@ -43,6 +44,8 @@ module Step_RK_CS_CS__Form
 !       IterationPrevious_2, &
 !       Residual_1, &
 !       Residual_2
+    class ( ImplicitDiagnosticsForm ), dimension ( : ), allocatable :: &
+      ImplicitDiagnostics
     class ( Step_RK_CS_Form ), allocatable :: &
       Step_CS_1, &
       Step_CS_2
@@ -128,6 +131,21 @@ contains
     S % ImplicitTolerance  =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter &
            ( S % ImplicitTolerance, 'ImplicitTolerance' )
+
+    if ( .not. allocated ( S % ImplicitDiagnostics ) ) then
+      associate ( nS  =>  S % nStages )
+      allocate ( ImplicitDiagnosticsForm :: S % ImplicitDiagnostics ( 2 : nS ) )
+      do iS  =  2, nS
+        associate ( ID  =>  S % ImplicitDiagnostics ( iS ) )
+        call ID % Initialize &
+               ( S % Atlas, iS, &
+                 DeviceMemoryOption = CS_1 % DeviceMemory, &
+                 PinnedMemoryOption = CS_1 % PinnedMemory, &
+                 DevicesCommunicateOption = CS_1 % DevicesCommunicate )
+        end associate !-- ID
+      end do !-- iS
+      end associate !-- nS
+    end if
 
     ! associate &
     !   ( nS    =>  S % nStages, &
@@ -255,8 +273,15 @@ contains
     class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
 
+    integer ( KDI ) :: &
+      iS
+
     call S % Step_CS_1 % SetStream ( Sm )
     call S % Step_CS_2 % SetStream ( Sm )
+
+    do iS = 2, S % nStages
+      call Sm % AddFieldSet ( S % ImplicitDiagnostics ( iS ) )
+    end do
 
   end subroutine SetStream
 

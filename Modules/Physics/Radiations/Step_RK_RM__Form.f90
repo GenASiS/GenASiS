@@ -120,7 +120,8 @@ contains
          Tol      =>  S   % ImplicitTolerance, &
          Max_I    =>  S   % MaxImplicitIterations, &
          Res_R_E  =>  S   % Residual_R_E, &
-         Res_F_E  =>  S   % Residual_F_E )
+         Res_F_E  =>  S   % Residual_F_E, &
+         ID       =>  S   % ImplicitDiagnostics ( iS ) )
 
     call Search &
            ( R % iaBalanced, R % ENERGY_DENSITY_B, iEnergy_R )
@@ -149,7 +150,8 @@ contains
           Y_I_R_V  =>  Y_I_R % Storage ( iC ) % Value, &
           Y_I_F_V  =>  Y_I_F % Storage ( iC ) % Value, &
            KK_R_V  =>   KK_R % Storage ( iC ) % Value, &
-           KK_F_V  =>   KK_F % Storage ( iC ) % Value )
+           KK_F_V  =>   KK_F % Storage ( iC ) % Value, &
+             ID_V  =>     ID % Storage ( iC ) % Value )
       associate &
         (   Xi_J      =>  I_V ( :, I % EMISSIVITY_J ), &
             Xi_H      =>  I_V ( :, I % EMISSIVITY_H ), &
@@ -183,6 +185,8 @@ contains
           KK_F_S_1    =>  KK_F_V ( :, iMomentum_F ( 1 ) ), &
           KK_F_S_2    =>  KK_F_V ( :, iMomentum_F ( 2 ) ), &
           KK_F_S_3    =>  KK_F_V ( :, iMomentum_F ( 3 ) ), &
+             N_I      =>  ID_V ( :, ID % N_ITERATIONS ), &
+             R_Max    =>  ID_V ( :, ID % RESIDUAL_MAX ), &
           ProperCell  =>  C % ProperCell )
 
       select type ( G  =>  R % Geometry )
@@ -253,10 +257,14 @@ contains
 !end if
 
                 if ( dE_R  <  Tol .and. dE_F  <  Tol ) then
+!                if ( dE_F  <  Tol ) then
 !if ( iV == 3 ) then
 !  call Show ( '>>> Solution reached' )
 !  call Show ( iI, '>>> iI' )
 !end if
+                  N_I   ( iV )  =  iI
+                  R_Max ( iV )  =  max ( dE_R, dE_F )
+
                   exit Implicit
                 end if
 

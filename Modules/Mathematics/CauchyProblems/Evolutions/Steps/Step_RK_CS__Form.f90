@@ -224,7 +224,7 @@ contains
     call S % SetStream_H ( Sm )
 
 !call SM % AddFieldSet ( S % RiemannSolver )
-call SM % AddFieldSet ( S % Error )
+!call Sm % AddFieldSet ( S % Error )
 
   end subroutine SetStream
 

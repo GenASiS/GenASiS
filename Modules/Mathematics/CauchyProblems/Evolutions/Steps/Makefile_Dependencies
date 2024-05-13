@@ -1,3 +1,9 @@
+ImplicitDiagnostics_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  ImplicitDiagnostics_Form.f90
+
 Step_RK_H__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -18,11 +24,13 @@ Step_RK_CS_CS__Form.o: \
   Manifolds.o \
   Fields.o \
   Slopes.o \
+  ImplicitDiagnostics_Form.o \
   Step_RK_H__Form.o \
   Step_RK_CS__Form.o \
   Step_RK_CS_CS__Form.f90
 
 Steps.o: \
+  ImplicitDiagnostics_Form.o \
   Step_RK_H__Form.o \
   Step_RK_CS__Form.o \
   Step_RK_CS_CS__Form.o \
