@@ -1,29 +1,30 @@
-module ImplicitDiagnostics_RM__Form
+module ImplicitDiagnostics_NM_G__Form
   
-  !-- ImplicitDiagnostics_RadiationMoments_Form
+  !-- ImplicitDiagnostics_NeutrinoMoments_Grey_Form
 
   use Basics
   use Mathematics
+  use ImplicitDiagnostics_RM__Form
 
   implicit none
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM = 2
+      N_FIELDS_NM_G = 2
 
-  type, public, extends ( ImplicitDiagnosticsForm ) &
-    :: ImplicitDiagnostics_RM_Form
+  type, public, extends ( ImplicitDiagnostics_RM_Form ) &
+    :: ImplicitDiagnostics_NM_G_Form
       integer ( KDI ) :: &
-        N_FIELDS_RM = N_FIELDS_RM
+        N_FIELDS_NM_G = N_FIELDS_NM_G
       integer ( KDI ) :: &
-        RESIDUAL_RADIATION_ENERGY = 0, &
-        RESIDUAL_FLUID_ENERGY     = 0
+        RESIDUAL_RADIATION_NUMBER = 0, &
+        RESIDUAL_FLUID_NUMBER     = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_ID
     final :: &
       Finalize
-  end type ImplicitDiagnostics_RM_Form
+  end type ImplicitDiagnostics_NM_G_Form
 
 
 contains
@@ -34,7 +35,7 @@ contains
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, nFieldsOption, IgnorabilityOption )
 
-    class ( ImplicitDiagnostics_RM_Form ), intent ( inout ), target :: &
+    class ( ImplicitDiagnostics_NM_G_Form ), intent ( inout ), target :: &
       ID
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
@@ -59,16 +60,16 @@ contains
       Field
 
     if ( ID % Type  ==  '' ) &
-      ID % Type  =  'an ImplicitDiagnostics_RM' 
+      ID % Type  =  'an ImplicitDiagnostics_NM_G' 
 
     !-- Field indices
 
-    oF  =  ID % N_FIELDS_ID
+    oF  =  ID % N_FIELDS_ID  +  ID % N_FIELDS_RM
 
-    ID % RESIDUAL_RADIATION_ENERGY  =  oF  +  1
-    ID % RESIDUAL_FLUID_ENERGY      =  oF  +  2
+    ID % RESIDUAL_RADIATION_NUMBER  =  oF  +  1
+    ID % RESIDUAL_FLUID_NUMBER      =  oF  +  2
 
-    nFields  =  oF  +  ID % N_FIELDS_RM
+    nFields  =  oF  +  ID % N_FIELDS_NM_G
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
 
@@ -80,13 +81,13 @@ contains
       allocate ( Field ( nFields ) )
     end if !-- FieldOption
 
-    Field ( oF + 1 : oF + ID % N_FIELDS_RM ) &
-      = [ 'ResidualRadiationEnergy', &
-          'ResidualFluidEnergy    ' ]
+    Field ( oF + 1 : oF + ID % N_FIELDS_NM_G ) &
+      = [ 'ResidualRadiationNumber', &
+          'ResidualFluidNumber    ' ]
           
     !-- FieldSet
 
-    call ID % ImplicitDiagnosticsForm % Initialize &
+    call ID % ImplicitDiagnostics_RM_Form % Initialize &
            ( A, iStage, &
              FieldOption = Field, &
              DeviceMemoryOption = DeviceMemoryOption, &
@@ -100,10 +101,10 @@ contains
 
   impure elemental subroutine Finalize ( ID )
 
-    type ( ImplicitDiagnostics_RM_Form ), intent ( inout ) :: &
+    type ( ImplicitDiagnostics_NM_G_Form ), intent ( inout ) :: &
       ID
 
   end subroutine Finalize
 
 
-end module ImplicitDiagnostics_RM__Form
+end module ImplicitDiagnostics_NM_G__Form

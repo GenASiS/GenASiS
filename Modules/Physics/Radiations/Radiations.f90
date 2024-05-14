@@ -18,6 +18,7 @@ module Radiations
   use Slope_NM_G_I_I_J_N__Form
   use Slope_NM_G_DFV_I__Form
   use ImplicitDiagnostics_RM__Form
+  use ImplicitDiagnostics_NM_G__Form
   use Step_RK_RM__Form
 
 end module Radiations
