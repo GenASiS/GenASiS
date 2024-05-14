@@ -47,6 +47,8 @@ module NeutrinoMoments_G__Form
       ComputeFromBalancedSingle
     procedure, private, pass :: &
       ComputeSpectralParametersAll
+    procedure, private, pass :: &
+      ComputeSpectralParametersSingle
     procedure, public, pass :: &
       ComputeEquilibriumAll
   end type NeutrinoMoments_G_Form
@@ -55,7 +57,8 @@ module NeutrinoMoments_G__Form
       Compute_E_S_G_G_Kernel, &
       Compute_J_H_N_G_A_Kernel, &
       Compute_J_H_N_G_S_Kernel, &
-      Compute_SP_Kernel, &
+      Compute_SP_A_Kernel, &
+      Compute_SP_S_Kernel, &
       Compute_Eq_Kernel
     
     interface
@@ -134,9 +137,9 @@ module NeutrinoMoments_G__Form
           iV
       end subroutine Compute_J_H_N_G_S_Kernel
 
-      module subroutine Compute_SP_Kernel &
+      module subroutine Compute_SP_A_Kernel &
                ( T_R, Eta_R, E_Ave, F_Ave, J, N, UseDeviceOption )
-        !-- Compute_SpectralParameters_Kernel
+        !-- Compute_SpectralParameters_All_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -146,7 +149,21 @@ module NeutrinoMoments_G__Form
           J, N
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_SP_Kernel
+      end subroutine Compute_SP_A_Kernel
+ 
+      module subroutine Compute_SP_S_Kernel &
+               ( T_R, Eta_R, E_Ave, F_Ave, J, N, iV )
+        !-- Compute_SpectralParameters_Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          T_R, Eta_R, &
+          E_Ave, F_Ave
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J, N
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_SP_S_Kernel
  
       module subroutine Compute_Eq_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, Sign, &
@@ -629,7 +646,7 @@ contains
             J      =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
             N      =>  RMV ( :, RM % NUMBER_DENSITY_C ) )
                
-      call Compute_SP_Kernel &
+      call Compute_SP_A_Kernel &
              ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
                UseDeviceOption  =  RM % DeviceMemory )
 
@@ -638,6 +655,35 @@ contains
     end do !-- iC
 
   end subroutine ComputeSpectralParametersAll
+
+
+  subroutine ComputeSpectralParametersSingle ( RM, iC, iV )
+
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      RM
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+!    call Show ( 'ComputeSpectralParametersSingle', CONSOLE % INFO_6 )
+!    call Show ( RM % Name, 'NeutrinoMoments', CONSOLE % INFO_6 )
+
+    associate &
+      ( RMV  =>  RM % Storage ( iC ) % Value )
+    associate &
+      (   T_R    =>  RMV ( :, RM % TEMPERATURE_GREY ), &
+        Eta_R    =>  RMV ( :, RM % DEGENERACY_GREY ), &
+          E_Ave  =>  RMV ( :, RM % ENERGY_AVERAGE ), &
+          F_Ave  =>  RMV ( :, RM % OCCUPANCY_AVERAGE ), &
+          J      =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
+          N      =>  RMV ( :, RM % NUMBER_DENSITY_C ) )
+             
+    call Compute_SP_S_Kernel ( T_R, Eta_R, E_Ave, F_Ave, J, N, iV )
+
+    end associate !-- T_R, etc.
+    end associate !-- RV, etc.
+
+  end subroutine ComputeSpectralParametersSingle
 
 
   subroutine ComputeEquilibriumAll ( RM )

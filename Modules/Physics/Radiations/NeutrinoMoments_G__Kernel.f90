@@ -531,9 +531,9 @@ contains
   end procedure Compute_J_H_N_G_S_Kernel
 
 
-  module procedure Compute_SP_Kernel
+  module procedure Compute_SP_A_Kernel
 
-    !-- Compute_SpectralParameters_Kernel
+    !-- Compute_SpectralParameters_All_xKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -655,7 +655,101 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure Compute_SP_Kernel
+  end procedure Compute_SP_A_Kernel
+
+
+  module procedure Compute_SP_S_Kernel
+
+    !-- Compute_SpectralParameters_Singlex_Kernel
+
+    real ( KDR ) :: &
+!      SixPi_2, EightPi_2, &
+!      OnePlusEpsilon, &
+!      Factor_ND, Factor_ED_1, Factor_ED_2, &
+      Factor_ND, &
+!      LHS, &
+!      Eta_ND, Eta_ED, Eta, &
+      Eta_ND, EtaMax, &
+      F_2, F_3!, &
+ !     fdeta, fdeta2, &
+ !     fdtheta, fdtheta2, &
+ !     fdetadtheta
+    logical ( KDL ) :: &
+      Bracket, &
+      Converge
+          
+    ! OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
+
+    !   SixPi_2  =  6.0_KDR  *  Pi_2
+    ! EightPi_2  =  8.0_KDR  *  Pi_2
+
+    Factor_ND    =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
+ !   Factor_ED_1  =  EightPi_2 ** ( 1.0_KDR / 4.0_KDR )  &
+ !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
+ !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
+
+    EtaMax  =  100.
+
+    if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
+      return
+
+    ! LHS  =  J ( iV ) ** ( 1.0_KDR / 4.0_KDR )  &
+    !         *  N ( iV ) ** ( - 1.0_KDR / 3.0_KDR )
+    ! LHS  =  max ( LHS, OnePlusEpsilon / Factor_ED_1 )
+
+    ! Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  LHS ** 4 )
+    ! Eta_ED  =  ( Factor_ED_2 * ( Factor_ED_1 * LHS  -  1.0_KDR ) ) &
+    !            ** ( - 0.5_KDR )
+
+    ! if ( Eta_ND < -10.0_KDR ) then
+    !   Eta_R ( iV )  =  Eta_ND
+    ! else if ( Eta_ED > 50.0_KDR ) then
+    !   Eta_R ( iV )  =  Eta_ED
+    ! else
+    !   Eta  =  max ( Eta_ND, Eta_R ( iV ) )
+    !   call SolveSecant ( LHS, 0.99 * Eta, Eta, Success, Eta )
+    !   if ( Success ) then
+    !     Eta_R ( iV )  =  Eta
+    !   else
+    !     !-- crude last resort
+    !     if ( Eta_ND < 1.0_KDR ) then
+    !       Eta_R ( iV )  =  Eta_ND
+    !     else
+    !       Eta_R ( iV )  =  Eta_ED
+    !     end if
+    !   end if
+    ! end if
+
+    Eta_ND  =  - 3.0_KDR  &
+                 * log ( Factor_ND  *  J ( iV ) &
+                         *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR ) )
+
+    if ( Eta_ND  <=  0.0_KDR ) then
+      Eta_R ( iV )  =  Eta_ND
+    else
+      Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
+      call SolveEtaBisection &
+             ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, Bracket, Converge )
+      Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
+    end if
+
+    ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    ! call DFERMI ( 3.0_KDR, Eta_R ( iV ), 0.0_KDR, F_3, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    F_2  =  Fermi_2 ( Eta_R ( iV ) )
+    F_3  =  Fermi_3 ( Eta_R ( iV ) )
+
+    T_R  ( iV )  =  J ( iV )  /  N ( iV )  *  F_2 / F_3
+
+    E_Ave ( iV )  &
+      =  J ( iV )  /  N ( iV )
+    F_Ave ( iV )  &
+      =  1.0_KDR &
+         /  ( exp ( E_Ave ( iV ) / T_R ( iV )  -  Eta_R ( iV ) )  &
+              +  1.0_KDR )
+
+  end procedure Compute_SP_S_Kernel
 
 
   module procedure Compute_Eq_Kernel
