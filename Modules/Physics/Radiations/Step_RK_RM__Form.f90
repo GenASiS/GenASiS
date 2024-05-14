@@ -166,6 +166,7 @@ contains
       associate &
         (     I_V  =>      I % Storage ( iC ) % Value, &
               R_V  =>      R % Storage ( iC ) % Value, &
+              F_V  =>      F % Storage ( iC ) % Value, &
           Y_I_R_V  =>  Y_I_R % Storage ( iC ) % Value, &
           Y_I_F_V  =>  Y_I_F % Storage ( iC ) % Value, &
            KK_R_V  =>   KK_R % Storage ( iC ) % Value, &
@@ -184,10 +185,10 @@ contains
              S_R_1    =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_1 ), &
              S_R_2    =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_2 ), &
              S_R_3    =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_3 ), &
-             E_F      =>  R_V ( :, F % ENERGY_DENSITY_B ), &
-             S_F_1    =>  R_V ( :, F % MOMENTUM_DENSITY_D_1 ), &
-             S_F_2    =>  R_V ( :, F % MOMENTUM_DENSITY_D_2 ), &
-             S_F_3    =>  R_V ( :, F % MOMENTUM_DENSITY_D_3 ), &
+             E_F      =>  F_V ( :, F % ENERGY_DENSITY_B ), &
+             S_F_1    =>  F_V ( :, F % MOMENTUM_DENSITY_D_1 ), &
+             S_F_2    =>  F_V ( :, F % MOMENTUM_DENSITY_D_2 ), &
+             S_F_3    =>  F_V ( :, F % MOMENTUM_DENSITY_D_3 ), &
              E_R_0    =>  Y_I_R_V ( :, iEnergy_R ), &
              S_R_1_0  =>  Y_I_R_V ( :, iMomentum_R ( 1 ) ), &
              S_R_2_0  =>  Y_I_R_V ( :, iMomentum_R ( 2 ) ), &
@@ -359,7 +360,7 @@ contains
       end select !-- G
 
       end associate !-- Xi_J, etc.
-      end associate !-- IntV, etc.
+      end associate !-- I_V, etc.
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
