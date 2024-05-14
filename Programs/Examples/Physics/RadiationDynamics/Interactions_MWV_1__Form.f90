@@ -151,16 +151,16 @@ contains
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
-        ( IV  =>  I % Storage ( iC ) % Value, &
-          RV  =>  R % Storage ( iC ) % Value, &
-          FV  =>  F % Storage ( iC ) % Value )
+        ( I_V  =>  I % Storage ( iC ) % Value, &
+          R_V  =>  R % Storage ( iC ) % Value, &
+          F_V  =>  F % Storage ( iC ) % Value )
       associate &
-        (   M     =>  FV ( :, F % BARYON_MASS ), &
-            N     =>  FV ( :, F % BARYON_DENSITY_C ), &
-           Xi_J   =>  IV ( :, I % EMISSIVITY_J ), &
-          Chi_J   =>  IV ( :, I % OPACITY_J ), &
-          Chi_H   =>  IV ( :, I % OPACITY_H ), &
-            J_Eq  =>  RV ( :, R % ENERGY_DENSITY_C_EQ ) )
+        (   M     =>  F_V ( :, F % BARYON_MASS ), &
+            N     =>  F_V ( :, F % BARYON_DENSITY_C ), &
+           Xi_J   =>  I_V ( :, I % EMISSIVITY_J ), &
+          Chi_J   =>  I_V ( :, I % OPACITY_J ), &
+          Chi_H   =>  I_V ( :, I % OPACITY_H ), &
+            J_Eq  =>  R_V ( :, R % ENERGY_DENSITY_C_EQ ) )
 
       call ComputeAllKernel &
              ( Xi_J, Chi_J, Chi_H, M, N, J_Eq, Kappa = I % SpecificOpacity, &

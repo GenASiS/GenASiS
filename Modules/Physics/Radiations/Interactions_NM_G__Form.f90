@@ -27,21 +27,27 @@ module Interactions_NM_G__Form
       SetStream
     procedure, private, pass :: &
       ComputeAll
+    procedure, private, pass :: &
+      ComputeSingle
     final :: &
       Finalize
   end type Interactions_NM_G_Form
 
     private :: &
-      Compute_EA_E_Kernel, &
-      Compute_EA_E_Bar_Kernel
+      Compute_EA_E_A_Kernel, &
+      Compute_EA_E_S_Kernel, &
+      Compute_EA_E_Bar_A_Kernel, &
+      Compute_EA_E_Bar_S_Kernel, &
+      Compute_S_N_A_A_Kernel, & 
+      Compute_S_N_A_S_Kernel 
 
     interface
 
-      module subroutine Compute_EA_E_Kernel &
+      module subroutine Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption )
-        !-- Compute_EmissionAbsorption_Electron_Kernel
+        !-- Compute_EmissionAbsorption_Electron_All_Kernel
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
@@ -50,13 +56,27 @@ module Interactions_NM_G__Form
           M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_EA_E_Kernel
+      end subroutine Compute_EA_E_A_Kernel
 
-      module subroutine Compute_EA_E_Bar_Kernel &
+      module subroutine Compute_EA_E_S_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
+        !-- Compute_EmissionAbsorption_Electron_Single_Kernel
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J,  Xi_H,  Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_eq, N_eq, F_Ave, &
+          M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_EA_E_S_Kernel
+
+      module subroutine Compute_EA_E_Bar_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption )
-        !-- Compute_EmissionAbsorption_Electron_Bar_Kernel
+        !-- Compute_EmissionAbsorption_Electron_Bar_All_Kernel
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
@@ -65,12 +85,26 @@ module Interactions_NM_G__Form
           M, N, T, X_n, Mu_e
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_EA_E_Bar_Kernel
+      end subroutine Compute_EA_E_Bar_A_Kernel
 
-      module subroutine Compute_S_N_A_Kernel &
+      module subroutine Compute_EA_E_Bar_S_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, iV )
+        !-- Compute_EmissionAbsorption_Electron_Bar_Single_Kernel
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J,  Xi_H,  Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_eq, N_eq, F_Ave, &
+          M, N, T, X_n, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_EA_E_Bar_S_Kernel
+
+      module subroutine Compute_S_N_A_A_Kernel &
                ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
                  UseDeviceOption )
-        !-- Compute_Scattering_Nucleons_Nuclei
+        !-- Compute_Scattering_Nucleons_All_Nuclei
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -78,7 +112,19 @@ module Interactions_NM_G__Form
           M, N, X_p, X_n, X_A, Z, A
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_S_N_A_Kernel
+      end subroutine Compute_S_N_A_A_Kernel
+
+      module subroutine Compute_S_N_A_S_Kernel &
+               ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
+        !-- Compute_Scattering_Nucleons_Single_Nuclei
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T_nu, Eta_nu, &
+          M, N, X_p, X_n, X_A, Z, A
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_S_N_A_S_Kernel
 
     end interface
 
@@ -255,12 +301,12 @@ contains
 
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
-        call Compute_EA_E_Kernel &
+        call Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption = I % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
-        call Compute_EA_E_Bar_Kernel &
+        call Compute_EA_E_Bar_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption = I % DeviceMemory )
@@ -268,7 +314,7 @@ contains
              
       !-- Elastic scattering on nucleons and nuclei
 
-      call Compute_S_N_A_Kernel &
+      call Compute_S_N_A_A_Kernel &
              ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
                UseDeviceOption = I % DeviceMemory )
 
@@ -280,6 +326,79 @@ contains
     end select !-- R
 
   end subroutine ComputeAll
+
+
+  subroutine ComputeSingle ( I, iC, iV )
+
+    class ( Interactions_NM_G_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+!    call Show ( 'ComputeSingle', CONSOLE % INFO_6 )
+!    call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
+
+    select type ( R  =>  I % Radiation )
+      class is ( NeutrinoMoments_G_Form )
+    select type ( F  =>  I % Fluid )
+      class is ( Fluid_P_HN_Form )
+
+    call R % ComputeSpectralParameters ( iC, iV )
+    call R % ComputeEquilibrium ( iC, iV )
+
+    associate &
+      ( I_V  =>  I % Storage ( iC ) % Value, &
+        R_V  =>  R % Storage ( iC ) % Value, &
+        F_V  =>  F % Storage ( iC ) % Value )
+    associate &
+      (  Xi_J    =>  I_V ( :, I % EMISSIVITY_J ), &
+         Xi_H    =>  I_V ( :, I % EMISSIVITY_H ), &
+         Xi_N    =>  I_V ( :, I % EMISSIVITY_N ), &
+        Chi_J    =>  I_V ( :, I % OPACITY_J ), &
+        Chi_H    =>  I_V ( :, I % OPACITY_H ), &
+        Chi_N    =>  I_V ( :, I % OPACITY_N ), &
+          T_Nu   =>  R_V ( :, R % TEMPERATURE_GREY ), &
+        Eta_Nu   =>  R_V ( :, R % DEGENERACY_GREY ), &
+          J_Eq   =>  R_V ( :, R % ENERGY_DENSITY_C_EQ ), &
+          N_Eq   =>  R_V ( :, R % NUMBER_DENSITY_C_EQ ), &
+          F_Ave  =>  R_V ( :, R % OCCUPANCY_AVERAGE ), &
+          M      =>  F_V ( :, F % BARYON_MASS ), &
+          N      =>  F_V ( :, F % BARYON_DENSITY_C ), &
+          T      =>  F_V ( :, F % TEMPERATURE ), &
+          X_p    =>  F_V ( :, F % MASS_FRACTION_PROTON ), &
+          X_n    =>  F_V ( :, F % MASS_FRACTION_NEUTRON ), &
+          X_A    =>  F_V ( :, F % MASS_FRACTION_HEAVY ), &
+          Z      =>  F_V ( :, F % ATOMIC_NUMBER_HEAVY ), &
+          A      =>  F_V ( :, F % MASS_NUMBER_HEAVY ), &
+         Mu_e    =>  F_V ( :, F % CHEMICAL_POTENTIAL_E ), &
+         Mu_n_p  =>  F_V ( :, F % CHEMICAL_POTENTIAL_N_P ) )
+
+    !-- Emission / Absorption
+
+    select case ( trim ( R % RadiationType ) )
+    case ( 'NEUTRINOS_E' )
+      call Compute_EA_E_S_Kernel &
+             ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+               J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
+    case ( 'NEUTRINOS_E_BAR' )
+      call Compute_EA_E_Bar_S_Kernel &
+             ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+               J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, iV )
+    end select !-- RadiationType
+           
+    !-- Elastic scattering on nucleons and nuclei
+
+    call Compute_S_N_A_S_Kernel &
+           ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
+
+    end associate !-- Xi_J, etc.
+    end associate !-- FV, etc.
+
+    end select !-- F
+    end select !-- R
+
+  end subroutine ComputeSingle
 
 
   impure elemental subroutine Finalize ( I )
