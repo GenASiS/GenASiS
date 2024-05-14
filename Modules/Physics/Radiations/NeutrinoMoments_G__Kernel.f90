@@ -752,9 +752,9 @@ contains
   end procedure Compute_SP_S_Kernel
 
 
-  module procedure Compute_Eq_Kernel
+  module procedure Compute_Eq_A_Kernel
 
-    !-- Compute_Equilibrium_Kernel
+    !-- Compute_Equilibrium_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -824,7 +824,51 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure Compute_Eq_Kernel
+  end procedure Compute_Eq_A_Kernel
+
+
+  module procedure Compute_Eq_S_Kernel
+
+    !-- Compute_Equilibrium_Single_Kernel
+
+    real ( KDR ) :: &
+      SqrtTiny, &
+      TwoPi, FourPi, & 
+      Factor_J_N, &
+      Eta_Eq, &
+      F_2_Eq, F_3_Eq!, &
+!      fdeta, fdeta2, &
+!      fdtheta, fdtheta2, &
+!      fdetadtheta
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+     TwoPi  =  2.0_KDR  *  Pi
+    FourPi  =  4.0_KDR  *  Pi
+
+    Factor_J_N   =  FourPi  /  TwoPi ** 3
+
+    if ( T ( iV )  <=  0.0_KDR ) &
+      return
+
+    Eta_Eq  =  Sign  *  ( Mu_E ( iV )  -  Mu_NP ( iV ) )  /  T ( iV )
+    
+    ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    ! call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, F_3_Eq, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    F_2_Eq  =  Fermi_2 ( Eta_Eq )
+    F_3_Eq  =  Fermi_3 ( Eta_Eq )
+
+    N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
+    J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
+
+    N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
+                     /  max ( SqrtTiny, N_Eq ( iV ) )
+    J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                     /  max ( SqrtTiny, J_Eq ( iV ) )
+
+  end procedure Compute_Eq_S_Kernel
 
 
 !   subroutine SolveSecant ( LHS, Guess_1, Guess_2, Success, Root )

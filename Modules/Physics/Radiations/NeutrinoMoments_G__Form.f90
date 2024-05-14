@@ -51,6 +51,8 @@ module NeutrinoMoments_G__Form
       ComputeSpectralParametersSingle
     procedure, public, pass :: &
       ComputeEquilibriumAll
+    procedure, public, pass :: &
+      ComputeEquilibriumSingle
   end type NeutrinoMoments_G_Form
 
     private :: &
@@ -59,7 +61,8 @@ module NeutrinoMoments_G__Form
       Compute_J_H_N_G_S_Kernel, &
       Compute_SP_A_Kernel, &
       Compute_SP_S_Kernel, &
-      Compute_Eq_Kernel
+      Compute_Eq_A_Kernel, &
+      Compute_Eq_S_Kernel
     
     interface
 
@@ -165,10 +168,10 @@ module NeutrinoMoments_G__Form
           iV
       end subroutine Compute_SP_S_Kernel
  
-      module subroutine Compute_Eq_Kernel &
+      module subroutine Compute_Eq_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, Sign, &
                  UseDeviceOption )
-        !-- Compute_Equilibrium_Kernel
+        !-- Compute_Equilibrium_Single_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -182,7 +185,25 @@ module NeutrinoMoments_G__Form
           Sign
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_Eq_Kernel
+      end subroutine Compute_Eq_A_Kernel
+
+      module subroutine Compute_Eq_S_Kernel &
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, Sign, iV )
+        !-- Compute_Equilibrium_Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq, N_Eq, &
+          J_RD, N_RD
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J, N, &
+          T, &
+          Mu_E, Mu_NP
+        real ( KDR ), intent ( in ) :: &
+          Sign
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_Eq_S_Kernel
 
     end interface
 
@@ -719,11 +740,11 @@ contains
 
       select case ( trim ( RM % RadiationType ) )
       case ( 'NEUTRINOS_E' )
-        call Compute_Eq_Kernel &
+        call Compute_Eq_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                  Sign = +1.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
-        call Compute_Eq_Kernel &
+        call Compute_Eq_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                  Sign = -1.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case default
@@ -742,6 +763,60 @@ contains
     end select !-- I
 
   end subroutine ComputeEquilibriumAll
+
+
+  subroutine ComputeEquilibriumSingle ( RM, iC, iV )
+
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      RM
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+!    call Show ( 'ComputeEquilibriumSingle', CONSOLE % INFO_6 )
+!    call Show ( RM % Name, 'NeutrinoMoments', CONSOLE % INFO_6 )
+
+    select type ( I  =>  RM % Interactions )
+      class is ( Interactions_BM_Form )
+    select type ( F  =>  I % Fluid )
+      class is ( Fluid_P_HN_Form )
+
+    associate &
+      ( RMV  =>  RM % Storage ( iC ) % Value, &
+         FV  =>   F % Storage ( iC ) % Value )
+    associate &
+      (  J_Eq  =>  RMV ( :, RM % ENERGY_DENSITY_C_EQ ), &
+         N_Eq  =>  RMV ( :, RM % NUMBER_DENSITY_C_EQ ), &
+         J_RD  =>  RMV ( :, RM % ENERGY_DENSITY_C_RD ), &
+         N_RD  =>  RMV ( :, RM % NUMBER_DENSITY_C_RD ), &
+         J     =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
+         N     =>  RMV ( :, RM % NUMBER_DENSITY_C ), &
+         T     =>   FV ( :,  F % TEMPERATURE ), &
+        Mu_E   =>   FV ( :,  F % CHEMICAL_POTENTIAL_E ), &
+        Mu_NP  =>   FV ( :,  F % CHEMICAL_POTENTIAL_N_P ) )
+
+    select case ( trim ( RM % RadiationType ) )
+    case ( 'NEUTRINOS_E' )
+      call Compute_Eq_S_Kernel &
+             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, +1.0_KDR, iV )
+    case ( 'NEUTRINOS_E_BAR' )
+      call Compute_Eq_S_Kernel &
+             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, -1.0_KDR, iV )
+    case default
+      call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+      call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
+      call Show ( 'NeutrinoMoments_G__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeEquilibriumAll', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Name
+
+    end associate !-- T_R, etc.
+    end associate !-- RV, etc.
+
+    end select !-- F
+    end select !-- I
+
+  end subroutine ComputeEquilibriumSingle
 
 
 end module NeutrinoMoments_G__Form
