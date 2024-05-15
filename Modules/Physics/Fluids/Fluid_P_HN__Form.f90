@@ -62,6 +62,8 @@ module Fluid_P_HN__Form
       ComputeFromPrimitive
     procedure, private, pass :: &
       ComputeFromBalancedAll
+    procedure, private, pass :: &
+      ComputeFromBalancedSingle
     final :: &
       Finalize
 !     procedure, public, pass ( C ) :: &
@@ -73,14 +75,17 @@ module Fluid_P_HN__Form
   end type Fluid_P_HN_Form
 
     private :: &
-      Apply_EOS_PrologueKernel, &
+      Apply_EOS_Prologue_A_Kernel, &
+      Apply_EOS_Prologue_S_Kernel, &
       Compute_D_S_G_DE_G_Kernel, &
-      Compute_N_V_E_YE_G_Kernel, &
-      Apply_EOS_EpilogueKernel
+      Compute_N_V_E_YE_G_A_Kernel, &
+      Compute_N_V_E_YE_G_S_Kernel, &
+      Apply_EOS_Epilogue_A_Kernel, &
+      Apply_EOS_Epilogue_S_Kernel
 
     interface 
   
-      module subroutine Apply_EOS_PrologueKernel &
+      module subroutine Apply_EOS_Prologue_A_Kernel &
                ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                  UseDeviceOption )
         use Basics
@@ -101,7 +106,30 @@ module Fluid_P_HN__Form
           Y_Safe
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Apply_EOS_PrologueKernel
+      end subroutine Apply_EOS_Prologue_A_Kernel
+    
+      module subroutine Apply_EOS_Prologue_S_Kernel &
+               ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
+                 iV )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M, &
+          N, &
+          P, &
+          T, &
+          E, &
+          YE
+        real ( KDR ), intent ( in ) :: &
+          M_Ref, &
+          N_Min, &
+          E_Min, &
+          T_Min, &
+          Y_Min, &
+          Y_Safe
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Apply_EOS_Prologue_S_Kernel
     
       module subroutine Compute_D_S_G_DE_G_Kernel & 	 	 
                ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
@@ -133,11 +161,12 @@ module Fluid_P_HN__Form
           UseDeviceOption
       end subroutine Compute_D_S_G_DE_G_Kernel 	 	 
 
-      module subroutine Compute_N_V_E_YE_G_Kernel &
+      module subroutine Compute_N_V_E_YE_G_A_Kernel &
                ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
                  N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, YE, &
                  UseDeviceOption )
-        !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo_Kernel
+        !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo
+        !    _All_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -160,9 +189,38 @@ module Fluid_P_HN__Form
           YE
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_N_V_E_YE_G_Kernel
+      end subroutine Compute_N_V_E_YE_G_A_Kernel
 
-      module subroutine Apply_EOS_EpilogueKernel &
+      module subroutine Compute_N_V_E_YE_G_S_Kernel &
+               ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
+        !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo
+        !    _Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          D, &
+          S_1, S_2, S_3, &
+          G, &
+          DE
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M, &
+          M_UU_11, M_UU_22, M_UU_33
+        real ( KDR ), intent ( in ) :: &
+          N_Min, &
+          E_Min, &
+          Y_Min, &
+          Y_Safe
+        integer ( KDI ), intent ( in ) :: &
+          iV
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          N, &
+          V_1, V_2, V_3, &
+          E, &
+          YE
+      end subroutine Compute_N_V_E_YE_G_S_Kernel
+
+      module subroutine Apply_EOS_Epilogue_A_Kernel &
                ( N, P, T, SS, E, Mu_NP, Mu_E, M, UseDeviceOption )
         use Basics
         implicit none
@@ -178,7 +236,25 @@ module Fluid_P_HN__Form
           M
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Apply_EOS_EpilogueKernel
+      end subroutine Apply_EOS_Epilogue_A_Kernel
+
+      module subroutine Apply_EOS_Epilogue_S_Kernel &
+               ( N, P, T, SS, E, Mu_NP, Mu_E, M, iV )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          N, &
+          P, &
+          T, &
+          SS, &
+          E, &
+          Mu_NP, &
+          Mu_E
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Apply_EOS_Epilogue_S_Kernel
 
     end interface
 
@@ -574,7 +650,7 @@ contains
           Mu_NP =>  FV ( :, F % CHEMICAL_POTENTIAL_N_P ), &
           Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
 
-      call Apply_EOS_PrologueKernel &
+      call Apply_EOS_Prologue_A_Kernel &
              ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                UseDeviceOption = F % DeviceMemory )
 
@@ -587,7 +663,7 @@ contains
       call FS % ReassociateHost ( AssociateVariablesOption = .true. )
       end associate !-- FS
 
-      call Apply_EOS_EpilogueKernel &
+      call Apply_EOS_Epilogue_A_Kernel &
              ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
                UseDeviceOption = F % DeviceMemory )
 
@@ -675,7 +751,7 @@ contains
                   UseDeviceOption = CS % DeviceMemory )
       end associate !-- CSV
 
-      call Apply_EOS_PrologueKernel &
+      call Apply_EOS_Prologue_A_Kernel &
              ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                UseDeviceOption = CS % DeviceMemory )
 
@@ -689,7 +765,7 @@ contains
       call FS % ReassociateHost ( AssociateVariablesOption = .true. )
       end associate !-- FS
 
-      call Apply_EOS_EpilogueKernel &
+      call Apply_EOS_Epilogue_A_Kernel &
              ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
                UseDeviceOption = CS % DeviceMemory )
 
@@ -793,7 +869,7 @@ contains
             M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
             M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
 
-        call Compute_N_V_E_YE_G_Kernel &
+        call Compute_N_V_E_YE_G_A_Kernel &
                ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
                  N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, YE, &
                  UseDeviceOption = CS % DeviceMemory )
@@ -808,7 +884,7 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
 
-      call Apply_EOS_PrologueKernel &
+      call Apply_EOS_Prologue_A_Kernel &
              ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
                UseDeviceOption = CS % DeviceMemory )
 
@@ -822,7 +898,7 @@ contains
       call FS % ReassociateHost ( AssociateVariablesOption = .true. )
       end associate !-- FS
 
-      call Apply_EOS_EpilogueKernel &
+      call Apply_EOS_Epilogue_A_Kernel &
              ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
                UseDeviceOption = CS % DeviceMemory )
 
@@ -833,6 +909,111 @@ contains
     if ( associated ( T_K ) ) call T_K % Stop ( )
 
   end subroutine ComputeFromBalancedAll
+
+
+  subroutine ComputeFromBalancedSingle ( CS, iC, iV, T_Option )
+
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      CS
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+    integer ( KDI ), intent ( in ) :: &
+      iC, &
+      iV
+
+    type ( TimerForm ), pointer :: &
+      T_G, &
+      T_K
+
+    ! call Show ( 'ComputeFromBalancedSingle', CONSOLE % INFO_6 )
+    ! call Show ( CS % Name, 'Fluid', CONSOLE % INFO_6 )
+
+    ! if ( present ( T_Option ) ) then
+    !   T_K  =>  PROGRAM_HEADER % Timer &
+    !              ( Handle = CS % iTimer_CFB, &
+    !                Name = trim ( T_Option % Name ) // '_Krnl', &
+    !                Level = T_Option % Level + 1 )
+    ! else
+    !   T_K  =>  null ( )
+    ! end if
+
+    ! if ( associated ( T_K ) ) call T_K % Start ( )
+
+    associate &
+      (    FV   =>  CS % Storage ( iC ) % Value, &
+        M_Ref   =>  CS % BaryonMass, &
+        N_Min   =>  CS % BaryonDensityMin, &
+        E_Min   =>  CS % EnergyDensityMin, &
+        T_Min   =>  CS % TemperatureMin, &
+        Y_Min   =>  CS % ElectronFractionMin, &
+        Y_Safe  =>  CS % ElectronFractionSafe )
+    associate &
+      ( M     =>  FV ( :, CS % BARYON_MASS ), &
+        N     =>  FV ( :, CS % BARYON_DENSITY_C ), &
+        V_1   =>  FV ( :, CS % VELOCITY_U_1 ), &
+        V_2   =>  FV ( :, CS % VELOCITY_U_2 ), &
+        V_3   =>  FV ( :, CS % VELOCITY_U_3 ), &
+        D     =>  FV ( :, CS % BARYON_DENSITY_B ), &
+        S_1   =>  FV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
+        S_2   =>  FV ( :, CS % MOMENTUM_DENSITY_D_2 ), &
+        S_3   =>  FV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
+        E     =>  FV ( :, CS % ENERGY_DENSITY_C ), &
+        G     =>  FV ( :, CS % ENERGY_DENSITY_B ), &
+        P     =>  FV ( :, CS % PRESSURE ), &
+        T     =>  FV ( :, CS % TEMPERATURE ), &
+        SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
+        SS    =>  FV ( :, CS % SOUND_SPEED ), &
+        YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
+        DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
+        Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
+        Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
+
+    select type ( Gn  =>  CS % Geometry )
+    class is ( Gravitation_G_Form )
+
+      associate &
+        ( GSV  =>  Gn % Storage ( iC ) % Value )
+      associate &
+        ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
+          M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
+          M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+
+      call Compute_N_V_E_YE_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
+
+      end associate !-- M_UU_11, etc.
+      end associate !-- GSV
+
+    class default
+      call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Gn
+
+    call Apply_EOS_Prologue_S_Kernel &
+           ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
+
+    associate ( FS  =>  CS % Storage ( iC ) )
+    call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+    call CS % EOS % ComputeFromEnergy &
+           ( FS, &
+             iaFluidInput = [ CS % BARYON_DENSITY_C, &
+                              CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
+             iSolve = CS % ENERGY_DENSITY_C, iV = iV )
+    call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+    end associate !-- FS
+
+    call Apply_EOS_Epilogue_S_Kernel &
+           ( N, P, T, SS, E, Mu_NP, Mu_E, M, iV )
+
+    end associate !-- M, etc.
+    end associate !-- FV, etc.
+
+!    if ( associated ( T_K ) ) call T_K % Stop ( )
+
+  end subroutine ComputeFromBalancedSingle
 
 
   impure elemental subroutine Finalize ( F )

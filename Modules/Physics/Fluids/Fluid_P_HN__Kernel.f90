@@ -9,7 +9,7 @@ submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
 contains
 
   
-  module procedure Apply_EOS_PrologueKernel
+  module procedure Apply_EOS_Prologue_A_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -81,7 +81,31 @@ contains
     
     end if
     
-  end procedure Apply_EOS_PrologueKernel
+  end procedure Apply_EOS_Prologue_A_Kernel
+  
+  
+  module procedure Apply_EOS_Prologue_S_Kernel
+
+    M ( iV )   =  M_Ref
+
+    if ( N ( iV )  <=  N_Min ) then
+      N ( iV )   =  N_Min
+      YE ( iV )  =  Y_Safe
+    end if
+    if ( E ( iV )  <=  E_Min ) & 
+      E ( iV )  =  E_Min
+    if ( T ( iV )  <=  T_Min ) & 
+      T ( iV )  =  T_Min
+    if ( YE ( iV )  <=  Y_Min ) &
+      YE ( iV )  =  Y_Min
+
+    E ( iV )  =  ( E ( iV )  /  ( M ( iV )  *  N ( iV ) )  -  OR_Shift ) &
+                 /  SpecificEnergy_CGS
+    N ( iV )  =  M ( iV )  *  N ( iV )  /  MassDensity_CGS
+    T ( iV )  =  T ( iV )  /  MeV
+    P ( iV )  =  P ( iV )  /  Pressure_CGS
+
+  end procedure Apply_EOS_Prologue_S_Kernel
   
   
   module procedure Compute_D_S_G_DE_G_Kernel
@@ -165,9 +189,9 @@ contains
   end procedure Compute_D_S_G_DE_G_Kernel 	 	 
 
 
-  module procedure Compute_N_V_E_YE_G_Kernel
+  module procedure Compute_N_V_E_YE_G_A_Kernel
 
-    !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo
+    !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_All_Galileo
 
     integer ( KDI ) :: &
       iV, &
@@ -249,10 +273,41 @@ contains
     
     end if
 
-  end procedure Compute_N_V_E_YE_G_Kernel
+  end procedure Compute_N_V_E_YE_G_A_Kernel
 
 
-  module procedure Apply_EOS_EpilogueKernel
+  module procedure Compute_N_V_E_YE_G_S_Kernel
+
+    !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Single_Galileo
+
+    if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
+      D   ( iV )  =  N_Min
+      S_1 ( iV )  =  0.0_KDR
+      S_2 ( iV )  =  0.0_KDR
+      S_3 ( iV )  =  0.0_KDR
+      G   ( iV )  =  E_Min
+      DE  ( iV )  =  Y_Safe * N_Min
+    end if
+
+    N ( iV )    =  D ( iV )
+
+    V_1 ( iV )  =  M_UU_11 ( iV )  &
+                   *  S_1 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+    V_2 ( iV )  =  M_UU_22 ( iV )  &
+                   *  S_2 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+    V_3 ( iV )  =  M_UU_33 ( iV )  &
+                   *  S_3 ( iV )  /  ( M ( iV )  *  D ( iV ) )
+
+    E ( iV )    =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+
+    YE ( iV )   =  DE ( iV )  /  N ( iV )
+
+  end procedure Compute_N_V_E_YE_G_S_Kernel
+
+
+  module procedure Apply_EOS_Epilogue_A_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -312,7 +367,25 @@ contains
         
     end if
     
-  end procedure Apply_EOS_EpilogueKernel
+  end procedure Apply_EOS_Epilogue_A_Kernel
+
+
+  module procedure Apply_EOS_Epilogue_S_Kernel
+
+!        if ( N ( iV ) == 0.0_KDR ) cycle 
+
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        T ( iV )      =  T ( iV ) * MeV
+        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
+        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
+                           * M ( iV ) * N ( iV )
+        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+
+        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
+        
+  end procedure Apply_EOS_Epilogue_S_Kernel
 
 
 end submodule Fluid_P_HN__Kernel
