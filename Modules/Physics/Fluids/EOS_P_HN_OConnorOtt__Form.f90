@@ -57,9 +57,19 @@ module EOS_P_HN_OConnorOtt__Form
       AllocateDevice => AllocateDevice_EOS_P_HN
     procedure, public, pass :: &
       SelectVariables
+    procedure, private, pass :: &
+      ComputeFromTemperatureAll, &
+      ComputeFromTemperatureSingle
+    generic, public :: &
+      ComputeFromTemperature => ComputeFromTemperatureAll, &
+                                ComputeFromTemperatureSingle
+    procedure, private, pass :: &
+      ComputeFromEnergyAll, &
+      ComputeFromEnergySingle
+    generic, public :: &
+      ComputeFromEnergy => ComputeFromEnergyAll, &
+                           ComputeFromEnergySingle
     procedure, public, pass :: &
-      ComputeFromTemperature, &
-      ComputeFromEnergy, &
       ComputeFromEntropy, &
       ComputeFromEnergyEntropy
     final :: &
@@ -69,8 +79,10 @@ module EOS_P_HN_OConnorOtt__Form
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
-      Interpolate_3D_Kernel, &
-      FindTemperatureKernel, &
+      Interpolate_3D_A_Kernel, &
+      Interpolate_3D_S_Kernel, &
+      FindTemperature_A_Kernel, &
+      FindTemperature_S_Kernel, &
       InterpolateTableKernel
   
   real ( KDR ), parameter :: &
@@ -88,7 +100,7 @@ module EOS_P_HN_OConnorOtt__Form
 
   interface
   
-    module subroutine Interpolate_3D_Kernel &
+    module subroutine Interpolate_3D_A_Kernel &
                  ( F, T, XT, YT, ZT, E_Shift, ia_F_I, ia_F_O, ia_E, &
                    UseDeviceOption )
       use Basics      
@@ -108,9 +120,30 @@ module EOS_P_HN_OConnorOtt__Form
         ia_E       !-- iaEOS
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Interpolate_3D_Kernel
+    end subroutine Interpolate_3D_A_Kernel
     
-    module subroutine FindTemperatureKernel &
+    module subroutine Interpolate_3D_S_Kernel &
+                 ( F, T, XT, YT, ZT, E_Shift, ia_F_I, ia_F_O, ia_E, iValue )
+      use Basics      
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        XT, &      !-- LogDensity (typically)
+        YT, &      !-- LogTemperature (typically)
+        ZT         !-- ElectronFraction  (typically)
+      real ( KDR ), intent ( in ) :: &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, &  !-- iaFluidInput
+        ia_F_O, &  !-- iaFluidOutput
+        ia_E       !-- iaEOS
+      integer ( KDI ), intent ( in ) :: &
+        iValue
+    end subroutine Interpolate_3D_S_Kernel
+    
+    module subroutine FindTemperature_A_Kernel &
                ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, i_SF, i_ST, &
                  LogScaleOption, UseDeviceOption, ShiftOption, &
                  ToleranceOption, nIterationsOption )
@@ -136,7 +169,36 @@ module EOS_P_HN_OConnorOtt__Form
         ToleranceOption
       integer ( KDI ), intent ( in ), optional :: &
         nIterationsOption
-    end subroutine FindTemperatureKernel
+    end subroutine FindTemperature_A_Kernel
+
+
+    module subroutine FindTemperature_S_Kernel &
+               ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, i_SF, i_ST, iV, &
+                 LogScaleOption, ShiftOption, &
+                 ToleranceOption, nIterationsOption )
+      use Basics
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        T_L_N, &      !-- TableLogDensity
+        T_L_T, &      !-- TableLogTemperature
+        T_Ye          !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I        !-- iaFluidInput
+      integer ( KDI ), intent ( in ) :: & 
+        i_SF, &       !-- index of Fluid to solve from
+        i_ST, &          !-- index of the corresponding quantity in EOS table
+        iV
+      logical ( KDL ), intent ( in ), optional :: &
+        LogScaleOption
+      real ( KDR ), intent ( in ), optional :: &
+        ShiftOption, &
+        ToleranceOption
+      integer ( KDI ), intent ( in ), optional :: &
+        nIterationsOption
+    end subroutine FindTemperature_S_Kernel
 
 
     module subroutine FindTemperatureEnergyEntropyKernel &
@@ -449,7 +511,7 @@ contains
   end subroutine AllocateDevice_EOS_P_HN
 
   
-  subroutine ComputeFromTemperature ( E, Fluid, iaFluidInput )
+  subroutine ComputeFromTemperatureAll ( E, Fluid, iaFluidInput )
   
     class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
       E
@@ -463,16 +525,40 @@ contains
     
     UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
     
-    call Interpolate_3D_Kernel &
+    call Interpolate_3D_A_Kernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, E % EnergyShift, iaFluidInput, &
              E % iaFluidOutput, E % iaSelected, &
              UseDeviceOption = UseDevice )
   
-  end subroutine ComputeFromTemperature
+  end subroutine ComputeFromTemperatureAll
   
   
-  subroutine ComputeFromEnergy ( E, Fluid, iaFluidInput, iSolve )
+  subroutine ComputeFromTemperatureSingle ( E, Fluid, iaFluidInput, iV )
+  
+    class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
+      E
+    class ( StorageForm ), intent ( inout ) :: &
+      Fluid
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaFluidInput
+    integer ( KDI ), intent ( in ) :: &
+      iV
+    
+    logical ( KDL ) :: &
+      UseDevice 
+    
+    UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
+    
+    call Interpolate_3D_S_Kernel &
+           ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
+             E % ElectronFraction, E % EnergyShift, iaFluidInput, &
+             E % iaFluidOutput, E % iaSelected, iV )
+  
+  end subroutine ComputeFromTemperatureSingle
+  
+  
+  subroutine ComputeFromEnergyAll ( E, Fluid, iaFluidInput, iSolve )
   
     class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
       E
@@ -494,17 +580,49 @@ contains
     
 !call Show ( '>>> 3.2.1' )
 
-    call FindTemperatureKernel &
+    call FindTemperature_A_Kernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, iaFluidInput, iSolve, &
              E % iaSelected ( iSelected ), ShiftOption = E % EnergyShift, &
              LogScaleOption = .true., UseDeviceOption = UseDevice )
     
 !call Show ( '>>> 3.2.2' )
-    call E % ComputeFromTemperature ( Fluid, iaFluidInput )
+    call E % ComputeFromTemperatureAll ( Fluid, iaFluidInput )
     
 !call Show ( '>>> 3.2.3' )
-  end subroutine ComputeFromEnergy
+  end subroutine ComputeFromEnergyAll
+    
+  
+  subroutine ComputeFromEnergySingle ( E, Fluid, iaFluidInput, iSolve, iV )
+  
+    class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
+      E
+    class ( StorageForm ), intent ( inout ) :: &
+      Fluid
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaFluidInput
+    integer ( KDI ), intent ( in ) :: &
+      iSolve, &
+      iV
+    
+    integer ( KDI ) :: &
+      iSelected
+    
+    call Search ( E % iaFluidOutput, iSolve, iSelected )
+    
+!call Show ( '>>> 3.2.1' )
+
+    call FindTemperature_S_Kernel &
+           ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
+             E % ElectronFraction, iaFluidInput, iSolve, iV, &
+             E % iaSelected ( iSelected ), ShiftOption = E % EnergyShift, &
+             LogScaleOption = .true. )
+    
+!call Show ( '>>> 3.2.2' )
+    call E % ComputeFromTemperatureSingle ( Fluid, iaFluidInput, iV )
+    
+!call Show ( '>>> 3.2.3' )
+  end subroutine ComputeFromEnergySingle
     
   
   subroutine ComputeFromEntropy ( E, Fluid, iaFluidInput, iSolve )
@@ -527,12 +645,12 @@ contains
     
     call Search ( E % iaFluidOutput, iSolve, iSelected )
     
-    call FindTemperatureKernel &
+    call FindTemperature_A_Kernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, iaFluidInput, iSolve, &
              E % iaSelected ( iSelected ), UseDeviceOption = UseDevice )
     
-    call E % ComputeFromTemperature ( Fluid, iaFluidInput )
+    call E % ComputeFromTemperatureAll ( Fluid, iaFluidInput )
     
   end subroutine ComputeFromEntropy
   
@@ -577,7 +695,7 @@ contains
              ShiftOption = [ 0.0_KDR, E % EnergyShift ], &
              UseDeviceOption = UseDevice )
     
-    call E % ComputeFromTemperature ( Fluid, iaFluidInput )
+    call E % ComputeFromTemperatureAll ( Fluid, iaFluidInput )
   
   end subroutine ComputeFromEnergyEntropy
                
