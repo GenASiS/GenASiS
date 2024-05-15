@@ -118,6 +118,9 @@ contains
        E_F_P, &
       SqrtTiny
 
+    call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
+    call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
+
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     associate &

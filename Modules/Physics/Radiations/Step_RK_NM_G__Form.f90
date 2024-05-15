@@ -132,6 +132,9 @@ contains
        N_F_P, &  !-- Number_Fluid_Previous
       SqrtTiny
 
+    call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
+    call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
+
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     associate &
@@ -255,8 +258,14 @@ contains
 
         nV  =  size ( ProperCell )
 
+!call Show ( '>>> Stage' )
+!call Show ( iS, '>>> iS' )
+
         do iV = 1, nV
           if ( ProperCell ( iV ) ) then      
+
+!call Show ( '  >>> Cell' )
+!call Show ( iV, '>>> iV' )
 
             !-- Iterate radiation and fluid energy to convergence
 
@@ -266,12 +275,17 @@ contains
 
               iI  =  iI + 1
 
+!call Show ( '    >>> Iteration' )
+!call Show ( iI, '>>> iI' )
+
               !-- Compute interactions
 
+!call Show ( '      >>> compute interactions' )
               call I % Compute ( iC, iV )
 
               !-- Compute energy and number updates
 
+!call Show ( '      >>> compute updates' )
               KK_R_E ( iV )  &
                 =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
                    /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
@@ -284,6 +298,7 @@ contains
 
               !-- Apply energy and number updates
 
+!call Show ( '      >>> apply updates' )
               E_R ( iV )  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )
               N_R ( iV )  =  N_R_0 ( iV )  +  dT * AA * KK_R_N ( iV )
 
@@ -294,6 +309,7 @@ contains
 
               if ( iI  >  1 ) then
 
+!call Show ( '      >>> exit test' )
                 associate &
                   ( dE_R    =>  Res_R_E ( iI ), &
                     dN_R    =>  Res_R_N ( iI ), &
@@ -323,31 +339,40 @@ contains
                 if ( dE_R  <  Tol .and. dE_F  <  Tol  &
                      .and. dN_R  <  Tol .and. dN_F  <  Tol ) &
                 then
-                  Err ( iV )  =  0  !-- Converged
+                  Err ( iV )  =  0.0_KDR  !-- Converged
                 else if ( iI  ==  Max_I  &
                           .and. ( dE_R  <  dE_R_P .and. dE_F  <  dE_F_P  &
                             .and. dN_R  <  dN_R_P .and. dN_F  <  dN_F_P ) ) &
                 then
-                  Err ( iV )  =  1  !-- Converging slowly
-                  call Show ( 'Implicit solve converging slowly', &
-                              CONSOLE % WARNING )
-                  call Show ( iV, 'iV', &
-                              CONSOLE % WARNING )
-                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
-                              CONSOLE % WARNING )
-                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
+                  Err ( iV )  =  1.0_KDR  !-- Converging slowly
+                  ! call Show ( 'Implicit solve converging slowly', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( iS, 'iS', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( iV, 'iV', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( Res_R_E ( : iI ), 'Res_R_E', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( Res_F_E ( : iI ), 'Res_F_E' )
                 else if ( iI  >  2  &
                           .and. ( dE_R  >  dE_R_P .or. dE_F  >  dE_F_P  &
                              .or. dN_R  >  dN_R_P .or. dN_F  >  dN_F_P ) ) &
                 then
-                  Err ( iV )  =  2  !-- Diverging
-                  call Show ( 'Implicit solve diverging', &
-                              CONSOLE % WARNING )
-                  call Show ( iV, 'iV', &
-                              CONSOLE % WARNING )
-                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
-                              CONSOLE % WARNING )
-                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
+                  Err ( iV )  =  2.0_KDR  !-- Diverging
+                  ! call Show ( 'Implicit solve diverging', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( iS, 'iS', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( iV, 'iV', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( Res_R_E ( : iI ), 'Res_R_E', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( Res_R_N ( : iI ), 'Res_R_N', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( Res_F_E ( : iI ), 'Res_F_E', &
+                  !             CONSOLE % WARNING )
+                  ! call Show ( Res_F_N ( : iI ), 'Res_F_N', &
+                  !             CONSOLE % WARNING )
                   !-- Discard updates and do nothing
                   KK_R_E ( iV )  =  0.0_KDR
                   KK_R_N ( iV )  =  0.0_KDR
@@ -370,25 +395,34 @@ contains
               E_F_P  =  E_F ( iV )
               N_F_P  =  N_F ( iV )
 
+!call Show ( '      >>> R % ComputeFromBalanced' )
               call R % ComputeFromBalanced ( iC, iV )
+!call Show ( '      >>> F % ComputeFromBalanced' )
               call F % ComputeFromBalanced ( iC, iV )
+!call Show ( '      >>> end iteration' )
 
             end do Implicit
 
             !--- Momentum update
 
-            KK_R_S_1 ( iV )  &
-              =  ( Xi_H ( iV )  &
-                   -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-            KK_R_S_2 ( iV )  &
-              =  ( Xi_H ( iV )  &
-                   -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-            KK_R_S_3 ( iV )  &
-              =  ( Xi_H ( iV )  &
-                   -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            if ( Err ( iV )  <  1.1_KDR ) then
+              KK_R_S_1 ( iV )  &
+                =  ( Xi_H ( iV )  &
+                     -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
+                   /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+              KK_R_S_2 ( iV )  &
+                =  ( Xi_H ( iV )  &
+                     -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
+                   /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+              KK_R_S_3 ( iV )  &
+                =  ( Xi_H ( iV )  &
+                     -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
+                   /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            else
+              KK_R_S_1 ( iV )  =  0.0_KDR
+              KK_R_S_2 ( iV )  =  0.0_KDR
+              KK_R_S_3 ( iV )  =  0.0_KDR
+            end if
 
             KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
             KK_F_S_2 ( iV )  =  - KK_R_S_2 ( iV )

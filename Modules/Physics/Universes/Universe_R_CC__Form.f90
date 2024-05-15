@@ -627,9 +627,9 @@ contains
     select type ( I  =>  U % Integrator )
     class is ( Integrator_CS_1D_BM_CS_Form )
 
-      allocate ( Step_RK_CS_CS_Form :: I % Step_X )
+      allocate ( Step_RK_NM_G_Form :: I % Step_X )
       select type ( S  =>  I % Step_X )
-        class is ( Step_RK_CS_CS_Form )
+        class is ( Step_RK_NM_G_Form )
 
       allocate ( S % Step_CS_1 )
       allocate ( S % Step_CS_2 )
@@ -652,9 +652,9 @@ contains
       end select !-- DF
 
       if ( ImplicitExplicit ) then
-        !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
-        S_R % SetSlopeImplicitIterate  =>  SetSlope_NM_G_I_I_J_N
-        S_R % SetSlopeImplicit         =>  SetSlope_NM_G_I_I
+!        !-- SetSlopeExplicit set to DFV by default in Step_RK_CS__Form
+!        S_R % SetSlopeImplicitIterate  =>  SetSlope_NM_G_I_I_J_N
+!        S_R % SetSlopeImplicit         =>  SetSlope_NM_G_I_I
       else
         S_R % SetSlopeExplicit  =>  SetSlope_NM_G_DFV_I
       end if
@@ -680,8 +680,8 @@ contains
 
       if ( ImplicitExplicit ) then
         S_F % SetSlopeExplicit         =>  SetSlope_F_P_DFV_N
-        S_F % SetSlopeImplicitIterate  =>  SetSlope_F_P_SS
-        S_F % SetSlopeImplicit         =>  SetSlope_F_P_SS
+!        S_F % SetSlopeImplicitIterate  =>  SetSlope_F_P_SS
+!        S_F % SetSlopeImplicit         =>  SetSlope_F_P_SS
       else
         S_F % SetSlopeExplicit  =>  SetSlope_F_P_DFV_N_SS
       end if

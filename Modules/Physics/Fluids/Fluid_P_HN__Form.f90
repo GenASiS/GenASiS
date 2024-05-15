@@ -995,6 +995,8 @@ contains
     call Apply_EOS_Prologue_S_Kernel &
            ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
 
+!call Show ( '>>> ComputeFromEnergy' )
+!call Show ( iV, '>>> iV' )
     associate ( FS  =>  CS % Storage ( iC ) )
     call FS % ReassociateHost ( AssociateVariablesOption = .false. )
     call CS % EOS % ComputeFromEnergy &

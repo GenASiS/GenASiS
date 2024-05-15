@@ -610,18 +610,18 @@ contains
     
     call Search ( E % iaFluidOutput, iSolve, iSelected )
     
-!call Show ( '>>> 3.2.1' )
-
+!call Show ( '>>> FindTemperature_S_Kernel' )
+!call Show ( iV, '>>> iV' )
     call FindTemperature_S_Kernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
-             E % ElectronFraction, iaFluidInput, iSolve, iV, &
-             E % iaSelected ( iSelected ), ShiftOption = E % EnergyShift, &
-             LogScaleOption = .true. )
+             E % ElectronFraction, iaFluidInput, iSolve, &
+             E % iaSelected ( iSelected ), iV, &
+             ShiftOption = E % EnergyShift, LogScaleOption = .true. )
     
-!call Show ( '>>> 3.2.2' )
+!call Show ( '>>> 3.2' )
     call E % ComputeFromTemperatureSingle ( Fluid, iaFluidInput, iV )
     
-!call Show ( '>>> 3.2.3' )
+!call Show ( '>>> 3.3' )
   end subroutine ComputeFromEnergySingle
     
   
