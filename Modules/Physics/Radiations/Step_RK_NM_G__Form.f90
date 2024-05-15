@@ -113,10 +113,10 @@ contains
       iS
 
     integer ( KDI ) :: &
-      iC!, &
-!       iV, &
-!       iI, &
-!       nV
+      iC, &
+      iV, &
+      iI, &
+      nV
     integer ( KDI ) :: &
       iEnergy_R, &
       iEnergy_F, &
@@ -126,8 +126,10 @@ contains
       iMomentum_R, &
       iMomentum_F
     real ( KDR ) :: &
-!        E_R_P, &
-!        E_F_P, &
+       E_R_P, &  !-- Energy_Radiation_Previous
+       N_R_P, &  !-- Number_Radiation_Previous
+       E_F_P, &  !-- Energy_Fluid_Previous
+       N_F_P, &  !-- Number_Fluid_Previous
       SqrtTiny
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
@@ -241,152 +243,183 @@ contains
              R_F_N    =>  ID_V ( :, ID % RESIDUAL_FLUID_NUMBER ), &
           ProperCell  =>  C % ProperCell )
 
-!       select type ( G  =>  R % Geometry )
-!       class is ( Gravitation_G_Form )
+      select type ( G  =>  R % Geometry )
+      class is ( Gravitation_G_Form )
 
-!         associate &
-!           ( GSV  =>  G % Storage ( iC ) % Value )
-!         associate &
-!           ( M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
-!             M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
-!             M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
+        associate &
+          ( GSV  =>  G % Storage ( iC ) % Value )
+        associate &
+          ( M_DD_11  =>  GSV ( :, G % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, G % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, G % METRIC_F_DD_33 ) )
 
-!         nV  =  size ( ProperCell )
+        nV  =  size ( ProperCell )
 
-!         do iV = 1, nV
-!           if ( ProperCell ( iV ) ) then      
+        do iV = 1, nV
+          if ( ProperCell ( iV ) ) then      
 
-!             !-- Iterate radiation and fluid energy to convergence
+            !-- Iterate radiation and fluid energy to convergence
 
-!             iI  =  0
-!             Err ( iV )  =  - huge ( 1.0_KDR )
-!             Implicit: do 
+            iI  =  0
+            Err ( iV )  =  - huge ( 1.0_KDR )
+            Implicit: do 
 
-!               iI  =  iI + 1
+              iI  =  iI + 1
 
-!               !-- Compute interactions
+              !-- Compute interactions
 
-!               call I % Compute ( iC, iV )
+              call I % Compute ( iC, iV )
 
-!               !-- Compute energy updates
+              !-- Compute energy and number updates
 
-!               KK_R_E ( iV )  &
-!                 =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
-!                    /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+              KK_R_E ( iV )  &
+                =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
+                   /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+              KK_R_N ( iV )  &
+                =  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
+                   /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
 
-!               KK_F_E ( iV )  =  - KK_R_E ( iV )
+              KK_F_E ( iV )  =  - KK_R_E ( iV )
+              KK_F_N ( iV )  =  - KK_R_N ( iV )
 
-!               !-- Apply energy updates
+              !-- Apply energy and number updates
 
-!               E_R ( iV )  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )
-!               E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
+              E_R ( iV )  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )
+              N_R ( iV )  =  N_R_0 ( iV )  +  dT * AA * KK_R_N ( iV )
 
-!               !-- Exit test
+              E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
+              N_F ( iV )  =  N_F_0 ( iV )  +  dT * AA * KK_F_N ( iV )
 
-!               if ( iI  >  1 ) then
+              !-- Exit test
 
-!                 associate &
-!                   ( dE_R    =>  Res_R_E ( iI ), &
-!                     dE_F    =>  Res_F_E ( iI ), &
-!                     dE_R_P  =>  Res_R_E ( iI - 1 ), &
-!                     dE_F_P  =>  Res_F_E ( iI - 1 ) )
+              if ( iI  >  1 ) then
 
-!                 dE_R  =  abs ( E_R ( iV )  -  E_R_P )  &
-!                          /  max ( abs ( E_R_0 ( iV ) ), SqrtTiny )
-!                 dE_F  =  abs ( E_F ( iV )  -  E_F_P )  &
-!                          /  max ( abs ( E_F_0 ( iV ) ), SqrtTiny )
+                associate &
+                  ( dE_R    =>  Res_R_E ( iI ), &
+                    dN_R    =>  Res_R_N ( iI ), &
+                    dE_F    =>  Res_F_E ( iI ), &
+                    dN_F    =>  Res_F_N ( iI ), &
+                    dE_R_P  =>  Res_R_E ( iI - 1 ), &
+                    dN_R_P  =>  Res_R_N ( iI - 1 ), &
+                    dE_F_P  =>  Res_F_E ( iI - 1 ), &
+                    dN_F_P  =>  Res_F_N ( iI - 1 ) )
 
-!                 N_I   ( iV )  =  iI
-!                 R_Max ( iV )  =  max ( dE_R, dE_F )
-!                 R_R_E ( iV )  =  dE_R
-!                 R_F_E ( iV )  =  dE_F
+                dE_R  =  abs ( E_R ( iV )  -  E_R_P )  &
+                         /  max ( abs ( E_R_0 ( iV ) ), SqrtTiny )
+                dN_R  =  abs ( N_R ( iV )  -  N_R_P )  &
+                         /  max ( abs ( N_R_0 ( iV ) ), SqrtTiny )
+                dE_F  =  abs ( E_F ( iV )  -  E_F_P )  &
+                         /  max ( abs ( E_F_0 ( iV ) ), SqrtTiny )
+                dN_F  =  abs ( N_F ( iV )  -  N_F_P )  &
+                         /  max ( abs ( N_F_0 ( iV ) ), SqrtTiny )
 
-!                 if ( dE_R  <  Tol .and. dE_F  <  Tol ) then
-!                   Err ( iV )  =  0  !-- Converged
-!                 else if ( iI  ==  Max_I  &
-!                           .and. ( dE_R  <  dE_R_P .and. dE_F  <  dE_F_P ) ) &
-!                 then
-!                   Err ( iV )  =  1  !-- Converging slowly
-!                   call Show ( 'Implicit solve converging slowly', &
-!                               CONSOLE % WARNING )
-!                   call Show ( iV, 'iV', &
-!                               CONSOLE % WARNING )
-!                   call Show ( Res_R_E ( : iI ), 'Res_R_E', &
-!                               CONSOLE % WARNING )
-!                   call Show ( Res_F_E ( : iI ), 'Res_F_E' )
-!                 else if ( iI  >  2  &
-!                           .and. ( dE_R  >  dE_R_P .or. dE_F  >  dE_F_P ) ) &
-!                 then
-!                   Err ( iV )  =  2  !-- Diverging
-!                   call Show ( 'Implicit solve diverging', &
-!                               CONSOLE % WARNING )
-!                   call Show ( iV, 'iV', &
-!                               CONSOLE % WARNING )
-!                   call Show ( Res_R_E ( : iI ), 'Res_R_E', &
-!                               CONSOLE % WARNING )
-!                   call Show ( Res_F_E ( : iI ), 'Res_F_E' )
-!                   !-- Discard updates and do nothing
-!                   KK_R_E ( iV )  =  0.0_KDR
-!                   KK_F_E ( iV )  =  0.0_KDR
-!                 end if
+                N_I   ( iV )  =  iI
+                R_Max ( iV )  =  max ( dE_R, dN_R, dE_F, dN_F )
+                R_R_E ( iV )  =  dE_R
+                R_R_N ( iV )  =  dN_R
+                R_F_E ( iV )  =  dE_F
+                R_F_N ( iV )  =  dN_F
 
-!                 if ( Err ( iV )  >=  0.0_KDR ) &
-!                   exit Implicit
+                if ( dE_R  <  Tol .and. dE_F  <  Tol  &
+                     .and. dN_R  <  Tol .and. dN_F  <  Tol ) &
+                then
+                  Err ( iV )  =  0  !-- Converged
+                else if ( iI  ==  Max_I  &
+                          .and. ( dE_R  <  dE_R_P .and. dE_F  <  dE_F_P  &
+                            .and. dN_R  <  dN_R_P .and. dN_F  <  dN_F_P ) ) &
+                then
+                  Err ( iV )  =  1  !-- Converging slowly
+                  call Show ( 'Implicit solve converging slowly', &
+                              CONSOLE % WARNING )
+                  call Show ( iV, 'iV', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
+                else if ( iI  >  2  &
+                          .and. ( dE_R  >  dE_R_P .or. dE_F  >  dE_F_P  &
+                             .or. dN_R  >  dN_R_P .or. dN_F  >  dN_F_P ) ) &
+                then
+                  Err ( iV )  =  2  !-- Diverging
+                  call Show ( 'Implicit solve diverging', &
+                              CONSOLE % WARNING )
+                  call Show ( iV, 'iV', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
+                              CONSOLE % WARNING )
+                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
+                  !-- Discard updates and do nothing
+                  KK_R_E ( iV )  =  0.0_KDR
+                  KK_R_N ( iV )  =  0.0_KDR
+                  KK_F_E ( iV )  =  0.0_KDR
+                  KK_F_N ( iV )  =  0.0_KDR
+                end if
 
-!                 end associate !-- dE_R, etc.
+                if ( Err ( iV )  >=  0.0_KDR ) &
+                  exit Implicit
 
-!               end if !-- iI > 1
+                end associate !-- dE_R, etc.
 
-!               !-- Prepare for next iteration
+              end if !-- iI > 1 (exit test)
 
-!               E_R_P  =  E_R ( iV )
-!               E_F_P  =  E_F ( iV )
+              !-- Prepare for next iteration
 
-!               call R % ComputeFromBalanced ( iC, iV )
-!               call F % ComputeFromBalanced ( iC, iV )
+              E_R_P  =  E_R ( iV )
+              N_R_P  =  N_R ( iV )
 
-!             end do Implicit
+              E_F_P  =  E_F ( iV )
+              N_F_P  =  N_F ( iV )
 
-!             !--- Momentum update
+              call R % ComputeFromBalanced ( iC, iV )
+              call F % ComputeFromBalanced ( iC, iV )
 
-!             KK_R_S_1 ( iV )  &
-!               =  ( Xi_H ( iV )  &
-!                    -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
-!                  /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-!             KK_R_S_2 ( iV )  &
-!               =  ( Xi_H ( iV )  &
-!                    -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
-!                  /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
-!             KK_R_S_3 ( iV )  &
-!               =  ( Xi_H ( iV )  &
-!                    -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
-!                  /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            end do Implicit
 
-!             KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
-!             KK_F_S_2 ( iV )  =  - KK_R_S_2 ( iV )
-!             KK_F_S_3 ( iV )  =  - KK_R_S_3 ( iV )
+            !--- Momentum update
 
-!           else
-!             KK_R_E   ( iV )  =  0.0_KDR
-!             KK_R_S_1 ( iV )  =  0.0_KDR
-!             KK_R_S_2 ( iV )  =  0.0_KDR
-!             KK_R_S_3 ( iV )  =  0.0_KDR
-!             KK_F_E   ( iV )  =  0.0_KDR
-!             KK_F_S_1 ( iV )  =  0.0_KDR
-!             KK_F_S_2 ( iV )  =  0.0_KDR
-!             KK_F_S_3 ( iV )  =  0.0_KDR
-!           end if !-- ProperCell
-!         end do !-- iV
+            KK_R_S_1 ( iV )  &
+              =  ( Xi_H ( iV )  &
+                   -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            KK_R_S_2 ( iV )  &
+              =  ( Xi_H ( iV )  &
+                   -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+            KK_R_S_3 ( iV )  &
+              =  ( Xi_H ( iV )  &
+                   -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
 
-!         end associate !-- M_DD_11, etc.
-!         end associate !-- GSV
+            KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
+            KK_F_S_2 ( iV )  =  - KK_R_S_2 ( iV )
+            KK_F_S_3 ( iV )  =  - KK_R_S_3 ( iV )
 
-!       class default
-!         call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
-!         call Show ( 'Step_RK_RM__Form', 'module', CONSOLE % ERROR )
-!         call Show ( 'SolveUpdateImplicit', 'subroutine', CONSOLE % ERROR )
-!         call PROGRAM_HEADER % Abort ( )
-!       end select !-- G
+          else
+
+            KK_R_E   ( iV )  =  0.0_KDR
+            KK_R_S_1 ( iV )  =  0.0_KDR
+            KK_R_S_2 ( iV )  =  0.0_KDR
+            KK_R_S_3 ( iV )  =  0.0_KDR
+            KK_R_N   ( iV )  =  0.0_KDR
+
+            KK_F_E   ( iV )  =  0.0_KDR
+            KK_F_S_1 ( iV )  =  0.0_KDR
+            KK_F_S_2 ( iV )  =  0.0_KDR
+            KK_F_S_3 ( iV )  =  0.0_KDR
+            KK_F_N   ( iV )  =  0.0_KDR
+
+          end if !-- ProperCell
+        end do !-- iV
+
+        end associate !-- M_DD_11, etc.
+        end associate !-- GSV
+
+      class default
+        call Show ( 'Gravitation type not recognized', CONSOLE % ERROR )
+        call Show ( 'Step_RK_RM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SolveUpdateImplicit', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- G
 
       end associate !-- Xi_J, etc.
       end associate !-- I_V, etc.
