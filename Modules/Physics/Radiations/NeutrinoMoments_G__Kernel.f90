@@ -631,7 +631,8 @@ contains
         else
           Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
           call SolveEtaBisection &
-                 ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, Bracket, Converge )
+                 ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, iV, &
+                   Bracket, Converge )
           Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
         end if
 
@@ -729,7 +730,7 @@ contains
     else
       Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
       call SolveEtaBisection &
-             ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, Bracket, Converge )
+             ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, iV, Bracket, Converge )
       Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
     end if
 
@@ -938,7 +939,7 @@ contains
 !   end subroutine SolveSecant
   
 
-  subroutine SolveEtaBisection ( Eta, J, N, EtaMax, Bracket, Converge )
+  subroutine SolveEtaBisection ( Eta, J, N, EtaMax, iV, Bracket, Converge )
 
     real ( KDR ), intent ( inout ) :: &
       Eta
@@ -946,6 +947,8 @@ contains
       J, N
     real ( KDR ), intent ( in ) :: &
       EtaMax
+    integer ( KDI ), intent ( in ) :: &
+      iV
     logical ( KDL ), intent ( out ) :: &
       Bracket, &
       Converge
@@ -963,7 +966,7 @@ contains
       RelativePrecision
       
     MaxIterations  =  50
-    Tolerance      =  1.0e-4_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
+    Tolerance      =  1.0e-9_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
     Factor         =  1.6_KDR
 
     X_0  =  0.0
@@ -975,24 +978,36 @@ contains
     !-- Bracket root
 
     Bracket  =  .false.
+
+! if ( iV == 3 ) then
+!   call Show ( '>>> Bracketing Eta' ) 
+!   call Show ( [ X_0, Y_0 ], '>>> [ X_0, Y_0 ]' )
+!   call Show ( [ X_1, Y_1 ], '>>> [ X_1, Y_1 ]' )
+! end if
       
     do iIteration  =  1, MaxIterations
-      if ( Y_0 * Y_1  <  0.0_KDR ) then
-        Bracket  =  .true.
-        exit
-      end if
       !-- Only move outer bound
       X_1  =  Factor * X_1
       Y_1  =  ZeroEta ( J, N, X_1 )
-      if ( Y_1  >  EtaMax ) &
+! if ( iV == 3 ) then
+!   call Show ( iIteration, '>>> iIteration' )
+!   call Show ( [ X_1, Y_1 ], '>>> [ X_1, Y_1 ]' )
+! end if      
+      if ( Y_0 * Y_1  <  0.0_KDR ) then
+        Bracket  =  .true.
         exit
+      else if ( X_1  >  EtaMax ) then
+        exit
+      end if
     end do
 
     if ( .not. Bracket ) then
-      ! call Show ( '>>> Failed to bracket Eta', CONSOLE % ERROR )
+      ! call Show ( 'Failed to bracket Eta', CONSOLE % ERROR )
+      ! call Show ( iV, 'iV', CONSOLE % ERROR )
       ! call Show ( J, 'J', CONSOLE % ERROR )
       ! call Show ( N, 'N', CONSOLE % ERROR )
       ! call Show ( Eta, 'Eta', CONSOLE % ERROR )
+!      call PROGRAM_HEADER % Abort ( )
       return
     end if
 
@@ -1019,6 +1034,12 @@ contains
 !           .or. RelativePrecision  <=  Tolerance ) &
 !      then
       if ( RelativePrecision  <=  Tolerance ) then
+! if ( iV == 3 ) then
+!   call Show ( '>>> Converged' )
+!   call Show ( iV, '>>> iV' )
+!   call Show ( iIteration, '>>> iIteration' )
+!   call Show ( Eta, '>>> Eta' )
+! end if      
         Converge = .true. 
         exit
       end if
@@ -1032,12 +1053,14 @@ contains
     end do
     
     if ( .not. Converge ) then
-      call Show ( '>>> Failed to converge Eta', CONSOLE % ERROR )
-      call Show ( J, 'J', CONSOLE % ERROR )
-      call Show ( N, 'N', CONSOLE % ERROR )
-      call Show ( Eta, 'Eta', CONSOLE % ERROR )
-      call Show ( AbsolutePrecision, 'AbsolutePrecision', CONSOLE % ERROR )
-      call Show ( RelativePrecision, 'RelativePrecision', CONSOLE % ERROR )
+      ! call Show ( 'Failed to converge Eta', CONSOLE % ERROR )
+      ! call Show ( iV, 'iV', CONSOLE % ERROR )
+      ! call Show ( J, 'J', CONSOLE % ERROR )
+      ! call Show ( N, 'N', CONSOLE % ERROR )
+      ! call Show ( Eta, 'Eta', CONSOLE % ERROR )
+      ! call Show ( AbsolutePrecision, 'AbsolutePrecision', CONSOLE % ERROR )
+      ! call Show ( RelativePrecision, 'RelativePrecision', CONSOLE % ERROR )
+      ! call PROGRAM_HEADER % Abort ( )
       return
     end if
 
