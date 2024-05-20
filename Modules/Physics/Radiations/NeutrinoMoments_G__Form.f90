@@ -417,7 +417,7 @@ contains
     call Show ( 'ComputeFromPrimitive', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
 
-!    call CS % SetFluidVelocity ( FS_CS )
+    call CS % SetFluidVelocity ( FS_CS )
 
     do iC  =  1, CS % Atlas % nCharts
 
@@ -489,7 +489,7 @@ contains
     call Show ( 'ComputeFromBalancedAll', CONSOLE % INFO_6 )
     call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
 
-!    call CS % SetFluidVelocity ( CS )
+    call CS % SetFluidVelocity ( CS )
 
     if ( present ( T_Option ) ) then
       T_K  =>  PROGRAM_HEADER % Timer &
@@ -576,7 +576,7 @@ contains
 !    call Show ( 'ComputeFromBalancedSingle', CONSOLE % INFO_6 )
 !    call Show ( CS % Name, 'RadiationMoments', CONSOLE % INFO_6 )
 
-!    call CS % SetFluidVelocity ( CS )
+    call CS % SetFluidVelocity ( CS )
 
     if ( present ( T_Option ) ) then
       T_K  =>  PROGRAM_HEADER % Timer &
