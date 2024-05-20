@@ -599,7 +599,7 @@ integer ( KDI ) :: &
       J_Eq_P, &  !-- previous iteration
       N_Eq_0, &
       N_Eq_P, &
-      LimitFactor, &
+      LimiterFactor, &
       SqrtTiny
 
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
@@ -709,10 +709,9 @@ integer ( KDI ) :: &
           KK_F_N      =>  KK_F_V ( :, iNumber_F ), &
              N_I      =>  ID_V ( :, ID % N_ITERATIONS ), &
              R_Max    =>  ID_V ( :, ID % RESIDUAL_MAX ), &
-             R_J_Eq   =>  ID_V ( :, ID % RESIDUAL_RADIATION_ENERGY ), &
-             R_N_Eq   =>  ID_V ( :, ID % RESIDUAL_RADIATION_NUMBER ), &
-!              R_F_E    =>  ID_V ( :, ID % RESIDUAL_FLUID_ENERGY ), &
-!              R_F_N    =>  ID_V ( :, ID % RESIDUAL_FLUID_NUMBER ), &
+             R_J_Eq   =>  ID_V ( :, ID % RESIDUAL_ENERGY_EQ ), &
+             R_N_Eq   =>  ID_V ( :, ID % RESIDUAL_NUMBER_EQ ), &
+             LF       =>  ID_V ( :, ID % LIMITER_FACTOR ), &
           ProperCell  =>  C % ProperCell )
 
       select type ( G  =>  R % Geometry )
@@ -754,12 +753,12 @@ integer ( KDI ) :: &
             Limiter: do 
 
               iL  =  iL + 1
-              LimitFactor  =  0.5_KDR ** ( iL - 1 )
+              LimiterFactor  =  0.5_KDR ** ( iL - 1 )
 
 ! if ( iV == iShow ) then
 !   call Show ( '    >>> Limiter loop' )
 !   call Show ( iL, '>>> iL' )
-!   call Show ( LimitFactor, '>>> LimitFactor' )
+!   call Show ( LimiterFactor, '>>> LimiterFactor' )
 ! end if
 
             iI  =  0
@@ -790,11 +789,11 @@ integer ( KDI ) :: &
               !-- Compute energy and number updates
 
               KK_R_E ( iV )  &
-                =  LimitFactor  &
+                =  LimiterFactor  &
                    *  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
                       /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
               KK_R_N ( iV )  &
-                =  LimitFactor  &
+                =  LimiterFactor  &
                    *  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
                       /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
 
@@ -859,10 +858,11 @@ integer ( KDI ) :: &
 !   call Show ( dN_Eq, '>>> dN_Eq' )
 ! end if
 
-                N_I    ( iV )   =  iI
-                R_Max  ( iV )   =  max ( dJ_Eq, dN_Eq )
-                R_J_Eq ( iV )   =  dJ_Eq
-                R_N_Eq ( iV )   =  dN_Eq
+                N_I    ( iV )  =  iI
+                R_Max  ( iV )  =  max ( dJ_Eq, dN_Eq )
+                R_J_Eq ( iV )  =  dJ_Eq
+                R_N_Eq ( iV )  =  dN_Eq
+                LF     ( iV )  =  LimiterFactor
 
                 if ( dJ_Eq  <  Tol .and. dN_Eq  <  Tol ) then
                   exit Limiter
@@ -914,17 +914,17 @@ integer ( KDI ) :: &
             !--- Momentum update
 
             KK_R_S_1 ( iV )  &
-              =  LimitFactor  &
+              =  LimiterFactor  &
                  *  ( Xi_H ( iV )  &
                       -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
                     /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
             KK_R_S_2 ( iV )  &
-              =  LimitFactor  &
+              =  LimiterFactor  &
                  *  ( Xi_H ( iV )  &
                       -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
                     /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
             KK_R_S_3 ( iV )  &
-              =  LimitFactor  &
+              =  LimiterFactor  &
                  *  ( Xi_H ( iV )  &
                       -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
                     /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )

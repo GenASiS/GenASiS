@@ -8,13 +8,12 @@ module ImplicitDiagnostics_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_ID = 3
+      N_FIELDS_ID = 2
 
   type, public, extends ( FieldSet_BM_Form ) :: ImplicitDiagnosticsForm
     integer ( KDI ) :: &
       N_FIELDS_ID = N_FIELDS_ID
     integer ( KDI ) :: &
-      ERROR        = 0, &
       N_ITERATIONS = 0, &
       RESIDUAL_MAX = 0
   contains
@@ -72,9 +71,8 @@ contains
 
     !-- Field indices
 
-    ID % ERROR         =  1
-    ID % N_ITERATIONS  =  2
-    ID % RESIDUAL_MAX  =  3
+    ID % N_ITERATIONS  =  1
+    ID % RESIDUAL_MAX  =  2
 
     nFields  =  ID % N_FIELDS_ID
     if ( present ( nFieldsOption ) ) &
@@ -89,8 +87,7 @@ contains
     end if !-- FieldOption
 
     Field ( 1 : ID % N_FIELDS_ID )  &
-      =  [ 'Error      ', &
-           'nIterations', &
+      =  [ 'nIterations', &
            'ResidualMax' ]
 
     !-- FieldSet

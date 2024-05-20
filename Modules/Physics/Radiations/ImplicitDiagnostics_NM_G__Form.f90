@@ -10,15 +10,16 @@ module ImplicitDiagnostics_NM_G__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_NM_G = 2
+      N_FIELDS_NM_G = 3
 
   type, public, extends ( ImplicitDiagnostics_RM_Form ) &
     :: ImplicitDiagnostics_NM_G_Form
       integer ( KDI ) :: &
         N_FIELDS_NM_G = N_FIELDS_NM_G
       integer ( KDI ) :: &
-        RESIDUAL_RADIATION_NUMBER = 0, &
-        RESIDUAL_FLUID_NUMBER     = 0
+        RESIDUAL_ENERGY_EQ = 0, &
+        RESIDUAL_NUMBER_EQ = 0, &
+        LIMITER_FACTOR     = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_ID
@@ -64,10 +65,11 @@ contains
 
     !-- Field indices
 
-    oF  =  ID % N_FIELDS_ID  +  ID % N_FIELDS_RM
+    oF  =  ID % N_FIELDS_ID!  +  ID % N_FIELDS_RM
 
-    ID % RESIDUAL_RADIATION_NUMBER  =  oF  +  1
-    ID % RESIDUAL_FLUID_NUMBER      =  oF  +  2
+    ID % RESIDUAL_ENERGY_EQ  =  oF  +  1
+    ID % RESIDUAL_NUMBER_EQ  =  oF  +  2
+    ID % LIMITER_FACTOR      =  oF  +  3
 
     nFields  =  oF  +  ID % N_FIELDS_NM_G
     if ( present ( nFieldsOption ) ) &
@@ -82,8 +84,9 @@ contains
     end if !-- FieldOption
 
     Field ( oF + 1 : oF + ID % N_FIELDS_NM_G ) &
-      = [ 'ResidualRadiationNumber', &
-          'ResidualFluidNumber    ' ]
+      = [ 'ResidualEnergyEq', &
+          'ResidualNumberEq', &
+          'LimiterFactor   ' ]
           
     !-- FieldSet
 

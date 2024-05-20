@@ -208,7 +208,6 @@ contains
           KK_F_S_1    =>  KK_F_V ( :, iMomentum_F ( 1 ) ), &
           KK_F_S_2    =>  KK_F_V ( :, iMomentum_F ( 2 ) ), &
           KK_F_S_3    =>  KK_F_V ( :, iMomentum_F ( 3 ) ), &
-             Err      =>  ID_V ( :, ID % ERROR ), &
              N_I      =>  ID_V ( :, ID % N_ITERATIONS ), &
              R_Max    =>  ID_V ( :, ID % RESIDUAL_MAX ), &
              R_R_E    =>  ID_V ( :, ID % RESIDUAL_RADIATION_ENERGY ), &
@@ -233,7 +232,6 @@ contains
             !-- Iterate radiation and fluid energy to convergence
 
             iI  =  0
-            Err ( iV )  =  - huge ( 1.0_KDR )
             Implicit: do 
 
               iI  =  iI + 1
@@ -276,11 +274,10 @@ contains
                 R_F_E ( iV )  =  dE_F
 
                 if ( dE_R  <  Tol .and. dE_F  <  Tol ) then
-                  Err ( iV )  =  0  !-- Converged
+                  exit Implicit  !-- Converged
                 else if ( iI  ==  Max_I  &
                           .and. ( dE_R  <  dE_R_P .and. dE_F  <  dE_F_P ) ) &
                 then
-                  Err ( iV )  =  1  !-- Converging slowly
                   call Show ( 'Implicit solve converging slowly', &
                               CONSOLE % WARNING )
                   call Show ( iV, 'iV', &
@@ -288,24 +285,8 @@ contains
                   call Show ( Res_R_E ( : iI ), 'Res_R_E', &
                               CONSOLE % WARNING )
                   call Show ( Res_F_E ( : iI ), 'Res_F_E' )
-                else if ( iI  >  2  &
-                          .and. ( dE_R  >  dE_R_P .or. dE_F  >  dE_F_P ) ) &
-                then
-                  Err ( iV )  =  2  !-- Diverging
-                  call Show ( 'Implicit solve diverging', &
-                              CONSOLE % WARNING )
-                  call Show ( iV, 'iV', &
-                              CONSOLE % WARNING )
-                  call Show ( Res_R_E ( : iI ), 'Res_R_E', &
-                              CONSOLE % WARNING )
-                  call Show ( Res_F_E ( : iI ), 'Res_F_E' )
-                  !-- Discard updates and do nothing
-                  KK_R_E ( iV )  =  0.0_KDR
-                  KK_F_E ( iV )  =  0.0_KDR
+                  call PROGRAM_HEADER % Abort ( )
                 end if
-
-                if ( Err ( iV )  >=  0.0_KDR ) &
-                  exit Implicit
 
                 end associate !-- dE_R, etc.
 
