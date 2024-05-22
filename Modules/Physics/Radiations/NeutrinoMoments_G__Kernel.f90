@@ -634,6 +634,14 @@ contains
                  ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, iV, &
                    Bracket, Converge )
           Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
+          if ( .not. Bracket .or. .not. Converge ) then
+    !        call Show ( Eta_0, 'Eta_0', CONSOLE % ERROR )
+    !        call Show ( Eta_ND, 'Eta_ND', CONSOLE % ERROR )
+    !        Eta_R ( iV )  =  Eta_0
+    !        Eta_R ( iV )  =  0.0_KDR
+            Eta_R ( iV )  =  EtaMax
+    !        call PROGRAM_HEADER % Abort ( )
+          end if
         end if
 
         ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
@@ -732,6 +740,14 @@ contains
       call SolveEtaBisection &
              ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, iV, Bracket, Converge )
       Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
+      if ( .not. Bracket .or. .not. Converge ) then
+!        call Show ( Eta_0, 'Eta_0', CONSOLE % ERROR )
+!        call Show ( Eta_ND, 'Eta_ND', CONSOLE % ERROR )
+!        Eta_R ( iV )  =  Eta_0
+!        Eta_R ( iV )  =  0.0_KDR
+        Eta_R ( iV )  =  EtaMax
+!        call PROGRAM_HEADER % Abort ( )
+      end if
     end if
 
     ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
@@ -1060,7 +1076,7 @@ contains
       ! call Show ( Eta, 'Eta', CONSOLE % ERROR )
       ! call Show ( AbsolutePrecision, 'AbsolutePrecision', CONSOLE % ERROR )
       ! call Show ( RelativePrecision, 'RelativePrecision', CONSOLE % ERROR )
-      ! call PROGRAM_HEADER % Abort ( )
+!      call PROGRAM_HEADER % Abort ( )
       return
     end if
 
