@@ -68,7 +68,7 @@ contains
       select type ( ID  =>  S % ImplicitDiagnostics ( iS ) % Element )
         class is ( ImplicitDiagnostics_NM_G_Form )
       call ID % Initialize &
-             ( S % Atlas, iS, &
+             ( S % Atlas, CS_1 % Name, iS, &
                DeviceMemoryOption = CS_1 % DeviceMemory, &
                PinnedMemoryOption = CS_1 % PinnedMemory, &
                DevicesCommunicateOption = CS_1 % DevicesCommunicate )
@@ -578,10 +578,10 @@ contains
       iS
 
     integer ( KDI ) :: &
-      iC, &
-      iV, &
-      iI, &
-      iL, &
+      iC, &  !-- iChart
+      iV, &  !-- iValue
+      iR, &  !-- iRelaxation
+      iI, &  !-- iIteration
       nV
     integer ( KDI ) :: &
       iEnergy_R, &
@@ -599,7 +599,9 @@ integer ( KDI ) :: &
       J_Eq_P, &  !-- previous iteration
       N_Eq_0, &
       N_Eq_P, &
-      LimiterFactor, &
+      E_R_P, E_R_N, &  !-- previous, new
+      N_R_P, N_R_N, &
+      dOmega, &
       SqrtTiny
 
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
@@ -624,6 +626,7 @@ integer ( KDI ) :: &
          AA       =>  S_R % AA ( iS ) % Value ( iS ), &
          Tol      =>  S   % ImplicitTolerance, &
          Max_I    =>  S   % MaxImplicitIterations, &
+         Max_R    =>  S   % MaxRelaxationIterations, &
         Res_J_Eq  =>  S   % Residual_J_Eq, & 
         Res_N_Eq  =>  S   % Residual_N_Eq ) 
     select type ( ID  =>  S % ImplicitDiagnostics ( iS ) % Element )
@@ -708,10 +711,10 @@ integer ( KDI ) :: &
           KK_F_S_3    =>  KK_F_V ( :, iMomentum_F ( 3 ) ), &
           KK_F_N      =>  KK_F_V ( :, iNumber_F ), &
              N_I      =>  ID_V ( :, ID % N_ITERATIONS ), &
-             R_Max    =>  ID_V ( :, ID % RESIDUAL_MAX ), &
+          Omega       =>  ID_V ( :, ID % RELAXATION ), &   
+             R_Max    =>  ID_V ( :, ID % RESIDUAL ), &
              R_J_Eq   =>  ID_V ( :, ID % RESIDUAL_ENERGY_EQ ), &
              R_N_Eq   =>  ID_V ( :, ID % RESIDUAL_NUMBER_EQ ), &
-             LF       =>  ID_V ( :, ID % LIMITER_FACTOR ), &
           ProperCell  =>  C % ProperCell )
 
       select type ( G  =>  R % Geometry )
@@ -726,11 +729,11 @@ integer ( KDI ) :: &
 
         nV  =  size ( ProperCell )
 
-! call Show ( '>>> Stage' )
-! call Show ( iS, '>>> iS' )
+call Show ( '>>> Stage' )
+call Show ( iS, '>>> iS' )
 
-! iShow = 3
-! call Show ( iShow, '>>> iShow' )
+iShow = 3
+call Show ( iShow, '>>> iShow' )
 
         do iV = 1, nV
           if ( ProperCell ( iV ) ) then      
@@ -740,194 +743,217 @@ integer ( KDI ) :: &
             J_Eq_0  =  J_Eq ( iV )
             N_Eq_0  =  N_Eq ( iV )
 
-! if ( iV == iShow ) then
-!   call Show ( E_R_0 ( iV ), '>>> E_R_0' )
-!   call Show ( E_F_0 ( iV ), '>>> E_F_0' )
-!   call Show ( N_R_0 ( iV ), '>>> N_R_0' )
-!   call Show ( N_F_0 ( iV ), '>>> N_F_0' )
-!   call Show ( J_Eq_0, '>>> J_Eq_0' )
-!   call Show ( N_Eq_0, '>>> N_Eq_0' )
-! end if
+if ( iV == iShow ) then
+  call Show ( E_R_0 ( iV ), '>>> E_R_0' )
+  call Show ( E_F_0 ( iV ), '>>> E_F_0' )
+  call Show ( N_R_0 ( iV ), '>>> N_R_0' )
+  call Show ( N_F_0 ( iV ), '>>> N_F_0' )
+  call Show ( J_Eq_0, '>>> J_Eq_0' )
+  call Show ( N_Eq_0, '>>> N_Eq_0' )
+end if
      
-            iL  =  0
-            Limiter: do 
+            dOmega  =  1.0_KDR  /  Max_R
+            if ( Omega ( iV )  ==  0.0_KDR ) then
+              Omega ( iV )  =  1.0_KDR
+            else
+              Omega ( iV )  =  min ( Omega ( iV )  +  dOmega,  1.0_KDR )
+            end if
 
-              iL  =  iL + 1
-              LimiterFactor  =  0.5_KDR ** ( iL - 1 )
+            iR  =  0
+            Relaxation: do 
 
-! if ( iV == iShow ) then
-!   call Show ( '    >>> Limiter loop' )
-!   call Show ( iL, '>>> iL' )
-!   call Show ( LimiterFactor, '>>> LimiterFactor' )
-! end if
+              iR  =  iR + 1
 
-            iI  =  0
-            Implicit: do 
-
-              iI  =  iI + 1
-
-! if ( iV == iShow ) then
-!   call Show ( '    >>> Iteration' )
-!   call Show ( iI, '>>> iI' )
-! end if
-
-              !-- Compute interactions
-
-              call I % Compute ( iC, iV )
-
-              !-- For vanishing radiation initial conditions
-              if ( J_Eq_0  ==  0.0_KDR )  &
-                J_Eq_0  =  J_Eq ( iV )
-              if ( N_Eq_0  ==  0.0_KDR )  &
-                N_Eq_0  =  N_Eq ( iV )
-
-! if ( iV == iShow ) then
-!   call Show ( J_Eq ( iV ), '>>> J_Eq' )
-!   call Show ( N_Eq ( iV ), '>>> N_Eq' )
-! end if
-
-              !-- Compute energy and number updates
-
-              KK_R_E ( iV )  &
-                =  LimiterFactor  &
-                   *  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
-                      /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
-              KK_R_N ( iV )  &
-                =  LimiterFactor  &
-                   *  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
-                      /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
-
-! if ( iV == iShow ) then
-!   call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E' )
-!   call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N' )
-! end if
-
-              KK_F_E ( iV )  =  - KK_R_E ( iV )
-              KK_F_N ( iV )  =  - KK_R_N ( iV )
-
-              !-- Apply energy and number updates
-
-              E_R ( iV )  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )
-              N_R ( iV )  =  N_R_0 ( iV )  +  dT * AA * KK_R_N ( iV )
-
-              E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
-              N_F ( iV )  =  N_F_0 ( iV )  +  dT * AA * KK_F_N ( iV )
-
-! if ( iV == iShow ) then
-!   call Show ( E_R ( iV ), '>>> E_R' )
-!   call Show ( E_F ( iV ), '>>> E_F' )
-!   call Show ( N_R ( iV ), '>>> N_R' )
-!   call Show ( N_F ( iV ), '>>> N_F' )
-! end if
-
-              if ( E_R ( iV )  <  0.0_KDR .or. N_R ( iV )  <  0.0_KDR ) then
-                ! ErrorRank  =  C % Communicator % Rank
-                ! call Show ( 'Implicit solve negative radiation density', &
-                !             CONSOLE % ERROR )
-                ! call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
-                ! call Show ( iS, 'iS', CONSOLE % ERROR )
-                ! call Show ( iV, 'iV', CONSOLE % ERROR )
-                ! call Show ( 'Invoking limiter', CONSOLE % ERROR )
-                ! call Show ( iL, 'iL', CONSOLE % ERROR )
-                E_R ( iV )  =  E_R_0 ( iV )
-                N_R ( iV )  =  N_R_0 ( iV )
-                E_F ( iV )  =  E_F_0 ( iV )
-                N_F ( iV )  =  N_F_0 ( iV )
-                call R % ComputeFromBalanced ( iC, iV )
-                call F % ComputeFromBalanced ( iC, iV )
-                cycle Limiter
+              if ( iR  ==  Max_R ) then
+                ErrorRank  =  C % Communicator % Rank
+                call Show ( 'Relaxation maximum iterations', CONSOLE % ERROR )
+                call Show ( iR, 'iRelaxation', CONSOLE % ERROR )
+                call Show ( Omega ( iV ), 'Relaxation', CONSOLE % ERROR )
+                call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
+                call Show ( iS, 'iStage', CONSOLE % ERROR )
+                call Show ( iV, 'iValue', CONSOLE % ERROR )
+                call PROGRAM_HEADER % Abort ( )
               end if
 
-              !-- Exit test
+              Omega ( iV )  =  Omega ( iV )  -  ( iR - 1 ) * dOmega
 
-              if ( iI  >  1 ) then
+if ( iV == iShow ) then
+  call Show ( '  >>> Relaxation loop' )
+  call Show ( iR, '>>> iR' )
+  call Show ( Omega ( iV ), '>>> Relaxation' )
+end if
 
-                associate &
-                  ( dJ_Eq    =>  Res_J_Eq ( iI ), &
-                    dN_Eq    =>  Res_N_Eq ( iI ), &
-                    dJ_Eq_P  =>  Res_J_Eq ( iI - 1 ), &
-                    dN_Eq_P  =>  Res_N_Eq ( iI - 1 ) )
+              iI  =  0
+              Implicit: do 
 
-                dJ_Eq  =  abs ( J_Eq ( iV )  -  J_Eq_P )  &
-                          /  max ( abs ( J_Eq_0 ), SqrtTiny )
-                dN_Eq  =  abs ( N_Eq ( iV )  -  N_Eq_P )  &
-                          /  max ( abs ( N_Eq_0 ), SqrtTiny )
+                iI  =  iI + 1
 
-! if ( iV == iShow ) then
-!   call Show ( dJ_Eq, '>>> dJ_Eq' )
-!   call Show ( dN_Eq, '>>> dN_Eq' )
-! end if
+if ( iV == iShow ) then
+  call Show ( '    >>> Iteration' )
+  call Show ( iI, '>>> iI' )
+end if
 
-                N_I    ( iV )  =  iI
-                R_Max  ( iV )  =  max ( dJ_Eq, dN_Eq )
-                R_J_Eq ( iV )  =  dJ_Eq
-                R_N_Eq ( iV )  =  dN_Eq
-                LF     ( iV )  =  LimiterFactor
+                !-- Compute interactions
 
-                if ( dJ_Eq  <  Tol .and. dN_Eq  <  Tol ) then
-                  exit Limiter
-                else if ( iI  ==  Max_I ) then
-!                   ErrorRank  =  C % Communicator % Rank
-!                   call Show ( 'Implicit solve maximum iterations', &
-!                               CONSOLE % ERROR )
-!                   call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
-!                   call Show ( iS, 'iS', CONSOLE % ERROR )
-!                   call Show ( iV, 'iV', CONSOLE % ERROR )
-! !                  call Show ( Res_J_Eq ( : iI ), 'Res_J_Eq', CONSOLE % ERROR )
-! !                  call Show ( Res_N_Eq ( : iI ), 'Res_N_Eq', CONSOLE % ERROR )
-!                   call Show ( 'Invoking limiter', CONSOLE % ERROR )
-!                   call Show ( iL, 'iL', CONSOLE % ERROR )
+                call I % Compute ( iC, iV )
+
+                !-- For vanishing radiation initial conditions
+                if ( J_Eq_0  ==  0.0_KDR )  &
+                  J_Eq_0  =  J_Eq ( iV )
+                if ( N_Eq_0  ==  0.0_KDR )  &
+                  N_Eq_0  =  N_Eq ( iV )
+
+if ( iV == iShow ) then
+  call Show ( J_Eq ( iV ), '>>> J_Eq' )
+  call Show ( N_Eq ( iV ), '>>> N_Eq' )
+end if
+
+                !-- Compute energy and number updates
+
+                KK_R_E ( iV )  &
+                  =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
+                     /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+                KK_R_N ( iV )  &
+                  =  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
+                     /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
+
+if ( iV == iShow ) then
+  call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E (raw)' )
+  call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N (raw)' )
+end if
+
+                !-- Adjust and apply energy and number updates
+
+                E_R_P  =  E_R ( iV )
+                N_R_P  =  N_R ( iV )
+
+                E_R_N  =  E_R_0 ( iV )  +  dT * AA * KK_R_E ( iV )  
+                N_R_N  =  N_R_0 ( iV )  +  dT * AA * KK_R_N ( iV )
+
+                E_R ( iV )  =  ( 1.0_KDR  -  Omega ( iV ) )  *  E_R_P  &
+                                          +  Omega ( iV )    *  E_R_N
+                N_R ( iV )  =  ( 1.0_KDR  -  Omega ( iV ) )  *  N_R_P  &
+                                          +  Omega ( iV )    *  N_R_N
+
+                KK_R_E ( iV )  =  ( E_R ( iV )  -  E_R_0 ( iV ) )  &
+                                  /  ( dT * AA )
+                KK_R_N ( iV )  =  ( N_R ( iV )  -  N_R_0 ( iV ) )  &
+                                  /  ( dT * AA )
+
+                KK_F_E ( iV )  =  - KK_R_E ( iV )
+                KK_F_N ( iV )  =  - KK_R_N ( iV )
+
+                E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
+                N_F ( iV )  =  N_F_0 ( iV )  +  dT * AA * KK_F_N ( iV )
+
+if ( iV == iShow ) then
+  call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E (adjusted)' )
+  call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N (adjusted)' )
+end if
+
+if ( iV == iShow ) then
+  call Show ( E_R ( iV ), '>>> E_R' )
+  call Show ( E_F ( iV ), '>>> E_F' )
+  call Show ( N_R ( iV ), '>>> N_R' )
+  call Show ( N_F ( iV ), '>>> N_F' )
+end if
+
+                if ( E_R ( iV )  <  0.0_KDR .or. N_R ( iV )  <  0.0_KDR ) then
+                  call Show ( 'Implicit solve negative radiation density', &
+                              CONSOLE % ERROR )
                   exit Implicit
-                !  call PROGRAM_HEADER % Abort ( )
-                ! else if &
-                !   ( dJ_Eq > Tol .and. dJ_Eq_P > Tol .and. dJ_Eq > dJ_Eq_P &
-                !     .and. &
-                !     dN_Eq > Tol .and. dN_Eq_P > Tol .and. dN_Eq > dN_Eq_P ) &
-                ! then
-                !   Err ( iV )  =  2.0_KDR  !-- Diverging
-                !   ErrorRank  =  C % Communicator % Rank
-                !   call Show ( 'Implicit solve diverging', CONSOLE % ERROR )
-                !   call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
-                !   call Show ( iS, 'iS', CONSOLE % ERROR )
-                !   call Show ( iV, 'iV', CONSOLE % ERROR )
-                !   call Show ( Res_J_Eq ( : iI ), 'Res_J_Eq', CONSOLE % ERROR )
-                !   call Show ( Res_N_Eq ( : iI ), 'Res_N_Eq', CONSOLE % ERROR )
-                !   call PROGRAM_HEADER % Abort ( )
+!                  call PROGRAM_HEADER % Abort ( )
                 end if
 
-                end associate !-- dJ_Eq, etc.
+                !-- Exit test
 
-              end if !-- iI > 1 (exit test)
+                if ( iI  >  1 ) then
 
-              !-- Prepare for next iteration
+                  associate &
+                    ( dJ_Eq    =>  Res_J_Eq ( iI ), &
+                      dN_Eq    =>  Res_N_Eq ( iI ), &
+                      dJ_Eq_P  =>  Res_J_Eq ( iI - 1 ), &
+                      dN_Eq_P  =>  Res_N_Eq ( iI - 1 ) )
 
-              J_Eq_P  =  J_Eq ( iV )
-              N_Eq_P  =  N_Eq ( iV )
+                  dJ_Eq  =  abs ( J_Eq ( iV )  -  J_Eq_P )  &
+                            /  max ( abs ( J_Eq_0 ), SqrtTiny )
+                  dN_Eq  =  abs ( N_Eq ( iV )  -  N_Eq_P )  &
+                            /  max ( abs ( N_Eq_0 ), SqrtTiny )
 
+if ( iV == iShow ) then
+  call Show ( dJ_Eq, '>>> dJ_Eq' )
+  call Show ( dN_Eq, '>>> dN_Eq' )
+end if
+
+                  N_I    ( iV )  =  iI
+                  R_Max  ( iV )  =  max ( dJ_Eq, dN_Eq )
+                  R_J_Eq ( iV )  =  dJ_Eq
+                  R_N_Eq ( iV )  =  dN_Eq
+
+                  if ( dJ_Eq  <  Tol .and. dN_Eq  <  Tol ) then
+                    exit Relaxation
+                  else if &
+                    ( dJ_Eq > Tol .and. dJ_Eq_P > Tol .and. dJ_Eq > dJ_Eq_P &
+                      .and. &
+                      dN_Eq > Tol .and. dN_Eq_P > Tol .and. dN_Eq > dN_Eq_P ) &
+                  then
+                    call Show ( 'Implicit solve diverging', CONSOLE % ERROR )
+                    call Show ( Res_J_Eq ( : iI ), 'Res_J_Eq', CONSOLE % ERROR )
+                    call Show ( Res_N_Eq ( : iI ), 'Res_N_Eq', CONSOLE % ERROR )
+                    exit Implicit
+!                    call PROGRAM_HEADER % Abort ( )
+                  else if ( iI  ==  Max_I ) then
+                    call Show ( 'Implicit solve maximum iterations', &
+                                CONSOLE % ERROR )
+                    call Show ( Res_J_Eq ( : iI ), 'Res_J_Eq', CONSOLE % ERROR )
+                    call Show ( Res_N_Eq ( : iI ), 'Res_N_Eq', CONSOLE % ERROR )
+                    exit Implicit
+!                    call PROGRAM_HEADER % Abort ( )
+                  end if
+
+                  end associate !-- dJ_Eq, etc.
+
+                end if !-- iI > 1 (exit test)
+
+                !-- Prepare for next iteration
+
+                J_Eq_P  =  J_Eq ( iV )
+                N_Eq_P  =  N_Eq ( iV )
+
+                call R % ComputeFromBalanced ( iC, iV )
+                call F % ComputeFromBalanced ( iC, iV )
+
+              end do Implicit
+
+              ErrorRank  =  C % Communicator % Rank
+              call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
+              call Show ( iS, 'iS', CONSOLE % ERROR )
+              call Show ( iV, 'iV', CONSOLE % ERROR )
+              call Show ( 'Adjusting relaxation', CONSOLE % ERROR )
+              call Show ( iR, 'iR', CONSOLE % ERROR )
+              E_R ( iV )  =  E_R_0 ( iV )
+              N_R ( iV )  =  N_R_0 ( iV )
+              E_F ( iV )  =  E_F_0 ( iV )
+              N_F ( iV )  =  N_F_0 ( iV )
               call R % ComputeFromBalanced ( iC, iV )
               call F % ComputeFromBalanced ( iC, iV )
 
-            end do Implicit
-
-            end do Limiter
+            end do Relaxation
 
             !--- Momentum update
 
             KK_R_S_1 ( iV )  &
-              =  LimiterFactor  &
-                 *  ( Xi_H ( iV )  &
+              =  ( Xi_H ( iV )  &
                       -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
-                    /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
             KK_R_S_2 ( iV )  &
-              =  LimiterFactor  &
-                 *  ( Xi_H ( iV )  &
+              =  ( Xi_H ( iV )  &
                       -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
-                    /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
             KK_R_S_3 ( iV )  &
-              =  LimiterFactor  &
-                 *  ( Xi_H ( iV )  &
+              =  ( Xi_H ( iV )  &
                       -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
-                    /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
 
             KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
             KK_F_S_2 ( iV )  =  - KK_R_S_2 ( iV )

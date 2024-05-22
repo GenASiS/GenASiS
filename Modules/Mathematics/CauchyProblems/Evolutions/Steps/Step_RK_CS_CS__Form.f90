@@ -21,7 +21,8 @@ module Step_RK_CS_CS__Form
 !       IMPLICIT_GOOD      = 4, &
 !       IMPLICIT_EXCELLENT = 5
     integer ( KDI ) :: &
-      MaxImplicitIterations
+      MaxImplicitIterations, &
+      MaxRelaxationIterations
 !     integer ( KDI ), dimension ( : ), allocatable :: &
 !       nImplicitIterations
 !     integer ( KDI ), dimension ( :, : ), allocatable :: &
@@ -127,6 +128,10 @@ contains
     S % MaxImplicitIterations  =  50
     call PROGRAM_HEADER % GetParameter &
            ( S % MaxImplicitIterations, 'MaxImplicitIterations' )
+
+    S % MaxRelaxationIterations  =  10
+    call PROGRAM_HEADER % GetParameter &
+           ( S % MaxRelaxationIterations, 'MaxRelaxationIterations' )
 
     S % ImplicitTolerance  =  1.0e-6_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -314,6 +319,8 @@ contains
     call S % Step_RK_H_Form % Show ( )
 
     call Show ( S % MaxImplicitIterations, 'MaxImplicitIterations', &
+                S % IGNORABILITY )
+    call Show ( S % MaxRelaxationIterations, 'MaxRelaxationIterations', &
                 S % IGNORABILITY )
     call Show ( S % ImplicitTolerance, 'ImplicitTolerance', &
                 S % IGNORABILITY )

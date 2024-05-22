@@ -8,14 +8,16 @@ module ImplicitDiagnostics_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_ID = 2
+      N_FIELDS_ID = 4
 
   type, public, extends ( FieldSet_BM_Form ) :: ImplicitDiagnosticsForm
     integer ( KDI ) :: &
       N_FIELDS_ID = N_FIELDS_ID
     integer ( KDI ) :: &
+      ERROR        = 0, &
       N_ITERATIONS = 0, &
-      RESIDUAL_MAX = 0
+      RELAXATION   = 0, &
+      RESIDUAL     = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_ID
@@ -30,7 +32,7 @@ contains
 
 
   subroutine InitializeAllocate_ID &
-               ( ID, A, iStage, FieldOption, NameOption, &
+               ( ID, A, FieldSetName, iStage, FieldOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, nFieldsOption, IgnorabilityOption )
 
@@ -38,6 +40,8 @@ contains
       ID
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
+    character ( * ), intent ( in ) :: &
+      FieldSetName
     integer ( KDI ), intent ( in ) :: &
       iStage
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -65,14 +69,16 @@ contains
       ID % Type  =  'an ImplicitDiagnostics' 
 
     write ( StageNumber, fmt = '(i1.1)' ) iStage    
-    Name  =  'ImplicitDiagnostics_Stage_' // StageNumber
+    Name  =  trim ( FieldSetName ) // 'ID_S_' // StageNumber
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
     !-- Field indices
 
-    ID % N_ITERATIONS  =  1
-    ID % RESIDUAL_MAX  =  2
+    ID % ERROR         =  1
+    ID % N_ITERATIONS  =  2
+    ID % RELAXATION    =  3
+    ID % RESIDUAL      =  4
 
     nFields  =  ID % N_FIELDS_ID
     if ( present ( nFieldsOption ) ) &
@@ -87,8 +93,10 @@ contains
     end if !-- FieldOption
 
     Field ( 1 : ID % N_FIELDS_ID )  &
-      =  [ 'nIterations', &
-           'ResidualMax' ]
+      =  [ 'Error      ', &
+           'nIterations', &
+           'Relaxation ', &
+           'Residual   ' ]
 
     !-- FieldSet
 

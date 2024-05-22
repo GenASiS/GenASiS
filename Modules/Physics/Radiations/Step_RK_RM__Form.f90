@@ -63,7 +63,7 @@ contains
       select type ( ID  =>  S % ImplicitDiagnostics ( iS ) % Element )
         class is ( ImplicitDiagnostics_RM_Form )
       call ID % Initialize &
-             ( S % Atlas, iS, &
+             ( S % Atlas, CS_1 % Name, iS, &
                DeviceMemoryOption = CS_1 % DeviceMemory, &
                PinnedMemoryOption = CS_1 % PinnedMemory, &
                DevicesCommunicateOption = CS_1 % DevicesCommunicate )
@@ -209,7 +209,7 @@ contains
           KK_F_S_2    =>  KK_F_V ( :, iMomentum_F ( 2 ) ), &
           KK_F_S_3    =>  KK_F_V ( :, iMomentum_F ( 3 ) ), &
              N_I      =>  ID_V ( :, ID % N_ITERATIONS ), &
-             R_Max    =>  ID_V ( :, ID % RESIDUAL_MAX ), &
+             R_Max    =>  ID_V ( :, ID % RESIDUAL ), &
              R_R_E    =>  ID_V ( :, ID % RESIDUAL_RADIATION_ENERGY ), &
              R_F_E    =>  ID_V ( :, ID % RESIDUAL_FLUID_ENERGY ), &
           ProperCell  =>  C % ProperCell )

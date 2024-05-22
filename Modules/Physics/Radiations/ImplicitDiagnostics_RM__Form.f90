@@ -30,7 +30,7 @@ contains
 
 
   subroutine InitializeAllocate_ID &
-               ( ID, A, iStage, FieldOption, NameOption, &
+               ( ID, A, FieldSetName, iStage, FieldOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, nFieldsOption, IgnorabilityOption )
 
@@ -38,6 +38,8 @@ contains
       ID
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
+    character ( * ), intent ( in ) :: &
+      FieldSetName
     integer ( KDI ), intent ( in ) :: &
       iStage
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -87,7 +89,7 @@ contains
     !-- FieldSet
 
     call ID % ImplicitDiagnosticsForm % Initialize &
-           ( A, iStage, &
+           ( A, FieldSetName, iStage, &
              FieldOption = Field, &
              DeviceMemoryOption = DeviceMemoryOption, &
              PinnedMemoryOption = PinnedMemoryOption, &

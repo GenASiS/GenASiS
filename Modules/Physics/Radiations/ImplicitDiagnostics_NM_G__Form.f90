@@ -10,7 +10,7 @@ module ImplicitDiagnostics_NM_G__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_NM_G = 3
+      N_FIELDS_NM_G = 2
 
   type, public, extends ( ImplicitDiagnostics_RM_Form ) &
     :: ImplicitDiagnostics_NM_G_Form
@@ -18,8 +18,7 @@ module ImplicitDiagnostics_NM_G__Form
         N_FIELDS_NM_G = N_FIELDS_NM_G
       integer ( KDI ) :: &
         RESIDUAL_ENERGY_EQ = 0, &
-        RESIDUAL_NUMBER_EQ = 0, &
-        LIMITER_FACTOR     = 0
+        RESIDUAL_NUMBER_EQ = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_ID
@@ -32,7 +31,7 @@ contains
 
 
   subroutine InitializeAllocate_ID &
-               ( ID, A, iStage, FieldOption, NameOption, &
+               ( ID, A, FieldSetName, iStage, FieldOption, NameOption, &
                  DeviceMemoryOption, PinnedMemoryOption, &
                  DevicesCommunicateOption, nFieldsOption, IgnorabilityOption )
 
@@ -40,6 +39,8 @@ contains
       ID
     class ( Atlas_H_Form ), intent ( in ), target :: &
       A
+    character ( * ), intent ( in ) :: &
+      FieldSetName
     integer ( KDI ), intent ( in ) :: &
       iStage
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -69,7 +70,6 @@ contains
 
     ID % RESIDUAL_ENERGY_EQ  =  oF  +  1
     ID % RESIDUAL_NUMBER_EQ  =  oF  +  2
-    ID % LIMITER_FACTOR      =  oF  +  3
 
     nFields  =  oF  +  ID % N_FIELDS_NM_G
     if ( present ( nFieldsOption ) ) &
@@ -85,13 +85,12 @@ contains
 
     Field ( oF + 1 : oF + ID % N_FIELDS_NM_G ) &
       = [ 'ResidualEnergyEq', &
-          'ResidualNumberEq', &
-          'LimiterFactor   ' ]
+          'ResidualNumberEq' ]
           
     !-- FieldSet
 
     call ID % ImplicitDiagnostics_RM_Form % Initialize &
-           ( A, iStage, &
+           ( A, FieldSetName, iStage, &
              FieldOption = Field, &
              DeviceMemoryOption = DeviceMemoryOption, &
              PinnedMemoryOption = PinnedMemoryOption, &
