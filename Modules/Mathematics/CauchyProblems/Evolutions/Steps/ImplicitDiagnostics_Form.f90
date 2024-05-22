@@ -69,7 +69,7 @@ contains
       ID % Type  =  'an ImplicitDiagnostics' 
 
     write ( StageNumber, fmt = '(i1.1)' ) iStage    
-    Name  =  trim ( FieldSetName ) // 'ID_S_' // StageNumber
+    Name  =  trim ( FieldSetName ) // '_ID_S_' // StageNumber
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
