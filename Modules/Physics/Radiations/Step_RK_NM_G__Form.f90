@@ -729,11 +729,11 @@ integer ( KDI ) :: &
 
         nV  =  size ( ProperCell )
 
-call Show ( '>>> Stage' )
-call Show ( iS, '>>> iS' )
+! call Show ( '>>> Stage' )
+! call Show ( iS, '>>> iS' )
 
-iShow = 3
-call Show ( iShow, '>>> iShow' )
+! iShow = 35
+! call Show ( iShow, '>>> iShow' )
 
         do iV = 1, nV
           if ( ProperCell ( iV ) ) then      
@@ -743,14 +743,14 @@ call Show ( iShow, '>>> iShow' )
             J_Eq_0  =  J_Eq ( iV )
             N_Eq_0  =  N_Eq ( iV )
 
-if ( iV == iShow ) then
-  call Show ( E_R_0 ( iV ), '>>> E_R_0' )
-  call Show ( E_F_0 ( iV ), '>>> E_F_0' )
-  call Show ( N_R_0 ( iV ), '>>> N_R_0' )
-  call Show ( N_F_0 ( iV ), '>>> N_F_0' )
-  call Show ( J_Eq_0, '>>> J_Eq_0' )
-  call Show ( N_Eq_0, '>>> N_Eq_0' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( E_R_0 ( iV ), '>>> E_R_0' )
+!   call Show ( E_F_0 ( iV ), '>>> E_F_0' )
+!   call Show ( N_R_0 ( iV ), '>>> N_R_0' )
+!   call Show ( N_F_0 ( iV ), '>>> N_F_0' )
+!   call Show ( J_Eq_0, '>>> J_Eq_0' )
+!   call Show ( N_Eq_0, '>>> N_Eq_0' )
+! end if
      
             dOmega  =  1.0_KDR  /  Max_R
             if ( Omega ( iV )  ==  0.0_KDR ) then
@@ -764,9 +764,12 @@ end if
 
               iR  =  iR + 1
 
-              if ( iR  ==  Max_R ) then
+              if ( iR  >  1 ) &
+                Omega ( iV )  =  Omega ( iV )  -  dOmega
+
+              if ( Omega ( iV )  <  0.99 * dOmega ) then
                 ErrorRank  =  C % Communicator % Rank
-                call Show ( 'Relaxation maximum iterations', CONSOLE % ERROR )
+                call Show ( 'Relaxation parameter too small', CONSOLE % ERROR )
                 call Show ( iR, 'iRelaxation', CONSOLE % ERROR )
                 call Show ( Omega ( iV ), 'Relaxation', CONSOLE % ERROR )
                 call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
@@ -775,23 +778,21 @@ end if
                 call PROGRAM_HEADER % Abort ( )
               end if
 
-              Omega ( iV )  =  Omega ( iV )  -  ( iR - 1 ) * dOmega
-
-if ( iV == iShow ) then
-  call Show ( '  >>> Relaxation loop' )
-  call Show ( iR, '>>> iR' )
-  call Show ( Omega ( iV ), '>>> Relaxation' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( '  >>> Relaxation loop' )
+!   call Show ( iR, '>>> iR' )
+!   call Show ( Omega ( iV ), '>>> Relaxation' )
+! end if
 
               iI  =  0
               Implicit: do 
 
                 iI  =  iI + 1
 
-if ( iV == iShow ) then
-  call Show ( '    >>> Iteration' )
-  call Show ( iI, '>>> iI' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( '    >>> Iteration' )
+!   call Show ( iI, '>>> iI' )
+! end if
 
                 !-- Compute interactions
 
@@ -803,10 +804,10 @@ end if
                 if ( N_Eq_0  ==  0.0_KDR )  &
                   N_Eq_0  =  N_Eq ( iV )
 
-if ( iV == iShow ) then
-  call Show ( J_Eq ( iV ), '>>> J_Eq' )
-  call Show ( N_Eq ( iV ), '>>> N_Eq' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( J_Eq ( iV ), '>>> J_Eq' )
+!   call Show ( N_Eq ( iV ), '>>> N_Eq' )
+! end if
 
                 !-- Compute energy and number updates
 
@@ -817,10 +818,10 @@ end if
                   =  ( Xi_N ( iV )  -  Chi_N ( iV )  *  N ( iV ) ) &
                      /  ( 1.0_KDR  +  Chi_N ( iV ) * dT )
 
-if ( iV == iShow ) then
-  call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E (raw)' )
-  call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N (raw)' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E (raw)' )
+!   call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N (raw)' )
+! end if
 
                 !-- Adjust and apply energy and number updates
 
@@ -846,23 +847,23 @@ end if
                 E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
                 N_F ( iV )  =  N_F_0 ( iV )  +  dT * AA * KK_F_N ( iV )
 
-if ( iV == iShow ) then
-  call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E (adjusted)' )
-  call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N (adjusted)' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( dT * AA * KK_R_E ( iV ), '>>> dT * AA * KK_R_E (adjusted)' )
+!   call Show ( dT * AA * KK_R_N ( iV ), '>>> dT * AA * KK_R_N (adjusted)' )
+! end if
 
-if ( iV == iShow ) then
-  call Show ( E_R ( iV ), '>>> E_R' )
-  call Show ( E_F ( iV ), '>>> E_F' )
-  call Show ( N_R ( iV ), '>>> N_R' )
-  call Show ( N_F ( iV ), '>>> N_F' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( E_R ( iV ), '>>> E_R' )
+!   call Show ( E_F ( iV ), '>>> E_F' )
+!   call Show ( N_R ( iV ), '>>> N_R' )
+!   call Show ( N_F ( iV ), '>>> N_F' )
+! end if
 
                 if ( E_R ( iV )  <  0.0_KDR .or. N_R ( iV )  <  0.0_KDR ) then
-                  call Show ( 'Implicit solve negative radiation density', &
-                              CONSOLE % ERROR )
+                  ! if ( iV  ==  iShow ) &
+                  !   call Show ( 'Implicit solve negative radiation density', &
+                  !               CONSOLE % ERROR )
                   exit Implicit
-!                  call PROGRAM_HEADER % Abort ( )
                 end if
 
                 !-- Exit test
@@ -880,10 +881,10 @@ end if
                   dN_Eq  =  abs ( N_Eq ( iV )  -  N_Eq_P )  &
                             /  max ( abs ( N_Eq_0 ), SqrtTiny )
 
-if ( iV == iShow ) then
-  call Show ( dJ_Eq, '>>> dJ_Eq' )
-  call Show ( dN_Eq, '>>> dN_Eq' )
-end if
+! if ( iV == iShow ) then
+!   call Show ( dJ_Eq, '>>> dJ_Eq' )
+!   call Show ( dN_Eq, '>>> dN_Eq' )
+! end if
 
                   N_I    ( iV )  =  iI
                   R_Max  ( iV )  =  max ( dJ_Eq, dN_Eq )
@@ -892,23 +893,22 @@ end if
 
                   if ( dJ_Eq  <  Tol .and. dN_Eq  <  Tol ) then
                     exit Relaxation
-                  else if &
-                    ( dJ_Eq > Tol .and. dJ_Eq_P > Tol .and. dJ_Eq > dJ_Eq_P &
-                      .and. &
-                      dN_Eq > Tol .and. dN_Eq_P > Tol .and. dN_Eq > dN_Eq_P ) &
-                  then
-                    call Show ( 'Implicit solve diverging', CONSOLE % ERROR )
-                    call Show ( Res_J_Eq ( : iI ), 'Res_J_Eq', CONSOLE % ERROR )
-                    call Show ( Res_N_Eq ( : iI ), 'Res_N_Eq', CONSOLE % ERROR )
-                    exit Implicit
-!                    call PROGRAM_HEADER % Abort ( )
+                  ! else if &
+                  !   ( iI  >  10  &
+                  !     .and.  &
+                  !     dJ_Eq > Tol .and. dJ_Eq_P > Tol .and. dJ_Eq > dJ_Eq_P &
+                  !     .and. &
+                  !     dN_Eq > Tol .and. dN_Eq_P > Tol .and. dN_Eq > dN_Eq_P ) &
+                  ! then
+                  !   if ( iV  ==  iShow ) &
+                  !     call Show ( '>>> Implicit solve diverging', &
+                  !                 CONSOLE % ERROR )
+                  !   exit Implicit
                   else if ( iI  ==  Max_I ) then
-                    call Show ( 'Implicit solve maximum iterations', &
-                                CONSOLE % ERROR )
-                    call Show ( Res_J_Eq ( : iI ), 'Res_J_Eq', CONSOLE % ERROR )
-                    call Show ( Res_N_Eq ( : iI ), 'Res_N_Eq', CONSOLE % ERROR )
+                    ! if ( iV  ==  iShow ) &
+                    !   call Show ( 'Implicit solve maximum iterations', &
+                    !               CONSOLE % ERROR )
                     exit Implicit
-!                    call PROGRAM_HEADER % Abort ( )
                   end if
 
                   end associate !-- dJ_Eq, etc.
@@ -925,18 +925,25 @@ end if
 
               end do Implicit
 
-              ErrorRank  =  C % Communicator % Rank
-              call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
-              call Show ( iS, 'iS', CONSOLE % ERROR )
-              call Show ( iV, 'iV', CONSOLE % ERROR )
-              call Show ( 'Adjusting relaxation', CONSOLE % ERROR )
-              call Show ( iR, 'iR', CONSOLE % ERROR )
               E_R ( iV )  =  E_R_0 ( iV )
               N_R ( iV )  =  N_R_0 ( iV )
               E_F ( iV )  =  E_F_0 ( iV )
               N_F ( iV )  =  N_F_0 ( iV )
               call R % ComputeFromBalanced ( iC, iV )
               call F % ComputeFromBalanced ( iC, iV )
+
+              ! if ( iV  ==  iShow ) then
+              !   ErrorRank  =  C % Communicator % Rank
+              !   call Show ( Res_J_Eq ( : iI ), '>>> Res_J_Eq', &
+              !               CONSOLE % ERROR )
+              !   call Show ( Res_N_Eq ( : iI ), '>>> Res_N_Eq', &
+              !               CONSOLE % ERROR )
+              !   call Show ( ErrorRank, '>>> ErrorRank', CONSOLE % ERROR )
+              !   call Show ( iS, '>>> iS', CONSOLE % ERROR )
+              !   call Show ( iV, '>>> iV', CONSOLE % ERROR )
+              !   call Show ( '>>> Adjusting relaxation', CONSOLE % ERROR )
+              ! end if
+              ! call PROGRAM_HEADER % Abort ( )
 
             end do Relaxation
 

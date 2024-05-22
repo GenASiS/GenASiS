@@ -571,7 +571,7 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
-    EtaMax  =  100.
+    EtaMax  =  25.
 
     if ( UseDevice ) then
   !     !$OMP OMP_TARGET_DIRECTIVE parallel do &
@@ -697,7 +697,7 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
-    EtaMax  =  100.
+    EtaMax  =  25.
 
     if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
       return
