@@ -17,7 +17,7 @@ module Universe_F_C__Form
     logical ( KDL ) :: &
       Coarsen
     type ( Coarsening_C_F_Form ), allocatable :: &
-      Coarsening
+      Coarsening_F
     class ( Atlas_SCG_Form ), allocatable :: &
       PositionSpace_SA, &  !-- SphericalAverage
       PositionSpace_AA     !-- AzimuthalAverage
@@ -182,8 +182,8 @@ contains
       deallocate ( U % PositionSpace_AA )
     if ( allocated ( U % PositionSpace_SA ) ) &
       deallocate ( U % PositionSpace_SA )
-    if ( allocated ( U % Coarsening ) ) &
-      deallocate ( U % Coarsening )
+    if ( allocated ( U % Coarsening_F ) ) &
+      deallocate ( U % Coarsening_F )
     
   end subroutine Finalize
 
@@ -837,12 +837,12 @@ contains
 
     call S % Initialize ( F, nStagesOption = nStages )
 
-    !-- Coarsening
+    !-- Coarsening_F
     U % Coarsen  =  .true.
     call PROGRAM_HEADER % GetParameter ( U % Coarsen, 'Coarsen' )
     if ( U % Coarsen ) then
-      allocate ( U % Coarsening )
-      associate ( C  =>  U % Coarsening )
+      allocate ( U % Coarsening_F )
+      associate ( C  =>  U % Coarsening_F )
       select type ( F )
         type is ( Fluid_D_Form )
           call C % Initialize &
@@ -1006,8 +1006,8 @@ contains
       class ( Universe_F_C_Form ), intent ( in ) :: &
         U
 
-    if ( allocated ( U % Coarsening ) ) &
-      call U % Coarsening % Show ( )
+    if ( allocated ( U % Coarsening_F ) ) &
+      call U % Coarsening_F % Show ( )
 
     if ( allocated ( U % PositionSpace_AA ) ) then
       call U % PositionSpace_AA % Show ( )
@@ -1046,7 +1046,7 @@ contains
         ES_2  =>  I % EigenspeedSet_X ( 2 ), &
         ES_3  =>  I % EigenspeedSet_X ( 3 ), &
          G    =>  I % Geometry_X, &
-        Crsn  =>  U % Coarsening )
+        Crsn  =>  U % Coarsening_F )
 
     select type ( A  =>  G % Atlas )
       class is ( Atlas_SCG_Form )

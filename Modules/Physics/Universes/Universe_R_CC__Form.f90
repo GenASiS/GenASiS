@@ -542,11 +542,11 @@ contains
 
 !     call S % Initialize ( F, OrderOption = EvolutionOrder )
 
-!     !-- Coarsening
+!     !-- Coarsening_F
 !     if ( U % Coarsen ) then
-!       allocate ( U % Coarsening )
+!       allocate ( U % Coarsening_F )
 !       associate &
-!         ( C  =>  U % Coarsening, &
+!         ( C  =>  U % Coarsening_F, &
 !           G  =>  I % Geometry_X )
 !         call C % Initialize ( F, G )
 !         call S % SetCoarsening ( C )
@@ -692,11 +692,11 @@ contains
                ImplicitExplicitOption = ImplicitExplicit, &
                nStagesOption = nStages )
 
-      !-- Coarsening
+      !-- Coarsening_F
       if ( U % Coarsen ) then
-        allocate ( U % Coarsening )
+        allocate ( U % Coarsening_F )
         associate &
-          ( C  =>  U % Coarsening, &
+          ( C  =>  U % Coarsening_F, &
             G  =>  I % Geometry_X )
           call C % Initialize ( F, G )
           call S_F % SetCoarsening ( C )
