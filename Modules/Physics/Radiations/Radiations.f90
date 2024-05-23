@@ -5,6 +5,7 @@ module Radiations
   use Interactions_BM__Form
   use DivergencePart_RM__Form
   use DiffusionFactor_RM__Form
+  use Coarsening_C_RM__Form
   use Slope_RM_I__Form
   use Slope_RM_I_I__Form
   use Slope_RM_I_I_J__Form

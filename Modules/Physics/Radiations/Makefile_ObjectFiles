@@ -26,6 +26,8 @@ RADIATIONS = \
   Slope_RM_I_I__Form.o \
   Slope_RM_I__Kernel.o \
   Slope_RM_I__Form.o \
+  Coarsening_C_RM__Kernel.o \
+  Coarsening_C_RM__Form.o \
   DiffusionFactor_RM__Kernel.o \
   DiffusionFactor_RM__Form.o \
   DivergencePart_RM__Kernel.o \
