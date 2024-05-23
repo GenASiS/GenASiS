@@ -29,6 +29,8 @@ module Universe_R_CC__Form
 !      CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
+    type ( Coarsening_C_RM_Form ), allocatable :: &
+      Coarsening_R
     class ( Interactions_NM_G_Form ), allocatable :: &
       Interactions_NM_G
   contains
@@ -56,6 +58,8 @@ module Universe_R_CC__Form
       InitializeIntegrator
     procedure, public, pass :: &
       ShowParameters
+    procedure, public, pass :: &
+      ShowDiagnostics
     procedure, public, pass ( U ) :: &
       Compute_dT_RI_CGS
     procedure, public, pass ( U ) :: &
@@ -272,6 +276,8 @@ contains
            ( GravitationType, &
              FinishTimeOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
+    call U % InitializeDiagnostics &
+           ( )
 
     call U % SetMeasures ( )
 
@@ -296,6 +302,8 @@ contains
 
     if ( allocated ( U % Interactions_NM_G ) ) &
       deallocate ( U % Interactions_NM_G )
+    if ( allocated ( U % Coarsening_R ) ) &
+      deallocate ( U % Coarsening_R )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
 !    if ( allocated ( U % CO_SplitSource ) ) &
@@ -638,7 +646,8 @@ contains
           S_F  =>  S % Step_CS_2 )
 
       !-- Radiation
-      associate ( R  =>  I % CurrentSet_X_1D )
+      select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( RadiationMoments_BM_Form )
 
       allocate ( DivergencePart_NM_G_Form :: S_R % DivergenceTotal )
       associate ( DT  =>  S_R % DivergenceTotal )
@@ -692,14 +701,18 @@ contains
                ImplicitExplicitOption = ImplicitExplicit, &
                nStagesOption = nStages )
 
-      !-- Coarsening_F
+      !-- Coarsening
       if ( U % Coarsen ) then
         allocate ( U % Coarsening_F )
+        allocate ( U % Coarsening_R )
         associate &
-          ( C  =>  U % Coarsening_F, &
-            G  =>  I % Geometry_X )
-          call C % Initialize ( F, G )
-          call S_F % SetCoarsening ( C )
+          ( C_F  =>  U % Coarsening_F, &
+            C_R  =>  U % Coarsening_R, &
+            G    =>  I % Geometry_X )
+          call C_F % Initialize ( F, G )
+          call C_R % Initialize ( R, G )
+          call S_F % SetCoarsening ( C_F )
+          call S_R % SetCoarsening ( C_R )
         end associate !-- C, etc.
       end if
 
@@ -709,9 +722,9 @@ contains
         call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select    !-- F
-      end associate !-- R
+      end select    !-- R
       end associate !-- S_R, S_F
-      end select !-- S
+      end select    !-- S
 
     end select !-- I
 
@@ -795,6 +808,33 @@ contains
     call Show ( U % InteractionFactor, 'InteractionFactor', U % IGNORABILITY )
 
   end subroutine ShowParameters
+
+
+  subroutine ShowDiagnostics ( U )
+
+      class ( Universe_R_CC_Form ), intent ( in ) :: &
+        U
+
+    if ( allocated ( U % Coarsening_F ) ) &
+      call U % Coarsening_F % Show ( )
+    if ( allocated ( U % Coarsening_R ) ) &
+      call U % Coarsening_R % Show ( )
+
+    if ( allocated ( U % PositionSpace_AA ) ) then
+      call U % PositionSpace_AA % Show ( )
+      call U % AA_Gravitation % FieldSet_AA % Show ( )
+      call U % AA_Fluid % FieldSet_AA % Show ( )
+      call U % Stream_AA % Show ( )
+    end if !-- allocated PositionSpace_AA
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      call U % PositionSpace_SA % Show ( )
+      call U % SA_Gravitation % FieldSet_SA % Show ( )
+      call U % SA_Fluid % FieldSet_SA % Show ( )
+      call U % Stream_SA % Show ( )
+    end if !-- allocated PositionSpace_SA
+
+  end subroutine ShowDiagnostics
 
 
   subroutine Compute_dT_RI_CGS ( dT_E, dT_N, U, iC, T_Option )

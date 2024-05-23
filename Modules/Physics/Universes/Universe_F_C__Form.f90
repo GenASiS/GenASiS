@@ -51,6 +51,8 @@ module Universe_F_C__Form
       InitializeStep
     procedure, public, pass :: &
       InitializeIntegrator
+    procedure, public, pass :: &
+      InitializeDiagnostics
     procedure, private, pass :: &
       InitializeAtlas
     procedure, public, pass :: &
@@ -155,6 +157,15 @@ contains
              FinishTimeOption = FinishTimeOption, &
              GravityFactorOption = GravityFactorOption, &
              nWriteOption = nWriteOption )
+    call U % InitializeDiagnostics &
+           ( )
+
+    !-- Integrator methods
+
+    associate ( I  =>  U % Integrator )
+    I % Analyze  =>  Analyze_F_C
+    I % Write    =>  Write_F_C
+    end associate !-- I
 
   end subroutine Initialize_F_C
 
@@ -903,6 +914,18 @@ contains
              T_FinishOption = FinishTimeOption, &
              nWriteOption = nWriteOption )
 
+    end select !-- I
+
+  end subroutine InitializeIntegrator
+
+
+  subroutine InitializeDiagnostics ( U )
+
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
+
+    associate ( I  =>  U % Integrator )
+
     !-- AzimuthalAverage Stream
 
     if ( allocated ( U % PositionSpace_AA ) ) then
@@ -953,14 +976,9 @@ contains
       end associate !-- A_SA, etc.
     end if !-- allocated PositionSpace_SA
 
-    !-- Integrator methods
+    end associate !-- I
 
-    I % Analyze  =>  Analyze_F_C
-    I % Write    =>  Write_F_C
-
-    end select !-- I
-
-  end subroutine InitializeIntegrator
+  end subroutine InitializeDiagnostics
 
 
   subroutine InitializeAtlas &
