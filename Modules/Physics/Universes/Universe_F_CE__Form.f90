@@ -235,7 +235,8 @@ contains
     !-- Advection step
 
     if ( U % Coarsen ) then
-      call U % Compute_dT_CS_CGS_C ( dT_1, iC, T_Option )
+      call U % Compute_dT_CS_CGS_C &
+             ( I % EigenspeedSet_X, dT_1, U % Coarsening_F, iC, T_Option )
     else !-- .not. Coarsen
       call I % Compute_dT_CS_CGS &
              ( I % EigenspeedSet_X, dT_1, iC, T_Option )

@@ -59,7 +59,7 @@ module Universe_F_C__Form
       ShowParameters
     procedure, public, pass :: &
       ShowDiagnostics
-    procedure, public, pass :: &
+    procedure, public, pass ( U ) :: &
       Compute_dT_CS_CGS_C
     procedure, public, nopass :: &
       Analyze_F_C
@@ -1044,14 +1044,18 @@ contains
   end subroutine ShowDiagnostics
 
 
-  subroutine Compute_dT_CS_CGS_C ( U, dT, iC, T_Option )
+  subroutine Compute_dT_CS_CGS_C ( ES, dT, U, Crsng, iC, T_Option )
 
     !-- Compute_dT_CurrentSet_ChartGridStructured_Central (or _Coarsened)
 
-    class ( Universe_F_C_Form ), intent ( inout ) :: &
-      U
+    class ( EigenspeedSet_F_Form ), dimension ( : ), intent ( inout ) :: &
+      ES
     real ( KDR ), intent ( inout ) :: &
       dT
+    class ( Universe_F_C_Form ), intent ( in ) :: &
+      U
+    class ( Coarsening_C_Form ), intent ( in ) :: &
+      Crsng
     integer ( KDI ), intent ( in ) :: &
       iC
     type ( TimerForm ), intent ( in ), optional :: &
@@ -1060,11 +1064,10 @@ contains
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_Form )
     associate &
-      ( ES_1  =>  I % EigenspeedSet_X ( 1 ), &
-        ES_2  =>  I % EigenspeedSet_X ( 2 ), &
-        ES_3  =>  I % EigenspeedSet_X ( 3 ), &
-         G    =>  I % Geometry_X, &
-        Crsn  =>  U % Coarsening_F )
+      ( ES_1  =>  ES ( 1 ), &
+        ES_2  =>  ES ( 2 ), &
+        ES_3  =>  ES ( 3 ), &
+         G    =>  I % Geometry_X )
 
     select type ( A  =>  G % Atlas )
       class is ( Atlas_SCG_Form )
@@ -1080,7 +1083,7 @@ contains
         EV_2  =>  ES_2 % Storage ( 1 ) % Value, &
         EV_3  =>  ES_3 % Storage ( 1 ) % Value, &
         GV    =>   G   % Storage ( 1 ) % Value, &
-        CV    =>  Crsn % Storage ( 1 ) % Value )
+        CV    =>  Crsng % Storage ( 1 ) % Value )
 
     call Compute_dT_CS_CGS_C_Kernel &
            ( dT, C % ProperCell, &
@@ -1093,8 +1096,8 @@ contains
              GV ( :, G % WIDTH_U_1 ), &
              GV ( :, G % WIDTH_U_2 ), &
              GV ( :, G % WIDTH_U_3 ), &
-             CV ( :, Crsn % COARSENING_POLAR ), &
-             CV ( :, Crsn % COARSENING_AZIMUTHAL ), &
+             CV ( :, Crsng % COARSENING_POLAR ), &
+             CV ( :, Crsng % COARSENING_AZIMUTHAL ), &
              C % nDimensions, &
              UseDeviceOption = G % DeviceMemory )
 

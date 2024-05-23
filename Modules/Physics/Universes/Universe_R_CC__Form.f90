@@ -1602,7 +1602,8 @@ contains
     !-- Fluid advection step
 
     if ( U % Coarsen ) then
-      call U % Compute_dT_CS_CGS_C ( dT_2, iC, T_Option )
+      call U % Compute_dT_CS_CGS_C &
+             ( I % EigenspeedSet_X, dT_2, U % Coarsening_F, iC, T_Option )
     else !-- .not. Coarsen
       call I % Compute_dT_CS_CGS &
              ( I % EigenspeedSet_X, dT_2, iC, T_Option )
@@ -1611,8 +1612,13 @@ contains
     
     !-- Radiation streaming step
 
-    call I % Compute_dT_CS_CGS &
-           ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
+    if ( U % Coarsen ) then
+      call U % Compute_dT_CS_CGS_C &
+             ( I % EigenspeedSet_X_1D, dT_3, U % Coarsening_R, iC, T_Option )
+    else !-- .not. Coarsen
+      call I % Compute_dT_CS_CGS &
+             ( I % EigenspeedSet_X_1D, dT_3, iC, T_Option )
+    end if
     dT_3  =  I % CourantFactor_1D  *  dT_3
 
     ! !-- Radiative transfer steps
