@@ -732,7 +732,7 @@ integer ( KDI ) :: &
 ! call Show ( '>>> Stage' )
 ! call Show ( iS, '>>> iS' )
 
-! iShow = 35
+! iShow = 31
 ! call Show ( iShow, '>>> iShow' )
 
         do iV = 1, nV
@@ -775,7 +775,7 @@ integer ( KDI ) :: &
                 call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
                 call Show ( iS, 'iStage', CONSOLE % ERROR )
                 call Show ( iV, 'iValue', CONSOLE % ERROR )
-                call PROGRAM_HEADER % Abort ( )
+!                call PROGRAM_HEADER % Abort ( )
               end if
 
 ! if ( iV == iShow ) then
@@ -905,9 +905,9 @@ integer ( KDI ) :: &
                   !                 CONSOLE % ERROR )
                   !   exit Implicit
                   else if ( iI  ==  Max_I ) then
-                    ! if ( iV  ==  iShow ) &
-                    !   call Show ( 'Implicit solve maximum iterations', &
-                    !               CONSOLE % ERROR )
+!                    if ( iV  ==  iShow ) &
+!                      call Show ( 'Implicit solve maximum iterations', &
+!                                  CONSOLE % ERROR )
                     exit Implicit
                   end if
 

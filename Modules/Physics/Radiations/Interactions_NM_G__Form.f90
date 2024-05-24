@@ -336,6 +336,9 @@ contains
       iC, &
       iV
 
+integer ( KDI ) :: &
+  iShow
+
 !    call Show ( 'ComputeSingle', CONSOLE % INFO_6 )
 !    call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
 
@@ -373,6 +376,11 @@ contains
           A      =>  F_V ( :, F % MASS_NUMBER_HEAVY ), &
          Mu_e    =>  F_V ( :, F % CHEMICAL_POTENTIAL_E ), &
          Mu_n_p  =>  F_V ( :, F % CHEMICAL_POTENTIAL_N_P ) )
+
+! iShow = 31
+! if ( iV == iShow ) then
+!   call Show ( Eta_Nu ( iV ), '>>> Eta_Nu' )
+! end if
 
     !-- Emission / Absorption
 
