@@ -39,8 +39,8 @@ module Step_RK_H__Form
     class ( Atlas_H_Form ), pointer :: &
       Atlas => null ( )
     class ( Slope_H_Form ), allocatable :: &
-      SlopeImplicitIterate, &  !-- Subset of KK on which to iterate
-      SlopeImplicit, &         !-- KK computation
+!      SlopeImplicitIterate, &  !-- Subset of KK on which to iterate
+!      SlopeImplicit, &         !-- KK computation
       SlopeExplicit            !-- K  computation
     class ( Slope_H_Form ), allocatable :: &
       SlopeSumImplicit, &  !-- KK sum for I/O
@@ -49,8 +49,8 @@ module Step_RK_H__Form
       SlopeStageImplicit, &  !-- storage of KK for various stages
       SlopeStageExplicit     !-- storage of K for various stages
     procedure ( SS ), pointer :: &
-      SetSlopeImplicitIterate => null ( ), &
-      SetSlopeImplicit => null ( ), &
+!      SetSlopeImplicitIterate => null ( ), &
+!      SetSlopeImplicit => null ( ), &
       SetSlopeExplicit => null ( )
     procedure ( SSS ), pointer :: &
       SetSlopeStage => null ( )  !-- used to initialize either K or KK storage
@@ -188,13 +188,13 @@ contains
 
     if ( S % ImplicitExplicit ) then
 
-      if ( .not. associated ( S % SetSlopeImplicitIterate ) ) &
-        S % SetSlopeImplicitIterate  =>  SetSlope_H
-      if ( .not. associated ( S % SetSlopeImplicit ) ) &
-        S % SetSlopeImplicit  =>  SetSlope_H
+      ! if ( .not. associated ( S % SetSlopeImplicitIterate ) ) &
+      !   S % SetSlopeImplicitIterate  =>  SetSlope_H
+      ! if ( .not. associated ( S % SetSlopeImplicit ) ) &
+      !   S % SetSlopeImplicit  =>  SetSlope_H
 
-      call S % SetSlopeImplicitIterate ( S % SlopeImplicitIterate )
-      call S % SetSlopeImplicit ( S % SlopeImplicit )
+      ! call S % SetSlopeImplicitIterate ( S % SlopeImplicitIterate )
+      ! call S % SetSlopeImplicit ( S % SlopeImplicit )
 
       allocate ( S % SlopeStageImplicit ( nS ) )
       do iS  =  1,  nS
@@ -228,14 +228,14 @@ contains
     integer ( KDI ) :: &
       iS  !-- iStage
 
-    if ( S % ImplicitExplicit ) then
-      if ( .not. allocated ( S % SlopeSumImplicit ) ) then
-        call S % SetSlopeImplicit ( S % SlopeSumImplicit )
-        associate ( K_Sum  =>  S % SlopeSumImplicit )
-        call K_Sum % SetStream ( Sm )
-        end associate !-- K_Sum
-      end if !-- allocated SlopeSumImplicit
-    end if
+    ! if ( S % ImplicitExplicit ) then
+    !   if ( .not. allocated ( S % SlopeSumImplicit ) ) then
+    !     call S % SetSlopeImplicit ( S % SlopeSumImplicit )
+    !     associate ( K_Sum  =>  S % SlopeSumImplicit )
+    !     call K_Sum % SetStream ( Sm )
+    !     end associate !-- K_Sum
+    !   end if !-- allocated SlopeSumImplicit
+    ! end if
 
     if ( .not. allocated ( S % SlopeSumExplicit ) ) then
       call S % SetSlopeExplicit ( S % SlopeSumExplicit )
@@ -507,19 +507,19 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
 
-    if ( S % ImplicitExplicit .and. allocated ( S % SlopeSumImplicit ) ) then
+    ! if ( S % ImplicitExplicit .and. allocated ( S % SlopeSumImplicit ) ) then
 
-      associate &
-        ( KK_Sum  =>  S % SlopeSumImplicit, &
-          KK      =>  S % SlopeImplicit )
+    !   associate &
+    !     ( KK_Sum  =>  S % SlopeSumImplicit, &
+    !       KK      =>  S % SlopeImplicit )
 
-      if ( iS == 1 ) &
-        call KK_Sum % ClearRecursive ( )
-      call KK_Sum % MultiplyAddRecursive ( KK, S % BB ( iS ) )
+    !   if ( iS == 1 ) &
+    !     call KK_Sum % ClearRecursive ( )
+    !   call KK_Sum % MultiplyAddRecursive ( KK, S % BB ( iS ) )
 
-      end associate !-- K_Sum, etc.
+    !   end associate !-- K_Sum, etc.
 
-    end if !-- ImplicitExplicit and allocated SlopeSumImplicit
+    ! end if !-- ImplicitExplicit and allocated SlopeSumImplicit
 
     if ( allocated ( S % SlopeSumExplicit ) ) then
 
@@ -553,10 +553,10 @@ contains
       deallocate ( S % SlopeSumImplicit )
     if ( allocated ( S % SlopeExplicit ) ) &
       deallocate ( S % SlopeExplicit )
-    if ( allocated ( S % SlopeImplicit ) ) &
-      deallocate ( S % SlopeImplicit )
-    if ( allocated ( S % SlopeImplicitIterate ) ) &
-      deallocate ( S % SlopeImplicitIterate )
+    ! if ( allocated ( S % SlopeImplicit ) ) &
+    !   deallocate ( S % SlopeImplicit )
+    ! if ( allocated ( S % SlopeImplicitIterate ) ) &
+    !   deallocate ( S % SlopeImplicitIterate )
     if ( allocated ( S % AA ) ) &
       deallocate ( S % AA )
     if ( allocated ( S % A ) ) &
