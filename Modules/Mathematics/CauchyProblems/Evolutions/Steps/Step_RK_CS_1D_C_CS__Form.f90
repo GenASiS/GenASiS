@@ -1,6 +1,6 @@
-module Step_RK_CS_CS_1D_C__Form
+module Step_RK_CS_1D_C_CS__Form
 
-  !-- Step_RungeKutta_CurrentSet_CurrentSet_1D_Collected__Form
+  !-- Step_RungeKutta_CurrentSet_1D_Collected_CurrentSet__Form
 
   use Basics
   use Fields
@@ -11,7 +11,7 @@ module Step_RK_CS_CS_1D_C__Form
   implicit none
   private
 
-  type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_CS_1D_C_Form
+  type, public, extends ( Step_RK_H_Form ) :: Step_RK_CS_1D_C_CS_Form
     integer ( KDI ) :: &
       nCurrentSets_1D, &
       MaxImplicitIterations, &
@@ -26,9 +26,9 @@ module Step_RK_CS_CS_1D_C__Form
       Step_CS_1D
   contains
     procedure, private, pass :: &
-      Initialize_CS_CS_1D_C
+      Initialize_CS_1D_C_CS
     generic, public :: &
-      Initialize => Initialize_CS_CS_1D_C
+      Initialize => Initialize_CS_1D_C_CS
     procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
@@ -53,17 +53,17 @@ module Step_RK_CS_CS_1D_C__Form
       StoreSolution
     procedure, public, pass :: &
       SolveUpdateImplicit
-  end type Step_RK_CS_CS_1D_C_Form
+  end type Step_RK_CS_1D_C_CS_Form
 
 
 contains
 
 
-  subroutine Initialize_CS_CS_1D_C &
+  subroutine Initialize_CS_1D_C_CS &
                ( S, CS_1D, CS, NameOption, ImplicitExplicitOption, &
                  nStagesOption )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     class ( CurrentSetForm ), dimension ( : ), intent ( in ), target :: &
       CS_1D
@@ -82,9 +82,9 @@ contains
       Name
 
     if ( S % Type  ==  '' ) &
-      S % Type  =  'a Step_RK_CS_CS_1D_C'
+      S % Type  =  'a Step_RK_CS_1D_C_CS'
 
-    Name  =  'CS_CS_1D_C_Stp' 
+    Name  =  'CS_1D_C_CS_Stp' 
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
@@ -125,12 +125,12 @@ contains
                nStagesOption )
     end do !-- iCS
 
-  end subroutine Initialize_CS_CS_1D_C
+  end subroutine Initialize_CS_1D_C_CS
 
 
   subroutine SetStream ( S, Sm )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     class ( Stream_BM_Form ), intent ( inout ) :: &
       Sm
@@ -156,7 +156,7 @@ contains
 
   subroutine Show_S ( S )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( in ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( in ) :: &
       S
 
     integer ( KDI ) :: &
@@ -189,7 +189,7 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    type ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
 
     if ( allocated ( S % Step_CS_1D ) ) &
@@ -204,7 +204,7 @@ contains
 
   subroutine LoadSolution ( S )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
 
     integer ( KDI ) :: &
@@ -221,7 +221,7 @@ contains
 
   subroutine InitializeIntermediate ( S, iS )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iS  !-- iStage
@@ -240,7 +240,7 @@ contains
 
   subroutine IncrementIntermediate ( S, dT, iS, iK )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       dT
@@ -262,7 +262,7 @@ contains
 
   subroutine StoreIntermediate ( S, T_Option )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -281,7 +281,7 @@ contains
 
   subroutine ComputeUpdateImplicit ( S, T, dT, iS, T_Option )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
        T, &
@@ -360,7 +360,7 @@ contains
 
   subroutine ComputeUpdateExplicit ( S, T, dT, iS, T_Option )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
        T, &
@@ -385,7 +385,7 @@ contains
 
   subroutine IncrementSolution ( S, dT, iS )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       dT
@@ -406,7 +406,7 @@ contains
 
   subroutine StoreSolution ( S, T_Option )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
@@ -425,7 +425,7 @@ contains
 
   subroutine SolveUpdateImplicit  ( S, T, dT, iS )
 
-    class ( Step_RK_CS_CS_1D_C_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
        T, &
@@ -434,10 +434,10 @@ contains
       iS
 
     call Show ( 'SolveUpdateImplicit should be overridden', CONSOLE % WARNING )
-    call Show ( 'Step_RK_CS_CS_1D_C_Form', 'module', CONSOLE % WARNING )
+    call Show ( 'Step_RK_CS_1D_C_CS_Form', 'module', CONSOLE % WARNING )
     call Show ( 'SolveUpdateImplicit', 'subroutine', CONSOLE % WARNING )
 
   end subroutine SolveUpdateImplicit
 
 
-end module Step_RK_CS_CS_1D_C__Form
+end module Step_RK_CS_1D_C_CS__Form
