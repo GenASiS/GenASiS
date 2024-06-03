@@ -768,14 +768,21 @@ integer ( KDI ) :: &
                 Omega ( iV )  =  Omega ( iV )  -  dOmega
 
               if ( Omega ( iV )  <  0.99 * dOmega ) then
-                ErrorRank  =  C % Communicator % Rank
-                call Show ( 'Relaxation parameter too small', CONSOLE % ERROR )
-                call Show ( iR, 'iRelaxation', CONSOLE % ERROR )
-                call Show ( Omega ( iV ), 'Relaxation', CONSOLE % ERROR )
-                call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
-                call Show ( iS, 'iStage', CONSOLE % ERROR )
-                call Show ( iV, 'iValue', CONSOLE % ERROR )
+                ! ErrorRank  =  C % Communicator % Rank
+                ! call Show ( 'Relaxation parameter too small', CONSOLE % ERROR )
+                ! call Show ( iR, 'iRelaxation', CONSOLE % ERROR )
+                ! call Show ( Omega ( iV ), 'Relaxation', CONSOLE % ERROR )
+                ! call Show ( ErrorRank, 'ErrorRank', CONSOLE % ERROR )
+                ! call Show ( iS, 'iStage', CONSOLE % ERROR )
+                ! call Show ( iV, 'iValue', CONSOLE % ERROR )
 !                call PROGRAM_HEADER % Abort ( )
+                E_R ( iV )  =  E_R_0 ( iV )
+                N_R ( iV )  =  N_R_0 ( iV )
+                E_F ( iV )  =  E_F_0 ( iV )
+                N_F ( iV )  =  N_F_0 ( iV )
+                call R % ComputeFromBalanced ( iC, iV )
+                call F % ComputeFromBalanced ( iC, iV )
+                exit Relaxation
               end if
 
 ! if ( iV == iShow ) then
