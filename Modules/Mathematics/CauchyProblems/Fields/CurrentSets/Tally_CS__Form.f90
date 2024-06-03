@@ -64,10 +64,10 @@ module Tally_CS__Form
       Finalize_E
   end type Tally_CS_Element
 
-!   type, public :: Tally_C_PointerForm
-!     class ( Tally_C_Form ), pointer :: &
-!       Pointer => null ( )
-!   end type Tally_C_PointerForm
+  type, public :: Tally_CS_Pointer
+    class ( Tally_CS_Form ), pointer :: &
+      Pointer => null ( )
+  end type Tally_CS_Pointer
 
 
 contains
