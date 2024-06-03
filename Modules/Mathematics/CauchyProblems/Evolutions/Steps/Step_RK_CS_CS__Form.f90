@@ -58,8 +58,6 @@ module Step_RK_CS_CS__Form
     procedure, public, pass :: &
       SetStream
     procedure, public, pass :: &
-      SetCoarsening
-    procedure, public, pass :: &
       Show => Show_S
     final :: &
       Finalize
@@ -287,25 +285,6 @@ contains
     end do
 
   end subroutine SetStream
-
-
-  subroutine SetCoarsening ( S, C, iS )
-
-    class ( Step_RK_CS_CS_Form ), intent ( inout ) :: &
-      S
-    class ( Coarsening_C_Form ), intent ( in ), target :: &
-      C
-    integer ( KDI ), intent ( in ) :: &
-      iS
-
-    select case ( iS )
-    case ( 1 )
-      call S % Step_CS_1 % SetCoarsening ( C )
-    case ( 2 )
-      call S % Step_CS_2 % SetCoarsening ( C )
-    end select !-- iS
-
-  end subroutine SetCoarsening
 
 
   subroutine Show_S ( S )
