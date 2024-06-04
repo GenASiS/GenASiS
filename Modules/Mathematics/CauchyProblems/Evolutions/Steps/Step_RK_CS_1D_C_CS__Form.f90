@@ -425,7 +425,7 @@ contains
 
   subroutine SolveUpdateImplicit  ( S, T, dT, iS )
 
-    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
+    class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ), target :: &
       S
     real ( KDR ), intent ( in ) :: &
        T, &

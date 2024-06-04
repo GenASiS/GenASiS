@@ -22,5 +22,6 @@ module Radiations
   use ImplicitDiagnostics_NM_G__Form
   use Step_RK_RM__Form
   use Step_RK_NM_G__Form
+  use Step_RK_NM_G_1D_C__Form
 
 end module Radiations

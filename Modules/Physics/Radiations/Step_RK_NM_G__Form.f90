@@ -1005,7 +1005,7 @@ integer ( KDI ) :: &
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
-        call Show ( 'Step_RK_RM__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Step_RK_NM_G__Form', 'module', CONSOLE % ERROR )
         call Show ( 'SolveUpdateImplicit', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- C
