@@ -30,6 +30,8 @@ module Step_RK_NM_G_1D_C__Form
       SetBalancedIndices, &
       SetStoragePointers_F, &
       SetStoragePointers_R, &
+      SetFieldPointers_R, &
+      SetFieldPointers_KK, &
       SolveKernel
 
 contains
@@ -130,19 +132,15 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_R, &
       iMomentum_F
-    real ( KDR ) :: &
-!       J_Eq_0, &  !-- upon entry
-!       J_Eq_P, &  !-- previous iteration
-!       N_Eq_0, &
-!       N_Eq_P, &
-!       E_R_P, E_R_N, &  !-- previous, new
-!       N_R_P, N_R_N, &
-!       dOmega, &
-      SqrtTiny
+    !-- Field pointers
     real ( KDR ), dimension ( : ), pointer :: &
       KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
       KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
-      KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N      
+      KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N
+    real ( KDR ), dimension ( : ), pointer :: &
+      J_Eq_E,  N_Eq_E, &
+      J_Eq_EB, N_Eq_EB
+    !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
       Y_I_F_V => null ( ), Y_I_E_V => null ( ), Y_I_EB_V => null ( )
     real ( KDR ), dimension ( :, : ), pointer :: &
@@ -152,6 +150,7 @@ contains
     real ( KDR ), dimension ( :, : ), pointer :: &
       R_E_V => null ( ), R_EB_V => null ( ), &
       I_E_V => null ( ), I_EB_V => null ( )
+    !-- FieldSet pointers
     class ( FieldSet_BM_Form ), pointer :: &
       Y_I_F => null ( ), Y_I_E => null ( ), Y_I_EB => null ( )
     class ( FieldSet_BM_Form ), pointer :: &
@@ -165,8 +164,6 @@ contains
 
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
     call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
-
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     associate &
       (  S_R  =>  S % Step_CS_1D ( : ), &
@@ -222,8 +219,22 @@ contains
              ( I_EB,   R_EB,   Y_I_EB,   KK_EB,  iC, &
                I_EB_V, R_EB_V, Y_I_EB_V, KK_EB_V )
 
+      call SetFieldPointers_KK &
+               ( KK_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
+                 KK_F_S_1, KK_F_S_2, KK_F_S_3, KK_F_E, KK_F_N )
+      call SetFieldPointers_KK &
+               ( KK_E_V, iMomentum_R, iEnergy_R, iNumber_R, &
+                 KK_E_S_1, KK_E_S_2, KK_E_S_3, KK_E_E, KK_E_N )
+      call SetFieldPointers_KK &
+               ( KK_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
+                 KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_N )
+
+      call SetFieldPointers_R ( R_E,  R_E_V,  J_Eq_E,  N_Eq_E  )
+      call SetFieldPointers_R ( R_EB, R_EB_V, J_Eq_EB, N_Eq_EB )
+
       call SolveKernel &
              ( C % ProperCell, &
+               J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
                KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
                KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
                KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
@@ -316,14 +327,59 @@ contains
   end subroutine SetStoragePointers_R
 
 
+  subroutine SetFieldPointers_KK &
+               ( KK_V, iMomentum, iEnergy, iNumber, &
+                 KK_S_1, KK_S_2, KK_S_3, KK_E, KK_N )
+    
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
+      KK_V
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      iMomentum
+    integer ( KDI ), intent ( in ) :: &
+      iEnergy, &
+      iNumber
+    real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
+      KK_S_1, KK_S_2, KK_S_3, &
+      KK_E, &
+      KK_N
+
+    KK_S_1  =>  KK_V ( :, iMomentum ( 1 ) ) 
+    KK_S_2  =>  KK_V ( :, iMomentum ( 2 ) ) 
+    KK_S_3  =>  KK_V ( :, iMomentum ( 3 ) ) 
+    
+    KK_E    =>  KK_V ( :, iEnergy )
+    KK_N    =>  KK_V ( :, iNumber )
+
+  end subroutine SetFieldPointers_KK
+
+
+  subroutine SetFieldPointers_R ( R, R_V, J_Eq, N_Eq )
+
+    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+      R
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
+      R_V
+    real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
+      J_Eq, N_Eq
+
+      J_Eq  =>  R_V ( :, R % ENERGY_DENSITY_C_EQ )
+      N_Eq  =>  R_V ( :, R % NUMBER_DENSITY_C_EQ )
+
+  end subroutine SetFieldPointers_R
+
+
   subroutine SolveKernel &
                ( ProperCell, &
+                 J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
                  KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J_Eq_E,  N_Eq_E, &
+      J_Eq_EB, N_Eq_EB
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
       KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
@@ -334,6 +390,18 @@ contains
       iR, &  !-- iRelaxation
       iI, &  !-- iIteration
       nV
+    real ( KDR ) :: &
+      J_Eq_E_0,  N_Eq_E_0,  &  !-- upon entry
+      J_Eq_EB_0, N_Eq_EB_0
+!      J_Eq_P, &  !-- previous iteration
+!      N_Eq_P, &
+!      E_R_P, E_R_N, &  !-- previous, new
+!      N_R_P, N_R_N, &
+    real ( KDR ) :: &
+!      dOmega, &
+      SqrtTiny
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     nV  =  size ( ProperCell )
 
@@ -341,6 +409,12 @@ contains
       if ( ProperCell ( iV ) ) then      
 
         !-- Iterate radiation and fluid energy and number to convergence
+
+        J_Eq_E_0   =  J_Eq_E  ( iV )
+        N_Eq_E_0   =  N_Eq_E  ( iV )
+
+        J_Eq_EB_0  =  J_Eq_EB ( iV )
+        N_Eq_EB_0  =  N_Eq_EB ( iV )
 
       else
 
