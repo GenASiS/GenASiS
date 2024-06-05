@@ -29,8 +29,9 @@ module Step_RK_NM_G_1D_C__Form
       SetBalancedIndices, &
       SetStoragePointers_F, &
       SetStoragePointers_R, &
-      SetFieldPointers_R, &
       SetFieldPointers_FS_B, &
+      SetFieldPointers_F, &
+      SetFieldPointers_R, &
       SolveKernel
 
 contains
@@ -105,13 +106,24 @@ contains
       iMomentum_F
     !-- Field pointers
     real ( KDR ), dimension ( : ), pointer :: &
-      Omega
+      Error, Omega, Residual
     real ( KDR ), dimension ( : ), pointer :: &
       KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
       KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
       KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N
     real ( KDR ), dimension ( : ), pointer :: &
-      J_Eq_E,  N_Eq_E, &
+      E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
+      E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
+      E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0
+    real ( KDR ), dimension ( : ), pointer :: &
+      E_F, S_F_1, S_F_2, S_F_3, D_F
+    real ( KDR ), dimension ( : ), pointer :: &
+      J_E, H_E_1, H_E_2, H_E_3, N_E, &
+      E_E, S_E_1, S_E_2, S_E_3, D_E, &
+      J_Eq_E, N_Eq_E
+    real ( KDR ), dimension ( : ), pointer :: &
+      J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+      E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
       J_Eq_EB, N_Eq_EB
     !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
@@ -203,26 +215,55 @@ contains
 
       !-- Field pointers
 
-      Omega  =>  ID_V ( :, ID % RELAXATION )
+         Error  =>  ID_V ( :, ID % ERROR )
+         Omega  =>  ID_V ( :, ID % RELAXATION )
+      Residual  =>  ID_V ( :, ID % RESIDUAL )
 
       call SetFieldPointers_FS_B &
-               ( KK_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
-                 KK_F_S_1, KK_F_S_2, KK_F_S_3, KK_F_E, KK_F_N )
+             ( KK_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
+               KK_F_S_1, KK_F_S_2, KK_F_S_3, KK_F_E, KK_F_N )
       call SetFieldPointers_FS_B &
-               ( KK_E_V, iMomentum_R, iEnergy_R, iNumber_R, &
-                 KK_E_S_1, KK_E_S_2, KK_E_S_3, KK_E_E, KK_E_N )
+             ( KK_E_V, iMomentum_R, iEnergy_R, iNumber_R, &
+               KK_E_S_1, KK_E_S_2, KK_E_S_3, KK_E_E, KK_E_N )
       call SetFieldPointers_FS_B &
-               ( KK_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
-                 KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_N )
+             ( KK_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
+               KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_N )
 
-      call SetFieldPointers_R ( R_E,  R_E_V,  J_Eq_E,  N_Eq_E  )
-      call SetFieldPointers_R ( R_EB, R_EB_V, J_Eq_EB, N_Eq_EB )
+      call SetFieldPointers_FS_B &
+             ( Y_I_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
+               S_F_1_0, S_F_2_0, S_F_3_0, E_F_0, D_F_0 )
+      call SetFieldPointers_FS_B &
+             ( Y_I_E_V, iMomentum_R, iEnergy_R, iNumber_R, &
+               S_E_1_0, S_E_2_0, S_E_3_0, E_E_0, D_E_0 )
+      call SetFieldPointers_FS_B &
+             ( Y_I_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
+               S_EB_1_0, S_EB_2_0, S_EB_3_0, E_EB_0, D_EB_0 )
+
+      call SetFieldPointers_F &
+             ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F )
+
+      call SetFieldPointers_R &
+             ( R_E, R_E_V, &
+               J_E, H_E_1, H_E_2, H_E_3, N_E, &
+               E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E )
+      call SetFieldPointers_R &
+             ( R_EB, R_EB_V, &
+               J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+               E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB )
 
       call SolveKernel &
-             ( J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
-               Omega, &
+             ( R_E, R_EB, F_HN, &
+               J_E, H_E_1, H_E_2, H_E_3, N_E, &
+               E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
+               J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+               E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+               E_F, S_F_1, S_F_2, S_F_3, D_F, &
+               Error, Omega, Residual, &
                C % ProperCell, &
-               S % MaxRelaxationIterations, S % MaxImplicitIterations, &
+               E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
+               E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+               E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
+               S % MaxRelaxationIterations, S % MaxImplicitIterations, iC, &
                KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
                KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
                KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
@@ -342,15 +383,47 @@ contains
   end subroutine SetFieldPointers_FS_B
 
 
-  subroutine SetFieldPointers_R ( R, R_V, J_Eq, N_Eq )
+  subroutine SetFieldPointers_F &
+               ( F, F_V, E, S_1, S_2, S_3, D )
+
+    class ( Fluid_P_HN_Form ), intent ( in ) :: &
+      F
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
+      F_V
+    real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
+      E, S_1, S_2, S_3, D
+
+      E     =>  F_V ( :, F % ENERGY_DENSITY_B )
+      S_1   =>  F_V ( :, F % MOMENTUM_DENSITY_D_1 )
+      S_2   =>  F_V ( :, F % MOMENTUM_DENSITY_D_2 )
+      S_3   =>  F_V ( :, F % MOMENTUM_DENSITY_D_3 )
+      D     =>  F_V ( :, F % ELECTRON_DENSITY_B )
+
+  end subroutine SetFieldPointers_F
+
+
+  subroutine SetFieldPointers_R &
+               ( R, R_V, J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, J_Eq, N_Eq )
 
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       R
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       R_V
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
+      J, H_1, H_2, H_3, N, &
+      E, S_1, S_2, S_3, D, &
       J_Eq, N_Eq
 
+      J     =>  R_V ( :, R % ENERGY_DENSITY_C )
+      H_1   =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_1 )
+      H_2   =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_2 )
+      H_3   =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_3 )
+      N     =>  R_V ( :, R % NUMBER_DENSITY_C )
+      E     =>  R_V ( :, R % ENERGY_DENSITY_B )
+      S_1   =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_1 )
+      S_2   =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_2 )
+      S_3   =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_3 )
+      D     =>  R_V ( :, R % NUMBER_DENSITY_B )
       J_Eq  =>  R_V ( :, R % ENERGY_DENSITY_C_EQ )
       N_Eq  =>  R_V ( :, R % NUMBER_DENSITY_C_EQ )
 
@@ -358,23 +431,46 @@ contains
 
 
   subroutine SolveKernel &
-               ( J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
-                 Omega, &
+               ( R_E, R_EB, F_HN, &
+                 J_E, H_E_1, H_E_2, H_E_3, N_E, &
+                 E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
+                 J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, &
+                 Error, Omega, Residual, &
                  ProperCell, &
-                 Max_R, Max_I, &
+                 E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
+                 E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+                 E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
+                 Max_R, Max_I, iC, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
                  KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
 
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      R_E, R_EB
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F_HN
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      J_Eq_E,  N_Eq_E, &
-      J_Eq_EB, N_Eq_EB, &
-      Omega
+      J_E, H_E_1, H_E_2, H_E_3, N_E, &
+      E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+      E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      E_F, S_F_1, S_F_2, S_F_3, D_F
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Error, Omega, Residual
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
+      E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+      E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0
     integer ( KDI ), intent ( in ) :: &
       Max_R, &
-      Max_I
+      Max_I, &
+      iC
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
       KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
@@ -385,9 +481,6 @@ contains
       iR, &  !-- iRelaxation
       iI, &  !-- iIteration
       nV
-!       ErrorRank
-! integer ( KDI ) :: &
-!   iShow
     real ( KDR ) :: &
       J_Eq_E_0,  N_Eq_E_0,  &  !-- upon entry
       J_Eq_EB_0, N_Eq_EB_0
@@ -423,6 +516,45 @@ contains
 
         iR  =  0
         Relaxation: do 
+
+          iR  =  iR + 1
+
+          if ( iR  >  1 ) &
+            Omega ( iV )  =  Omega ( iV )  -  dOmega
+
+          if ( Omega ( iV )  <  0.99 * dOmega ) then
+
+            !-- Reset and bail out
+
+            E_E ( iV )  =  E_E_0 ( iV )
+            D_E ( iV )  =  D_E_0 ( iV )
+            call R_E % ComputeFromBalanced ( iC, iV )
+
+            E_EB ( iV )  =  E_EB_0 ( iV )
+            D_EB ( iV )  =  D_EB_0 ( iV )
+            call R_EB % ComputeFromBalanced ( iC, iV )
+
+            E_F ( iV )  =  E_F_0 ( iV )
+            D_F ( iV )  =  D_F_0 ( iV )
+            call F_HN % ComputeFromBalanced ( iC, iV )
+
+            J_Eq_E ( iV )  =  J_Eq_E_0
+            N_Eq_E ( iV )  =  N_Eq_E_0
+
+            J_Eq_EB ( iV )  =  J_Eq_E_0
+            N_Eq_EB ( iV )  =  N_Eq_E_0
+
+            Error ( iV )  =  1.0_KDR
+            exit Relaxation
+
+          end if
+
+          iI  =  0
+          Implicit: do 
+
+            iI  =  iI + 1
+
+          end do Implicit
 
         end do Relaxation
 
