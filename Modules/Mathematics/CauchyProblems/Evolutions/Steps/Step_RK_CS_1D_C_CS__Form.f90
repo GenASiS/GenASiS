@@ -18,7 +18,7 @@ module Step_RK_CS_1D_C_CS__Form
       MaxRelaxationIterations
     real ( KDR ) :: &
       ImplicitTolerance
-    class ( ImplicitDiagnosticsForm ), dimension ( :, : ), allocatable :: &
+    class ( ImplicitDiagnosticsForm ), dimension ( : ), allocatable :: &
       ImplicitDiagnostics
     class ( Step_RK_CS_Form ), allocatable :: &
       Step_CS
@@ -77,7 +77,8 @@ contains
       nStagesOption
 
     integer ( KDI ) :: &
-      iCS  !-- iCurrentSet
+      iS, &  !-- iStage
+      iCS    !-- iCurrentSet
     character ( LDL ) :: &
       Name
 
@@ -110,6 +111,17 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( S % ImplicitTolerance, 'ImplicitTolerance' )
 
+    allocate ( S % ImplicitDiagnostics ( 2 : S % nStages ) )
+    do iS  =  2,  S % nStages
+      associate ( ID  =>  S % ImplicitDiagnostics ( iS ) )
+      call ID % Initialize &
+             ( S % Atlas, 'ImplicitDiagnostics', iS, &
+               DeviceMemoryOption = CS % DeviceMemory, &
+               PinnedMemoryOption = CS % PinnedMemory, &
+               DevicesCommunicateOption = CS % DevicesCommunicate )
+      end associate !-- ID
+    end do !-- iS
+
     !-- Steps
 
     if ( .not. allocated ( S % Step_CS ) ) &
@@ -119,7 +131,7 @@ contains
 
     if ( .not. allocated ( S % Step_CS_1D ) ) &
       allocate ( S % Step_CS_1D ( S % nCurrentSets_1D ) )
-    do iCS  =  1,  size ( CS_1D )
+    do iCS  =  1,  S % nCurrentSets_1D
       call S % Step_CS_1D ( iCS ) % Initialize &
              ( CS_1D ( iCS ), NameOption, ImplicitExplicitOption, &
                nStagesOption )
@@ -142,14 +154,12 @@ contains
     call S % Step_CS % SetStream ( Sm )
 
     do iCS  =  1,  S % nCurrentSets_1D
-
-      call S % Step_CS_1D ( iS ) % SetStream ( Sm )
-
-      do iS = 2, S % nStages
-        call Sm % AddFieldSet ( S % ImplicitDiagnostics ( iS, iCS ) )
-      end do !-- iS
-    
+      call S % Step_CS_1D ( iS ) % SetStream ( Sm )    
     end do !-- iCS
+
+    do iS = 2, S % nStages
+      call Sm % AddFieldSet ( S % ImplicitDiagnostics ( iS ) )
+    end do !-- iS
 
   end subroutine SetStream
 
@@ -175,14 +185,12 @@ contains
     call S % Step_CS % Show ( )
 
     do iCS  =  1,  S % nCurrentSets_1D
-
       call S % Step_CS_1D ( iCS ) % Show ( )
-
-      do iS = 2, S % nStages
-        call S % ImplicitDiagnostics ( iS, iCS ) % Show ( )
-      end do !-- iS
-
     end do !-- iCS
+
+    do iS = 2, S % nStages
+      call S % ImplicitDiagnostics ( iS ) % Show ( )
+    end do !-- iS
 
   end subroutine Show_S
 

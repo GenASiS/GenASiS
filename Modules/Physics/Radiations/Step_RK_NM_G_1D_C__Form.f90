@@ -8,7 +8,6 @@ module Step_RK_NM_G_1D_C__Form
   use Fluids
   use NeutrinoMoments_G__Form
   use Interactions_NM_G__Form
-  use ImplicitDiagnostics_NM_G__Form
 
   implicit none
   private
@@ -31,7 +30,7 @@ module Step_RK_NM_G_1D_C__Form
       SetStoragePointers_F, &
       SetStoragePointers_R, &
       SetFieldPointers_R, &
-      SetFieldPointers_KK, &
+      SetFieldPointers_FS_B, &
       SolveKernel
 
 contains
@@ -54,10 +53,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
-    integer ( KDI ) :: &
-      iNM, &
-      iS
-
     if ( S % Type  ==  '' ) &
       S % Type  =  'a Step_RK_NM_G_1D_C'
 
@@ -66,30 +61,9 @@ contains
 
     associate &
       ( nNM  =>  S % nCurrentSets_1D, &
-        nS   =>  S % nStages, &
         mII  =>  S % MaxImplicitIterations )
-
-    allocate ( ImplicitDiagnostics_NM_G_Form  &
-               :: S % ImplicitDiagnostics ( 2 : nS, 1 : nNM ) )
-    do iNM  =  1, nNM
-      do iS  =  2, nS
-        associate &
-          ( NM  =>  CS_1D ( iNM ) )
-        select type ( ID  =>  S % ImplicitDiagnostics ( iS, iNM ) )
-          class is ( ImplicitDiagnostics_NM_G_Form )
-        call ID % Initialize &
-               ( S % Atlas, NM % Name, iS, &
-                 DeviceMemoryOption = NM % DeviceMemory, &
-                 PinnedMemoryOption = NM % PinnedMemory, &
-                 DevicesCommunicateOption = NM % DevicesCommunicate )
-        end select !-- ID
-        end associate !-- NM
-      end do !-- iS
-    end do !-- iNM
-
     allocate ( S % Residual_J_Eq ( mII, nNM ) )
     allocate ( S % Residual_N_Eq ( mII, nNM ) )
-
     end associate !-- nNM, etc.
 
   end subroutine Initialize_CS_1D_C_CS
@@ -125,42 +99,45 @@ contains
       iEnergy_R, &
       iEnergy_F, &
       iNumber_R, &
-      iNumber_F!, &
-!       ErrorRank
-! integer ( KDI ) :: &
-!   iShow
+      iNumber_F
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum_R, &
       iMomentum_F
     !-- Field pointers
     real ( KDR ), dimension ( : ), pointer :: &
-      KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
-      KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
-      KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N
+      Omega
+    real ( KDR ), dimension ( : ), pointer :: &
+      KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
+      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
+      KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N
     real ( KDR ), dimension ( : ), pointer :: &
       J_Eq_E,  N_Eq_E, &
       J_Eq_EB, N_Eq_EB
     !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
-      Y_I_F_V => null ( ), Y_I_E_V => null ( ), Y_I_EB_V => null ( )
+      ID_V
     real ( KDR ), dimension ( :, : ), pointer :: &
-      KK_F_V => null ( ), KK_E_V => null ( ), KK_EB_V => null ( )
+      KK_F_V, KK_E_V, KK_EB_V
     real ( KDR ), dimension ( :, : ), pointer :: &
-      F_V => null ( )
+      Y_I_F_V, Y_I_E_V, Y_I_EB_V
     real ( KDR ), dimension ( :, : ), pointer :: &
-      R_E_V => null ( ), R_EB_V => null ( ), &
-      I_E_V => null ( ), I_EB_V => null ( )
+      F_V
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      R_E_V, R_EB_V, &
+      I_E_V, I_EB_V
     !-- FieldSet pointers
+    class ( ImplicitDiagnosticsForm ), pointer :: &
+      ID
     class ( FieldSet_BM_Form ), pointer :: &
-      Y_I_F => null ( ), Y_I_E => null ( ), Y_I_EB => null ( )
+      KK_F, KK_E, KK_EB
     class ( FieldSet_BM_Form ), pointer :: &
-      KK_F => null ( ), KK_E => null ( ), KK_EB => null ( )
+      Y_I_F, Y_I_E, Y_I_EB
     class ( Fluid_P_HN_Form ), pointer :: &
-      F_HN => null ( )
+      F_HN
     class ( NeutrinoMoments_G_Form ), pointer :: &
-      R_E => null ( ), R_EB => null ( )
+      R_E, R_EB
     class ( Interactions_NM_G_Form ), pointer :: &
-      I_E => null ( ), I_EB => null ( )
+      I_E, I_EB
 
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
     call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
@@ -169,6 +146,10 @@ contains
       (  S_R  =>  S % Step_CS_1D ( : ), &
          S_F  =>  S % Step_CS, &
         nR    =>  S % nCurrentSets_1D )
+
+    !-- FieldSet pointers
+
+    ID  =>  S % ImplicitDiagnostics ( iS )
 
     select type ( F  =>  S_F % CurrentSet )
     class is ( Fluid_P_HN_Form )
@@ -182,8 +163,6 @@ contains
         class is ( NeutrinoMoments_G_Form )
       select type ( I  =>  R % Interactions )
         class is ( Interactions_NM_G_Form )
-      select type ( ID =>  S % ImplicitDiagnostics ( iS, iR ) )
-        class is ( ImplicitDiagnostics_NM_G_Form )
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
           I_E  =>  I
@@ -196,7 +175,6 @@ contains
         Y_I_EB  =>  S_R ( iR ) % Intermediate
          KK_EB  =>  S_R ( iR ) % SlopeStageImplicit ( iS ) % Element
       end select !-- RadiationType
-      end select !-- ID
       end select !-- I
       end select !-- R
     end do !-- iR
@@ -209,6 +187,10 @@ contains
       select type ( C  =>  S % Atlas % Chart ( iC ) % Element )
         class is ( Chart_GS_Form )
 
+      !-- Storage % Value pointers
+
+      ID_V  =>  ID % Storage ( iC ) % Value
+
       call SetStoragePointers_F &
              ( F_HN, Y_I_F,   KK_F,  iC, &
                F_V,  Y_I_F_V, KK_F_V )
@@ -219,13 +201,17 @@ contains
              ( I_EB,   R_EB,   Y_I_EB,   KK_EB,  iC, &
                I_EB_V, R_EB_V, Y_I_EB_V, KK_EB_V )
 
-      call SetFieldPointers_KK &
+      !-- Field pointers
+
+      Omega  =>  ID_V ( :, ID % RELAXATION )
+
+      call SetFieldPointers_FS_B &
                ( KK_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
                  KK_F_S_1, KK_F_S_2, KK_F_S_3, KK_F_E, KK_F_N )
-      call SetFieldPointers_KK &
+      call SetFieldPointers_FS_B &
                ( KK_E_V, iMomentum_R, iEnergy_R, iNumber_R, &
                  KK_E_S_1, KK_E_S_2, KK_E_S_3, KK_E_E, KK_E_N )
-      call SetFieldPointers_KK &
+      call SetFieldPointers_FS_B &
                ( KK_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
                  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_N )
 
@@ -233,8 +219,10 @@ contains
       call SetFieldPointers_R ( R_EB, R_EB_V, J_Eq_EB, N_Eq_EB )
 
       call SolveKernel &
-             ( C % ProperCell, &
-               J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
+             ( J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
+               Omega, &
+               C % ProperCell, &
+               S % MaxRelaxationIterations, S % MaxImplicitIterations, &
                KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
                KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
                KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
@@ -310,7 +298,8 @@ contains
   end subroutine SetStoragePointers_F
 
 
-  subroutine SetStoragePointers_R ( I, R, Y_I, KK, iC, I_V, R_V, Y_I_V, KK_V )
+  subroutine SetStoragePointers_R &
+               ( I, R, Y_I, KK, iC, I_V, R_V, Y_I_V, KK_V )
 
     class ( FieldSet_BM_Form ), intent ( in ) :: &
       I, R, Y_I, KK
@@ -327,30 +316,30 @@ contains
   end subroutine SetStoragePointers_R
 
 
-  subroutine SetFieldPointers_KK &
-               ( KK_V, iMomentum, iEnergy, iNumber, &
-                 KK_S_1, KK_S_2, KK_S_3, KK_E, KK_N )
+  subroutine SetFieldPointers_FS_B &  !-- FieldSet_Balanced
+               ( FS_V, iMomentum, iEnergy, iNumber, &
+                 FS_S_1, FS_S_2, FS_S_3, FS_E, FS_N )
     
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
-      KK_V
+      FS_V
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       iMomentum
     integer ( KDI ), intent ( in ) :: &
       iEnergy, &
       iNumber
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
-      KK_S_1, KK_S_2, KK_S_3, &
-      KK_E, &
-      KK_N
+      FS_S_1, FS_S_2, FS_S_3, &
+      FS_E, &
+      FS_N
 
-    KK_S_1  =>  KK_V ( :, iMomentum ( 1 ) ) 
-    KK_S_2  =>  KK_V ( :, iMomentum ( 2 ) ) 
-    KK_S_3  =>  KK_V ( :, iMomentum ( 3 ) ) 
+    FS_S_1  =>  FS_V ( :, iMomentum ( 1 ) ) 
+    FS_S_2  =>  FS_V ( :, iMomentum ( 2 ) ) 
+    FS_S_3  =>  FS_V ( :, iMomentum ( 3 ) ) 
     
-    KK_E    =>  KK_V ( :, iEnergy )
-    KK_N    =>  KK_V ( :, iNumber )
+    FS_E    =>  FS_V ( :, iEnergy )
+    FS_N    =>  FS_V ( :, iNumber )
 
-  end subroutine SetFieldPointers_KK
+  end subroutine SetFieldPointers_FS_B
 
 
   subroutine SetFieldPointers_R ( R, R_V, J_Eq, N_Eq )
@@ -369,17 +358,23 @@ contains
 
 
   subroutine SolveKernel &
-               ( ProperCell, &
-                 J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
+               ( J_Eq_E, N_Eq_E, J_Eq_EB, N_Eq_EB, &
+                 Omega, &
+                 ProperCell, &
+                 Max_R, Max_I, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
                  KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J_Eq_E,  N_Eq_E, &
+      J_Eq_EB, N_Eq_EB, &
+      Omega
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J_Eq_E,  N_Eq_E, &
-      J_Eq_EB, N_Eq_EB
+    integer ( KDI ), intent ( in ) :: &
+      Max_R, &
+      Max_I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
       KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
@@ -390,6 +385,9 @@ contains
       iR, &  !-- iRelaxation
       iI, &  !-- iIteration
       nV
+!       ErrorRank
+! integer ( KDI ) :: &
+!   iShow
     real ( KDR ) :: &
       J_Eq_E_0,  N_Eq_E_0,  &  !-- upon entry
       J_Eq_EB_0, N_Eq_EB_0
@@ -398,7 +396,7 @@ contains
 !      E_R_P, E_R_N, &  !-- previous, new
 !      N_R_P, N_R_N, &
     real ( KDR ) :: &
-!      dOmega, &
+      dOmega, &
       SqrtTiny
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
@@ -415,6 +413,18 @@ contains
 
         J_Eq_EB_0  =  J_Eq_EB ( iV )
         N_Eq_EB_0  =  N_Eq_EB ( iV )
+
+        dOmega  =  1.0_KDR  /  Max_R
+        if ( Omega ( iV )  ==  0.0_KDR ) then
+          Omega ( iV )  =  1.0_KDR
+        else
+          Omega ( iV )  =  min ( Omega ( iV )  +  dOmega,  1.0_KDR )
+        end if
+
+        iR  =  0
+        Relaxation: do 
+
+        end do Relaxation
 
       else
 

@@ -251,7 +251,6 @@ Step_RK_NM_G_1D_C__Form.o: \
   Fluids.o \
   NeutrinoMoments_G__Form.o \
   Interactions_NM_G__Form.o \
-  ImplicitDiagnostics_NM_G__Form.o \
   Step_RK_NM_G_1D_C__Form.f90
 
 Radiations.o: \
