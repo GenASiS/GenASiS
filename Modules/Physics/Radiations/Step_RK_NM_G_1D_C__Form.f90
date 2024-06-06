@@ -13,9 +13,9 @@ module Step_RK_NM_G_1D_C__Form
   private
 
   type, public, extends ( Step_RK_CS_1D_C_CS_Form ) :: Step_RK_NM_G_1D_C_Form
-    real ( KDR ), dimension ( :, : ), allocatable :: &
-      Residual_J_Eq, &
-      Residual_N_Eq
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Residual_J_Eq_E,  Residual_N_Eq_E, &
+      Residual_J_Eq_EB, Residual_N_Eq_EB
   contains
     procedure, private, pass :: &
       Initialize_CS_1D_C_CS
@@ -32,6 +32,7 @@ module Step_RK_NM_G_1D_C__Form
       SetFieldPointers_FS_B, &
       SetFieldPointers_F, &
       SetFieldPointers_R, &
+      SetFieldPointers_I, &
       SolveKernel
 
 contains
@@ -60,11 +61,14 @@ contains
     call S % Step_RK_CS_1D_C_CS_Form % Initialize &
            ( CS_1D, CS, NameOption, ImplicitExplicitOption, nStagesOption )
 
-    associate &
-      ( nNM  =>  S % nCurrentSets_1D, &
-        mII  =>  S % MaxImplicitIterations )
-    allocate ( S % Residual_J_Eq ( mII, nNM ) )
-    allocate ( S % Residual_N_Eq ( mII, nNM ) )
+    associate ( mII  =>  S % MaxImplicitIterations )
+
+    allocate ( S % Residual_J_Eq_E ( mII ) )
+    allocate ( S % Residual_N_Eq_E ( mII ) )
+
+    allocate ( S % Residual_J_Eq_EB ( mII ) )
+    allocate ( S % Residual_N_Eq_EB ( mII ) )
+
     end associate !-- nNM, etc.
 
   end subroutine Initialize_CS_1D_C_CS
@@ -75,10 +79,15 @@ contains
     type ( Step_RK_NM_G_1D_C_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % Residual_N_Eq ) ) &
-      deallocate ( S % Residual_N_Eq )
-    if ( allocated ( S % Residual_J_Eq ) ) &
-      deallocate ( S % Residual_J_Eq )
+    if ( allocated ( S % Residual_N_Eq_EB ) ) &
+      deallocate ( S % Residual_N_Eq_EB )
+    if ( allocated ( S % Residual_J_Eq_EB ) ) &
+      deallocate ( S % Residual_J_Eq_EB )
+
+    if ( allocated ( S % Residual_N_Eq_E ) ) &
+      deallocate ( S % Residual_N_Eq_E )
+    if ( allocated ( S % Residual_J_Eq_E ) ) &
+      deallocate ( S % Residual_J_Eq_E )
 
   end subroutine Finalize
 
@@ -108,9 +117,9 @@ contains
     real ( KDR ), dimension ( : ), pointer :: &
       Error, Omega, Residual
     real ( KDR ), dimension ( : ), pointer :: &
-      KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
-      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
-      KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N
+      KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+      KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
     real ( KDR ), dimension ( : ), pointer :: &
       E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
       E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
@@ -125,6 +134,9 @@ contains
       J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
       E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
       J_Eq_EB, N_Eq_EB
+    real ( KDR ), dimension ( : ), pointer :: &
+      Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
+      Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB
     !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
       ID_V
@@ -157,6 +169,10 @@ contains
     associate &
       (  S_R  =>  S % Step_CS_1D ( : ), &
          S_F  =>  S % Step_CS, &
+         AA   =>  S % AA ( iS ) % Value ( iS ), &
+         Tol  =>  S % ImplicitTolerance, &
+        mII   =>  S % MaxImplicitIterations, &
+        mRI   =>  S % MaxRelaxationIterations, & 
         nR    =>  S % nCurrentSets_1D )
 
     !-- FieldSet pointers
@@ -221,13 +237,13 @@ contains
 
       call SetFieldPointers_FS_B &
              ( KK_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
-               KK_F_S_1, KK_F_S_2, KK_F_S_3, KK_F_E, KK_F_N )
+               KK_F_S_1, KK_F_S_2, KK_F_S_3, KK_F_E, KK_F_D )
       call SetFieldPointers_FS_B &
              ( KK_E_V, iMomentum_R, iEnergy_R, iNumber_R, &
-               KK_E_S_1, KK_E_S_2, KK_E_S_3, KK_E_E, KK_E_N )
+               KK_E_S_1, KK_E_S_2, KK_E_S_3, KK_E_E, KK_E_D )
       call SetFieldPointers_FS_B &
              ( KK_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
-               KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_N )
+               KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_D )
 
       call SetFieldPointers_FS_B &
              ( Y_I_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
@@ -251,8 +267,17 @@ contains
                J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
                E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB )
 
+      call SetFieldPointers_I &
+             ( I_E, I_E_V, &
+               Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E )
+      call SetFieldPointers_I &
+             ( I_EB, I_EB_V, &
+               Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB )
+
       call SolveKernel &
-             ( R_E, R_EB, F_HN, &
+             ( I_E, I_EB, R_E, R_EB, F_HN, &
+               Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+               Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
                J_E, H_E_1, H_E_2, H_E_3, N_E, &
                E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
                J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
@@ -263,10 +288,10 @@ contains
                E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
-               S % MaxRelaxationIterations, S % MaxImplicitIterations, iC, &
-               KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
-               KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
-               KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
+               AA, dT, mRI, mII, iC, &
+               KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+               KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+               KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D )
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
@@ -359,7 +384,7 @@ contains
 
   subroutine SetFieldPointers_FS_B &  !-- FieldSet_Balanced
                ( FS_V, iMomentum, iEnergy, iNumber, &
-                 FS_S_1, FS_S_2, FS_S_3, FS_E, FS_N )
+                 FS_S_1, FS_S_2, FS_S_3, FS_E, FS_D )
     
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       FS_V
@@ -371,14 +396,14 @@ contains
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
       FS_S_1, FS_S_2, FS_S_3, &
       FS_E, &
-      FS_N
+      FS_D
 
     FS_S_1  =>  FS_V ( :, iMomentum ( 1 ) ) 
     FS_S_2  =>  FS_V ( :, iMomentum ( 2 ) ) 
     FS_S_3  =>  FS_V ( :, iMomentum ( 3 ) ) 
     
     FS_E    =>  FS_V ( :, iEnergy )
-    FS_N    =>  FS_V ( :, iNumber )
+    FS_D    =>  FS_V ( :, iNumber )
 
   end subroutine SetFieldPointers_FS_B
 
@@ -430,8 +455,31 @@ contains
   end subroutine SetFieldPointers_R
 
 
+  subroutine SetFieldPointers_I &
+               ( I, I_V, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N )
+
+    class ( Interactions_NM_G_Form ), intent ( in ) :: &
+      I
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
+      I_V
+    real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
+       Xi_J,  Xi_H,  Xi_N, &
+      Chi_J, Chi_H, Chi_N
+
+     Xi_J  =>  I_V ( :, I % EMISSIVITY_J )
+     Xi_H  =>  I_V ( :, I % EMISSIVITY_H )
+     Xi_N  =>  I_V ( :, I % EMISSIVITY_N )
+    Chi_J  =>  I_V ( :, I % OPACITY_J )
+    Chi_H  =>  I_V ( :, I % OPACITY_H )
+    Chi_N  =>  I_V ( :, I % OPACITY_N )
+ 
+  end subroutine SetFieldPointers_I
+
+
   subroutine SolveKernel &
-               ( R_E, R_EB, F_HN, &
+               ( I_E, I_EB, R_E, R_EB, F_HN, &
+                 Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+                 Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
                  J_E, H_E_1, H_E_2, H_E_3, N_E, &
                  E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
                  J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
@@ -442,15 +490,20 @@ contains
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
-                 Max_R, Max_I, iC, &
-                 KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
-                 KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
-                 KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N )
+                 AA, dT, mRI, mII, iC, &
+                 KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+                 KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+                 KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D )
 
+    class ( Interactions_NM_G_Form ), intent ( inout ) :: &
+      I_E, I_EB
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       R_E, R_EB
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       F_HN
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
+      Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J_E, H_E_1, H_E_2, H_E_3, N_E, &
       E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E
@@ -467,14 +520,16 @@ contains
       E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
       E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
       E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0
+    real ( KDR ), intent ( in ) :: &
+      AA, dT
     integer ( KDI ), intent ( in ) :: &
-      Max_R, &
-      Max_I, &
+      mRI, &
+      mII, &
       iC
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_N, & 
-      KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_N, & 
-      KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_N
+      KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+      KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+      KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -484,10 +539,12 @@ contains
     real ( KDR ) :: &
       J_Eq_E_0,  N_Eq_E_0,  &  !-- upon entry
       J_Eq_EB_0, N_Eq_EB_0
-!      J_Eq_P, &  !-- previous iteration
-!      N_Eq_P, &
-!      E_R_P, E_R_N, &  !-- previous, new
-!      N_R_P, N_R_N, &
+    real ( KDR ) :: &
+      J_Eq_E_P,  N_Eq_E_P,  &  !-- previous iteration
+      J_Eq_EB_P, N_Eq_EB_P
+    real ( KDR ) :: &
+      E_E_P,  E_E_N,  D_E_P,  D_E_N, &  !-- previous, new
+      E_EB_P, E_EB_N, D_EB_P, D_EB_N
     real ( KDR ) :: &
       dOmega, &
       SqrtTiny
@@ -507,7 +564,7 @@ contains
         J_Eq_EB_0  =  J_Eq_EB ( iV )
         N_Eq_EB_0  =  N_Eq_EB ( iV )
 
-        dOmega  =  1.0_KDR  /  Max_R
+        dOmega  =  1.0_KDR  /  mRI
         if ( Omega ( iV )  ==  0.0_KDR ) then
           Omega ( iV )  =  1.0_KDR
         else
@@ -524,7 +581,7 @@ contains
 
           if ( Omega ( iV )  <  0.99 * dOmega ) then
 
-            !-- Reset and bail out
+            !-- Reset
 
             E_E ( iV )  =  E_E_0 ( iV )
             D_E ( iV )  =  D_E_0 ( iV )
@@ -544,6 +601,8 @@ contains
             J_Eq_EB ( iV )  =  J_Eq_E_0
             N_Eq_EB ( iV )  =  N_Eq_E_0
 
+            !-- Abort step
+
             Error ( iV )  =  1.0_KDR
             exit Relaxation
 
@@ -554,7 +613,121 @@ contains
 
             iI  =  iI + 1
 
+            !-- Compute interactions
+
+            call I_E  % Compute ( iC, iV )
+            call I_EB % Compute ( iC, iV )
+
+            !-- For vanishing radiation initial conditions
+
+            if ( J_Eq_E_0  ==  0.0_KDR )  &
+              J_Eq_E_0  =  J_Eq_E ( iV )
+            if ( N_Eq_E_0  ==  0.0_KDR )  &
+              N_Eq_E_0  =  N_Eq_E ( iV )
+
+            if ( J_Eq_EB_0  ==  0.0_KDR )  &
+              J_Eq_EB_0  =  J_Eq_EB ( iV )
+            if ( N_Eq_EB_0  ==  0.0_KDR )  &
+              N_Eq_EB_0  =  N_Eq_EB ( iV )
+
+            !-- Compute radiation energy and number updates
+
+            KK_E_E ( iV )  &
+              =  ( Xi_J_E ( iV )  -  Chi_J_E ( iV )  *  J_E ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_J_E ( iV ) * dT )
+            KK_E_D ( iV )  &
+              =  ( Xi_N_E ( iV )  -  Chi_N_E ( iV )  *  N_E ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_N_E ( iV ) * dT )
+
+            KK_EB_E ( iV )  &
+              =  ( Xi_J_EB ( iV )  -  Chi_J_EB ( iV )  *  J_EB ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_J_EB ( iV ) * dT )
+            KK_EB_D ( iV )  &
+              =  ( Xi_N_EB ( iV )  -  Chi_N_EB ( iV )  *  N_EB ( iV ) ) &
+                 /  ( 1.0_KDR  +  Chi_N_EB ( iV ) * dT )
+
+            !-- Previous radiation values
+
+            E_E_P  =  E_E ( iV )
+            D_E_P  =  D_E ( iV )
+
+            E_EB_P  =  E_EB ( iV )
+            D_EB_P  =  D_EB ( iV )
+
+            !-- New radiation values
+
+            E_E_N  =  E_E_0 ( iV )  +  dT * AA * KK_E_E ( iV )  
+            D_E_N  =  D_E_0 ( iV )  +  dT * AA * KK_E_D ( iV )
+
+            E_EB_N  =  E_EB_0 ( iV )  +  dT * AA * KK_EB_E ( iV )  
+            D_EB_N  =  D_EB_0 ( iV )  +  dT * AA * KK_EB_D ( iV )
+
+            !-- New radiation values with underrelaxation
+
+            E_E ( iV )  =  ( 1.0_KDR  -  Omega ( iV ) )  *  E_E_P  &
+                                      +  Omega ( iV )    *  E_E_N
+            D_E ( iV )  =  ( 1.0_KDR  -  Omega ( iV ) )  *  D_E_P  &
+                                      +  Omega ( iV )    *  D_E_N
+
+            E_EB ( iV )  =  ( 1.0_KDR  -  Omega ( iV ) )  *  E_EB_P  &
+                                       +  Omega ( iV )    *  E_EB_N
+            D_EB ( iV )  =  ( 1.0_KDR  -  Omega ( iV ) )  *  D_EB_P  &
+                                       +  Omega ( iV )    *  D_EB_N
+
+            !-- Adjusted radiation updates
+
+            KK_E_E ( iV )  =  ( E_E ( iV )  -  E_E_0 ( iV ) )  &
+                              /  ( dT * AA )
+            KK_E_D ( iV )  =  ( D_E ( iV )  -  D_E_0 ( iV ) )  &
+                              /  ( dT * AA )
+
+            KK_EB_E ( iV )  =  ( E_EB ( iV )  -  E_EB_0 ( iV ) )  &
+                              /  ( dT * AA )
+            KK_EB_D ( iV )  =  ( D_EB ( iV )  -  D_EB_0 ( iV ) )  &
+                              /  ( dT * AA )
+
+            !-- Fluid updates
+
+            KK_F_E ( iV )  =  - KK_E_E ( iV )  -  KK_EB_E ( iV )
+            KK_F_D ( iV )  =  - KK_E_D ( iV )  +  KK_EB_D ( iV )
+
+            !-- New fluid values
+
+            E_F ( iV )  =  E_F_0 ( iV )  +  dT * AA * KK_F_E ( iV )
+            D_F ( iV )  =  D_F_0 ( iV )  +  dT * AA * KK_F_D ( iV )
+
+            !-- If negative radiation density, abort for this value of Omega
+
+            if (      E_E  ( iV )  <  0.0_KDR .or. D_E  ( iV )  <  0.0_KDR  &
+                 .or. E_EB ( iV )  <  0.0_KDR .or. D_EB ( iV )  <  0.0_KDR )  &
+             then
+              exit Implicit
+            end if
+
+            !-- Exit test
+
+
           end do Implicit
+
+          !-- Reset, try again with lower Omega
+
+          E_E ( iV )  =  E_E_0 ( iV )
+          D_E ( iV )  =  D_E_0 ( iV )
+          call R_E % ComputeFromBalanced ( iC, iV )
+
+          E_EB ( iV )  =  E_EB_0 ( iV )
+          D_EB ( iV )  =  D_EB_0 ( iV )
+          call R_EB % ComputeFromBalanced ( iC, iV )
+
+          E_F ( iV )  =  E_F_0 ( iV )
+          D_F ( iV )  =  D_F_0 ( iV )
+          call F_HN % ComputeFromBalanced ( iC, iV )
+
+          J_Eq_E ( iV )  =  J_Eq_E_0
+          N_Eq_E ( iV )  =  N_Eq_E_0
+
+          J_Eq_EB ( iV )  =  J_Eq_E_0
+          N_Eq_EB ( iV )  =  N_Eq_E_0
 
         end do Relaxation
 
@@ -564,19 +737,19 @@ contains
         KK_E_S_1 ( iV )  =  0.0_KDR
         KK_E_S_2 ( iV )  =  0.0_KDR
         KK_E_S_3 ( iV )  =  0.0_KDR
-        KK_E_N   ( iV )  =  0.0_KDR
+        KK_E_D   ( iV )  =  0.0_KDR
 
         KK_EB_E   ( iV )  =  0.0_KDR
         KK_EB_S_1 ( iV )  =  0.0_KDR
         KK_EB_S_2 ( iV )  =  0.0_KDR
         KK_EB_S_3 ( iV )  =  0.0_KDR
-        KK_EB_N   ( iV )  =  0.0_KDR
+        KK_EB_D   ( iV )  =  0.0_KDR
 
         KK_F_E   ( iV )  =  0.0_KDR
         KK_F_S_1 ( iV )  =  0.0_KDR
         KK_F_S_2 ( iV )  =  0.0_KDR
         KK_F_S_3 ( iV )  =  0.0_KDR
-        KK_F_N   ( iV )  =  0.0_KDR
+        KK_F_D   ( iV )  =  0.0_KDR
 
       end if !-- ProperCell
     end do !-- iV

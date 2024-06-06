@@ -5,7 +5,7 @@ FORTRAN_COMPILE      = mpifort -c -cpp
 FORTRAN_FIXEDFORM    = -ffixed-form
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
-FORTRAN_OPTIMIZE     = -Ofast
+FORTRAN_OPTIMIZE     = -Ofast -fno-unsafe-math-optimizations
 FORTRAN_PROFILE      = -O2 -g
 
 CC_COMPILE           = mpicc -c
