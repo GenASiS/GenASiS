@@ -106,20 +106,17 @@ contains
       iR, &  !-- iRadiation
       iC     !-- iChart
     integer ( KDI ) :: &
-      iEnergy_R, &
-      iEnergy_F, &
-      iNumber_R, &
-      iNumber_F
+      iEnergy_R, iNumber_R, &
+      iEnergy_F, iNumber_F
     integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum_R, &
-      iMomentum_F
+      iMomentum_R, iMomentum_F
     !-- Field pointers
     real ( KDR ), dimension ( : ), pointer :: &
       Error, nIterations, Omega, Residual
     real ( KDR ), dimension ( : ), pointer :: &
+      KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
       KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
-      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
-      KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
+      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D 
     real ( KDR ), dimension ( : ), pointer :: &
       E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
       E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
@@ -614,6 +611,8 @@ contains
 
           if ( Omega ( iV )  <  0.99 * dOmega ) then
 
+            !-- Solve fails with vanishing relaxation parameter Omegax
+
             !-- Reset
 
             E_E ( iV )  =  E_E_0 ( iV )
@@ -634,7 +633,27 @@ contains
             J_Eq_EB ( iV )  =  J_Eq_E_0
             N_Eq_EB ( iV )  =  N_Eq_E_0
 
-            !-- Abort step
+            !-- Nullify updates
+          
+            KK_E_E   ( iV )  =  0.0_KDR
+            KK_E_S_1 ( iV )  =  0.0_KDR
+            KK_E_S_2 ( iV )  =  0.0_KDR
+            KK_E_S_3 ( iV )  =  0.0_KDR
+            KK_E_D   ( iV )  =  0.0_KDR
+
+            KK_EB_E   ( iV )  =  0.0_KDR
+            KK_EB_S_1 ( iV )  =  0.0_KDR
+            KK_EB_S_2 ( iV )  =  0.0_KDR
+            KK_EB_S_3 ( iV )  =  0.0_KDR
+            KK_EB_D   ( iV )  =  0.0_KDR
+
+            KK_F_E   ( iV )  =  0.0_KDR
+            KK_F_S_1 ( iV )  =  0.0_KDR
+            KK_F_S_2 ( iV )  =  0.0_KDR
+            KK_F_S_3 ( iV )  =  0.0_KDR
+            KK_F_D   ( iV )  =  0.0_KDR
+
+            !-- Abort solve
 
             Error ( iV )  =  1.0_KDR
             exit Relaxation
@@ -742,10 +761,10 @@ contains
             if ( iI  >  1 ) then
 
               associate &
-                ( dJ_Eq_E   =>  Res_J_Eq_E ( iI ), &
-                  dN_Eq_E   =>  Res_N_Eq_E ( iI ), &
-                  dJ_Eq_EB  =>  Res_J_Eq_E ( iI ), &
-                  dN_Eq_EB  =>  Res_N_Eq_E ( iI ) )
+                ( dJ_Eq_E   =>  Res_J_Eq_E  ( iI ), &
+                  dN_Eq_E   =>  Res_N_Eq_E  ( iI ), &
+                  dJ_Eq_EB  =>  Res_J_Eq_EB ( iI ), &
+                  dN_Eq_EB  =>  Res_N_Eq_EB ( iI ) )
 
               dJ_Eq_E  =  abs ( J_Eq_E ( iV )  -  J_Eq_E_P )  &
                           /  max ( abs ( J_Eq_E_0 ), SqrtTiny )
@@ -787,7 +806,7 @@ contains
 
           end do Implicit
 
-          !-- Reset, try again with lower Omega
+          !-- Reset, try again with lower relaxation parameter Omega
 
           E_E ( iV )  =  E_E_0 ( iV )
           D_E ( iV )  =  D_E_0 ( iV )
@@ -811,37 +830,41 @@ contains
 
         !--- Momentum update
 
-        KK_E_S_1 ( iV )  &
-          =  ( Xi_H_E ( iV )  &
-                  -  Chi_H_E ( iV )  *  M_DD_11 ( iV ) * H_E_1 ( iV ) ) &
-             /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
-        KK_E_S_2 ( iV )  &
-          =  ( Xi_H_E ( iV )  &
-                  -  Chi_H_E ( iV )  *  M_DD_22 ( iV ) * H_E_2 ( iV ) ) &
-             /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
-        KK_E_S_3 ( iV )  &
-          =  ( Xi_H_E ( iV )  &
-                  -  Chi_H_E ( iV )  *  M_DD_33 ( iV ) * H_E_3 ( iV ) ) &
-             /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+        if ( Error ( iV )  ==  0.0_KDR ) then
 
-        KK_EB_S_1 ( iV )  &
-          =  ( Xi_H_EB ( iV )  &
-                  -  Chi_H_EB ( iV )  *  M_DD_11 ( iV ) * H_EB_1 ( iV ) ) &
-             /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
-        KK_EB_S_2 ( iV )  &
-          =  ( Xi_H_EB ( iV )  &
-                  -  Chi_H_EB ( iV )  *  M_DD_22 ( iV ) * H_EB_2 ( iV ) ) &
-             /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
-        KK_EB_S_3 ( iV )  &
-          =  ( Xi_H_EB ( iV )  &
-                  -  Chi_H_EB ( iV )  *  M_DD_33 ( iV ) * H_EB_3 ( iV ) ) &
-             /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+          KK_E_S_1 ( iV )  &
+            =  ( Xi_H_E ( iV )  &
+                    -  Chi_H_E ( iV )  *  M_DD_11 ( iV ) * H_E_1 ( iV ) ) &
+               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+          KK_E_S_2 ( iV )  &
+            =  ( Xi_H_E ( iV )  &
+                    -  Chi_H_E ( iV )  *  M_DD_22 ( iV ) * H_E_2 ( iV ) ) &
+               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+          KK_E_S_3 ( iV )  &
+            =  ( Xi_H_E ( iV )  &
+                    -  Chi_H_E ( iV )  *  M_DD_33 ( iV ) * H_E_3 ( iV ) ) &
+               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
 
-        KK_F_S_1 ( iV )  =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )
-        KK_F_S_2 ( iV )  =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )
-        KK_F_S_3 ( iV )  =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )
+          KK_EB_S_1 ( iV )  &
+            =  ( Xi_H_EB ( iV )  &
+                    -  Chi_H_EB ( iV )  *  M_DD_11 ( iV ) * H_EB_1 ( iV ) ) &
+               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+          KK_EB_S_2 ( iV )  &
+            =  ( Xi_H_EB ( iV )  &
+                    -  Chi_H_EB ( iV )  *  M_DD_22 ( iV ) * H_EB_2 ( iV ) ) &
+               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+          KK_EB_S_3 ( iV )  &
+            =  ( Xi_H_EB ( iV )  &
+                    -  Chi_H_EB ( iV )  *  M_DD_33 ( iV ) * H_EB_3 ( iV ) ) &
+               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
 
-      else
+          KK_F_S_1 ( iV )  =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )
+          KK_F_S_2 ( iV )  =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )
+          KK_F_S_3 ( iV )  =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )
+
+        end if !-- Error = 0
+
+      else !-- .not. ProperCell
 
         KK_E_E   ( iV )  =  0.0_KDR
         KK_E_S_1 ( iV )  =  0.0_KDR
