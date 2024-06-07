@@ -115,7 +115,7 @@ contains
       iMomentum_F
     !-- Field pointers
     real ( KDR ), dimension ( : ), pointer :: &
-      Error, Omega, Residual
+      Error, nIterations, Omega, Residual
     real ( KDR ), dimension ( : ), pointer :: &
       KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
       KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
@@ -124,6 +124,8 @@ contains
       E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
       E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
       E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0
+    real ( KDR ), dimension ( : ), pointer :: &
+      M_DD_11, M_DD_22, M_DD_33
     real ( KDR ), dimension ( : ), pointer :: &
       E_F, S_F_1, S_F_2, S_F_3, D_F
     real ( KDR ), dimension ( : ), pointer :: &
@@ -145,6 +147,8 @@ contains
     real ( KDR ), dimension ( :, : ), pointer :: &
       Y_I_F_V, Y_I_E_V, Y_I_EB_V
     real ( KDR ), dimension ( :, : ), pointer :: &
+      G_V
+    real ( KDR ), dimension ( :, : ), pointer :: &
       F_V
     real ( KDR ), dimension ( :, : ), pointer :: &
       R_E_V, R_EB_V, &
@@ -156,6 +160,8 @@ contains
       KK_F, KK_E, KK_EB
     class ( FieldSet_BM_Form ), pointer :: &
       Y_I_F, Y_I_E, Y_I_EB
+    class ( Gravitation_N_SG_Form ), pointer :: &
+      G_N
     class ( Fluid_P_HN_Form ), pointer :: &
       F_HN
     class ( NeutrinoMoments_G_Form ), pointer :: &
@@ -169,6 +175,10 @@ contains
     associate &
       (  S_R  =>  S % Step_CS_1D ( : ), &
          S_F  =>  S % Step_CS, &
+         Res_J_Eq_E   =>  S % Residual_J_Eq_E, &
+         Res_N_Eq_E   =>  S % Residual_N_Eq_E, &
+         Res_J_Eq_EB  =>  S % Residual_J_Eq_EB, &
+         Res_N_Eq_EB  =>  S % Residual_N_Eq_EB, &
          AA   =>  S % AA ( iS ) % Value ( iS ), &
          Tol  =>  S % ImplicitTolerance, &
         mII   =>  S % MaxImplicitIterations, &
@@ -185,6 +195,11 @@ contains
       Y_I_F  =>  S_F % Intermediate
        KK_F  =>  S_F % SlopeStageImplicit ( iS ) % Element
     end select !-- F
+
+    select type ( G  =>  F_HN % Geometry )
+    class is ( Gravitation_N_SG_Form )
+      G_N  =>  G
+    end select !-- G
 
     do iR  =  1,  nR
       select type ( R  =>  S_R ( iR ) % CurrentSet )
@@ -217,7 +232,9 @@ contains
 
       !-- Storage % Value pointers
 
-      ID_V  =>  ID % Storage ( iC ) % Value
+      ID_V  =>   ID % Storage ( iC ) % Value
+
+       G_V  =>  G_N % Storage ( iC ) % Value
 
       call SetStoragePointers_F &
              ( F_HN, Y_I_F,   KK_F,  iC, &
@@ -231,9 +248,14 @@ contains
 
       !-- Field pointers
 
-         Error  =>  ID_V ( :, ID % ERROR )
-         Omega  =>  ID_V ( :, ID % RELAXATION )
-      Residual  =>  ID_V ( :, ID % RESIDUAL )
+            Error  =>  ID_V ( :, ID % ERROR )
+      nIterations  =>  ID_V ( :, ID % N_ITERATIONS )
+            Omega  =>  ID_V ( :, ID % RELAXATION )
+         Residual  =>  ID_V ( :, ID % RESIDUAL )
+
+      M_DD_11  =>  G_V ( :, G_N % METRIC_F_DD_11 )
+      M_DD_22  =>  G_V ( :, G_N % METRIC_F_DD_22 )
+      M_DD_33  =>  G_V ( :, G_N % METRIC_F_DD_33 )
 
       call SetFieldPointers_FS_B &
              ( KK_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
@@ -283,15 +305,18 @@ contains
                J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
                E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
                E_F, S_F_1, S_F_2, S_F_3, D_F, &
-               Error, Omega, Residual, &
+               Error, nIterations, Omega, Residual, &
                C % ProperCell, &
                E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
-               AA, dT, mRI, mII, iC, &
+               M_DD_11, M_DD_22, M_DD_33, &
+               AA, Tol, dT, mRI, mII, iC, &
                KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
-               KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D )
+               KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
+               Res_J_Eq_E,  Res_N_Eq_E, &
+               Res_J_Eq_EB, Res_N_Eq_EB )
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
@@ -485,15 +510,18 @@ contains
                  J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
                  E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
                  E_F, S_F_1, S_F_2, S_F_3, D_F, &
-                 Error, Omega, Residual, &
+                 Error, nIterations, Omega, Residual, &
                  ProperCell, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
-                 AA, dT, mRI, mII, iC, &
+                 M_DD_11, M_DD_22, M_DD_33, &
+                 AA, Tol, dT, mRI, mII, iC, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
-                 KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D )
+                 KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
+                 Res_J_Eq_E,  Res_N_Eq_E, &
+                 Res_J_Eq_EB, Res_N_Eq_EB )
 
     class ( Interactions_NM_G_Form ), intent ( inout ) :: &
       I_E, I_EB
@@ -513,15 +541,17 @@ contains
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E_F, S_F_1, S_F_2, S_F_3, D_F
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Error, Omega, Residual
+      Error, nIterations, Omega, Residual
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       ProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
       E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
       E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_DD_11, M_DD_22, M_DD_33
     real ( KDR ), intent ( in ) :: &
-      AA, dT
+      AA, Tol, dT
     integer ( KDI ), intent ( in ) :: &
       mRI, &
       mII, &
@@ -530,6 +560,9 @@ contains
       KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
       KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
       KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      Res_J_Eq_E,  Res_N_Eq_E, &
+      Res_J_Eq_EB, Res_N_Eq_EB
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -706,6 +739,51 @@ contains
 
             !-- Exit test
 
+            if ( iI  >  1 ) then
+
+              associate &
+                ( dJ_Eq_E   =>  Res_J_Eq_E ( iI ), &
+                  dN_Eq_E   =>  Res_N_Eq_E ( iI ), &
+                  dJ_Eq_EB  =>  Res_J_Eq_E ( iI ), &
+                  dN_Eq_EB  =>  Res_N_Eq_E ( iI ) )
+
+              dJ_Eq_E  =  abs ( J_Eq_E ( iV )  -  J_Eq_E_P )  &
+                          /  max ( abs ( J_Eq_E_0 ), SqrtTiny )
+              dN_Eq_E  =  abs ( N_Eq_E ( iV )  -  N_Eq_E_P )  &
+                          /  max ( abs ( N_Eq_E_0 ), SqrtTiny )
+
+              dJ_Eq_EB  =  abs ( J_Eq_EB ( iV )  -  J_Eq_EB_P )  &
+                           /  max ( abs ( J_Eq_EB_0 ), SqrtTiny )
+              dN_Eq_EB  =  abs ( N_Eq_EB ( iV )  -  N_Eq_EB_P )  &
+                           /  max ( abs ( N_Eq_EB_0 ), SqrtTiny )
+
+              nIterations ( iV )  =  iI
+                 Residual ( iV )  =  max ( dJ_Eq_E,  dN_Eq_E, &
+                                           dJ_Eq_EB, dN_Eq_EB )
+
+              if (       dJ_Eq_E   <  Tol .and. dN_Eq_E   <  Tol  &
+                   .and. dJ_Eq_EB  <  Tol .and. dN_Eq_EB  <  Tol )  &
+              then
+                Error ( iV )  =  0.0_KDR
+                exit Relaxation
+              else if ( iI  ==  mII ) then
+                exit Implicit
+              end if
+              end associate !-- dJ_Eq_E, etc.
+
+            end if !-- iI > 1 (exit test)
+
+            !-- Prepare for next iteration
+
+            J_Eq_E_P  =  J_Eq_EB ( iV )
+            N_Eq_E_P  =  N_Eq_EB ( iV )
+
+            J_Eq_EB_P  =  J_Eq_EB ( iV )
+            N_Eq_EB_P  =  N_Eq_EB ( iV )
+
+            call R_E  % ComputeFromBalanced ( iC, iV )
+            call R_EB % ComputeFromBalanced ( iC, iV )
+            call F_HN % ComputeFromBalanced ( iC, iV )
 
           end do Implicit
 
@@ -730,6 +808,38 @@ contains
           N_Eq_EB ( iV )  =  N_Eq_E_0
 
         end do Relaxation
+
+        !--- Momentum update
+
+        KK_E_S_1 ( iV )  &
+          =  ( Xi_H_E ( iV )  &
+                  -  Chi_H_E ( iV )  *  M_DD_11 ( iV ) * H_E_1 ( iV ) ) &
+             /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+        KK_E_S_2 ( iV )  &
+          =  ( Xi_H_E ( iV )  &
+                  -  Chi_H_E ( iV )  *  M_DD_22 ( iV ) * H_E_2 ( iV ) ) &
+             /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+        KK_E_S_3 ( iV )  &
+          =  ( Xi_H_E ( iV )  &
+                  -  Chi_H_E ( iV )  *  M_DD_33 ( iV ) * H_E_3 ( iV ) ) &
+             /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+
+        KK_EB_S_1 ( iV )  &
+          =  ( Xi_H_EB ( iV )  &
+                  -  Chi_H_EB ( iV )  *  M_DD_11 ( iV ) * H_EB_1 ( iV ) ) &
+             /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+        KK_EB_S_2 ( iV )  &
+          =  ( Xi_H_EB ( iV )  &
+                  -  Chi_H_EB ( iV )  *  M_DD_22 ( iV ) * H_EB_2 ( iV ) ) &
+             /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+        KK_EB_S_3 ( iV )  &
+          =  ( Xi_H_EB ( iV )  &
+                  -  Chi_H_EB ( iV )  *  M_DD_33 ( iV ) * H_EB_3 ( iV ) ) &
+             /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+
+        KK_F_S_1 ( iV )  =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )
+        KK_F_S_2 ( iV )  =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )
+        KK_F_S_3 ( iV )  =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )
 
       else
 
