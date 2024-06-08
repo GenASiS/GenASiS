@@ -372,7 +372,7 @@ contains
 
   subroutine SetStoragePointers_F ( F, Y_I, KK, iC, F_V, Y_I_V, KK_V )
 
-    class ( FieldSet_BM_Form ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       F, Y_I, KK
     integer ( KDI ), intent ( in ) :: &
       iC
@@ -389,7 +389,7 @@ contains
   subroutine SetStoragePointers_R &
                ( I, R, Y_I, KK, iC, I_V, R_V, Y_I_V, KK_V )
 
-    class ( FieldSet_BM_Form ), intent ( in ) :: &
+    class ( FieldSet_BM_Form ), intent ( in ), target :: &
       I, R, Y_I, KK
     integer ( KDI ), intent ( in ) :: &
       iC

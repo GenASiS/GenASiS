@@ -154,7 +154,7 @@ contains
     call S % Step_CS % SetStream ( Sm )
 
     do iCS  =  1,  S % nCurrentSets_1D
-      call S % Step_CS_1D ( iS ) % SetStream ( Sm )    
+      call S % Step_CS_1D ( iCS ) % SetStream ( Sm )    
     end do !-- iCS
 
     do iS = 2, S % nStages

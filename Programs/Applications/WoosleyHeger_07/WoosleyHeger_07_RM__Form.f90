@@ -63,15 +63,20 @@ contains
 
     !-- Interactions
 
-    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G )
+!    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G )
+    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 2 ) )
 
     !-- Initialization
 
     call WH % Initialize &
-           ( RadiationName = [ 'Neutrinos_E    ' ], &
-!                               'Neutrinos_E_Bar' ], &
-             RadiationType = [ 'NEUTRINOS_E    ' ], &
-!                               'NEUTRINOS_E_BAR' ], &
+!            ( RadiationName = [ 'Neutrinos_E    ' ],   &
+! !                               'Neutrinos_E_Bar' ], &
+!              RadiationType = [ 'NEUTRINOS_E    ' ],   &
+! !                               'NEUTRINOS_E_BAR' ], &
+           ( RadiationName = [ 'Neutrinos_E    ',   &
+                               'Neutrinos_E_Bar' ], &
+             RadiationType = [ 'NEUTRINOS_E    ',   &
+                               'NEUTRINOS_E_BAR' ], &
              FormalismType = FormalismType, &
              FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &

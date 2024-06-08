@@ -151,18 +151,18 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
-    !-- Fluid SplitSource
+    ! !-- Fluid SplitSource
 
-    allocate ( I % Fluid % SplitSource )
-    call I % Fluid % SplitSource % Initialize &
-           ( F % Atlas, &
-             FieldOption = F % Balanced, &
-             NameOption = Name, &
-             DeviceMemoryOption = F % DeviceMemory, &
-             PinnedMemoryOption = F % PinnedMemory, &
-             DevicesCommunicateOption = F % DevicesCommunicate, &
-             nFieldsOption = F % nBalanced, &
-             IgnorabilityOption = F % IGNORABILITY )
+    ! allocate ( I % Fluid % SplitSource )
+    ! call I % Fluid % SplitSource % Initialize &
+    !        ( F % Atlas, &
+    !          FieldOption = F % Balanced, &
+    !          NameOption = 'Fluid_SplitSource', &
+    !          DeviceMemoryOption = F % DeviceMemory, &
+    !          PinnedMemoryOption = F % PinnedMemory, &
+    !          DevicesCommunicateOption = F % DevicesCommunicate, &
+    !          nFieldsOption = F % nBalanced, &
+    !          IgnorabilityOption = F % IGNORABILITY )
 
   end subroutine InitializeAllocate_I
 

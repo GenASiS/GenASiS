@@ -168,7 +168,7 @@ contains
     if ( I % Type  ==  '' ) &
       I % Type  =  'an Interactions_NM_G' 
     
-    Name  =  'Interactions'
+    Name  =  'Interactions_' // trim ( R % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 

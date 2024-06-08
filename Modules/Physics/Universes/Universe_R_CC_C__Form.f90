@@ -268,7 +268,7 @@ contains
     if ( allocated ( U % Interactions_NM_G ) ) then
       do iR  =  1, U % nRadiations
         call U % Interactions_NM_G ( iR ) % Initialize &
-               ( R ( iR ) , U % Units_R, F )
+               ( R ( iR ), U % Units_R, F )
       end do !-- iR
     end if
 
@@ -560,6 +560,7 @@ contains
 
     associate ( nR  =>  U % nRadiations )
     allocate ( dT_RS ( nR ) )
+    dT_RS  =  dT_3
     do iR  =  1, nR
       if ( U % Coarsen ) then
         call U % Compute_dT_CS_CGS_C &

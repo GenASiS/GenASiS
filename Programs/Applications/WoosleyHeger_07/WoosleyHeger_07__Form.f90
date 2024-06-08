@@ -5,7 +5,8 @@ module WoosleyHeger_07__Form
   implicit none
   private
 
-  type, public, extends ( Universe_R_CC_Form ) :: WoosleyHeger_07_Form
+!  type, public, extends ( Universe_R_CC_Form ) :: WoosleyHeger_07_Form
+  type, public, extends ( Universe_R_CC_C_Form ) :: WoosleyHeger_07_Form
   contains
     procedure, public, pass :: &
       SetFluid
