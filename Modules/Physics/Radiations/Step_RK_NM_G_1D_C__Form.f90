@@ -794,8 +794,8 @@ contains
 
             !-- Prepare for next iteration
 
-            J_Eq_E_P  =  J_Eq_EB ( iV )
-            N_Eq_E_P  =  N_Eq_EB ( iV )
+            J_Eq_E_P  =  J_Eq_E ( iV )
+            N_Eq_E_P  =  N_Eq_E ( iV )
 
             J_Eq_EB_P  =  J_Eq_EB ( iV )
             N_Eq_EB_P  =  N_Eq_EB ( iV )
