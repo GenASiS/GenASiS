@@ -166,6 +166,9 @@ contains
     class ( Interactions_NM_G_Form ), pointer :: &
       I_E, I_EB
 
+integer ( KDI ) :: &
+  iV
+
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
     call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
 
@@ -293,6 +296,55 @@ contains
              ( I_EB, I_EB_V, &
                Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB )
 
+if ( iS == 2 ) then
+  associate &
+    ( Y_E  =>  S_R ( 1 ) % Solution, &
+      K_E  =>  S_R ( 1 ) % SlopeStageExplicit ( iS - 1 ) % Element )
+  associate &
+    ( Y_E_V  =>  Y_E % Storage ( iC ) % Value, &
+      K_E_V  =>  K_E % Storage ( iC ) % Value )
+  associate &
+    ( R    =>  G_V ( :, G_N % CENTER_U_1 ), &
+      J_N  =>  Y_E_V ( :, iEnergy_R ), &
+      H_N  =>  Y_E_V ( :, iMomentum_R ( 1 ) ), &
+      K_E_E   =>  K_E_V ( :, iEnergy_R ), &
+      K_E_S_1 =>  K_E_V ( :, iMomentum_R ( 1 ) ) )
+  call Show ( '>>> Stage' )
+  call Show ( iS, '>>> iS' )
+  call Show ( dT, '>>> dT' )
+  iV  =  40
+  call Show ( '>>> Cell' )
+  call Show ( iV, '>>> iV' )
+  call Show ( R ( iV ), UNIT % KILOMETER, '>>> R' )
+  call Show ( '>>> Before implicit solve' )
+    call Show ( '>>> Energy' )
+    call Show ( J_N ( iV ), '>>> J_(1)' )
+    call Show ( dT * K_E_E ( iV ), '>>> dT * K_E_E_(1)' )
+    call Show ( E_E_0 ( iV ), '>>> J_(1+)' )
+    call Show ( J_N ( iV ) + dT * K_E_E ( iV ), '>>> J_(1+) check' )
+    call Show ( K_E_E ( iV ), '>>> K_E_E' )
+    call Show ( - 2. * H_N ( iV ) / R ( iV ), '>>> - 2H/R' )
+    call Show ( - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
+                  / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
+                '>>> - dH/dR' )
+    call Show ( - 2. * H_N ( iV ) / R ( iV ) &
+                - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
+                  / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
+                '>>> - ( 2H/R + dH/dR )' )
+    call Show ( '>>> Momentum' )
+    call Show ( H_N ( iV ), '>>> H_(1)' )
+    call Show ( dT * K_E_S_1 ( iV ), '>>> dT * K_E_S_1_(1)' )
+    call Show ( S_E_1_0 ( iV ), '>>> H_(1+)' )
+    call Show ( H_N ( iV ) + dT * K_E_S_1 ( iV ), '>>> H_(1+) check' )
+    call Show ( K_E_S_1 ( iV ), '>>> K_E_S_1' )
+    call Show ( - ( J_N ( iV + 1 ) - J_N ( iV - 1 ) ) &
+                  / ( 3. * ( R ( iV + 1 ) - R ( iV - 1 ) ) ), &
+                '>>> -(1/3) dJ/dR' )
+  end associate !-- R, etc.
+  end associate !-- Y_E_V
+  end associate !-- Y_E
+end if
+
       call SolveKernel &
              ( I_E, I_EB, R_E, R_EB, F_HN, &
                Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
@@ -314,6 +366,28 @@ contains
                KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
                Res_J_Eq_E,  Res_N_Eq_E, &
                Res_J_Eq_EB, Res_N_Eq_EB )
+
+if ( iS == 2 ) then
+  associate &
+    ( K_E  =>  S_R ( 1 ) % SlopeStageExplicit ( iS - 1 ) % Element )
+  associate &
+    ( K_E_V  =>  K_E % Storage ( iC ) % Value )
+  associate &
+    ( K_E_S_1 =>  K_E_V ( :, iMomentum_R ( 1 ) ) )
+  call Show ( '>>> After implicit solve' )
+    call Show ( '>>> Energy' )
+    call Show ( dT * KK_E_E ( iV ), '>>> dT * KK_E_E_(2)' )
+    call Show ( E_E_0 ( iV ) +  dT * KK_E_E ( iV ), '>>> J_(2)' )
+    call Show ( '>>> Momentum' )
+    call Show ( dT * KK_E_S_1 ( iV ), '>>> dT * KK_E_S_1_(2)' )
+    call Show ( S_E_1_0 ( iV ) + dT * KK_E_S_1 ( iV ), '>>> H_(2)' )
+    call Show ( K_E_S_1 ( iV ) / Chi_H_E ( iV ), 'K_E_S_1 / Chi_H_E' )
+    call Show ( Chi_H_E ( iV ), '>>> Chi_H_E' )
+  end associate !-- K_E
+  end associate !-- K_E_V
+  end associate !-- K_E_S_1
+end if
+
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
