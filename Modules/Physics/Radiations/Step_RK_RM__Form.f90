@@ -243,7 +243,7 @@ contains
               !-- Compute energy updates
 
               KK_R_E ( iV )  &
-                =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  J ( iV ) ) &
+                =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  E_R_0 ( iV ) ) &
                    /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
 
               KK_F_E ( iV )  =  - KK_R_E ( iV )
@@ -297,7 +297,7 @@ contains
               E_R_P  =  E_R ( iV )
               E_F_P  =  E_F ( iV )
 
-              call R % ComputeFromBalanced ( iC, iV )
+!              call R % ComputeFromBalanced ( iC, iV )
               call F % ComputeFromBalanced ( iC, iV )
 
             end do Implicit
@@ -306,15 +306,15 @@ contains
 
             KK_R_S_1 ( iV )  &
               =  ( Xi_H ( iV )  &
-                   -  Chi_H ( iV )  *  M_DD_11 ( iV ) * H_1 ( iV ) ) &
+                   -  Chi_H ( iV )  *  S_R_1_0 ( iV ) ) &
                  /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
             KK_R_S_2 ( iV )  &
               =  ( Xi_H ( iV )  &
-                   -  Chi_H ( iV )  *  M_DD_22 ( iV ) * H_2 ( iV ) ) &
+                   -  Chi_H ( iV )  *  S_R_2_0 ( iV ) ) &
                  /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
             KK_R_S_3 ( iV )  &
               =  ( Xi_H ( iV )  &
-                   -  Chi_H ( iV )  *  M_DD_33 ( iV ) * H_3 ( iV ) ) &
+                   -  Chi_H ( iV )  *  S_R_3_0 ( iV ) ) &
                  /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
 
             KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
