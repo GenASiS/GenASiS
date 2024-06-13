@@ -84,7 +84,7 @@ contains
              UnitsTypeOption = 'ASTROPHYSICS', &
              FinishTimeOption = FinishTime, &
              nCellsPolarOption = 128, &
-             nWriteOption = 30 )
+             nWriteOption = 10 )
 
     WH % Integrator % SetInitial  =>  SetInitial
     WH % Integrator % System      =>  WH
