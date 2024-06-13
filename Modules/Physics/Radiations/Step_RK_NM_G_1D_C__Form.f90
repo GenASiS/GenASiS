@@ -296,55 +296,6 @@ integer ( KDI ) :: &
              ( I_EB, I_EB_V, &
                Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB )
 
-if ( iS == 2 ) then
-  associate &
-    ( Y_E  =>  S_R ( 1 ) % Solution, &
-      K_E  =>  S_R ( 1 ) % SlopeStageExplicit ( iS - 1 ) % Element )
-  associate &
-    ( Y_E_V  =>  Y_E % Storage ( iC ) % Value, &
-      K_E_V  =>  K_E % Storage ( iC ) % Value )
-  associate &
-    ( R    =>  G_V ( :, G_N % CENTER_U_1 ), &
-      J_N  =>  Y_E_V ( :, iEnergy_R ), &
-      H_N  =>  Y_E_V ( :, iMomentum_R ( 1 ) ), &
-      K_E_E   =>  K_E_V ( :, iEnergy_R ), &
-      K_E_S_1 =>  K_E_V ( :, iMomentum_R ( 1 ) ) )
-  call Show ( '>>> Stage' )
-  call Show ( iS, '>>> iS' )
-  call Show ( dT, '>>> dT' )
-  iV  =  40
-  call Show ( '>>> Cell' )
-  call Show ( iV, '>>> iV' )
-  call Show ( R ( iV ), UNIT % KILOMETER, '>>> R' )
-  call Show ( '>>> Before implicit solve' )
-    call Show ( '>>> Energy' )
-    call Show ( J_N ( iV ), '>>> J_(1)' )
-    call Show ( dT * K_E_E ( iV ), '>>> dT * K_E_E_(1)' )
-    call Show ( E_E_0 ( iV ), '>>> J_(1+)' )
-    call Show ( J_N ( iV ) + dT * K_E_E ( iV ), '>>> J_(1+) check' )
-    call Show ( K_E_E ( iV ), '>>> K_E_E' )
-    call Show ( - 2. * H_N ( iV ) / R ( iV ), '>>> - 2H/R' )
-    call Show ( - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
-                  / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
-                '>>> - dH/dR' )
-    call Show ( - 2. * H_N ( iV ) / R ( iV ) &
-                - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
-                  / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
-                '>>> - ( 2H/R + dH/dR )' )
-    call Show ( '>>> Momentum' )
-    call Show ( H_N ( iV ), '>>> H_(1)' )
-    call Show ( dT * K_E_S_1 ( iV ), '>>> dT * K_E_S_1_(1)' )
-    call Show ( S_E_1_0 ( iV ), '>>> H_(1+)' )
-    call Show ( H_N ( iV ) + dT * K_E_S_1 ( iV ), '>>> H_(1+) check' )
-    call Show ( K_E_S_1 ( iV ), '>>> K_E_S_1' )
-    call Show ( - ( J_N ( iV + 1 ) - J_N ( iV - 1 ) ) &
-                  / ( 3. * ( R ( iV + 1 ) - R ( iV - 1 ) ) ), &
-                '>>> -(1/3) dJ/dR' )
-  end associate !-- R, etc.
-  end associate !-- Y_E_V
-  end associate !-- Y_E
-end if
-
       call SolveKernel &
              ( I_E, I_EB, R_E, R_EB, F_HN, &
                Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
@@ -367,27 +318,124 @@ end if
                Res_J_Eq_E,  Res_N_Eq_E, &
                Res_J_Eq_EB, Res_N_Eq_EB )
 
-if ( iS == 2 ) then
-  associate &
-    ( K_E  =>  S_R ( 1 ) % SlopeStageExplicit ( iS - 1 ) % Element )
-  associate &
-    ( K_E_V  =>  K_E % Storage ( iC ) % Value )
-  associate &
-    ( K_E_S_1 =>  K_E_V ( :, iMomentum_R ( 1 ) ) )
-  call Show ( '>>> After implicit solve' )
-    call Show ( '>>> Energy' )
-    call Show ( dT * KK_E_E ( iV ), '>>> dT * KK_E_E_(2)' )
-    call Show ( E_E_0 ( iV ) +  dT * KK_E_E ( iV ), '>>> J_(2)' )
-    call Show ( '>>> Momentum' )
-    call Show ( dT * KK_E_S_1 ( iV ), '>>> dT * KK_E_S_1_(2)' )
-    call Show ( S_E_1_0 ( iV ) + dT * KK_E_S_1 ( iV ), '>>> H_(2)' )
-    call Show ( K_E_S_1 ( iV ) / Chi_H_E ( iV ), 'K_E_S_1 / Chi_H_E' )
-    call Show ( Chi_H_E ( iV ), '>>> Chi_H_E' )
-  end associate !-- K_E
-  end associate !-- K_E_V
-  end associate !-- K_E_S_1
-end if
-
+! iV  =  40
+! associate &
+!   (  Y_E    =>  S_R ( 1 ) % Solution, &
+!      K_E_1  =>  S_R ( 1 ) % SlopeStageExplicit ( 1 ) % Element, &
+!      K_E_2  =>  S_R ( 1 ) % SlopeStageExplicit ( 2 ) % Element, &
+!     KK_E_2  =>  S_R ( 1 ) % SlopeStageImplicit ( 2 ) % Element, &
+!     KK_E_3  =>  S_R ( 1 ) % SlopeStageImplicit ( 3 ) % Element )
+! associate &
+!   (  Y_E_V    =>   Y_E   % Storage ( iC ) % Value, &
+!      K_E_1_V  =>   K_E_1 % Storage ( iC ) % Value, &
+!      K_E_2_V  =>   K_E_2 % Storage ( iC ) % Value, &
+!     KK_E_2_V  =>  KK_E_2 % Storage ( iC ) % Value, &
+!     KK_E_3_V  =>  KK_E_3 % Storage ( iC ) % Value )
+! associate &
+!   (  R    =>  G_V ( :, G_N % CENTER_U_1 ), &
+!      J_N  =>  Y_E_V ( :, iEnergy_R ), &
+!      H_N  =>  Y_E_V ( :, iMomentum_R ( 1 ) ), &
+!      K_E_1_E  =>   K_E_1_V ( :, iEnergy_R ), &
+!      K_E_1_H  =>   K_E_1_V ( :, iMomentum_R ( 1 ) ), &
+!      K_E_2_E  =>   K_E_2_V ( :, iEnergy_R ), &
+!      K_E_2_H  =>   K_E_2_V ( :, iMomentum_R ( 1 ) ), &
+!     KK_E_2_E  =>  KK_E_2_V ( :, iEnergy_R ), &
+!     KK_E_2_H  =>  KK_E_2_V ( :, iMomentum_R ( 1 ) ), &
+!     KK_E_3_E  =>  KK_E_3_V ( :, iEnergy_R ), &
+!     KK_E_3_H  =>  KK_E_3_V ( :, iMomentum_R ( 1 ) ) )
+! if ( iS == 2 ) then
+!   call Show ( '>>> Stage' )
+!   call Show ( iS, '>>> iS' )
+!   call Show ( dT, '>>> dT' )
+!   call Show ( '>>> Cell' )
+!   call Show ( iV, '>>> iV' )
+!   call Show ( R ( iV ), UNIT % KILOMETER, '>>> R' )
+!   call Show ( '>>> Before implicit solve' )
+!     call Show ( '>>> Energy' )
+!     call Show ( J_N ( iV ), '>>> J_(1)' )
+!     call Show ( dT * K_E_1_E ( iV ), '>>> dT * K_E_E_(1)' )
+!     call Show ( E_E_0 ( iV ), '>>> J_(1+)' )
+!     call Show ( J_N ( iV ) + dT * K_E_1_E ( iV ), '>>> J_(1+) check' )
+!     call Show ( K_E_1_E ( iV ), '>>> K_E_E_(1)' )
+!     call Show ( - 2. * H_N ( iV ) / R ( iV ), '>>> - 2H/R' )
+!     call Show ( - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
+!                   / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
+!                 '>>> - dH/dR' )
+!     call Show ( - 2. * H_N ( iV ) / R ( iV ) &
+!                 - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
+!                   / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
+!                 '>>> - ( 2H/R + dH/dR )' )
+!     call Show ( '>>> Momentum' )
+!     call Show ( H_N ( iV ), '>>> H_(1)' )
+!     call Show ( dT * K_E_1_H ( iV ), '>>> dT * K_E_H_(1)' )
+!     call Show ( S_E_1_0 ( iV ), '>>> H_(1+)' )
+!     call Show ( H_N ( iV ) + dT * K_E_1_H ( iV ), '>>> H_(1+) check' )
+!     call Show ( K_E_1_H ( iV ), '>>> K_E_H_(1)' )
+!     call Show ( - ( J_N ( iV + 1 ) - J_N ( iV - 1 ) ) &
+!                   / ( 3. * ( R ( iV + 1 ) - R ( iV - 1 ) ) ), &
+!                 '>>> -(1/3) dJ/dR' )
+!   call Show ( '>>> After implicit solve' )
+!     call Show ( '>>> Energy' )
+!     call Show ( dT * KK_E_2_E ( iV ), '>>> dT * KK_E_E_(2)' )
+!     call Show ( E_E_0 ( iV ) +  dT * KK_E_2_E ( iV ), '>>> J_(2)' )
+!     call Show ( '>>> Momentum' )
+!     call Show ( dT * KK_E_2_H ( iV ), '>>> dT * KK_E_H_(2)' )
+!     call Show ( S_E_1_0 ( iV ) + dT * KK_E_2_H ( iV ), '>>> H_(2)' )
+!     call Show ( K_E_1_H ( iV ) / Chi_H_E ( iV ), 'K_E_1_H / Chi_H_E' )
+!     call Show ( Chi_H_E ( iV ), '>>> Chi_H_E' )
+! else if ( iS == 3 ) then
+!   call Show ( '>>> Stage' )
+!   call Show ( iS, '>>> iS' )
+!   call Show ( dT, '>>> dT' )
+!   call Show ( '>>> Cell' )
+!   call Show ( iV, '>>> iV' )
+!   call Show ( R ( iV ), UNIT % KILOMETER, '>>> R' )
+!   call Show ( '>>> Before implicit solve' )
+!     call Show ( '>>> Energy' )
+!     call Show ( J_N ( iV ), '>>> J_(1)' )
+!     call Show ( 0.5 * dT * K_E_1_E ( iV ), '>>> (1/2) dT * K_E_E_(1)' )
+!     call Show ( 0.5 * dT * K_E_2_E ( iV ), '>>> (1/2) dT * K_E_E_(2)' )
+!     call Show ( 0.5 * dT * KK_E_2_E ( iV ), '>>> (1/2) dT * KK_E_E_(2)' )
+!     call Show ( E_E_0 ( iV ), '>>> J_(2+)' )
+!     call Show ( J_N ( iV ) + 0.5 * dT * K_E_1_E ( iV ) &
+!                  + 0.5 * dT * K_E_2_E ( iV ) + 0.5 * dT * KK_E_2_E ( iV ), &
+!                 '>>> J_(2+) check' )
+!   !   call Show ( K_E_1_E ( iV ), '>>> K_E_E_(1)' )
+!   !   call Show ( - 2. * H_N ( iV ) / R ( iV ), '>>> - 2H/R' )
+!   !   call Show ( - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
+!   !                 / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
+!   !               '>>> - dH/dR' )
+!   !   call Show ( - 2. * H_N ( iV ) / R ( iV ) &
+!   !               - ( H_N ( iV + 1 ) - H_N ( iV - 1 ) ) &
+!   !                 / ( R ( iV + 1 ) - R ( iV - 1 ) ), &
+!   !               '>>> - ( 2H/R + dH/dR )' )
+!     call Show ( '>>> Momentum' )
+!     call Show ( H_N ( iV ), '>>> H_(1)' )
+!     call Show ( 0.5 * dT * K_E_1_H ( iV ), '>>> (1/2) dT * K_E_H_(1)' )
+!     call Show ( 0.5 * dT * K_E_2_H ( iV ), '>>> (1/2) dT * K_E_H_(2)' )
+!     call Show ( 0.5 * dT * KK_E_2_H ( iV ), '>>> (1/2) dT * KK_E_H_(2)' )
+!     call Show ( S_E_1_0 ( iV ), '>>> H_(2+)' )
+!     call Show ( H_N ( iV ) + 0.5 * dT * K_E_1_H ( iV ) &
+!                  + 0.5 * dT * K_E_2_H ( iV ) + 0.5 * dT * KK_E_2_H ( iV ), &
+!                 '>>> H_(2+) check' )
+!   !   call Show ( H_N ( iV ) + dT * K_E_1_H ( iV ), '>>> H_(1+) check' )
+!   !   call Show ( K_E_1_H ( iV ), '>>> K_E_H_(1)' )
+!   !   call Show ( - ( J_N ( iV + 1 ) - J_N ( iV - 1 ) ) &
+!   !                 / ( 3. * ( R ( iV + 1 ) - R ( iV - 1 ) ) ), &
+!   !               '>>> -(1/3) dJ/dR' )
+!   call Show ( '>>> After implicit solve' )
+!     call Show ( '>>> Energy' )
+!     call Show ( 0.5 * dT * KK_E_3_E ( iV ), '>>> (1/2) dT * KK_E_E_(3)' )
+!     call Show ( E_E_0 ( iV ) + 0.5 * dT * KK_E_3_E ( iV ), '>>> J_(3)' )
+!     call Show ( '>>> Momentum' )
+!     call Show ( 0.5 * dT * KK_E_3_H ( iV ), '>>> (1/2) dT * KK_E_H_(3)' )
+!     call Show ( S_E_1_0 ( iV ) + 0.5 * dT * KK_E_3_H ( iV ), '>>> H_(3)' )
+!   !   call Show ( K_E_1_H ( iV ) / Chi_H_E ( iV ), 'K_E_1_H / Chi_H_E' )
+!   !   call Show ( Chi_H_E ( iV ), '>>> Chi_H_E' )
+! end if
+! end associate !-- R, etc.
+! end associate !-- Y_E_V, etc.
+! end associate !-- Y_E, etc.
 
       class default
         call Show ( 'Chart type not recognized', CONSOLE % ERROR )
@@ -1152,17 +1200,17 @@ end if
 
             KK_E_E ( iV )  &
               =  ( Xi_J_E ( iV )  -  Chi_J_E ( iV )  *  E_E_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_J_E ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_J_E ( iV ) * AA * dT )
             KK_E_D ( iV )  &
               =  ( Xi_N_E ( iV )  -  Chi_N_E ( iV )  *  D_E_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_N_E ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_N_E ( iV ) * AA * dT )
 
             KK_EB_E ( iV )  &
               =  ( Xi_J_EB ( iV )  -  Chi_J_EB ( iV )  *  E_EB_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_J_EB ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_J_EB ( iV ) * AA * dT )
             KK_EB_D ( iV )  &
               =  ( Xi_N_EB ( iV )  -  Chi_N_EB ( iV )  *  D_EB_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_N_EB ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_N_EB ( iV ) * AA * dT )
 
             !-- Previous radiation values
 
@@ -1302,23 +1350,23 @@ end if
 
           KK_E_S_1 ( iV )  &
             =  ( Xi_H_E ( iV )  -  Chi_H_E ( iV )  *  S_E_1_0 ( iV ) ) &
-               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * AA * dT )
           KK_E_S_2 ( iV )  &
             =  ( Xi_H_E ( iV )  -  Chi_H_E ( iV )  *  S_E_2_0 ( iV ) ) &
-               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * AA * dT )
           KK_E_S_3 ( iV )  &
             =  ( Xi_H_E ( iV )  -  Chi_H_E ( iV )  *  S_E_3_0 ( iV ) ) &
-               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * dT )
+               /  ( 1.0_KDR  +  Chi_H_E ( iV ) * AA * dT )
 
           KK_EB_S_1 ( iV )  &
             =  ( Xi_H_EB ( iV )  -  Chi_H_EB ( iV )  *  S_EB_1_0 ( iV ) ) &
-               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * AA * dT )
           KK_EB_S_2 ( iV )  &
             =  ( Xi_H_EB ( iV )  -  Chi_H_EB ( iV )  *  S_EB_2_0 ( iV ) ) &
-               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * AA * dT )
           KK_EB_S_3 ( iV )  &
             =  ( Xi_H_EB ( iV )  -  Chi_H_EB ( iV )  *  S_EB_3_0 ( iV ) ) &
-               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * dT )
+               /  ( 1.0_KDR  +  Chi_H_EB ( iV ) * AA * dT )
 
           KK_F_S_1 ( iV )  =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )
           KK_F_S_2 ( iV )  =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )

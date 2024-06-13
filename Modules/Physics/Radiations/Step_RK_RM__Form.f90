@@ -244,7 +244,7 @@ contains
 
               KK_R_E ( iV )  &
                 =  ( Xi_J ( iV )  -  Chi_J ( iV )  *  E_R_0 ( iV ) ) &
-                   /  ( 1.0_KDR  +  Chi_J ( iV ) * dT )
+                   /  ( 1.0_KDR  +  Chi_J ( iV ) * AA * dT )
 
               KK_F_E ( iV )  =  - KK_R_E ( iV )
 
@@ -307,15 +307,15 @@ contains
             KK_R_S_1 ( iV )  &
               =  ( Xi_H ( iV )  &
                    -  Chi_H ( iV )  *  S_R_1_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * AA * dT )
             KK_R_S_2 ( iV )  &
               =  ( Xi_H ( iV )  &
                    -  Chi_H ( iV )  *  S_R_2_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * AA * dT )
             KK_R_S_3 ( iV )  &
               =  ( Xi_H ( iV )  &
                    -  Chi_H ( iV )  *  S_R_3_0 ( iV ) ) &
-                 /  ( 1.0_KDR  +  Chi_H ( iV ) * dT )
+                 /  ( 1.0_KDR  +  Chi_H ( iV ) * AA * dT )
 
             KK_F_S_1 ( iV )  =  - KK_R_S_1 ( iV )
             KK_F_S_2 ( iV )  =  - KK_R_S_2 ( iV )
