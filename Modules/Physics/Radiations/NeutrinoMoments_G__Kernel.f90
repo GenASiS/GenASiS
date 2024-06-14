@@ -571,7 +571,7 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
-    EtaMax  =  25.
+    EtaMax  =  50.
 
     if ( UseDevice ) then
   !     !$OMP OMP_TARGET_DIRECTIVE parallel do &
@@ -697,7 +697,7 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
-    EtaMax  =  25.
+    EtaMax  =  50.
 
     if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
       return
@@ -982,7 +982,7 @@ contains
       RelativePrecision
       
     MaxIterations  =  50
-    Tolerance      =  1.0e-9_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
+    Tolerance      =  1.0e-6_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
     Factor         =  1.6_KDR
 
     X_0  =  0.0
