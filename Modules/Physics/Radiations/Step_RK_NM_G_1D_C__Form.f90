@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module Step_RK_NM_G_1D_C__Form
 
   !-- Step_RungeKutta_NeutrinoMoments_Grey_1D_Collected__Form
@@ -1095,8 +1097,18 @@ integer ( KDI ) :: &
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
+    ! dOmega  =  1.0_KDR  /  mRI
+
     nV  =  size ( ProperCell )
 
+    !$OMP parallel do &
+    !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+    !$OMP shared ( SqrtTiny ) &
+    !$OMP private ( iR, iI ) &
+    !$OMP private ( J_Eq_E_0, N_Eq_E_0, J_Eq_EB_0, N_Eq_EB_0 ) &
+    !$OMP private ( J_Eq_E_P, N_Eq_E_P, J_Eq_EB_P, N_Eq_EB_P ) &
+    !$OMP private ( E_E_P,  E_E_N,  D_E_P,  D_E_N ) &
+    !$OMP private ( E_EB_P, E_EB_N, D_EB_P, D_EB_N )
     do iV = 1, nV
       if ( ProperCell ( iV ) ) then      
 
@@ -1108,7 +1120,6 @@ integer ( KDI ) :: &
         J_Eq_EB_0  =  J_Eq_EB ( iV )
         N_Eq_EB_0  =  N_Eq_EB ( iV )
 
-        ! dOmega  =  1.0_KDR  /  mRI
         ! if ( Omega ( iV )  ==  0.0_KDR ) then
           Omega ( iV )  =  1.0_KDR
         ! else
@@ -1396,6 +1407,7 @@ integer ( KDI ) :: &
 
       end if !-- ProperCell
     end do !-- iV
+    !$OMP end parallel do
 
   end subroutine SolveKernel
 
