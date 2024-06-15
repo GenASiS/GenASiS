@@ -120,7 +120,8 @@ contains
       CommunicatorOption
       
     integer ( KDI ) :: &
-      iT
+      iT, &
+      dI
     real ( KDR ) :: &
       ExecutionTime, &
       MaxMinusMeanFraction
@@ -131,9 +132,11 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
+    dI  =  2  !-- Change in Ignorability for more complete information
+
     associate ( nT  =>  T_1D % nTimers )
 
-    call Show ( 'This process timers', Ignorability + 1 )
+    call Show ( 'This process timers', Ignorability + dI )
     do iT  =  1,  nT
       associate &
         ( T         =>  T_1D % Element ( iT ), &
@@ -143,7 +146,7 @@ contains
         Running  =  .true.
         call T % Stop ( )
       end if
-      call T % ShowTotal ( Ignorability + 1 )
+      call T % ShowTotal ( Ignorability + dI )
       TimeThis  =  T % TotalTime
       if ( Running ) &
         call T % Start ( )
@@ -169,7 +172,7 @@ contains
         end associate !-- T, etc.
       end do !-- iT
 
-      call Show ( 'Across processes max timers', Ignorability + 1 )
+      call Show ( 'Across processes max timers', Ignorability + dI )
       call CO % Reduce ( REDUCTION % MAX )
       do iT  =  1,  nT
         associate &
@@ -177,12 +180,12 @@ contains
             TimeMax  =>  T_1D % TimeMax ( iT ) )
         call T_Max % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        call T_Max % ShowTotal ( Ignorability + 1 )
+        call T_Max % ShowTotal ( Ignorability + dI )
         TimeMax  =  T_Max % TotalTime
         end associate !-- T_Max, etc.
       end do !-- iT
       
-      call Show ( 'Across processes min timers', Ignorability + 1 )
+      call Show ( 'Across processes min timers', Ignorability + dI )
       call CO % Reduce ( REDUCTION % MIN )
       do iT  =  1,  nT
         associate &
@@ -190,12 +193,12 @@ contains
             TimeMin  =>  T_1D % TimeMin ( iT ) )
         call T_Min % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        call T_Min % ShowTotal ( Ignorability + 1 )
+        call T_Min % ShowTotal ( Ignorability + dI )
         TimeMin  =  T_Min % TotalTime
         end associate !-- T_Min, etc.
       end do !-- iT
       
-      call Show ( 'Across processes mean timers', Ignorability + 1 )
+      call Show ( 'Across processes mean timers', Ignorability + dI )
       call CO % Reduce ( REDUCTION % SUM )
       do iT  =  1,  nT
         associate &
@@ -204,7 +207,7 @@ contains
         call T_Mean % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT )  &
                       /  CommunicatorOption % Size )
-        call T_Mean % ShowTotal ( Ignorability + 1 )
+        call T_Mean % ShowTotal ( Ignorability + dI )
         TimeMean  =  T_Mean % TotalTime
         end associate !-- T_Mean, etc.
       end do !-- iT
