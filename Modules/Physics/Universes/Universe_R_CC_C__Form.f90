@@ -107,6 +107,18 @@ contains
 
     U % FormalismType  =  FormalismType
 
+    if ( trim ( RadiationType ( 1 ) )  ==  'NONE' ) then
+      call U % Universe_F_CC_Form % Initialize &
+             ( FluidType, GravitationType, Name, &
+               FinishTimeOption = FinishTimeOption, &
+               RadiusMaxOption = RadiusMaxOption, &
+               RadiusCoreOption = RadiusCoreOption, &
+               RadialRatioOption = RadialRatioOption, &
+               nCellsPolarOption = nCellsPolarOption, &
+               nWriteOption = nWriteOption )
+      return
+    end if
+
     !-- Initializations
 
     call U % AllocateIntegrator &
