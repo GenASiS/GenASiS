@@ -20,7 +20,8 @@ module Step_RK_H__Form
       iTimer_II   = 0, &  !-- InitializeIntermediate
       iTimer_II_A = 0, &  !-- IncrementIntermediate
       iTimer_SI   = 0, &  !-- StoreIntermediate
-      iTimer_CS   = 0, &  !-- ComputeStage
+      iTimer_CI   = 0, &  !-- ComputeImplicit
+      iTimer_CE   = 0, &  !-- ComputeExplicit
       iTimer_IS_B = 0, &  !-- IncrementSolution
       iTimer_SS   = 0, &  !-- StoreSolution
       iTimer_AS   = 0     !-- AccumulateSlope
@@ -65,6 +66,8 @@ module Step_RK_H__Form
       Show => Show_S
     procedure, public, pass :: &
       Timer
+    procedure, public, pass :: &
+      TimerComputeExplicit
     procedure, public, pass :: &
       TimerStoreSolution
     procedure, public, pass :: &
@@ -334,6 +337,23 @@ contains
   end function Timer
 
 
+  function TimerComputeExplicit ( S, Level ) result ( T )
+
+    class ( Step_RK_H_Form ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      Level
+    type ( TimerForm ), pointer :: &
+      T
+
+    T  =>  PROGRAM_HEADER % Timer &
+             ( Handle = S % iTimer_CE, &
+               Name = trim ( S % Name ) // '_CmptExplct', &
+               Level = Level )
+
+  end function TimerComputeExplicit
+
+
   function TimerStoreSolution ( S, Level ) result ( T )
 
     class ( Step_RK_H_Form ), intent ( inout ) :: &
@@ -386,7 +406,8 @@ contains
       T_II, &
       T_II_A, &
       T_SI, &
-      T_CS, &
+      T_CI, &
+      T_CE, &
       T_IS_B, &
       T_SS
 
@@ -449,20 +470,28 @@ contains
         end if
       end do !-- iK
 
-      if ( S % ImplicitExplicit ) &
+      if ( S % ImplicitExplicit ) then
         !-- Obtain Y_(I) and KK ( iS ) = dY/dT_Implicit ( Y_(I) )
         !   from nonlinear solve Y_(I) = Q_(I-1) + dt A_II KK ( iS )
-        call S % ComputeUpdateImplicit ( T, dT, iS )
+        if ( present ( T_Option ) ) then
+          T_CI  =>  PROGRAM_HEADER % Timer &
+                      ( Handle = S % iTimer_CI, &
+                        Name = trim ( S % Name ) // '_CmptImplct', &
+                        Level = T_Option % Level + 1 )
+          call T_CI % Start ( )
+          call S % ComputeUpdateImplicit ( T, dT, iS, T_Option = T_CI )
+          call T_CI % Stop ( )
+        else
+          call S % ComputeUpdateImplicit ( T, dT, iS )
+        end if
+      end if
 
       !-- Compute K ( iS )  =  dY/dT_Explicit ( Y_(I) )
       if ( present ( T_Option ) ) then
-        T_CS  =>  PROGRAM_HEADER % Timer &
-                    ( Handle = S % iTimer_CS, &
-                      Name = trim ( S % Name ) // '_CmptStg', &
-                      Level = T_Option % Level + 1 )
-        call T_CS % Start ( )
-        call S % ComputeUpdateExplicit ( T, dT, iS, T_Option = T_CS )
-        call T_CS % Stop ( )
+        T_CE  =>  S % TimerComputeExplicit ( Level = T_Option % Level + 1 )
+        call T_CE % Start ( )
+        call S % ComputeUpdateExplicit ( T, dT, iS, T_Option = T_CE )
+        call T_CE % Stop ( )
       else
         call S % ComputeUpdateExplicit ( T, dT, iS )
       end if

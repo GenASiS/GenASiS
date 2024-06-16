@@ -380,12 +380,32 @@ contains
 
     integer ( KDI ) :: &
       iCS
-
-    call S % Step_CS % ComputeUpdateExplicit ( T, dT, iS, T_Option )
+    type ( TimerForm ), pointer :: &
+      T_CS
+    
+    associate ( S_CS  =>  S % Step_CS )
+    if ( present ( T_Option ) ) then
+      T_CS  =>  S_CS % TimerComputeExplicit ( Level = T_Option % Level + 1 )
+    else
+      T_CS  => null ( )
+    end if
+    if ( associated ( T_CS ) ) call T_CS % Start ( )
+    call S_CS % ComputeUpdateExplicit ( T, dT, iS, T_Option = T_CS )
+    if ( associated ( T_CS ) ) call T_CS % Stop ( )
+    end associate !-- S_CS
 
     do iCS  =  1,  S % nCurrentSets_1D
-      call S % Step_CS_1D ( iCS ) % ComputeUpdateExplicit &
+      associate ( S_CS  =>  S % Step_CS_1D ( iCS ) )
+      if ( present ( T_Option ) ) then
+        T_CS  =>  S_CS % TimerComputeExplicit ( Level = T_Option % Level + 1 )
+      else
+        T_CS  => null ( )
+      end if
+      if ( associated ( T_CS ) ) call T_CS % Start ( )
+      call S_CS % ComputeUpdateExplicit &
              ( T, dT, iS, T_Option )
+      if ( associated ( T_CS ) ) call T_CS % Stop ( )
+      end associate !-- S_CS
     end do 
 
   end subroutine ComputeUpdateExplicit

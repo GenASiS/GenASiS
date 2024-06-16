@@ -377,7 +377,8 @@ contains
       T_Option
 
     associate ( Y_I  =>  S % Intermediate )
-    call StoreBalanced_CS ( S, Y_I, T_Option )
+!    call StoreBalanced_CS ( S, Y_I, T_Option )
+    call StoreBalanced_CS ( S, Y_I )
     end associate !-- Y
   
   end subroutine StoreIntermediate
@@ -410,11 +411,11 @@ contains
 
     !-- Compute slope
     
-    if ( present ( T_Option ) ) then
-      T_CS  =>  K % Timer ( Level = T_Option % Level + 1 )
-    else
+    ! if ( present ( T_Option ) ) then
+    !   T_CS  =>  K % Timer ( Level = T_Option % Level + 1 )
+    ! else
       T_CS   =>  null ( )
-    end if
+    ! end if
     if ( associated ( T_CS ) ) call T_CS % Start ( )
     call K % Compute ( dT, T_Option = T_CS )
     if ( associated ( T_CS ) ) call T_CS % Stop ( )
@@ -422,14 +423,14 @@ contains
     !-- Coarsening
 
     if ( associated ( S % Coarsening ) ) then
-      if ( present ( T_Option ) ) then
-        T_C  =>  PROGRAM_HEADER % Timer &
-                   ( Handle = S % iTimer_Crsn, &
-                     Name = trim ( K % Name ) // '_Crsn', &
-                     Level = T_Option % Level + 1 )
-      else
+      ! if ( present ( T_Option ) ) then
+      !   T_C  =>  PROGRAM_HEADER % Timer &
+      !              ( Handle = S % iTimer_Crsn, &
+      !                Name = trim ( K % Name ) // '_Crsn', &
+      !                Level = T_Option % Level + 1 )
+      ! else
         T_C  =>  null ( )
-      end if
+      ! end if
       if ( associated ( T_C ) ) call T_C % Start ( )
       call S % Coarsening % Compute ( K )
       if ( associated ( T_C ) ) call T_C % Stop ( )
@@ -437,22 +438,22 @@ contains
 
     !-- Slope ghost exchange
 
-    if ( present ( T_Option ) ) then
-      T_EG  =>  K % TimerGhost ( Level = T_Option % Level + 1 )
-    else
+!    if ( present ( T_Option ) ) then
+!      T_EG  =>  K % TimerGhost ( Level = T_Option % Level + 1 )
+!    else
       T_EG  =>  null ( )
-    end if
+!    end if
     if ( associated ( T_EG ) ) call T_EG % Start ( )
     call K % ExchangeGhostData ( )
     if ( associated ( T_EG ) ) call T_EG % Stop ( )
 
     !-- Accumulations
 
-    if ( present ( T_Option ) ) then
-      T_AS  =>  S % TimerAccumulateSlope ( Level = T_Option % Level + 1 )
-    else
+!    if ( present ( T_Option ) ) then
+!      T_AS  =>  S % TimerAccumulateSlope ( Level = T_Option % Level + 1 )
+!    else
       T_AS  =>  null ( )
-    end if
+!    end if
     if ( associated ( T_AS ) ) call T_AS % Start ( )
 
     call K % Copy ( K_Stage )
@@ -519,7 +520,8 @@ contains
       T_Option
 
     associate ( Y  =>  S % Solution )
-    call StoreBalanced_CS ( S, Y, T_Option )
+!    call StoreBalanced_CS ( S, Y, T_Option )
+    call StoreBalanced_CS ( S, Y )
     end associate !-- Y
   
   end subroutine StoreSolution

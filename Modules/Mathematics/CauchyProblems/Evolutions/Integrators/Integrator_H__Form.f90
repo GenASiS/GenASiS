@@ -470,16 +470,16 @@ contains
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
+    T_WC =>  PROGRAM_HEADER % Timer &
+               ( Handle = iT_WC, &
+                 Name = 'WallCheckpoint', Level = 1 )
+    call T_WC % Start ( )
+    
     T_E  =>  PROGRAM_HEADER % Timer &
                ( Handle = I % iTimer_E, &
                  Name = trim ( I % Name ) // '_Evltn', &
                  Level = 1 )
     call T_E % Start ( )
-    
-    T_WC =>  PROGRAM_HEADER % Timer &
-               ( Handle = iT_WC, &
-                 Name = 'WallCheckpoint', Level = 1 )
-    call T_WC % Start ( )
     
     call CO % Initialize &
            ( PROGRAM_HEADER % Communicator, &
