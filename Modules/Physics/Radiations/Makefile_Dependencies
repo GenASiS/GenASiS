@@ -253,6 +253,11 @@ Step_RK_NM_G_1D_C__Form.o: \
   Interactions_NM_G__Form.o \
   Step_RK_NM_G_1D_C__Form.f90
 
+Step_RK_NM_G_1D_C__Kernel.o: \
+  Basics.o \
+  Step_RK_NM_G_1D_C__Form.o \
+  Step_RK_NM_G_1D_C__Kernel.f90
+
 Radiations.o: \
   Units_R__Form.o \
   RadiationMoments_BM__Form.o \
