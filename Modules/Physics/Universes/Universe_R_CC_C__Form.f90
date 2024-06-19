@@ -21,9 +21,11 @@ module Universe_R_CC_C__Form
       RadiationName, &
       RadiationType
     type ( SphericalAverageForm ), dimension ( : ), allocatable :: &
-      SA_Radiation
+      SA_Radiation, &
+      SA_Interactions
     type ( AzimuthalAverageForm ), dimension ( : ), allocatable :: &
-      AA_Radiation
+      AA_Radiation, &
+      AA_Interactions
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
     type ( Coarsening_C_RM_Form ), dimension ( : ), allocatable :: &
@@ -177,8 +179,12 @@ contains
       deallocate ( U % Interactions_NM_G )
     if ( allocated ( U % Coarsening_R ) ) &
       deallocate ( U % Coarsening_R )
+    if ( allocated ( U % AA_Interactions ) ) &
+      deallocate ( U % AA_Interactions )
     if ( allocated ( U % AA_Radiation ) ) &
       deallocate ( U % AA_Radiation )
+    if ( allocated ( U % SA_Interactions ) ) &
+      deallocate ( U % SA_Interactions )
     if ( allocated ( U % SA_Radiation ) ) &
       deallocate ( U % SA_Radiation )
     if ( allocated ( U % Units_R ) ) &
@@ -255,8 +261,6 @@ contains
         call R % Initialize &
                ( F, U % Units_R, U % RadiationType ( iR ), &
                  NameOption = U % RadiationName ( iR ) )
-        if ( allocated ( U % Interactions_NM_G ) ) &
-          call R % SetInteractions ( U % Interactions_NM_G ( iR ) )
 
         !-- Azimuthal average
         if ( allocated ( U % PositionSpace_AA ) ) then
@@ -329,6 +333,8 @@ contains
 
     integer ( KDI ) :: &
       iR
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaAverage
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_C_CS_Form )
@@ -336,14 +342,77 @@ contains
       class is ( RadiationMoments_BM_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_Form )
+    associate &
+      (  G  =>  I % Geometry_X, &
+        nR  =>  U % nRadiations )
+
+    allocate ( iaAverage ( 0 ) )
 
     if ( allocated ( U % Interactions_NM_G ) ) then
-      do iR  =  1, U % nRadiations
-        call U % Interactions_NM_G ( iR ) % Initialize &
+      associate ( Int  =>  U % Interactions_NM_G )
+      if ( allocated ( U % PositionSpace_AA ) ) &
+        allocate ( U % AA_Interactions ( nR ) )
+      if ( allocated ( U % PositionSpace_SA ) ) &
+        allocate ( U % SA_Interactions ( nR ) )
+      do iR  =  1,  nR
+
+        call Int ( iR ) % Initialize &
                ( R ( iR ), U % Units_R, F )
+        call R ( iR ) % SetInteractions ( Int ( iR ) )
+
+        !-- Azimuthal average
+        if ( allocated ( U % PositionSpace_AA ) ) then
+          associate &
+            ( AA     =>  U % AA_Interactions ( iR ), &
+               A_AA  =>  U % PositionSpace_AA )
+          allocate ( Interactions_NM_G_Form :: AA % FieldSet_AA )
+          select type ( I_AA  =>  AA % FieldSet_AA )
+            type is ( Interactions_NM_G_Form )
+          select type ( R_AA  =>  U % AA_Radiation ( iR ) % FieldSet_AA )
+            type is ( NeutrinoMoments_G_Form )
+          select type ( F_AA  =>  U % AA_Fluid % FieldSet_AA )
+            type is ( Fluid_P_HN_Form )
+          call I_AA % Initialize &
+                 ( R_AA, U % Units_R, F_AA, &
+                   NameOption = trim ( Int ( iR ) % Name ) // '_AA' )
+          call AA % Initialize &
+                 ( G, Int ( iR ), A_AA, iaAverageOption = iaAverage )
+          call R_AA % SetInteractions ( I_AA )
+          end select !-- F_AA
+          end select !-- R_AA
+          end select !-- I_AA
+          end associate !-- AA, etc.
+        end if !-- allocated PositionSpace_AA
+
+        !-- Spherical average
+        if ( allocated ( U % PositionSpace_SA ) ) then
+          associate &
+            ( SA     =>  U % SA_Interactions ( iR ), &
+               A_SA  =>  U % PositionSpace_SA )
+          allocate ( Interactions_NM_G_Form :: SA % FieldSet_SA )
+          select type ( I_SA  =>  SA % FieldSet_SA )
+            type is ( Interactions_NM_G_Form )
+          select type ( R_SA  =>  U % SA_Radiation ( iR ) % FieldSet_SA )
+            type is ( NeutrinoMoments_G_Form )
+          select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
+            type is ( Fluid_P_HN_Form )
+          call I_SA % Initialize &
+                 ( R_SA, U % Units_R, F_SA, &
+                   NameOption = trim ( Int ( iR ) % Name ) // '_SA' )
+          call SA % Initialize &
+                 ( G, Int ( iR ), A_SA, iaAverageOption = iaAverage )
+          call R_SA % SetInteractions ( I_SA )
+          end select !-- F_SA
+          end select !-- R_SA
+          end select !-- I_SA
+          end associate !-- SA, etc.
+        end if !-- allocated PositionSpace_SA
+
       end do !-- iR
+      end associate !-- Int
     end if
 
+    end associate !-- G, etc.
     end select !-- F
     end select !-- R
     end select !-- I
@@ -556,7 +625,11 @@ contains
       do iR  =  1,  U % nRadiations
         select type ( R_AA  =>  U % AA_Radiation ( iR ) % FieldSet_AA )
           class is ( NeutrinoMoments_G_Form )
+        select type ( I_AA  =>  U % AA_Interactions ( iR ) % FieldSet_AA )
+          class is ( Interactions_NM_G_Form )
         call R_AA % SetStream ( S_AA )
+        call I_AA % SetStream ( S_AA )
+        end select !-- I_AA
         end select !-- R_AA
       end do
       end associate !-- S_AA
@@ -569,7 +642,11 @@ contains
       do iR  =  1,  U % nRadiations
         select type ( R_SA  =>  U % SA_Radiation ( iR ) % FieldSet_SA )
           class is ( NeutrinoMoments_G_Form )
+        select type ( I_SA  =>  U % SA_Interactions ( iR ) % FieldSet_SA )
+          class is ( Interactions_NM_G_Form )
         call R_SA % SetStream ( S_SA )
+        call I_SA % SetStream ( S_SA )
+        end select !-- I_SA
         end select !-- R_SA
       end do
       end associate !-- S_SA
@@ -613,6 +690,7 @@ contains
       call U % AA_Fluid % FieldSet_AA % Show ( )
       do iR  =  1,  U % nRadiations
         call U % AA_Radiation ( iR ) % FieldSet_AA % Show ( )
+        call U % AA_Interactions ( iR ) % FieldSet_AA % Show ( )
       end do !-- iR
       call U % Stream_AA % Show ( )
     end if !-- allocated PositionSpace_AA
@@ -623,6 +701,7 @@ contains
       call U % SA_Fluid % FieldSet_SA % Show ( )
       do iR  =  1,  U % nRadiations
         call U % SA_Radiation ( iR ) % FieldSet_SA % Show ( )
+        call U % SA_Interactions ( iR ) % FieldSet_SA % Show ( )
       end do !-- iR
       call U % Stream_SA % Show ( )
     end if !-- allocated PositionSpace_SA
@@ -738,7 +817,11 @@ contains
         call U % AA_Radiation ( iR ) % Compute ( )
         select type ( R_AA  =>  U % AA_Radiation ( iR ) % FieldSet_AA )
           class is ( NeutrinoMoments_G_Form )
+        select type ( I_AA  =>  U % AA_Interactions ( iR ) % FieldSet_AA )
+          class is ( Interactions_NM_G_Form )
         call R_AA % ComputeFromBalanced ( )
+        call I_AA % Compute ( )
+        end select !-- I_AA
         end select !-- R_AA
       end do !-- iR
     end if !-- allocated PositionSpace_AA
@@ -749,7 +832,11 @@ contains
         call U % SA_Radiation ( iR ) % Compute ( )
         select type ( R_SA  =>  U % SA_Radiation ( iR ) % FieldSet_SA )
           class is ( NeutrinoMoments_G_Form )
+        select type ( I_SA  =>  U % SA_Interactions ( iR ) % FieldSet_SA )
+          class is ( Interactions_NM_G_Form )
         call R_SA % ComputeFromBalanced ( )
+        call I_SA % Compute ( )
+        end select !-- I_SA
         end select !-- R_SA
       end do !-- iR
     end if !-- allocated PositionSpace_SA
