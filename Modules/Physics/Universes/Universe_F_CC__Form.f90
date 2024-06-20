@@ -7,7 +7,7 @@ module Universe_F_CC__Form
   use Gravitations
   use Fluids
   use Measures_F_CC__Form
-  use Series_F_CC__Form
+  use Series_CC__Form
   use Universe_F_C__Form
 
   implicit none
@@ -32,7 +32,7 @@ module Universe_F_CC__Form
     procedure, public, pass :: &
       Compute_dT_G_CGS
     procedure, public, nopass :: &
-      InitializeSeries_F_CC      
+      InitializeSeries_CC      
     procedure, public, nopass :: &
       Analyze_F_CC
     procedure, public, nopass :: &
@@ -116,7 +116,7 @@ contains
 
     associate ( I  =>  U % Integrator )
     I % Compute_dT_Local          =>  Compute_dT_Local
-    I % InitializeSeries          =>  InitializeSeries_F_CC
+    I % InitializeSeries          =>  InitializeSeries_CC
     I % Analyze                   =>  Analyze_F_CC
     I % Set_T_CheckpointInterval  =>  Set_T_CheckpointInterval_F_CC
     end associate !-- I
@@ -346,19 +346,19 @@ contains
   end subroutine Compute_dT_G_CGS
 
 
-  subroutine InitializeSeries_F_CC ( I )
+  subroutine InitializeSeries_CC ( I )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    allocate ( Series_F_CC_Form :: I % Series )
+    allocate ( Series_CC_Form :: I % Series )
 
     select type ( U  =>  I % System )
       class is ( Universe_F_CC_Form )
     select type ( I )
       class is ( Integrator_CS_Form )
     select type ( S  =>  I % Series )
-      class is ( Series_F_CC_Form )
+      class is ( Series_CC_Form )
     call S % Initialize &
       ( U % Measures, I % CurrentSet_X, I % GridImageStream, I % dT_Label, &
         I % Unit_T, I % dT_Candidate, I % T, I % Communicator % Rank, &
@@ -367,7 +367,7 @@ contains
     end select !-- I
     end select !-- U
 
-  end subroutine InitializeSeries_F_CC
+  end subroutine InitializeSeries_CC
 
 
   subroutine Analyze_F_CC ( I, Ignorability, T_Option )

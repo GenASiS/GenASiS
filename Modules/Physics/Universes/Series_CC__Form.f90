@@ -1,6 +1,6 @@
-module Series_F_CC__Form
+module Series_CC__Form
 
-  !-- Series_Fluid_CentralCore__Form
+  !-- Series_CentralCore__Form
 
   use Basics
   use Mathematics
@@ -9,9 +9,9 @@ module Series_F_CC__Form
   implicit none
   private
 
-  type, public, extends ( Series_CS_Form ) :: Series_F_CC_Form
+  type, public, extends ( Series_CS_Form ) :: Series_CC_Form
     type ( StorageForm ), allocatable :: &
-      Measures_F_CC
+      Measures_CC
     class ( Measures_F_CC_Form ), pointer :: &
       Measures => null ( )
   contains
@@ -25,7 +25,7 @@ module Series_F_CC__Form
 !       Restore
     final :: &
       Finalize
-  end type Series_F_CC_Form
+  end type Series_CC_Form
 
 
 contains
@@ -35,7 +35,7 @@ contains
                ( S, M, CS, GIS, dT_Label, Unit_T, dT_Candidate, T, &
                  CommunicatorRank, nWrite, iCycle )
 
-    class ( Series_F_CC_Form ), intent ( inout ) :: &
+    class ( Series_CC_Form ), intent ( inout ) :: &
       S
     class ( Measures_F_CC_Form ), intent ( in ), target :: &
       M
@@ -65,7 +65,7 @@ contains
       SeriesName
 
     if ( S % Type == '' ) &
-      S % Type = 'a Series_F_CC' 
+      S % Type = 'a Series_CC' 
 
     call S % Series_CS_Form % Initialize &
            ( CS, GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
@@ -80,14 +80,14 @@ contains
       SeriesUnit ( iM )  =  M % Unit ( iM )
     end do !-- iS
 
-    allocate ( S % Measures_F_CC )
+    allocate ( S % Measures_CC )
     associate &
-      ( SM  =>  S % Measures_F_CC, &
+      ( SM  =>  S % Measures_CC, &
         SB  =>  S % Basic )
     call SM % Initialize &
            ( [ SB % nValues, M % nMeasures ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption =  'Measures_F_CC', &
+             NameOption =  'Measures_CC', &
              ClearOption = .true. )
     if ( allocated ( S % CurveImage ) ) then
       associate ( CI => S % CurveImage )
@@ -101,7 +101,7 @@ contains
 
   subroutine Record ( S )
 
-    class ( Series_F_CC_Form ), intent ( inout ) :: &
+    class ( Series_CC_Form ), intent ( inout ) :: &
       S
 
     integer ( KDI ) :: &
@@ -110,7 +110,7 @@ contains
     call S % Series_CS_Form % Record ( )
 
     associate &
-      (  SMV  =>  S % Measures_F_CC % Value, &
+      (  SMV  =>  S % Measures_CC % Value, &
         iR    =>  S % iRecord, &
           MV  =>  S % Measures % Value, &
         nM    =>  S % Measures % nMeasures )
@@ -124,15 +124,15 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Series_F_CC_Form ), intent ( inout ) :: &
+    type ( Series_CC_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % Measures_F_CC ) ) &
-      deallocate ( S % Measures_F_CC )
+    if ( allocated ( S % Measures_CC ) ) &
+      deallocate ( S % Measures_CC )
 
     nullify ( S % Measures )
 
   end subroutine Finalize
 
 
-end module Series_F_CC__Form
+end module Series_CC__Form

@@ -1691,7 +1691,7 @@ contains
     select type ( U  =>  I % System )
       class is ( Universe_R_CC_Form )
 
-    call U % InitializeSeries_F_CC ( I )
+    call U % InitializeSeries_CC ( I )
 
     end select !-- U
 
