@@ -1,5 +1,7 @@
 module Measures_F_CC__Form
 
+  !-- Measures_Fluid_CentralCore__Form
+
   use Basics
   use Mathematics
   use Gravitations
@@ -9,14 +11,21 @@ module Measures_F_CC__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_MEASURES_D    =  8, &
-      N_MEASURES_P    = 10, &
-      N_MEASURES_P_HN = 11, &
-      N_MEASURES_MAX  = 11
+      N_MEASURES_D     =  8, &
+      N_MEASURES_P     = 10, &
+      N_MEASURES_P_HN  = 11, &
+      N_MEASURES_F_MAX = 11
 
   type, public :: Measures_F_CC_Form
     integer ( KDI ) :: &
-      nMeasures
+      N_MEASURES_D     = N_MEASURES_D, &
+      N_MEASURES_P     = N_MEASURES_P, &
+      N_MEASURES_P_HN  = N_MEASURES_P_HN, &
+      N_MEASURES_F_MAX = N_MEASURES_F_MAX
+    integer ( KDI ) :: &
+      nMeasures_F
+    integer ( KDI ) :: &
+      nMeasures = 0
     real ( KDR ) :: &
       VelocityMax, &
       Radius_V_Max, &
@@ -29,11 +38,11 @@ module Measures_F_CC__Form
       Temperature_C, &
       EntropyPerBaryon_C, &
       ElectronFraction_C
-    real ( KDR ), dimension ( N_MEASURES_MAX ) :: &
+    real ( KDR ), dimension ( : ), allocatable :: &
       Value
-    type ( QuantityForm ), dimension ( N_MEASURES_MAX ) :: &
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
       Unit
-    character ( LDL ), dimension ( N_MEASURES_MAX ) :: &
+    character ( LDL ), dimension ( : ), allocatable :: &
       Name
     class ( Atlas_H_Form ), pointer :: &
       Atlas_SA => null ( )
@@ -43,8 +52,10 @@ module Measures_F_CC__Form
     class ( Units_F_Form ), pointer :: &
       Units_F => null ( )
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_F_CC
+    generic, public :: &
+      Initialize => Initialize_F_CC
     procedure, public, pass :: &
       Compute
     final :: &
@@ -66,7 +77,8 @@ module Measures_F_CC__Form
 contains
 
 
-  subroutine Initialize ( M, F_SA, G_SA, A_SA, Units_F )
+  subroutine Initialize_F_CC &
+               ( M, F_SA, G_SA, A_SA, Units_F, nMeasuresAddOption )
 
     class ( Measures_F_CC_Form ), intent ( inout ) :: &
       M
@@ -77,47 +89,21 @@ contains
       A_SA
     class ( Units_F_Form ), intent ( in ), target :: &
       Units_F
+    integer ( KDI ), intent ( in ), optional :: &
+      nMeasuresAddOption
 
     M % Atlas_SA     =>  A_SA
     M % Fluid_SA     =>  F_SA
     M % Geometry_SA  =>  G_SA
     M % Units_F      =>  Units_F
 
-    M % Name = [ 'VelocityMax        ', &
-                 'Radius_V_Max       ', &
-                 'Baryons_V_Max      ', &
-                 'Mass_V_Max         ', &
-                 'BaryonDensity_V_Max', &
-                 'MassDensity_V_Max  ', &
-                 'BaryonDensity_C    ', &
-                 'MassDensity_C      ', &
-                 'Temperature_C      ', &
-                 'EntropyPerBaryon_C ', &
-                 'ElectronFraction_C ' ]
-
-    associate ( UF  =>  M % Units_F )
-    M % Unit  =  [ UF % Velocity_U ( 1 ), &     !-- VelocityMax
-                   UF % Coordinate_PS ( 1 ), &  !-- Radius_V_Max
-                   UF % Number, &               !-- Baryons_V_Max
-                   UF % Mass, &                 !-- Mass_V_Max
-                   UF % NumberDensity, &        !-- BaryonDensity_V_Max
-                   UF % MassDensity, &          !-- MassDensity_V_Max
-                   UF % NumberDensity, &        !-- BaryonDensity_C
-                   UF % MassDensity, &          !-- MassDensity_C
-                   UF % Temperature, &          !-- Temperature_C
-                   UF % EnergyDensity &
-                     /  UF % NumberDensity  &
-                     /  UF % Temperature, &     !-- EntropyPerBaryon_C
-                   UNIT % IDENTITY ]            !-- ElectronFraction_C
-    end associate !-- UF
-
     select type ( F_SA )
     class is ( Fluid_P_HN_Form )
-      M % nMeasures  =  N_MEASURES_P_HN
+      M % nMeasures_F  =  N_MEASURES_P_HN
     class is ( Fluid_P_Form )
-      M % nMeasures  =  N_MEASURES_P
+      M % nMeasures_F  =  N_MEASURES_P
     class is ( Fluid_D_Form )
-      M % nMeasures  =  N_MEASURES_D
+      M % nMeasures_F  =  N_MEASURES_D
     class default
       call Show ( 'Fluid type not found', CONSOLE % ERROR )
       call Show ( 'Measures_F_CC__Form', 'module', CONSOLE % ERROR )
@@ -125,7 +111,56 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- F_SA
 
-  end subroutine Initialize
+    M % nMeasures  =  M % nMeasures_F
+    if ( present ( nMeasuresAddOption ) ) &
+      M % nMeasures  =  M % nMeasures  +  nMeasuresAddOption
+
+    allocate ( M % Name ( M % nMeasures ) )   
+    allocate ( M % Unit ( M % nMeasures ) )
+    allocate ( M % Value ( M % nMeasures ) )
+   
+    associate ( UF  =>  M % Units_F )
+
+    M % Name ( 1 : M % N_MEASURES_D ) &
+      = [ 'VelocityMax        ', &
+          'Radius_V_Max       ', &
+          'Baryons_V_Max      ', &
+          'Mass_V_Max         ', &
+          'BaryonDensity_V_Max', &
+          'MassDensity_V_Max  ', &
+          'BaryonDensity_C    ', &
+          'MassDensity_C      ' ]
+    M % Unit ( 1 : M % N_MEASURES_D ) &
+      =  [ UF % Velocity_U ( 1 ), &     !-- VelocityMax
+           UF % Coordinate_PS ( 1 ), &  !-- Radius_V_Max
+           UF % Number, &               !-- Baryons_V_Max
+           UF % Mass, &                 !-- Mass_V_Max
+           UF % NumberDensity, &        !-- BaryonDensity_V_Max
+           UF % MassDensity, &          !-- MassDensity_V_Max
+           UF % NumberDensity, &        !-- BaryonDensity_C
+           UF % MassDensity ]          !-- MassDensity_C
+
+    if ( M % nMeasures_F  >  M % N_MEASURES_D ) then
+      M % Name ( M % N_MEASURES_D + 1 : M % N_MEASURES_P ) &
+        = [ 'Temperature_C      ', &
+            'EntropyPerBaryon_C ' ]
+      M % Unit ( M % N_MEASURES_D + 1 : M % N_MEASURES_P ) &
+        = [ UF % Temperature, &          !-- Temperature_C
+            UF % EnergyDensity &
+                /  UF % NumberDensity  &
+                /  UF % Temperature ]     !-- EntropyPerBaryon_C
+    end if !-- N_MEASURES_P
+
+    if ( M % nMeasures_F  >  M % N_MEASURES_P ) then
+      M % Name ( M % N_MEASURES_P + 1 : M % N_MEASURES_P_HN ) &
+        = [ 'ElectronFraction_C ' ]
+      M % Unit ( M % N_MEASURES_P + 1 : M % N_MEASURES_P_HN ) &
+        = [ UNIT % IDENTITY ]            !-- ElectronFraction_C
+    end if !-- N_MEASURES_P_HN
+
+    end associate !-- UF
+
+  end subroutine Initialize_F_CC
 
 
   subroutine Compute ( M )
@@ -298,14 +333,18 @@ contains
     M % Value (  6 )  =  Rho_V_Max
     M % Value (  7 )  =    N_C
     M % Value (  8 )  =  Rho_C
-    M % Value (  9 )  =    T_C
-    M % Value ( 10 )  =    S_C
-    M % Value ( 11 )  =    Y_C
+    if ( M % nMeasures_F  >  M % N_MEASURES_D ) then
+      M % Value (  9 )  =  T_C
+      M % Value ( 10 )  =  S_C
+    end if !-- N_MEASURES_P
+    if ( M % nMeasures_F  >  M % N_MEASURES_P ) then
+      M % Value ( 11 )  =  Y_C
+    end if !-- N_MEASURES_P_HN
 
     !-- Display
 
     call Show ( 'Fluid_CentralCore Measures' )
-    do iM  =  1,  M % nMeasures
+    do iM  =  1,  M % nMeasures_F
       call Show ( M % Value ( iM ), M % Unit ( iM ), M % Name ( iM ) )
     end do !-- iM
 
@@ -326,7 +365,14 @@ contains
     type ( Measures_F_CC_Form ), intent ( inout ) :: &
       M
 
-    if ( allocated ( CO ) ) deallocate ( CO )
+    if ( allocated ( M % Name ) ) &
+      deallocate ( M % Name )
+    if ( allocated ( M % Unit ) ) &
+      deallocate ( M % Unit )
+    if ( allocated ( M % Value ) ) &
+      deallocate ( M % Value )
+    if ( allocated ( CO ) ) &
+      deallocate ( CO )    
 
     nullify ( M % Units_F )
     nullify ( M % Fluid_SA )

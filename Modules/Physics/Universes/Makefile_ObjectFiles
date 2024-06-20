@@ -14,4 +14,5 @@ UNIVERSES = \
   Universe_F_B__Form.o \
   Universe_H__Form.o \
   Series_CC__Form.o \
+  Measures_R_CC_C__Form.o \
   Measures_F_CC__Form.o
