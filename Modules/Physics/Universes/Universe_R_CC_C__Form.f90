@@ -7,6 +7,7 @@ module Universe_R_CC_C__Form
   use Gravitations
   use Fluids
   use Radiations
+  use Measures_R_CC_C__Form
   use Universe_F_CC__Form
 
   implicit none
@@ -53,6 +54,8 @@ module Universe_R_CC_C__Form
       InitializeIntegrator
     procedure, public, pass :: &
       InitializeDiagnostics
+    procedure, public, pass :: &
+      SetMeasures
     procedure, public, pass :: &
       ShowParameters
     procedure, public, pass :: &
@@ -653,6 +656,56 @@ contains
     end if !-- allocated PositionSpace_SA
 
   end subroutine InitializeDiagnostics
+
+
+  subroutine SetMeasures ( U )
+
+    class ( Universe_R_CC_C_Form ), intent ( inout ), target :: &
+      U
+
+    integer ( KDI ) :: &
+      iR
+    class ( Atlas_H_Form ), pointer :: &
+      A_SA
+    class ( FieldSet_BM_Form ), pointer :: &
+      G_SA, &
+      F_SA
+    type ( FieldSet_BM_Pointer ), dimension ( : ), allocatable :: &
+      R_SA_1D
+
+    associate ( nR  =>  U % nRadiations )
+    allocate ( R_SA_1D ( nR ) )
+
+    if ( allocated ( U % PositionSpace_SA ) ) then
+      A_SA     =>  U % PositionSpace_SA
+      G_SA     =>  U % SA_Gravitation % FieldSet_SA
+      F_SA     =>  U % SA_Fluid % FieldSet_SA
+      do iR  =  1, nR
+        R_SA_1D ( iR ) % Pointer  =>  U % SA_Radiation ( iR ) % FieldSet_SA
+      end do !-- iR
+    else !-- 1D
+      select type ( I  =>  U % Integrator )
+        class is ( Integrator_CS_1D_C_CS_Form )
+      A_SA     =>  I % X
+      G_SA     =>  I % Geometry_X
+      F_SA     =>  I % CurrentSet_X
+      do iR  =  1, nR
+        R_SA_1D ( iR ) % Pointer  =>  I % CurrentSet_X_1D ( iR )
+      end do !-- iR
+      end select !-- I
+    end if
+
+    allocate ( Measures_R_CC_C_Form :: U % Measures )
+    select type ( M  =>  U % Measures )
+      class is ( Measures_R_CC_C_Form )
+    call M % Initialize &
+          ( R_SA_1D, F_SA, G_SA, A_SA, &
+            Units_R = U % Units_R ( 1 ), Units_F = U % Units_F ( 1 ) )
+    end select !-- M
+
+    end associate !-- nR
+
+  end subroutine SetMeasures
 
 
   subroutine ShowParameters ( U )

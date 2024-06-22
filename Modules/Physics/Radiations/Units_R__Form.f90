@@ -11,9 +11,14 @@ module Units_R__Form
   type, public, extends ( Units_F_Form ) :: Units_R_Form
 !-- FIXME: GCC 11.3 doesn't like hardwired dimensionality
 !    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    !-- Local
     type ( QuantityForm ), dimension ( : ), allocatable :: &
       Coordinate_MS, &     !-- Coordinate_MomentumSpace
       MomentumDensity_U
+    !-- Global
+    type ( QuantityForm ) :: &
+      Luminosity, &
+      EnergyAverage
   contains
     procedure, public, pass :: &
       Initialize
@@ -44,6 +49,7 @@ contains
       select case ( trim ( TypeOption ) )
       case ( '' )
       case ( 'MKS' )
+        !-- Local
         U % MomentumDensity_U ( 1 )  =  UNIT % MASS_DENSITY_MKS  &
                                         *  U % Velocity_U ( 1 )
         U % MomentumDensity_U ( 2 )  =  UNIT % MASS_DENSITY_MKS  &
@@ -51,6 +57,7 @@ contains
         U % MomentumDensity_U ( 3 )  =  UNIT % MASS_DENSITY_MKS  &
                                         *  U % Velocity_U ( 3 )
       case ( 'CGS' )
+        !-- Local
         U % MomentumDensity_U ( 1 )  =  UNIT % MASS_DENSITY_CGS  &
                                         *  U % Velocity_U ( 1 )
         U % MomentumDensity_U ( 2 )  =  UNIT % MASS_DENSITY_CGS  &
@@ -58,12 +65,16 @@ contains
         U % MomentumDensity_U ( 3 )  =  UNIT % MASS_DENSITY_CGS  &
                                         *  U % Velocity_U ( 3 )
       case ( 'ASTROPHYSICS' )
+        !-- Local
         U % MomentumDensity_U ( 1 )  =  UNIT % MASS_DENSITY_NUCLEAR  &
                                         *  U % Velocity_U ( 1 )
         U % MomentumDensity_U ( 2 )  =  UNIT % MASS_DENSITY_NUCLEAR  &
                                         *  U % Velocity_U ( 2 )
         U % MomentumDensity_U ( 3 )  =  UNIT % MASS_DENSITY_NUCLEAR  &
                                         *  U % Velocity_U ( 3 )
+        !-- Global
+        U % Luminosity     =  UNIT % BETHE  /  UNIT % SECOND
+        U % EnergyAverage  =  UNIT % MEGA_ELECTRON_VOLT
       case default
         call Show ( 'Type not recognized', CONSOLE % ERROR )
         call Show ( 'Units_R__Form', 'module', CONSOLE % ERROR )

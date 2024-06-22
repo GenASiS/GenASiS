@@ -7,7 +7,10 @@ Measures_F_CC__Form.o: \
 
 Measures_R_CC_C__Form.o: \
   Basics.o \
+  Mathematics.o \
+  Fluids.o \
   Radiations.o \
+  Measures_F_CC__Form.o \
   Measures_R_CC_C__Form.f90
 
 Series_CC__Form.o: \
@@ -92,6 +95,7 @@ Universe_R_CC_C__Form.o: \
   Gravitations.o \
   Fluids.o \
   Radiations.o \
+  Measures_R_CC_C__Form.o \
   Universe_F_CC__Form.o \
   Universe_R_CC_C__Form.f90
 

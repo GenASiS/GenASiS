@@ -104,6 +104,14 @@ module FieldSet_BM__Form
       Finalize_E
   end type FieldSet_BM_Element
 
+  type, public :: FieldSet_BM_Pointer
+    class ( FieldSet_BM_Form ), pointer :: &
+      Pointer => null ( )
+  contains
+    final :: &
+      Finalize_P
+  end type FieldSet_BM_Pointer
+
 
 contains
 
@@ -974,6 +982,16 @@ contains
       deallocate ( FSE % Element )
 
   end subroutine Finalize_E
+
+
+  impure elemental subroutine Finalize_P ( FSP )
+    
+    type ( FieldSet_BM_Pointer ), intent ( inout ) :: &
+      FSP
+
+    nullify ( FSP % Pointer )
+
+  end subroutine Finalize_P
 
 
 end module FieldSet_BM__Form
