@@ -40,6 +40,8 @@ module Measures_F_CC__Form
       ElectronFraction_C
     real ( KDR ), dimension ( : ), allocatable :: &
       Value
+    real ( KDR ), dimension ( : ), allocatable:: &
+      Radius
     type ( QuantityForm ), dimension ( : ), allocatable :: &
       Unit
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -207,6 +209,9 @@ contains
          N_P  =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
          V_P  =>  F_SA_V ( :, F_SA % VELOCITY_U_1 ) )
 
+    !-- Gather spherically averaged fluid fields
+    !   (assume decomposition in spherical shells)
+
     nF   =   4
     T_P  =>  null ( )
     S_P  =>  null ( )
@@ -224,9 +229,6 @@ contains
       nF   =   nF + 1
       Y_P  =>  F_SA_V ( :, F_SA % ELECTRON_FRACTION )
     end select !-- F_SA
-
-    !-- Gather spherically averaged density and velocity
-    !   (assume decomposition in spherical shells)
 
     if ( .not. allocated ( CO ) ) then
       allocate ( CO )
@@ -281,9 +283,12 @@ contains
       end associate   !-- nCBG_V
     end do !-- iB
 
+    if ( .not. allocated ( M % Radius ) ) &
+      allocate ( M % Radius ( nC ) )
+    M % Radius  =  R
+
     associate &
-      (  UF        =>  M % Units_F, &
-          V_Max    =>  M % VelocityMax, &
+      (   V_Max    =>  M % VelocityMax, &
           R_V_Max  =>  M % Radius_V_Max, &
           B_V_Max  =>  M % Baryons_V_Max, &
           M_V_Max  =>  M % Mass_V_Max, &
@@ -350,9 +355,9 @@ contains
 
     !-- Cleanup
 
-    end associate !-- UF, etc.
+    end associate !-- V_Max, etc.
     end associate !-- nGL, etc.
-    end associate !-- C_SA
+    end associate !-- C_SA, etc.
     end select !-- A_SA
     end select !-- G_SA
     end select !-- F_SA
@@ -371,6 +376,9 @@ contains
       deallocate ( M % Unit )
     if ( allocated ( M % Value ) ) &
       deallocate ( M % Value )
+    if ( allocated ( M % Radius ) ) &
+      deallocate ( M % Radius )
+
     if ( allocated ( CO ) ) &
       deallocate ( CO )    
 
