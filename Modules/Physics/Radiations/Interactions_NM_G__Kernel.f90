@@ -684,7 +684,7 @@ contains
 
   module procedure Compute_S_N_A_A_Kernel
 
-    !-- Compute_Scattering_Nucleons_All_Nuclei
+    !-- Compute_Scattering_Nucleons_Nuclei_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -692,7 +692,7 @@ contains
     real ( KDR ) :: &
       SqrtTiny, &
       Pi, &
-      G_F, Sin_2_Theta_W, g_A, Sin_2_Theta_W, amu, &
+      G_F, Sin_2_Theta_W, g_A, amu, &
       Factor_n, Factor_p, Factor_A, &
       N_p, N_n, N_A, &
       Fermi_3_nu, Fermi_5_nu!, &
@@ -794,12 +794,12 @@ contains
 
   module procedure Compute_S_N_A_S_Kernel
 
-    !-- Compute_Scattering_Nucleons_Single_Nuclei
+    !-- Compute_Scattering_Nucleons_Nuclei_Single_Kernel
 
     real ( KDR ) :: &
       SqrtTiny, &
       Pi, &
-      G_F, Sin_2_Theta_W, g_A, Sin_2_Theta_W, amu, &
+      G_F, Sin_2_Theta_W, g_A, amu, &
       Factor_n, Factor_p, Factor_A, &
       N_p, N_n, N_A, &
       Fermi_3_nu, Fermi_5_nu!, &
@@ -820,28 +820,139 @@ contains
     Factor_n  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
                  *  ( 1. / 4.  +  5. / 4. * g_A ** 2 )
 
-      Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
-                   *  (    A ( iV )  *  ( 1. / 2.  -  2. * Sin_2_Theta_W ) &
-                        -  Z ( iV )  *  ( 1.  -  2. * Sin_2_Theta_W ) ) ** 2  
+    Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
+                 *  (    A ( iV )  *  ( 1. / 2.  -  2. * Sin_2_Theta_W ) &
+                      -  Z ( iV )  *  ( 1.  -  2. * Sin_2_Theta_W ) ) ** 2  
 
-      N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
-      N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
-      N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
-              /  ( max ( A ( iV ), SqrtTiny ) * amu )
+    N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+    N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+    N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+            /  ( max ( A ( iV ), SqrtTiny ) * amu )
 
-      ! call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
-      !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-      ! call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
-      !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-      Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
-      Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+    ! call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    ! call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+    Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
 
-      Chi_H ( iV )  &
-        =  Chi_H ( iV )  &
-           +  ( Factor_p * N_p  +  Factor_n * N_n  +  Factor_A * N_A )  &
-              *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+    Chi_H ( iV )  &
+      =  Chi_H ( iV )  &
+         +  ( Factor_p * N_p  +  Factor_n * N_n  +  Factor_A * N_A )  &
+            *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
 
   end procedure Compute_S_N_A_S_Kernel
+
+
+  module procedure Compute_P_A_Kernel
+
+    !-- Compute_Pair_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Pi, G_F, Sin_2_Theta_W, Factor, RhoMax, &
+      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Xi_J )
+
+    Pi             =  CONSTANT % PI
+    G_F            =  CONSTANT % FERMI_COUPLING
+    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
+
+    Factor  =  nSpecies * G_F ** 2  /  ( 9.  *  Pi ** 5 )  &
+               *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
+                        +  8. * Sin_2_Theta_W ** 2 )
+
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( Pi, G_F, Sin_2_Theta_W, Factor, RhoMax ) &
+      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP )
+      do iV = 1, nV
+        if ( M ( iV )  *  N ( iV )  <  RhoMax ) then
+
+          Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+          Xi_J ( iV )  &
+            =  Xi_J ( iV )  &
+               +  Factor  *  T ( iV ) ** 9  &
+                  *  ( Fermi_3_eM * Fermi_4_eP  +  Fermi_3_eP * Fermi_4_eM )
+
+        end if
+      end do !-- iV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( Pi, G_F, Sin_2_Theta_W, Factor, RhoMax ) &
+      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP )
+      do iV = 1, nV
+        if ( M ( iV )  *  N ( iV )  <  RhoMax ) then
+
+          Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+          Xi_J ( iV )  &
+            =  Xi_J ( iV )  &
+               +  Factor  *  T ( iV ) ** 9  &
+                  *  ( Fermi_3_eM * Fermi_4_eP  +  Fermi_3_eP * Fermi_4_eM )
+
+        end if
+      end do !-- iV
+      !$OMP end parallel do
+    end if
+   
+  end procedure Compute_P_A_Kernel
+
+
+  module procedure Compute_P_S_Kernel
+
+    !-- Compute_Pair_Single_Kernel
+
+    real ( KDR ) :: &
+      Pi, G_F, Sin_2_Theta_W, Factor, RhoMax, &
+      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP
+          
+    Pi             =  CONSTANT % PI
+    G_F            =  CONSTANT % FERMI_COUPLING
+    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
+
+    Factor  =  nSpecies * G_F ** 2  /  ( 9.  *  Pi ** 5 )  &
+               *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
+                        +  8. * Sin_2_Theta_W ** 2 )
+
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+
+    if ( M ( iV )  *  N ( iV )  <  RhoMax ) then
+
+      Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+      Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+      Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+      Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+      Xi_J ( iV )  &
+        =  Xi_J ( iV )  &
+           +  Factor  *  T ( iV ) ** 9  &
+              *  ( Fermi_3_eM * Fermi_4_eP  +  Fermi_3_eP * Fermi_4_eM )
+
+    end if
+   
+  end procedure Compute_P_S_Kernel
 
 
   function Fermi_2 ( Eta ) result ( F_2 )

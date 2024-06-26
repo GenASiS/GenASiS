@@ -48,6 +48,7 @@ module Interactions_NM_G__Form
                  J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_All_Kernel
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
@@ -62,6 +63,7 @@ module Interactions_NM_G__Form
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
         !-- Compute_EmissionAbsorption_Electron_Single_Kernel
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
@@ -77,6 +79,7 @@ module Interactions_NM_G__Form
                  J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_Bar_All_Kernel
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
@@ -91,6 +94,7 @@ module Interactions_NM_G__Form
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, iV )
         !-- Compute_EmissionAbsorption_Electron_Bar_Single_Kernel
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
@@ -104,7 +108,8 @@ module Interactions_NM_G__Form
       module subroutine Compute_S_N_A_A_Kernel &
                ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
                  UseDeviceOption )
-        !-- Compute_Scattering_Nucleons_All_Nuclei
+        !-- Compute_Scattering_Nucleons_Nuclei_All_Kernel
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -116,7 +121,8 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_S_N_A_S_Kernel &
                ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
-        !-- Compute_Scattering_Nucleons_Single_Nuclei
+        !-- Compute_Scattering_Nucleons_Nuclei_Single_Kernel
+        implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -125,6 +131,35 @@ module Interactions_NM_G__Form
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Compute_S_N_A_S_Kernel
+
+      module subroutine Compute_P_A_Kernel &
+               ( Xi_J, M, N, T, Mu_e, Sign, nSpecies, UseDeviceOption )
+        !-- Compute_Pair_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign, &
+          nSpecies
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_P_A_Kernel
+
+      module subroutine Compute_P_S_Kernel &
+               ( Xi_J, M, N, T, Mu_e, Sign, nSpecies, iV )
+        !-- Compute_Pair_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign, &
+          nSpecies, &
+          iV
+      end subroutine Compute_P_S_Kernel
 
     end interface
 
@@ -318,6 +353,15 @@ contains
              ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
                UseDeviceOption = I % DeviceMemory )
 
+      !-- Pair emission
+
+      select case ( trim ( R % RadiationType ) )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
+        call Compute_P_A_Kernel &
+               ( Xi_J, M, N, T, Mu_e, Sign = +1, nSpecies = 1, &
+                 UseDeviceOption = I % DeviceMemory )
+      end select !-- RadiationType
+
       end associate !-- Xi_J, etc.
       end associate !-- FV, etc.
     end do !-- iC
@@ -399,6 +443,14 @@ integer ( KDI ) :: &
 
     call Compute_S_N_A_S_Kernel &
            ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
+
+    !-- Pair emission
+
+    select case ( trim ( R % RadiationType ) )
+    case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
+      call Compute_P_S_Kernel &
+             ( Xi_J, M, N, T, Mu_e, Sign = +1, nSpecies = 1, iV = iV )
+    end select !-- RadiationType
 
     end associate !-- Xi_J, etc.
     end associate !-- FV, etc.
