@@ -46,6 +46,7 @@ contains
     do iV = 1, nV
       if ( ProperCell ( iV ) ) then      
 
+!call Show ( iV, '>>> iV' )
         !-- Iterate radiation and fluid energy and number to convergence
 
         J_Eq_E_0   =  J_Eq_E  ( iV )
@@ -124,6 +125,7 @@ contains
 
             iI  =  iI + 1
 
+!call Show ( iI, '>>> iI' )
             !-- Compute interactions
 
             call I_E  % Compute ( iC, iV )

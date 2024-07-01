@@ -143,12 +143,12 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
-        Chi_J ( iV )  =  Xi / J_eq ( iV )
+        Chi_J ( iV )  =  Xi / J_Eq ( iV )
 
         !--- Momentum
 
          Xi_H ( iV )  =  0.0_KDR
-        Chi_H ( iV )  =  Xi / J_eq ( iV )
+        Chi_H ( iV )  =  Xi / J_Eq ( iV )
 
         !-- Number
 
@@ -169,7 +169,7 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
-        Chi_N ( iV )  =  Xi / N_eq ( iV )
+        Chi_N ( iV )  =  Xi / N_Eq ( iV )
 
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -259,12 +259,12 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
-        Chi_J ( iV )  =  Xi / J_eq ( iV )
+        Chi_J ( iV )  =  Xi / J_Eq ( iV )
 
         !--- Momentum
 
          Xi_H ( iV )  =  0.0_KDR
-        Chi_H ( iV )  =  Xi / J_eq ( iV )
+        Chi_H ( iV )  =  Xi / J_Eq ( iV )
 
         !-- Number
 
@@ -285,7 +285,7 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
-        Chi_N ( iV )  =  Xi / N_eq ( iV )
+        Chi_N ( iV )  =  Xi / N_Eq ( iV )
 
       end do
       !$OMP end parallel do
@@ -402,12 +402,12 @@ contains
     Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
      Xi_J ( iV )  =  Xi
-    Chi_J ( iV )  =  Xi / J_eq ( iV )
+    Chi_J ( iV )  =  Xi / J_Eq ( iV )
 
     !--- Momentum
 
      Xi_H ( iV )  =  0.0_KDR
-    Chi_H ( iV )  =  Xi / J_eq ( iV )
+    Chi_H ( iV )  =  Xi / J_Eq ( iV )
 
     !-- Number
 
@@ -428,7 +428,7 @@ contains
     Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
      Xi_N ( iV )  =  Xi
-    Chi_N ( iV )  =  Xi / N_eq ( iV )
+    Chi_N ( iV )  =  Xi / N_Eq ( iV )
 
   end procedure Compute_EA_E_S_Kernel
 
@@ -510,12 +510,12 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
-        Chi_J ( iV )  =  Xi / J_eq ( iV )
+        Chi_J ( iV )  =  Xi / J_Eq ( iV )
 
         !--- Momentum
 
          Xi_H ( iV )  =  0.0_KDR
-        Chi_H ( iV )  =  Xi / J_eq ( iV )
+        Chi_H ( iV )  =  Xi / J_Eq ( iV )
 
         !-- Number
 
@@ -529,7 +529,7 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
-        Chi_N ( iV )  =  Xi / N_eq ( iV )
+        Chi_N ( iV )  =  Xi / N_Eq ( iV )
 
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -574,12 +574,12 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_J ( iV )  =  Xi
-        Chi_J ( iV )  =  Xi / J_eq ( iV )
+        Chi_J ( iV )  =  Xi / J_Eq ( iV )
 
         !--- Momentum
 
          Xi_H ( iV )  =  0.0_KDR
-        Chi_H ( iV )  =  Xi / J_eq ( iV )
+        Chi_H ( iV )  =  Xi / J_Eq ( iV )
 
         !-- Number
 
@@ -593,7 +593,7 @@ contains
         Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
          Xi_N ( iV )  =  Xi
-        Chi_N ( iV )  =  Xi / N_eq ( iV )
+        Chi_N ( iV )  =  Xi / N_Eq ( iV )
 
       end do
       !$OMP end parallel do
@@ -658,12 +658,12 @@ contains
       Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
        Xi_J ( iV )  =  Xi
-      Chi_J ( iV )  =  Xi / J_eq ( iV )
+      Chi_J ( iV )  =  Xi / J_Eq ( iV )
 
       !--- Momentum
 
        Xi_H ( iV )  =  0.0_KDR
-      Chi_H ( iV )  =  Xi / J_eq ( iV )
+      Chi_H ( iV )  =  Xi / J_Eq ( iV )
 
       !-- Number
 
@@ -677,9 +677,176 @@ contains
       Xi  =  Xi  *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
        Xi_N ( iV )  =  Xi
-      Chi_N ( iV )  =  Xi / N_eq ( iV )
+      Chi_N ( iV )  =  Xi / N_Eq ( iV )
 
   end procedure Compute_EA_E_Bar_S_Kernel
+
+
+  module procedure Compute_P_A_Kernel
+
+    !-- Compute_Pair_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Pi, G_F, Sin_2_Theta_W, Factor, RhoMin, RhoMax, &
+      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, Xi
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Xi_J )
+
+    Pi             =  CONSTANT % PI
+    G_F            =  CONSTANT % FERMI_COUPLING
+    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
+
+    Factor  =  nSpecies * G_F ** 2  /  ( 9.  *  Pi ** 5 )  &
+               *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
+                        +  8. * Sin_2_Theta_W ** 2 )
+
+    RhoMin  =  1.0e6_KDR  * UNIT % MASS_DENSITY_CGS
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( Pi, G_F, Sin_2_Theta_W, Factor, RhoMin, RhoMax ) &
+      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, Xi )
+      do iV = 1, nV
+        if (       M ( iV )  *  N ( iV )  >  RhoMin ) then !&
+!             .and. M ( iV )  *  N ( iV )  <  RhoMax ) &
+!        then
+
+          Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+          !--- Energy
+
+          Xi  =  Factor  *  T ( iV ) ** 9  &
+                 *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
+                            +  Fermi_3_eP * Fermi_4_eM )
+
+           Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
+          Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
+
+          !--- Momentum
+
+          Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
+
+          !--- Number
+
+          Xi  =  Factor  *  T ( iV ) ** 8  &
+                 *  Fermi_3_eM * Fermi_3_eP
+
+           Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
+          Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
+
+        end if
+      end do !-- iV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( Pi, G_F, Sin_2_Theta_W, Factor, RhoMin, RhoMax ) &
+      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, Xi )
+      do iV = 1, nV
+        if (       M ( iV )  *  N ( iV )  >  RhoMin ) then !&
+!             .and. M ( iV )  *  N ( iV )  <  RhoMax ) &
+!        then
+
+          Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+          Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+          Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+          !--- Energy
+
+          Xi  =  Factor  *  T ( iV ) ** 9  &
+                 *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
+                            +  Fermi_3_eP * Fermi_4_eM )
+
+           Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
+          Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
+
+          !--- Momentum
+
+          Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
+
+          !--- Number
+
+          Xi  =  Factor  *  T ( iV ) ** 8  &
+                 *  Fermi_3_eM * Fermi_3_eP
+
+           Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
+          Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
+
+        end if
+      end do !-- iV
+      !$OMP end parallel do
+    end if
+   
+  end procedure Compute_P_A_Kernel
+
+
+  module procedure Compute_P_S_Kernel
+
+    !-- Compute_Pair_Single_Kernel
+
+    real ( KDR ) :: &
+      Pi, G_F, Sin_2_Theta_W, Factor, RhoMin, RhoMax, &
+      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, Xi
+          
+    Pi             =  CONSTANT % PI
+    G_F            =  CONSTANT % FERMI_COUPLING
+    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
+
+    Factor  =  nSpecies * G_F ** 2  /  ( 9.  *  Pi ** 5 )  &
+               *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
+                        +  8. * Sin_2_Theta_W ** 2 )
+
+    RhoMin  =  1.0e7_KDR  * UNIT % MASS_DENSITY_CGS
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+
+   if (       M ( iV )  *  N ( iV )  >  RhoMin ) then!&
+!         .and. M ( iV )  *  N ( iV )  <  RhoMax ) &
+!    then
+
+      Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+      Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+      Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+      Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+      !--- Energy
+
+      Xi  =  Factor  *  T ( iV ) ** 9  &
+             *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
+                        +  Fermi_3_eP * Fermi_4_eM )
+
+       Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
+      Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
+
+      !--- Momentum
+
+      Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
+
+      !--- Number
+
+      Xi  =  Factor  *  T ( iV ) ** 8  &
+             *  Fermi_3_eM * Fermi_3_eP
+
+       Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
+      Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
+
+    end if
+   
+  end procedure Compute_P_S_Kernel
 
 
   module procedure Compute_S_N_A_A_Kernel
@@ -842,117 +1009,6 @@ contains
             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
 
   end procedure Compute_S_N_A_S_Kernel
-
-
-  module procedure Compute_P_A_Kernel
-
-    !-- Compute_Pair_All_Kernel
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    real ( KDR ) :: &
-      Pi, G_F, Sin_2_Theta_W, Factor, RhoMax, &
-      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP
-    logical ( KDL ) :: &
-      UseDevice      
-          
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-      
-    nV  =  size ( Xi_J )
-
-    Pi             =  CONSTANT % PI
-    G_F            =  CONSTANT % FERMI_COUPLING
-    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
-
-    Factor  =  nSpecies * G_F ** 2  /  ( 9.  *  Pi ** 5 )  &
-               *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
-                        +  8. * Sin_2_Theta_W ** 2 )
-
-    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
-
-    if ( UseDevice ) then
-      !$OMP OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP shared ( Pi, G_F, Sin_2_Theta_W, Factor, RhoMax ) &
-      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP )
-      do iV = 1, nV
-        if ( M ( iV )  *  N ( iV )  <  RhoMax ) then
-
-          Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
-          Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
-          Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
-          Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
-
-          Xi_J ( iV )  &
-            =  Xi_J ( iV )  &
-               +  Factor  *  T ( iV ) ** 9  &
-                  *  ( Fermi_3_eM * Fermi_4_eP  +  Fermi_3_eP * Fermi_4_eM )
-
-        end if
-      end do !-- iV
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    else
-      !$OMP parallel do &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP shared ( Pi, G_F, Sin_2_Theta_W, Factor, RhoMax ) &
-      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP )
-      do iV = 1, nV
-        if ( M ( iV )  *  N ( iV )  <  RhoMax ) then
-
-          Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
-          Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
-          Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
-          Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
-
-          Xi_J ( iV )  &
-            =  Xi_J ( iV )  &
-               +  Factor  *  T ( iV ) ** 9  &
-                  *  ( Fermi_3_eM * Fermi_4_eP  +  Fermi_3_eP * Fermi_4_eM )
-
-        end if
-      end do !-- iV
-      !$OMP end parallel do
-    end if
-   
-  end procedure Compute_P_A_Kernel
-
-
-  module procedure Compute_P_S_Kernel
-
-    !-- Compute_Pair_Single_Kernel
-
-    real ( KDR ) :: &
-      Pi, G_F, Sin_2_Theta_W, Factor, RhoMax, &
-      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP
-          
-    Pi             =  CONSTANT % PI
-    G_F            =  CONSTANT % FERMI_COUPLING
-    Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG
-
-    Factor  =  nSpecies * G_F ** 2  /  ( 9.  *  Pi ** 5 )  &
-               *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
-                        +  8. * Sin_2_Theta_W ** 2 )
-
-    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
-
-    if ( M ( iV )  *  N ( iV )  <  RhoMax ) then
-
-      Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
-      Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
-      Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
-      Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
-
-      Xi_J ( iV )  &
-        =  Xi_J ( iV )  &
-           +  Factor  *  T ( iV ) ** 9  &
-              *  ( Fermi_3_eM * Fermi_4_eP  +  Fermi_3_eP * Fermi_4_eM )
-
-    end if
-   
-  end procedure Compute_P_S_Kernel
 
 
   function Fermi_2 ( Eta ) result ( F_2 )

@@ -240,6 +240,7 @@ integer ( KDI ) :: &
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
     call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
 
+!call Show ( iS, '>>> iS' )
     associate &
       (  S_R  =>  S % Step_CS_1D ( : ), &
          S_F  =>  S % Step_CS, &

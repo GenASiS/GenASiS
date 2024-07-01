@@ -45,7 +45,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
+                 J_Eq, N_Eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_All_Kernel
         implicit none
@@ -53,7 +53,7 @@ module Interactions_NM_G__Form
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_eq, N_eq, F_Ave, &
+          J_Eq, N_Eq, F_Ave, &
           M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -61,14 +61,14 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_S_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
+                 J_Eq, N_Eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
         !-- Compute_EmissionAbsorption_Electron_Single_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_eq, N_eq, F_Ave, &
+          J_Eq, N_Eq, F_Ave, &
           M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p
         integer ( KDI ), intent ( in ) :: &
           iV
@@ -76,7 +76,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_Bar_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
+                 J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_Electron_Bar_All_Kernel
         implicit none
@@ -84,7 +84,7 @@ module Interactions_NM_G__Form
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_eq, N_eq, F_Ave, &
+          J_Eq, N_Eq, F_Ave, &
           M, N, T, X_n, Mu_e
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -92,18 +92,53 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_Bar_S_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, iV )
+                 J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, iV )
         !-- Compute_EmissionAbsorption_Electron_Bar_Single_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_eq, N_eq, F_Ave, &
+          J_Eq, N_Eq, F_Ave, &
           M, N, T, X_n, Mu_e
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Compute_EA_E_Bar_S_Kernel
+
+      module subroutine Compute_P_A_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign, nSpecies, UseDeviceOption )
+        !-- Compute_Pair_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, N_Eq, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign, &
+          nSpecies
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_P_A_Kernel
+
+      module subroutine Compute_P_S_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign, nSpecies, iV )
+        !-- Compute_Pair_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, N_Eq, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign, &
+          nSpecies, &
+          iV
+      end subroutine Compute_P_S_Kernel
 
       module subroutine Compute_S_N_A_A_Kernel &
                ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
@@ -131,35 +166,6 @@ module Interactions_NM_G__Form
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Compute_S_N_A_S_Kernel
-
-      module subroutine Compute_P_A_Kernel &
-               ( Xi_J, M, N, T, Mu_e, Sign, nSpecies, UseDeviceOption )
-        !-- Compute_Pair_All_Kernel
-        implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          Xi_J
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          M, N, T, Mu_e
-        integer ( KDI ), intent ( in ) :: &
-          Sign, &
-          nSpecies
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine Compute_P_A_Kernel
-
-      module subroutine Compute_P_S_Kernel &
-               ( Xi_J, M, N, T, Mu_e, Sign, nSpecies, iV )
-        !-- Compute_Pair_Single_Kernel
-        implicit none
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          Xi_J
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          M, N, T, Mu_e
-        integer ( KDI ), intent ( in ) :: &
-          Sign, &
-          nSpecies, &
-          iV
-      end subroutine Compute_P_S_Kernel
 
     end interface
 
@@ -338,29 +344,30 @@ contains
       case ( 'NEUTRINOS_E' )
         call Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
+                 J_Eq, N_Eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption = I % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
         call Compute_EA_E_Bar_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, &
+                 J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
              
-      !-- Elastic scattering on nucleons and nuclei
-
-      call Compute_S_N_A_A_Kernel &
-             ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
-               UseDeviceOption = I % DeviceMemory )
-
       !-- Pair emission
 
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
         call Compute_P_A_Kernel &
-               ( Xi_J, M, N, T, Mu_e, Sign = +1, nSpecies = 1, &
-                 UseDeviceOption = I % DeviceMemory )
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign = +1, nSpecies = 1, UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
+
+      !-- Elastic scattering on nucleons and nuclei
+
+      call Compute_S_N_A_A_Kernel &
+             ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
+               UseDeviceOption = I % DeviceMemory )
 
       end associate !-- Xi_J, etc.
       end associate !-- FV, etc.
@@ -390,9 +397,6 @@ integer ( KDI ) :: &
       class is ( NeutrinoMoments_G_Form )
     select type ( F  =>  I % Fluid )
       class is ( Fluid_P_HN_Form )
-
-    call R % ComputeSpectralParameters ( iC, iV )
-    call R % ComputeEquilibrium ( iC, iV )
 
     associate &
       ( I_V  =>  I % Storage ( iC ) % Value, &
@@ -426,31 +430,61 @@ integer ( KDI ) :: &
 !   call Show ( Eta_Nu ( iV ), '>>> Eta_Nu' )
 ! end if
 
+! call Show ( R % RadiationType, '>>> Type' )
+
+! call Show ( Eta_Nu ( iV ), '>>> Eta_Nu entry' ) 
+! call Show ( T_Nu ( iV ), '>>> T_Nu entry' )
+
+    call R % ComputeSpectralParameters ( iC, iV )
+    call R % ComputeEquilibrium ( iC, iV )
+
+! associate &
+!   ( E_Nu  =>  R_V ( :, R % ENERGY_DENSITY_C ), &
+!     N_Nu  =>  R_V ( :, R % NUMBER_DENSITY_C ) )
+! call Show ( E_Nu ( iV ), '>>> E_Nu' )
+! call Show ( N_Nu ( iV ), '>>> N_Nu' )
+! call Show ( Eta_Nu ( iV ), '>>> Eta_Nu' ) 
+! call Show ( T_Nu ( iV ), '>>> T_Nu' )
+! end associate !-- E_Nu, etc.
+
     !-- Emission / Absorption
 
     select case ( trim ( R % RadiationType ) )
     case ( 'NEUTRINOS_E' )
       call Compute_EA_E_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-               J_eq, N_eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
+               J_Eq, N_Eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
     case ( 'NEUTRINOS_E_BAR' )
       call Compute_EA_E_Bar_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-               J_eq, N_eq, F_Ave, M, N, T, X_n, Mu_e, iV )
+               J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, iV )
     end select !-- RadiationType
+! call Show ( Xi_J ( iV ), '>>> Xi_J after EA' )
+! call Show ( Xi_N ( iV ), '>>> Xi_N after EA' )
+! call Show ( Chi_J ( iV ), '>>> Chi_J after EA' )
+! call Show ( Chi_N ( iV ), '>>> Chi_N after EA' )
+! call Show ( Chi_H ( iV ), '>>> Chi_H after EA' )
            
-    !-- Elastic scattering on nucleons and nuclei
-
-    call Compute_S_N_A_S_Kernel &
-           ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
-
     !-- Pair emission
 
     select case ( trim ( R % RadiationType ) )
     case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
       call Compute_P_S_Kernel &
-             ( Xi_J, M, N, T, Mu_e, Sign = +1, nSpecies = 1, iV = iV )
+             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+               J_Eq, N_Eq, M, N, T, Mu_e, &
+               Sign = +1, nSpecies = 1, iV = iV )
+! call Show ( Xi_J ( iV ), '>>> Xi_J after P' )
+! call Show ( Xi_N ( iV ), '>>> Xi_N after P' )
+! call Show ( Chi_J ( iV ), '>>> Chi_J after P' )
+! call Show ( Chi_N ( iV ), '>>> Chi_N after P' )
+! call Show ( Chi_H ( iV ), '>>> Chi_H after P' )
     end select !-- RadiationType
+
+    !-- Elastic scattering on nucleons and nuclei
+
+    call Compute_S_N_A_S_Kernel &
+           ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
+! call Show ( Chi_H ( iV ), '>>> Chi_H after ISO' )
 
     end associate !-- Xi_J, etc.
     end associate !-- FV, etc.
