@@ -869,6 +869,13 @@ contains
       return
 
     Eta_Eq  =  Sign  *  ( Mu_E ( iV )  -  Mu_NP ( iV ) )  /  T ( iV )
+
+! Eta_Eq  =  min ( Eta_Eq,   50.0_KDR )
+! Eta_Eq  =  max ( Eta_Eq, - 50.0_KDR )
+! call Show ( Mu_E ( iV ), '>>> Mu_E' )
+! call Show ( Mu_NP ( iV ), '>>> Mu_NP' )
+! call Show ( T ( iV ), '>>> T' )
+! call Show ( Eta_Eq, '>>> Eta_Eq' )
     
     ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
     !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -877,8 +884,14 @@ contains
     F_2_Eq  =  Fermi_2 ( Eta_Eq )
     F_3_Eq  =  Fermi_3 ( Eta_Eq )
 
+!call Show ( F_2_Eq, '>>> F_2_Eq' )
+!call Show ( F_3_Eq, '>>> F_3_Eq' )
+
     N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
     J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
+
+!call Show ( N_Eq ( iV ), '>>> N_Eq' )
+!call Show ( J_Eq ( iV ), '>>> J_Eq' )
 
     N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
                      /  max ( SqrtTiny, N_Eq ( iV ) )
