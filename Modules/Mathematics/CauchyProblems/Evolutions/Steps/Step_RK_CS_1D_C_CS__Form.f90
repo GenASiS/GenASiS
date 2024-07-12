@@ -325,6 +325,12 @@ contains
       ( Y_I_CS  =>  S_CS % Intermediate, &
         KK_CS   =>  S_CS % SlopeStageImplicit ( iS ) % Element )
 
+    !-- Coarsening
+
+    if ( associated ( S_CS % Coarsening ) ) then
+      call S_CS % Coarsening % Compute ( KK_CS )
+    end if
+
     !-- Assume SlopeImplicit local: no ghost exchange in implicit solve 
     call KK_CS % ExchangeGhostData ( )
 
@@ -345,6 +351,12 @@ contains
       associate &
         ( Y_I_CS_1D  =>  S_CS_1D ( iCS ) % Intermediate, &
            KK_CS_1D  =>  S_CS_1D ( iCS ) % SlopeStageImplicit ( iS ) % Element )
+
+      !-- Coarsening
+
+      if ( associated ( S_CS_1D ( iCS ) % Coarsening ) ) then
+        call S_CS_1D ( iCS ) % Coarsening % Compute ( KK_CS_1D )
+      end if
 
       !-- Assume SlopeImplicit local: no ghost exchange in implicit solve 
       call KK_CS_1D % ExchangeGhostData ( )
