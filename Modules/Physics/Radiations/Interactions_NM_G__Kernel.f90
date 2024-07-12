@@ -709,8 +709,8 @@ contains
                *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
                         +  8. * Sin_2_Theta_W ** 2 )
 
-    RhoMin  =  1.0e6_KDR  * UNIT % MASS_DENSITY_CGS
-    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+    RhoMin  =  0.0_KDR  * UNIT % MASS_DENSITY_CGS
+    RhoMax  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
 
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
@@ -733,20 +733,23 @@ contains
                  *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
                             +  Fermi_3_eP * Fermi_4_eM )
 
-           Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
-          Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
+          Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
+          if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+            Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
 
           !--- Momentum
 
-          Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
+          if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+            Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
 
           !--- Number
 
           Xi  =  Factor  *  T ( iV ) ** 8  &
                  *  Fermi_3_eM * Fermi_3_eP
 
-           Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
-          Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
+          Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
+          if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+            Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
 
         end if
       end do !-- iV
@@ -772,20 +775,23 @@ contains
                  *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
                             +  Fermi_3_eP * Fermi_4_eM )
 
-           Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
-          Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
+          Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
+          if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+            Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
 
           !--- Momentum
 
-          Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
+          if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+            Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
 
           !--- Number
 
           Xi  =  Factor  *  T ( iV ) ** 8  &
                  *  Fermi_3_eM * Fermi_3_eP
 
-           Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
-          Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
+          Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
+          if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+            Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
 
         end if
       end do !-- iV
@@ -811,8 +817,8 @@ contains
                *  ( 1.  +  Sign * 4. * Sin_2_Theta_W  &
                         +  8. * Sin_2_Theta_W ** 2 )
 
-    RhoMin  =  1.0e7_KDR  * UNIT % MASS_DENSITY_CGS
-    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+    RhoMin  =  0.0_KDR  * UNIT % MASS_DENSITY_CGS
+    RhoMax  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
 
    if (       M ( iV )  *  N ( iV )  >  RhoMin ) then!&
 !         .and. M ( iV )  *  N ( iV )  <  RhoMax ) &
@@ -829,20 +835,23 @@ contains
              *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
                         +  Fermi_3_eP * Fermi_4_eM )
 
-       Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
-      Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
+      Xi_J ( iV )  =   Xi_J ( iV )  +  Xi
+      if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+        Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_Eq ( iV )
 
       !--- Momentum
 
-      Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
+      if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+        Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_Eq ( iV )
 
       !--- Number
 
       Xi  =  Factor  *  T ( iV ) ** 8  &
              *  Fermi_3_eM * Fermi_3_eP
 
-       Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
-      Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
+      Xi_N ( iV )  =   Xi_N ( iV )  +  Xi
+      if ( M ( iV )  *  N ( iV )  >  RhoMax ) &
+        Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_Eq ( iV )
 
     end if
    
