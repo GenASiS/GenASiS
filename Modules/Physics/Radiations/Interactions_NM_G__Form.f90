@@ -361,6 +361,11 @@ contains
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_Eq, N_Eq, M, N, T, Mu_e, &
                  Sign = +1, nSpecies = 1, UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_X' )
+        call Compute_P_A_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign = -1, nSpecies = 4, UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
 
       !-- Elastic scattering on nucleons and nuclei
@@ -473,6 +478,11 @@ integer ( KDI ) :: &
              ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                J_Eq, N_Eq, M, N, T, Mu_e, &
                Sign = +1, nSpecies = 1, iV = iV )
+    case ( 'NEUTRINOS_X' )
+      call Compute_P_S_Kernel &
+             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+               J_Eq, N_Eq, M, N, T, Mu_e, &
+               Sign = -1, nSpecies = 4, iV = iV )
 ! call Show ( Xi_J ( iV ), '>>> Xi_J after P' )
 ! call Show ( Xi_N ( iV ), '>>> Xi_N after P' )
 ! call Show ( Chi_J ( iV ), '>>> Chi_J after P' )

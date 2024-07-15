@@ -769,9 +769,9 @@ contains
   end procedure Compute_SP_S_Kernel
 
 
-  module procedure Compute_Eq_A_Kernel
+  module procedure Compute_Eq_E_A_Kernel
 
-    !-- Compute_Equilibrium_All_Kernel
+    !-- Compute_Equilibrium_E_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -841,12 +841,12 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure Compute_Eq_A_Kernel
+  end procedure Compute_Eq_E_A_Kernel
 
 
-  module procedure Compute_Eq_S_Kernel
+  module procedure Compute_Eq_E_S_Kernel
 
-    !-- Compute_Equilibrium_Single_Kernel
+    !-- Compute_Equilibrium_E_Single_Kernel
 
     real ( KDR ) :: &
       SqrtTiny, &
@@ -898,7 +898,133 @@ contains
     J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
                      /  max ( SqrtTiny, J_Eq ( iV ) )
 
-  end procedure Compute_Eq_S_Kernel
+  end procedure Compute_Eq_E_S_Kernel
+
+
+  module procedure Compute_Eq_X_A_Kernel
+
+    !-- Compute_Equilibrium_X_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      SqrtTiny, &
+      TwoPi, FourPi, & 
+      Factor_J_N, &
+      F_2_Eq, F_3_Eq!, &
+!      fdeta, fdeta2, &
+!      fdtheta, fdtheta2, &
+!      fdetadtheta
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( J_Eq )
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+     TwoPi  =  2.0_KDR  *  Pi
+    FourPi  =  4.0_KDR  *  Pi
+
+    Factor_J_N   =  nSpecies  *  FourPi  /  TwoPi ** 3
+
+    if ( UseDevice ) then
+    !   !$OMP OMP_TARGET_DIRECTIVE parallel do &
+    !   !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+    !   !$OMP shared ( a )
+    !   do iV = 1, nV
+    !     J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+    !   end do
+    !   !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP shared ( SqrtTiny, Factor_J_N ) &
+      !$OMP private ( F_2_Eq, F_3_Eq ) !&
+ !     !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      do iV = 1, nV
+
+        if ( T ( iV )  <=  0.0_KDR ) &
+          cycle
+
+        ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, F_3_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        F_2_Eq  =  Fermi_2 ( 0.0_KDR )
+        F_3_Eq  =  Fermi_3 ( 0.0_KDR )
+
+        N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
+        J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
+
+        N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, N_Eq ( iV ) )
+        J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, J_Eq ( iV ) )
+
+      end do
+      !$OMP end parallel do
+    end if
+
+  end procedure Compute_Eq_X_A_Kernel
+
+
+  module procedure Compute_Eq_X_S_Kernel
+
+    !-- Compute_Equilibrium_X_Single_Kernel
+
+    real ( KDR ) :: &
+      SqrtTiny, &
+      TwoPi, FourPi, & 
+      Factor_J_N, &
+      F_2_Eq, F_3_Eq!, &
+!      fdeta, fdeta2, &
+!      fdtheta, fdtheta2, &
+!      fdetadtheta
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+     TwoPi  =  2.0_KDR  *  Pi
+    FourPi  =  4.0_KDR  *  Pi
+
+    Factor_J_N   =  nSpecies  *  FourPi  /  TwoPi ** 3
+
+    if ( T ( iV )  <=  0.0_KDR ) &
+      return
+
+! Eta_Eq  =  min ( Eta_Eq,   50.0_KDR )
+! Eta_Eq  =  max ( Eta_Eq, - 50.0_KDR )
+! call Show ( Mu_E ( iV ), '>>> Mu_E' )
+! call Show ( Mu_NP ( iV ), '>>> Mu_NP' )
+! call Show ( T ( iV ), '>>> T' )
+! call Show ( Eta_Eq, '>>> Eta_Eq' )
+    
+    ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    ! call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, F_3_Eq, &
+    !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    F_2_Eq  =  Fermi_2 ( 0.0_KDR )
+    F_3_Eq  =  Fermi_3 ( 0.0_KDR )
+
+!call Show ( F_2_Eq, '>>> F_2_Eq' )
+!call Show ( F_3_Eq, '>>> F_3_Eq' )
+
+    N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
+    J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
+
+!call Show ( N_Eq ( iV ), '>>> N_Eq' )
+!call Show ( J_Eq ( iV ), '>>> J_Eq' )
+
+    N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
+                     /  max ( SqrtTiny, N_Eq ( iV ) )
+    J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                     /  max ( SqrtTiny, J_Eq ( iV ) )
+
+  end procedure Compute_Eq_X_S_Kernel
 
 
 !   subroutine SolveSecant ( LHS, Guess_1, Guess_2, Success, Root )

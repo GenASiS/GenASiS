@@ -61,8 +61,10 @@ module NeutrinoMoments_G__Form
       Compute_J_H_N_G_S_Kernel, &
       Compute_SP_A_Kernel, &
       Compute_SP_S_Kernel, &
-      Compute_Eq_A_Kernel, &
-      Compute_Eq_S_Kernel
+      Compute_Eq_E_A_Kernel, &
+      Compute_Eq_E_S_Kernel, &
+      Compute_Eq_X_A_Kernel, &
+      Compute_Eq_X_S_Kernel
     
     interface
 
@@ -168,10 +170,10 @@ module NeutrinoMoments_G__Form
           iV
       end subroutine Compute_SP_S_Kernel
  
-      module subroutine Compute_Eq_A_Kernel &
+      module subroutine Compute_Eq_E_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, Sign, &
                  UseDeviceOption )
-        !-- Compute_Equilibrium_Single_Kernel
+        !-- Compute_Equilibrium_E_Single_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -185,11 +187,11 @@ module NeutrinoMoments_G__Form
           Sign
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_Eq_A_Kernel
+      end subroutine Compute_Eq_E_A_Kernel
 
-      module subroutine Compute_Eq_S_Kernel &
+      module subroutine Compute_Eq_E_S_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, Sign, iV )
-        !-- Compute_Equilibrium_Single_Kernel
+        !-- Compute_Equilibrium_E_Single_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -203,7 +205,42 @@ module NeutrinoMoments_G__Form
           Sign
         integer ( KDI ), intent ( in ) :: &
           iV
-      end subroutine Compute_Eq_S_Kernel
+      end subroutine Compute_Eq_E_S_Kernel
+
+      module subroutine Compute_Eq_X_A_Kernel &
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, nSpecies, &
+                 UseDeviceOption )
+        !-- Compute_Equilibrium_X_Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq, N_Eq, &
+          J_RD, N_RD
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J, N, &
+          T
+        real ( KDR ), intent ( in ) :: &
+          nSpecies
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_Eq_X_A_Kernel
+
+      module subroutine Compute_Eq_X_S_Kernel &
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, nSpecies, iV )
+        !-- Compute_Equilibrium_X_Single_Kernel
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J_Eq, N_Eq, &
+          J_RD, N_RD
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J, N, &
+          T
+        real ( KDR ), intent ( in ) :: &
+          nSpecies
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_Eq_X_S_Kernel
 
     end interface
 
@@ -740,13 +777,17 @@ contains
 
       select case ( trim ( RM % RadiationType ) )
       case ( 'NEUTRINOS_E' )
-        call Compute_Eq_A_Kernel &
+        call Compute_Eq_E_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                  Sign = +1.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case ( 'NEUTRINOS_E_BAR' )
-        call Compute_Eq_A_Kernel &
+        call Compute_Eq_E_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                  Sign = -1.0_KDR, UseDeviceOption = RM % DeviceMemory )
+      case ( 'NEUTRINOS_X' )
+        call Compute_Eq_X_A_Kernel &
+               ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
+                 nSpecies = 4.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case default
         call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
         call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
@@ -797,11 +838,17 @@ contains
 
     select case ( trim ( RM % RadiationType ) )
     case ( 'NEUTRINOS_E' )
-      call Compute_Eq_S_Kernel &
-             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, +1.0_KDR, iV )
+      call Compute_Eq_E_S_Kernel &
+             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
+               Sign = +1.0_KDR, iV = iV )
     case ( 'NEUTRINOS_E_BAR' )
-      call Compute_Eq_S_Kernel &
-             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, -1.0_KDR, iV )
+      call Compute_Eq_E_S_Kernel &
+             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
+               Sign = -1.0_KDR, iV = iV )
+    case ( 'NEUTRINOS_X' )
+      call Compute_Eq_X_S_Kernel &
+             ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
+               nSpecies = 4.0_KDR, iV = iV )
     case default
       call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
       call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
