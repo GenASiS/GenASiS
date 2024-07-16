@@ -73,10 +73,16 @@ contains
 ! !                               'Neutrinos_E_Bar' ], &
 !              RadiationType = [ 'NEUTRINOS_E    ' ],   &
 ! !                               'NEUTRINOS_E_BAR' ], &
+           ! ( RadiationName = [ 'Neutrinos_E    ',   &
+           !                     'Neutrinos_E_Bar' ], &
+           !   RadiationType = [ 'NEUTRINOS_E    ',   &
+           !                     'NEUTRINOS_E_BAR' ], &
            ( RadiationName = [ 'Neutrinos_E    ',   &
-                               'Neutrinos_E_Bar' ], &
+                               'Neutrinos_E_Bar', &
+                               'Neutrinox_X    ' ], &
              RadiationType = [ 'NEUTRINOS_E    ',   &
-                               'NEUTRINOS_E_BAR' ], &
+                               'NEUTRINOS_E_BAR', &
+                               'NEUTRINOS_X    ' ], &
              FormalismType = FormalismType, &
              FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &

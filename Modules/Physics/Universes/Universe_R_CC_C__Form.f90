@@ -256,7 +256,7 @@ contains
       do iR  =  1, nR
 
         select case ( trim ( U % RadiationType ( iR ) ) )
-        case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
+        case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR', 'NEUTRINOS_X' )
 
         select type ( R  =>  I % CurrentSet_X_1D ( iR ) )
         class is ( NeutrinoMoments_G_Form )
@@ -715,9 +715,9 @@ contains
 
     call U % Universe_F_CC_Form % ShowParameters ( )
 
-    call Show ( U % RadiationName,     'RadiationName',     U % IGNORABILITY )
-    call Show ( U % RadiationType,     'RadiationType',     U % IGNORABILITY )
-    call Show ( U % FormalismType,     'FormalismType',     U % IGNORABILITY )
+    call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
+    call Show ( U % RadiationType, 'RadiationType', U % IGNORABILITY )
+    call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
 
   end subroutine ShowParameters
 
