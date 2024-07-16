@@ -15,7 +15,8 @@ module Step_RK_NM_G_1D_C__Form
   type, public, extends ( Step_RK_CS_1D_C_CS_Form ) :: Step_RK_NM_G_1D_C_Form
     real ( KDR ), dimension ( : ), allocatable :: &
       Residual_J_Eq_E,  Residual_N_Eq_E, &
-      Residual_J_Eq_EB, Residual_N_Eq_EB
+      Residual_J_Eq_EB, Residual_N_Eq_EB, &
+      Residual_J_Eq_X,  Residual_N_Eq_X
   contains
     procedure, private, pass :: &
       Initialize_CS_1D_C_CS
@@ -38,41 +39,52 @@ module Step_RK_NM_G_1D_C__Form
     interface
 
       module subroutine SolveKernel &
-               ( I_E, I_EB, R_E, R_EB, F_HN, &
+               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
                  Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+                 Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
                  J_E, H_E_1, H_E_2, H_E_3, N_E, &
                  E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
                  J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
                  E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+                 J_X, H_X_1, H_X_2, H_X_3, N_X, &
+                 E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X, &
                  E_F, S_F_1, S_F_2, S_F_3, D_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+                 E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
                  M_DD_11, M_DD_22, M_DD_33, &
                  AA, Tol, dT, mRI, mII, iC, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+                 KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
                  KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
                  Res_J_Eq_E,  Res_N_Eq_E, &
-                 Res_J_Eq_EB, Res_N_Eq_EB )
+                 Res_J_Eq_EB, Res_N_Eq_EB, &
+                 Res_J_Eq_X,  Res_N_Eq_X )
+      implicit none
       class ( Interactions_NM_G_Form ), intent ( inout ) :: &
-        I_E, I_EB
+        I_E, I_EB, I_X
       class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
-        R_E, R_EB
+        R_E, R_EB, R_X
       class ( Fluid_P_HN_Form ), intent ( inout ) :: &
         F_HN
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
-        Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB
+        Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+        Xi_J_X,  Xi_H_X,  Xi_N_X,  Chi_J_X,  Chi_H_X,  Chi_N_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         J_E, H_E_1, H_E_2, H_E_3, N_E, &
         E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
         E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        J_X, H_X_1, H_X_2, H_X_3, N_X, &
+        E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         E_F, S_F_1, S_F_2, S_F_3, D_F
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -82,6 +94,7 @@ module Step_RK_NM_G_1D_C__Form
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
         E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+        E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
         E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M_DD_11, M_DD_22, M_DD_33
@@ -94,10 +107,12 @@ module Step_RK_NM_G_1D_C__Form
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
         KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+        KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
         KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         Res_J_Eq_E,  Res_N_Eq_E, &
-        Res_J_Eq_EB, Res_N_Eq_EB
+        Res_J_Eq_EB, Res_N_Eq_EB, &
+        Res_J_Eq_X,  Res_N_Eq_X
     end subroutine SolveKernel
 
   end interface
@@ -137,6 +152,9 @@ contains
     allocate ( S % Residual_J_Eq_EB ( mII ) )
     allocate ( S % Residual_N_Eq_EB ( mII ) )
 
+    allocate ( S % Residual_J_Eq_X ( mII ) )
+    allocate ( S % Residual_N_Eq_X ( mII ) )
+
     end associate !-- nNM, etc.
 
   end subroutine Initialize_CS_1D_C_CS
@@ -146,6 +164,11 @@ contains
 
     type ( Step_RK_NM_G_1D_C_Form ), intent ( inout ) :: &
       S
+
+    if ( allocated ( S % Residual_N_Eq_X ) ) &
+      deallocate ( S % Residual_N_Eq_X )
+    if ( allocated ( S % Residual_J_Eq_X ) ) &
+      deallocate ( S % Residual_J_Eq_X )
 
     if ( allocated ( S % Residual_N_Eq_EB ) ) &
       deallocate ( S % Residual_N_Eq_EB )
@@ -183,12 +206,14 @@ contains
       Error, nIterations, Omega, Residual
     real ( KDR ), dimension ( : ), pointer :: &
       KK_F_E,   KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
-      KK_E_E ,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
-      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D 
+      KK_E_E,   KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+      KK_EB_E,  KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+      KK_X_E,   KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D 
     real ( KDR ), dimension ( : ), pointer :: &
       E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
       E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
-      E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0
+      E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+      E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0
     real ( KDR ), dimension ( : ), pointer :: &
       M_DD_11, M_DD_22, M_DD_33
     real ( KDR ), dimension ( : ), pointer :: &
@@ -202,37 +227,42 @@ contains
       E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
       J_Eq_EB, N_Eq_EB
     real ( KDR ), dimension ( : ), pointer :: &
+      J_X, H_X_1, H_X_2, H_X_3, N_X, &
+      E_X, S_X_1, S_X_2, S_X_3, D_X, &
+      J_Eq_X, N_Eq_X
+    real ( KDR ), dimension ( : ), pointer :: &
       Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
-      Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB
+      Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+      Xi_J_X,  Xi_H_X,  Xi_N_X,  Chi_J_X,  Chi_H_X,  Chi_N_X
     !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
       ID_V
     real ( KDR ), dimension ( :, : ), pointer :: &
-      KK_F_V, KK_E_V, KK_EB_V
+      KK_F_V, KK_E_V, KK_EB_V, KK_X_V
     real ( KDR ), dimension ( :, : ), pointer :: &
-      Y_I_F_V, Y_I_E_V, Y_I_EB_V
+      Y_I_F_V, Y_I_E_V, Y_I_EB_V, Y_I_X_V
     real ( KDR ), dimension ( :, : ), pointer :: &
       G_V
     real ( KDR ), dimension ( :, : ), pointer :: &
       F_V
     real ( KDR ), dimension ( :, : ), pointer :: &
-      R_E_V, R_EB_V, &
-      I_E_V, I_EB_V
+      R_E_V, R_EB_V, R_X_V, &
+      I_E_V, I_EB_V, I_X_V
     !-- FieldSet pointers
     class ( ImplicitDiagnosticsForm ), pointer :: &
       ID
     class ( FieldSet_BM_Form ), pointer :: &
-      KK_F, KK_E, KK_EB
+      KK_F, KK_E, KK_EB, KK_X
     class ( FieldSet_BM_Form ), pointer :: &
-      Y_I_F, Y_I_E, Y_I_EB
+      Y_I_F, Y_I_E, Y_I_EB, Y_I_X
     class ( Gravitation_N_SG_Form ), pointer :: &
       G_N
     class ( Fluid_P_HN_Form ), pointer :: &
       F_HN
     class ( NeutrinoMoments_G_Form ), pointer :: &
-      R_E, R_EB
+      R_E, R_EB, R_X
     class ( Interactions_NM_G_Form ), pointer :: &
-      I_E, I_EB
+      I_E, I_EB, I_X
 
 integer ( KDI ) :: &
   iV
@@ -248,6 +278,8 @@ integer ( KDI ) :: &
          Res_N_Eq_E   =>  S % Residual_N_Eq_E, &
          Res_J_Eq_EB  =>  S % Residual_J_Eq_EB, &
          Res_N_Eq_EB  =>  S % Residual_N_Eq_EB, &
+         Res_J_Eq_X   =>  S % Residual_J_Eq_X, &
+         Res_N_Eq_X   =>  S % Residual_N_Eq_X, &
          AA   =>  S % AA ( iS ) % Value ( iS ), &
          Tol  =>  S % ImplicitTolerance, &
         mII   =>  S % MaxImplicitIterations, &
@@ -286,6 +318,11 @@ integer ( KDI ) :: &
           R_EB  =>  R
         Y_I_EB  =>  S_R ( iR ) % Intermediate
          KK_EB  =>  S_R ( iR ) % SlopeStageImplicit ( iS ) % Element
+      case ( 'NEUTRINOS_X' )
+          I_X  =>  I
+          R_X  =>  R
+        Y_I_X  =>  S_R ( iR ) % Intermediate
+         KK_X  =>  S_R ( iR ) % SlopeStageImplicit ( iS ) % Element
       end select !-- RadiationType
       end select !-- I
       end select !-- R
@@ -314,6 +351,9 @@ integer ( KDI ) :: &
       call SetStoragePointers_R &
              ( I_EB,   R_EB,   Y_I_EB,   KK_EB,  iC, &
                I_EB_V, R_EB_V, Y_I_EB_V, KK_EB_V )
+      call SetStoragePointers_R &
+             ( I_X,   R_X,   Y_I_X,   KK_X,  iC, &
+               I_X_V, R_X_V, Y_I_X_V, KK_X_V )
 
       !-- Field pointers
 
@@ -335,6 +375,9 @@ integer ( KDI ) :: &
       call SetFieldPointers_FS_B &
              ( KK_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
                KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_E, KK_EB_D )
+      call SetFieldPointers_FS_B &
+             ( KK_X_V, iMomentum_R, iEnergy_R, iNumber_R, &
+               KK_X_S_1, KK_X_S_2, KK_X_S_3, KK_X_E, KK_X_D )
 
       call SetFieldPointers_FS_B &
              ( Y_I_F_V, iMomentum_F, iEnergy_F, iNumber_F, &
@@ -345,6 +388,9 @@ integer ( KDI ) :: &
       call SetFieldPointers_FS_B &
              ( Y_I_EB_V, iMomentum_R, iEnergy_R, iNumber_R, &
                S_EB_1_0, S_EB_2_0, S_EB_3_0, E_EB_0, D_EB_0 )
+      call SetFieldPointers_FS_B &
+             ( Y_I_X_V, iMomentum_R, iEnergy_R, iNumber_R, &
+               S_X_1_0, S_X_2_0, S_X_3_0, E_X_0, D_X_0 )
 
       call SetFieldPointers_F &
              ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F )
@@ -357,6 +403,10 @@ integer ( KDI ) :: &
              ( R_EB, R_EB_V, &
                J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
                E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB )
+      call SetFieldPointers_R &
+             ( R_X, R_X_V, &
+               J_X, H_X_1, H_X_2, H_X_3, N_X, &
+               E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X )
 
       call SetFieldPointers_I &
              ( I_E, I_E_V, &
@@ -364,28 +414,37 @@ integer ( KDI ) :: &
       call SetFieldPointers_I &
              ( I_EB, I_EB_V, &
                Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB )
+      call SetFieldPointers_I &
+             ( I_X, I_X_V, &
+               Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X )
 
       call SolveKernel &
-             ( I_E, I_EB, R_E, R_EB, F_HN, &
+             ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
                Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
                Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+               Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
                J_E, H_E_1, H_E_2, H_E_3, N_E, &
                E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
                J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
                E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+               J_X, H_X_1, H_X_2, H_X_3, N_X, &
+               E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X, &
                E_F, S_F_1, S_F_2, S_F_3, D_F, &
                Error, nIterations, Omega, Residual, &
                C % ProperCell, &
                E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+               E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
                E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
                M_DD_11, M_DD_22, M_DD_33, &
                AA, Tol, dT, mRI, mII, iC, &
                KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+               KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
                KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
                Res_J_Eq_E,  Res_N_Eq_E, &
-               Res_J_Eq_EB, Res_N_Eq_EB )
+               Res_J_Eq_EB, Res_N_Eq_EB, &
+               Res_J_Eq_X,  Res_N_Eq_X )
 
 ! iV  =  40
 ! associate &
