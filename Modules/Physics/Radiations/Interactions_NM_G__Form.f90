@@ -351,6 +351,8 @@ contains
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_X' )
+        call I % Clear ( )
       end select !-- RadiationType
              
       !-- Pair emission
@@ -463,6 +465,8 @@ integer ( KDI ) :: &
       call Compute_EA_E_Bar_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, iV )
+    case ( 'NEUTRINOS_X' )
+      call I % Clear ( )
     end select !-- RadiationType
 ! call Show ( Xi_J ( iV ), '>>> Xi_J after EA' )
 ! call Show ( Xi_N ( iV ), '>>> Xi_N after EA' )

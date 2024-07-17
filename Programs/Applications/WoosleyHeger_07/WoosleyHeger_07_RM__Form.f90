@@ -64,7 +64,8 @@ contains
     !-- Interactions
 
 !    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G )
-    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 2 ) )
+!    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 2 ) )
+    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 3 ) )
 
     !-- Initialization
 
@@ -79,7 +80,7 @@ contains
            !                     'NEUTRINOS_E_BAR' ], &
            ( RadiationName = [ 'Neutrinos_E    ',   &
                                'Neutrinos_E_Bar', &
-                               'Neutrinox_X    ' ], &
+                               'Neutrinos_X    ' ], &
              RadiationType = [ 'NEUTRINOS_E    ',   &
                                'NEUTRINOS_E_BAR', &
                                'NEUTRINOS_X    ' ], &
