@@ -710,7 +710,7 @@ contains
                         +  8. * Sin_2_Theta_W ** 2 )
 
     RhoMin  =  0.0_KDR  * UNIT % MASS_DENSITY_CGS
-    RhoMax  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
 
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
@@ -818,7 +818,7 @@ contains
                         +  8. * Sin_2_Theta_W ** 2 )
 
     RhoMin  =  0.0_KDR  * UNIT % MASS_DENSITY_CGS
-    RhoMax  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
+    RhoMax  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
 
    if (       M ( iV )  *  N ( iV )  >  RhoMin ) then!&
 !         .and. M ( iV )  *  N ( iV )  <  RhoMax ) &
