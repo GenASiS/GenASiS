@@ -1,6 +1,6 @@
-module WoosleyHeger_07_RM__Form
+module WoosleyHeger_07_NM__Form
 
-  !-- WoosleyHeger_07_RadiationMoments_Form
+  !-- WoosleyHeger_07_NeutrinoMoments_Form
 
   use GenASiS
   use WoosleyHeger_07__Form
@@ -8,13 +8,13 @@ module WoosleyHeger_07_RM__Form
   implicit none
   private
 
-  type, public, extends ( WoosleyHeger_07_Form ) :: WoosleyHeger_07_RM_Form
+  type, public, extends ( WoosleyHeger_07_Form ) :: WoosleyHeger_07_NM_Form
   contains
     procedure, public, pass :: &
-      Initialize_RM
+      Initialize_NM
     final :: &
       Finalize
-  end type WoosleyHeger_07_RM_Form
+  end type WoosleyHeger_07_NM_Form
 
     private :: &
       InitializeUniverse, &
@@ -24,25 +24,25 @@ module WoosleyHeger_07_RM__Form
 contains
 
 
-  subroutine Initialize_RM ( U, FormalismType, Name )
+  subroutine Initialize_NM ( U, FormalismType, Name )
 
-    class ( WoosleyHeger_07_RM_Form ), intent ( inout ), target :: &
+    class ( WoosleyHeger_07_NM_Form ), intent ( inout ), target :: &
       U
     character ( * ), intent ( in ) :: &
       FormalismType, &
       Name
 
     if ( U % Type == '' ) &
-      U % Type = 'a WoosleyHeger_07_RM'
+      U % Type = 'a WoosleyHeger_07_NM'
 
     call InitializeUniverse ( U, FormalismType, Name )
 
-  end subroutine Initialize_RM
+  end subroutine Initialize_NM
 
 
   subroutine Finalize ( WH )
 
-    type ( WoosleyHeger_07_RM_Form ), intent ( inout ) :: &
+    type ( WoosleyHeger_07_NM_Form ), intent ( inout ) :: &
       WH
 
   end subroutine Finalize
@@ -50,7 +50,7 @@ contains
 
   subroutine InitializeUniverse ( WH, FormalismType, Name )
 
-    class ( WoosleyHeger_07_RM_Form ), intent ( inout ), target :: &
+    class ( WoosleyHeger_07_NM_Form ), intent ( inout ), target :: &
       WH
     character ( * ), intent ( in )  :: &
       FormalismType, &
@@ -114,4 +114,4 @@ contains
   end subroutine SetInitial
 
 
-end module WoosleyHeger_07_RM__Form
+end module WoosleyHeger_07_NM__Form

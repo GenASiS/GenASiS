@@ -22,14 +22,14 @@ WoosleyHeger_07_A: ThirdParty.a GenASiS.a WoosleyHeger_07_A.o
 WoosleyHeger_07_G: ThirdParty.a GenASiS.a WoosleyHeger_07_G.o
 	$(LINK) $(FLAGS) \
            -o WoosleyHeger_07_G_$(MACHINE) \
-           WoosleyHeger_07_G.o WoosleyHeger_07_RM__Form.o \
+           WoosleyHeger_07_G.o WoosleyHeger_07_NM__Form.o \
            WoosleyHeger_07__Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # WoosleyHeger_07_S: ThirdParty.a GenASiS.a WoosleyHeger_07_S.o
 # 	$(LINK) $(FLAGS) \
 #            -o WoosleyHeger_07_S_$(MACHINE) \
-#            WoosleyHeger_07_S.o WoosleyHeger_07_RM__Form.o \
+#            WoosleyHeger_07_S.o WoosleyHeger_07_NM__Form.o \
 #            WoosleyHeger_07__Template.o \
 #            GenASiS.a ThirdParty.a $(LIBRARIES)
 
@@ -78,19 +78,19 @@ WoosleyHeger_07_A.o: \
 #   WoosleyHeger_07_D__Form.o \
 #   WoosleyHeger_07_D.f90
 
-WoosleyHeger_07_RM__Form.o: \
+WoosleyHeger_07_NM__Form.o: \
   GenASiS.o \
   WoosleyHeger_07__Form.o \
-  WoosleyHeger_07_RM__Form.f90
+  WoosleyHeger_07_NM__Form.f90
 
 WoosleyHeger_07_G.o: \
   GenASiS.o \
-  WoosleyHeger_07_RM__Form.o \
+  WoosleyHeger_07_NM__Form.o \
   WoosleyHeger_07_G.f90
 
 # WoosleyHeger_07_S.o: \
 #   GenASiS.o \
-#   WoosleyHeger_07_RM__Form.o \
+#   WoosleyHeger_07_NM__Form.o \
 #   WoosleyHeger_07_S.f90
 
 # Findall_GPU_Test.o: \

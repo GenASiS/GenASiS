@@ -3,11 +3,11 @@ program WoosleyHeger_07_G
   !-- WoosleyHeger_07_Grey
 
   use GenASiS
-  use WoosleyHeger_07_RM__Form
+  use WoosleyHeger_07_NM__Form
 
   implicit none
 
-  type ( WoosleyHeger_07_RM_Form ), allocatable :: &
+  type ( WoosleyHeger_07_NM_Form ), allocatable :: &
     WH
 
   allocate ( PROGRAM_HEADER )
@@ -15,7 +15,7 @@ program WoosleyHeger_07_G
          ( 'WoosleyHeger_07_G', DimensionalityOption = '1D' )
 
   allocate ( WH )
-  call WH % Initialize_RM ( 'GREY', PROGRAM_HEADER % Name )
+  call WH % Initialize_NM ( 'GREY', PROGRAM_HEADER % Name )
   call WH % Evolve ( )
   deallocate ( WH )
 
