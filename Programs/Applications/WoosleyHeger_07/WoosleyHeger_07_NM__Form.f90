@@ -58,32 +58,53 @@ contains
 
     real ( KDR ) :: &
       FinishTime
+    logical ( KDL ) :: &
+      Neutrinos_EB, &
+      Neutrinos_M_MB_T_TB
+    character ( LDL ), dimension ( : ), allocatable :: &
+      RadiationName, &
+      RadiationType
 
     FinishTime  =  0.7_KDR  *  UNIT % SECOND
 
-    !-- Interactions
+    Neutrinos_EB         =  .false.
+    Neutrinos_M_MB_T_TB  =  .false.
+    call PROGRAM_HEADER % GetParameter &
+           ( Neutrinos_EB, 'Neutrinos_EB' )
+    call PROGRAM_HEADER % GetParameter &
+           ( Neutrinos_M_MB_T_TB, 'Neutrinos_M_MB_T_TB' )
 
-!    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G )
-!    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 2 ) )
-    allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 3 ) )
+    if ( Neutrinos_EB .and. Neutrinos_M_MB_T_TB ) then
+      allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 3 ) )
+      allocate ( RadiationName ( 3 ) )
+      allocate ( RadiationType ( 3 ) )
+      RadiationName  =  [ 'Neutrinos_E        ',   &
+                          'Neutrinos_EB       ', &
+                          'Neutrinos_M_MB_T_TB' ]
+      RadiationType  =  [ 'NEUTRINOS_E        ',   &
+                          'NEUTRINOS_EB       ', &
+                          'NEUTRINOS_M_MB_T_TB' ]
+    else if ( Neutrinos_EB ) then
+      allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 2 ) )
+      allocate ( RadiationName ( 2 ) )
+      allocate ( RadiationType ( 2 ) )
+      RadiationName  =  [ 'Neutrinos_E ',   &
+                          'Neutrinos_EB' ]
+      RadiationType  =  [ 'NEUTRINOS_E ',   &
+                          'NEUTRINOS_EB' ]
+    else
+      allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 1 ) )
+      allocate ( RadiationName ( 1 ) )
+      allocate ( RadiationType ( 1 ) )
+      RadiationName  =  [ 'Neutrinos_E' ]
+      RadiationType  =  [ 'NEUTRINOS_E ' ]
+    end if
 
     !-- Initialization
 
     call WH % Initialize &
-!            ( RadiationName = [ 'Neutrinos_E    ' ],   &
-! !                               'Neutrinos_E_Bar' ], &
-!              RadiationType = [ 'NEUTRINOS_E    ' ],   &
-! !                               'NEUTRINOS_E_BAR' ], &
-           ! ( RadiationName = [ 'Neutrinos_E    ',   &
-           !                     'Neutrinos_E_Bar' ], &
-           !   RadiationType = [ 'NEUTRINOS_E    ',   &
-           !                     'NEUTRINOS_E_BAR' ], &
-           ( RadiationName = [ 'Neutrinos_E    ',   &
-                               'Neutrinos_E_Bar', &
-                               'Neutrinos_X    ' ], &
-             RadiationType = [ 'NEUTRINOS_E    ',   &
-                               'NEUTRINOS_E_BAR', &
-                               'NEUTRINOS_X    ' ], &
+           ( RadiationName = RadiationName, &
+             RadiationType = RadiationType, &
              FormalismType = FormalismType, &
              FluidType = 'HEAVY_NUCLEUS', &
              GravitationType = 'NEWTON_SG', &

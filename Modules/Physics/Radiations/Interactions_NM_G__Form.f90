@@ -346,24 +346,24 @@ contains
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_Eq, N_Eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  UseDeviceOption = I % DeviceMemory )
-      case ( 'NEUTRINOS_E_BAR' )
+      case ( 'NEUTRINOS_EB' )
         call Compute_EA_E_Bar_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, &
                  UseDeviceOption = I % DeviceMemory )
-      case ( 'NEUTRINOS_X' )
+      case ( 'NEUTRINOS_M_MB_T_TB' )
         call I % Clear ( )
       end select !-- RadiationType
              
       !-- Pair emission
 
       select case ( trim ( R % RadiationType ) )
-      case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
         call Compute_P_A_Kernel &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_Eq, N_Eq, M, N, T, Mu_e, &
                  Sign = +1, nSpecies = 1, UseDeviceOption = I % DeviceMemory )
-      case ( 'NEUTRINOS_X' )
+      case ( 'NEUTRINOS_M_MB_T_TB' )
         call Compute_P_A_Kernel &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                  J_Eq, N_Eq, M, N, T, Mu_e, &
@@ -461,11 +461,11 @@ integer ( KDI ) :: &
       call Compute_EA_E_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                J_Eq, N_Eq, F_Ave, M, N, T, X_p, X_A, Z, A, Mu_e, Mu_n_p, iV )
-    case ( 'NEUTRINOS_E_BAR' )
+    case ( 'NEUTRINOS_EB' )
       call Compute_EA_E_Bar_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, iV )
-    case ( 'NEUTRINOS_X' )
+    case ( 'NEUTRINOS_M_MB_T_TB' )
       call I % Clear ( )
     end select !-- RadiationType
 ! call Show ( Xi_J ( iV ), '>>> Xi_J after EA' )
@@ -477,12 +477,12 @@ integer ( KDI ) :: &
     !-- Pair emission
 
     select case ( trim ( R % RadiationType ) )
-    case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR' )
+    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
       call Compute_P_S_Kernel &
              ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                J_Eq, N_Eq, M, N, T, Mu_e, &
                Sign = +1, nSpecies = 1, iV = iV )
-    case ( 'NEUTRINOS_X' )
+    case ( 'NEUTRINOS_M_MB_T_TB' )
       call Compute_P_S_Kernel &
              ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                J_Eq, N_Eq, M, N, T, Mu_e, &
