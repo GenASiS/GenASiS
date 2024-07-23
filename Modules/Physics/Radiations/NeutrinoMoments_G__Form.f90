@@ -784,7 +784,7 @@ contains
         call Compute_Eq_E_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                  Sign = -1.0_KDR, UseDeviceOption = RM % DeviceMemory )
-      case ( 'NEUTRINOS_M_MB_T_TB' )
+      case ( 'NEUTRINOS_HL' )
         call Compute_Eq_X_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
                  nSpecies = 4.0_KDR, UseDeviceOption = RM % DeviceMemory )
@@ -845,7 +845,7 @@ contains
       call Compute_Eq_E_S_Kernel &
              ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                Sign = -1.0_KDR, iV = iV )
-    case ( 'NEUTRINOS_M_MB_T_TB' )
+    case ( 'NEUTRINOS_HL' )
       call Compute_Eq_X_S_Kernel &
              ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
                nSpecies = 4.0_KDR, iV = iV )

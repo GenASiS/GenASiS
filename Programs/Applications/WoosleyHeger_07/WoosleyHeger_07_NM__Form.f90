@@ -60,30 +60,30 @@ contains
       FinishTime
     logical ( KDL ) :: &
       Neutrinos_EB, &
-      Neutrinos_M_MB_T_TB
+      Neutrinos_HL
     character ( LDL ), dimension ( : ), allocatable :: &
       RadiationName, &
       RadiationType
 
     FinishTime  =  0.7_KDR  *  UNIT % SECOND
 
-    Neutrinos_EB         =  .false.
-    Neutrinos_M_MB_T_TB  =  .false.
+    Neutrinos_EB  =  .false.
+    Neutrinos_HL  =  .false.
     call PROGRAM_HEADER % GetParameter &
            ( Neutrinos_EB, 'Neutrinos_EB' )
     call PROGRAM_HEADER % GetParameter &
-           ( Neutrinos_M_MB_T_TB, 'Neutrinos_M_MB_T_TB' )
+           ( Neutrinos_HL, 'Neutrinos_HL' )
 
-    if ( Neutrinos_EB .and. Neutrinos_M_MB_T_TB ) then
+    if ( Neutrinos_EB .and. Neutrinos_HL ) then
       allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 3 ) )
       allocate ( RadiationName ( 3 ) )
       allocate ( RadiationType ( 3 ) )
-      RadiationName  =  [ 'Neutrinos_E        ',   &
-                          'Neutrinos_EB       ', &
-                          'Neutrinos_M_MB_T_TB' ]
-      RadiationType  =  [ 'NEUTRINOS_E        ',   &
-                          'NEUTRINOS_EB       ', &
-                          'NEUTRINOS_M_MB_T_TB' ]
+      RadiationName  =  [ 'Neutrinos_E ',   &
+                          'Neutrinos_EB', &
+                          'Neutrinos_HL' ]
+      RadiationType  =  [ 'NEUTRINOS_E ',   &
+                          'NEUTRINOS_EB', &
+                          'NEUTRINOS_HL' ]
     else if ( Neutrinos_EB ) then
       allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 2 ) )
       allocate ( RadiationName ( 2 ) )
