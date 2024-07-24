@@ -270,7 +270,6 @@ integer ( KDI ) :: &
     call Show ( 'SolveUpdateImplicit', CONSOLE % INFO_5 )
     call Show ( S % Name, 'Step', CONSOLE % INFO_5 )
 
-!call Show ( iS, '>>> iS' )
     associate &
       (  S_R  =>  S % Step_CS_1D ( : ), &
          S_F  =>  S % Step_CS, &
@@ -313,16 +312,23 @@ integer ( KDI ) :: &
           R_E  =>  R
         Y_I_E  =>  S_R ( iR ) % Intermediate
          KK_E  =>  S_R ( iR ) % SlopeStageImplicit ( iS ) % Element
-      case ( 'NEUTRINOS_E_BAR' )
+      case ( 'NEUTRINOS_EB' )
           I_EB  =>  I
           R_EB  =>  R
         Y_I_EB  =>  S_R ( iR ) % Intermediate
          KK_EB  =>  S_R ( iR ) % SlopeStageImplicit ( iS ) % Element
-      case ( 'NEUTRINOS_X' )
+      case ( 'NEUTRINOS_HL' )
           I_X  =>  I
           R_X  =>  R
         Y_I_X  =>  S_R ( iR ) % Intermediate
          KK_X  =>  S_R ( iR ) % SlopeStageImplicit ( iS ) % Element
+      case default
+        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+        call Show ( R % RadiationType, 'RadiationType', &
+                    CONSOLE % ERROR )
+        call Show ( 'Step_RK_NM_G_1D_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SolveUpdateImplicit', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
       end select !-- RadiationType
       end select !-- I
       end select !-- R

@@ -67,8 +67,8 @@ contains
 
     FinishTime  =  0.7_KDR  *  UNIT % SECOND
 
-    Neutrinos_EB  =  .false.
-    Neutrinos_HL  =  .false.
+    Neutrinos_EB  =  .true.
+    Neutrinos_HL  =  .true.
     call PROGRAM_HEADER % GetParameter &
            ( Neutrinos_EB, 'Neutrinos_EB' )
     call PROGRAM_HEADER % GetParameter &

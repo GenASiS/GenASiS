@@ -256,7 +256,7 @@ contains
       do iR  =  1, nR
 
         select case ( trim ( U % RadiationType ( iR ) ) )
-        case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR', 'NEUTRINOS_X' )
+        case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
 
         select type ( R  =>  I % CurrentSet_X_1D ( iR ) )
         class is ( NeutrinoMoments_G_Form )
