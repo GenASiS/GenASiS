@@ -6,9 +6,9 @@ submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
   
   implicit none
 
-  real ( KDR ), private, parameter :: &
+  real ( KDR ), parameter :: &
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-  real ( KDR ), private, parameter :: &
+  real ( KDR ), parameter :: &
      Pi    =  ( CONSTANT % PI ), &
      Pi_2  =  ( CONSTANT % PI ) ** 2, &
      Pi_3  =  ( CONSTANT % PI ) ** 3, &

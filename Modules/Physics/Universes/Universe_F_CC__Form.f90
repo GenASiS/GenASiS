@@ -7,7 +7,7 @@ module Universe_F_CC__Form
   use Gravitations
   use Fluids
   use Measures_F_CC__Form
-  use Series_CC__Form
+  use Series_F_CC__Form
   use Universe_F_C__Form
 
   implicit none
@@ -351,14 +351,14 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
-    allocate ( Series_CC_Form :: I % Series )
+    allocate ( Series_F_CC_Form :: I % Series )
 
     select type ( U  =>  I % System )
       class is ( Universe_F_CC_Form )
     select type ( I )
       class is ( Integrator_CS_Form )
     select type ( S  =>  I % Series )
-      class is ( Series_CC_Form )
+      class is ( Series_F_CC_Form )
     call S % Initialize &
       ( U % Measures, I % CurrentSet_X, I % GridImageStream, I % dT_Label, &
         I % Unit_T, I % dT_Candidate, I % T, I % Communicator % Rank, &

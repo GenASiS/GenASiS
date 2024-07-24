@@ -148,6 +148,8 @@ contains
       end if
       end associate !-- I, etc.
 
+      deallocate ( SeriesUnit )
+      deallocate ( SeriesName )
       end associate !-- TT, etc.
 
     end do !-- iCS

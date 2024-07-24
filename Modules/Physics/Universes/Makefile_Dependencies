@@ -13,11 +13,17 @@ Measures_R_CC_C__Form.o: \
   Measures_F_CC__Form.o \
   Measures_R_CC_C__Form.f90
 
-Series_CC__Form.o: \
+Series_F_CC__Form.o: \
   Basics.o \
   Mathematics.o \
   Measures_F_CC__Form.o \
-  Series_CC__Form.f90
+  Series_F_CC__Form.f90
+
+Series_R_CC_C__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Measures_R_CC_C__Form.o \
+  Series_R_CC_C__Form.f90
 
 Universe_H__Form.o: \
   Basics.o \
@@ -67,7 +73,7 @@ Universe_F_CC__Form.o: \
   Gravitations.o \
   Fluids.o \
   Measures_F_CC__Form.o \
-  Series_CC__Form.o \
+  Series_F_CC__Form.o \
   Universe_F_C__Form.o \
   Universe_F_CC__Form.f90
 
@@ -96,6 +102,7 @@ Universe_R_CC_C__Form.o: \
   Fluids.o \
   Radiations.o \
   Measures_R_CC_C__Form.o \
+  Series_R_CC_C__Form.o \
   Universe_F_CC__Form.o \
   Universe_R_CC_C__Form.f90
 
@@ -116,7 +123,8 @@ Universe_R_CC__Kernel.o: \
 Universes.o: \
   Measures_F_CC__Form.o \
   Measures_R_CC_C__Form.o \
-  Series_CC__Form.o \
+  Series_F_CC__Form.o \
+  Series_R_CC_C__Form.o \
   Universe_H__Form.o \
   Universe_F_B__Form.o \
   Universe_F_SC__Form.o \

@@ -2,7 +2,8 @@ module Universes
 
   use Measures_F_CC__Form
   use Measures_R_CC_C__Form
-  use Series_CC__Form
+  use Series_F_CC__Form
+  use Series_R_CC_C__Form
   use Universe_H__Form
   use Universe_F_B__Form
   use Universe_F_SC__Form

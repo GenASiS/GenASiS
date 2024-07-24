@@ -1,44 +1,46 @@
-module Series_CC__Form
+module Series_R_CC_C__Form
 
-  !-- Series_CentralCore__Form
+  !-- Series_Radiation_CentralCore_Collected__Form
 
   use Basics
   use Mathematics
-  use Measures_F_CC__Form
+  use Measures_R_CC_C__Form
 
   implicit none
   private
 
-  type, public, extends ( Series_CS_Form ) :: Series_CC_Form
+  type, public, extends ( Series_CS_1D_C_CS_Form ) :: Series_R_CC_C_Form
     type ( StorageForm ), allocatable :: &
       Measures_CC
-    class ( Measures_F_CC_Form ), pointer :: &
+    class ( Measures_R_CC_C_Form ), pointer :: &
       Measures => null ( )
   contains
     procedure, private, pass :: &
-      Initialize_F_CC
+      Initialize_R_CC_C
     generic, public :: &
-      Initialize => Initialize_F_CC
+      Initialize => Initialize_R_CC_C
     procedure, public, pass :: &
       Record
 !     procedure, public, pass :: &
 !       Restore
     final :: &
       Finalize
-  end type Series_CC_Form
+  end type Series_R_CC_C_Form
 
 
 contains
 
 
-  subroutine Initialize_F_CC &
-               ( S, M, CS, GIS, dT_Label, Unit_T, dT_Candidate, T, &
+  subroutine Initialize_R_CC_C &
+               ( S, M, CS_1D, CS, GIS, dT_Label, Unit_T, dT_Candidate, T, &
                  CommunicatorRank, nWrite, iCycle )
 
-    class ( Series_CC_Form ), intent ( inout ) :: &
+    class ( Series_R_CC_C_Form ), intent ( inout ) :: &
       S
-    class ( Measures_F_CC_Form ), intent ( in ), target :: &
+    class ( Measures_R_CC_C_Form ), intent ( in ), target :: &
       M
+    class ( CurrentSetForm ), dimension ( : ), intent ( in ) :: &
+      CS_1D
     class ( CurrentSetForm ), intent ( in ) :: &
       CS
     type ( GridImageStreamForm ), intent ( in ) :: &
@@ -65,11 +67,11 @@ contains
       SeriesName
 
     if ( S % Type == '' ) &
-      S % Type = 'a Series_CC' 
+      S % Type = 'a Series_R_CC_C' 
 
-    call S % Series_CS_Form % Initialize &
-           ( CS, GIS, dT_Label, Unit_T, dT_Candidate, T, CommunicatorRank, &
-             nWrite, iCycle  )
+    call S % Series_CS_1D_C_CS_Form % Initialize &
+           ( CS_1D, CS, GIS, dT_Label, Unit_T, dT_Candidate, T, &
+             CommunicatorRank, nWrite, iCycle  )
 
     S % Measures  =>  M
 
@@ -96,18 +98,18 @@ contains
     end if
     end associate !-- SM, etc.
 
-  end subroutine Initialize_F_CC
+  end subroutine Initialize_R_CC_C
 
 
   subroutine Record ( S )
 
-    class ( Series_CC_Form ), intent ( inout ) :: &
+    class ( Series_R_CC_C_Form ), intent ( inout ) :: &
       S
 
     integer ( KDI ) :: &
       iM  !-- iMeasure
 
-    call S % Series_CS_Form % Record ( )
+    call S % Series_CS_1D_C_CS_Form % Record ( )
 
     associate &
       (  SMV  =>  S % Measures_CC % Value, &
@@ -124,7 +126,7 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Series_CC_Form ), intent ( inout ) :: &
+    type ( Series_R_CC_C_Form ), intent ( inout ) :: &
       S
 
     if ( allocated ( S % Measures_CC ) ) &
@@ -135,4 +137,4 @@ contains
   end subroutine Finalize
 
 
-end module Series_CC__Form
+end module Series_R_CC_C__Form

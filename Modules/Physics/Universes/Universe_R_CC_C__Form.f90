@@ -8,6 +8,7 @@ module Universe_R_CC_C__Form
   use Fluids
   use Radiations
   use Measures_R_CC_C__Form
+  use Series_R_CC_C__Form
   use Universe_F_CC__Form
 
   implicit none
@@ -836,11 +837,23 @@ contains
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
 
+    allocate ( Series_R_CC_C_Form :: I % Series )
+
     select type ( U  =>  I % System )
       class is ( Universe_R_CC_C_Form )
-
-    call U % InitializeSeries_CC ( I )
-
+    select type ( I )
+      class is ( Integrator_CS_1D_C_CS_Form )
+    select type ( S  =>  I % Series )
+      class is ( Series_R_CC_C_Form )
+    select type ( M  =>  U % Measures )
+      class is ( Measures_R_CC_C_Form )
+    call S % Initialize &
+      ( M, I % CurrentSet_X_1D, I % CurrentSet_X, &
+        I % GridImageStream, I % dT_Label, I % Unit_T, I % dT_Candidate, &
+        I % T, I % Communicator % Rank, I % nWrite, I % iCycle )
+    end select !-- M
+    end select !-- S
+    end select !-- I
     end select !-- U
 
   end subroutine InitializeSeries
