@@ -250,9 +250,9 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
-                 NameOption, UnitOption, TallyUnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+                 TallyVariableOption, NameOption, UnitOption, TallyUnitOption, &
+                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
+                 nFieldsOption, IgnorabilityOption )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -264,7 +264,8 @@ contains
       RadiationType
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
-      VectorOption
+      VectorOption, &
+      TallyVariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
@@ -298,7 +299,8 @@ contains
     character ( LDL ) :: &
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
-      Field
+      Field, &
+      TallyVariable
 
     if ( RM % Type  ==  '' ) &
       RM % Type  =  'a NeutrinoMoments_G' 
@@ -391,6 +393,16 @@ contains
     iaBalanced ( oB  +  1 : oB  +  RM % N_BALANCED_NM )  &
       =  [ RM % NUMBER_DENSITY_B ]
 
+    !-- Tally variables
+
+    if ( present ( TallyVariableOption ) ) then
+      allocate ( TallyVariable, source = TallyVariableOption )
+    else
+      allocate ( TallyVariable ( nBalanced ) )
+    end if
+
+    TallyVariable ( oB + 1 )  =  'Number'
+
     !-- Tally units
 
     if ( present ( TallyUnitOption ) ) then
@@ -407,6 +419,7 @@ contains
            ( F, Units_R, RadiationType, &
              FieldOption = Field, &
              VectorOption = VectorOption, &
+             TallyVariableOption = TallyVariable, &
              NameOption = Name, &
              UnitOption = FieldUnit, &
              TallyUnitOption = TallyUnit, &

@@ -189,9 +189,9 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
-                 NameOption, UnitOption, TallyUnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+                 TallyVariableOption, NameOption, UnitOption, TallyUnitOption, &
+                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
+                 nFieldsOption, IgnorabilityOption )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       RM
@@ -203,7 +203,8 @@ contains
       RadiationType
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
-      VectorOption
+      VectorOption, &
+      TallyVariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
@@ -245,7 +246,8 @@ contains
       Name
     character ( LDL ), dimension ( : ), allocatable :: &
       Field, &
-      Vector
+      Vector, &
+      TallyVariable
 
     if ( RM % Type  ==  '' ) &
       RM % Type  =  'a RadiationMoments' 
@@ -424,6 +426,19 @@ contains
     iaBalanced ( oB  +  1 : oB  +  RM % N_BALANCED_RM )  &
       =  [ RM % ENERGY_DENSITY_B, RM % MOMENTUM_DENSITY_B_D ]
 
+    !-- Tally variables
+
+    if ( present ( TallyVariableOption ) ) then
+      allocate ( TallyVariable, source = TallyVariableOption )
+    else
+      allocate ( TallyVariable ( nBalanced ) )
+    end if
+
+    TallyVariable ( oB + 1 )  =  'Energy'
+    TallyVariable ( oB + 2 )  =  'Momentum_1'
+    TallyVariable ( oB + 3 )  =  'Momentum_2'
+    TallyVariable ( oB + 4 )  =  'Momentum_3'
+
     !-- Tally units
 
     if ( present ( TallyUnitOption ) ) then
@@ -443,6 +458,7 @@ contains
            ( F % Geometry, &
              FieldOption = Field, &
              VectorOption = Vector, &
+             TallyVariableOption = TallyVariable, &
              NameOption = Name, &
              UnitOption = FieldUnit, &
              TallyUnitOption = TallyUnit, &

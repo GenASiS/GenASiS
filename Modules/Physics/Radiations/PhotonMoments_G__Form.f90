@@ -108,9 +108,9 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
-                 NameOption, UnitOption, TallyUnitOption, VectorIndicesOption, &
-                 iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
-                 IgnorabilityOption )
+                 TallyVariableOption, NameOption, UnitOption, TallyUnitOption, &
+                 VectorIndicesOption, iaPrimitiveOption, iaBalancedOption, &
+                 nFieldsOption, IgnorabilityOption )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -122,7 +122,8 @@ contains
       RadiationType
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       FieldOption, &
-      VectorOption
+      VectorOption, &
+      TallyVariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
@@ -198,6 +199,7 @@ contains
            ( F, Units_R, RadiationType, &             
              FieldOption = Field, &
              VectorOption = VectorOption, &
+             TallyVariableOption = TallyVariableOption, &
              NameOption = Name, &
              UnitOption = FieldUnit, &
              TallyUnitOption = TallyUnitOption, &
