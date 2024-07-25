@@ -108,7 +108,7 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
-                 NameOption, UnitOption, VectorIndicesOption, &
+                 NameOption, UnitOption, TallyUnitOption, VectorIndicesOption, &
                  iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
                  IgnorabilityOption )
 
@@ -127,6 +127,8 @@ contains
       NameOption
     type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
+      TallyUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -198,6 +200,7 @@ contains
              VectorOption = VectorOption, &
              NameOption = Name, &
              UnitOption = FieldUnit, &
+             TallyUnitOption = TallyUnitOption, &
              VectorIndicesOption = VectorIndicesOption, &
              iaPrimitiveOption = iaPrimitiveOption, &
              iaBalancedOption = iaBalancedOption, &

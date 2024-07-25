@@ -250,7 +250,7 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
-                 NameOption, UnitOption, VectorIndicesOption, &
+                 NameOption, UnitOption, TallyUnitOption, VectorIndicesOption, &
                  iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
                  IgnorabilityOption )
 
@@ -269,6 +269,8 @@ contains
       NameOption
     type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
+      TallyUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -289,6 +291,8 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaBalanced
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
+      TallyUnit
     type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
     character ( LDL ) :: &
@@ -342,7 +346,7 @@ contains
       allocate ( FieldUnit, source = UnitOption )
     else
       allocate ( FieldUnit ( nFields, nC ) )
-    end if !-- FieldOption
+    end if !-- UnitOption
 
     do iC  =  1, nC
       FieldUnit ( RM % NUMBER_DENSITY_C, iC ) &
@@ -387,6 +391,16 @@ contains
     iaBalanced ( oB  +  1 : oB  +  RM % N_BALANCED_NM )  &
       =  [ RM % NUMBER_DENSITY_B ]
 
+    !-- Tally units
+
+    if ( present ( TallyUnitOption ) ) then
+      allocate ( TallyUnit, source = TallyUnitOption )
+    else
+      allocate ( TallyUnit ( nBalanced ) )
+    end if !-- TallyUnitOption
+
+    TallyUnit ( oB + 1 )  =  Units_R ( 1 ) % Number
+
     !-- PhotonMoments_G
 
     call RM % PhotonMoments_G_Form % Initialize &
@@ -395,6 +409,7 @@ contains
              VectorOption = VectorOption, &
              NameOption = Name, &
              UnitOption = FieldUnit, &
+             TallyUnitOption = TallyUnit, &
              VectorIndicesOption = VectorIndicesOption, &
              iaPrimitiveOption = iaPrimitive, &
              iaBalancedOption = iaBalanced, &

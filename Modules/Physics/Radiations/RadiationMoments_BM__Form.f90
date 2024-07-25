@@ -189,7 +189,7 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, F, Units_R, RadiationType, FieldOption, VectorOption, &
-                 NameOption, UnitOption, VectorIndicesOption, &
+                 NameOption, UnitOption, TallyUnitOption, VectorIndicesOption, &
                  iaPrimitiveOption, iaBalancedOption, nFieldsOption, &
                  IgnorabilityOption )
 
@@ -208,6 +208,8 @@ contains
       NameOption
     type ( QuantityForm ), dimension ( :, : ), intent ( in ), optional :: &
       UnitOption
+    type ( QuantityForm ), dimension ( : ), intent ( in ), optional :: &
+      TallyUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
@@ -235,6 +237,8 @@ contains
       iaBalanced
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
+    type ( QuantityForm ), dimension ( : ), allocatable :: &
+      TallyUnit
     type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
     character ( LDL ) :: &
@@ -420,6 +424,19 @@ contains
     iaBalanced ( oB  +  1 : oB  +  RM % N_BALANCED_RM )  &
       =  [ RM % ENERGY_DENSITY_B, RM % MOMENTUM_DENSITY_B_D ]
 
+    !-- Tally units
+
+    if ( present ( TallyUnitOption ) ) then
+      allocate ( TallyUnit, source = TallyUnitOption )
+    else
+      allocate ( TallyUnit ( nBalanced ) )
+    end if !-- TallyUnitOption
+
+    TallyUnit ( oB + 1 )  =  Units_R ( 1 ) % Energy
+    TallyUnit ( oB + 2 )  =  Units_R ( 1 ) % Momentum
+    TallyUnit ( oB + 3 )  =  Units_R ( 1 ) % Momentum
+    TallyUnit ( oB + 4 )  =  Units_R ( 1 ) % Momentum
+
     !-- CurrentSet
 
     call RM % CurrentSetForm % Initialize &
@@ -428,6 +445,7 @@ contains
              VectorOption = Vector, &
              NameOption = Name, &
              UnitOption = FieldUnit, &
+             TallyUnitOption = TallyUnit, &
              VectorIndicesOption = VectorIndices, &
              iaPrimitiveOption = iaPrimitive, &
              iaBalancedOption = iaBalanced, &
