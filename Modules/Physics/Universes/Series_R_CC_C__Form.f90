@@ -10,7 +10,13 @@ module Series_R_CC_C__Form
   private
 
   type, public, extends ( Series_CS_1D_C_CS_Form ) :: Series_R_CC_C_Form
+    integer ( KDI ) :: &
+      iEnergy_F, &
+      iEnergy_R, &
+      iNumber_F, &
+      iNumber_R
     type ( StorageForm ), allocatable :: &
+      TotalChange, &
       Measures_CC
     class ( Measures_R_CC_C_Form ), pointer :: &
       Measures => null ( )
@@ -60,18 +66,76 @@ contains
       iCycle
 
     integer ( KDI ) :: &
+      nVariables, &
+      iI, &  !-- iIntegral
       iM  !-- iMeasure
     type ( QuantityForm ), dimension ( : ), allocatable :: &
+      Unit, &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
+      Variable, &
       SeriesName
 
     if ( S % Type == '' ) &
       S % Type = 'a Series_R_CC_C' 
 
+    !-- Parent
+
     call S % Series_CS_1D_C_CS_Form % Initialize &
            ( CS_1D, CS, GIS, dT_Label, Unit_T, dT_Candidate, T, &
              CommunicatorRank, nWrite, iCycle  )
+
+    !-- TotalChange
+
+    associate &
+      ( TF  =>  S % TallyChange, &                    !-- Fluid
+        TR  =>  S % TallyChange_1D ( 1 ) % Pointer )  !-- Radiation
+
+    !-- Fluid indices
+    do iI  =  1, TF % nIntegrals
+      if ( trim ( TF % Variable ( iI ) )  ==  'TotalEnergy' ) then
+        S % iEnergy_F  =  iI
+      else if ( trim ( TF % Variable ( iI ) )  ==  'ElectronNumber' ) then
+        S % iNumber_F  =  iI
+      end if
+    end do !-- iI
+
+    !-- Radiation indices
+    do iI  =  1, TR % nIntegrals
+      if ( trim ( TR % Variable ( iI ) )  ==  'Energy' ) then
+        S % iEnergy_R  =  iI
+      else if ( trim ( TR % Variable ( iI ) )  ==  'Number' ) then
+        S % iNumber_R  =  iI
+      end if
+    end do !-- iI
+
+    nVariables = 2
+    allocate ( Variable ( nVariables ) )
+    allocate ( Unit ( nVariables ) )
+    Variable ( 1 )  =  'Energy'
+    Variable ( 2 )  =  'ElectronNumber'
+        Unit ( 1 )  =  TF % Unit ( S % iEnergy_F )
+        Unit ( 2 )  =  TF % Unit ( S % iNumber_F )
+
+    allocate ( S % TotalChange )
+    associate &
+      ( STC  =>  S % TotalChange, &
+        SB   =>  S % Basic )
+    call STC % Initialize &
+           ( [ SB % nValues, nVariables ], &
+             VariableOption = Variable, UnitOption = Unit, &
+             NameOption =  'TotalChange', &
+             ClearOption = .true. )
+    if ( allocated ( S % CurveImage ) ) then
+      associate ( CI => S % CurveImage )
+      call CI % AddStorage ( STC )
+      end associate !-- CI
+    end if
+    end associate !-- STC, etc.
+
+    end associate !-- TF, etc.
+
+    !-- Measures
 
     S % Measures  =>  M
 
@@ -107,9 +171,44 @@ contains
       S
 
     integer ( KDI ) :: &
-      iM  !-- iMeasure
+      iN, &  !-- iNeutrinos
+      iM     !-- iMeasure
+    real ( KDR ) :: &
+      Sign
 
     call S % Series_CS_1D_C_CS_Form % Record ( )
+
+    !-- TotalChange
+
+    associate &
+      (  STCV  =>  S % TotalChange % Value, &
+        iR     =>  S % iRecord )
+    
+    !-- Fluid
+    associate ( TCFV  =>  S % TallyChange % Value )
+    STCV ( iR, 1 )  =  TCFV ( S % iEnergy_F )
+    STCV ( iR, 2 )  =  TCFV ( S % iNumber_F )
+    end associate !-- TCFV
+
+    !-- Radiation (neutrinos)
+    do iN  =  1,  size ( S % TallyChange_1D )
+      associate ( TCRV  =>  S % TallyChange_1D ( iN ) % Pointer % Value )
+      select case ( iN )
+        case ( 1 )
+          Sign  =   1.0_KDR  !-- NEUTRINOS_E
+        case ( 2 )
+          Sign  =  -1.0_KDR  !-- NEUTRINOS_EB
+        case default
+          Sign  =   0.0_KDR  !-- NEUTRINOS_HL, etc.
+      end select !-- iN
+      STCV ( iR, 1 )  =  STCV ( iR, 1 )  +         TCRV ( S % iEnergy_R )
+      STCV ( iR, 2 )  =  STCV ( iR, 2 )  +  Sign * TCRV ( S % iNumber_R )
+      end associate !-- TCRV
+    end do !-- iN
+
+    end associate !-- STCV, etc.
+
+    !-- Measures
 
     associate &
       (  SMV  =>  S % Measures_CC % Value, &
@@ -131,6 +230,8 @@ contains
 
     if ( allocated ( S % Measures_CC ) ) &
       deallocate ( S % Measures_CC )
+    if ( allocated ( S % TotalChange ) ) &
+      deallocate ( S % TotalChange )
 
     nullify ( S % Measures )
 
