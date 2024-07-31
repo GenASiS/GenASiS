@@ -15,7 +15,7 @@ module Fluid_P_HN__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_HN = 1, &
       N_BALANCED_HN  = 1, &
-      N_FIELDS_HN    = 11, &
+      N_FIELDS_HN    = 13, &
       N_VECTORS_HN   = 0
     
   type, public, extends ( Fluid_P_Form ) :: Fluid_P_HN_Form
@@ -32,9 +32,13 @@ module Fluid_P_HN__Form
       MASS_FRACTION_HEAVY    = 0, &
       ATOMIC_NUMBER_HEAVY    = 0, &
       MASS_NUMBER_HEAVY      = 0, &
+      CHEMICAL_POTENTIAL_N   = 0, &
+        !-- Measured relative to m_n.
+      CHEMICAL_POTENTIAL_P   = 0, &
+        !-- Measured relative to m_n.
       CHEMICAL_POTENTIAL_N_P = 0, &  
         !-- a.k.a. mu_hat. Includes m_n - m_p. (mu_n and mu_p both
-        !   measured with respect to m_n.)
+        !   measured relative to m_n.)
       CHEMICAL_POTENTIAL_E   = 0, &
       ADIABATIC_INDEX        = 0
         !-- Includes m_e.
@@ -346,9 +350,11 @@ contains
     F % MASS_FRACTION_HEAVY     =  oF +  6
     F % ATOMIC_NUMBER_HEAVY     =  oF +  7
     F % MASS_NUMBER_HEAVY       =  oF +  8
-    F % CHEMICAL_POTENTIAL_N_P  =  oF +  9
-    F % CHEMICAL_POTENTIAL_E    =  oF + 10
-    F % ADIABATIC_INDEX         =  of + 11
+    F % CHEMICAL_POTENTIAL_N    =  oF +  9
+    F % CHEMICAL_POTENTIAL_P    =  oF + 10
+    F % CHEMICAL_POTENTIAL_N_P  =  oF + 11
+    F % CHEMICAL_POTENTIAL_E    =  oF + 12
+    F % ADIABATIC_INDEX         =  of + 13
 
     nFields  =  oF  +  F % N_FIELDS_HN
     if ( present ( nFieldsOption ) ) &
@@ -371,6 +377,8 @@ contains
           'MassFractionHeavy    ', &
           'AtomicNumberHeavy    ', &
           'MassNumberHeavy      ', &
+          'ChemicalPotential_N  ', &
+          'ChemicalPotential_P  ', &
           'ChemicalPotential_N_P', &
           'ChemicalPotential_E  ', &
           'AdiabaticIndex       ' ]
@@ -388,6 +396,10 @@ contains
     do iC  =  1, nC
       FieldUnit ( F % ELECTRON_DENSITY_B, iC ) &
         =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % NumberDensity
+      FieldUnit ( F % CHEMICAL_POTENTIAL_N, iC ) &
+        =  Units_F ( iC ) % Temperature
+      FieldUnit ( F % CHEMICAL_POTENTIAL_P, iC ) &
+        =  Units_F ( iC ) % Temperature
       FieldUnit ( F % CHEMICAL_POTENTIAL_N_P, iC ) &
         =  Units_F ( iC ) % Temperature
       FieldUnit ( F % CHEMICAL_POTENTIAL_E, iC ) &
@@ -458,8 +470,8 @@ contains
       call PROGRAM_HEADER % GetParameter ( EOS_Filename, 'EOS_Filename' )
       call F % EOS % Initialize ( EOS_Filename )
       
-      allocate ( iaFluidOutput ( 13 ) )
-      allocate ( iaSelected_EOS ( 13 ) )
+      allocate ( iaFluidOutput ( 15 ) )
+      allocate ( iaSelected_EOS ( 15 ) )
       
       iaFluidOutput &
         = [ F % ENERGY_DENSITY_C, &
@@ -474,6 +486,8 @@ contains
             F % ATOMIC_NUMBER_HEAVY, &
             F % CHEMICAL_POTENTIAL_E, &
             F % CHEMICAL_POTENTIAL_N_P, &
+            F % CHEMICAL_POTENTIAL_N, &
+            F % CHEMICAL_POTENTIAL_P, &
             F % ADIABATIC_INDEX ]
 
       iaSelected_EOS &
@@ -489,6 +503,8 @@ contains
             F % EOS % ATOMIC_NUMBER_BAR, &
             F % EOS % CHEMICAL_POTENTIAL_E, &
             F % EOS % CHEMICAL_POTENTIAL_HAT, &
+            F % EOS % CHEMICAL_POTENTIAL_N, &
+            F % EOS % CHEMICAL_POTENTIAL_P, &
             F % EOS % GAMMA ]
       
       call F % EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
@@ -587,6 +603,7 @@ contains
                     CS % MASS_FRACTION_PROTON, CS % MASS_FRACTION_NEUTRON, &
                     CS % MASS_FRACTION_ALPHA, CS % MASS_FRACTION_HEAVY, &
                     CS % ATOMIC_NUMBER_HEAVY, CS % MASS_NUMBER_HEAVY, &
+                    CS % CHEMICAL_POTENTIAL_N, CS % CHEMICAL_POTENTIAL_P, &
                     CS % CHEMICAL_POTENTIAL_N_P, CS % CHEMICAL_POTENTIAL_E, &
                     CS % ADIABATIC_INDEX ] )
 
