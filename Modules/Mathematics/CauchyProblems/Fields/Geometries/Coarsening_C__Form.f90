@@ -267,11 +267,13 @@ contains
       if ( .not. C % ProperCell ( iV ) ) &
         cycle
       CP ( iV )  =  1.0_KDR
-      CoarsenPolar: do
-        if ( CP ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
-          exit CoarsenPolar
-        CP ( iV )  =  2.0_KDR  *  CP ( iV )
-      end do CoarsenPolar
+      !CoarsenPolar: do
+      !  if ( CP ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
+      !    exit CoarsenPolar
+      !  CP ( iV )  =  2.0_KDR  *  CP ( iV )
+      !end do CoarsenPolar
+      if ( R ( iV )  *  dTheta  <  C % MinWidth ) &
+        CP ( iV ) = C % nCellsPolar
     end do !-- iV
 
   end subroutine SetCoarseningPolar
@@ -299,12 +301,14 @@ contains
         cycle
       CA ( iV )  =  1.0_KDR
       if ( C % nDimensions  ==  3 ) then
-        CoarsenAzimuthal: do
-          if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
-               >  C % MinWidth ) &
-            exit CoarsenAzimuthal
-          CA ( iV )  =  2.0_KDR  *  CA ( iV )
-        end do CoarsenAzimuthal
+        !CoarsenAzimuthal: do
+        !  if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
+        !       >  C % MinWidth ) &
+        !    exit CoarsenAzimuthal
+        !  CA ( iV )  =  2.0_KDR  *  CA ( iV )
+        !end do CoarsenAzimuthal
+        if ( R ( iV )  *  sin ( Th ( iV ) )  * dPhi >  C % MinWidth ) &
+          CA ( iV ) = 2  *  C % nCellsPolar
       end if !-- nDimensions == 3
     end do !-- iV
 
