@@ -335,8 +335,10 @@ contains
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
         SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
+        Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E  ( iV ) * MeV
         
         !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
         
@@ -357,8 +359,10 @@ contains
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
         SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
+        Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E  ( iV ) * MeV
 
         !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
         
@@ -380,8 +384,10 @@ contains
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
         SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
+        Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E  ( iV ) * MeV
 
         !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
         

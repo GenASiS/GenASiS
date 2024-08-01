@@ -225,7 +225,7 @@ module Fluid_P_HN__Form
       end subroutine Compute_N_V_E_YE_G_S_Kernel
 
       module subroutine Apply_EOS_Epilogue_A_Kernel &
-               ( N, P, T, SS, E, Mu_NP, Mu_E, M, UseDeviceOption )
+               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -234,6 +234,8 @@ module Fluid_P_HN__Form
           T, &
           SS, &
           E, &
+          Mu_N, &
+          Mu_P, &
           Mu_NP, &
           Mu_E
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -243,7 +245,7 @@ module Fluid_P_HN__Form
       end subroutine Apply_EOS_Epilogue_A_Kernel
 
       module subroutine Apply_EOS_Epilogue_S_Kernel &
-               ( N, P, T, SS, E, Mu_NP, Mu_E, M, iV )
+               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -252,6 +254,8 @@ module Fluid_P_HN__Form
           T, &
           SS, &
           E, &
+          Mu_N, &
+          Mu_P, &
           Mu_NP, &
           Mu_E
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -664,6 +668,8 @@ contains
           SS    =>  FV ( :, F % SOUND_SPEED ), &
           YE    =>  FV ( :, F % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, F % ELECTRON_DENSITY_B ), &
+          Mu_N  =>  FV ( :, F % CHEMICAL_POTENTIAL_N ), &
+          Mu_P  =>  FV ( :, F % CHEMICAL_POTENTIAL_P ), &
           Mu_NP =>  FV ( :, F % CHEMICAL_POTENTIAL_N_P ), &
           Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
 
@@ -681,7 +687,7 @@ contains
       end associate !-- FS
 
       call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, &
                UseDeviceOption = F % DeviceMemory )
 
       select type ( Gn  =>  F % Geometry )
@@ -758,6 +764,8 @@ contains
           SS    =>  FV ( :, CS % SOUND_SPEED ), &
           YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
+          Mu_N  =>  FV ( :, CS % CHEMICAL_POTENTIAL_N ), &
+          Mu_P  =>  FV ( :, CS % CHEMICAL_POTENTIAL_P ), &
           Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
           Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
 
@@ -783,7 +791,7 @@ contains
       end associate !-- FS
 
       call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, &
                UseDeviceOption = CS % DeviceMemory )
 
       select type ( Gn  =>  CS % Geometry )
@@ -873,6 +881,8 @@ contains
           SS    =>  FV ( :, CS % SOUND_SPEED ), &
           YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
+          Mu_N  =>  FV ( :, CS % CHEMICAL_POTENTIAL_N ), &
+          Mu_P  =>  FV ( :, CS % CHEMICAL_POTENTIAL_P ), &
           Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
           Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
 
@@ -916,7 +926,7 @@ contains
       end associate !-- FS
 
       call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_NP, Mu_E, M, &
+             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, &
                UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
@@ -982,6 +992,8 @@ contains
         SS    =>  FV ( :, CS % SOUND_SPEED ), &
         YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
         DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
+        Mu_N  =>  FV ( :, CS % CHEMICAL_POTENTIAL_N ), &
+        Mu_P  =>  FV ( :, CS % CHEMICAL_POTENTIAL_P ), &
         Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
 
@@ -1025,7 +1037,7 @@ contains
     end associate !-- FS
 
     call Apply_EOS_Epilogue_S_Kernel &
-           ( N, P, T, SS, E, Mu_NP, Mu_E, M, iV )
+           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
 
     end associate !-- M, etc.
     end associate !-- FV, etc.
