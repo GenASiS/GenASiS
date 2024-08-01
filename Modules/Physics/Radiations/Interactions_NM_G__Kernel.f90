@@ -68,16 +68,16 @@ contains
         Xi_J_p  =  Factor_p  *  N_p  *  T ( iV ) ** 4  &
                    *  (    T ( iV ) ** 2     *  Fermi_5_e_Q  &
                         +  2 * Q * T ( iV )  *  Fermi_4_e_Q  &
-                        +  Q ** 2            *  Fermi_3_e_Q )  &
-                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
+                        +  Q ** 2            *  Fermi_3_e_Q )!  &
+!                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
         Xi_H_p  =  0.0_KDR
 
         Xi_N_p  =  Factor_p  *  N_p  *  T ( iV ) ** 3  &
                    *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
                         +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
-                        +  Q ** 2            *  Fermi_2_e_Q )  &
-                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
+                        +  Q ** 2            *  Fermi_2_e_Q )!  &
+!                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
         !-- nu_e + n  ->  p + e-
 
@@ -95,16 +95,16 @@ contains
         Chi_J_n  =  Factor_n  *  N_n  /  Fermi_3_nu  &
                    *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
                         +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
-                        +  Q ** 2               *  Fermi_3_nu )  &
-                   *  ( 1.0_KDR  -  F_e )
+                        +  Q ** 2               *  Fermi_3_nu )!  &
+!                   *  ( 1.0_KDR  -  F_e )
 
         Chi_H_n  =  Chi_J_n
 
         Chi_N_n  =  Factor_n  *  N_n  /  Fermi_2_nu  &
                    *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
                         +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
-                        +  Q ** 2               *  Fermi_2_nu )  &
-                   *  ( 1.0_KDR  -  F_e )
+                        +  Q ** 2               *  Fermi_2_nu )!  &
+!                   *  ( 1.0_KDR  -  F_e )
 
         !-- nu_e + n  ->  p + e-, detailed balance
 
@@ -124,15 +124,15 @@ contains
         Xi_H ( iV )  =  Xi_H_p
         Xi_N ( iV )  =  Xi_N_p
         
-        if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
-          Chi_J ( iV )  =  Chi_J_n
-          Chi_H ( iV )  =  Chi_H_n
-          Chi_N ( iV )  =  Chi_N_n
-        else
+        ! if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
+        !   Chi_J ( iV )  =  Chi_J_n
+        !   Chi_H ( iV )  =  Chi_H_n
+        !   Chi_N ( iV )  =  Chi_N_n
+        ! else
           Chi_J ( iV )  =  Chi_J_DB
           Chi_H ( iV )  =  Chi_H_DB
           Chi_N ( iV )  =  Chi_N_DB
-        end if
+        ! end if
 
       end do
     end if
@@ -173,16 +173,16 @@ contains
     Xi_J_p  =  Factor_p  *  N_p  *  T ( iV ) ** 4  &
                *  (    T ( iV ) ** 2     *  Fermi_5_e_Q  &
                     +  2 * Q * T ( iV )  *  Fermi_4_e_Q  &
-                    +  Q ** 2            *  Fermi_3_e_Q )  &
-               *  ( 1.0_KDR  -  F_Ave ( iV ) )
+                    +  Q ** 2            *  Fermi_3_e_Q )!  &
+!               *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
     Xi_H_p  =  0.0_KDR
 
     Xi_N_p  =  Factor_p  *  N_p  *  T ( iV ) ** 3  &
                *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
                     +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
-                    +  Q ** 2            *  Fermi_2_e_Q )  &
-               *  ( 1.0_KDR  -  F_Ave ( iV ) )
+                    +  Q ** 2            *  Fermi_2_e_Q )!  &
+!               *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
     !-- nu_e + n  ->  p + e-
 
@@ -200,16 +200,16 @@ contains
     Chi_J_n  =  Factor_n  *  N_n  /  Fermi_3_nu  &
                *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
                     +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
-                    +  Q ** 2               *  Fermi_3_nu )  &
-               *  ( 1.0_KDR  -  F_e )
+                    +  Q ** 2               *  Fermi_3_nu )!  &
+!               *  ( 1.0_KDR  -  F_e )
 
     Chi_H_n  =  Chi_J_n
 
     Chi_N_n  =  Factor_n  *  N_n  /  Fermi_2_nu  &
                *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
                     +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
-                    +  Q ** 2               *  Fermi_2_nu )  &
-               *  ( 1.0_KDR  -  F_e )
+                    +  Q ** 2               *  Fermi_2_nu )!  &
+!               *  ( 1.0_KDR  -  F_e )
 
     !-- nu_e + n  ->  p + e-, detailed balance
 
@@ -229,15 +229,15 @@ contains
     Xi_H ( iV )  =  Xi_H_p
     Xi_N ( iV )  =  Xi_N_p
     
-    if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
-      Chi_J ( iV )  =  Chi_J_n
-      Chi_H ( iV )  =  Chi_H_n
-      Chi_N ( iV )  =  Chi_N_n
-    else
+    ! if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
+    !   Chi_J ( iV )  =  Chi_J_n
+    !   Chi_H ( iV )  =  Chi_H_n
+    !   Chi_N ( iV )  =  Chi_N_n
+    ! else
       Chi_J ( iV )  =  Chi_J_DB
       Chi_H ( iV )  =  Chi_H_DB
       Chi_N ( iV )  =  Chi_N_DB
-    end if
+    ! end if
 
   end procedure Compute_EA_E_S_Kernel
 
