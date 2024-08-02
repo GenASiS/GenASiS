@@ -12,7 +12,7 @@
 #	$(MAKE) -C $(PATH_TIMMES) fermi_dirac_quadrature.o
 
 ThirdParty.a:
-	touch ThirdParty.a
+	ar r ThirdParty.a
 
 clean_ThirdParty:
 	rm -rf ThirdPartyObjects
