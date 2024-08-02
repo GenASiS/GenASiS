@@ -93,6 +93,54 @@ module Interactions_NM_G__Form
           iV
       end subroutine Compute_EA_E_S_Kernel
 
+      module subroutine Compute_EA_EB_A_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+                 M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
+                 Rho_DB, UseDeviceOption )
+        !-- Compute_EmissionAbsorption_Electron_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J,  Xi_H,  Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_EC_N, &
+          Chi_J_EC_N, &
+          Chi_J_EC_N_DB
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+          M, N, T, X_n, X_p, Mu_e, Mu_n_p
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_EA_EB_A_Kernel
+
+      module subroutine Compute_EA_EB_S_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+                 M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
+                 Rho_DB, iV )
+        !-- Compute_EmissionAbsorption_Electron_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J,  Xi_H,  Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_EC_N, &
+          Chi_J_EC_N, &
+          Chi_J_EC_N_DB
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+          M, N, T, X_n, X_p, Mu_e, Mu_n_p
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_EA_EB_S_Kernel
+
     end interface
 
 
@@ -303,11 +351,14 @@ contains
                  M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
-      ! case ( 'NEUTRINOS_EB' )
-      !   call Compute_EA_E_Bar_A_Kernel &
-      !          ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-      !            J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, &
-      !            UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_EB' )
+        call Compute_EA_EB_A_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+                 M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
+                 Rho_DB = I % DensityDetailedBalance, &
+                 UseDeviceOption = I % DeviceMemory )
       ! case ( 'NEUTRINOS_HL' )
       !   call I % Clear ( )
       end select !-- RadiationType
@@ -406,10 +457,13 @@ integer ( KDI ) :: &
                J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                Rho_DB = I % DensityDetailedBalance, iV = iV )
-    ! case ( 'NEUTRINOS_EB' )
-    !   call Compute_EA_E_Bar_S_Kernel &
-    !          ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-    !            J_Eq, N_Eq, F_Ave, M, N, T, X_n, Mu_e, iV )
+    case ( 'NEUTRINOS_EB' )
+      call Compute_EA_EB_S_Kernel &
+             ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+               Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+               J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+               M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
+               Rho_DB = I % DensityDetailedBalance, iV = iV )
     ! case ( 'NEUTRINOS_HL' )
     !   call I % Clear ( )
     end select !-- RadiationType
