@@ -66,6 +66,7 @@ contains
       RadiationType
 
     FinishTime  =  0.7_KDR  *  UNIT % SECOND
+    call PROGRAM_HEADER % GetParameter ( FinishTime, 'FinishTime' )
 
     Neutrinos_EB  =  .true.
     Neutrinos_HL  =  .true.
