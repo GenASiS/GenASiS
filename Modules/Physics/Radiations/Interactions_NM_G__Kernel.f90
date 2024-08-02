@@ -124,15 +124,15 @@ contains
         Xi_H ( iV )  =  Xi_H_p
         Xi_N ( iV )  =  Xi_N_p
         
-        ! if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
+        if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
           Chi_J ( iV )  =  Chi_J_n
           Chi_H ( iV )  =  Chi_H_n
           Chi_N ( iV )  =  Chi_N_n
-        ! else
-        !   Chi_J ( iV )  =  Chi_J_DB
-        !   Chi_H ( iV )  =  Chi_H_DB
-        !   Chi_N ( iV )  =  Chi_N_DB
-        ! end if
+        else
+          Chi_J ( iV )  =  Chi_J_DB
+          Chi_H ( iV )  =  Chi_H_DB
+          Chi_N ( iV )  =  Chi_N_DB
+        end if
 
       end do
     end if
@@ -229,15 +229,15 @@ contains
     Xi_H ( iV )  =  Xi_H_p
     Xi_N ( iV )  =  Xi_N_p
     
-    ! if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
+    if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then
       Chi_J ( iV )  =  Chi_J_n
       Chi_H ( iV )  =  Chi_H_n
       Chi_N ( iV )  =  Chi_N_n
-    ! else
-    !   Chi_J ( iV )  =  Chi_J_DB
-    !   Chi_H ( iV )  =  Chi_H_DB
-    !   Chi_N ( iV )  =  Chi_N_DB
-    ! end if
+    else
+      Chi_J ( iV )  =  Chi_J_DB
+      Chi_H ( iV )  =  Chi_H_DB
+      Chi_N ( iV )  =  Chi_N_DB
+    end if
 
   end procedure Compute_EA_E_S_Kernel
 
