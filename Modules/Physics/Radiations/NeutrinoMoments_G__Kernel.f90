@@ -901,9 +901,9 @@ contains
   end procedure Compute_Eq_E_S_Kernel
 
 
-  module procedure Compute_Eq_X_A_Kernel
+  module procedure Compute_Eq_HL_A_Kernel
 
-    !-- Compute_Equilibrium_X_All_Kernel
+    !-- Compute_Equilibrium_HL_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -970,12 +970,12 @@ contains
       !$OMP end parallel do
     end if
 
-  end procedure Compute_Eq_X_A_Kernel
+  end procedure Compute_Eq_HL_A_Kernel
 
 
-  module procedure Compute_Eq_X_S_Kernel
+  module procedure Compute_Eq_HL_S_Kernel
 
-    !-- Compute_Equilibrium_X_Single_Kernel
+    !-- Compute_Equilibrium_HL_Single_Kernel
 
     real ( KDR ) :: &
       SqrtTiny, &
@@ -1024,7 +1024,7 @@ contains
     J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
                      /  max ( SqrtTiny, J_Eq ( iV ) )
 
-  end procedure Compute_Eq_X_S_Kernel
+  end procedure Compute_Eq_HL_S_Kernel
 
 
 !   subroutine SolveSecant ( LHS, Guess_1, Guess_2, Success, Root )

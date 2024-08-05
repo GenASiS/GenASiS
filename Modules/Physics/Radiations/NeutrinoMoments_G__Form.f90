@@ -63,8 +63,8 @@ module NeutrinoMoments_G__Form
       Compute_SP_S_Kernel, &
       Compute_Eq_E_A_Kernel, &
       Compute_Eq_E_S_Kernel, &
-      Compute_Eq_X_A_Kernel, &
-      Compute_Eq_X_S_Kernel
+      Compute_Eq_HL_A_Kernel, &
+      Compute_Eq_HL_S_Kernel
     
     interface
 
@@ -207,10 +207,10 @@ module NeutrinoMoments_G__Form
           iV
       end subroutine Compute_Eq_E_S_Kernel
 
-      module subroutine Compute_Eq_X_A_Kernel &
+      module subroutine Compute_Eq_HL_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, nSpecies, &
                  UseDeviceOption )
-        !-- Compute_Equilibrium_X_Single_Kernel
+        !-- Compute_Equilibrium_HL_Single_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -223,11 +223,11 @@ module NeutrinoMoments_G__Form
           nSpecies
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_Eq_X_A_Kernel
+      end subroutine Compute_Eq_HL_A_Kernel
 
-      module subroutine Compute_Eq_X_S_Kernel &
+      module subroutine Compute_Eq_HL_S_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, nSpecies, iV )
-        !-- Compute_Equilibrium_X_Single_Kernel
+        !-- Compute_Equilibrium_HL_Single_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -240,7 +240,7 @@ module NeutrinoMoments_G__Form
           nSpecies
         integer ( KDI ), intent ( in ) :: &
           iV
-      end subroutine Compute_Eq_X_S_Kernel
+      end subroutine Compute_Eq_HL_S_Kernel
 
     end interface
 
@@ -813,7 +813,7 @@ contains
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                  Sign = -1.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case ( 'NEUTRINOS_HL' )
-        call Compute_Eq_X_A_Kernel &
+        call Compute_Eq_HL_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
                  nSpecies = 4.0_KDR, UseDeviceOption = RM % DeviceMemory )
       case default
@@ -874,7 +874,7 @@ contains
              ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, Mu_E, Mu_NP, &
                Sign = -1.0_KDR, iV = iV )
     case ( 'NEUTRINOS_HL' )
-      call Compute_Eq_X_S_Kernel &
+      call Compute_Eq_HL_S_Kernel &
              ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
                nSpecies = 4.0_KDR, iV = iV )
     case default
