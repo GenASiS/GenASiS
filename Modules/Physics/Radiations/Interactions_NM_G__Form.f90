@@ -12,7 +12,7 @@ module Interactions_NM_G__Form
  private
 
      integer ( KDI ), private, parameter :: &
-      N_FIELDS_NM_G = 5
+      N_FIELDS_NM_G = 4
 
   type, public, extends ( Interactions_BM_Form ) :: Interactions_NM_G_Form
     integer ( KDI ) :: &
