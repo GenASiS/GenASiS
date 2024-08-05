@@ -116,9 +116,9 @@ contains
 
 !         !-- Total
 
-!          Xi_J_EC_N    ( iV )  =   Xi_J_p
-!         Chi_J_EC_N    ( iV )  =  Chi_J_n
-!         Chi_J_EC_N_DB ( iV )  =  Chi_J_DB
+!          Xi_J_EA_N    ( iV )  =   Xi_J_p
+!         Chi_J_EA_N    ( iV )  =  Chi_J_n
+!         Chi_J_EA_N_DB ( iV )  =  Chi_J_DB
 
 !         Xi_J ( iV )  =  Xi_J_p
 !         Xi_H ( iV )  =  Xi_H_p
@@ -221,9 +221,9 @@ contains
 
 !     !-- Total
 
-!      Xi_J_EC_N    ( iV )  =   Xi_J_p
-!     Chi_J_EC_N    ( iV )  =  Chi_J_n
-!     Chi_J_EC_N_DB ( iV )  =  Chi_J_DB
+!      Xi_J_EA_N    ( iV )  =   Xi_J_p
+!     Chi_J_EA_N    ( iV )  =  Chi_J_n
+!     Chi_J_EA_N_DB ( iV )  =  Chi_J_DB
 
 !     Xi_J ( iV )  =  Xi_J_p
 !     Xi_H ( iV )  =  Xi_H_p
@@ -308,8 +308,8 @@ contains
 
         !-- Total
 
-         Xi_J_EC_N ( iV )  =   Xi_J_p
-        Chi_J_EC_N ( iV )  =  Chi_J_n
+         Xi_J_EA_N ( iV )  =   Xi_J_p
+        Chi_J_EA_N ( iV )  =  Chi_J_n
 
         Xi_J ( iV )  =  Xi_J_p
         Xi_H ( iV )  =  Xi_H_p
@@ -376,8 +376,8 @@ contains
 
     !-- Total
 
-     Xi_J_EC_N ( iV )  =   Xi_J_p
-    Chi_J_EC_N ( iV )  =  Chi_J_n
+     Xi_J_EA_N ( iV )  =   Xi_J_p
+    Chi_J_EA_N ( iV )  =  Chi_J_n
 
     Xi_J ( iV )  =  Xi_J_p
     Xi_H ( iV )  =  Xi_H_p
@@ -457,8 +457,8 @@ contains
 
         !-- Total
 
-         Xi_J_EC_N ( iV )  =   Xi_J_n
-        Chi_J_EC_N ( iV )  =  Chi_J_p
+         Xi_J_EA_N ( iV )  =   Xi_J_n
+        Chi_J_EA_N ( iV )  =  Chi_J_p
 
         Xi_J ( iV )  =  Xi_J_n
         Xi_H ( iV )  =  Xi_H_n
@@ -523,8 +523,8 @@ contains
 
     !-- Total
 
-     Xi_J_EC_N ( iV )  =   Xi_J_n
-    Chi_J_EC_N ( iV )  =  Chi_J_p
+     Xi_J_EA_N ( iV )  =   Xi_J_n
+    Chi_J_EA_N ( iV )  =  Chi_J_p
 
     Xi_J ( iV )  =  Xi_J_n
     Xi_H ( iV )  =  Xi_H_n
