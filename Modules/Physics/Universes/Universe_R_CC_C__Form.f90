@@ -107,17 +107,6 @@ contains
     call U % Universe_H_Form % Initialize &
            ( Name, UnitsTypeOption = UnitsTypeOption )
 
-    !-- Radiations
-
-    U % nRadiations  =  size ( RadiationName )
-
-    allocate ( U % RadiationName ( U % nRadiations ) )
-    allocate ( U % RadiationType ( U % nRadiations ) )
-    U % RadiationName  =  RadiationName
-    U % RadiationType  =  RadiationType
-
-    U % FormalismType  =  FormalismType
-
     if ( trim ( RadiationType ( 1 ) )  ==  'NONE' ) then
       call U % Universe_F_CC_Form % Initialize &
              ( FluidType, GravitationType, Name, &
@@ -129,6 +118,17 @@ contains
                nWriteOption = nWriteOption )
       return
     end if
+    
+    !-- Radiations
+
+    U % nRadiations  =  size ( RadiationName )
+
+    allocate ( U % RadiationName ( U % nRadiations ) )
+    allocate ( U % RadiationType ( U % nRadiations ) )
+    U % RadiationName  =  RadiationName
+    U % RadiationType  =  RadiationType
+
+    U % FormalismType  =  FormalismType
 
     !-- Initializations
 
