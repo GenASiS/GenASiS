@@ -250,11 +250,14 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      Factor_p, &
-      N_p, Eta_e_Q, &
-      Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
+      Factor_p, Factor_A, Dlta, &
+      N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, &
+      Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
+      Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
        Xi_J_p,  Xi_H_p,  Xi_N_p, &
-      Chi_J_n, Chi_H_n, Chi_N_n
+      Chi_J_n, Chi_H_n, Chi_N_n, &
+       Xi_J_A,  Xi_H_A,  Xi_N_A, &
+      Chi_J_A, Chi_H_A, Chi_N_A
     logical ( KDL ) :: &
       UseDevice      
 
@@ -265,6 +268,8 @@ contains
     nV  =  size ( J_Eq )
 
     Factor_p  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
+    Factor_A  =  G_F_2 / ( 2 * Pi_3 )  *  ( 2.0_KDR / 7.0_KDR )  *  g_A_2
+      Dlta    =  3.0_KDR !-- MeV
 
     if ( UseDevice ) then
     else
@@ -306,18 +311,71 @@ contains
 
         Chi_N_n  =  Xi_N_p / N_Eq ( iV )
 
+        !-- e- + A  ->  A' + nu_e 
+
+        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+                /  ( max ( A ( iV ), SqrtTiny ) * amu )
+        
+        if ( Z ( iV )  <=  20.0_KDR ) then
+          N_p_Z  =  0.0_KDR
+        else if ( Z ( iV )  <=  28.0_KDR ) then
+          N_p_Z  =  Z ( iV )  -  20.0_KDR
+        else
+          N_p_Z  =  8.0_KDR
+        end if
+
+        if ( A ( iV )  -  Z ( iV )  <=  34.0_KDR ) then
+          N_h_N  =  6.0_KDR
+        else if ( A ( iV )  -  Z ( iV )  <=  40.0_KDR ) then
+          N_h_N  =  40.0_KDR  -  ( A ( iV )  -  Z ( iV ) )
+        else
+          N_h_N  =  0.0_KDR
+        end if
+
+        Qp  =  Mu_n_p ( iV )  +  Dlta
+
+        Eta_e_Qp  =  ( Mu_e ( iV )  -  Qp )  /  T ( iV )
+
+        Fermi_2_e_Qp  =  Fermi_2 ( Eta_e_Qp )
+        Fermi_3_e_Qp  =  Fermi_3 ( Eta_e_Qp )
+        Fermi_4_e_Qp  =  Fermi_4 ( Eta_e_Qp )
+        Fermi_5_e_Qp  =  Fermi_5 ( Eta_e_Qp )
+
+        Xi_J_A  =  Factor_A  *  N_A  *  N_p_Z  *  N_h_N  *  T ( iV ) ** 4  &
+                   *  (    T ( iV ) ** 2      *  Fermi_5_e_Qp  &
+                        +  2 * Qp * T ( iV )  *  Fermi_4_e_Qp  &
+                        +  Qp ** 2            *  Fermi_3_e_Qp )
+
+        Xi_H_A  =  0.0_KDR
+
+        Xi_N_A  =  Factor_A  *  N_A  *  N_p_Z  *  N_h_N  *  T ( iV ) ** 3  &
+                   *  (    T ( iV ) ** 2      *  Fermi_4_e_Qp  &
+                        +  2 * Qp * T ( iV )  *  Fermi_3_e_Qp  &
+                        +  Qp ** 2            *  Fermi_2_e_Qp )
+
+        !-- nu_e + A'  ->  A + e-, detailed balance
+
+        Chi_J_A  =  Xi_J_A / J_Eq ( iV )
+
+        Chi_H_A  =  Chi_J_A
+
+        Chi_N_A  =  Xi_N_A / N_Eq ( iV )
+
         !-- Total
 
          Xi_J_EA_N ( iV )  =   Xi_J_p
         Chi_J_EA_N ( iV )  =  Chi_J_n
 
-        Xi_J ( iV )  =  Xi_J_p
-        Xi_H ( iV )  =  Xi_H_p
-        Xi_N ( iV )  =  Xi_N_p
+         Xi_J_EA_A ( iV )  =   Xi_J_A
+        Chi_J_EA_A ( iV )  =  Chi_J_A
+
+        Xi_J ( iV )  =  Xi_J_p  +  Xi_J_A
+        Xi_H ( iV )  =  Xi_H_p  +  Xi_H_A
+        Xi_N ( iV )  =  Xi_N_p  +  Xi_N_A
         
-        Chi_J ( iV )  =  Chi_J_n
-        Chi_H ( iV )  =  Chi_H_n
-        Chi_N ( iV )  =  Chi_N_n
+        Chi_J ( iV )  =  Chi_J_n  +  Chi_J_A
+        Chi_H ( iV )  =  Chi_H_n  +  Chi_H_A
+        Chi_N ( iV )  =  Chi_N_n  +  Chi_N_A
 
       end do
     end if
@@ -330,13 +388,18 @@ contains
     !-- Compute_EmissionAbsorption_Electron_Single_Kernel
 
     real ( KDR ) :: &
-      Factor_p, &
-      N_p, Eta_e_Q, &
-      Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
+      Factor_p, Factor_A, Dlta, &
+      N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, &
+      Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
+      Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
        Xi_J_p,  Xi_H_p,  Xi_N_p, &
-      Chi_J_n, Chi_H_n, Chi_N_n
+      Chi_J_n, Chi_H_n, Chi_N_n, &
+       Xi_J_A,  Xi_H_A,  Xi_N_A, &
+      Chi_J_A, Chi_H_A, Chi_N_A
 
     Factor_p  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
+    Factor_A  =  G_F_2 / ( 2 * Pi_3 )  *  ( 2.0_KDR / 7.0_KDR )  *  g_A_2
+      Dlta    =  3.0_KDR !-- MeV
 
     if ( T ( iV ) == 0.0_KDR ) &
       return
@@ -374,18 +437,71 @@ contains
 
     Chi_N_n  =  Xi_N_p / N_Eq ( iV )
 
+    !-- e- + A  ->  A' + nu_e 
+
+    N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+            /  ( max ( A ( iV ), SqrtTiny ) * amu )
+    
+    if ( Z ( iV )  <=  20.0_KDR ) then
+      N_p_Z  =  0.0_KDR
+    else if ( Z ( iV )  <=  28.0_KDR ) then
+      N_p_Z  =  Z ( iV )  -  20.0_KDR
+    else
+      N_p_Z  =  8.0_KDR
+    end if
+
+    if ( A ( iV )  -  Z ( iV )  <=  34.0_KDR ) then
+      N_h_N  =  6.0_KDR
+    else if ( A ( iV )  -  Z ( iV )  <=  40.0_KDR ) then
+      N_h_N  =  40.0_KDR  -  ( A ( iV )  -  Z ( iV ) )
+    else
+      N_h_N  =  0.0_KDR
+    end if
+
+    Qp  =  Mu_n_p ( iV )  +  Dlta
+
+    Eta_e_Qp  =  ( Mu_e ( iV )  -  Qp )  /  T ( iV )
+
+    Fermi_2_e_Qp  =  Fermi_2 ( Eta_e_Qp )
+    Fermi_3_e_Qp  =  Fermi_3 ( Eta_e_Qp )
+    Fermi_4_e_Qp  =  Fermi_4 ( Eta_e_Qp )
+    Fermi_5_e_Qp  =  Fermi_5 ( Eta_e_Qp )
+
+    Xi_J_A  =  Factor_A  *  N_A  *  N_p_Z  *  N_h_N  *  T ( iV ) ** 4  &
+               *  (    T ( iV ) ** 2      *  Fermi_5_e_Qp  &
+                    +  2 * Qp * T ( iV )  *  Fermi_4_e_Qp  &
+                    +  Qp ** 2            *  Fermi_3_e_Qp )
+
+    Xi_H_A  =  0.0_KDR
+
+    Xi_N_A  =  Factor_A  *  N_A  *  N_p_Z  *  N_h_N  *  T ( iV ) ** 3  &
+               *  (    T ( iV ) ** 2      *  Fermi_4_e_Qp  &
+                    +  2 * Qp * T ( iV )  *  Fermi_3_e_Qp  &
+                    +  Qp ** 2            *  Fermi_2_e_Qp )
+
+    !-- nu_e + A'  ->  A + e-, detailed balance
+
+    Chi_J_A  =  Xi_J_A / J_Eq ( iV )
+
+    Chi_H_A  =  Chi_J_A
+
+    Chi_N_A  =  Xi_N_A / N_Eq ( iV )
+
     !-- Total
 
      Xi_J_EA_N ( iV )  =   Xi_J_p
     Chi_J_EA_N ( iV )  =  Chi_J_n
 
-    Xi_J ( iV )  =  Xi_J_p
-    Xi_H ( iV )  =  Xi_H_p
-    Xi_N ( iV )  =  Xi_N_p
+     Xi_J_EA_A ( iV )  =   Xi_J_A
+    Chi_J_EA_A ( iV )  =  Chi_J_A
+
+    Xi_J ( iV )  =  Xi_J_p  +  Xi_J_A
+    Xi_H ( iV )  =  Xi_H_p  +  Xi_H_A
+    Xi_N ( iV )  =  Xi_N_p  +  Xi_N_A
     
-    Chi_J ( iV )  =  Chi_J_n
-    Chi_H ( iV )  =  Chi_H_n
-    Chi_N ( iV )  =  Chi_N_n
+    Chi_J ( iV )  =  Chi_J_n  +  Chi_J_A
+    Chi_H ( iV )  =  Chi_H_n  +  Chi_H_A
+    Chi_N ( iV )  =  Chi_N_n  +  Chi_N_A
 
   end procedure Compute_EA_E_S_Kernel
 
