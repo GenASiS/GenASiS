@@ -6,9 +6,9 @@ submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
   
   implicit none
 
-  real ( KDR ) :: &
-    Pi    =  CONSTANT % PI, &
-    Pi_2  =  CONSTANT % PI ** 2
+!  real ( KDR ) :: &
+!    Pi    =  CONSTANT % PI, &
+!    Pi_2  =  CONSTANT % PI ** 2
 
 contains
 
@@ -1042,12 +1042,16 @@ contains
       Eta
     real ( KDR ) :: &
       F_3
-
+    
+    associate ( Pi_2 => CONSTANT % PI ** 2 )
+    
     if ( Eta  >  0.0_KDR ) then
       F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
     else
       F_3  =  6. * exp ( Eta )
     end if
+    
+    end associate
 
   end function Fermi_3
 
@@ -1058,13 +1062,17 @@ contains
       Eta
     real ( KDR ) :: &
       F_4
-
+    
+    associate ( Pi_2 => CONSTANT % PI ** 2 )
+    
     if ( Eta  >  0.0_KDR ) then
       F_4  =  Eta**5 / 5.  +  2. * Pi_2 * Eta**3 / 3.  +  48. * Eta  &
               +  24. * exp ( -Eta )
     else
       F_4  =  24. * exp ( Eta )
     end if
+    
+    end associate
 
   end function Fermi_4
 
@@ -1076,12 +1084,16 @@ contains
     real ( KDR ) :: &
       F_5
 
+    associate ( Pi_2 => CONSTANT % PI ** 2 )
+
     if ( Eta  >  0.0_KDR ) then
       F_5  =  Eta**6 / 6.  +  5. * Pi_2 * Eta**4 / 6.  +  110. * Eta**2  &
               +  240.  -  120. * exp ( -Eta )
     else
       F_5  =  120. * exp ( Eta )
     end if
+  
+    end associate
 
   end function Fermi_5
 
