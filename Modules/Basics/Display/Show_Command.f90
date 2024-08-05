@@ -1461,6 +1461,11 @@ contains
 
     AbortShow = .false.
     
+    if ( Ignorability <= 0 ) then
+      AbortShow = .true.
+      return
+    end if
+    
     if ( CONSOLE % Muted .or. Ignorability > CONSOLE % Verbosity ) then
       AbortShow = .true.
       return
