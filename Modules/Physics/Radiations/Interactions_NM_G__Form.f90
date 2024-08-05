@@ -12,7 +12,7 @@ module Interactions_NM_G__Form
  private
 
      integer ( KDI ), private, parameter :: &
-      N_FIELDS_NM_G = 5
+      N_FIELDS_NM_G = 4
 
   type, public, extends ( Interactions_BM_Form ) :: Interactions_NM_G_Form
     integer ( KDI ) :: &
@@ -23,8 +23,7 @@ module Interactions_NM_G__Form
     integer ( KDI ) :: &
       !-- Electron capture on neutrons
       EMISSIVITY_J_EC_N    = 0, & 
-         OPACITY_J_EC_N    = 0, &
-         OPACITY_J_EC_N_DB = 0     !-- From grey detailed balance
+         OPACITY_J_EC_N    = 0
     real ( KDR ) :: &
       DensityDetailedBalance
   contains
@@ -47,7 +46,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 Xi_J_EC_N, Chi_J_EC_N, &
                  J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                  M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  Rho_DB, UseDeviceOption )
@@ -58,8 +57,7 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J_EC_N, &
-          Chi_J_EC_N, &
-          Chi_J_EC_N_DB
+          Chi_J_EC_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
           M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p
@@ -71,7 +69,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_E_S_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 Xi_J_EC_N, Chi_J_EC_N, &
                  J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                  M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  Rho_DB, iV )
@@ -82,8 +80,7 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J_EC_N, &
-          Chi_J_EC_N, &
-          Chi_J_EC_N_DB
+          Chi_J_EC_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
           M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p
@@ -95,7 +92,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_EB_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 Xi_J_EC_N, Chi_J_EC_N, &
                  J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                  M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                  Rho_DB, UseDeviceOption )
@@ -106,8 +103,7 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J_EC_N, &
-          Chi_J_EC_N, &
-          Chi_J_EC_N_DB
+          Chi_J_EC_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
           M, N, T, X_n, X_p, Mu_e, Mu_n_p
@@ -119,7 +115,7 @@ module Interactions_NM_G__Form
 
       module subroutine Compute_EA_EB_S_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 Xi_J_EC_N, Chi_J_EC_N, &
                  J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                  M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                  Rho_DB, iV )
@@ -130,8 +126,7 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J_EC_N, &
-          Chi_J_EC_N, &
-          Chi_J_EC_N_DB
+          Chi_J_EC_N
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
           M, N, T, X_n, X_p, Mu_e, Mu_n_p
@@ -196,7 +191,6 @@ contains
 
     I % EMISSIVITY_J_EC_N     =  oF + 3 
     I %    OPACITY_J_EC_N     =  oF + 4
-    I %    OPACITY_J_EC_N_DB  =  oF + 5
 
     nFields  =  oF  +  I % N_FIELDS_NM_G
     if ( present ( nFieldsOption ) ) &
@@ -214,8 +208,7 @@ contains
       = [ 'Emissivity_N     ', &
           'Opacity_N        ', &
           'Emissivity_J_EC_N', &
-          'Opacity_J_EC_N   ', &
-          'Opacity_J_EC_N_DB' ]
+          'Opacity_J_EC_N   ' ]
           
     !-- Units
 
@@ -239,8 +232,6 @@ contains
         =  Units_R ( iC ) % EnergyDensity  &
            *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
       FieldUnit ( I % OPACITY_J_EC_N, iC ) &
-        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
-      FieldUnit ( I % OPACITY_J_EC_N_DB, iC ) &
         =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
 
     end do !-- iC
@@ -283,8 +274,7 @@ contains
                    I % OPACITY_H, &
                    I % OPACITY_N, &
                    I % EMISSIVITY_J_EC_N, &
-                   I % OPACITY_J_EC_N, &
-                   I % OPACITY_J_EC_N_DB ] )
+                   I % OPACITY_J_EC_N ] )
 
   end subroutine SetStream
 
@@ -322,7 +312,6 @@ contains
           Chi_H          =>  IV ( :, I % OPACITY_H ), &
           Chi_N          =>  IV ( :, I % OPACITY_N ), &
           Chi_J_EC_N     =>  IV ( :, I % OPACITY_J_EC_N ), &
-          Chi_J_EC_N_DB  =>  IV ( :, I % OPACITY_J_EC_N_DB ), &
             T_Nu         =>  RV ( :, R % TEMPERATURE_GREY ), &
           Eta_Nu         =>  RV ( :, R % DEGENERACY_GREY ), &
             J_Eq         =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
@@ -346,7 +335,7 @@ contains
       case ( 'NEUTRINOS_E' )
         call Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 Xi_J_EC_N, Chi_J_EC_N, &
                  J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                  M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                  Rho_DB = I % DensityDetailedBalance, &
@@ -354,13 +343,13 @@ contains
       case ( 'NEUTRINOS_EB' )
         call Compute_EA_EB_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+                 Xi_J_EC_N, Chi_J_EC_N, &
                  J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                  M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                  Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
-      ! case ( 'NEUTRINOS_HL' )
-      !   call I % Clear ( )
+      case ( 'NEUTRINOS_HL' )
+        call I % Clear ( )
       end select !-- RadiationType
              
       ! !-- Pair emission
@@ -426,7 +415,6 @@ integer ( KDI ) :: &
         Chi_H          =>  I_V ( :, I % OPACITY_H ), &
         Chi_N          =>  I_V ( :, I % OPACITY_N ), &
         Chi_J_EC_N     =>  I_V ( :, I % OPACITY_J_EC_N ), &
-        Chi_J_EC_N_DB  =>  I_V ( :, I % OPACITY_J_EC_N_DB ), &
           T_Nu         =>  R_V ( :, R % TEMPERATURE_GREY ), &
         Eta_Nu         =>  R_V ( :, R % DEGENERACY_GREY ), &
           J_Eq         =>  R_V ( :, R % ENERGY_DENSITY_C_EQ ), &
@@ -453,19 +441,19 @@ integer ( KDI ) :: &
     case ( 'NEUTRINOS_E' )
       call Compute_EA_E_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-               Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+               Xi_J_EC_N, Chi_J_EC_N, &
                J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                M, N, T, X_n, X_p, X_A, Z, A, Mu_e, Mu_n_p, &
                Rho_DB = I % DensityDetailedBalance, iV = iV )
     case ( 'NEUTRINOS_EB' )
       call Compute_EA_EB_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
-               Xi_J_EC_N, Chi_J_EC_N, Chi_J_EC_N_DB, &
+               Xi_J_EC_N, Chi_J_EC_N, &
                J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                Rho_DB = I % DensityDetailedBalance, iV = iV )
-    ! case ( 'NEUTRINOS_HL' )
-    !   call I % Clear ( )
+    case ( 'NEUTRINOS_HL' )
+      call I % Clear ( )
     end select !-- RadiationType
            
     ! !-- Pair emission
