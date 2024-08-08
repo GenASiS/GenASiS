@@ -384,8 +384,8 @@ contains
                  M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                  Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
-      case ( 'NEUTRINOS_HL' )
-        call I % Clear ( )
+!      case ( 'NEUTRINOS_HL' )
+!        call I % Clear ( )
       end select !-- RadiationType
              
       ! !-- Pair emission
@@ -492,8 +492,8 @@ integer ( KDI ) :: &
                J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                Rho_DB = I % DensityDetailedBalance, iV = iV )
-    case ( 'NEUTRINOS_HL' )
-      call I % Clear ( )
+!    case ( 'NEUTRINOS_HL' )
+!      call I % Clear ( )
     end select !-- RadiationType
            
     ! !-- Pair emission
