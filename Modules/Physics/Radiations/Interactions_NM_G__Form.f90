@@ -21,10 +21,10 @@ module Interactions_NM_G__Form
       EMISSIVITY_N = 0, &
          OPACITY_N = 0
     integer ( KDI ) :: &
-      !-- Electron capture on nucleons
+      !-- Emission/absorption, nucleons
       EMISSIVITY_J_EA_N = 0, & 
          OPACITY_J_EA_N = 0, &
-      !-- Electron capture on nuclei
+      !-- Emission/absorption, nuclei
       EMISSIVITY_J_EA_A = 0, & 
          OPACITY_J_EA_A = 0, &
       !-- Scattering on nucleons
@@ -47,7 +47,12 @@ module Interactions_NM_G__Form
   end type Interactions_NM_G_Form
 
     private :: &
-      Compute_EA_E_A_Kernel
+      Compute_EA_E_A_Kernel, &
+      Compute_EA_E_S_Kernel, &
+      Compute_EA_EB_A_Kernel, &
+      Compute_EA_EB_S_Kernel, &
+      Compute_S_A_Kernel, & 
+      Compute_S_S_Kernel 
 
     interface
 
@@ -142,6 +147,38 @@ module Interactions_NM_G__Form
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Compute_EA_EB_S_Kernel
+
+      module subroutine Compute_S_A_Kernel &
+               ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+                 M, N, X_p, X_n, X_A, Z, A, UseDeviceOption )
+        !-- Compute_Scattering_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H_S_N, Chi_H_S_A
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T_nu, Eta_nu, &
+          M, N, X_p, X_n, X_A, Z, A
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_S_A_Kernel
+
+      module subroutine Compute_S_S_Kernel &
+               ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+                 M, N, X_p, X_n, X_A, Z, A, iV )
+        !-- Compute_Scattering_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H_S_N, Chi_H_S_A
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T_nu, Eta_nu, &
+          M, N, X_p, X_n, X_A, Z, A
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_S_S_Kernel
 
     end interface
 
@@ -403,11 +440,12 @@ contains
       !            Sign = -1, nSpecies = 4, UseDeviceOption = I % DeviceMemory )
       ! end select !-- RadiationType
 
-      ! !-- Elastic scattering on nucleons and nuclei
+      !-- Elastic scattering on nucleons and nuclei
 
-      ! call Compute_S_N_A_A_Kernel &
-      !        ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, &
-      !          UseDeviceOption = I % DeviceMemory )
+      call Compute_S_A_Kernel &
+             ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+               M, N, X_p, X_n, X_A, Z, A, &
+               UseDeviceOption = I % DeviceMemory )
 
       end associate !-- Xi_J, etc.
       end associate !-- FV, etc.
@@ -511,10 +549,11 @@ integer ( KDI ) :: &
     !            Sign = -1, nSpecies = 4, iV = iV )
     ! end select !-- RadiationType
 
-    ! !-- Elastic scattering on nucleons and nuclei
+    !-- Elastic scattering on nucleons and nuclei
 
-    ! call Compute_S_N_A_S_Kernel &
-    !        ( Chi_H, T_nu, Eta_nu, M, N, X_p, X_n, X_A, Z, A, iV )
+    call Compute_S_S_Kernel &
+           ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+             M, N, X_p, X_n, X_A, Z, A, iV )
 
     end associate !-- Xi_J, etc.
     end associate !-- FV, etc.

@@ -9,13 +9,14 @@ submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
   real ( KDR ), parameter :: &
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
   real ( KDR ), parameter :: &
-     Pi    =  ( CONSTANT % PI ), &
-     Pi_2  =  ( CONSTANT % PI ) ** 2, &
-     Pi_3  =  ( CONSTANT % PI ) ** 3, &
-      amu  =  ( CONSTANT % ATOMIC_MASS_UNIT ), &
-        Q  =  ( CONSTANT % NEUTRON_MASS )  -  ( CONSTANT % PROTON_MASS ), &
-    G_F_2  =  ( CONSTANT % FERMI_COUPLING ) ** 2, &
-    g_A_2  =  ( CONSTANT % NEUTRON_AXIAL_COUPLING ) ** 2
+     Pi      =  ( CONSTANT % PI ), &
+     Pi_2    =  ( CONSTANT % PI ) ** 2, &
+     Pi_3    =  ( CONSTANT % PI ) ** 3, &
+      amu    =  ( CONSTANT % ATOMIC_MASS_UNIT ), &
+        Q    =  ( CONSTANT % NEUTRON_MASS )  -  ( CONSTANT % PROTON_MASS ), &
+    G_F_2    =  ( CONSTANT % FERMI_COUPLING ) ** 2, &
+    g_A_2    =  ( CONSTANT % NEUTRON_AXIAL_COUPLING ) ** 2, &
+    S_2_T_W  =  CONSTANT % SIN_2_WEINBERG
 
 contains
 
@@ -250,7 +251,7 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      Factor_p, Factor_A, Dlta, &
+      Factor_p, Factor_n, Factor_A, Dlta, &
       N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, &
       Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
       Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
@@ -651,6 +652,110 @@ contains
     Chi_N ( iV )  =  Chi_N_p
 
   end procedure Compute_EA_EB_S_Kernel
+
+
+  module procedure Compute_S_A_Kernel
+
+    !-- Compute_Scattering_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Factor_p, Factor_n, Factor_A, &
+      N_p, N_n, N_A, &
+      Fermi_3_nu, Fermi_5_nu
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Chi_H )
+
+    Factor_p  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+                 *  ( ( 1. / 2.  -  2. * S_2_T_W ) ** 2  +  5. / 4. * g_A_2 )
+
+    Factor_n  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+                 *  ( 1. / 4.  +  5. / 4. * g_A_2 )
+
+    if ( UseDevice ) then
+    else
+      do iV = 1, nV
+
+        Factor_A  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+                     *  (    A ( iV )  *  ( 1. / 2.  -  2. * S_2_T_W ) &
+                          -  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
+
+        N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+        N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+        N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+                /  ( max ( A ( iV ), SqrtTiny ) * amu )
+
+        Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+        Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+
+        !-- Elastic scattering on nucleons
+
+        Chi_H_S_N ( iV )  &
+          =  ( Factor_p * N_p  +  Factor_n * N_n )  &
+             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+        Chi_H_S_A ( iV )  &
+          =  Factor_A * N_A  &
+             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+        Chi_H ( iV )  &
+          =  Chi_H ( iV )  +  Chi_H_S_N ( iV )  +  Chi_H_S_A ( iV )
+
+      end do
+    end if
+
+  end procedure Compute_S_A_Kernel
+
+
+  module procedure Compute_S_S_Kernel
+
+    !-- Compute_Scattering_Single_Kernel
+
+    real ( KDR ) :: &
+      Factor_p, Factor_n, Factor_A, &
+      N_p, N_n, N_A, &
+      Fermi_3_nu, Fermi_5_nu
+
+    Factor_p  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+                 *  ( ( 1. / 2.  -  2. * S_2_T_W ) ** 2  +  5. / 4. * g_A_2 )
+
+    Factor_n  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+                 *  ( 1. / 4.  +  5. / 4. * g_A_2 )
+
+    Factor_A  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+                 *  (    A ( iV )  *  ( 1. / 2.  -  2. * S_2_T_W ) &
+                      -  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
+
+    N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+    N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+    N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  &
+            /  ( max ( A ( iV ), SqrtTiny ) * amu )
+
+    Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+    Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+
+    !-- Elastic scattering on nucleons
+
+    Chi_H_S_N ( iV )  &
+      =  ( Factor_p * N_p  +  Factor_n * N_n )  &
+         *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+    Chi_H_S_A ( iV )  &
+      =  Factor_A * N_A  &
+         *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+    Chi_H ( iV )  &
+      =  Chi_H ( iV )  +  Chi_H_S_N ( iV )  +  Chi_H_S_A ( iV )
+
+  end procedure Compute_S_S_Kernel
 
 
   function Fermi_2 ( Eta ) result ( F_2 )
