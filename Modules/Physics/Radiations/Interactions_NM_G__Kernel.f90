@@ -252,9 +252,10 @@ contains
       nV
     real ( KDR ) :: &
       Factor_p, Factor_n, Factor_A, Dlta, &
-      N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, &
+      N_p, N_n, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, F_e, &
       Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
       Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
+      Fermi_2_nu,  Fermi_3_nu,  Fermi_4_nu,  Fermi_5_nu, &
        Xi_J_p,  Xi_H_p,  Xi_N_p, &
       Chi_J_n, Chi_H_n, Chi_N_n, &
        Xi_J_A,  Xi_H_A,  Xi_N_A, &
@@ -269,6 +270,7 @@ contains
     nV  =  size ( J_Eq )
 
     Factor_p  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
+    Factor_n  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
     Factor_A  =  G_F_2 / ( 2 * Pi_3 )  *  ( 2.0_KDR / 7.0_KDR )  *  g_A_2
       Dlta    =  3.0_KDR !-- MeV
 
@@ -304,13 +306,46 @@ contains
                         +  Q ** 2            *  Fermi_2_e_Q )!  &
 !                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
-        !-- nu_e + n  ->  p + e-, detailed balance
+        if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then
 
-        Chi_J_n  =  Xi_J_p / J_Eq ( iV )
+          !-- nu_e + n  ->  p + e-, detailed balance
 
-        Chi_H_n  =  Chi_J_n
+          Chi_J_n  =  Xi_J_p / J_Eq ( iV )
 
-        Chi_N_n  =  Xi_N_p / N_Eq ( iV )
+          Chi_H_n  =  Chi_J_n
+
+          Chi_N_n  =  Xi_N_p / N_Eq ( iV )
+
+        else
+
+          !-- nu_e + n  ->  p + e-, direct
+
+          N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+
+          Fermi_2_nu  =  Fermi_2 ( Eta_nu ( iV ) )
+          Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+          Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+          Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+
+          F_e  =  1.  &
+                  /  ( 1. +  &
+                       exp ( ( E_Ave ( iV )  -  Mu_e ( iV ) ) / T ( iV ) ) )
+
+          Chi_J_n  =  Factor_n  *  N_n  /  Fermi_3_nu  &
+                     *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
+                          +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
+                          +  Q ** 2               *  Fermi_3_nu )!  &
+  !                   *  ( 1.0_KDR  -  F_e )
+
+          Chi_H_n  =  Chi_J_n
+
+          Chi_N_n  =  Factor_n  *  N_n  /  Fermi_2_nu  &
+                     *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
+                          +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
+                          +  Q ** 2               *  Fermi_2_nu )!  &
+  !                   *  ( 1.0_KDR  -  F_e )
+
+        end if
 
         !-- e- + A  ->  A' + nu_e 
 
@@ -389,16 +424,18 @@ contains
     !-- Compute_EmissionAbsorption_Electron_Single_Kernel
 
     real ( KDR ) :: &
-      Factor_p, Factor_A, Dlta, &
-      N_p, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, &
+      Factor_p, Factor_n, Factor_A, Dlta, &
+      N_p, N_n, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, F_e, &
       Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
       Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
+      Fermi_2_nu,  Fermi_3_nu,  Fermi_4_nu,  Fermi_5_nu, &
        Xi_J_p,  Xi_H_p,  Xi_N_p, &
       Chi_J_n, Chi_H_n, Chi_N_n, &
        Xi_J_A,  Xi_H_A,  Xi_N_A, &
       Chi_J_A, Chi_H_A, Chi_N_A
 
     Factor_p  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
+    Factor_n  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
     Factor_A  =  G_F_2 / ( 2 * Pi_3 )  *  ( 2.0_KDR / 7.0_KDR )  *  g_A_2
       Dlta    =  3.0_KDR !-- MeV
 
@@ -430,13 +467,46 @@ contains
                     +  Q ** 2            *  Fermi_2_e_Q )!  &
 !               *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
-    !-- nu_e + n  ->  p + e-, detailed balance
+    if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then
 
-    Chi_J_n  =  Xi_J_p / J_Eq ( iV )
+      !-- nu_e + n  ->  p + e-, detailed balance
 
-    Chi_H_n  =  Chi_J_n
+      Chi_J_n  =  Xi_J_p / J_Eq ( iV )
 
-    Chi_N_n  =  Xi_N_p / N_Eq ( iV )
+      Chi_H_n  =  Chi_J_n
+
+      Chi_N_n  =  Xi_N_p / N_Eq ( iV )
+
+    else
+
+      !-- nu_e + n  ->  p + e-, direct
+
+      N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
+
+      Fermi_2_nu  =  Fermi_2 ( Eta_nu ( iV ) )
+      Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+      Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+      Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+
+      F_e  =  1.  &
+              /  ( 1. +  &
+                   exp ( ( E_Ave ( iV )  -  Mu_e ( iV ) ) / T ( iV ) ) )
+
+      Chi_J_n  =  Factor_n  *  N_n  /  Fermi_3_nu  &
+                 *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
+                      +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
+                      +  Q ** 2               *  Fermi_3_nu )!  &
+!                  *  ( 1.0_KDR  -  F_e )
+
+      Chi_H_n  =  Chi_J_n
+
+      Chi_N_n  =  Factor_n  *  N_n  /  Fermi_2_nu  &
+                 *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
+                      +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
+                      +  Q ** 2               *  Fermi_2_nu )!  &
+!                  *  ( 1.0_KDR  -  F_e )
+
+    end if
 
     !-- e- + A  ->  A' + nu_e 
 
