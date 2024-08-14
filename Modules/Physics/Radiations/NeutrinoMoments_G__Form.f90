@@ -143,7 +143,7 @@ module NeutrinoMoments_G__Form
       end subroutine Compute_J_H_N_G_S_Kernel
 
       module subroutine Compute_SP_A_Kernel &
-               ( T_R, Eta_R, E_Ave, F_Ave, J, N, UseDeviceOption )
+               ( T_R, Eta_R, E_Ave, F_Ave, J, N, nSpecies, UseDeviceOption )
         !-- Compute_SpectralParameters_All_Kernel
         use Basics
         implicit none
@@ -152,12 +152,14 @@ module NeutrinoMoments_G__Form
           E_Ave, F_Ave
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           J, N
+        integer ( KDI ), intent ( in ) :: &
+          nSpecies
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_SP_A_Kernel
  
       module subroutine Compute_SP_S_Kernel &
-               ( T_R, Eta_R, E_Ave, F_Ave, J, N, iV )
+               ( T_R, Eta_R, E_Ave, F_Ave, J, N, nSpecies, iV )
         !-- Compute_SpectralParameters_Single_Kernel
         use Basics
         implicit none
@@ -166,6 +168,8 @@ module NeutrinoMoments_G__Form
           E_Ave, F_Ave
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           J, N
+        integer ( KDI ), intent ( in ) :: &
+          nSpecies
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Compute_SP_S_Kernel
@@ -219,7 +223,7 @@ module NeutrinoMoments_G__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J, N, &
           T
-        real ( KDR ), intent ( in ) :: &
+        integer ( KDI ), intent ( in ) :: &
           nSpecies
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -236,7 +240,7 @@ module NeutrinoMoments_G__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           J, N, &
           T
-        real ( KDR ), intent ( in ) :: &
+        integer ( KDI ), intent ( in ) :: &
           nSpecies
         integer ( KDI ), intent ( in ) :: &
           iV
@@ -732,9 +736,25 @@ contains
             J      =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
             N      =>  RMV ( :, RM % NUMBER_DENSITY_C ) )
                
-      call Compute_SP_A_Kernel &
-             ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
-               UseDeviceOption  =  RM % DeviceMemory )
+      select case ( trim ( RM % RadiationType ) )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+        call Compute_SP_A_Kernel &
+               ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
+                 nSpecies = 1, &
+                 UseDeviceOption = RM % DeviceMemory )
+      case ( 'NEUTRINOS_HL' )
+        call Compute_SP_A_Kernel &
+               ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
+                 nSpecies = 4, &
+                 UseDeviceOption = RM % DeviceMemory )
+      case default
+        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+        call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
+        call Show ( 'NeutrinoMoments_G__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeSpectralParametersAll', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Name
 
       end associate !-- T_R, etc.
       end associate !-- RV, etc.
@@ -764,7 +784,25 @@ contains
           J      =>  RMV ( :, RM % ENERGY_DENSITY_C ), &
           N      =>  RMV ( :, RM % NUMBER_DENSITY_C ) )
              
-    call Compute_SP_S_Kernel ( T_R, Eta_R, E_Ave, F_Ave, J, N, iV )
+    select case ( trim ( RM % RadiationType ) )
+    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+      call Compute_SP_S_Kernel &
+             ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
+               nSpecies = 1, &
+               iV = iV )
+    case ( 'NEUTRINOS_HL' )
+      call Compute_SP_S_Kernel &
+             ( T_R, Eta_R, E_Ave, F_Ave, J, N, &
+               nSpecies = 4, &
+               iV = iV )
+    case default
+      call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+      call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
+      call Show ( 'NeutrinoMoments_G__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeSpectralParametersSingle', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Name
 
     end associate !-- T_R, etc.
     end associate !-- RV, etc.
@@ -815,7 +853,7 @@ contains
       case ( 'NEUTRINOS_HL' )
         call Compute_Eq_HL_A_Kernel &
                ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
-                 nSpecies = 4.0_KDR, UseDeviceOption = RM % DeviceMemory )
+                 nSpecies = 4, UseDeviceOption = RM % DeviceMemory )
       case default
         call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
         call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
@@ -876,12 +914,12 @@ contains
     case ( 'NEUTRINOS_HL' )
       call Compute_Eq_HL_S_Kernel &
              ( J_Eq, N_Eq, J_RD, N_RD, J, N, T, &
-               nSpecies = 4.0_KDR, iV = iV )
+               nSpecies = 4, iV = iV )
     case default
       call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
       call Show ( RM % RadiationType, 'RadiationType', CONSOLE % ERROR )
       call Show ( 'NeutrinoMoments_G__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeEquilibriumAll', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'ComputeEquilibriumSingle', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- Name
 

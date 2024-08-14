@@ -546,7 +546,8 @@ contains
 !      LHS, &
 !      Eta_ND, Eta_ED, Eta, &
       Eta_ND, EtaMax, &
-      F_2, F_3!, &
+      F_2, F_3, &
+      J_Species, N_Species
  !     fdeta, fdeta2, &
  !     fdtheta, fdtheta2, &
  !     fdetadtheta
@@ -589,14 +590,18 @@ contains
 !      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta ) &
 !      !$OMP private ( Success )
       !$OMP shared ( Factor_ND, EtaMax ) &
-      !$OMP private ( Eta_ND, F_2, F_3, Bracket, Converge )
+      !$OMP private ( Eta_ND, F_2, F_3, J_Species, N_Species ) &
+      !$OMP private ( Bracket, Converge )
       do iV = 1, nV
 
-        if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
+        J_Species  =  J ( iV )  /  nSpecies
+        N_Species  =  N ( iV )  /  nSpecies
+
+        if ( J_Species  <=  0.0_KDR  .or.  N_Species  <=  0.0_KDR ) &
           cycle
 
-        ! LHS  =  J ( iV ) ** ( 1.0_KDR / 4.0_KDR )  &
-        !         *  N ( iV ) ** ( - 1.0_KDR / 3.0_KDR )
+        ! LHS  =  J_Species ** ( 1.0_KDR / 4.0_KDR )  &
+        !         *  N_Species ** ( - 1.0_KDR / 3.0_KDR )
         ! LHS  =  max ( LHS, OnePlusEpsilon / Factor_ED_1 )
 
         ! Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  LHS ** 4 )
@@ -623,15 +628,15 @@ contains
         ! end if
 
         Eta_ND  =  - 3.0_KDR  &
-                     * log ( Factor_ND  *  J ( iV ) &
-                             *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR ) )
+                     * log ( Factor_ND  *  J_Species &
+                             *  N_Species ** ( - 4.0_KDR / 3.0_KDR ) )
 
         if ( Eta_ND  <=  0.0_KDR ) then
           Eta_R ( iV )  =  Eta_ND
         else
           Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
           call SolveEtaBisection &
-                 ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, iV, &
+                 ( Eta_R ( iV ), J_Species, N_Species, EtaMax, iV, &
                    Bracket, Converge )
           Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
           if ( .not. Bracket .or. .not. Converge ) then
@@ -651,10 +656,10 @@ contains
         F_2  =  Fermi_2 ( Eta_R ( iV ) )
         F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
-        T_R  ( iV )  =  J ( iV )  /  N ( iV )  *  F_2 / F_3
+        T_R  ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3
 
         E_Ave ( iV )  &
-          =  J ( iV )  /  N ( iV )
+          =  J_Species  /  N_Species
         F_Ave ( iV )  &
           =  1.0_KDR &
              /  ( exp ( E_Ave ( iV ) / T_R ( iV )  -  Eta_R ( iV ) )  &
@@ -679,7 +684,9 @@ contains
 !      LHS, &
 !      Eta_ND, Eta_ED, Eta, &
       Eta_ND, EtaMax, &
-      F_2, F_3!, &
+      F_2, F_3, &
+      J_Species, &
+      N_Species
  !     fdeta, fdeta2, &
  !     fdtheta, fdtheta2, &
  !     fdetadtheta
@@ -699,11 +706,14 @@ contains
 
     EtaMax  =  25.
 
-    if ( J ( iV )  <=  0.0_KDR  .or.  N ( iV )  <=  0.0_KDR ) &
+    J_Species  =  J ( iV )  /  nSpecies
+    N_Species  =  N ( iV )  /  nSpecies
+
+    if ( J_Species  <=  0.0_KDR  .or.  N_Species  <=  0.0_KDR ) &
       return
 
-    ! LHS  =  J ( iV ) ** ( 1.0_KDR / 4.0_KDR )  &
-    !         *  N ( iV ) ** ( - 1.0_KDR / 3.0_KDR )
+    ! LHS  =  J_Species ** ( 1.0_KDR / 4.0_KDR )  &
+    !         *  N_Species ** ( - 1.0_KDR / 3.0_KDR )
     ! LHS  =  max ( LHS, OnePlusEpsilon / Factor_ED_1 )
 
     ! Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  LHS ** 4 )
@@ -730,15 +740,15 @@ contains
     ! end if
 
     Eta_ND  =  - 3.0_KDR  &
-                 * log ( Factor_ND  *  J ( iV ) &
-                         *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR ) )
+                 * log ( Factor_ND  *  J_Species &
+                         *  N_Species ** ( - 4.0_KDR / 3.0_KDR ) )
 
     if ( Eta_ND  <=  0.0_KDR ) then
       Eta_R ( iV )  =  Eta_ND
     else
       Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
       call SolveEtaBisection &
-             ( Eta_R ( iV ), J ( iV ), N ( iV ), EtaMax, iV, Bracket, Converge )
+             ( Eta_R ( iV ), J_Species, N_Species, EtaMax, iV, Bracket, Converge )
       Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
       if ( .not. Bracket .or. .not. Converge ) then
 !        call Show ( Eta_0, 'Eta_0', CONSOLE % ERROR )
@@ -757,10 +767,10 @@ contains
     F_2  =  Fermi_2 ( Eta_R ( iV ) )
     F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
-    T_R  ( iV )  =  J ( iV )  /  N ( iV )  *  F_2 / F_3
+    T_R  ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3
 
     E_Ave ( iV )  &
-      =  J ( iV )  /  N ( iV )
+      =  J_Species  /  N_Species
     F_Ave ( iV )  &
       =  1.0_KDR &
          /  ( exp ( E_Ave ( iV ) / T_R ( iV )  -  Eta_R ( iV ) )  &
