@@ -12,6 +12,7 @@ submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
      Pi      =  ( CONSTANT % PI ), &
      Pi_2    =  ( CONSTANT % PI ) ** 2, &
      Pi_3    =  ( CONSTANT % PI ) ** 3, &
+     Pi_5    =  ( CONSTANT % PI ) ** 5, &
       amu    =  ( CONSTANT % ATOMIC_MASS_UNIT ), &
         Q    =  ( CONSTANT % NEUTRON_MASS )  -  ( CONSTANT % PROTON_MASS ), &
     G_F_2    =  ( CONSTANT % FERMI_COUPLING ) ** 2, &
@@ -789,6 +790,130 @@ contains
     Chi_N ( iV )  =  0.0_KDR
 
   end procedure Compute_EA_HL_S_Kernel
+
+
+  module procedure Compute_P_A_Kernel
+
+    !-- Compute_Pair_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Factor, &
+      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
+       Xi_J_P,           Xi_N_P, &
+      Chi_J_P, Chi_H_P, Chi_N_P
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Xi_J )
+
+    Factor  =  nSpecies * G_F_2  /  ( 9.  *  Pi_5 )  &
+               *  ( 1.  +  Sign * 4. * S_2_T_W  +  8. * S_2_T_W ** 2 )
+
+    if ( UseDevice ) then
+    else
+      do iV = 1, nV
+
+        if ( T ( iV ) == 0.0_KDR ) &
+          cycle
+
+        Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+        Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+        Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+        Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+        Xi_J_P  =  Factor  *  T ( iV ) ** 9  &
+                   *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
+                              +  Fermi_3_eP * Fermi_4_eM )
+
+        Xi_N_P  =  Factor  *  T ( iV ) ** 8  &
+                   *  Fermi_3_eM * Fermi_3_eP
+
+        if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+          Chi_J_P  =  Xi_J_P  /  J_Eq ( iV )
+          Chi_H_P  =  Xi_J_P  /  J_Eq ( iV )
+          Chi_N_P  =  Xi_N_P  /  N_Eq ( iV )
+        else
+          Chi_J_P  =  0.0_KDR
+          Chi_H_P  =  0.0_KDR
+          Chi_N_P  =  0.0_KDR
+        end if
+          
+        !-- Total
+
+         Xi_J_P_EP ( iV )  =   Xi_J_P
+        Chi_J_P_EP ( iV )  =  Chi_J_P
+
+        Xi_J ( iV )  =  Xi_J ( iV )  +  Xi_J_P
+        Xi_N ( iV )  =  Xi_N ( iV )  +  Xi_N_P
+
+        Chi_J ( iV )  =  Chi_J ( iV )  +  Chi_J_P
+        Chi_H ( iV )  =  Chi_H ( iV )  +  Chi_H_P
+        Chi_N ( iV )  =  Chi_N ( iV )  +  Chi_N_P
+
+      end do !-- iV
+    end if
+   
+  end procedure Compute_P_A_Kernel
+
+
+  module procedure Compute_P_S_Kernel
+
+    !-- Compute_Pair_Single_Kernel
+
+    real ( KDR ) :: &
+      Factor, &
+      Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
+       Xi_J_P,           Xi_N_P, &
+      Chi_J_P, Chi_H_P, Chi_N_P
+          
+    Factor  =  nSpecies * G_F_2  /  ( 9.  *  Pi_5 )  &
+               *  ( 1.  +  Sign * 4. * S_2_T_W  +  8. * S_2_T_W ** 2 )
+
+    if ( T ( iV ) == 0.0_KDR ) &
+      return
+
+    Fermi_3_eM  =  Fermi_3 ( + Mu_e ( iV ) / T ( iV ) )
+    Fermi_4_eM  =  Fermi_4 ( + Mu_e ( iV ) / T ( iV ) )
+    Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+    Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+    Xi_J_P  =  Factor  *  T ( iV ) ** 9  &
+               *  0.5 * (    Fermi_3_eM * Fermi_4_eP  &
+                          +  Fermi_3_eP * Fermi_4_eM )
+
+    Xi_N_P  =  Factor  *  T ( iV ) ** 8  &
+               *  Fermi_3_eM * Fermi_3_eP
+
+    if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+      Chi_J_P  =  Xi_J_P  /  J_Eq ( iV )
+      Chi_H_P  =  Xi_J_P  /  J_Eq ( iV )
+      Chi_N_P  =  Xi_N_P  /  N_Eq ( iV )
+    else
+      Chi_J_P  =  0.0_KDR
+      Chi_H_P  =  0.0_KDR
+      Chi_N_P  =  0.0_KDR
+    end if
+      
+    !-- Total
+
+     Xi_J_P_EP ( iV )  =   Xi_J_P
+    Chi_J_P_EP ( iV )  =  Chi_J_P
+
+    Xi_J ( iV )  =  Xi_J ( iV )  +  Xi_J_P
+    Xi_N ( iV )  =  Xi_N ( iV )  +  Xi_N_P
+
+    Chi_J ( iV )  =  Chi_J ( iV )  +  Chi_J_P
+    Chi_H ( iV )  =  Chi_H ( iV )  +  Chi_H_P
+    Chi_N ( iV )  =  Chi_N ( iV )  +  Chi_N_P
+
+  end procedure Compute_P_S_Kernel
 
 
   module procedure Compute_S_A_Kernel

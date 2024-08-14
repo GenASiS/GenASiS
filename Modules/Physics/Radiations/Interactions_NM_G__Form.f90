@@ -12,7 +12,7 @@ module Interactions_NM_G__Form
  private
 
      integer ( KDI ), private, parameter :: &
-      N_FIELDS_NM_G = 8
+      N_FIELDS_NM_G = 10
 
   type, public, extends ( Interactions_BM_Form ) :: Interactions_NM_G_Form
     integer ( KDI ) :: &
@@ -27,6 +27,9 @@ module Interactions_NM_G__Form
       !-- Emission/absorption, nuclei
       EMISSIVITY_J_EA_A = 0, & 
          OPACITY_J_EA_A = 0, &
+      !-- Pairs, electron/positron
+      EMISSIVITY_J_P_EP = 0, & 
+         OPACITY_J_P_EP = 0, & 
       !-- Scattering on nucleons
       OPACITY_H_S_N = 0, &
       !-- Scattering on nuclei
@@ -53,6 +56,8 @@ module Interactions_NM_G__Form
       Compute_EA_EB_S_Kernel, &
       Compute_EA_HL_A_Kernel, &
       Compute_EA_HL_S_Kernel, &
+      Compute_P_A_Kernel, & 
+      Compute_P_S_Kernel, & 
       Compute_S_A_Kernel, & 
       Compute_S_S_Kernel 
 
@@ -182,6 +187,53 @@ module Interactions_NM_G__Form
           iV
       end subroutine Compute_EA_HL_S_Kernel
 
+      module subroutine Compute_P_A_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign, nSpecies, Rho_DB, UseDeviceOption )
+        !-- Compute_Pair_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_P_EP, &
+          Chi_J_P_EP
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, N_Eq, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign, &
+          nSpecies
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_P_A_Kernel
+
+      module subroutine Compute_P_S_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign, nSpecies, Rho_DB, iV )
+        !-- Compute_Pair_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_P_EP, &
+          Chi_J_P_EP
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, N_Eq, M, N, T, Mu_e
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        integer ( KDI ), intent ( in ) :: &
+          Sign, &
+          nSpecies, &
+          iV
+      end subroutine Compute_P_S_Kernel
+
       module subroutine Compute_S_A_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, UseDeviceOption )
@@ -273,8 +325,11 @@ contains
     I % EMISSIVITY_J_EA_A  =  oF + 5 
     I %    OPACITY_J_EA_A  =  oF + 6
 
-    I % OPACITY_H_S_N  =  oF + 7
-    I % OPACITY_H_S_A  =  oF + 8
+    I % EMISSIVITY_J_P_EP  =  oF + 7 
+    I %    OPACITY_J_P_EP  =  oF + 8
+
+    I % OPACITY_H_S_N  =  oF +  9
+    I % OPACITY_H_S_A  =  oF + 10
 
     nFields  =  oF  +  I % N_FIELDS_NM_G
     if ( present ( nFieldsOption ) ) &
@@ -295,6 +350,8 @@ contains
           'Opacity_J_EA_N   ', &
           'Emissivity_J_EA_A', &
           'Opacity_J_EA_A   ', &
+          'Emissivity_J_P_EP', &
+          'Opacity_J_P_EP   ', &
           'Opacity_H_S_N    ', &
           'Opacity_H_S_A    ' ]
           
@@ -326,6 +383,12 @@ contains
         =  Units_R ( iC ) % EnergyDensity  &
            *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
       FieldUnit ( I % OPACITY_J_EA_A, iC ) &
+        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
+
+      FieldUnit ( I % EMISSIVITY_J_P_EP, iC ) &
+        =  Units_R ( iC ) % EnergyDensity  &
+           *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
+      FieldUnit ( I % OPACITY_J_P_EP, iC ) &
         =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
 
       FieldUnit ( I % OPACITY_H_S_N, iC ) &
@@ -412,11 +475,13 @@ contains
            Xi_N          =>  IV ( :, I % EMISSIVITY_N ), &
            Xi_J_EA_N     =>  IV ( :, I % EMISSIVITY_J_EA_N ), &
            Xi_J_EA_A     =>  IV ( :, I % EMISSIVITY_J_EA_A ), &
+           Xi_J_P_EP     =>  IV ( :, I % EMISSIVITY_J_P_EP ), &
           Chi_J          =>  IV ( :, I % OPACITY_J ), &
           Chi_H          =>  IV ( :, I % OPACITY_H ), &
           Chi_N          =>  IV ( :, I % OPACITY_N ), &
           Chi_J_EA_N     =>  IV ( :, I % OPACITY_J_EA_N ), &
           Chi_J_EA_A     =>  IV ( :, I % OPACITY_J_EA_A ), &
+          Chi_J_P_EP     =>  IV ( :, I % OPACITY_J_P_EP ), &
           Chi_H_S_N      =>  IV ( :, I % OPACITY_H_S_N ), &
           Chi_H_S_A      =>  IV ( :, I % OPACITY_H_S_A ), &
             T_Nu         =>  RV ( :, R % TEMPERATURE_GREY ), &
@@ -462,20 +527,26 @@ contains
                  UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
              
-      ! !-- Pair emission
+      !-- Pair emission
 
-      ! select case ( trim ( R % RadiationType ) )
-      ! case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
-      !   call Compute_P_A_Kernel &
-      !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-      !            J_Eq, N_Eq, M, N, T, Mu_e, &
-      !            Sign = +1, nSpecies = 1, UseDeviceOption = I % DeviceMemory )
-      ! case ( 'NEUTRINOS_HL' )
-      !   call Compute_P_A_Kernel &
-      !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-      !            J_Eq, N_Eq, M, N, T, Mu_e, &
-      !            Sign = -1, nSpecies = 4, UseDeviceOption = I % DeviceMemory )
-      ! end select !-- RadiationType
+      select case ( trim ( R % RadiationType ) )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+        call Compute_P_A_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign = +1, nSpecies = 1, &
+                 Rho_DB = I % DensityDetailedBalance, &
+                 UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_HL' )
+        call Compute_P_A_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 Sign = -1, nSpecies = 4, &
+                 Rho_DB = I % DensityDetailedBalance, &
+                 UseDeviceOption = I % DeviceMemory )
+      end select !-- RadiationType
 
       !-- Elastic scattering on nucleons and nuclei
 
@@ -523,11 +594,13 @@ integer ( KDI ) :: &
          Xi_N          =>  I_V ( :, I % EMISSIVITY_N ), &
          Xi_J_EA_N     =>  I_V ( :, I % EMISSIVITY_J_EA_N ), &
          Xi_J_EA_A     =>  I_V ( :, I % EMISSIVITY_J_EA_A ), &
+         Xi_J_P_EP     =>  I_V ( :, I % EMISSIVITY_J_P_EP ), &
         Chi_J          =>  I_V ( :, I % OPACITY_J ), &
         Chi_H          =>  I_V ( :, I % OPACITY_H ), &
         Chi_N          =>  I_V ( :, I % OPACITY_N ), &
         Chi_J_EA_N     =>  I_V ( :, I % OPACITY_J_EA_N ), &
         Chi_J_EA_A     =>  I_V ( :, I % OPACITY_J_EA_A ), &
+        Chi_J_P_EP     =>  I_V ( :, I % OPACITY_J_P_EP ), &
         Chi_H_S_N      =>  I_V ( :, I % OPACITY_H_S_N ), &
         Chi_H_S_A      =>  I_V ( :, I % OPACITY_H_S_A ), &
           T_Nu         =>  R_V ( :, R % TEMPERATURE_GREY ), &
@@ -574,20 +647,26 @@ integer ( KDI ) :: &
                iV = iV )
     end select !-- RadiationType
            
-    ! !-- Pair emission
+    !-- Pair emission
 
-    ! select case ( trim ( R % RadiationType ) )
-    ! case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
-    !   call Compute_P_S_Kernel &
-    !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-    !            J_Eq, N_Eq, M, N, T, Mu_e, &
-    !            Sign = +1, nSpecies = 1, iV = iV )
-    ! case ( 'NEUTRINOS_HL' )
-    !   call Compute_P_S_Kernel &
-    !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-    !            J_Eq, N_Eq, M, N, T, Mu_e, &
-    !            Sign = -1, nSpecies = 4, iV = iV )
-    ! end select !-- RadiationType
+    select case ( trim ( R % RadiationType ) )
+    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+      call Compute_P_S_Kernel &
+             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+               Xi_J_P_EP, Chi_J_P_EP, &
+               J_Eq, N_Eq, M, N, T, Mu_e, &
+               Sign = +1, nSpecies = 1, &
+               Rho_DB = I % DensityDetailedBalance, &
+               iV = iV )
+    case ( 'NEUTRINOS_HL' )
+      call Compute_P_S_Kernel &
+             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+               Xi_J_P_EP, Chi_J_P_EP, &
+               J_Eq, N_Eq, M, N, T, Mu_e, &
+               Sign = -1, nSpecies = 4, &
+               Rho_DB = I % DensityDetailedBalance, &
+               iV = iV )
+    end select !-- RadiationType
 
     !-- Elastic scattering on nucleons and nuclei
 
