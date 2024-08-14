@@ -647,6 +647,9 @@ contains
          Xi_J_EA_N ( iV )  =   Xi_J_n
         Chi_J_EA_N ( iV )  =  Chi_J_p
 
+         Xi_J_EA_A ( iV )  =  0.0_KDR
+        Chi_J_EA_A ( iV )  =  0.0_KDR
+
         Xi_J ( iV )  =  Xi_J_n
         Xi_H ( iV )  =  Xi_H_n
         Xi_N ( iV )  =  Xi_N_n
@@ -713,6 +716,9 @@ contains
      Xi_J_EA_N ( iV )  =   Xi_J_n
     Chi_J_EA_N ( iV )  =  Chi_J_p
 
+     Xi_J_EA_A ( iV )  =  0.0_KDR
+    Chi_J_EA_A ( iV )  =  0.0_KDR
+
     Xi_J ( iV )  =  Xi_J_n
     Xi_H ( iV )  =  Xi_H_n
     Xi_N ( iV )  =  Xi_N_n
@@ -722,6 +728,67 @@ contains
     Chi_N ( iV )  =  Chi_N_p
 
   end procedure Compute_EA_EB_S_Kernel
+
+
+  module procedure Compute_EA_HL_A_Kernel
+
+    !-- Compute_EmissionAbsorption_HeavyLepton_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice      
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Xi_J )
+
+    if ( UseDevice ) then
+    else
+      do iV = 1, nV
+
+         Xi_J_EA_N ( iV )  =  0.0_KDR
+        Chi_J_EA_N ( iV )  =  0.0_KDR
+
+         Xi_J_EA_A ( iV )  =  0.0_KDR
+        Chi_J_EA_A ( iV )  =  0.0_KDR
+
+        Xi_J ( iV )  =  0.0_KDR
+        Xi_H ( iV )  =  0.0_KDR
+        Xi_N ( iV )  =  0.0_KDR
+        
+        Chi_J ( iV )  =  0.0_KDR
+        Chi_H ( iV )  =  0.0_KDR
+        Chi_N ( iV )  =  0.0_KDR
+
+      end do
+    end if
+
+  end procedure Compute_EA_HL_A_Kernel
+
+
+  module procedure Compute_EA_HL_S_Kernel
+
+    !-- Compute_EmissionAbsorption_HeavyLepton_Single_Kernel
+
+     Xi_J_EA_N ( iV )  =  0.0_KDR
+    Chi_J_EA_N ( iV )  =  0.0_KDR
+
+     Xi_J_EA_A ( iV )  =  0.0_KDR
+    Chi_J_EA_A ( iV )  =  0.0_KDR
+
+    Xi_J ( iV )  =  0.0_KDR
+    Xi_H ( iV )  =  0.0_KDR
+    Xi_N ( iV )  =  0.0_KDR
+    
+    Chi_J ( iV )  =  0.0_KDR
+    Chi_H ( iV )  =  0.0_KDR
+    Chi_N ( iV )  =  0.0_KDR
+
+  end procedure Compute_EA_HL_S_Kernel
 
 
   module procedure Compute_S_A_Kernel
