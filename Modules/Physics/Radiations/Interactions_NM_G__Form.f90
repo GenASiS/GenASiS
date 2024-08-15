@@ -439,6 +439,8 @@ contains
                    I % OPACITY_J_EA_N, &
                    I % EMISSIVITY_J_EA_A, &
                    I % OPACITY_J_EA_A, &
+                   I % EMISSIVITY_J_P_EP, &
+                   I % OPACITY_J_P_EP, &
                    I % OPACITY_H_S_N, &
                    I % OPACITY_H_S_A ] )
 
