@@ -545,7 +545,7 @@ contains
       Factor_ND, &
 !      LHS, &
 !      Eta_ND, Eta_ED, Eta, &
-      Eta_ND, EtaMax, &
+      Eta_ND, EtaMin, EtaMax, &
       F_2, F_3, &
       J_Species, N_Species
  !     fdeta, fdeta2, &
@@ -572,7 +572,8 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
-    EtaMax  =  25.
+    EtaMin  =  -50.
+    EtaMax  =   25.
 
     if ( UseDevice ) then
   !     !$OMP OMP_TARGET_DIRECTIVE parallel do &
@@ -589,7 +590,7 @@ contains
 !      !$OMP private ( LHS, Eta_ND, Eta_ED, Eta, F_2, F_3 ) &
 !      !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta ) &
 !      !$OMP private ( Success )
-      !$OMP shared ( Factor_ND, EtaMax ) &
+      !$OMP shared ( Factor_ND, EtaMin, EtaMax ) &
       !$OMP private ( Eta_ND, F_2, F_3, J_Species, N_Species ) &
       !$OMP private ( Bracket, Converge )
       do iV = 1, nV
@@ -632,7 +633,7 @@ contains
                              *  N_Species ** ( - 4.0_KDR / 3.0_KDR ) )
 
         if ( Eta_ND  <=  0.0_KDR ) then
-          Eta_R ( iV )  =  Eta_ND
+          Eta_R ( iV )  =  max ( Eta_ND, EtaMin )
         else
           Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
           call SolveEtaBisection &
@@ -656,8 +657,10 @@ contains
         F_2  =  Fermi_2 ( Eta_R ( iV ) )
         F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
-        T_R  ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3
-
+        T_R ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3  
+!        T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
+!                             25. ) !--MeV  
+        
         E_Ave ( iV )  &
           =  J_Species  /  N_Species
         F_Ave ( iV )  &
@@ -683,7 +686,7 @@ contains
       Factor_ND, &
 !      LHS, &
 !      Eta_ND, Eta_ED, Eta, &
-      Eta_ND, EtaMax, &
+      Eta_ND, EtaMin, EtaMax, &
       F_2, F_3, &
       J_Species, &
       N_Species
@@ -704,7 +707,8 @@ contains
  !                   /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
  !   Factor_ED_2  =  6.0_KDR  /  Pi ** 2
 
-    EtaMax  =  25.
+    EtaMin  =  -50.
+    EtaMax  =   25.
 
     J_Species  =  J ( iV )  /  nSpecies
     N_Species  =  N ( iV )  /  nSpecies
@@ -744,7 +748,7 @@ contains
                          *  N_Species ** ( - 4.0_KDR / 3.0_KDR ) )
 
     if ( Eta_ND  <=  0.0_KDR ) then
-      Eta_R ( iV )  =  Eta_ND
+      Eta_R ( iV )  =  max ( Eta_ND, EtaMin )
     else
       Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
       call SolveEtaBisection &
@@ -768,6 +772,8 @@ contains
     F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
     T_R  ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3
+!    T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
+!                         25. ) !--MeV  
 
     E_Ave ( iV )  &
       =  J_Species  /  N_Species
