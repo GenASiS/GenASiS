@@ -1008,11 +1008,11 @@ contains
 
     Chi_H_S_N ( iV )  &
       =  ( Factor_p * N_p  +  Factor_n * N_n )  &
-         *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+         *  T_nu ( iV ) ** 2  *  Fermi_5_nu / max ( Fermi_3_nu, SqrtTiny ) 
 
     Chi_H_S_A ( iV )  &
       =  Factor_A * N_A  &
-         *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+         *  T_nu ( iV ) ** 2  *  Fermi_5_nu / max ( Fermi_3_nu, SqrtTiny ) 
 
     Chi_H ( iV )  &
       =  Chi_H ( iV )  +  Chi_H_S_N ( iV )  +  Chi_H_S_A ( iV )

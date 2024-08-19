@@ -576,10 +576,13 @@ contains
       iV
 
 integer ( KDI ) :: &
-  iShow
+  iV_S
 
-!    call Show ( 'ComputeSingle', CONSOLE % INFO_6 )
-!    call Show ( I % Name, 'Interactions', CONSOLE % INFO_6 )
+! iV_S = 68
+! if ( iV == iV_S ) then
+!   call Show ( '>>> Interactions_NM_G % ComputeSingle', CONSOLE % INFO_6 )
+!   call Show ( I % Name, '>>> Interactions', CONSOLE % INFO_6 )
+! end if
 
     select type ( R  =>  I % Radiation )
       class is ( NeutrinoMoments_G_Form )
@@ -622,8 +625,18 @@ integer ( KDI ) :: &
          Mu_e          =>  F_V ( :, F % CHEMICAL_POTENTIAL_E ), &
          Mu_n_p        =>  F_V ( :, F % CHEMICAL_POTENTIAL_N_P ) )
 
+! if ( iV == iV_S ) then
+!   call Show ( T_Nu ( iV_S ), '>>> T_Nu before ComputeSpectralParameters' )
+!   call Show ( Eta_Nu ( iV_S ), '>>> Eta_Nu before ComputeSpectralParameters' )
+! end if
+
     call R % ComputeSpectralParameters ( iC, iV )
     call R % ComputeEquilibrium ( iC, iV )
+
+! if ( iV == iV_S ) then
+!   call Show ( T_Nu ( iV_S ), '>>> T_Nu after ComputeSpectralParameters' )
+!   call Show ( Eta_Nu ( iV_S ), '>>> Eta_Nu after ComputeSpectralParameters' )
+! end if
 
     !-- Emission / Absorption
 
@@ -672,9 +685,18 @@ integer ( KDI ) :: &
 
     !-- Elastic scattering on nucleons and nuclei
 
+! if ( iV == iV_S ) &
+!   call Show ( Chi_H ( iV_S ), '>>> Chi_H before scattering' )
+
     call Compute_S_S_Kernel &
            ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
              M, N, X_p, X_n, X_A, Z, A, iV )
+
+! if ( iV == iV_S ) then
+!   call Show ( Chi_H ( iV_S ), '>>> Chi_H after scattering' )
+!   call Show ( Chi_H_S_N ( iV_S ), '>>> Chi_H_S_N' )
+!   call Show ( Chi_H_S_A ( iV_S ), '>>> Chi_H_S_A' )
+! end if
 
     end associate !-- Xi_J, etc.
     end associate !-- FV, etc.
