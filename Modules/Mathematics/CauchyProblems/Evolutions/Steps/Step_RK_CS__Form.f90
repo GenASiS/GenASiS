@@ -405,6 +405,9 @@ contains
       T_C,  &  !-- Coarsen
       T_AS     !-- AccumulateSlope
 
+    call Show ( 'ComputeUpdateExplicit', CONSOLE % INFO_5 )
+    call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
+
     associate &
       ( K  =>  S % SlopeExplicit, &
         K_Stage  =>  S % SlopeStageExplicit ( iS ) % Element )
@@ -457,6 +460,8 @@ contains
     if ( associated ( T_AS ) ) call T_AS % Start ( )
 
     call K % Copy ( K_Stage )
+
+!call Show ( K_Stage % Storage ( 1 ) % Value, '>>> K_Stage Value' )
 
     call S % AccumulateSlope ( iS )
     
