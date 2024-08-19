@@ -32,11 +32,16 @@ contains
       dOmega, &
       SqrtTiny
 
+integer ( KDI ) :: &
+  iV_Show
+
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     ! dOmega  =  1.0_KDR  /  mRI
 
     nV  =  size ( ProperCell )
+
+!iV_Show = 68
 
     !$OMP parallel do &
     !$OMP schedule ( OMP_SCHEDULE_HOST ) &
@@ -54,7 +59,9 @@ contains
     do iV = 1, nV
       if ( ProperCell ( iV ) ) then      
 
-!call Show ( iV, '>>> iV' )
+!if ( iV == iV_Show ) &
+!  call Show ( iV, '>>> iV' )
+
         !-- Iterate radiation and fluid energy and number to convergence
 
         J_Eq_E_0   =  J_Eq_E  ( iV )
@@ -136,7 +143,9 @@ contains
 
             iI  =  iI + 1
 
-!call Show ( iI, '>>> iI' )
+!if ( iV == iV_Show ) &
+!  call Show ( iI, '>>> iI' )
+
             !-- Compute interactions
 
             call I_E  % Compute ( iC, iV )

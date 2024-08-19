@@ -452,6 +452,11 @@ integer ( KDI ) :: &
                Res_J_Eq_EB, Res_N_Eq_EB, &
                Res_J_Eq_X,  Res_N_Eq_X )
 
+! call Show ( KK_E_V, '>>> KK_E_V' )
+! call Show ( KK_EB_V, '>>> KK_EB_V' )
+! call Show ( KK_X_V, '>>> KK_X_V' )
+! call Show ( KK_F_V, '>>> KK_F_V' )
+
 ! iV  =  40
 ! associate &
 !   (  Y_E    =>  S_R ( 1 ) % Solution, &
