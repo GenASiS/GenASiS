@@ -158,6 +158,7 @@ module Interactions_NM_G__Form
       module subroutine Compute_EA_HL_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+                 Chi_H_S_N, Chi_H_S_A, &
                  UseDeviceOption )
         !-- Compute_EmissionAbsorption_HeavyLepton_All_Kernel
         implicit none
@@ -166,7 +167,8 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J_EA_N,  Xi_J_EA_A, &
-          Chi_J_EA_N, Chi_J_EA_A
+          Chi_J_EA_N, Chi_J_EA_A, &
+          Chi_H_S_N,  Chi_H_S_A
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Compute_EA_HL_A_Kernel
@@ -174,6 +176,7 @@ module Interactions_NM_G__Form
       module subroutine Compute_EA_HL_S_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+                 Chi_H_S_N, Chi_H_S_A, &
                  iV )
         !-- Compute_EmissionAbsorption_HeavyLepton_Single_Kernel
         implicit none
@@ -182,7 +185,8 @@ module Interactions_NM_G__Form
           Chi_J, Chi_H, Chi_N
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J_EA_N,  Xi_J_EA_A, &
-          Chi_J_EA_N, Chi_J_EA_A
+          Chi_J_EA_N, Chi_J_EA_A, &
+          Chi_H_S_N,  Chi_H_S_A
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Compute_EA_HL_S_Kernel
@@ -414,7 +418,7 @@ contains
 
     !-- Parameters
 
-    I % DensityDetailedBalance  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+    I % DensityDetailedBalance  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
 
   end subroutine InitializeAllocate_I
 
@@ -522,10 +526,12 @@ contains
                  M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                  Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
+!      case ( 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
       case ( 'NEUTRINOS_HL' )
         call Compute_EA_HL_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+                 Chi_H_S_N, Chi_H_S_A, &
                  UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
              
@@ -540,22 +546,27 @@ contains
                  Sign = +1, nSpecies = 1, &
                  Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
-      case ( 'NEUTRINOS_HL' )
-        call Compute_P_A_Kernel &
-               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_P_EP, Chi_J_P_EP, &
-                 J_Eq, N_Eq, M, N, T, Mu_e, &
-                 Sign = -1, nSpecies = 4, &
-                 Rho_DB = I % DensityDetailedBalance, &
-                 UseDeviceOption = I % DeviceMemory )
+      ! case ( 'NEUTRINOS_HL' )
+      !   call Compute_P_A_Kernel &
+      !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+      !            Xi_J_P_EP, Chi_J_P_EP, &
+      !            J_Eq, N_Eq, M, N, T, Mu_e, &
+      !            Sign = -1, nSpecies = 4, &
+      !            Rho_DB = I % DensityDetailedBalance, &
+      !            UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
 
       !-- Elastic scattering on nucleons and nuclei
 
-      call Compute_S_A_Kernel &
-             ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
-               M, N, X_p, X_n, X_A, Z, A, &
-               UseDeviceOption = I % DeviceMemory )
+      select case ( trim ( R % RadiationType ) )
+!      case ( 'NEUTRINOS_E' )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+!      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
+        call Compute_S_A_Kernel &
+               ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+                 M, N, X_p, X_n, X_A, Z, A, &
+                 UseDeviceOption = I % DeviceMemory )
+      end select !-- RadiationType
 
       end associate !-- Xi_J, etc.
       end associate !-- FV, etc.
@@ -578,11 +589,11 @@ contains
 integer ( KDI ) :: &
   iV_S
 
-! iV_S = 68
-! if ( iV == iV_S ) then
-!   call Show ( '>>> Interactions_NM_G % ComputeSingle', CONSOLE % INFO_6 )
-!   call Show ( I % Name, '>>> Interactions', CONSOLE % INFO_6 )
-! end if
+!iV_S = 88
+!if ( iV == iV_S ) then
+!  call Show ( '>>> Interactions_NM_G % ComputeSingle', CONSOLE % INFO_6 )
+!  call Show ( I % Name, '>>> Interactions', CONSOLE % INFO_6 )
+!end if
 
     select type ( R  =>  I % Radiation )
       class is ( NeutrinoMoments_G_Form )
@@ -655,10 +666,12 @@ integer ( KDI ) :: &
                J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
                M, N, T, X_n, X_p, Mu_e, Mu_n_p, &
                Rho_DB = I % DensityDetailedBalance, iV = iV )
+!      case ( 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
     case ( 'NEUTRINOS_HL' )
       call Compute_EA_HL_S_Kernel &
              ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+               Chi_H_S_N, Chi_H_S_A, &
                iV = iV )
     end select !-- RadiationType
            
@@ -673,30 +686,39 @@ integer ( KDI ) :: &
                Sign = +1, nSpecies = 1, &
                Rho_DB = I % DensityDetailedBalance, &
                iV = iV )
-    case ( 'NEUTRINOS_HL' )
-      call Compute_P_S_Kernel &
-             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-               Xi_J_P_EP, Chi_J_P_EP, &
-               J_Eq, N_Eq, M, N, T, Mu_e, &
-               Sign = -1, nSpecies = 4, &
-               Rho_DB = I % DensityDetailedBalance, &
-               iV = iV )
+    ! case ( 'NEUTRINOS_HL' )
+    !   call Compute_P_S_Kernel &
+    !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+    !            Xi_J_P_EP, Chi_J_P_EP, &
+    !            J_Eq, N_Eq, M, N, T, Mu_e, &
+    !            Sign = -1, nSpecies = 4, &
+    !            Rho_DB = I % DensityDetailedBalance, &
+    !            iV = iV )
     end select !-- RadiationType
 
     !-- Elastic scattering on nucleons and nuclei
 
-! if ( iV == iV_S ) &
-!   call Show ( Chi_H ( iV_S ), '>>> Chi_H before scattering' )
+!if ( iV == iV_S ) then
+!  call Show ( R % RadiationType, '>>> RadiationType' )
+!  call Show ( Chi_H ( iV_S ), '>>> Chi_H before scattering' )
+!  call Show ( Chi_H_S_N ( iV_S ), '>>> Chi_H_S_N' )
+!  call Show ( Chi_H_S_A ( iV_S ), '>>> Chi_H_S_A' )
+!end if
 
-    call Compute_S_S_Kernel &
-           ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
-             M, N, X_p, X_n, X_A, Z, A, iV )
+    select case ( trim ( R % RadiationType ) )
+!    case ( 'NEUTRINOS_E' )
+    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+!    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
+      call Compute_S_S_Kernel &
+             ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+               M, N, X_p, X_n, X_A, Z, A, iV )
+   end select !-- RadiationType
 
-! if ( iV == iV_S ) then
-!   call Show ( Chi_H ( iV_S ), '>>> Chi_H after scattering' )
-!   call Show ( Chi_H_S_N ( iV_S ), '>>> Chi_H_S_N' )
-!   call Show ( Chi_H_S_A ( iV_S ), '>>> Chi_H_S_A' )
-! end if
+!if ( iV == iV_S ) then
+!  call Show ( Chi_H ( iV_S ), '>>> Chi_H after scattering' )
+!  call Show ( Chi_H_S_N ( iV_S ), '>>> Chi_H_S_N' )
+!  call Show ( Chi_H_S_A ( iV_S ), '>>> Chi_H_S_A' )
+!end if
 
     end associate !-- Xi_J, etc.
     end associate !-- FV, etc.

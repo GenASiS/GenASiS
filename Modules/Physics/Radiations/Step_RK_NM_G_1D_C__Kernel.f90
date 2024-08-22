@@ -41,7 +41,7 @@ integer ( KDI ) :: &
 
     nV  =  size ( ProperCell )
 
-!iV_Show = 68
+!iV_Show = 88
 
     !$OMP parallel do &
     !$OMP schedule ( OMP_SCHEDULE_HOST ) &
@@ -389,6 +389,13 @@ integer ( KDI ) :: &
           KK_X_S_3 ( iV )  &
             =  ( Xi_H_X ( iV )  -  Chi_H_X ( iV )  *  S_X_3_0 ( iV ) ) &
                /  ( 1.0_KDR  +  Chi_H_X ( iV ) * AA * dT )
+
+! if ( iV == iV_Show ) then
+!   call Show ( Xi_H_X ( iV ), '>>> Xi_H_X ( iV )' )
+!   call Show ( Chi_H_X ( iV ), '>>> Chi_H_X ( iV )' )
+!   call Show ( S_X_1_0 ( iV ), '>>> S_X_1_0 ( iV )' )
+!   call Show ( KK_X_S_1 ( iV ), '>>> KK_X_S_1' )
+! end if
 
           KK_F_S_1 ( iV )  &
             =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )  -  KK_X_S_1 ( iV )
