@@ -394,6 +394,8 @@ contains
     real ( KDR ) :: &
       H, &
       SqrtTiny
+      
+    !$OMP declare target
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 

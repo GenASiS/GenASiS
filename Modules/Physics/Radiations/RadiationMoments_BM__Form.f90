@@ -841,7 +841,12 @@ contains
       associate &
         ( RSV  =>  FS_RM % Storage ( iC ) % Value, &
           FSV  =>   F    % Storage ( iC ) % Value )
-
+      
+      !-- FIXME: The following seems to avoid out-of-bound issue with CCE 16
+      !          optimized compilation
+      !call Show ( F  % VELOCITY_U_1, '<<< F % VELOCITY_U_1', CONSOLE % INFO_7 )
+      !call Show ( F  % VELOCITY_U_3, '<<< F % VELOCITY_U_3', CONSOLE % INFO_7 )
+      
       call Copy ( FSV ( :,   F  % VELOCITY_U_1  &
                            : F  % VELOCITY_U_3 ), &
                   RSV ( :,   RM % FLUID_VELOCITY_U_1 &

@@ -6,7 +6,7 @@ submodule ( NeutrinoMoments_G__Form ) NeutrinoMoments_G__Kernel
   
   implicit none
 
-  real ( KDR ) :: &
+  real ( KDR ), parameter :: &
     Pi    =  CONSTANT % PI, &
     Pi_2  =  CONSTANT % PI ** 2
 
@@ -418,6 +418,8 @@ contains
     real ( KDR ) :: &
       H, &
       SqrtTiny
+      
+    !$OMP declare target
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
@@ -576,13 +578,86 @@ contains
     EtaMax  =   25.
 
     if ( UseDevice ) then
-  !     !$OMP OMP_TARGET_DIRECTIVE parallel do &
-  !     !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-  !     !$OMP shared ( a )
-  !     do iV = 1, nV
-  !       T_R ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
-  !     end do
-  !     !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( Factor_ND, EtaMin, EtaMax ) &
+      !$OMP private ( Eta_ND, F_2, F_3, J_Species, N_Species ) &
+      !$OMP private ( Bracket, Converge )
+      do iV = 1, nV
+        J_Species  =  J ( iV )  /  nSpecies
+        N_Species  =  N ( iV )  /  nSpecies
+
+        if ( J_Species  <=  0.0_KDR  .or.  N_Species  <=  0.0_KDR ) &
+          cycle
+
+        ! LHS  =  J_Species ** ( 1.0_KDR / 4.0_KDR )  &
+        !         *  N_Species ** ( - 1.0_KDR / 3.0_KDR )
+        ! LHS  =  max ( LHS, OnePlusEpsilon / Factor_ED_1 )
+
+        ! Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  LHS ** 4 )
+        ! Eta_ED  =  ( Factor_ED_2 * ( Factor_ED_1 * LHS  -  1.0_KDR ) ) &
+        !            ** ( - 0.5_KDR )
+
+        ! if ( Eta_ND < -10.0_KDR ) then
+        !   Eta_R ( iV )  =  Eta_ND
+        ! else if ( Eta_ED > 50.0_KDR ) then
+        !   Eta_R ( iV )  =  Eta_ED
+        ! else
+        !   Eta  =  max ( Eta_ND, Eta_R ( iV ) )
+        !   call SolveSecant ( LHS, 0.99 * Eta, Eta, Success, Eta )
+        !   if ( Success ) then
+        !     Eta_R ( iV )  =  Eta
+        !   else
+        !     !-- crude last resort
+        !     if ( Eta_ND < 1.0_KDR ) then
+        !       Eta_R ( iV )  =  Eta_ND
+        !     else
+        !       Eta_R ( iV )  =  Eta_ED
+        !     end if
+        !   end if
+        ! end if
+
+        Eta_ND  =  - 3.0_KDR  &
+                     * log ( Factor_ND  *  J_Species &
+                             *  N_Species ** ( - 4.0_KDR / 3.0_KDR ) )
+
+        if ( Eta_ND  <=  0.0_KDR ) then
+          Eta_R ( iV )  =  max ( Eta_ND, EtaMin )
+        else
+          Eta_R ( iV )  =  max ( Eta_R ( iV ), Eta_ND )
+          call SolveEtaBisection &
+                 ( Eta_R ( iV ), J_Species, N_Species, EtaMax, iV, &
+                   Bracket, Converge )
+          Eta_R ( iV )  =  min ( Eta_R ( iV ), EtaMax )
+          if ( .not. Bracket .or. .not. Converge ) then
+    !        call Show ( Eta_0, 'Eta_0', CONSOLE % ERROR )
+    !        call Show ( Eta_ND, 'Eta_ND', CONSOLE % ERROR )
+    !        Eta_R ( iV )  =  Eta_0
+    !        Eta_R ( iV )  =  0.0_KDR
+            Eta_R ( iV )  =  EtaMax
+    !        call PROGRAM_HEADER % Abort ( )
+          end if
+        end if
+
+        ! call DFERMI ( 2.0_KDR, Eta_R ( iV ), 0.0_KDR, F_2, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_R ( iV ), 0.0_KDR, F_3, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        F_2  =  Fermi_2 ( Eta_R ( iV ) )
+        F_3  =  Fermi_3 ( Eta_R ( iV ) )
+
+        T_R ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3  
+!        T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
+!                             25. ) !--MeV  
+        
+        E_Ave ( iV )  &
+          =  J_Species  /  N_Species
+        F_Ave ( iV )  &
+          =  1.0_KDR &
+             /  ( exp ( E_Ave ( iV ) / T_R ( iV )  -  Eta_R ( iV ) )  &
+                  +  1.0_KDR )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
@@ -696,6 +771,8 @@ contains
     logical ( KDL ) :: &
       Bracket, &
       Converge
+      
+    !$OMP declare target
           
     ! OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
 
@@ -818,13 +895,34 @@ contains
     Factor_J_N   =  FourPi  /  TwoPi ** 3
 
     if ( UseDevice ) then
-    !   !$OMP OMP_TARGET_DIRECTIVE parallel do &
-    !   !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-    !   !$OMP shared ( a )
-    !   do iV = 1, nV
-    !     J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
-    !   end do
-    !   !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( SqrtTiny, Factor_J_N ) &
+      !$OMP private ( Eta_Eq, F_2_Eq, F_3_Eq ) !&    
+      do iV = 1, nV
+
+        if ( T ( iV )  <=  0.0_KDR ) &
+          cycle
+
+        Eta_Eq  =  Sign  *  ( Mu_E ( iV )  -  Mu_NP ( iV ) )  /  T ( iV )
+        
+        ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, F_3_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        F_2_Eq  =  Fermi_2 ( Eta_Eq )
+        F_3_Eq  =  Fermi_3 ( Eta_Eq )
+
+        N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
+        J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
+
+        N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, N_Eq ( iV ) )
+        J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, J_Eq ( iV ) )
+
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
@@ -873,6 +971,8 @@ contains
 !      fdeta, fdeta2, &
 !      fdtheta, fdtheta2, &
 !      fdetadtheta
+
+    !$OMP declare target
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
@@ -949,13 +1049,33 @@ contains
     Factor_J_N   =  nSpecies  *  FourPi  /  TwoPi ** 3
 
     if ( UseDevice ) then
-    !   !$OMP OMP_TARGET_DIRECTIVE parallel do &
-    !   !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-    !   !$OMP shared ( a )
-    !   do iV = 1, nV
-    !     J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
-    !   end do
-    !   !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP shared ( SqrtTiny, Factor_J_N ) &
+      !$OMP private ( F_2_Eq, F_3_Eq ) !&
+ !     !$OMP private ( fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      do iV = 1, nV
+
+        if ( T ( iV )  <=  0.0_KDR ) &
+          cycle
+
+        ! call DFERMI ( 2.0_KDR, Eta_Eq, 0.0_KDR, F_2_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        ! call DFERMI ( 3.0_KDR, Eta_Eq, 0.0_KDR, F_3_Eq, &
+        !               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        F_2_Eq  =  Fermi_2 ( 0.0_KDR )
+        F_3_Eq  =  Fermi_3 ( 0.0_KDR )
+
+        N_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 3  *  F_2_Eq
+        J_Eq ( iV )  =  Factor_J_N  *  T ( iV ) ** 4  *  F_3_Eq
+
+        N_RD  ( iV )  =  abs ( N ( iV )  -  N_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, N_Eq ( iV ) )
+        J_RD  ( iV )  =  abs ( J ( iV )  -  J_Eq ( iV ) )  &
+                         /  max ( SqrtTiny, J_Eq ( iV ) )
+
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
@@ -1001,6 +1121,8 @@ contains
 !      fdeta, fdeta2, &
 !      fdtheta, fdtheta2, &
 !      fdetadtheta
+
+    !$OMP declare target
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
@@ -1123,7 +1245,7 @@ contains
     logical ( KDL ), intent ( out ) :: &
       Bracket, &
       Converge
-
+      
     integer ( KDI ) :: &
       iIteration, &
       MaxIterations
@@ -1135,6 +1257,8 @@ contains
       Tolerance, &
       AbsolutePrecision, &
       RelativePrecision
+      
+    !$OMP declare target
       
     MaxIterations  =  50
     Tolerance      =  1.0e-9_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
@@ -1283,6 +1407,8 @@ contains
       FourThirds, &
       Factor, &
       F_2, F_3
+      
+    !$OMP declare target
 
     FourThirds  =  4.0_KDR / 3.0_KDR
     Factor      =  ( 2 * Pi_2 ) ** ( 1.0_KDR / 3.0_KDR )
@@ -1301,6 +1427,8 @@ contains
       Eta
     real ( KDR ) :: &
       F_2
+      
+    !$OMP declare target
 
     if ( Eta  >  0.0_KDR ) then
       F_2  =  Eta**3 / 3.  +  4. * Eta  +  2. * exp ( -Eta )
@@ -1317,6 +1445,8 @@ contains
       Eta
     real ( KDR ) :: &
       F_3
+      
+    !$OMP declare target
 
     if ( Eta  >  0.0_KDR ) then
       F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
