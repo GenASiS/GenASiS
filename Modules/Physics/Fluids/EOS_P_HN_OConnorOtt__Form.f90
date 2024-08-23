@@ -487,8 +487,8 @@ contains
     type ( c_ptr ) :: &
       D_P  !-- Device Pointer
 
-    call AllocateDevice ( E % Error, D_P )
-    call AssociateHost  ( D_P, E % Error )
+    !call AllocateDevice ( E % Error, D_P )
+    !call AssociateHost  ( D_P, E % Error )
 
     call AllocateDevice ( E % Table, D_P )
     call AssociateHost  ( D_P, E % Table )
@@ -717,8 +717,8 @@ contains
     if ( allocated ( E % LogDensity ) ) &
       deallocate ( E % LogDensity )
     
-    if ( allocated ( E % Error ) ) &
-      deallocate ( E % Error )
+    !if ( allocated ( E % Error ) ) &
+    !  deallocate ( E % Error )
       
     if ( allocated ( E % iaSelected ) ) &
       deallocate ( E % iaSelected )
