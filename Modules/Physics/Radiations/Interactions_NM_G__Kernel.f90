@@ -332,7 +332,7 @@ contains
                   /  ( 1. +  &
                        exp ( ( E_Ave ( iV )  -  Mu_e ( iV ) ) / T ( iV ) ) )
 
-          Chi_J_n  =  Factor_n  *  N_n  /  Fermi_3_nu  &
+          Chi_J_n  =  Factor_n  *  N_n  /  max ( Fermi_3_nu, SqrtTiny )  &
                      *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
                           +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
                           +  Q ** 2               *  Fermi_3_nu )!  &
@@ -340,7 +340,7 @@ contains
 
           Chi_H_n  =  Chi_J_n
 
-          Chi_N_n  =  Factor_n  *  N_n  /  Fermi_2_nu  &
+          Chi_N_n  =  Factor_n  *  N_n  /  max ( Fermi_2_nu, SqrtTiny )  &
                      *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
                           +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
                           +  Q ** 2               *  Fermi_2_nu )!  &
@@ -493,7 +493,7 @@ contains
               /  ( 1. +  &
                    exp ( ( E_Ave ( iV )  -  Mu_e ( iV ) ) / T ( iV ) ) )
 
-      Chi_J_n  =  Factor_n  *  N_n  /  Fermi_3_nu  &
+      Chi_J_n  =  Factor_n  *  N_n  /  max ( Fermi_3_nu, SqrtTiny )  &
                  *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
                       +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
                       +  Q ** 2               *  Fermi_3_nu )!  &
@@ -501,7 +501,7 @@ contains
 
       Chi_H_n  =  Chi_J_n
 
-      Chi_N_n  =  Factor_n  *  N_n  /  Fermi_2_nu  &
+      Chi_N_n  =  Factor_n  *  N_n  /  max ( Fermi_2_nu, SqrtTiny )  &
                  *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
                       +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
                       +  Q ** 2               *  Fermi_2_nu )!  &
@@ -586,9 +586,10 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      Factor_n, &
-      N_n, Eta_e, &
-      Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
+      Factor_n, Factor_p, &
+      N_n, N_p, Eta_e, &
+      Fermi_2_e,  Fermi_3_e,  Fermi_4_e,  Fermi_5_e, &
+      Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
        Xi_J_n,  Xi_H_n,  Xi_N_n, &
       Chi_J_p, Chi_H_p, Chi_N_p
     logical ( KDL ) :: &
@@ -601,6 +602,7 @@ contains
     nV  =  size ( J_Eq )
 
     Factor_n  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
+    Factor_p  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
 
     if ( UseDevice ) then
     else
@@ -635,13 +637,41 @@ contains
                     +  Q ** 2            *  Fermi_2_e )! &
 !                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
-        !-- nu_e_bar + p  ->  n + e+, detailed balance
+        if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then
 
-        Chi_J_p  =  Xi_J_n / J_Eq ( iV )
+          !-- nu_e_bar + p  ->  n + e+, detailed balance
 
-        Chi_H_p  =  Chi_J_p
+          Chi_J_p  =  Xi_J_n / J_Eq ( iV )
 
-        Chi_N_p  =  Xi_N_n / N_Eq ( iV )
+          Chi_H_p  =  Chi_J_p
+
+          Chi_N_p  =  Xi_N_n / N_Eq ( iV )
+
+        else
+
+          !-- nu_e_bar + p  ->  n + e+, direct
+
+          N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+
+          Fermi_2_nu  =  Fermi_2 ( Eta_nu ( iV ) )
+          Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+          Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+          Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+
+          Chi_J_p  =  Factor_p  *  N_p  /  max ( Fermi_3_nu, SqrtTiny )  &
+                      *  (    T_nu ( iV ) ** 2        *  Fermi_5_nu  &
+                           +  3 *  Q  *  T_nu ( iV )  *  Fermi_4_nu  &
+                           +  3 *  Q ** 2             *  Fermi_3_nu  &
+                           +  Q ** 3  /  T_nu ( iV )  *  Fermi_2_nu )
+                  
+          Chi_H_p  =  Chi_J_p
+
+          Chi_N_p  =  Factor_p  *  N_p  /  max ( Fermi_2_nu, SqrtTiny )  &
+                      *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
+                           +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
+                           +  Q ** 2               *  Fermi_2_nu )
+
+        end if
 
         !-- Total
 
@@ -670,13 +700,15 @@ contains
     !-- Compute_EmissionAbsorption_ElectronBar_Single_Kernel
 
     real ( KDR ) :: &
-      Factor_n, &
-      N_n, Eta_e, &
-      Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
+      Factor_n, Factor_p, &
+      N_n, N_p, Eta_e, &
+      Fermi_2_e,  Fermi_3_e,  Fermi_4_e,  Fermi_5_e, &
+      Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
        Xi_J_n,  Xi_H_n,  Xi_N_n, &
       Chi_J_p, Chi_H_p, Chi_N_p
 
     Factor_n  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
+    Factor_p  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
 
     !-- e+ + n  ->  p + nu_e_bar 
 
@@ -704,13 +736,41 @@ contains
                 +  Q ** 2            *  Fermi_2_e )! &
 !                   *  ( 1.0_KDR  -  F_Ave ( iV ) )
 
-    !-- nu_e_bar + p  ->  n + e+, detailed balance
+    if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then
 
-    Chi_J_p  =  Xi_J_n / J_Eq ( iV )
+      !-- nu_e_bar + p  ->  n + e+, detailed balance
 
-    Chi_H_p  =  Chi_J_p
+      Chi_J_p  =  Xi_J_n / J_Eq ( iV )
 
-    Chi_N_p  =  Xi_N_n / N_Eq ( iV )
+      Chi_H_p  =  Chi_J_p
+
+      Chi_N_p  =  Xi_N_n / N_Eq ( iV )
+
+    else
+
+      !-- nu_e_bar + p  ->  n + e+, direct
+
+      N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
+
+      Fermi_2_nu  =  Fermi_2 ( Eta_nu ( iV ) )
+      Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+      Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+      Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
+
+      Chi_J_p  =  Factor_p  *  N_p  /  max ( Fermi_3_nu, SqrtTiny )  &
+                  *  (    T_nu ( iV ) ** 2        *  Fermi_5_nu  &
+                       +  3 *  Q  *  T_nu ( iV )  *  Fermi_4_nu  &
+                       +  3 *  Q ** 2             *  Fermi_3_nu  &
+                       +  Q ** 3  /  T_nu ( iV )  *  Fermi_2_nu )
+              
+      Chi_H_p  =  Chi_J_p
+
+      Chi_N_p  =  Factor_p  *  N_p  /  max ( Fermi_2_nu, SqrtTiny )  &
+                  *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
+                       +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
+                       +  Q ** 2               *  Fermi_2_nu )
+
+    end if
 
     !-- Total
 

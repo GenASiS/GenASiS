@@ -418,7 +418,7 @@ contains
 
     !-- Parameters
 
-    I % DensityDetailedBalance  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
+    I % DensityDetailedBalance  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
 
   end subroutine InitializeAllocate_I
 
@@ -537,24 +537,24 @@ contains
              
       !-- Pair emission
 
-      select case ( trim ( R % RadiationType ) )
-      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
-        call Compute_P_A_Kernel &
-               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-                 Xi_J_P_EP, Chi_J_P_EP, &
-                 J_Eq, N_Eq, M, N, T, Mu_e, &
-                 Sign = +1, nSpecies = 1, &
-                 Rho_DB = I % DensityDetailedBalance, &
-                 UseDeviceOption = I % DeviceMemory )
-      ! case ( 'NEUTRINOS_HL' )
+      ! select case ( trim ( R % RadiationType ) )
+      ! case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
       !   call Compute_P_A_Kernel &
       !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
       !            Xi_J_P_EP, Chi_J_P_EP, &
       !            J_Eq, N_Eq, M, N, T, Mu_e, &
-      !            Sign = -1, nSpecies = 4, &
+      !            Sign = +1, nSpecies = 1, &
       !            Rho_DB = I % DensityDetailedBalance, &
       !            UseDeviceOption = I % DeviceMemory )
-      end select !-- RadiationType
+      ! ! case ( 'NEUTRINOS_HL' )
+      ! !   call Compute_P_A_Kernel &
+      ! !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+      ! !            Xi_J_P_EP, Chi_J_P_EP, &
+      ! !            J_Eq, N_Eq, M, N, T, Mu_e, &
+      ! !            Sign = -1, nSpecies = 4, &
+      ! !            Rho_DB = I % DensityDetailedBalance, &
+      ! !            UseDeviceOption = I % DeviceMemory )
+      ! end select !-- RadiationType
 
       !-- Elastic scattering on nucleons and nuclei
 
@@ -677,24 +677,24 @@ integer ( KDI ) :: &
            
     !-- Pair emission
 
-    select case ( trim ( R % RadiationType ) )
-    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
-      call Compute_P_S_Kernel &
-             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-               Xi_J_P_EP, Chi_J_P_EP, &
-               J_Eq, N_Eq, M, N, T, Mu_e, &
-               Sign = +1, nSpecies = 1, &
-               Rho_DB = I % DensityDetailedBalance, &
-               iV = iV )
-    ! case ( 'NEUTRINOS_HL' )
+    ! select case ( trim ( R % RadiationType ) )
+    ! case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
     !   call Compute_P_S_Kernel &
     !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
     !            Xi_J_P_EP, Chi_J_P_EP, &
     !            J_Eq, N_Eq, M, N, T, Mu_e, &
-    !            Sign = -1, nSpecies = 4, &
+    !            Sign = +1, nSpecies = 1, &
     !            Rho_DB = I % DensityDetailedBalance, &
     !            iV = iV )
-    end select !-- RadiationType
+    ! ! case ( 'NEUTRINOS_HL' )
+    ! !   call Compute_P_S_Kernel &
+    ! !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+    ! !            Xi_J_P_EP, Chi_J_P_EP, &
+    ! !            J_Eq, N_Eq, M, N, T, Mu_e, &
+    ! !            Sign = -1, nSpecies = 4, &
+    ! !            Rho_DB = I % DensityDetailedBalance, &
+    ! !            iV = iV )
+    ! end select !-- RadiationType
 
     !-- Elastic scattering on nucleons and nuclei
 
