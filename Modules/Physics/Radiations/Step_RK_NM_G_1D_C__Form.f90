@@ -217,23 +217,40 @@ contains
     real ( KDR ), dimension ( : ), pointer :: &
       M_DD_11, M_DD_22, M_DD_33
     real ( KDR ), dimension ( : ), pointer :: &
-      E_F, S_F_1, S_F_2, S_F_3, D_F
+      E_F, S_F_1, S_F_2, S_F_3, D_F, &
+      M_F, N_F, T_F, X_p_F, X_n_F, X_A_F, &
+      Z_F, Z_A, Mu_e_F, Mu_n_p_F
     real ( KDR ), dimension ( : ), pointer :: &
       J_E, H_E_1, H_E_2, H_E_3, N_E, &
       E_E, S_E_1, S_E_2, S_E_3, D_E, &
-      J_Eq_E, N_Eq_E
+      J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
+      T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E
     real ( KDR ), dimension ( : ), pointer :: &
       J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
       E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
-      J_Eq_EB, N_Eq_EB
+      J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, &
+      T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB
     real ( KDR ), dimension ( : ), pointer :: &
       J_X, H_X_1, H_X_2, H_X_3, N_X, &
       E_X, S_X_1, S_X_2, S_X_3, D_X, &
-      J_Eq_X, N_Eq_X
+      J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
+      T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X
     real ( KDR ), dimension ( : ), pointer :: &
-      Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
-      Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-      Xi_J_X,  Xi_H_X,  Xi_N_X,  Chi_J_X,  Chi_H_X,  Chi_N_X
+      Xi_J_E,  Xi_H_E,  Xi_N_E,  &
+      Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
+      Chi_J_E,  Chi_H_E,  Chi_N_E, &
+      Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
+      Chi_H_S_N_E, Chi_H_S_A_E, &
+      Xi_J_EB,  Xi_H_EB,  Xi_N_EB,  &
+      Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
+      Chi_J_EB,  Chi_H_EB,  Chi_N_EB, &
+      Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
+      Chi_H_S_N_EB, Chi_H_S_A_EB, &
+      Xi_J_X,  Xi_H_X,  Xi_N_X,  &
+      Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
+      Chi_J_X,  Chi_H_X,  Chi_N_X, &
+      Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
+      Chi_H_S_N_X, Chi_H_S_A_X
     !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
       ID_V
@@ -399,30 +416,49 @@ integer ( KDI ) :: &
                S_X_1_0, S_X_2_0, S_X_3_0, E_X_0, D_X_0 )
 
       call SetFieldPointers_F &
-             ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F )
+             ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F, &
+               M_F, N_F, T_F, X_p_F, X_n_F, X_A_F, Z_F, Z_A, Mu_e_F, Mu_n_p_F )
 
       call SetFieldPointers_R &
              ( R_E, R_E_V, &
                J_E, H_E_1, H_E_2, H_E_3, N_E, &
-               E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E )
+               E_E, S_E_1, S_E_2, S_E_3, D_E, &
+               J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
+               T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E )
       call SetFieldPointers_R &
              ( R_EB, R_EB_V, &
                J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
-               E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB )
+               E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
+               J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, &
+               T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB )
       call SetFieldPointers_R &
              ( R_X, R_X_V, &
                J_X, H_X_1, H_X_2, H_X_3, N_X, &
-               E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X )
+               E_X, S_X_1, S_X_2, S_X_3, D_X, &
+               J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
+               T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X )
 
       call SetFieldPointers_I &
              ( I_E, I_E_V, &
-               Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E )
+               Xi_J_E, Xi_H_E, Xi_N_E, &
+               Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
+               Chi_J_E, Chi_H_E, Chi_N_E, &
+               Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
+               Chi_H_S_N_E, Chi_H_S_A_E )
       call SetFieldPointers_I &
              ( I_EB, I_EB_V, &
-               Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB )
+               Xi_J_EB, Xi_H_EB, Xi_N_EB, &
+               Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
+               Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+               Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
+               Chi_H_S_N_EB, Chi_H_S_A_EB )
       call SetFieldPointers_I &
              ( I_X, I_X_V, &
-               Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X )
+               Xi_J_X, Xi_H_X, Xi_N_X, &
+               Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
+               Chi_J_X, Chi_H_X, Chi_N_X, &
+               Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
+               Chi_H_S_N_X, Chi_H_S_A_X )
 
       call SolveKernel &
              ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
@@ -692,26 +728,41 @@ integer ( KDI ) :: &
 
 
   subroutine SetFieldPointers_F &
-               ( F, F_V, E, S_1, S_2, S_3, D )
+               ( F, F_V, E, S_1, S_2, S_3, D, &
+                 M, N, T, X_p, X_n, X_A, Z, A, Mu_e, Mu_n_p )
 
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       F
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       F_V
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
-      E, S_1, S_2, S_3, D
+      E, S_1, S_2, S_3, D, &
+      M, N, T, X_p, X_n, X_A, &
+      Z, A, Mu_e, Mu_n_p
 
       E     =>  F_V ( :, F % ENERGY_DENSITY_B )
       S_1   =>  F_V ( :, F % MOMENTUM_DENSITY_D_1 )
       S_2   =>  F_V ( :, F % MOMENTUM_DENSITY_D_2 )
       S_3   =>  F_V ( :, F % MOMENTUM_DENSITY_D_3 )
       D     =>  F_V ( :, F % ELECTRON_DENSITY_B )
+      
+      M       =>  F_V ( :, F % BARYON_MASS )
+      N       =>  F_V ( :, F % BARYON_DENSITY_C )
+      T       =>  F_V ( :, F % TEMPERATURE )
+      X_p     =>  F_V ( :, F % MASS_FRACTION_PROTON )
+      X_n     =>  F_V ( :, F % MASS_FRACTION_NEUTRON )
+      X_A     =>  F_V ( :, F % MASS_FRACTION_HEAVY )
+      Z       =>  F_V ( :, F % ATOMIC_NUMBER_HEAVY )
+      A       =>  F_V ( :, F % MASS_NUMBER_HEAVY )
+      Mu_e    =>  F_V ( :, F % CHEMICAL_POTENTIAL_E )
+      Mu_n_p  =>  F_V ( :, F % CHEMICAL_POTENTIAL_N_P )
 
   end subroutine SetFieldPointers_F
 
 
   subroutine SetFieldPointers_R &
-               ( R, R_V, J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, J_Eq, N_Eq )
+               ( R, R_V, J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, &
+                 J_Eq, N_Eq, J_Rd, N_Rd, T_Nu, Eta_Nu, E_Ave, F_Ave )
 
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       R
@@ -720,26 +771,38 @@ integer ( KDI ) :: &
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
       J, H_1, H_2, H_3, N, &
       E, S_1, S_2, S_3, D, &
-      J_Eq, N_Eq
+      J_Eq, N_Eq, &
+      J_Rd, N_Rd, &
+      T_Nu, Eta_Nu, &
+      E_Ave, F_Ave
 
-      J     =>  R_V ( :, R % ENERGY_DENSITY_C )
-      H_1   =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_1 )
-      H_2   =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_2 )
-      H_3   =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_3 )
-      N     =>  R_V ( :, R % NUMBER_DENSITY_C )
-      E     =>  R_V ( :, R % ENERGY_DENSITY_B )
-      S_1   =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_1 )
-      S_2   =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_2 )
-      S_3   =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_3 )
-      D     =>  R_V ( :, R % NUMBER_DENSITY_B )
-      J_Eq  =>  R_V ( :, R % ENERGY_DENSITY_C_EQ )
-      N_Eq  =>  R_V ( :, R % NUMBER_DENSITY_C_EQ )
+      J       =>  R_V ( :, R % ENERGY_DENSITY_C )
+      H_1     =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_1 )
+      H_2     =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_2 )
+      H_3     =>  R_V ( :, R % MOMENTUM_DENSITY_C_U_3 )
+      N       =>  R_V ( :, R % NUMBER_DENSITY_C )
+      E       =>  R_V ( :, R % ENERGY_DENSITY_B )
+      S_1     =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_1 )
+      S_2     =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_2 )
+      S_3     =>  R_V ( :, R % MOMENTUM_DENSITY_B_D_3 )
+      D       =>  R_V ( :, R % NUMBER_DENSITY_B )
+      J_Eq    =>  R_V ( :, R % ENERGY_DENSITY_C_EQ )
+      N_Eq    =>  R_V ( :, R % NUMBER_DENSITY_C_EQ )
+      J_Rd    =>  R_V ( :, R % ENERGY_DENSITY_C_RD )
+      N_Rd    =>  R_V ( :, R % NUMBER_DENSITY_C_RD )
+      T_Nu    =>  R_V ( :, R % TEMPERATURE_GREY )
+      Eta_Nu  =>  R_V ( :, R % DEGENERACY_GREY )
+      E_Ave   =>  R_V ( :, R % ENERGY_AVERAGE )
+      F_Ave   =>  R_V ( :, R % OCCUPANCY_AVERAGE )
 
   end subroutine SetFieldPointers_R
 
 
   subroutine SetFieldPointers_I &
-               ( I, I_V, Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N )
+               ( I, I_V, &
+                 Xi_J, Xi_H, Xi_N, Xi_J_EA_N, Xi_J_EA_A, Xi_J_P_EP, &
+                 Chi_J, Chi_H, Chi_N, Chi_J_EA_N, Chi_J_EA_A, Chi_J_P_EP, &
+                 Chi_H_S_N, Chi_H_S_A )
 
     class ( Interactions_NM_G_Form ), intent ( in ) :: &
       I
@@ -747,15 +810,27 @@ integer ( KDI ) :: &
       I_V
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
        Xi_J,  Xi_H,  Xi_N, &
-      Chi_J, Chi_H, Chi_N
+       Xi_J_EA_N, Xi_J_EA_A, Xi_J_P_EP, &
+      Chi_J, Chi_H, Chi_N, &
+      Chi_J_EA_N, Chi_J_EA_A, Chi_J_P_EP, &
+      Chi_H_S_N, Chi_H_S_A
 
-     Xi_J  =>  I_V ( :, I % EMISSIVITY_J )
-     Xi_H  =>  I_V ( :, I % EMISSIVITY_H )
-     Xi_N  =>  I_V ( :, I % EMISSIVITY_N )
-    Chi_J  =>  I_V ( :, I % OPACITY_J )
-    Chi_H  =>  I_V ( :, I % OPACITY_H )
-    Chi_N  =>  I_V ( :, I % OPACITY_N )
- 
+     Xi_J         =>  I_V ( :, I % EMISSIVITY_J )
+     Xi_H         =>  I_V ( :, I % EMISSIVITY_H )
+     Xi_N         =>  I_V ( :, I % EMISSIVITY_N )
+     Xi_J_EA_N    =>  I_V ( :, I % EMISSIVITY_J_EA_N )
+     Xi_J_EA_A    =>  I_V ( :, I % EMISSIVITY_J_EA_A )
+     Xi_J_P_EP    =>  I_V ( :, I % EMISSIVITY_J_P_EP )
+     
+    Chi_J         =>  I_V ( :, I % OPACITY_J )
+    Chi_H         =>  I_V ( :, I % OPACITY_H )
+    Chi_N         =>  I_V ( :, I % OPACITY_N )
+    Chi_J_EA_N    =>  I_V ( :, I % OPACITY_J_EA_N )
+    Chi_J_EA_A    =>  I_V ( :, I % OPACITY_J_EA_A )
+    Chi_J_P_EP    =>  I_V ( :, I % OPACITY_J_P_EP )
+    Chi_H_S_N     =>  I_V ( :, I % OPACITY_H_S_N )
+    Chi_H_S_A     =>  I_V ( :, I % OPACITY_H_S_A )
+                     
   end subroutine SetFieldPointers_I
 
 
