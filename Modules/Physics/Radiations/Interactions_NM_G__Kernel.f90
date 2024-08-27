@@ -868,6 +868,7 @@ contains
     real ( KDR ) :: &
       Factor, &
       Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
+      Fermi_3_nu, Fermi_4_nu, Fermi_3_nuB, Fermi_4_nuB, &
        Xi_J_P,           Xi_N_P, &
       Chi_J_P, Chi_H_P, Chi_N_P
     logical ( KDL ) :: &
@@ -902,13 +903,35 @@ contains
                    *  Fermi_3_eM * Fermi_3_eP
 
         if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+
+          !-- detailed balance
+
           Chi_J_P  =  Xi_J_P  /  J_Eq ( iV )
-          Chi_H_P  =  Xi_J_P  /  J_Eq ( iV )
+          Chi_H_P  =  Chi_J_P
           Chi_N_P  =  Xi_N_P  /  N_Eq ( iV )
+
         else
+
+          !-- direct
+
           Chi_J_P  =  0.0_KDR
           Chi_H_P  =  0.0_KDR
           Chi_N_P  =  0.0_KDR
+
+          ! Fermi_3_nu   =  Fermi_3 ( Eta_nu  ( iV ) )
+          ! Fermi_4_nu   =  Fermi_4 ( Eta_nu  ( iV ) )
+          ! Fermi_3_nuB  =  Fermi_3 ( Eta_nuB ( iV ) )
+          ! Fermi_4_nuB  =  Fermi_4 ( Eta_nuB ( iV ) )
+
+          ! Chi_J_P  =  Factor  *  T_nu ( iV ) ** 4  *  T_nuB ( iV ) ** 4  &
+          !             *  0.5 * (    T_nu  ( iV ) * Fermi_3_nu  * Fermi_4_nu  &
+          !                        +  T_nuB ( iV ) * Fermi_3_nuB * Fermi_4_nuB )
+
+          ! Chi_H_P  =  Chi_J_P
+
+          ! Chi_N_P  =  Factor  *  T_nu ( iV ) ** 4  *  T_nuB ( iV ) ** 4  &
+          !             *  Fermi_3_nu * Fermi_3_nuB
+
         end if
           
         !-- Total
@@ -936,6 +959,7 @@ contains
     real ( KDR ) :: &
       Factor, &
       Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
+      Fermi_3_nu, Fermi_4_nu, Fermi_3_nuB, Fermi_4_nuB, &
        Xi_J_P,           Xi_N_P, &
       Chi_J_P, Chi_H_P, Chi_N_P
           
@@ -958,15 +982,37 @@ contains
                *  Fermi_3_eM * Fermi_3_eP
 
     if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+
+      !-- detailed balance
+
       Chi_J_P  =  Xi_J_P  /  J_Eq ( iV )
-      Chi_H_P  =  Xi_J_P  /  J_Eq ( iV )
+      Chi_H_P  =  Chi_J_P
       Chi_N_P  =  Xi_N_P  /  N_Eq ( iV )
+
     else
+
+      !-- direct
+
       Chi_J_P  =  0.0_KDR
       Chi_H_P  =  0.0_KDR
       Chi_N_P  =  0.0_KDR
+
+      ! Fermi_3_nu   =  Fermi_3 ( Eta_nu  ( iV ) )
+      ! Fermi_4_nu   =  Fermi_4 ( Eta_nu  ( iV ) )
+      ! Fermi_3_nuB  =  Fermi_3 ( Eta_nuB ( iV ) )
+      ! Fermi_4_nuB  =  Fermi_4 ( Eta_nuB ( iV ) )
+
+      ! Chi_J_P  =  Factor  *  T_nu ( iV ) ** 4  *  T_nuB ( iV ) ** 4  &
+      !             *  0.5 * (    T_nu  ( iV ) * Fermi_3_nu  * Fermi_4_nu  &
+      !                        +  T_nuB ( iV ) * Fermi_3_nuB * Fermi_4_nuB )
+
+      ! Chi_H_P  =  Chi_J_P
+
+      ! Chi_N_P  =  Factor  *  T_nu ( iV ) ** 4  *  T_nuB ( iV ) ** 4  &
+      !             *  Fermi_3_nu * Fermi_3_nuB
+
     end if
-      
+          
     !-- Total
 
      Xi_J_P_EP ( iV )  =   Xi_J_P

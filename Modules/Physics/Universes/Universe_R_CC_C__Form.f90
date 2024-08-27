@@ -336,14 +336,15 @@ contains
       U
 
     integer ( KDI ) :: &
-      iR
+      iR, &
+      iRB
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaAverage
 
     select type ( I  =>  U % Integrator )
       class is ( Integrator_CS_1D_C_CS_Form )
     select type ( R  =>  I % CurrentSet_X_1D )
-      class is ( RadiationMoments_BM_Form )
+      class is ( NeutrinoMoments_G_Form )
     select type ( F  =>  I % CurrentSet_X )
       class is ( Fluid_P_Form )
     associate &
@@ -360,8 +361,17 @@ contains
         allocate ( U % SA_Interactions ( nR ) )
       do iR  =  1,  nR
 
+        select case ( iR )
+        case ( 1 )  !-- NEUTRINOS_E
+          iRB  =  2
+        case ( 2 )  !-- NEUTRINOS_EB
+          iRB  =  1
+        case ( 3 )  !-- NEUTRINOS_HL
+          iRB  =  3
+        end select !-- iR
+
         call Int ( iR ) % Initialize &
-               ( R ( iR ), U % Units_R, F )
+               ( R ( iR ), R ( iRB ), U % Units_R, F )
         call R ( iR ) % SetInteractions ( Int ( iR ) )
 
         !-- Azimuthal average
@@ -374,15 +384,18 @@ contains
             type is ( Interactions_NM_G_Form )
           select type ( R_AA  =>  U % AA_Radiation ( iR ) % FieldSet_AA )
             type is ( NeutrinoMoments_G_Form )
+          select type ( RB_AA  =>  U % AA_Radiation ( iRB ) % FieldSet_AA )
+            type is ( NeutrinoMoments_G_Form )
           select type ( F_AA  =>  U % AA_Fluid % FieldSet_AA )
             type is ( Fluid_P_HN_Form )
           call I_AA % Initialize &
-                 ( R_AA, U % Units_R, F_AA, &
+                 ( R_AA, RB_AA, U % Units_R, F_AA, &
                    NameOption = trim ( Int ( iR ) % Name ) // '_AA' )
           call AA % Initialize &
                  ( G, Int ( iR ), A_AA, iaAverageOption = iaAverage )
           call R_AA % SetInteractions ( I_AA )
           end select !-- F_AA
+          end select !-- RB_AA
           end select !-- R_AA
           end select !-- I_AA
           end associate !-- AA, etc.
@@ -398,15 +411,18 @@ contains
             type is ( Interactions_NM_G_Form )
           select type ( R_SA  =>  U % SA_Radiation ( iR ) % FieldSet_SA )
             type is ( NeutrinoMoments_G_Form )
+          select type ( RB_SA  =>  U % SA_Radiation ( iRB ) % FieldSet_SA )
+            type is ( NeutrinoMoments_G_Form )
           select type ( F_SA  =>  U % SA_Fluid % FieldSet_SA )
             type is ( Fluid_P_HN_Form )
           call I_SA % Initialize &
-                 ( R_SA, U % Units_R, F_SA, &
+                 ( R_SA, RB_SA, U % Units_R, F_SA, &
                    NameOption = trim ( Int ( iR ) % Name ) // '_SA' )
           call SA % Initialize &
                  ( G, Int ( iR ), A_SA, iaAverageOption = iaAverage )
           call R_SA % SetInteractions ( I_SA )
           end select !-- F_SA
+          end select !-- RB_SA
           end select !-- R_SA
           end select !-- I_SA
           end associate !-- SA, etc.
