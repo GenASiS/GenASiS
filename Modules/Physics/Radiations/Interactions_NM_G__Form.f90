@@ -48,18 +48,21 @@ module Interactions_NM_G__Form
     final :: &
       Finalize
   end type Interactions_NM_G_Form
+  
+  public :: &
+    Compute_EA_E_S_Kernel, &
+    Compute_EA_EB_S_Kernel, &
+    Compute_EA_HL_S_Kernel, &
+    Compute_P_S_Kernel, & 
+    Compute_S_S_Kernel 
 
     private :: &
       Compute_EA_E_A_Kernel, &
-      Compute_EA_E_S_Kernel, &
       Compute_EA_EB_A_Kernel, &
-      Compute_EA_EB_S_Kernel, &
       Compute_EA_HL_A_Kernel, &
-      Compute_EA_HL_S_Kernel, &
+
       Compute_P_A_Kernel, & 
-      Compute_P_S_Kernel, & 
-      Compute_S_A_Kernel, & 
-      Compute_S_S_Kernel 
+      Compute_S_A_Kernel
 
     interface
 

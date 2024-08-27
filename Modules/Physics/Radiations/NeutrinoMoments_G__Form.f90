@@ -54,17 +54,20 @@ module NeutrinoMoments_G__Form
     procedure, public, pass :: &
       ComputeEquilibriumSingle
   end type NeutrinoMoments_G_Form
+  
+  public :: &
+    Compute_SP_S_Kernel, &
+    Compute_Eq_E_S_Kernel, &
+    Compute_Eq_HL_S_Kernel
 
     private :: &
       Compute_E_S_G_G_Kernel, &
       Compute_J_H_N_G_A_Kernel, &
       Compute_J_H_N_G_S_Kernel, &
       Compute_SP_A_Kernel, &
-      Compute_SP_S_Kernel, &
       Compute_Eq_E_A_Kernel, &
-      Compute_Eq_E_S_Kernel, &
-      Compute_Eq_HL_A_Kernel, &
-      Compute_Eq_HL_S_Kernel
+      Compute_Eq_HL_A_Kernel
+
     
     interface
 
