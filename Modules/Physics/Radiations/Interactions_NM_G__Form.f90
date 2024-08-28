@@ -423,7 +423,7 @@ contains
 
     !-- Parameters
 
-    I % DensityDetailedBalance  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS
+    I % DensityDetailedBalance  =  1.0e11_KDR * UNIT % MASS_DENSITY_CGS
 
   end subroutine InitializeAllocate_NM_G
 
