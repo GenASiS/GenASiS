@@ -279,9 +279,9 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP shared ( Rho_DB ) &
+      !$OMP firstprivate ( Factor_p, Factor_n, Factor_A, Dlta ) &
       !$OMP private &
-      !$OMP   ( Factor_p, Factor_n, Factor_A, Dlta, &
-      !$OMP     N_p, N_n, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, F_e, &
+      !$OMP   ( N_p, N_n, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, F_e, &
       !$OMP     Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
       !$OMP     Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
       !$OMP     Fermi_2_nu,  Fermi_3_nu,  Fermi_4_nu,  Fermi_5_nu, &
@@ -433,9 +433,9 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( Rho_DB ) &
+      !$OMP firstprivate ( Factor_p, Factor_n, Factor_A, Dlta ) &
       !$OMP private &
-      !$OMP   ( Factor_p, Factor_n, Factor_A, Dlta, &
-      !$OMP     N_p, N_n, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, F_e, &
+      !$OMP   ( N_p, N_n, N_A, N_p_Z, N_h_N, Qp, Eta_e_Q, Eta_e_Qp, F_e, &
       !$OMP     Fermi_2_e_Q,  Fermi_3_e_Q,  Fermi_4_e_Q,  Fermi_5_e_Q, &
       !$OMP     Fermi_2_e_Qp, Fermi_3_e_Qp, Fermi_4_e_Qp, Fermi_5_e_Qp, &
       !$OMP     Fermi_2_nu,  Fermi_3_nu,  Fermi_4_nu,  Fermi_5_nu, &
@@ -776,8 +776,8 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP shared ( Rho_DB ) &
-      !$OMP private ( Factor_n, &
-      !$OMP           N_n, Eta_e, &
+      !$OMP firstprivate ( Factor_n ) &
+      !$OMP private ( N_n, Eta_e, &
       !$OMP           Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
       !$OMP            Xi_J_n,  Xi_H_n,  Xi_N_n, &
       !$OMP           Chi_J_p, Chi_H_p, Chi_N_p )
@@ -846,8 +846,8 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( Rho_DB ) &
-      !$OMP private ( Factor_n, &
-      !$OMP           N_n, Eta_e, &
+      !$OMP firstprivate ( Factor_n ) &
+      !$OMP private ( N_n, Eta_e, &
       !$OMP           Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
       !$OMP            Xi_J_n,  Xi_H_n,  Xi_N_n, &
       !$OMP           Chi_J_p, Chi_H_p, Chi_N_p )
@@ -1108,8 +1108,8 @@ contains
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP shared ( Rho_DB ) &
-      !$OMP private ( Factor, &
-      !$OMP           Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
+      !$OMP firstprivate ( Factor ) &
+      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
       !$OMP           Xi_J_P,           Xi_N_P, &
       !$OMP            Chi_J_P, Chi_H_P, Chi_N_P )
       do iV = 1, nV
@@ -1159,8 +1159,8 @@ contains
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP shared ( Rho_DB ) &
-      !$OMP private ( Factor, &
-      !$OMP           Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
+      !$OMP firstprivate ( Factor ) &
+      !$OMP private ( Fermi_3_eM, Fermi_4_eM, Fermi_3_eP, Fermi_4_eP, &
       !$OMP           Xi_J_P,           Xi_N_P, &
       !$OMP            Chi_J_P, Chi_H_P, Chi_N_P )
       do iV = 1, nV
@@ -1293,7 +1293,8 @@ contains
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP private ( Factor_p, Factor_n, Factor_A, &
+      !$OMP firstprivate ( Factor_p, Factor_n ) &
+      !$OMP private ( Factor_A, &
       !$OMP           N_p, N_n, N_A, &
       !$OMP           Fermi_3_nu, Fermi_5_nu )
       do iV = 1, nV
@@ -1330,7 +1331,8 @@ contains
     
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( Factor_p, Factor_n, Factor_A, &
+      !$OMP firstprivate ( Factor_p, Factor_n ) &
+      !$OMP private ( Factor_A, &
       !$OMP           N_p, N_n, N_A, &
       !$OMP           Fermi_3_nu, Fermi_5_nu )
       do iV = 1, nV
