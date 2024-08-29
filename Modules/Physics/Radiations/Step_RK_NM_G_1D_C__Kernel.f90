@@ -52,6 +52,9 @@ integer ( KDI ) :: &
     !$OMP parallel do &
     !$OMP schedule ( OMP_SCHEDULE_HOST ) &
     !$OMP shared ( SqrtTiny ) &
+    !$OMP private ( Res_J_Eq_E,  Res_N_Eq_E, &
+    !$OMP           Res_J_Eq_EB, Res_N_Eq_EB, &
+    !$OMP           Res_J_Eq_X,  Res_N_Eq_X ) &
     !$OMP private ( iR, iI ) &
     !$OMP private ( J_Eq_E_0,  N_Eq_E_0 ) &
     !$OMP private ( J_Eq_EB_0, N_Eq_EB_0 ) &
@@ -483,6 +486,9 @@ integer ( KDI ) :: &
     !$OMP schedule ( OMP_SCHEDULE_HOST ) &
     !$OMP shared ( SqrtTiny ) &
     !$OMP private ( iR, iI ) &
+    !$OMP private ( Res_J_Eq_E,  Res_N_Eq_E, &
+    !$OMP           Res_J_Eq_EB, Res_N_Eq_EB, &
+    !$OMP           Res_J_Eq_X,  Res_N_Eq_X ) &
     !$OMP private ( J_Eq_E_0,  N_Eq_E_0 ) &
     !$OMP private ( J_Eq_EB_0, N_Eq_EB_0 ) &
     !$OMP private ( J_Eq_X_0,  N_Eq_X_0 ) &

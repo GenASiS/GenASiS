@@ -573,33 +573,82 @@ integer ( KDI ) :: &
                Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
                Chi_H_S_N_X, Chi_H_S_A_X )
 
-      call SolveKernel &
-             ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
-               Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
-               Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-               Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
-               J_E, H_E_1, H_E_2, H_E_3, N_E, &
-               E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
-               J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
-               E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
-               J_X, H_X_1, H_X_2, H_X_3, N_X, &
-               E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X, &
-               E_F, S_F_1, S_F_2, S_F_3, D_F, &
-               Error, nIterations, Omega, Residual, &
-               C % ProperCell, &
-               E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
-               E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
-               E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
-               E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
-               M_DD_11, M_DD_22, M_DD_33, &
-               AA, Tol, dT, mRI, mII, iC, &
-               KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
-               KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
-               KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
-               KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
-               Res_J_Eq_E,  Res_N_Eq_E, &
-               Res_J_Eq_EB, Res_N_Eq_EB, &
-               Res_J_Eq_X,  Res_N_Eq_X )
+      if ( F_HN % DeviceMemory ) then
+        associate ( Rho_DB => I_E % DensityDetailedBalance )
+        call SolveKernelDevice &
+               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
+                 Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
+                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
+                 Chi_H_S_N_E, Chi_H_S_A_E, &
+                 Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
+                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
+                 Chi_H_S_N_EB, Chi_H_S_A_EB, &
+                 Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
+                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
+                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
+                 Chi_H_S_N_X, Chi_H_S_A_X, &
+                 J_E, H_E_1, H_E_2, H_E_3, N_E, &
+                 E_E, S_E_1, S_E_2, S_E_3, D_E, &
+                 J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
+                 T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E, &
+                 J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
+                 J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, &
+                 T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB, &
+                 J_X, H_X_1, H_X_2, H_X_3, N_X, &
+                 E_X, S_X_1, S_X_2, S_X_3, D_X, &
+                 J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
+                 T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, &
+                 Error, nIterations, Omega, Residual, &
+                 C % ProperCell, &
+                 M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                 Mu_e_F, Mu_n_p_F, &
+                 E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
+                 E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+                 E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
+                 E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
+                 M_DD_11, M_DD_22, M_DD_33, &
+                 AA, Tol, dT, Rho_DB, mRI, mII, iC, &
+                 KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+                 KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+                 KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
+                 KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
+                 Res_J_Eq_E,  Res_N_Eq_E, &
+                 Res_J_Eq_EB, Res_N_Eq_EB, &
+                 Res_J_Eq_X,  Res_N_Eq_X )
+        end associate
+      else 
+        call SolveKernel &
+               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
+                 Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+                 Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+                 Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
+                 J_E, H_E_1, H_E_2, H_E_3, N_E, &
+                 E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
+                 J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
+                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+                 J_X, H_X_1, H_X_2, H_X_3, N_X, &
+                 E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, &
+                 Error, nIterations, Omega, Residual, &
+                 C % ProperCell, &
+                 E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
+                 E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
+                 E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
+                 E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
+                 M_DD_11, M_DD_22, M_DD_33, &
+                 AA, Tol, dT, mRI, mII, iC, &
+                 KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
+                 KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
+                 KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
+                 KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D, &
+                 Res_J_Eq_E,  Res_N_Eq_E, &
+                 Res_J_Eq_EB, Res_N_Eq_EB, &
+                 Res_J_Eq_X,  Res_N_Eq_X )
+      end if
 
 ! call Show ( KK_E_V, '>>> KK_E_V' )
 ! call Show ( KK_EB_V, '>>> KK_EB_V' )
