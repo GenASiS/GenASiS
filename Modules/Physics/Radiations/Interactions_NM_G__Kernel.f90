@@ -1058,9 +1058,12 @@ contains
     else
       do iV = 1, nV
 
+        ! Factor_A  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+        !              *  (    A ( iV )  *  ( 1. / 2.  -  2. * S_2_T_W ) &
+        !                   -  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
         Factor_A  =  2.  *  G_F_2  /  ( 3. * Pi )  &
-                     *  (    A ( iV )  *  ( 1. / 2.  -  2. * S_2_T_W ) &
-                          -  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
+                     *  ( -  A ( iV )  /  2. &
+                          +  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
 
         N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
         N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
@@ -1104,9 +1107,12 @@ contains
     Factor_n  =  2.  *  G_F_2  /  ( 3. * Pi )  &
                  *  ( 1. / 4.  +  5. / 4. * g_A_2 )
 
+    ! Factor_A  =  2.  *  G_F_2  /  ( 3. * Pi )  &
+    !              *  (    A ( iV )  *  ( 1. / 2.  -  2. * S_2_T_W ) &
+    !                   -  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
     Factor_A  =  2.  *  G_F_2  /  ( 3. * Pi )  &
-                 *  (    A ( iV )  *  ( 1. / 2.  -  2. * S_2_T_W ) &
-                      -  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
+                 *  ( -  A ( iV )  /  2. &
+                      +  Z ( iV )  *  ( 1.  -  2. * S_2_T_W ) ) ** 2  
 
     N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  amu
     N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  amu
