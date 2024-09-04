@@ -1028,9 +1028,9 @@ contains
   end procedure Compute_P_S_Kernel
 
 
-  module procedure Compute_S_A_Kernel
+  module procedure Compute_S_B_A_Kernel
 
-    !-- Compute_Scattering_All_Kernel
+    !-- Compute_Scattering_Baryons_All_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -1089,12 +1089,12 @@ contains
       end do
     end if
 
-  end procedure Compute_S_A_Kernel
+  end procedure Compute_S_B_A_Kernel
 
 
-  module procedure Compute_S_S_Kernel
+  module procedure Compute_S_B_S_Kernel
 
-    !-- Compute_Scattering_Single_Kernel
+    !-- Compute_Scattering_Baryons_Single_Kernel
 
     real ( KDR ) :: &
       Factor_p, Factor_n, Factor_A, &
@@ -1135,7 +1135,7 @@ contains
     Chi_H ( iV )  &
       =  Chi_H ( iV )  +  Chi_H_S_N ( iV )  +  Chi_H_S_A ( iV )
 
-  end procedure Compute_S_S_Kernel
+  end procedure Compute_S_B_S_Kernel
 
 
   function Fermi_2 ( Eta ) result ( F_2 )

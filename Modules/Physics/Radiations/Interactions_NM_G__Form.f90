@@ -60,8 +60,8 @@ module Interactions_NM_G__Form
       Compute_EA_HL_S_Kernel, &
       Compute_P_A_Kernel, & 
       Compute_P_S_Kernel, & 
-      Compute_S_A_Kernel, & 
-      Compute_S_S_Kernel 
+      Compute_S_B_A_Kernel, & 
+      Compute_S_B_S_Kernel 
 
     interface
 
@@ -240,10 +240,10 @@ module Interactions_NM_G__Form
           iV
       end subroutine Compute_P_S_Kernel
 
-      module subroutine Compute_S_A_Kernel &
+      module subroutine Compute_S_B_A_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, UseDeviceOption )
-        !-- Compute_Scattering_All_Kernel
+        !-- Compute_Scattering_Baryons_All_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
@@ -254,12 +254,12 @@ module Interactions_NM_G__Form
           M, N, X_p, X_n, X_A, Z, A
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_S_A_Kernel
+      end subroutine Compute_S_B_A_Kernel
 
-      module subroutine Compute_S_S_Kernel &
+      module subroutine Compute_S_B_S_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, iV )
-        !-- Compute_Scattering_Single_Kernel
+        !-- Compute_Scattering_Baryons_Single_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
@@ -270,7 +270,7 @@ module Interactions_NM_G__Form
           M, N, X_p, X_n, X_A, Z, A
         integer ( KDI ), intent ( in ) :: &
           iV
-      end subroutine Compute_S_S_Kernel
+      end subroutine Compute_S_B_S_Kernel
 
     end interface
 
@@ -572,7 +572,7 @@ contains
 !      case ( 'NEUTRINOS_E' )
 !      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
       case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
-        call Compute_S_A_Kernel &
+        call Compute_S_B_A_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, &
                  UseDeviceOption = I % DeviceMemory )
@@ -725,7 +725,7 @@ integer ( KDI ) :: &
 !    case ( 'NEUTRINOS_E' )
 !    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
     case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
-      call Compute_S_S_Kernel &
+      call Compute_S_B_S_Kernel &
              ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                M, N, X_p, X_n, X_A, Z, A, iV )
    end select !-- RadiationType
