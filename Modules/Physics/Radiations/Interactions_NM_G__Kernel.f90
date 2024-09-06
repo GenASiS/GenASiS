@@ -1073,15 +1073,13 @@ contains
         Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
         Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
 
-        !-- Elastic scattering on nucleons
-
         Chi_H_S_N ( iV )  &
           =  ( Factor_p * N_p  +  Factor_n * N_n )  &
-             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / max ( Fermi_3_nu, SqrtTiny )
 
         Chi_H_S_A ( iV )  &
           =  Factor_A * N_A  &
-             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+             *  T_nu ( iV ) ** 2  *  Fermi_5_nu / max ( Fermi_3_nu, SqrtTiny ) 
 
         Chi_H ( iV )  &
           =  Chi_H ( iV )  +  Chi_H_S_N ( iV )  +  Chi_H_S_A ( iV )
@@ -1122,8 +1120,6 @@ contains
     Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
     Fermi_5_nu  =  Fermi_5 ( Eta_nu ( iV ) )
 
-    !-- Elastic scattering on nucleons
-
     Chi_H_S_N ( iV )  &
       =  ( Factor_p * N_p  +  Factor_n * N_n )  &
          *  T_nu ( iV ) ** 2  *  Fermi_5_nu / max ( Fermi_3_nu, SqrtTiny ) 
@@ -1136,6 +1132,307 @@ contains
       =  Chi_H ( iV )  +  Chi_H_S_N ( iV )  +  Chi_H_S_A ( iV )
 
   end procedure Compute_S_B_S_Kernel
+
+
+  module procedure Compute_S_EP_E_EB_A_Kernel
+
+    !-- Compute_Scattering_ElectronPositron_Electron_ElectronBar_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Factor_Xi, Factor_Chi_J, Factor_Chi_H, c1, c2, &
+      Fermi_3_eM, Fermi_4_eM, &
+      Fermi_3_eP, Fermi_4_eP, &
+      Fermi_3_nu, Fermi_4_nu
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Chi_H )
+
+    Factor_Xi     =  G_F_2  /  ( 6. * Pi_5 )
+    Factor_Chi_J  =  G_F_2  /  ( 3. * Pi_3 )
+    Factor_Chi_H  =  G_F_2  /  ( 6. * Pi_3 )
+
+    c1  =  ( 1  +  2. * S_2_T_W ) ** 2
+    c2  =  4. * S_2_T_W ** 2
+
+    if ( UseDevice ) then
+    else
+      do iV = 1, nV
+
+        if ( T ( iV ) == 0.0_KDR ) &
+          cycle
+
+        Fermi_3_eM  =  Fermi_3 ( + Sign * Mu_e ( iV ) / T ( iV ) )
+        Fermi_4_eM  =  Fermi_4 ( + Sign * Mu_e ( iV ) / T ( iV ) )
+        Fermi_3_eP  =  Fermi_3 ( - Sign * Mu_e ( iV ) / T ( iV ) )
+        Fermi_4_eP  =  Fermi_4 ( - Sign * Mu_e ( iV ) / T ( iV ) )
+
+        Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+        Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+
+        Xi_J_S_EP ( iV )  &
+          =  Factor_Xi  *  T ( iV ) ** 5  *  T_nu ( iV ) ** 4  *  Fermi_3_nu  &
+             *  (     ( c1 + c2 / 6. ) * Fermi_4_eM  &
+                   +  ( c2 + c1 / 6. ) * Fermi_4_eP  )
+
+        ! if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+
+        !   !-- detailed balance
+
+        !   Chi_J_S_EP ( iV )  =  Xi_J_S_EP ( iV )  /  J_Eq ( iV )
+
+        ! else
+
+          !-- direct 
+
+          Chi_J_S_EP ( iV )  &  
+            =  Factor_Chi_J  *  T ( iV ) ** 4  *  T_nu ( iV )  &
+               *  Fermi_4_nu / max ( Fermi_3_nu, SqrtTiny )  &
+               *  (     ( c1 + c2 / 6. ) * Fermi_3_eM  &
+                     +  ( c2 + c1 / 6. ) * Fermi_3_eP  )
+
+        ! end if 
+
+        Chi_H_S_EP ( iV )  &  
+          =  Chi_J_S_EP  ( iV )  &
+             +  Factor_Chi_H  *  T ( iV ) ** 5  &
+                *  (     ( c1 + c2 / 6. ) * Fermi_4_eM  &
+                      +  ( c2 + c1 / 6. ) * Fermi_4_eP  )
+
+        if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then 
+           Xi_J ( iV )  =   Xi_J ( iV )  +   Xi_J_S_EP ( iV )
+          Chi_J ( iV )  =  Chi_J ( iV )  +  Chi_J_S_EP ( iV )
+        end if
+
+        Chi_H ( iV )  =  Chi_H ( iV )  +  Chi_H_S_EP ( iV )
+
+
+      end do
+    end if
+
+  end procedure Compute_S_EP_E_EB_A_Kernel
+
+
+  module procedure Compute_S_EP_E_EB_S_Kernel
+
+    !-- Compute_Scattering_ElectronPositron_Electron_ElectronBar_Single_Kernel
+
+    real ( KDR ) :: &
+      Factor_Xi, Factor_Chi_J, Factor_Chi_H, c1, c2, &
+      Fermi_3_eM, Fermi_4_eM, &
+      Fermi_3_eP, Fermi_4_eP, &
+      Fermi_3_nu, Fermi_4_nu
+
+    Factor_Xi     =  G_F_2  /  ( 6. * Pi_5 )
+    Factor_Chi_J  =  G_F_2  /  ( 3. * Pi_3 )
+    Factor_Chi_H  =  G_F_2  /  ( 6. * Pi_3 )
+
+    c1  =  ( 1  +  2. * S_2_T_W ) ** 2
+    c2  =  4. * S_2_T_W ** 2
+
+    if ( T ( iV ) == 0.0_KDR ) &
+      return
+
+    Fermi_3_eM  =  Fermi_3 ( + Sign * Mu_e ( iV ) / T ( iV ) )
+    Fermi_4_eM  =  Fermi_4 ( + Sign * Mu_e ( iV ) / T ( iV ) )
+    Fermi_3_eP  =  Fermi_3 ( - Sign * Mu_e ( iV ) / T ( iV ) )
+    Fermi_4_eP  =  Fermi_4 ( - Sign * Mu_e ( iV ) / T ( iV ) )
+
+    Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+    Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+
+    Xi_J_S_EP ( iV )  &
+      =  Factor_Xi  *  T ( iV ) ** 5  *  T_nu ( iV ) ** 4  *  Fermi_3_nu  &
+         *  (     ( c1 + c2 / 6. ) * Fermi_4_eM  &
+               +  ( c2 + c1 / 6. ) * Fermi_4_eP  )
+
+    ! if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+
+    !   !-- detailed balance
+
+    !   Chi_J_S_EP ( iV )  =  Xi_J_S_EP ( iV )  /  J_Eq ( iV )
+
+    ! else
+
+      !-- direct 
+
+      Chi_J_S_EP ( iV )  &  
+        =  Factor_Chi_J  *  T ( iV ) ** 4  *  T_nu ( iV )  &
+           *  Fermi_4_nu / max ( Fermi_3_nu, SqrtTiny )  &
+           *  (     ( c1 + c2 / 6. ) * Fermi_3_eM  &
+                 +  ( c2 + c1 / 6. ) * Fermi_3_eP  )
+
+    ! end if 
+
+    Chi_H_S_EP ( iV )  &  
+      =  Chi_J_S_EP  ( iV )  &
+         +  Factor_Chi_H  *  T ( iV ) ** 5  &
+            *  (     ( c1 + c2 / 6. ) * Fermi_4_eM  &
+                  +  ( c2 + c1 / 6. ) * Fermi_4_eP  )
+
+    if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then 
+       Xi_J ( iV )  =   Xi_J ( iV )  +   Xi_J_S_EP ( iV )
+      Chi_J ( iV )  =  Chi_J ( iV )  +  Chi_J_S_EP ( iV )
+    end if
+
+    Chi_H ( iV )  =  Chi_H ( iV )  +  Chi_H_S_EP ( iV )
+
+  end procedure Compute_S_EP_E_EB_S_Kernel
+
+
+  module procedure Compute_S_EP_HL_A_Kernel
+
+    !-- Compute_Scattering_ElectronPositron_HeavyLepton_All_Kernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Factor_Xi, Factor_Chi_J, Factor_Chi_H, c1, c2, cA, &
+      Fermi_3_eM, Fermi_4_eM, &
+      Fermi_3_eP, Fermi_4_eP, &
+      Fermi_3_nu, Fermi_4_nu
+    logical ( KDL ) :: &
+      UseDevice      
+          
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+      
+    nV  =  size ( Chi_H )
+
+    Factor_Xi     =  7. * G_F_2  /  ( 36. * Pi_5 )
+    Factor_Chi_J  =  7. * G_F_2  /  ( 18. * Pi_3 )
+    Factor_Chi_H  =  7. * G_F_2  /  ( 36. * Pi_3 )
+
+    c1  =  ( 1  -  2. * S_2_T_W ) ** 2
+    c2  =  4. * S_2_T_W ** 2
+    cA  =  0.5_KDR * ( c1 + c2 )
+
+    if ( UseDevice ) then
+    else
+      do iV = 1, nV
+
+        if ( T ( iV ) == 0.0_KDR ) &
+          cycle
+
+        Fermi_3_eM  =  Fermi_3 (   Mu_e ( iV ) / T ( iV ) )
+        Fermi_4_eM  =  Fermi_4 (   Mu_e ( iV ) / T ( iV ) )
+        Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+        Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+        Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+        Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+
+        Xi_J_S_EP ( iV )  &
+          =  nSpecies  *  Factor_Xi  *  T ( iV ) ** 5  *  T_nu ( iV ) ** 4  &
+             *  Fermi_3_nu  *  cA  *  ( Fermi_4_eM  +  Fermi_4_eP  )
+
+        ! if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+
+        !   !-- detailed balance
+
+        !   Chi_J_S_EP ( iV )  =  Xi_J_S_EP ( iV )  /  J_Eq ( iV )
+
+        ! else
+
+          !-- direct 
+
+          Chi_J_S_EP ( iV )  &  
+            =  Factor_Chi_J  *  T ( iV ) ** 4  *  T_nu ( iV )  &
+               *  Fermi_4_nu / max ( Fermi_3_nu, SqrtTiny )  &
+               *  cA  *  ( Fermi_3_eM  +  Fermi_3_eP  )
+
+        ! end if 
+
+        Chi_H_S_EP ( iV )  &  
+          =  Chi_J_S_EP  ( iV )  &
+             +  Factor_Chi_H  *  T ( iV ) ** 5  &
+                *  cA  *  ( Fermi_4_eM  +  Fermi_4_eP )
+
+        if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then 
+           Xi_J ( iV )  =   Xi_J ( iV )  +   Xi_J_S_EP ( iV )
+          Chi_J ( iV )  =  Chi_J ( iV )  +  Chi_J_S_EP ( iV )
+        end if
+
+        Chi_H ( iV )  =  Chi_H ( iV )  +  Chi_H_S_EP ( iV )
+
+      end do
+    end if
+
+  end procedure Compute_S_EP_HL_A_Kernel
+
+
+  module procedure Compute_S_EP_HL_S_Kernel
+
+    !-- Compute_Scattering_ElectronPositron_HeavyLepton_Single_Kernel
+
+    real ( KDR ) :: &
+      Factor_Xi, Factor_Chi_J, Factor_Chi_H, c1, c2, cA, &
+      Fermi_3_eM, Fermi_4_eM, &
+      Fermi_3_eP, Fermi_4_eP, &
+      Fermi_3_nu, Fermi_4_nu
+
+    Factor_Xi     =  7. * G_F_2  /  ( 36. * Pi_5 )
+    Factor_Chi_J  =  7. * G_F_2  /  ( 18. * Pi_3 )
+    Factor_Chi_H  =  7. * G_F_2  /  ( 36. * Pi_3 )
+
+    c1  =  ( 1  -  2. * S_2_T_W ) ** 2
+    c2  =  4. * S_2_T_W ** 2
+    cA  =  0.5_KDR * ( c1 + c2 )
+
+    if ( T ( iV ) == 0.0_KDR ) &
+      return
+
+    Fermi_3_eM  =  Fermi_3 (   Mu_e ( iV ) / T ( iV ) )
+    Fermi_4_eM  =  Fermi_4 (   Mu_e ( iV ) / T ( iV ) )
+    Fermi_3_eP  =  Fermi_3 ( - Mu_e ( iV ) / T ( iV ) )
+    Fermi_4_eP  =  Fermi_4 ( - Mu_e ( iV ) / T ( iV ) )
+
+    Fermi_3_nu  =  Fermi_3 ( Eta_nu ( iV ) )
+    Fermi_4_nu  =  Fermi_4 ( Eta_nu ( iV ) )
+
+    Xi_J_S_EP ( iV )  &
+      =  nSpecies  *  Factor_Xi  *  T ( iV ) ** 5  *  T_nu ( iV ) ** 4  &
+         *  Fermi_3_nu  *  cA  *  ( Fermi_4_eM  +  Fermi_4_eP  )
+
+    ! if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
+
+    !   !-- detailed balance
+
+    !   Chi_J_S_EP ( iV )  =  Xi_J_S_EP ( iV )  /  J_Eq ( iV )
+
+    ! else
+
+      !-- direct 
+
+      Chi_J_S_EP ( iV )  &  
+        =  Factor_Chi_J  *  T ( iV ) ** 4  *  T_nu ( iV )  &
+           *  Fermi_4_nu / max ( Fermi_3_nu, SqrtTiny )  &
+           *  cA  *  ( Fermi_3_eM  +  Fermi_3_eP  )
+
+    ! end if 
+
+    Chi_H_S_EP ( iV )  &  
+      =  Chi_J_S_EP  ( iV )  &
+         +  Factor_Chi_H  *  T ( iV ) ** 5  &
+            *  cA  *  ( Fermi_4_eM  +  Fermi_4_eP )
+
+    if ( M ( iV )  *  N ( iV )  <  Rho_DB ) then 
+       Xi_J ( iV )  =   Xi_J ( iV )  +   Xi_J_S_EP ( iV )
+      Chi_J ( iV )  =  Chi_J ( iV )  +  Chi_J_S_EP ( iV )
+    end if
+
+    Chi_H ( iV )  =  Chi_H ( iV )  +  Chi_H_S_EP ( iV )
+
+  end procedure Compute_S_EP_HL_S_Kernel
 
 
   function Fermi_2 ( Eta ) result ( F_2 )
