@@ -6,7 +6,34 @@ submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
   
   implicit none
   
+  real ( KDR ) :: &
+      OR_Shift, &
+      MassDensity_CGS, &
+      SpecificEnergy_CGS, &
+      Pressure_CGS, &
+      Speed_CGS, &
+      MeV
+  
+  !$OMP declare target to &
+  !$OMP   ( OR_Shift, MassDensity_CGS, SpecificEnergy_CGS, Pressure_CGS, &
+  !$OMP     Speed_CGS, MeV )
+    
 contains
+
+
+  module procedure InitializeModuleVariablesKernel
+  
+    !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
+    OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
+                 / CONSTANT % ATOMIC_MASS_UNIT
+      
+    MassDensity_CGS     =  UNIT % MASS_DENSITY_CGS
+    SpecificEnergy_CGS  =  UNIT % ERG  /  UNIT % GRAM
+    Pressure_CGS        =  UNIT % BARYE
+    Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
+    MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+    
+  end procedure InitializeModuleVariablesKernel
 
   
   module procedure Apply_EOS_Prologue_A_Kernel
@@ -85,6 +112,9 @@ contains
   
   
   module procedure Apply_EOS_Prologue_S_Kernel
+  
+
+    !$OMP declare target
 
     M ( iV )   =  M_Ref
 
@@ -277,6 +307,8 @@ contains
 
 
   module procedure Compute_N_V_E_YE_G_S_Kernel
+    
+    !$OMP declare target
 
     !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Single_Galileo
 
@@ -375,6 +407,8 @@ contains
 
 
   module procedure Apply_EOS_Epilogue_S_Kernel
+  
+    !$OMP declare target
 
 !        if ( N ( iV ) == 0.0_KDR ) cycle 
 

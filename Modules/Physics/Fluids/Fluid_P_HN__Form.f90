@@ -77,17 +77,26 @@ module Fluid_P_HN__Form
 !     procedure, public, pass ( C ) :: &
 !       ComputeCenterStates
   end type Fluid_P_HN_Form
+  
+  public :: &
+    Compute_N_V_E_YE_G_S_Kernel, &
+    Apply_EOS_Prologue_S_Kernel, &
+    Apply_EOS_Epilogue_S_Kernel
 
     private :: &
+      InitializeModuleVariablesKernel, &
       Apply_EOS_Prologue_A_Kernel, &
-      Apply_EOS_Prologue_S_Kernel, &
       Compute_D_S_G_DE_G_Kernel, &
       Compute_N_V_E_YE_G_A_Kernel, &
-      Compute_N_V_E_YE_G_S_Kernel, &
-      Apply_EOS_Epilogue_A_Kernel, &
-      Apply_EOS_Epilogue_S_Kernel
+      Apply_EOS_Epilogue_A_Kernel
+
 
     interface 
+    
+      module subroutine InitializeModuleVariablesKernel
+        use Basics
+        implicit none
+      end subroutine InitializeModuleVariablesKernel
   
       module subroutine Apply_EOS_Prologue_A_Kernel &
                ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
@@ -217,7 +226,7 @@ module Fluid_P_HN__Form
           Y_Safe
         integer ( KDI ), intent ( in ) :: &
           iV
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
           N, &
           V_1, V_2, V_3, &
           E, &
@@ -266,13 +275,6 @@ module Fluid_P_HN__Form
 
     end interface
 
-    real ( KDR ), private, protected :: &
-      OR_Shift, &
-      MassDensity_CGS, &
-      SpecificEnergy_CGS, &
-      Pressure_CGS, &
-      Speed_CGS, &
-      MeV
     
     !-- OConnorOtt NucEOS-specific variables
     real ( KDR ), public, protected :: &
@@ -516,15 +518,8 @@ contains
       F % Allocated_EOS = .true.
       EOS_Pointer => F % EOS
 
-      !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
-      OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
-                 / CONSTANT % ATOMIC_MASS_UNIT
-      
-      MassDensity_CGS     =  UNIT % MASS_DENSITY_CGS
-      SpecificEnergy_CGS  =  UNIT % ERG  /  UNIT % GRAM
-      Pressure_CGS        =  UNIT % BARYE
-      Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
-      MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+      call InitializeModuleVariablesKernel ( )
+
       EOS_RF_Accuracy     =  1.0e-9_KDR
 
       EOS_Initialized  =  .true.
@@ -538,6 +533,10 @@ contains
 
     !-- Parameters
 
+    associate &
+      ( MassDensity_CGS => UNIT % MASS_DENSITY_CGS % Number, &
+                    MeV => UNIT % MEGA_ELECTRON_VOLT % Number )
+    
     call F % SetBaryonDensityMin  &
            ( ( 10.0_KDR ** F % EOS % MinLogDensity )  *  MassDensity_CGS  &
              /  F % BaryonMass )
@@ -550,6 +549,8 @@ contains
            ( F % EOS % MinElectronFraction )
     call F % SetElectronFractionSafe  &
            ( 0.45_KDR )
+    
+    end associate !-- MassDensity_CGS, MeV
 
   end subroutine InitializeAllocate_F
 

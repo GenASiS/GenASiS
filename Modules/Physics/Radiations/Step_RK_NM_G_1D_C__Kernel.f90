@@ -9,9 +9,11 @@ submodule ( Step_RK_NM_G_1D_C__Form ) Step_RK_NM_G_1D_C__Kernel
   use Interactions_NM_G__Form, &
       only : Compute_EA_E_S_Kernel, Compute_EA_EB_S_Kernel, &
              Compute_EA_HL_S_Kernel, Compute_P_S_Kernel, Compute_S_S_Kernel
+  use Fluid_P_HN__Form, & 
+      only:  Compute_N_V_E_YE_G_S_Kernel
 
   implicit none
-
+  
 contains 
 
 
@@ -469,12 +471,22 @@ integer ( KDI ) :: &
       E_X_P,  E_X_N,  D_X_P,  D_X_N
     real ( KDR ) :: &
       dOmega, &
-      SqrtTiny
+      SqrtTiny, &
+      M_Ref, N_Min, E_Min, &
+      T_Min, Y_Min, Y_Safe
 
 integer ( KDI ) :: &
   iV_Show
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+    
+    M_Ref   =  F_HN % BaryonMass
+    N_Min   =  F_HN % BaryonDensityMin
+    E_Min   =  F_HN % EnergyDensityMin
+    T_Min   =  F_HN % TemperatureMin
+    Y_Min   =  F_HN % ElectronFractionMin
+    Y_Safe  =  F_HN % ElectronFractionSafe
+
 
     ! dOmega  =  1.0_KDR  /  mRI
 
@@ -483,8 +495,8 @@ integer ( KDI ) :: &
 !iV_Show = 88
 
     !$OMP OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-    !$OMP shared ( SqrtTiny ) &
+    !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+    !$OMP shared ( SqrtTiny, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe ) &
     !$OMP private ( iR, iI ) &
     !$OMP private ( Res_J_Eq_E,  Res_N_Eq_E, &
     !$OMP           Res_J_Eq_EB, Res_N_Eq_EB, &
@@ -857,7 +869,22 @@ integer ( KDI ) :: &
 
 !            call R_E  % ComputeFromBalanced ( iC, iV )
 !            call R_EB % ComputeFromBalanced ( iC, iV )
-            call F_HN % ComputeFromBalanced ( iC, iV )
+            
+            !call F_HN % ComputeFromBalanced ( iC, iV )
+            call Compute_N_V_E_YE_G_S_Kernel &
+                   ( DB_F, S_F_1, S_F_2, S_F_3, E_F, D_F, M_F, &
+                     M_UU_11, M_UU_22, M_UU_33, &
+                     N_Min, E_Min, Y_Min, Y_Safe, iV, &
+                     N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F )
+            call Apply_EOS_Prologue_S_Kernel &
+                   ( M_F, N_F, P_F, T_F, EC_F, YE_F, &
+                     M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
+                     
+            !-- call CS % EOS % ComputeFromEnergy ( )
+            
+            call Apply_EOS_Epilogue_S_Kernel &
+                   ( N_F, P_F, T_F, SS_F, EC_F, Mu_n_F, Mu_p_F, Mu_n_p_F, &
+                     Mu_e_F, M_F, iV )
 
           end do Implicit
 
