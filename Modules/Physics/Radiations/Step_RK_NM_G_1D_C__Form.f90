@@ -585,6 +585,7 @@ integer ( KDI ) :: &
                Chi_H_S_N_X, Chi_H_S_A_X )
 
       if ( F_HN % DeviceMemory ) then
+      !if ( .true. ) then
         associate ( Rho_DB => I_E % DensityDetailedBalance )
         call SolveKernelDevice &
                ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &

@@ -601,9 +601,9 @@ contains
       Chi_J_n, Chi_H_n, Chi_N_n, &
        Xi_J_A,  Xi_H_A,  Xi_N_A, &
       Chi_J_A, Chi_H_A, Chi_N_A
-      
-    !$OMP declare target
 
+    !$OMP_DECLARE_TARGET
+    
     Factor_p  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
     Factor_n  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
     Factor_A  =  G_F_2 / ( 2 * Pi_3 )  *  ( 2.0_KDR / 7.0_KDR )  *  g_A_2
@@ -927,7 +927,7 @@ contains
        Xi_J_n,  Xi_H_n,  Xi_N_n, &
       Chi_J_p, Chi_H_p, Chi_N_p
       
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
     Factor_n  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
 
@@ -1057,7 +1057,7 @@ contains
 
     !-- Compute_EmissionAbsorption_HeavyLepton_Single_Kernel
     
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
      Xi_J_EA_N ( iV )  =  0.0_KDR
     Chi_J_EA_N ( iV )  =  0.0_KDR
@@ -1219,7 +1219,7 @@ contains
        Xi_J_P,           Xi_N_P, &
       Chi_J_P, Chi_H_P, Chi_N_P
       
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
           
     Factor  =  nSpecies * G_F_2  /  ( 9.  *  Pi_5 )  &
                *  ( 1.  +  Sign * 4. * S_2_T_W  +  8. * S_2_T_W ** 2 )
@@ -1379,7 +1379,7 @@ contains
       N_p, N_n, N_A, &
       Fermi_3_nu, Fermi_5_nu
       
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
     Factor_p  =  2.  *  G_F_2  /  ( 3. * Pi )  &
                  *  ( ( 1. / 2.  -  2. * S_2_T_W ) ** 2  +  5. / 4. * g_A_2 )
@@ -1422,7 +1422,7 @@ contains
     real ( KDR ) :: &
       F_2
       
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
     if ( Eta  >  0.0_KDR ) then
       F_2  =  Eta**3 / 3.  +  4. * Eta  +  2. * exp ( -Eta )
@@ -1440,7 +1440,7 @@ contains
     real ( KDR ) :: &
       F_3
     
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
     
     if ( Eta  >  0.0_KDR ) then
       F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
@@ -1458,7 +1458,7 @@ contains
     real ( KDR ) :: &
       F_4
 
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
     
     if ( Eta  >  0.0_KDR ) then
       F_4  =  Eta**5 / 5.  +  2. * Pi_2 * Eta**3 / 3.  +  48. * Eta  &
@@ -1477,7 +1477,7 @@ contains
     real ( KDR ) :: &
       F_5
       
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
     if ( Eta  >  0.0_KDR ) then
       F_5  =  Eta**6 / 6.  +  5. * Pi_2 * Eta**4 / 6.  +  110. * Eta**2  &

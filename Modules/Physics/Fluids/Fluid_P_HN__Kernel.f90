@@ -13,10 +13,12 @@ submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
       Pressure_CGS, &
       Speed_CGS, &
       MeV
-  
+
+#ifdef ENABLE_OMP_OFFLOAD
   !$OMP declare target to &
   !$OMP   ( OR_Shift, MassDensity_CGS, SpecificEnergy_CGS, Pressure_CGS, &
   !$OMP     Speed_CGS, MeV )
+#endif
     
 contains
 
@@ -114,7 +116,7 @@ contains
   module procedure Apply_EOS_Prologue_S_Kernel
   
 
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
     M ( iV )   =  M_Ref
 
@@ -308,7 +310,7 @@ contains
 
   module procedure Compute_N_V_E_YE_G_S_Kernel
     
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
     !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Single_Galileo
 
@@ -408,7 +410,7 @@ contains
 
   module procedure Apply_EOS_Epilogue_S_Kernel
   
-    !$OMP declare target
+    !$OMP_DECLARE_TARGET
 
 !        if ( N ( iV ) == 0.0_KDR ) cycle 
 
