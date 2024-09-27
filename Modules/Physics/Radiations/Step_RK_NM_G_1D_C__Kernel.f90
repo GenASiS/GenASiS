@@ -870,27 +870,27 @@ integer ( KDI ) :: &
 !            call R_E  % ComputeFromBalanced ( iC, iV )
 !            call R_EB % ComputeFromBalanced ( iC, iV )
             
-            !call F_HN % ComputeFromBalanced ( iC, iV )
+            call F_HN % ComputeFromBalanced ( iC, iV )
             
-            call Compute_N_V_E_YE_G_S_Kernel &
-                   ( DB_F, S_F_1, S_F_2, S_F_3, E_F, D_F, M_F, &
-                     M_UU_11, M_UU_22, M_UU_33, &
-                     N_Min, E_Min, Y_Min, Y_Safe, iV, &
-                     N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F )
-            call Apply_EOS_Prologue_S_Kernel &
-                   ( M_F, N_F, P_F, T_F, EC_F, YE_F, &
-                     M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
-                     
-            !-- call CS % EOS % ComputeFromEnergy ( )
-            call F_HN % EOS % ComputeFromEnergy &
-                   ( F_HN % Storage ( iC ), &
-                     iaFluidInput = [ F_HN % BARYON_DENSITY_C, &
-                                      F_HN % TEMPERATURE, &
-                                      F_HN % ELECTRON_FRACTION ], &
-                     iSolve = F_HN % ENERGY_DENSITY_C, iV = iV )
-            call Apply_EOS_Epilogue_S_Kernel &
-                   ( N_F, P_F, T_F, SS_F, EC_F, Mu_n_F, Mu_p_F, Mu_n_p_F, &
-                     Mu_e_F, M_F, iV )
+!            call Compute_N_V_E_YE_G_S_Kernel &
+!                   ( DB_F, S_F_1, S_F_2, S_F_3, E_F, D_F, M_F, &
+!                     M_UU_11, M_UU_22, M_UU_33, &
+!                     N_Min, E_Min, Y_Min, Y_Safe, iV, &
+!                     N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F )
+!            call Apply_EOS_Prologue_S_Kernel &
+!                   ( M_F, N_F, P_F, T_F, EC_F, YE_F, &
+!                     M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
+!                     
+!            !-- call CS % EOS % ComputeFromEnergy ( )
+!            call F_HN % EOS % ComputeFromEnergy &
+!                   ( F_HN % Storage ( iC ), &
+!                     iaFluidInput = [ F_HN % BARYON_DENSITY_C, &
+!                                      F_HN % TEMPERATURE, &
+!                                      F_HN % ELECTRON_FRACTION ], &
+!                     iSolve = F_HN % ENERGY_DENSITY_C, iV = iV )
+!            call Apply_EOS_Epilogue_S_Kernel &
+!                   ( N_F, P_F, T_F, SS_F, EC_F, Mu_n_F, Mu_p_F, Mu_n_p_F, &
+!                     Mu_e_F, M_F, iV )
 
           end do Implicit
 
