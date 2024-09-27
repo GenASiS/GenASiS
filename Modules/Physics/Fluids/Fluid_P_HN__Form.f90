@@ -217,7 +217,7 @@ module Fluid_P_HN__Form
           Y_Safe
         integer ( KDI ), intent ( in ) :: &
           iV
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
           N, &
           V_1, V_2, V_3, &
           E, &

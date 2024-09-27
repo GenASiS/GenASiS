@@ -534,9 +534,9 @@ contains
                ( IncomingEdge, OutgoingEdge, S, C, Periodic, &
                  DevicesCommunicate, TagReceive )
 
-    type ( MessageIncoming_1D_R_Form ), intent ( inout ) :: &
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingEdge
-    type ( MessageOutgoing_1D_R_Form ), intent ( inout ) :: &
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
       OutgoingEdge
     class ( StorageForm ), intent ( inout ) :: &
       S

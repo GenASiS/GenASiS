@@ -419,9 +419,13 @@ contains
     ! else
       T_CS   =>  null ( )
     ! end if
-    if ( associated ( T_CS ) ) call T_CS % Start ( )
-    call K % Compute ( dT, T_Option = T_CS )
-    if ( associated ( T_CS ) ) call T_CS % Stop ( )
+    if ( associated ( T_CS ) ) then 
+      call T_CS % Start ( )
+      call K % Compute ( dT, T_Option = T_CS )
+      call T_CS % Stop ( )
+    else
+      call K % Compute ( dT )
+    end if
     
     !-- Coarsening
 

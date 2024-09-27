@@ -518,11 +518,11 @@ contains
 
       !-- nu_e_bar + p  ->  n + e+, detailed balance
 
-      Chi_J_p  =  Xi_J_n / J_Eq ( iV )
+      Chi_J_p  =  Xi_J_n / max ( J_Eq ( iV ), SqrtTiny )
 
       Chi_H_p  =  Chi_J_p
 
-      Chi_N_p  =  Xi_N_n / N_Eq ( iV )
+      Chi_N_p  =  Xi_N_n / max ( N_Eq ( iV ), SqrtTiny )
 
     else
 
@@ -684,9 +684,9 @@ contains
 
           !-- detailed balance
 
-          Chi_J_P  =  Xi_J_P  /  J_Eq ( iV )
+          Chi_J_P  =  Xi_J_P  /  max ( J_Eq ( iV ), SqrtTiny )
           Chi_H_P  =  Chi_J_P
-          Chi_N_P  =  Xi_N_P  /  N_Eq ( iV )
+          Chi_N_P  =  Xi_N_P  /  max ( N_Eq ( iV ), SqrtTiny )
 
         else
 
@@ -762,10 +762,10 @@ contains
     if ( M ( iV )  *  N ( iV )  >  Rho_DB ) then 
 
       !-- detailed balance
-
-      Chi_J_P  =  Xi_J_P  /  J_Eq ( iV )
+      
+      Chi_J_P  =  Xi_J_P  /  max ( J_Eq ( iV ), SqrtTiny )
       Chi_H_P  =  Chi_J_P
-      Chi_N_P  =  Xi_N_P  /  N_Eq ( iV )
+      Chi_N_P  =  Xi_N_P  /  max ( N_Eq ( iV ), SqrtTiny )
 
     else
 
