@@ -12,7 +12,7 @@ module Interactions_NM_G__Form
  private
 
      integer ( KDI ), private, parameter :: &
-      N_FIELDS_NM_G = 10
+      N_FIELDS_NM_G = 13
 
   type, public, extends ( Interactions_BM_Form ) :: Interactions_NM_G_Form
     integer ( KDI ) :: &
@@ -33,12 +33,18 @@ module Interactions_NM_G__Form
       !-- Scattering on nucleons
       OPACITY_H_S_N = 0, &
       !-- Scattering on nuclei
-      OPACITY_H_S_A = 0
+      OPACITY_H_S_A = 0, &
+      !-- Scattering on electrons/positrons
+      EMISSIVITY_J_S_EP = 0, &
+         OPACITY_J_S_EP = 0, &
+         OPACITY_H_S_EP = 0
     real ( KDR ) :: &
       DensityDetailedBalance
   contains
     procedure, private, pass :: &
-      InitializeAllocate_I
+      InitializeAllocate_NM_G
+    generic, public :: &
+      Initialize => InitializeAllocate_NM_G
     procedure, public, pass ( I ) :: &
       SetStream
     procedure, private, pass :: &
@@ -60,9 +66,15 @@ module Interactions_NM_G__Form
       Compute_EA_E_A_Kernel, &
       Compute_EA_EB_A_Kernel, &
       Compute_EA_HL_A_Kernel, &
-
       Compute_P_A_Kernel, & 
-      Compute_S_A_Kernel
+      Compute_P_S_Kernel, & 
+      Compute_S_B_A_Kernel, & 
+      Compute_S_B_S_Kernel, &
+      Compute_S_EP_E_EB_A_Kernel, &
+      Compute_S_EP_E_EB_S_Kernel, &
+      Compute_S_EP_HL_A_Kernel, &
+      Compute_S_EP_HL_S_Kernel
+
 
     interface
 
@@ -197,7 +209,7 @@ module Interactions_NM_G__Form
       module subroutine Compute_P_A_Kernel &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_P_EP, Chi_J_P_EP, &
-                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e, &
                  Sign, nSpecies, Rho_DB, UseDeviceOption )
         !-- Compute_Pair_All_Kernel
         implicit none
@@ -208,7 +220,7 @@ module Interactions_NM_G__Form
            Xi_J_P_EP, &
           Chi_J_P_EP
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_Eq, N_Eq, M, N, T, Mu_e
+          J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e
         integer ( KDI ), intent ( in ) :: &
           Sign, &
           nSpecies
@@ -221,7 +233,7 @@ module Interactions_NM_G__Form
       module subroutine Compute_P_S_Kernel &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_P_EP, Chi_J_P_EP, &
-                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e, &
                  Sign, nSpecies, Rho_DB, iV )
         !-- Compute_Pair_Single_Kernel
         implicit none
@@ -232,7 +244,7 @@ module Interactions_NM_G__Form
            Xi_J_P_EP, &
           Chi_J_P_EP
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          J_Eq, N_Eq, M, N, T, Mu_e
+          J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e
         real ( KDR ), intent ( in ) :: &
           Rho_DB
         integer ( KDI ), intent ( in ) :: &
@@ -241,10 +253,10 @@ module Interactions_NM_G__Form
           iV
       end subroutine Compute_P_S_Kernel
 
-      module subroutine Compute_S_A_Kernel &
+      module subroutine Compute_S_B_A_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, UseDeviceOption )
-        !-- Compute_Scattering_All_Kernel
+        !-- Compute_Scattering_Baryons_All_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
@@ -255,12 +267,12 @@ module Interactions_NM_G__Form
           M, N, X_p, X_n, X_A, Z, A
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_S_A_Kernel
+      end subroutine Compute_S_B_A_Kernel
 
-      module subroutine Compute_S_S_Kernel &
+      module subroutine Compute_S_B_S_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, iV )
-        !-- Compute_Scattering_Single_Kernel
+        !-- Compute_Scattering_Baryons_Single_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           Chi_H
@@ -271,7 +283,99 @@ module Interactions_NM_G__Form
           M, N, X_p, X_n, X_A, Z, A
         integer ( KDI ), intent ( in ) :: &
           iV
-      end subroutine Compute_S_S_Kernel
+      end subroutine Compute_S_B_S_Kernel
+
+      module subroutine Compute_S_EP_E_EB_A_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 Sign, Rho_DB, UseDeviceOption )
+        !-- Compute_Scattering_ElectronPositron_Electron_ElectronBar_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, &
+          Chi_J, Chi_H
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, T_nu, Eta_nu, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_S_EP_E_EB_A_Kernel
+
+      module subroutine Compute_S_EP_E_EB_S_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 Sign, Rho_DB, iV )
+        !-- Compute_Scattering_ElectronPositron_Electron_ElectronBar_Sngl_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, &
+          Chi_J, Chi_H
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, T_nu, Eta_nu, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          Sign
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_S_EP_E_EB_S_Kernel
+
+      module subroutine Compute_S_EP_HL_A_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 nSpecies, Rho_DB, UseDeviceOption )
+        !-- Compute_Scattering_ElectronPositron_HeavyLepton_All_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, &
+          Chi_J, Chi_H
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, T_nu, Eta_nu, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          nSpecies
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_S_EP_HL_A_Kernel
+
+      module subroutine Compute_S_EP_HL_S_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 nSpecies, Rho_DB, iV )
+        !-- Compute_Scattering_ElectronPositron_HeavyLepton_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Xi_J, &
+          Chi_J, Chi_H
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          J_Eq, T_nu, Eta_nu, M, N, T, Mu_e
+        integer ( KDI ), intent ( in ) :: &
+          nSpecies
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine Compute_S_EP_HL_S_Kernel
 
     end interface
 
@@ -279,14 +383,15 @@ module Interactions_NM_G__Form
 contains
 
 
-  subroutine InitializeAllocate_I &
-               ( I, R, Units_R, F, FieldOption, NameOption, UnitOption, &
+  subroutine InitializeAllocate_NM_G &
+               ( I, R, RB, Units_R, F, FieldOption, NameOption, UnitOption, &
                  nFieldsOption, IgnorabilityOption )
 
     class ( Interactions_NM_G_Form ), intent ( inout ) :: &
       I
-    class ( RadiationMoments_BM_Form ), intent ( inout ), target :: &
-      R
+    class ( NeutrinoMoments_G_Form ), intent ( inout ), target :: &
+      R, &
+      RB
     class ( Units_R_Form ), dimension ( : ), intent ( in ) :: &
       Units_R
     class ( Fluid_P_Form ), intent ( in ), target :: &
@@ -338,6 +443,10 @@ contains
     I % OPACITY_H_S_N  =  oF +  9
     I % OPACITY_H_S_A  =  oF + 10
 
+    I % EMISSIVITY_J_S_EP  =  oF + 11
+    I %    OPACITY_J_S_EP  =  oF + 12
+    I %    OPACITY_H_S_EP  =  oF + 13
+
     nFields  =  oF  +  I % N_FIELDS_NM_G
     if ( present ( nFieldsOption ) ) &
       nFields  =  nFieldsOption
@@ -360,7 +469,10 @@ contains
           'Emissivity_J_P_EP', &
           'Opacity_J_P_EP   ', &
           'Opacity_H_S_N    ', &
-          'Opacity_H_S_A    ' ]
+          'Opacity_H_S_A    ', &
+          'Emissivity_J_S_EP', &
+          'Opacity_J_S_EP   ', &
+          'Opacity_H_S_EP   ' ]
           
     !-- Units
 
@@ -403,6 +515,14 @@ contains
       FieldUnit ( I % OPACITY_H_S_A, iC ) &
         =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
 
+      FieldUnit ( I % EMISSIVITY_J_S_EP, iC ) &
+        =  Units_R ( iC ) % EnergyDensity  &
+           *  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
+      FieldUnit ( I % OPACITY_J_S_EP, iC ) &
+        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
+      FieldUnit ( I % OPACITY_H_S_EP, iC ) &
+        =  ( UNIT % SPEED_OF_LIGHT * Units_R ( iC ) % Time ) ** (-1)
+
     end do !-- iC
 
     end associate !-- nC
@@ -417,13 +537,15 @@ contains
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
 
+    I % RadiationBar  =>  RB
+
     call R % SetInteractions ( I )
 
     !-- Parameters
 
-    I % DensityDetailedBalance  =  1.0e13_KDR * UNIT % MASS_DENSITY_CGS
+    I % DensityDetailedBalance  =  1.0e11_KDR * UNIT % MASS_DENSITY_CGS
 
-  end subroutine InitializeAllocate_I
+  end subroutine InitializeAllocate_NM_G
 
 
   subroutine SetStream ( S, I )
@@ -467,6 +589,8 @@ contains
 
     select type ( R  =>  I % Radiation )
       class is ( NeutrinoMoments_G_Form )
+    select type ( RB  =>  I % RadiationBar )
+      class is ( NeutrinoMoments_G_Form )
     select type ( F  =>  I % Fluid )
       class is ( Fluid_P_HN_Form )
 
@@ -475,9 +599,10 @@ contains
 
     do iC  =  1,  I % Atlas % nCharts
       associate &
-        ( IV  =>  I % Storage ( iC ) % Value, &
-          RV  =>  R % Storage ( iC ) % Value, &
-          FV  =>  F % Storage ( iC ) % Value )
+        ( IV   =>  I  % Storage ( iC ) % Value, &
+          RV   =>  R  % Storage ( iC ) % Value, &
+          RBV  =>  RB % Storage ( iC ) % Value, &
+          FV   =>  F  % Storage ( iC ) % Value )
       associate &
         (  Xi_J          =>  IV ( :, I % EMISSIVITY_J ), &
            Xi_H          =>  IV ( :, I % EMISSIVITY_H ), &
@@ -485,16 +610,21 @@ contains
            Xi_J_EA_N     =>  IV ( :, I % EMISSIVITY_J_EA_N ), &
            Xi_J_EA_A     =>  IV ( :, I % EMISSIVITY_J_EA_A ), &
            Xi_J_P_EP     =>  IV ( :, I % EMISSIVITY_J_P_EP ), &
+           Xi_J_S_EP     =>  IV ( :, I % EMISSIVITY_J_S_EP ), &
           Chi_J          =>  IV ( :, I % OPACITY_J ), &
           Chi_H          =>  IV ( :, I % OPACITY_H ), &
           Chi_N          =>  IV ( :, I % OPACITY_N ), &
           Chi_J_EA_N     =>  IV ( :, I % OPACITY_J_EA_N ), &
           Chi_J_EA_A     =>  IV ( :, I % OPACITY_J_EA_A ), &
           Chi_J_P_EP     =>  IV ( :, I % OPACITY_J_P_EP ), &
+          Chi_J_S_EP     =>  IV ( :, I % OPACITY_J_S_EP ), &
           Chi_H_S_N      =>  IV ( :, I % OPACITY_H_S_N ), &
           Chi_H_S_A      =>  IV ( :, I % OPACITY_H_S_A ), &
+          Chi_H_S_EP     =>  IV ( :, I % OPACITY_H_S_EP ), &
             T_Nu         =>  RV ( :, R % TEMPERATURE_GREY ), &
           Eta_Nu         =>  RV ( :, R % DEGENERACY_GREY ), &
+            T_NuB        =>  RBV ( :, RB % TEMPERATURE_GREY ), &
+          Eta_NuB        =>  RBV ( :, RB % DEGENERACY_GREY ), &
             J_Eq         =>  RV ( :, R % ENERGY_DENSITY_C_EQ ), &
             N_Eq         =>  RV ( :, R % NUMBER_DENSITY_C_EQ ), &
             E_Ave        =>  RV ( :, R % ENERGY_AVERAGE ), &
@@ -545,29 +675,58 @@ contains
         call Compute_P_A_Kernel &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_P_EP, Chi_J_P_EP, &
-                 J_Eq, N_Eq, M, N, T, Mu_e, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e, &
                  Sign = +1, nSpecies = 1, &
                  Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
-      ! case ( 'NEUTRINOS_HL' )
-      !   call Compute_P_A_Kernel &
-      !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-      !            Xi_J_P_EP, Chi_J_P_EP, &
-      !            J_Eq, N_Eq, M, N, T, Mu_e, &
-      !            Sign = -1, nSpecies = 4, &
-      !            Rho_DB = I % DensityDetailedBalance, &
-      !            UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_HL' )
+        call Compute_P_A_Kernel &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e, &
+                 Sign = -1, nSpecies = 4, &
+                 Rho_DB = I % DensityDetailedBalance, &
+                 UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
 
-      !-- Elastic scattering on nucleons and nuclei
+      !-- Scattering on nucleons and nuclei
 
       select case ( trim ( R % RadiationType ) )
 !      case ( 'NEUTRINOS_E' )
-      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
-!      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
-        call Compute_S_A_Kernel &
+!      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+      case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
+        call Compute_S_B_A_Kernel &
                ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                  M, N, X_p, X_n, X_A, Z, A, &
+                 UseDeviceOption = I % DeviceMemory )
+      end select !-- RadiationType
+
+      !-- Scattering on electrons and positrons
+
+      select case ( trim ( R % RadiationType ) )
+      case ( 'NEUTRINOS_E' )
+        call Compute_S_EP_E_EB_A_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 Sign = +1, &
+                 Rho_DB = I % DensityDetailedBalance, &
+                 UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_EB' )
+        call Compute_S_EP_E_EB_A_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 Sign = -1, &
+                 Rho_DB = I % DensityDetailedBalance, &
+                 UseDeviceOption = I % DeviceMemory )
+      case ( 'NEUTRINOS_HL' )
+        call Compute_S_EP_HL_A_Kernel &
+               ( Xi_J, Chi_J, Chi_H, &
+                 Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+                 J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+                 nSpecies = 4, &
+                 Rho_DB = I % DensityDetailedBalance, &
                  UseDeviceOption = I % DeviceMemory )
       end select !-- RadiationType
 
@@ -576,6 +735,7 @@ contains
     end do !-- iC
 
     end select !-- F
+    end select !-- RB
     end select !-- R
 
   end subroutine ComputeAll
@@ -600,13 +760,16 @@ integer ( KDI ) :: &
 
     select type ( R  =>  I % Radiation )
       class is ( NeutrinoMoments_G_Form )
+    select type ( RB  =>  I % RadiationBar )
+      class is ( NeutrinoMoments_G_Form )
     select type ( F  =>  I % Fluid )
       class is ( Fluid_P_HN_Form )
 
     associate &
-      ( I_V  =>  I % Storage ( iC ) % Value, &
-        R_V  =>  R % Storage ( iC ) % Value, &
-        F_V  =>  F % Storage ( iC ) % Value )
+      ( I_V   =>  I  % Storage ( iC ) % Value, &
+        R_V   =>  R  % Storage ( iC ) % Value, &
+        RB_V  =>  RB % Storage ( iC ) % Value, &
+        F_V   =>  F  % Storage ( iC ) % Value )
     associate &
       (  Xi_J          =>  I_V ( :, I % EMISSIVITY_J ), &
          Xi_H          =>  I_V ( :, I % EMISSIVITY_H ), &
@@ -614,16 +777,21 @@ integer ( KDI ) :: &
          Xi_J_EA_N     =>  I_V ( :, I % EMISSIVITY_J_EA_N ), &
          Xi_J_EA_A     =>  I_V ( :, I % EMISSIVITY_J_EA_A ), &
          Xi_J_P_EP     =>  I_V ( :, I % EMISSIVITY_J_P_EP ), &
+         Xi_J_S_EP     =>  I_V ( :, I % EMISSIVITY_J_S_EP ), &
         Chi_J          =>  I_V ( :, I % OPACITY_J ), &
         Chi_H          =>  I_V ( :, I % OPACITY_H ), &
         Chi_N          =>  I_V ( :, I % OPACITY_N ), &
         Chi_J_EA_N     =>  I_V ( :, I % OPACITY_J_EA_N ), &
         Chi_J_EA_A     =>  I_V ( :, I % OPACITY_J_EA_A ), &
         Chi_J_P_EP     =>  I_V ( :, I % OPACITY_J_P_EP ), &
+        Chi_J_S_EP     =>  I_V ( :, I % OPACITY_J_S_EP ), &
         Chi_H_S_N      =>  I_V ( :, I % OPACITY_H_S_N ), &
         Chi_H_S_A      =>  I_V ( :, I % OPACITY_H_S_A ), &
+        Chi_H_S_EP     =>  I_V ( :, I % OPACITY_H_S_EP ), &
           T_Nu         =>  R_V ( :, R % TEMPERATURE_GREY ), &
         Eta_Nu         =>  R_V ( :, R % DEGENERACY_GREY ), &
+          T_NuB        =>  RB_V ( :, RB % TEMPERATURE_GREY ), &
+        Eta_NuB        =>  RB_V ( :, RB % DEGENERACY_GREY ), &
           J_Eq         =>  R_V ( :, R % ENERGY_DENSITY_C_EQ ), &
           N_Eq         =>  R_V ( :, R % NUMBER_DENSITY_C_EQ ), &
           E_Ave        =>  R_V ( :, R % ENERGY_AVERAGE ), &
@@ -685,21 +853,21 @@ integer ( KDI ) :: &
       call Compute_P_S_Kernel &
              ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
                Xi_J_P_EP, Chi_J_P_EP, &
-               J_Eq, N_Eq, M, N, T, Mu_e, &
+               J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e, &
                Sign = +1, nSpecies = 1, &
                Rho_DB = I % DensityDetailedBalance, &
                iV = iV )
-    ! case ( 'NEUTRINOS_HL' )
-    !   call Compute_P_S_Kernel &
-    !          ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
-    !            Xi_J_P_EP, Chi_J_P_EP, &
-    !            J_Eq, N_Eq, M, N, T, Mu_e, &
-    !            Sign = -1, nSpecies = 4, &
-    !            Rho_DB = I % DensityDetailedBalance, &
-    !            iV = iV )
+    case ( 'NEUTRINOS_HL' )
+      call Compute_P_S_Kernel &
+             ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+               Xi_J_P_EP, Chi_J_P_EP, &
+               J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, M, N, T, Mu_e, &
+               Sign = -1, nSpecies = 4, &
+               Rho_DB = I % DensityDetailedBalance, &
+               iV = iV )
     end select !-- RadiationType
 
-    !-- Elastic scattering on nucleons and nuclei
+    !-- Scattering on nucleons and nuclei
 
 !if ( iV == iV_S ) then
 !  call Show ( R % RadiationType, '>>> RadiationType' )
@@ -710,12 +878,12 @@ integer ( KDI ) :: &
 
     select case ( trim ( R % RadiationType ) )
 !    case ( 'NEUTRINOS_E' )
-    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
-!    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
-      call Compute_S_S_Kernel &
+!    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB' )
+    case ( 'NEUTRINOS_E', 'NEUTRINOS_EB', 'NEUTRINOS_HL' )
+      call Compute_S_B_S_Kernel &
              ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
                M, N, X_p, X_n, X_A, Z, A, iV )
-   end select !-- RadiationType
+    end select !-- RadiationType
 
 !if ( iV == iV_S ) then
 !  call Show ( Chi_H ( iV_S ), '>>> Chi_H after scattering' )
@@ -723,10 +891,40 @@ integer ( KDI ) :: &
 !  call Show ( Chi_H_S_A ( iV_S ), '>>> Chi_H_S_A' )
 !end if
 
+    !-- Scattering on electrons and positrons
+
+    select case ( trim ( R % RadiationType ) )
+    case ( 'NEUTRINOS_E' )
+      call Compute_S_EP_E_EB_S_Kernel &
+             ( Xi_J, Chi_J, Chi_H, &
+               Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+               J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+               Sign = +1, &
+               Rho_DB = I % DensityDetailedBalance, &
+               iV = iV )
+    case ( 'NEUTRINOS_EB' )
+      call Compute_S_EP_E_EB_S_Kernel &
+             ( Xi_J, Chi_J, Chi_H, &
+               Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+               J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+               Sign = -1, &
+               Rho_DB = I % DensityDetailedBalance, &
+               iV = iV )
+    case ( 'NEUTRINOS_HL' )
+      call Compute_S_EP_HL_S_Kernel &
+             ( Xi_J, Chi_J, Chi_H, &
+               Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+               J_Eq, T_nu, Eta_nu, M, N, T, Mu_e, &
+               nSpecies = 4, &
+               Rho_DB = I % DensityDetailedBalance, &
+               iV = iV )
+    end select !-- RadiationType
+
     end associate !-- Xi_J, etc.
     end associate !-- FV, etc.
 
     end select !-- F
+    end select !-- RB
     end select !-- R
 
   end subroutine ComputeSingle

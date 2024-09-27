@@ -732,9 +732,9 @@ contains
         F_2  =  Fermi_2 ( Eta_R ( iV ) )
         F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
-        T_R ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3  
-!        T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
-!                             25. ) !--MeV  
+!        T_R ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3  
+        T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
+                             100.0_KDR ) !--MeV  
         
         E_Ave ( iV )  &
           =  J_Species  /  N_Species
@@ -848,12 +848,12 @@ contains
     F_2  =  Fermi_2 ( Eta_R ( iV ) )
     F_3  =  Fermi_3 ( Eta_R ( iV ) )
 
-    T_R  ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3
-!    T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
-!                         25. ) !--MeV  
+!    T_R  ( iV )  =  J_Species  /  N_Species  *  F_2 / F_3
+    T_R ( iV )  =  min ( J_Species  /  N_Species  *  F_2 / F_3, &
+                         100.0_KDR ) !--MeV  
 
     E_Ave ( iV )  &
-      =  J_Species  /  N_Species
+      =  min ( J_Species  /  N_Species, 100.0_KDR )
     F_Ave ( iV )  &
       =  1.0_KDR &
          /  ( exp ( E_Ave ( iV ) / T_R ( iV )  -  Eta_R ( iV ) )  &

@@ -23,7 +23,8 @@ module Interactions_BM__Form
     class ( Fluid_P_Form ), pointer :: &
       Fluid => null ( )
     class ( RadiationMoments_BM_Form ), pointer :: &
-      Radiation => null ( )
+      Radiation    => null ( ), &
+      RadiationBar => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
@@ -219,6 +220,7 @@ contains
     type ( Interactions_BM_Form ), intent ( inout ) :: &
       I
 
+    nullify ( I % RadiationBar )
     nullify ( I % Radiation )
     nullify ( I % Fluid )
 
