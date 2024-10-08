@@ -22,6 +22,28 @@ submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
 contains
 
 
+  module procedure ComputeInteractions_E_S_Kernel
+
+    !--   Spectral & Equilibrium
+    call Compute_SP_S_Kernel &
+          ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
+            J, N, nSpecies = 1, iV = iV )
+    call Compute_Eq_E_S_Kernel &
+          ( J_Eq, N_Eq, J_Rd, N_Rd, J, N, &
+            T_F, Mu_e_F, Mu_n_p_F, &
+            Sign = +1.0_KDR, iV = iV )
+            
+    !-- Emission / Absorption
+    call Compute_EA_E_S_Kernel &
+           ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+             Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+             J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+             M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, Mu_e_F, Mu_n_p_F, &
+             Rho_DB, iV )
+
+  end procedure ComputeInteractions_E_S_Kernel
+
+
   module procedure Compute_EA_E_A_Kernel
 
     !-- Compute_EmissionAbsorption_Electron_All_Kernel
