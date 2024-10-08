@@ -6,9 +6,9 @@ submodule ( Step_RK_NM_G_1D_C__Form ) Step_RK_NM_G_1D_C__Kernel
   use NeutrinoMoments_G__Form, &
       only : Compute_SP_S_Kernel, Compute_Eq_E_S_Kernel, &
              Compute_Eq_HL_S_Kernel
-  use Interactions_NM_G__Form, &
-      only : Compute_EA_E_S_Kernel, Compute_EA_EB_S_Kernel, &
-             Compute_EA_HL_S_Kernel, Compute_P_S_Kernel, Compute_S_S_Kernel
+  ! use Interactions_NM_G__Form, &
+  !     only : Compute_EA_E_S_Kernel, Compute_EA_EB_S_Kernel, &
+  !            Compute_EA_HL_S_Kernel, Compute_P_S_Kernel, Compute_S_S_Kernel
   use Fluid_P_HN__Form, & 
       only:  Compute_N_V_E_YE_G_S_Kernel
 
@@ -600,94 +600,94 @@ integer ( KDI ) :: &
 !if ( iV == iV_Show ) &
 !  call Show ( iI, '>>> iI' )
 
-            !-- Compute interactions
+            ! !-- Compute interactions
 
-            !-- Neutrino_E
-            !call I_E  % Compute ( iC, iV )
+            ! !-- Neutrino_E
+            ! !call I_E  % Compute ( iC, iV )
             
-            !--   Spectral & Equilibrium
-            call Compute_SP_S_Kernel &
-                  ( T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E, &
-                    J_E, N_E, nSpecies = 1, iV = iV )
-            call Compute_Eq_E_S_Kernel &
-                  ( J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, J_E, N_E, &
-                    T_F, Mu_e_F, Mu_n_p_F, &
-                    Sign = +1.0_KDR, iV = iV )
+            ! !--   Spectral & Equilibrium
+            ! call Compute_SP_S_Kernel &
+            !       ( T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E, &
+            !         J_E, N_E, nSpecies = 1, iV = iV )
+            ! call Compute_Eq_E_S_Kernel &
+            !       ( J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, J_E, N_E, &
+            !         T_F, Mu_e_F, Mu_n_p_F, &
+            !         Sign = +1.0_KDR, iV = iV )
             
-            !--   Emission / Absorption
-            call Compute_EA_E_S_Kernel &
-                  ( Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
-                    Xi_J_EA_N_E, Xi_J_EA_A_E, Chi_J_EA_N_E, Chi_J_EA_A_E, &
-                    J_Eq_E, N_Eq_E, T_nu_E, Eta_nu_E, E_Ave_E, F_Ave_E, &
-                    M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-                    Mu_e_F, Mu_n_p_F, Rho_DB, iV )
-            !--   Pair
-            call Compute_P_S_Kernel &
-                  ( Xi_J_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
-                    Xi_J_P_EP_E, Chi_J_P_EP_E, &
-                    J_Eq_E, N_Eq_E, M_F, N_F, T_F, &
-                    Mu_e_F, &
-                    Sign = +1, nSpecies = 1, &  
-                    Rho_DB = Rho_DB, iV = iV )
-            !--   Elastic scattering on nucleons and nuclei
-            call Compute_S_S_Kernel &
-                  ( Chi_H_E, Chi_H_S_N_E, Chi_H_S_A_E, T_nu_E, Eta_nu_E, &
-                    M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
+            ! !--   Emission / Absorption
+            ! call Compute_EA_E_S_Kernel &
+            !       ( Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+            !         Xi_J_EA_N_E, Xi_J_EA_A_E, Chi_J_EA_N_E, Chi_J_EA_A_E, &
+            !         J_Eq_E, N_Eq_E, T_nu_E, Eta_nu_E, E_Ave_E, F_Ave_E, &
+            !         M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+            !         Mu_e_F, Mu_n_p_F, Rho_DB, iV )
+            ! !--   Pair
+            ! call Compute_P_S_Kernel &
+            !       ( Xi_J_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+            !         Xi_J_P_EP_E, Chi_J_P_EP_E, &
+            !         J_Eq_E, N_Eq_E, M_F, N_F, T_F, &
+            !         Mu_e_F, &
+            !         Sign = +1, nSpecies = 1, &  
+            !         Rho_DB = Rho_DB, iV = iV )
+            ! !--   Elastic scattering on nucleons and nuclei
+            ! call Compute_S_S_Kernel &
+            !       ( Chi_H_E, Chi_H_S_N_E, Chi_H_S_A_E, T_nu_E, Eta_nu_E, &
+            !         M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
                     
 
-            !-- Neutrino_EB
-            !--call I_EB % Compute ( iC, iV )
+            ! !-- Neutrino_EB
+            ! !--call I_EB % Compute ( iC, iV )
             
-            !--   Spectral & Equilibrium
-            call Compute_SP_S_Kernel &
-                  ( T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB, &
-                    J_EB, N_EB, nSpecies = 1, iV = iV )
-            call Compute_Eq_E_S_Kernel &
-                  ( J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, J_EB, N_EB, &
-                    T_F, Mu_e_F, Mu_n_p_F, &
-                    Sign = -1.0_KDR, iV = iV )
+            ! !--   Spectral & Equilibrium
+            ! call Compute_SP_S_Kernel &
+            !       ( T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB, &
+            !         J_EB, N_EB, nSpecies = 1, iV = iV )
+            ! call Compute_Eq_E_S_Kernel &
+            !       ( J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, J_EB, N_EB, &
+            !         T_F, Mu_e_F, Mu_n_p_F, &
+            !         Sign = -1.0_KDR, iV = iV )
                     
-            !--   Emission / Absorption
-            call Compute_EA_EB_S_Kernel &
-                  ( Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-                    Xi_J_EA_N_EB, Xi_J_EA_A_EB, Chi_J_EA_N_EB, Chi_J_EA_A_EB, &  
-                    J_Eq_EB, N_Eq_EB, T_nu_EB, Eta_nu_EB, E_Ave_EB, F_Ave_EB, &   
-                    M_F, N_F, T_F, X_n_F, X_p_F, Mu_e_F, Mu_n_p_F, &
-                    Rho_DB, iV )
-            !--   Pair
-            call Compute_P_S_Kernel &
-                  ( Xi_J_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-                    Xi_J_P_EP_EB, Chi_J_P_EP_EB, &
-                    J_Eq_EB, N_Eq_EB, M_F, N_F, T_F, &
-                    Mu_e_F, &
-                    Sign = +1, nSpecies = 1, &  
-                    Rho_DB = Rho_DB, iV = iV )
-            !--   Elastic scattering on nucleons and nuclei
-            call Compute_S_S_Kernel &
-                  ( Chi_H_EB, Chi_H_S_N_EB, Chi_H_S_A_EB, T_nu_EB, Eta_nu_EB, &
-                    M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
+            ! !--   Emission / Absorption
+            ! call Compute_EA_EB_S_Kernel &
+            !       ( Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+            !         Xi_J_EA_N_EB, Xi_J_EA_A_EB, Chi_J_EA_N_EB, Chi_J_EA_A_EB, &  
+            !         J_Eq_EB, N_Eq_EB, T_nu_EB, Eta_nu_EB, E_Ave_EB, F_Ave_EB, &   
+            !         M_F, N_F, T_F, X_n_F, X_p_F, Mu_e_F, Mu_n_p_F, &
+            !         Rho_DB, iV )
+            ! !--   Pair
+            ! call Compute_P_S_Kernel &
+            !       ( Xi_J_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+            !         Xi_J_P_EP_EB, Chi_J_P_EP_EB, &
+            !         J_Eq_EB, N_Eq_EB, M_F, N_F, T_F, &
+            !         Mu_e_F, &
+            !         Sign = +1, nSpecies = 1, &  
+            !         Rho_DB = Rho_DB, iV = iV )
+            ! !--   Elastic scattering on nucleons and nuclei
+            ! call Compute_S_S_Kernel &
+            !       ( Chi_H_EB, Chi_H_S_N_EB, Chi_H_S_A_EB, T_nu_EB, Eta_nu_EB, &
+            !         M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
             
             
-            !-- Neutrino_X
-            !--call I_X  % Compute ( iC, iV )
+            ! !-- Neutrino_X
+            ! !--call I_X  % Compute ( iC, iV )
             
-            !--   Spectral & Equilibrium
-            call Compute_SP_S_Kernel &
-                  ( T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, J_X, N_X, &
-                    nSpecies = 4, iV = iV )
-            call Compute_Eq_HL_S_Kernel &
-                  ( J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, J_X, N_X, T_F, &
-                    nSpecies = 4, iV = iV )
+            ! !--   Spectral & Equilibrium
+            ! call Compute_SP_S_Kernel &
+            !       ( T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, J_X, N_X, &
+            !         nSpecies = 4, iV = iV )
+            ! call Compute_Eq_HL_S_Kernel &
+            !       ( J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, J_X, N_X, T_F, &
+            !         nSpecies = 4, iV = iV )
             
-            !--   Emission / Absorption
-            call Compute_EA_HL_S_Kernel &
-                  ( Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
-                    Xi_J_EA_N_X, Xi_J_EA_A_X, Chi_J_EA_N_X, Chi_J_EA_A_X, &  
-                    Chi_H_S_N_X, Chi_H_S_A_X, iV = iV )
-            !--   Pair
-            !  
+            ! !--   Emission / Absorption
+            ! call Compute_EA_HL_S_Kernel &
+            !       ( Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
+            !         Xi_J_EA_N_X, Xi_J_EA_A_X, Chi_J_EA_N_X, Chi_J_EA_A_X, &  
+            !         Chi_H_S_N_X, Chi_H_S_A_X, iV = iV )
+            ! !--   Pair
+            ! !  
             
-            !--   Elastic scattering on nucleons and nuclei
+            ! !--   Elastic scattering on nucleons and nuclei
                                                                                         
 
 
