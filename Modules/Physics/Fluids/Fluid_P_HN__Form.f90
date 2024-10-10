@@ -81,7 +81,8 @@ module Fluid_P_HN__Form
   public :: &
     Compute_N_V_E_YE_G_S_Kernel, &
     Apply_EOS_Prologue_S_Kernel, &
-    Apply_EOS_Epilogue_S_Kernel
+    Apply_EOS_Epilogue_S_Kernel, &
+    ComputeFromBalanced_S_Kernel
 
     private :: &
       InitializeModuleVariablesKernel, &
@@ -272,6 +273,56 @@ module Fluid_P_HN__Form
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Apply_EOS_Epilogue_S_Kernel
+      
+      module subroutine ComputeFromBalanced_S_Kernel &
+               ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
+                 SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, M_UU_11, M_UU_22, M_UU_33, &
+                 EOS, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+                 Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          FV
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M, &
+          N, &
+          V_1, V_2, V_3, &
+          D, &
+          G, &
+          S_1, S_2, S_3, &
+          P, &
+          T, &
+          E, &
+          YE, &
+          SS, &
+          DE, &
+          Mu_N, &
+          Mu_P, &
+          Mu_NP, &
+          Mu_E, &
+          M_UU_11, M_UU_22, M_UU_33
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          EOS
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          T_L_N, &      !-- TableLogDensity
+          T_L_T, &      !-- TableLogTemperature
+          T_Ye          !-- TableElectronFraction
+        real ( KDR ), intent ( in ) :: &
+          M_Ref, &
+          N_Min, &
+          E_Min, &
+          T_Min, &
+          Y_Min, &
+          Y_Safe, &
+          E_Shift
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          ia_F_I, &  !-- iaFluidInput
+          ia_F_O, &  !-- iaFluidOutput
+          ia_E       !-- iaEOS
+        integer ( KDI ), intent ( in ) :: &
+          iSolve, &
+          iV
+      end subroutine ComputeFromBalanced_S_Kernel
 
     end interface
 
@@ -949,6 +1000,8 @@ contains
       iC, &
       iV
 
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaFluidInput
     type ( TimerForm ), pointer :: &
       T_G, &
       T_K
@@ -1007,11 +1060,30 @@ contains
         ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
           M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
           M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+      associate &
+        ( EOS     => CS % EOS % Table, &
+          T_L_N   => CS % EOS % LogDensity, &
+          T_L_T   => CS % EOS % LogTemperature, &
+          T_Ye    => CS % EOS % ElectronFraction, &
+          E_Shift => CS % EOS % EnergyShift, &
+          ia_F_I  => [ CS % BARYON_DENSITY_C, &
+                       CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
+          ia_F_O  => CS % EOS % iaFluidOutput, &
+          ia_E    => CS % EOS % iaSelected, &
+          iSolve  => CS % ENERGY_DENSITY_C )
+        
 
-      call Compute_N_V_E_YE_G_S_Kernel &
-             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
-
+!--      call Compute_N_V_E_YE_G_S_Kernel &
+!--             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+!--               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
+      
+      call ComputeFromBalanced_S_Kernel &
+             ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
+               SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, M_UU_11, M_UU_22, M_UU_33, &
+               EOS, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+               Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
+      
+      end associate !-- EOS, etc.
       end associate !-- M_UU_11, etc.
       end associate !-- GSV
 
@@ -1022,23 +1094,31 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Gn
 
-    call Apply_EOS_Prologue_S_Kernel &
-           ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
-
-!call Show ( '>>> ComputeFromEnergy' )
-!call Show ( iV, '>>> iV' )
-    associate ( FS  =>  CS % Storage ( iC ) )
-    call FS % ReassociateHost ( AssociateVariablesOption = .false. )
-    call CS % EOS % ComputeFromEnergy &
-           ( FS, &
-             iaFluidInput = [ CS % BARYON_DENSITY_C, &
-                              CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
-             iSolve = CS % ENERGY_DENSITY_C, iV = iV )
-    call FS % ReassociateHost ( AssociateVariablesOption = .true. )
-    end associate !-- FS
-
-    call Apply_EOS_Epilogue_S_Kernel &
-           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
+!--    call Apply_EOS_Prologue_S_Kernel &
+!--           ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
+!--
+!--!call Show ( '>>> ComputeFromEnergy' )
+!--!call Show ( iV, '>>> iV' )
+!--    associate ( FS  =>  CS % Storage ( iC ) )
+!--    call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+!--    call CS % EOS % ComputeFromEnergy &
+!--           ( FS, &
+!--             iaFluidInput = [ CS % BARYON_DENSITY_C, &
+!--                              CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
+!--             iSolve = CS % ENERGY_DENSITY_C, iV = iV )
+!--    
+!--    !iaFluidInput = [ CS % BARYON_DENSITY_C, &
+!--    !                 CS % TEMPERATURE, CS % ELECTRON_FRACTION ]
+!--    !call ComputeFromEnergy_S_Kernel &
+!--    !       ( FV, CS % EOS % Table, CS % EOS % LogDensity, &
+!--    !         CS % EOS % LogTemperature, CS % EOS % ElectronFraction, &
+!--    !         CS % EOS % EnergyShift, iaFluidInput, CS % EOS % iaFluidOutput, &
+!--    !         CS % EOS % iaSelected, iSolve = CS % ENERGY_DENSITY_C, iV = iV )
+!--    call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+!--    end associate !-- FS
+!--
+!--    call Apply_EOS_Epilogue_S_Kernel &
+!--           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
 
     end associate !-- M, etc.
     end associate !-- FV, etc.

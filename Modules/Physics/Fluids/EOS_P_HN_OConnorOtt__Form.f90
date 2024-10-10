@@ -83,7 +83,8 @@ module EOS_P_HN_OConnorOtt__Form
       Interpolate_3D_S_Kernel, &
       FindTemperature_A_Kernel, &
       FindTemperature_S_Kernel, &
-      InterpolateTableKernel
+      InterpolateTableKernel, &
+      ComputeFromEnergy_S_Kernel
   
   real ( KDR ), parameter :: &
     T_MAX_HACK          = 240.0_KDR, &
@@ -171,7 +172,6 @@ module EOS_P_HN_OConnorOtt__Form
         nIterationsOption
     end subroutine FindTemperature_A_Kernel
 
-
     module subroutine FindTemperature_S_Kernel &
                ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, i_SF, i_ST, iV, &
                  LogScaleOption, ShiftOption, &
@@ -199,7 +199,6 @@ module EOS_P_HN_OConnorOtt__Form
       integer ( KDI ), intent ( in ), optional :: &
         nIterationsOption
     end subroutine FindTemperature_S_Kernel
-
 
     module subroutine FindTemperatureEnergyEntropyKernel &
                ( F, T, T_L_N, T_L_T, T_Ye, Mask, Threshold, &
@@ -233,7 +232,6 @@ module EOS_P_HN_OConnorOtt__Form
         nIterationsOption
     end subroutine FindTemperatureEnergyEntropyKernel
   
-    
     module subroutine InterpolateTableKernel &
                  ( X, Y, Z, T, XT, YT, ZT, i_ST, &
                    SV_R, D2 )
@@ -252,6 +250,29 @@ module EOS_P_HN_OConnorOtt__Form
         SV_R, &
         D2
     end subroutine InterpolateTableKernel
+    
+    module subroutine ComputeFromEnergy_S_Kernel &
+              ( F, T, T_L_N, T_L_T, T_Ye, E_Shift, ia_F_I, ia_F_O, ia_E, &
+                iSolve, iV )
+      
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        T_L_N, &      !-- TableLogDensity
+        T_L_T, &      !-- TableLogTemperature
+        T_Ye          !-- TableElectronFraction
+      real ( KDR ), intent ( in ) :: &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, &  !-- iaFluidInput
+        ia_F_O, &  !-- iaFluidOutput
+        ia_E       !-- iaEOS
+      integer ( KDI ), intent ( in ) :: &
+        iSolve, &
+        iV
+    end subroutine ComputeFromEnergy_S_Kernel
   
   end interface
 

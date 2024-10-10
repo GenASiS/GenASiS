@@ -971,4 +971,23 @@ end if
   end procedure InterpolateTableKernel
   
   
+  module procedure ComputeFromEnergy_S_Kernel
+  
+    integer ( KDI ) :: &
+      iSelected
+  
+    !$OMP_TARGET_DIRECTIVE
+    
+    call Search ( ia_F_O, iSolve, iSelected )
+    call FindTemperature_S_Kernel &
+           ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, &
+             iSolve, ia_E ( iSelected ), iV, &
+             ShiftOption = E_Shift, LogScaleOption = .true. )
+    call Interpolate_3D_S_Kernel &
+           ( F, T, T_L_N, T_L_T, T_Ye, &
+             E_Shift, ia_F_I, ia_F_O, ia_E, iV )
+  
+  end procedure ComputeFromEnergy_S_Kernel
+  
+  
 end submodule EOS_P_HN_OConnorOtt__Kernel
