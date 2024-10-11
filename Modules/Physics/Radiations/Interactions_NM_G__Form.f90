@@ -56,9 +56,9 @@ module Interactions_NM_G__Form
   end type Interactions_NM_G_Form
 
   public :: &
-    ComputeInteractions_E_S_Kernel!, &
-!    ComputeInteractions_EB_S_Kernel, &
-!    ComputeInteractions_HL_S_Kernel
+    ComputeInteractions_E_S_Kernel, &
+    ComputeInteractions_EB_S_Kernel, &
+    ComputeInteractions_HL_S_Kernel
 
   public :: &
     Compute_EA_E_S_Kernel, &
@@ -84,11 +84,16 @@ module Interactions_NM_G__Form
       module subroutine ComputeInteractions_E_S_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
                  Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 Chi_H_S_N, Chi_H_S_A, &
+                 Xi_J_S_EP, &
+                 Chi_J_S_EP, Chi_H_S_EP, &
                  J, N, J_Rd, N_Rd, &
-                 J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, E_Ave, F_Ave, &
                  M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
                  Mu_e_F, Mu_n_p_F, &
                  Rho_DB, iV )
+        !-- ComputeInteractions_Electron_Single_Kernel
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
            Xi_J,  Xi_H,  Xi_N, &
@@ -97,8 +102,16 @@ module Interactions_NM_G__Form
            Xi_J_EA_N,  Xi_J_EA_A, &
           Chi_J_EA_N, Chi_J_EA_A
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_P_EP, &
+          Chi_J_P_EP
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H_S_N, Chi_H_S_A
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
           J, N, J_Rd, N_Rd, &
-          J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave
+          J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, E_Ave, F_Ave
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, Mu_e_F, Mu_n_p_F
         real ( KDR ), intent ( in ) :: &
@@ -106,6 +119,84 @@ module Interactions_NM_G__Form
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine ComputeInteractions_E_S_Kernel
+
+      module subroutine ComputeInteractions_EB_S_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 Chi_H_S_N, Chi_H_S_A, &
+                 Xi_J_S_EP, &
+                 Chi_J_S_EP, Chi_H_S_EP, &
+                 J, N, J_Rd, N_Rd, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, E_Ave, F_Ave, &
+                 M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                 Mu_e_F, Mu_n_p_F, &
+                 Rho_DB, iV )
+        !-- ComputeInteractions_ElectronBar_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J,  Xi_H,  Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_EA_N,  Xi_J_EA_A, &
+          Chi_J_EA_N, Chi_J_EA_A
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_P_EP, &
+          Chi_J_P_EP
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H_S_N, Chi_H_S_A
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J, N, J_Rd, N_Rd, &
+          J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, E_Ave, F_Ave
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, Mu_e_F, Mu_n_p_F
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine ComputeInteractions_EB_S_Kernel
+
+      module subroutine ComputeInteractions_HL_S_Kernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+                 Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+                 Xi_J_P_EP, Chi_J_P_EP, &
+                 Chi_H_S_N, Chi_H_S_A, &
+                 Xi_J_S_EP, &
+                 Chi_J_S_EP, Chi_H_S_EP, &
+                 J, N, J_Rd, N_Rd, &
+                 J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, E_Ave, F_Ave, &
+                 M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                 Mu_e_F, Mu_n_p_F, &
+                 Rho_DB, iV )
+        !-- ComputeInteractions_HeavyLepton_Single_Kernel
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J,  Xi_H,  Xi_N, &
+          Chi_J, Chi_H, Chi_N
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_EA_N,  Xi_J_EA_A, &
+          Chi_J_EA_N, Chi_J_EA_A
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_P_EP, &
+          Chi_J_P_EP
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          Chi_H_S_N, Chi_H_S_A
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+           Xi_J_S_EP, &
+          Chi_J_S_EP, Chi_H_S_EP
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          J, N, J_Rd, N_Rd, &
+          J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, E_Ave, F_Ave
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, Mu_e_F, Mu_n_p_F
+        real ( KDR ), intent ( in ) :: &
+          Rho_DB
+        integer ( KDI ), intent ( in ) :: &
+          iV
+      end subroutine ComputeInteractions_HL_S_Kernel
 
       module subroutine Compute_EA_E_A_Kernel &
                ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &

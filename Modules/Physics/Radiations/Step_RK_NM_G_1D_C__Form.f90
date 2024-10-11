@@ -119,17 +119,17 @@ module Step_RK_NM_G_1D_C__Form
     module subroutine SolveKernelDevice &
                ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
-                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
-                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
-                 Chi_H_S_N_E, Chi_H_S_A_E, &
+                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
+                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+                 Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E, &
                  Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
-                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
-                 Chi_H_S_N_EB, Chi_H_S_A_EB, &
+                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
+                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+                 Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB, &
                  Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
-                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
-                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
-                 Chi_H_S_N_X, Chi_H_S_A_X, &
+                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
+                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+                 Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X, &
                  J_E, H_E_1, H_E_2, H_E_3, N_E, &
                  E_E, S_E_1, S_E_2, S_E_3, D_E, &
                  J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
@@ -171,17 +171,19 @@ module Step_RK_NM_G_1D_C__Form
         F_HN
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
-        Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
-        Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
-        Chi_H_S_N_E, Chi_H_S_A_E, &
+        Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
+        Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+        Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-        Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
-        Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
-        Chi_H_S_N_EB, Chi_H_S_A_EB, &
+        Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
+        Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+        Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_X,  Xi_H_X,  Xi_N_X,  Chi_J_X,  Chi_H_X,  Chi_N_X, &
-        Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
-        Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
-        Chi_H_S_N_X, Chi_H_S_A_X
+        Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
+        Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+        Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         J_E, H_E_1, H_E_2, H_E_3, N_E, &
         E_E, S_E_1, S_E_2, S_E_3, D_E, &
@@ -356,20 +358,20 @@ contains
       T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X
     real ( KDR ), dimension ( : ), pointer :: &
       Xi_J_E,  Xi_H_E,  Xi_N_E,  &
-      Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
+      Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
       Chi_J_E,  Chi_H_E,  Chi_N_E, &
-      Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
-      Chi_H_S_N_E, Chi_H_S_A_E, &
+      Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+      Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E, &
       Xi_J_EB,  Xi_H_EB,  Xi_N_EB,  &
-      Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
+      Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
       Chi_J_EB,  Chi_H_EB,  Chi_N_EB, &
-      Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
-      Chi_H_S_N_EB, Chi_H_S_A_EB, &
+      Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+      Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB, &
       Xi_J_X,  Xi_H_X,  Xi_N_X,  &
-      Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
+      Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
       Chi_J_X,  Chi_H_X,  Chi_N_X, &
-      Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
-      Chi_H_S_N_X, Chi_H_S_A_X
+      Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+      Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X
     !-- Storage % Value pointers
     real ( KDR ), dimension ( :, : ), pointer :: &
       ID_V
@@ -565,24 +567,24 @@ integer ( KDI ) :: &
       call SetFieldPointers_I &
              ( I_E, I_E_V, &
                Xi_J_E, Xi_H_E, Xi_N_E, &
-               Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
+               Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
                Chi_J_E, Chi_H_E, Chi_N_E, &
-               Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
-               Chi_H_S_N_E, Chi_H_S_A_E )
+               Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+               Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E )
       call SetFieldPointers_I &
              ( I_EB, I_EB_V, &
                Xi_J_EB, Xi_H_EB, Xi_N_EB, &
-               Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
+               Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
                Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-               Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
-               Chi_H_S_N_EB, Chi_H_S_A_EB )
+               Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+               Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB )
       call SetFieldPointers_I &
              ( I_X, I_X_V, &
                Xi_J_X, Xi_H_X, Xi_N_X, &
-               Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
+               Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
                Chi_J_X, Chi_H_X, Chi_N_X, &
-               Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
-               Chi_H_S_N_X, Chi_H_S_A_X )
+               Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+               Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X )
 
       if ( F_HN % DeviceMemory ) then
       !if ( .true. ) then
@@ -590,17 +592,17 @@ integer ( KDI ) :: &
         call SolveKernelDevice &
                ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
-                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, &
-                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, &
-                 Chi_H_S_N_E, Chi_H_S_A_E, &
+                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
+                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+                 Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E, &
                  Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, &
-                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, &
-                 Chi_H_S_N_EB, Chi_H_S_A_EB, &
+                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
+                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+                 Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB, &
                  Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
-                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, &
-                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, &
-                 Chi_H_S_N_X, Chi_H_S_A_X, &
+                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
+                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+                 Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X, &
                  J_E, H_E_1, H_E_2, H_E_3, N_E, &
                  E_E, S_E_1, S_E_2, S_E_3, D_E, &
                  J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
@@ -988,9 +990,11 @@ integer ( KDI ) :: &
 
   subroutine SetFieldPointers_I &
                ( I, I_V, &
-                 Xi_J, Xi_H, Xi_N, Xi_J_EA_N, Xi_J_EA_A, Xi_J_P_EP, &
-                 Chi_J, Chi_H, Chi_N, Chi_J_EA_N, Chi_J_EA_A, Chi_J_P_EP, &
-                 Chi_H_S_N, Chi_H_S_A )
+                 Xi_J, Xi_H, Xi_N, &
+                 Xi_J_EA_N, Xi_J_EA_A, Xi_J_P_EP, Xi_J_S_EP, &
+                 Chi_J, Chi_H, Chi_N, &
+                 Chi_J_EA_N, Chi_J_EA_A, Chi_J_P_EP, Chi_J_S_EP, &
+                 Chi_H_S_N, Chi_H_S_A, Chi_H_S_EP )
 
     class ( Interactions_NM_G_Form ), intent ( in ) :: &
       I
@@ -998,10 +1002,10 @@ integer ( KDI ) :: &
       I_V
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
        Xi_J,  Xi_H,  Xi_N, &
-       Xi_J_EA_N, Xi_J_EA_A, Xi_J_P_EP, &
+       Xi_J_EA_N, Xi_J_EA_A, Xi_J_P_EP, Xi_J_S_EP, &
       Chi_J, Chi_H, Chi_N, &
-      Chi_J_EA_N, Chi_J_EA_A, Chi_J_P_EP, &
-      Chi_H_S_N, Chi_H_S_A
+      Chi_J_EA_N, Chi_J_EA_A, Chi_J_P_EP, Chi_J_S_EP, &
+      Chi_H_S_N, Chi_H_S_A, Chi_H_S_EP
 
      Xi_J         =>  I_V ( :, I % EMISSIVITY_J )
      Xi_H         =>  I_V ( :, I % EMISSIVITY_H )
@@ -1009,6 +1013,7 @@ integer ( KDI ) :: &
      Xi_J_EA_N    =>  I_V ( :, I % EMISSIVITY_J_EA_N )
      Xi_J_EA_A    =>  I_V ( :, I % EMISSIVITY_J_EA_A )
      Xi_J_P_EP    =>  I_V ( :, I % EMISSIVITY_J_P_EP )
+     Xi_J_S_EP    =>  I_V ( :, I % EMISSIVITY_J_S_EP )
      
     Chi_J         =>  I_V ( :, I % OPACITY_J )
     Chi_H         =>  I_V ( :, I % OPACITY_H )
@@ -1016,8 +1021,10 @@ integer ( KDI ) :: &
     Chi_J_EA_N    =>  I_V ( :, I % OPACITY_J_EA_N )
     Chi_J_EA_A    =>  I_V ( :, I % OPACITY_J_EA_A )
     Chi_J_P_EP    =>  I_V ( :, I % OPACITY_J_P_EP )
+    Chi_J_S_EP    =>  I_V ( :, I % OPACITY_J_S_EP )
     Chi_H_S_N     =>  I_V ( :, I % OPACITY_H_S_N )
     Chi_H_S_A     =>  I_V ( :, I % OPACITY_H_S_A )
+    Chi_H_S_EP    =>  I_V ( :, I % OPACITY_H_S_EP )
                      
   end subroutine SetFieldPointers_I
 

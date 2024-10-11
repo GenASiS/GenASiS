@@ -24,14 +24,16 @@ contains
 
   module procedure ComputeInteractions_E_S_Kernel
 
+    !-- ComputeInteractions_Electron_Single_Kernel
+
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
-          ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
-            J, N, nSpecies = 1, iV = iV )
+           ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
+             J, N, nSpecies = 1, iV = iV )
     call Compute_Eq_E_S_Kernel &
-          ( J_Eq, N_Eq, J_Rd, N_Rd, J, N, &
-            T_F, Mu_e_F, Mu_n_p_F, &
-            Sign = +1.0_KDR, iV = iV )
+           ( J_Eq, N_Eq, J_Rd, N_Rd, J, N, &
+             T_F, Mu_e_F, Mu_n_p_F, &
+             Sign = +1.0_KDR, iV = iV )
             
     !-- Emission / Absorption
     call Compute_EA_E_S_Kernel &
@@ -41,7 +43,113 @@ contains
              M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, Mu_e_F, Mu_n_p_F, &
              Rho_DB, iV )
 
+    !-- Pair emission
+    call Compute_P_S_Kernel &
+           ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+             Xi_J_P_EP, Chi_J_P_EP, &
+             J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, &
+             M_F, N_F, T_F, Mu_e_F, &
+             Sign = +1, nSpecies = 1, Rho_DB = Rho_DB, iV = iV )
+
+    !-- Scattering on nucleons and nuclei
+    call Compute_S_B_S_Kernel &
+           ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+             M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
+
+    !-- Scattering on electrons and positrons
+    call Compute_S_EP_E_EB_S_Kernel &
+           ( Xi_J, Chi_J, Chi_H, &
+             Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+             J_Eq, T_nu, Eta_nu, M_F, N_F, T_F, Mu_e_F, &
+             Sign = +1, Rho_DB = Rho_DB, iV = iV )
+
   end procedure ComputeInteractions_E_S_Kernel
+
+
+  module procedure ComputeInteractions_EB_S_Kernel
+
+    !-- ComputeInteractions_ElectronBar_Single_Kernel
+
+    !--   Spectral & Equilibrium
+    call Compute_SP_S_Kernel &
+           ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
+             J, N, nSpecies = 1, iV = iV )
+    call Compute_Eq_E_S_Kernel &
+           ( J_Eq, N_Eq, J_Rd, N_Rd, J, N, &
+             T_F, Mu_e_F, Mu_n_p_F, &
+             Sign = -1.0_KDR, iV = iV )
+            
+    !-- Emission / Absorption
+    call Compute_EA_EB_S_Kernel &
+           ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+             Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+             J_Eq, N_Eq, T_nu, Eta_nu, E_Ave, F_Ave, &
+             M_F, N_F, T_F, X_n_F, X_p_F, Mu_e_F, Mu_n_p_F, &
+             Rho_DB, iV )
+
+    !-- Pair emission
+    call Compute_P_S_Kernel &
+           ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+             Xi_J_P_EP, Chi_J_P_EP, &
+             J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, &
+             M_F, N_F, T_F, Mu_e_F, &
+             Sign = +1, nSpecies = 1, Rho_DB = Rho_DB, iV = iV )
+
+    !-- Scattering on nucleons and nuclei
+    call Compute_S_B_S_Kernel &
+           ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+             M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
+
+    !-- Scattering on electrons and positrons
+    call Compute_S_EP_E_EB_S_Kernel &
+           ( Xi_J, Chi_J, Chi_H, &
+             Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+             J_Eq, T_nu, Eta_nu, M_F, N_F, T_F, Mu_e_F, &
+             Sign = -1, Rho_DB = Rho_DB, iV = iV )
+
+  end procedure ComputeInteractions_EB_S_Kernel
+
+
+  module procedure ComputeInteractions_HL_S_Kernel
+
+    !-- ComputeInteractions_HeavyLepton_Single_Kernel
+
+    !--   Spectral & Equilibrium
+    call Compute_SP_S_Kernel &
+           ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
+             J, N, nSpecies = 4, iV = iV )
+    call Compute_Eq_HL_S_Kernel &
+           ( J_Eq, N_Eq, J_RD, N_RD, J, N, T_F, &
+               nSpecies = 4, iV = iV )
+
+    !-- Emission / Absorption
+    call Compute_EA_HL_S_Kernel &
+           ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, &
+             Xi_J_EA_N, Xi_J_EA_A, Chi_J_EA_N, Chi_J_EA_A, &
+             Chi_H_S_N, Chi_H_S_A, &
+             iV = iV )
+
+    !-- Pair emission
+    call Compute_P_S_Kernel &
+           ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, &
+             Xi_J_P_EP, Chi_J_P_EP, &
+             J_Eq, N_Eq, T_nu, Eta_nu, T_nuB, Eta_nuB, &
+             M_F, N_F, T_F, Mu_e_F, &
+             Sign = -1, nSpecies = 4, Rho_DB = Rho_DB, iV = iV )
+
+    !-- Scattering on nucleons and nuclei
+    call Compute_S_B_S_Kernel &
+           ( Chi_H, Chi_H_S_N, Chi_H_S_A, T_nu, Eta_nu, &
+             M_F, N_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, iV )
+
+    !-- Scattering on electrons and positrons
+    call Compute_S_EP_HL_S_Kernel &
+           ( Xi_J, Chi_J, Chi_H, &
+             Xi_J_S_EP, Chi_J_S_EP, Chi_H_S_EP, &
+             J_Eq, T_nu, Eta_nu, M_F, N_F, T_F, Mu_e_F, &
+             nSpecies = 4, Rho_DB = Rho_DB, iV = iV )
+
+  end procedure ComputeInteractions_HL_S_Kernel
 
 
   module procedure Compute_EA_E_A_Kernel
