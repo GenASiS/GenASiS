@@ -276,9 +276,10 @@ module Fluid_P_HN__Form
       
       module subroutine ComputeFromBalanced_S_Kernel &
                ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-                 SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, M_UU_11, M_UU_22, M_UU_33, &
-                 EOS, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
-                 Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
+                 SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, EOS, &
+                 M_UU_11, M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
+                 E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, &
+                 iSolve, iV )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
@@ -299,11 +300,11 @@ module Fluid_P_HN__Form
           Mu_N, &
           Mu_P, &
           Mu_NP, &
-          Mu_E, &
-          M_UU_11, M_UU_22, M_UU_33
+          Mu_E
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
           EOS
         real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M_UU_11, M_UU_22, M_UU_33, &
           T_L_N, &      !-- TableLogDensity
           T_L_T, &      !-- TableLogTemperature
           T_Ye          !-- TableElectronFraction
@@ -1079,9 +1080,9 @@ contains
       
       call ComputeFromBalanced_S_Kernel &
              ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-               SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, M_UU_11, M_UU_22, M_UU_33, &
-               EOS, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
-               Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
+               SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, EOS, M_UU_11, M_UU_22, &
+               M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, &
+               Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
       
       end associate !-- EOS, etc.
       end associate !-- M_UU_11, etc.

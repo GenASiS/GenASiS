@@ -34,7 +34,8 @@ module Step_RK_NM_G_1D_C__Form
       SetFieldPointers_F, &
       SetFieldPointers_R, &
       SetFieldPointers_I, &
-      SolveKernel
+      SolveKernel, &
+      SolveKernelDevice
 
     interface
 

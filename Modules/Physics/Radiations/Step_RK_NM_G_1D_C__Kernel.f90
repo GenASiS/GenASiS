@@ -10,7 +10,7 @@ submodule ( Step_RK_NM_G_1D_C__Form ) Step_RK_NM_G_1D_C__Kernel
   !     only : Compute_EA_E_S_Kernel, Compute_EA_EB_S_Kernel, &
   !            Compute_EA_HL_S_Kernel, Compute_P_S_Kernel, Compute_S_S_Kernel
   use Fluid_P_HN__Form, & 
-      only:  Compute_N_V_E_YE_G_S_Kernel
+      only: F_P_HN_ComputeFromBalanced => ComputeFromBalanced_S_Kernel
 
   implicit none
   
@@ -486,7 +486,19 @@ integer ( KDI ) :: &
     T_Min   =  F_HN % TemperatureMin
     Y_Min   =  F_HN % ElectronFractionMin
     Y_Safe  =  F_HN % ElectronFractionSafe
-
+    
+    associate &
+      ( F_V     => F_HN % Storage ( iC ) % Value, &
+        EOS     => F_HN % EOS % Table, &
+        T_L_N   => F_HN % EOS % LogDensity, &
+        T_L_T   => F_HN % EOS % LogTemperature, &
+        T_Ye    => F_HN % EOS % ElectronFraction, &
+        E_Shift => F_HN % EOS % EnergyShift, &
+        ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
+                     F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
+        ia_F_O  => F_HN % EOS % iaFluidOutput, &
+        ia_E    => F_HN % EOS % iaSelected, &
+        iSolve  => F_HN % ENERGY_DENSITY_C )
 
     ! dOmega  =  1.0_KDR  /  mRI
 
@@ -826,7 +838,14 @@ integer ( KDI ) :: &
 !            call R_E  % ComputeFromBalanced ( iC, iV )
 !            call R_EB % ComputeFromBalanced ( iC, iV )
             
-            call F_HN % ComputeFromBalanced ( iC, iV )
+            !call F_HN % ComputeFromBalanced ( iC, iV )
+            call F_P_HN_ComputeFromBalanced &
+                   ( F_V, M_F, N_F, V_F_1, V_F_2, V_F_3, DB_F, E_F, &
+                     S_F_1, S_F_2, S_F_3, P_F, T_F, EC_F, YE_F, SS_F, D_F, &
+                     Mu_n_F, Mu_p_F, Mu_n_p_F, Mu_e_F, EOS, M_UU_11, &
+                     M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
+                     E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, &
+                     ia_E, iSolve, iV )
             
 !            call Compute_N_V_E_YE_G_S_Kernel &
 !                   ( DB_F, S_F_1, S_F_2, S_F_3, E_F, D_F, M_F, &
@@ -951,6 +970,8 @@ integer ( KDI ) :: &
       end if !-- ProperCell
     end do !-- iV
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    end associate !-- FV
 
   end procedure SolveKernelDevice
 
