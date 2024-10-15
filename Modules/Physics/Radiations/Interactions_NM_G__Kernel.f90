@@ -197,6 +197,8 @@ contains
 
     !-- ComputeInteractions_Electron_Single_Kernel
 
+    !$OMP_DECLARE_TARGET
+
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
            ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
@@ -241,6 +243,8 @@ contains
 
     !-- ComputeInteractions_ElectronBar_Single_Kernel
 
+    !$OMP_DECLARE_TARGET
+
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
            ( T_Nu, Eta_Nu, E_Ave, F_Ave, &
@@ -284,6 +288,8 @@ contains
   module procedure ComputeInteractions_HL_S_Kernel
 
     !-- ComputeInteractions_HeavyLepton_Single_Kernel
+
+    !$OMP_DECLARE_TARGET
 
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
@@ -738,6 +744,8 @@ contains
       Fermi_3_eP, Fermi_4_eP, &
       Fermi_3_nu, Fermi_4_nu
 
+    !$OMP_DECLARE_TARGET
+
     Factor_Xi     =  G_F_2  /  ( 6. * Pi_5 )
     Factor_Chi_J  =  G_F_2  /  ( 3. * Pi_3 )
     Factor_Chi_H  =  G_F_2  /  ( 6. * Pi_3 )
@@ -804,6 +812,8 @@ contains
       Fermi_3_eM, Fermi_4_eM, &
       Fermi_3_eP, Fermi_4_eP, &
       Fermi_3_nu, Fermi_4_nu
+
+    !$OMP_DECLARE_TARGET
 
     Factor_Xi     =  7. * G_F_2  /  ( 36. * Pi_5 )
     Factor_Chi_J  =  7. * G_F_2  /  ( 18. * Pi_3 )
