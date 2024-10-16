@@ -2,6 +2,8 @@
 !   index of a sorted array (of intrinsic types) corresponding to an input 
 !   value
 
+#include "Preprocessor"
+
 module Search_Command
 
   !-- based on Numerical Recipes, Fortran (1992), Fortran 90 (1996)  
@@ -37,6 +39,8 @@ contains
       iHigh
     logical ( KDL )  :: &
       Ascending
+      
+    !$OMP OMP_DECLARE_TARGET
       
     select type ( A )
     

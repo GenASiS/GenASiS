@@ -3,14 +3,11 @@
 submodule ( Step_RK_NM_G_1D_C__Form ) Step_RK_NM_G_1D_C__Kernel
 
   use Basics
-  use NeutrinoMoments_G__Form, &
-      only : Compute_SP_S_Kernel, Compute_Eq_E_S_Kernel, &
-             Compute_Eq_HL_S_Kernel
-  ! use Interactions_NM_G__Form, &
-  !     only : Compute_EA_E_S_Kernel, Compute_EA_EB_S_Kernel, &
-  !            Compute_EA_HL_S_Kernel, Compute_P_S_Kernel, Compute_S_S_Kernel
+  use Interactions_NM_G__Form, &
+      only : ComputeInteractions_E_S_Kernel, &
+             ComputeInteractions_EB_S_Kernel, ComputeInteractions_HL_S_Kernel
   use Fluid_P_HN__Form, & 
-      only: F_P_HN_ComputeFromBalanced => ComputeFromBalanced_S_Kernel
+      only : F_P_HN_ComputeFromBalanced => ComputeFromBalanced_S_Kernel
 
   implicit none
   
@@ -839,6 +836,7 @@ integer ( KDI ) :: &
 !            call R_EB % ComputeFromBalanced ( iC, iV )
             
             !call F_HN % ComputeFromBalanced ( iC, iV )
+            
             call F_P_HN_ComputeFromBalanced &
                    ( F_V, M_F, N_F, V_F_1, V_F_2, V_F_3, DB_F, E_F, &
                      S_F_1, S_F_2, S_F_3, P_F, T_F, EC_F, YE_F, SS_F, D_F, &

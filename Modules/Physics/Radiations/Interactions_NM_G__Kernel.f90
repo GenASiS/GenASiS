@@ -3,6 +3,9 @@
 submodule ( Interactions_NM_G__Form ) Interactions_NM_G__Kernel
 
   use Basics 
+  use NeutrinoMoments_G__Form, &
+      only : Compute_SP_S_Kernel, Compute_Eq_E_S_Kernel, &
+             Compute_Eq_HL_S_Kernel 
   
   implicit none
 
@@ -197,7 +200,7 @@ contains
 
     !-- ComputeInteractions_Electron_Single_Kernel
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
@@ -243,7 +246,7 @@ contains
 
     !-- ComputeInteractions_ElectronBar_Single_Kernel
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
@@ -289,7 +292,7 @@ contains
 
     !-- ComputeInteractions_HeavyLepton_Single_Kernel
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     !--   Spectral & Equilibrium
     call Compute_SP_S_Kernel &
@@ -344,7 +347,7 @@ contains
        Xi_J_A,  Xi_H_A,  Xi_N_A, &
       Chi_J_A, Chi_H_A, Chi_N_A
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
     
     Factor_p  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
     Factor_n  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
@@ -501,7 +504,7 @@ contains
        Xi_J_n,  Xi_H_n,  Xi_N_n, &
       Chi_J_p, Chi_H_p, Chi_N_p
       
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     Factor_n  =  G_F_2 / ( 2 * Pi_3 )  *  ( 1  +  3 * g_A_2 )
     Factor_p  =  G_F_2 / Pi            *  ( 1  +  3 * g_A_2 )
@@ -591,7 +594,7 @@ contains
 
     !-- Compute_EmissionAbsorption_HeavyLepton_Single_Kernel
     
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
      Xi_J_EA_N ( iV )  =  0.0_KDR
     Chi_J_EA_N ( iV )  =  0.0_KDR
@@ -624,7 +627,7 @@ contains
        Xi_J_P,           Xi_N_P, &
       Chi_J_P, Chi_H_P, Chi_N_P
       
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
           
     Factor  =  nSpecies * G_F_2  /  ( 9.  *  Pi_5 )  &
                *  ( 1.  +  Sign * 4. * S_2_T_W  +  8. * S_2_T_W ** 2 )
@@ -700,7 +703,7 @@ contains
       N_p, N_n, N_A, &
       Fermi_3_nu, Fermi_5_nu
       
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     Factor_p  =  2.  *  G_F_2  /  ( 3. * Pi )  &
                  *  ( ( 1. / 2.  -  2. * S_2_T_W ) ** 2  +  5. / 4. * g_A_2 )
@@ -744,7 +747,7 @@ contains
       Fermi_3_eP, Fermi_4_eP, &
       Fermi_3_nu, Fermi_4_nu
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     Factor_Xi     =  G_F_2  /  ( 6. * Pi_5 )
     Factor_Chi_J  =  G_F_2  /  ( 3. * Pi_3 )
@@ -813,7 +816,7 @@ contains
       Fermi_3_eP, Fermi_4_eP, &
       Fermi_3_nu, Fermi_4_nu
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     Factor_Xi     =  7. * G_F_2  /  ( 36. * Pi_5 )
     Factor_Chi_J  =  7. * G_F_2  /  ( 18. * Pi_3 )
@@ -877,7 +880,7 @@ contains
     real ( KDR ) :: &
       F_2
       
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     if ( Eta  >  0.0_KDR ) then
       F_2  =  Eta**3 / 3.  +  4. * Eta  +  2. * exp ( -Eta )
@@ -895,7 +898,7 @@ contains
     real ( KDR ) :: &
       F_3
     
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
     
     if ( Eta  >  0.0_KDR ) then
       F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
@@ -913,7 +916,7 @@ contains
     real ( KDR ) :: &
       F_4
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
     
     if ( Eta  >  0.0_KDR ) then
       F_4  =  Eta**5 / 5.  +  2. * Pi_2 * Eta**3 / 3.  +  48. * Eta  &
@@ -932,7 +935,7 @@ contains
     real ( KDR ) :: &
       F_5
       
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     if ( Eta  >  0.0_KDR ) then
       F_5  =  Eta**6 / 6.  +  5. * Pi_2 * Eta**4 / 6.  +  110. * Eta**2  &
