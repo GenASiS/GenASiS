@@ -468,34 +468,34 @@ integer ( KDI ) :: &
       E_X_P,  E_X_N,  D_X_P,  D_X_N
     real ( KDR ) :: &
       dOmega, &
-      SqrtTiny, &
-      M_Ref, N_Min, E_Min, &
-      T_Min, Y_Min, Y_Safe
+      SqrtTiny !, &
+ !     M_Ref, N_Min, E_Min, &
+ !     T_Min, Y_Min, Y_Safe
 
 integer ( KDI ) :: &
   iV_Show
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
     
-    M_Ref   =  F_HN % BaryonMass
-    N_Min   =  F_HN % BaryonDensityMin
-    E_Min   =  F_HN % EnergyDensityMin
-    T_Min   =  F_HN % TemperatureMin
-    Y_Min   =  F_HN % ElectronFractionMin
-    Y_Safe  =  F_HN % ElectronFractionSafe
-    
-    associate &
-      ( F_V     => F_HN % Storage ( iC ) % Value, &
-        EOS     => F_HN % EOS % Table, &
-        T_L_N   => F_HN % EOS % LogDensity, &
-        T_L_T   => F_HN % EOS % LogTemperature, &
-        T_Ye    => F_HN % EOS % ElectronFraction, &
-        E_Shift => F_HN % EOS % EnergyShift, &
-        ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
-                     F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
-        ia_F_O  => F_HN % EOS % iaFluidOutput, &
-        ia_E    => F_HN % EOS % iaSelected, &
-        iSolve  => F_HN % ENERGY_DENSITY_C )
+!    M_Ref   =  F_HN % BaryonMass
+!    N_Min   =  F_HN % BaryonDensityMin
+!    E_Min   =  F_HN % EnergyDensityMin
+!    T_Min   =  F_HN % TemperatureMin
+!    Y_Min   =  F_HN % ElectronFractionMin
+!    Y_Safe  =  F_HN % ElectronFractionSafe
+!    
+!    associate &
+!      ( F_V     => F_HN % Storage ( iC ) % Value, &
+!        EOS     => F_HN % EOS % Table, &
+!        T_L_N   => F_HN % EOS % LogDensity, &
+!        T_L_T   => F_HN % EOS % LogTemperature, &
+!        T_Ye    => F_HN % EOS % ElectronFraction, &
+!        E_Shift => F_HN % EOS % EnergyShift, &
+!        ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
+!                     F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
+!        ia_F_O  => F_HN % EOS % iaFluidOutput, &
+!        ia_E    => F_HN % EOS % iaSelected, &
+!        iSolve  => F_HN % ENERGY_DENSITY_C )
 
     ! dOmega  =  1.0_KDR  /  mRI
 
@@ -969,7 +969,7 @@ integer ( KDI ) :: &
     end do !-- iV
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    end associate !-- FV
+!    end associate !-- FV
 
   end procedure SolveKernelDevice
 

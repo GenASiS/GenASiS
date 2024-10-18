@@ -118,7 +118,7 @@ module Step_RK_NM_G_1D_C__Form
 
     
     module subroutine SolveKernelDevice &
-               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
+               ( F_V, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
                  Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
                  Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
@@ -149,13 +149,19 @@ module Step_RK_NM_G_1D_C__Form
                  Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
+                 EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                  E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
                  M_DD_11, M_DD_22, M_DD_33, &
                  M_UU_11, M_UU_22, M_UU_33, &
-                 AA, Tol, dT, Rho_DB, mRI, mII, iC, &
+                 T_L_N, T_L_T, T_Ye, &
+                 AA, Tol, dT, Rho_DB, &
+                 M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
+                 E_Shift, &
+                 ia_F_I, ia_F_O, ia_E, &
+                 mRI, mII, iC, iSolve, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
                  KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
@@ -164,12 +170,14 @@ module Step_RK_NM_G_1D_C__Form
                  Res_J_Eq_EB, Res_N_Eq_EB, &
                  Res_J_Eq_X,  Res_N_Eq_X )
       implicit none
-      class ( Interactions_NM_G_Form ), intent ( inout ) :: &
-        I_E, I_EB, I_X
-      class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
-        R_E, R_EB, R_X
-      class ( Fluid_P_HN_Form ), intent ( inout ) :: &
-        F_HN
+      !class ( Interactions_NM_G_Form ), intent ( inout ) :: &
+      !  I_E, I_EB, I_X
+      !class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
+      !  R_E, R_EB, R_X
+      !class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      !  F_HN
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F_V
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
         Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
@@ -209,6 +217,8 @@ module Step_RK_NM_G_1D_C__Form
         Error, nIterations, Omega, Residual
       logical ( KDL ), dimension ( : ), intent ( in ) :: &
         ProperCell
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
         E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
@@ -216,14 +226,21 @@ module Step_RK_NM_G_1D_C__Form
         E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M_DD_11, M_DD_22, M_DD_33, &
-        M_UU_11, M_UU_22, M_UU_33
+        M_UU_11, M_UU_22, M_UU_33, &
+        T_L_N, T_L_T, T_Ye
       real ( KDR ), intent ( in ) :: &
         AA, Tol, dT, &
-        Rho_DB
+        Rho_DB, &
+        M_Ref, N_Min, E_Min, &
+        T_Min, Y_Min, Y_Safe, &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, ia_F_O, ia_E
       integer ( KDI ), intent ( in ) :: &
         mRI, &
         mII, &
-        iC
+        iC, &
+        iSolve
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
         KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
@@ -588,10 +605,27 @@ integer ( KDI ) :: &
                Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X )
 
       if ( F_HN % DeviceMemory ) then
-      !if ( .true. ) then
-        associate ( Rho_DB => I_E % DensityDetailedBalance )
+        associate &
+          ( Rho_DB  => I_E % DensityDetailedBalance, &
+            EOS     => F_HN % EOS % Table, &
+            M_Ref   => F_HN % BaryonMass, &   
+            N_Min   => F_HN % BaryonDensityMin, &
+            E_Min   => F_HN % EnergyDensityMin, &
+            T_Min   => F_HN % TemperatureMin, &
+            Y_Min   => F_HN % ElectronFractionMin, &
+            Y_Safe  => F_HN % ElectronFractionSafe, &
+            T_L_N   => F_HN % EOS % LogDensity, &
+            T_L_T   => F_HN % EOS % LogTemperature, &
+            T_Ye    => F_HN % EOS % ElectronFraction, &
+            E_Shift => F_HN % EOS % EnergyShift, &
+            ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
+                         F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
+            ia_F_O  => F_HN % EOS % iaFluidOutput, &
+            ia_E    => F_HN % EOS % iaSelected, &
+            iSolve  => F_HN % ENERGY_DENSITY_C )
+        
         call SolveKernelDevice &
-               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
+               ( F_V, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
                  Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
                  Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
@@ -622,13 +656,18 @@ integer ( KDI ) :: &
                  Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
                  Error, nIterations, Omega, Residual, &
                  C % ProperCell, &
+                 EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                  E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
                  M_DD_11, M_DD_22, M_DD_33, &
                  M_UU_11, M_UU_22, M_UU_33, &
-                 AA, Tol, dT, Rho_DB, mRI, mII, iC, &
+                 T_L_N, T_L_T, T_Ye, & 
+                 AA, Tol, dT, Rho_DB, &
+                 M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, E_Shift, &
+                 ia_F_I, ia_F_O, ia_E, &
+                 mRI, mII, iC, iSolve, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
                  KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
