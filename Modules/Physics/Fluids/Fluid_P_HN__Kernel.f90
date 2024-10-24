@@ -34,6 +34,11 @@ contains
     Pressure_CGS        =  UNIT % BARYE
     Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+
+#ifdef ENABLE_OMP_OFFLOAD
+    !$OMP target update to ( OR_Shift, MassDensity_CGS, SpecificEnergy_CGS, &
+    !$OMP Pressure_CGS, Speed_CGS, MeV )
+#endif
     
   end procedure InitializeModuleVariablesKernel
 
