@@ -2,7 +2,7 @@
 
 #define OMP_TARGET_DIRECTIVE target teams distribute
 #define OMP_TARGET_DISTRIBUTE_DIRECTIVE target teams distribute 
-#define OMP_DECLARE_TARGET OMP declare target
+#define OMP_DECLARE_TARGET declare target
 
 #ifdef POWER_XL
 #define OMP_SCHEDULE_TARGET static, 1

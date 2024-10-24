@@ -10,6 +10,8 @@ module MultiplyAdd_Command
   use Specifiers
   use Devices
   
+  implicit none
+  
   public :: &
     MultiplyAdd, &
     MultiplyAddCollapse

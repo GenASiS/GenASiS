@@ -976,7 +976,7 @@ end if
     integer ( KDI ) :: &
       iSelected
   
-    !$OMP_TARGET_DIRECTIVE
+    !$OMP OMP_DECLARE_TARGET
     
     call Search ( ia_F_O, iSolve, iSelected )
     call FindTemperature_S_Kernel &

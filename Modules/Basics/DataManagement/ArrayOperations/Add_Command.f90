@@ -6,6 +6,7 @@
 module Add_Command
 
   use Specifiers
+  implicit none
   
   public :: &
     Add

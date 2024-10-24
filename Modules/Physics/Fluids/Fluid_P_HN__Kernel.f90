@@ -34,6 +34,11 @@ contains
     Pressure_CGS        =  UNIT % BARYE
     Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+
+#ifdef ENABLE_OMP_OFFLOAD
+    !$OMP target update to ( OR_Shift, MassDensity_CGS, SpecificEnergy_CGS, &
+    !$OMP Pressure_CGS, Speed_CGS, MeV )
+#endif
     
   end procedure InitializeModuleVariablesKernel
 
@@ -116,7 +121,7 @@ contains
   module procedure Apply_EOS_Prologue_S_Kernel
   
 
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     M ( iV )   =  M_Ref
 
@@ -310,7 +315,7 @@ contains
 
   module procedure Compute_N_V_E_YE_G_S_Kernel
     
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
     !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Single_Galileo
 
@@ -410,7 +415,7 @@ contains
 
   module procedure Apply_EOS_Epilogue_S_Kernel
   
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
 
 !        if ( N ( iV ) == 0.0_KDR ) cycle 
 
@@ -432,7 +437,7 @@ contains
   
   module procedure ComputeFromBalanced_S_Kernel
   
-    !$OMP_DECLARE_TARGET
+    !$OMP OMP_DECLARE_TARGET
     call Compute_N_V_E_YE_G_S_Kernel &
              ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
                N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
