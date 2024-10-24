@@ -400,7 +400,8 @@ contains
 
     real ( KDR ) :: &
       Constant_G, &
-      T_V, &
+      T_V_Max, &
+      T_V_Shock, &
       T_N
 
     select type ( U  =>  I % System )
@@ -412,11 +413,17 @@ contains
       (     V_Max  =>  M % VelocityMax, &
           R_V_Max  =>  M % Radius_V_Max, &
         Rho_V_Max  =>  M % MassDensity_V_Max, &
-        Rho_C      =>  M % MassDensity_C )
+        Rho_C      =>  M % MassDensity_C, &
+          R_Shock  =>  M % RadiusShock )
 
     !-- Time scales and CheckpointTimeInterval
 
-    T_V  =  R_V_Max  /  max ( V_Max, sqrt ( tiny ( 0.0_KDR ) ) )
+    T_V_Max    =  R_V_Max  /  max ( V_Max, sqrt ( tiny ( 0.0_KDR ) ) )
+
+    T_V_Shock  =  R_Shock  &
+                  /  max ( V_Max, sqrt ( tiny ( 0.0_KDR ) ) )
+    !-- Note V_Max is still used even though it may not correspond to the 
+    !   velocity near R_Shock when this differs from R_V_Max.
 
     if ( trim ( U % UnitsType )  ==  '' ) then
       Constant_G  =  1.0_KDR
@@ -426,13 +433,18 @@ contains
 
     T_N  =  ( Constant_G * min ( Rho_V_Max, Rho_C ) ) ** ( -0.5_KDR )
 
-    I % T_CheckpointInterval  =  min ( T_V, T_N )  /  I % nWrite
+    if ( R_Shock  >  R_V_Max ) then
+      I % T_CheckpointInterval  =  T_V_Shock  /  I % nWrite
+    else
+      I % T_CheckpointInterval  =  min ( T_V_Max, T_N )  /  I % nWrite
+    end if
 
     !-- Display
 
     call Show ( 'Time Scales', I % IGNORABILITY )
-    call Show ( T_V, I % Unit_T, 'T_Velocity', I % IGNORABILITY )
     call Show ( T_N, I % Unit_T, 'T_Density',  I % IGNORABILITY )
+    call Show ( T_V_Max, I % Unit_T, 'T_Velocity_Max', I % IGNORABILITY )
+    call Show ( T_V_Shock, I % Unit_T, 'T_Velocity_Shock', I % IGNORABILITY )
 
     !-- Cleanup
 

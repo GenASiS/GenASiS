@@ -12,9 +12,9 @@ module Measures_F_CC__Form
 
     integer ( KDI ), private, parameter :: &
       N_MEASURES_D     =  8, &
-      N_MEASURES_P     = 10, &
-      N_MEASURES_P_HN  = 11, &
-      N_MEASURES_F_MAX = 11
+      N_MEASURES_P     = 11, &
+      N_MEASURES_P_HN  = 12, &
+      N_MEASURES_F_MAX = 12
 
   type, public :: Measures_F_CC_Form
     integer ( KDI ) :: &
@@ -37,6 +37,7 @@ module Measures_F_CC__Form
       MassDensity_C, &
       Temperature_C, &
       EntropyPerBaryon_C, &
+      RadiusShock, &
       ElectronFraction_C
     real ( KDR ), dimension ( : ), allocatable :: &
       Value
@@ -140,17 +141,19 @@ contains
            UF % NumberDensity, &        !-- BaryonDensity_V_Max
            UF % MassDensity, &          !-- MassDensity_V_Max
            UF % NumberDensity, &        !-- BaryonDensity_C
-           UF % MassDensity ]          !-- MassDensity_C
+           UF % MassDensity ]           !-- MassDensity_C
 
     if ( M % nMeasures_F  >  M % N_MEASURES_D ) then
       M % Name ( M % N_MEASURES_D + 1 : M % N_MEASURES_P ) &
         = [ 'Temperature_C      ', &
-            'EntropyPerBaryon_C ' ]
+            'EntropyPerBaryon_C ', &
+            'RadiusShock        ' ]
       M % Unit ( M % N_MEASURES_D + 1 : M % N_MEASURES_P ) &
-        = [ UF % Temperature, &          !-- Temperature_C
+        = [ UF % Temperature, &           !-- Temperature_C
             UF % EnergyDensity &
                 /  UF % NumberDensity  &
-                /  UF % Temperature ]     !-- EntropyPerBaryon_C
+                /  UF % Temperature,  &   !-- EntropyPerBaryon_C
+            UF % Coordinate_PS ( 1 ) ]    !-- RadiusShock
     end if !-- N_MEASURES_P
 
     if ( M % nMeasures_F  >  M % N_MEASURES_P ) then
@@ -178,6 +181,10 @@ contains
       oC, &  !-- oCell
       oI, &  !-- oIncoming
       nF
+    real ( KDR ) :: &
+      N_High, &
+      S_ShockHigh, &
+      S_ShockLow
     real ( KDR ), dimension ( : ), pointer :: &
       T_P, &
       S_P, &
@@ -298,6 +305,7 @@ contains
         Rho_C      =>  M % MassDensity_C, &
           T_C      =>  M % Temperature_C, &
           S_C      =>  M % EntropyPerBaryon_C, &
+          R_S      =>  M % RadiusShock, &
           Y_C      =>  M % ElectronFraction_C )
 
     !-- VelocityMax
@@ -328,6 +336,39 @@ contains
     if ( allocated ( T ) )  T_C  =  T ( 1 )
     if ( allocated ( Y ) )  Y_C  =  Y ( 1 )
 
+    !-- Shock
+
+    associate ( UF  =>  M % Units_F )
+
+    N_High  =  1.0e-6_KDR  *  UNIT % FEMTOMETER ** (-3)
+
+    S_ShockHigh  =  3.0_KDR  *  UF % EnergyDensity &
+                                /  UF % NumberDensity  &
+                                /  UF % Temperature 
+
+    S_ShockLow   =  6.0_KDR  *  UF % EnergyDensity &
+                                /  UF % NumberDensity  &
+                                /  UF % Temperature 
+
+    end associate !-- UF
+
+    iR  =  1
+    do iC  =  nC, 1, -1
+      if ( N ( iC )  >  N_High ) then
+        if ( S ( iC )  >  S_ShockHigh ) then
+          iR  =  iC
+          exit
+        end if
+      else !-- N  <  N_High
+        if ( S ( iC )  >  S_ShockLow ) then
+          iR  =  iC
+          exit
+        end if
+      end if
+    end do !-- iC
+
+    R_S  =  R ( iR )
+
     !-- Record
 
     M % Value (  1 )  =      V_Max
@@ -341,9 +382,10 @@ contains
     if ( M % nMeasures_F  >  M % N_MEASURES_D ) then
       M % Value (  9 )  =  T_C
       M % Value ( 10 )  =  S_C
+      M % Value ( 11 )  =  R_S
     end if !-- N_MEASURES_P
     if ( M % nMeasures_F  >  M % N_MEASURES_P ) then
-      M % Value ( 11 )  =  Y_C
+      M % Value ( 12 )  =  Y_C
     end if !-- N_MEASURES_P_HN
 
     !-- Display
