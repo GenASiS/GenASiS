@@ -4,10 +4,10 @@ submodule ( Step_RK_NM_G_1D_C__Form ) Step_RK_NM_G_1D_C__Kernel
 
   use Basics
   use Interactions_NM_G__Form, &
-      only : ComputeInteractions_E_S_Kernel, &
-             ComputeInteractions_EB_S_Kernel, ComputeInteractions_HL_S_Kernel
+        only : ComputeInteractions_E_S_Kernel, &
+               ComputeInteractions_EB_S_Kernel, ComputeInteractions_HL_S_Kernel
   use Fluid_P_HN__Form, & 
-      only : F_P_HN_ComputeFromBalanced => ComputeFromBalanced_S_Kernel
+        only : F_P_HN_ComputeFromBalanced => ComputeFromBalanced_S_Kernel
 
   implicit none
   
@@ -35,12 +35,34 @@ contains
       E_X_P,  E_X_N,  D_X_P,  D_X_N
     real ( KDR ) :: &
       dOmega, &
-      SqrtTiny
+      SqrtTiny !, &
+ !     M_Ref, N_Min, E_Min, &
+ !     T_Min, Y_Min, Y_Safe
 
 integer ( KDI ) :: &
   iV_Show
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+    
+!    M_Ref   =  F_HN % BaryonMass
+!    N_Min   =  F_HN % BaryonDensityMin
+!    E_Min   =  F_HN % EnergyDensityMin
+!    T_Min   =  F_HN % TemperatureMin
+!    Y_Min   =  F_HN % ElectronFractionMin
+!    Y_Safe  =  F_HN % ElectronFractionSafe
+!    
+!    associate &
+!      ( F_V     => F_HN % Storage ( iC ) % Value, &
+!        EOS     => F_HN % EOS % Table, &
+!        T_L_N   => F_HN % EOS % LogDensity, &
+!        T_L_T   => F_HN % EOS % LogTemperature, &
+!        T_Ye    => F_HN % EOS % ElectronFraction, &
+!        E_Shift => F_HN % EOS % EnergyShift, &
+!        ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
+!                     F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
+!        ia_F_O  => F_HN % EOS % iaFluidOutput, &
+!        ia_E    => F_HN % EOS % iaSelected, &
+!        iSolve  => F_HN % ENERGY_DENSITY_C )
 
     ! dOmega  =  1.0_KDR  /  mRI
 
@@ -50,11 +72,11 @@ integer ( KDI ) :: &
 
     !$OMP parallel do &
     !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-    !$OMP shared ( SqrtTiny ) &
+    !$OMP shared ( SqrtTiny, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe ) &
+    !$OMP private ( iR, iI ) &
     !$OMP private ( Res_J_Eq_E,  Res_N_Eq_E, &
     !$OMP           Res_J_Eq_EB, Res_N_Eq_EB, &
     !$OMP           Res_J_Eq_X,  Res_N_Eq_X ) &
-    !$OMP private ( iR, iI ) &
     !$OMP private ( J_Eq_E_0,  N_Eq_E_0 ) &
     !$OMP private ( J_Eq_EB_0, N_Eq_EB_0 ) &
     !$OMP private ( J_Eq_X_0,  N_Eq_X_0 ) &
@@ -156,9 +178,50 @@ integer ( KDI ) :: &
 
             !-- Compute interactions
 
-            call I_E  % Compute ( iC, iV )
-            call I_EB % Compute ( iC, iV )
-            call I_X  % Compute ( iC, iV )
+            !-- Neutrino_E
+            call ComputeInteractions_E_S_Kernel &
+                   ( Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+                     Xi_J_EA_N_E, Xi_J_EA_A_E, Chi_J_EA_N_E, Chi_J_EA_A_E, &
+                     Xi_J_P_EP_E, Chi_J_P_EP_E, &
+                     Chi_H_S_N_E, Chi_H_S_A_E, &
+                     Xi_J_S_EP_E, &
+                     Chi_J_S_EP_E, Chi_H_S_EP_E, &
+                     J_E, N_E, J_Rd_E, N_Rd_E, &
+                     J_Eq_E, N_Eq_E, T_nu_E, Eta_nu_E, T_nu_EB, Eta_nu_EB, &
+                     E_Ave_E, F_Ave_E, &
+                     M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                     Mu_e_F, Mu_n_p_F, &
+                     Rho_DB, iV )
+
+            !-- Neutrino_EB
+            call ComputeInteractions_EB_S_Kernel &
+                   ( Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+                     Xi_J_EA_N_EB, Xi_J_EA_A_EB, Chi_J_EA_N_EB, Chi_J_EA_A_EB, &
+                     Xi_J_P_EP_EB, Chi_J_P_EP_EB, &
+                     Chi_H_S_N_EB, Chi_H_S_A_EB, &
+                     Xi_J_S_EP_EB, &
+                     Chi_J_S_EP_EB, Chi_H_S_EP_EB, &
+                     J_EB, N_EB, J_Rd_EB, N_Rd_EB, &
+                     J_Eq_EB, N_Eq_EB, T_nu_EB, Eta_nu_EB, T_nu_E, Eta_nu_E, &
+                     E_Ave_EB, F_Ave_EB, &
+                     M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                     Mu_e_F, Mu_n_p_F, &
+                     Rho_DB, iV )            
+            
+            !-- Neutrino_X
+            call ComputeInteractions_HL_S_Kernel &
+                   ( Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
+                     Xi_J_EA_N_X, Xi_J_EA_A_X, Chi_J_EA_N_X, Chi_J_EA_A_X, &
+                     Xi_J_P_EP_X, Chi_J_P_EP_X, &
+                     Chi_H_S_N_X, Chi_H_S_A_X, &
+                     Xi_J_S_EP_X, &
+                     Chi_J_S_EP_X, Chi_H_S_EP_X, &
+                     J_X, N_X, J_Rd_X, N_Rd_X, &
+                     J_Eq_X, N_Eq_X, T_nu_X, Eta_nu_X, T_nu_X, Eta_nu_X, &
+                     E_Ave_X, F_Ave_X, &
+                     M_F, N_F, T_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                     Mu_e_F, Mu_n_p_F, &
+                     Rho_DB, iV )            
 
             !-- For vanishing radiation initial conditions
 
@@ -338,7 +401,36 @@ integer ( KDI ) :: &
 
 !            call R_E  % ComputeFromBalanced ( iC, iV )
 !            call R_EB % ComputeFromBalanced ( iC, iV )
-            call F_HN % ComputeFromBalanced ( iC, iV )
+            
+            !call F_HN % ComputeFromBalanced ( iC, iV )
+            
+            call F_P_HN_ComputeFromBalanced &
+                   ( F_V, M_F, N_F, V_F_1, V_F_2, V_F_3, DB_F, E_F, &
+                     S_F_1, S_F_2, S_F_3, P_F, T_F, EC_F, YE_F, SS_F, D_F, &
+                     Mu_n_F, Mu_p_F, Mu_n_p_F, Mu_e_F, EOS, M_UU_11, &
+                     M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
+                     E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, &
+                     ia_E, iSolve, iV )
+            
+!            call Compute_N_V_E_YE_G_S_Kernel &
+!                   ( DB_F, S_F_1, S_F_2, S_F_3, E_F, D_F, M_F, &
+!                     M_UU_11, M_UU_22, M_UU_33, &
+!                     N_Min, E_Min, Y_Min, Y_Safe, iV, &
+!                     N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F )
+!            call Apply_EOS_Prologue_S_Kernel &
+!                   ( M_F, N_F, P_F, T_F, EC_F, YE_F, &
+!                     M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, iV )
+!                     
+!            !-- call CS % EOS % ComputeFromEnergy ( )
+!            call F_HN % EOS % ComputeFromEnergy &
+!                   ( F_HN % Storage ( iC ), &
+!                     iaFluidInput = [ F_HN % BARYON_DENSITY_C, &
+!                                      F_HN % TEMPERATURE, &
+!                                      F_HN % ELECTRON_FRACTION ], &
+!                     iSolve = F_HN % ENERGY_DENSITY_C, iV = iV )
+!            call Apply_EOS_Epilogue_S_Kernel &
+!                   ( N_F, P_F, T_F, SS_F, EC_F, Mu_n_F, Mu_p_F, Mu_n_p_F, &
+!                     Mu_e_F, M_F, iV )
 
           end do Implicit
 
@@ -443,6 +535,8 @@ integer ( KDI ) :: &
       end if !-- ProperCell
     end do !-- iV
     !$OMP end parallel do
+    
+!    end associate !-- FV
 
   end procedure SolveKernel
 

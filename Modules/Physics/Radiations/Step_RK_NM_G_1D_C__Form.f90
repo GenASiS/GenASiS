@@ -39,26 +39,51 @@ module Step_RK_NM_G_1D_C__Form
 
     interface
 
-      module subroutine SolveKernel &
-               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
+    module subroutine SolveKernel &
+               ( F_V, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
+                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+                 Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E, &
                  Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
+                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+                 Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB, &
                  Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
+                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
+                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+                 Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X, &
                  J_E, H_E_1, H_E_2, H_E_3, N_E, &
-                 E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
+                 E_E, S_E_1, S_E_2, S_E_3, D_E, &
+                 J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
+                 T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E, &
                  J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
-                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
+                 J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, &
+                 T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB, &
                  J_X, H_X_1, H_X_2, H_X_3, N_X, &
-                 E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X, &
-                 E_F, S_F_1, S_F_2, S_F_3, D_F, &
+                 E_X, S_X_1, S_X_2, S_X_3, D_X, &
+                 J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
+                 T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+                 N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
+                 M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                 Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
+                 EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                  E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
                  M_DD_11, M_DD_22, M_DD_33, &
-                 AA, Tol, dT, mRI, mII, iC, &
+                 M_UU_11, M_UU_22, M_UU_33, &
+                 T_L_N, T_L_T, T_Ye, &
+                 AA, Tol, dT, Rho_DB, &
+                 M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
+                 E_Shift, &
+                 ia_F_I, ia_F_O, ia_E, &
+                 mRI, mII, iC, iSolve, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
                  KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
@@ -67,44 +92,71 @@ module Step_RK_NM_G_1D_C__Form
                  Res_J_Eq_EB, Res_N_Eq_EB, &
                  Res_J_Eq_X,  Res_N_Eq_X )
       implicit none
-      class ( Interactions_NM_G_Form ), intent ( inout ) :: &
-        I_E, I_EB, I_X
-      class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
-        R_E, R_EB, R_X
-      class ( Fluid_P_HN_Form ), intent ( inout ) :: &
-        F_HN
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F_V
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_E,  Xi_H_E,  Xi_N_E,  Chi_J_E,  Chi_H_E,  Chi_N_E, &
+        Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
+        Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+        Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
-        Xi_J_X,  Xi_H_X,  Xi_N_X,  Chi_J_X,  Chi_H_X,  Chi_N_X
+        Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
+        Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+        Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Xi_J_X,  Xi_H_X,  Xi_N_X,  Chi_J_X,  Chi_H_X,  Chi_N_X, &
+        Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
+        Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+        Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         J_E, H_E_1, H_E_2, H_E_3, N_E, &
-        E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E
+        E_E, S_E_1, S_E_2, S_E_3, D_E, &
+        J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
+        T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
-        E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB
+        E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
+        J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, &
+        T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         J_X, H_X_1, H_X_2, H_X_3, N_X, &
-        E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X
+        E_X, S_X_1, S_X_2, S_X_3, D_X, &
+        J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
+        T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
-        E_F, S_F_1, S_F_2, S_F_3, D_F
+        E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+        N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
+        M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+        Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Error, nIterations, Omega, Residual
       logical ( KDL ), dimension ( : ), intent ( in ) :: &
         ProperCell
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
         E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
         E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
         E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0
       real ( KDR ), dimension ( : ), intent ( in ) :: &
-        M_DD_11, M_DD_22, M_DD_33
+        M_DD_11, M_DD_22, M_DD_33, &
+        M_UU_11, M_UU_22, M_UU_33, &
+        T_L_N, T_L_T, T_Ye
       real ( KDR ), intent ( in ) :: &
-        AA, Tol, dT
+        AA, Tol, dT, &
+        Rho_DB, &
+        M_Ref, N_Min, E_Min, &
+        T_Min, Y_Min, Y_Safe, &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, ia_F_O, ia_E
       integer ( KDI ), intent ( in ) :: &
         mRI, &
         mII, &
-        iC
+        iC, &
+        iSolve
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
         KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
@@ -170,12 +222,6 @@ module Step_RK_NM_G_1D_C__Form
                  Res_J_Eq_EB, Res_N_Eq_EB, &
                  Res_J_Eq_X,  Res_N_Eq_X )
       implicit none
-      !class ( Interactions_NM_G_Form ), intent ( inout ) :: &
-      !  I_E, I_EB, I_X
-      !class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
-      !  R_E, R_EB, R_X
-      !class ( Fluid_P_HN_Form ), intent ( inout ) :: &
-      !  F_HN
       real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
         F_V
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -604,26 +650,26 @@ integer ( KDI ) :: &
                Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
                Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X )
 
+      associate &
+        ( Rho_DB  => I_E % DensityDetailedBalance, &
+          EOS     => F_HN % EOS % Table, &
+          M_Ref   => F_HN % BaryonMass, &   
+          N_Min   => F_HN % BaryonDensityMin, &
+          E_Min   => F_HN % EnergyDensityMin, &
+          T_Min   => F_HN % TemperatureMin, &
+          Y_Min   => F_HN % ElectronFractionMin, &
+          Y_Safe  => F_HN % ElectronFractionSafe, &
+          T_L_N   => F_HN % EOS % LogDensity, &
+          T_L_T   => F_HN % EOS % LogTemperature, &
+          T_Ye    => F_HN % EOS % ElectronFraction, &
+          E_Shift => F_HN % EOS % EnergyShift, &
+          ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
+                       F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
+          ia_F_O  => F_HN % EOS % iaFluidOutput, &
+          ia_E    => F_HN % EOS % iaSelected, &
+          iSolve  => F_HN % ENERGY_DENSITY_C )
+
       if ( F_HN % DeviceMemory ) then
-        associate &
-          ( Rho_DB  => I_E % DensityDetailedBalance, &
-            EOS     => F_HN % EOS % Table, &
-            M_Ref   => F_HN % BaryonMass, &   
-            N_Min   => F_HN % BaryonDensityMin, &
-            E_Min   => F_HN % EnergyDensityMin, &
-            T_Min   => F_HN % TemperatureMin, &
-            Y_Min   => F_HN % ElectronFractionMin, &
-            Y_Safe  => F_HN % ElectronFractionSafe, &
-            T_L_N   => F_HN % EOS % LogDensity, &
-            T_L_T   => F_HN % EOS % LogTemperature, &
-            T_Ye    => F_HN % EOS % ElectronFraction, &
-            E_Shift => F_HN % EOS % EnergyShift, &
-            ia_F_I  => [ F_HN % BARYON_DENSITY_C, &
-                         F_HN % TEMPERATURE, F_HN % ELECTRON_FRACTION ], &
-            ia_F_O  => F_HN % EOS % iaFluidOutput, &
-            ia_E    => F_HN % EOS % iaSelected, &
-            iSolve  => F_HN % ENERGY_DENSITY_C )
-        
         call SolveKernelDevice &
                ( F_V, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
@@ -675,28 +721,51 @@ integer ( KDI ) :: &
                  Res_J_Eq_E,  Res_N_Eq_E, &
                  Res_J_Eq_EB, Res_N_Eq_EB, &
                  Res_J_Eq_X,  Res_N_Eq_X )
-        end associate
       else 
         call SolveKernel &
-               ( I_E, I_EB, I_X, R_E, R_EB, R_X, F_HN, &
+               ( F_V, &
                  Xi_J_E, Xi_H_E, Xi_N_E, Chi_J_E, Chi_H_E, Chi_N_E, &
+                 Xi_J_EA_N_E, Xi_J_EA_A_E, Xi_J_P_EP_E, Xi_J_S_EP_E, &
+                 Chi_J_EA_N_E, Chi_J_EA_A_E, Chi_J_P_EP_E, Chi_J_S_EP_E, &
+                 Chi_H_S_N_E, Chi_H_S_A_E, Chi_H_S_EP_E, &
                  Xi_J_EB, Xi_H_EB, Xi_N_EB, Chi_J_EB, Chi_H_EB, Chi_N_EB, &
+                 Xi_J_EA_N_EB, Xi_J_EA_A_EB, Xi_J_P_EP_EB, Xi_J_S_EP_EB, &
+                 Chi_J_EA_N_EB, Chi_J_EA_A_EB, Chi_J_P_EP_EB, Chi_J_S_EP_EB, &
+                 Chi_H_S_N_EB, Chi_H_S_A_EB, Chi_H_S_EP_EB, &
                  Xi_J_X, Xi_H_X, Xi_N_X, Chi_J_X, Chi_H_X, Chi_N_X, &
+                 Xi_J_EA_N_X, Xi_J_EA_A_X, Xi_J_P_EP_X, Xi_J_S_EP_X, &
+                 Chi_J_EA_N_X, Chi_J_EA_A_X, Chi_J_P_EP_X, Chi_J_S_EP_X, &
+                 Chi_H_S_N_X, Chi_H_S_A_X, Chi_H_S_EP_X, &
                  J_E, H_E_1, H_E_2, H_E_3, N_E, &
-                 E_E, S_E_1, S_E_2, S_E_3, D_E, J_Eq_E, N_Eq_E, &
+                 E_E, S_E_1, S_E_2, S_E_3, D_E, &
+                 J_Eq_E, N_Eq_E, J_Rd_E, N_Rd_E, &
+                 T_Nu_E, Eta_Nu_E, E_Ave_E, F_Ave_E, &
                  J_EB, H_EB_1, H_EB_2, H_EB_3, N_EB, &
-                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, J_Eq_EB, N_Eq_EB, &
+                 E_EB, S_EB_1, S_EB_2, S_EB_3, D_EB, &
+                 J_Eq_EB, N_Eq_EB, J_Rd_EB, N_Rd_EB, &
+                 T_Nu_EB, Eta_Nu_EB, E_Ave_EB, F_Ave_EB, &
                  J_X, H_X_1, H_X_2, H_X_3, N_X, &
-                 E_X, S_X_1, S_X_2, S_X_3, D_X, J_Eq_X, N_Eq_X, &
-                 E_F, S_F_1, S_F_2, S_F_3, D_F, &
+                 E_X, S_X_1, S_X_2, S_X_3, D_X, &
+                 J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
+                 T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+                 N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
+                 M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+                 Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
                  Error, nIterations, Omega, Residual, &
                  C % ProperCell, &
+                 EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
                  E_X_0,  S_X_1_0,  S_X_2_0,  S_X_3_0,  D_X_0, &
                  E_F_0,  S_F_1_0,  S_F_2_0,  S_F_3_0,  D_F_0, &
                  M_DD_11, M_DD_22, M_DD_33, &
-                 AA, Tol, dT, mRI, mII, iC, &
+                 M_UU_11, M_UU_22, M_UU_33, &
+                 T_L_N, T_L_T, T_Ye, & 
+                 AA, Tol, dT, Rho_DB, &
+                 M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, E_Shift, &
+                 ia_F_I, ia_F_O, ia_E, &
+                 mRI, mII, iC, iSolve, &
                  KK_E_E,  KK_E_S_1,  KK_E_S_2,  KK_E_S_3,  KK_E_D, & 
                  KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
                  KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
@@ -705,6 +774,8 @@ integer ( KDI ) :: &
                  Res_J_Eq_EB, Res_N_Eq_EB, &
                  Res_J_Eq_X,  Res_N_Eq_X )
       end if
+      
+      end associate   !-- Rho_DB, ...
 
 ! call Show ( KK_E_V, '>>> KK_E_V' )
 ! call Show ( KK_EB_V, '>>> KK_EB_V' )
