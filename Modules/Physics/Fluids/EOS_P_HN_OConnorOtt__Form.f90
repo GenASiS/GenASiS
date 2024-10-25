@@ -84,7 +84,9 @@ module EOS_P_HN_OConnorOtt__Form
       FindTemperature_A_Kernel, &
       FindTemperature_S_Kernel, &
       InterpolateTableKernel, &
-      ComputeFromEnergy_S_Kernel
+      ComputeFromEnergy_S_Kernel, &
+      ComputeFromEnergy_S_V_Kernel
+      
   
   real ( KDR ), parameter :: &
     T_MAX_HACK          = 240.0_KDR, &
@@ -144,6 +146,36 @@ module EOS_P_HN_OConnorOtt__Form
         iValue
     end subroutine Interpolate_3D_S_Kernel
     
+    module subroutine Interpolate_3D_S_V_Kernel &
+                 ( F_I_1, F_I_2, F_I_3, F_SF, &
+                   F_O_01, F_O_02, F_O_03, F_O_04, F_O_05, &
+                   F_O_06, F_O_07, F_O_08, F_O_09, F_O_10, &
+                   F_O_11, F_O_12, F_O_13, F_O_14, F_O_15, &
+                   T, XT, YT, ZT, E_Shift, ia_F_I, ia_F_O, ia_E, iValue )
+      use Basics      
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_I_1, F_I_2, F_I_3, &
+        F_SF                      !-- Fluid to Solve From
+      real ( KDR ), dimension ( : ), intent ( inout ), target :: &
+        F_O_01, F_O_02, F_O_03, F_O_04, F_O_05, &
+        F_O_06, F_O_07, F_O_08, F_O_09, F_O_10, &
+        F_O_11, F_O_12, F_O_13, F_O_14, F_O_15
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        XT, &      !-- LogDensity (typically)
+        YT, &      !-- LogTemperature (typically)
+        ZT         !-- ElectronFraction  (typically)
+      real ( KDR ), intent ( in ) :: &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, &  !-- iaFluidInput
+        ia_F_O, &  !-- iaFluidOutput
+        ia_E       !-- iaEOS
+      integer ( KDI ), intent ( in ) :: &
+        iValue
+    end subroutine Interpolate_3D_S_V_Kernel
+    
     module subroutine FindTemperature_A_Kernel &
                ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, i_SF, i_ST, &
                  LogScaleOption, UseDeviceOption, ShiftOption, &
@@ -199,6 +231,36 @@ module EOS_P_HN_OConnorOtt__Form
       integer ( KDI ), intent ( in ), optional :: &
         nIterationsOption
     end subroutine FindTemperature_S_Kernel
+
+    module subroutine FindTemperature_S_V_Kernel &
+               ( F_1, F_2, F_3, F_SF, T, T_L_N, T_L_T, T_Ye, &
+                 ia_F_I, i_SF, i_ST, iV, &
+                 LogScaleOption, ShiftOption, &
+                 ToleranceOption, nIterationsOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_1, F_2, F_3, &
+        F_SF
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        T_L_N, &      !-- TableLogDensity
+        T_L_T, &      !-- TableLogTemperature
+        T_Ye          !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I        !-- iaFluidInput
+      integer ( KDI ), intent ( in ) :: & 
+        i_SF, &       !-- index of Fluid to solve from
+        i_ST, &          !-- index of the corresponding quantity in EOS table
+        iV
+      logical ( KDL ), intent ( in ), optional :: &
+        LogScaleOption
+      real ( KDR ), intent ( in ), optional :: &
+        ShiftOption, &
+        ToleranceOption
+      integer ( KDI ), intent ( in ), optional :: &
+        nIterationsOption
+    end subroutine FindTemperature_S_V_Kernel
 
     module subroutine FindTemperatureEnergyEntropyKernel &
                ( F, T, T_L_N, T_L_T, T_Ye, Mask, Threshold, &
@@ -273,6 +335,38 @@ module EOS_P_HN_OConnorOtt__Form
         iSolve, &
         iV
     end subroutine ComputeFromEnergy_S_Kernel
+    
+    module subroutine ComputeFromEnergy_S_V_Kernel &
+              ( F_I_1, F_I_2, F_I_3, F_SF, &
+                F_O_01, F_O_02, F_O_03, F_O_04, F_O_05, &
+                F_O_06, F_O_07, F_O_08, F_O_09, F_O_10, &
+                F_O_11, F_O_12, F_O_13, F_O_14, F_O_15, &
+                T, T_L_N, T_L_T, T_Ye, E_Shift, ia_F_I, ia_F_O, ia_E, &
+                iSolve, iV )
+      
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_I_1, F_I_2, F_I_3, &
+        F_SF                      !-- Fluid to Solve From
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_O_01, F_O_02, F_O_03, F_O_04, F_O_05, &
+        F_O_06, F_O_07, F_O_08, F_O_09, F_O_10, &
+        F_O_11, F_O_12, F_O_13, F_O_14, F_O_15
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        T_L_N, &      !-- TableLogDensity
+        T_L_T, &      !-- TableLogTemperature
+        T_Ye          !-- TableElectronFraction
+      real ( KDR ), intent ( in ) :: &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, &  !-- iaFluidInput
+        ia_F_O, &  !-- iaFluidOutput
+        ia_E       !-- iaEOS
+      integer ( KDI ), intent ( in ) :: &
+        iSolve, &
+        iV
+    end subroutine ComputeFromEnergy_S_V_Kernel
   
   end interface
 

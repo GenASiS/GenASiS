@@ -333,6 +333,152 @@ contains
   end procedure Interpolate_3D_S_Kernel
   
   
+  module procedure Interpolate_3D_S_V_Kernel 
+    
+    integer ( KDI ) :: &
+      iV, &  !-- iVariable
+      iS, &  !-- iSelected
+      iF, &  !-- iFluid
+      nx,ny,nz,nvars, &
+      nValues, &
+      ix,iy,iz
+    real ( KDR ) :: &
+      L_x, &
+      L_y, &
+      delx, dely, delz, &
+      dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi,&
+      a1, a2, a3, a4, a5, a6, a7, a8 
+    real ( KDR), dimension ( : ), pointer :: &
+      F_O
+    real ( KDR ), dimension ( 8 ) :: &
+      fh
+      
+    nx = size ( XT )
+    ny = size ( YT )
+    nz = size ( ZT )
+    nvars = size ( T, dim = 4 )
+    nValues = size ( F_O_01 )
+    
+    !--  determine spacing parameters of (equidistant!!!) table
+    dx    = (xt(nx) - xt(1)) / real(nx-1, kind=KDR)
+    dy    = (yt(ny) - yt(1)) / real(ny-1, kind=KDR)
+    dz    = (zt(nz) - zt(1)) / real(nz-1, kind=KDR)
+
+    dxi   = 1. / dx
+    dyi   = 1. / dy
+    dzi   = 1. / dz
+
+    dxyi  = dxi * dyi
+    dxzi  = dxi * dzi
+    dyzi  = dyi * dzi
+
+    dxyzi = dxi * dyi * dzi
+    
+        do iS = 1, size ( ia_E )
+
+!call Show ( iValue, '>>> iValue' )
+!call Show ( iS, '>>> iS' )          
+          if ( F_I_1 ( iValue ) == 0.0_KDR ) &
+            cycle
+          
+          !-- Convert to log space for the x and y
+          L_x = log10 ( F_I_1 ( iValue ) )
+          L_y = log10 ( F_I_2 ( iValue ) )
+          
+          !-- determine location in (equidistant!!!) table 
+          ix = 2 + INT( (L_x - xt(1) - 1.e-10_KDR) * dxi )
+          iy = 2 + INT( (L_y - yt(1) - 1.e-10_KDR) * dyi )
+          iz = 2 + INT( ( F_I_3 ( iValue ) - zt(1) - 1.e-10_KDR) * dzi )
+                                                     
+          ix = MAX( 2, MIN( ix, nx ) )
+          iy = MAX( 2, MIN( iy, ny ) )   
+          iz = MAX( 2, MIN( iz, nz ) )
+
+          !-- set-up auxiliary arrays for Lagrange interpolation
+                                                                 
+          delx = xt(ix) - L_x
+          dely = yt(iy) - L_y
+          delz = zt(iz) - F_I_3 ( iValue )
+          
+          iV = ia_E ( iS )
+          
+          !iF = ia_F_O ( iS )
+          select case ( iS )
+            case ( 1 )
+              F_O => F_O_01
+            case ( 2 )
+              F_O => F_O_02
+            case ( 3 ) 
+              F_O => F_O_03
+            case ( 4 )
+              F_O => F_O_04
+            case ( 5 ) 
+              F_O => F_O_05
+            case ( 6 )
+              F_O => F_O_06
+            case ( 7 ) 
+              F_O => F_O_07
+            case ( 8 )
+              F_O => F_O_08
+            case ( 9 )
+              F_O => F_O_09
+            case ( 10 )
+              F_O => F_O_10
+            case ( 11 ) 
+              F_O => F_O_11
+            case ( 12 )
+              F_O => F_O_12
+            case ( 13 ) 
+              F_O => F_O_13
+            case ( 14 )
+              F_O => F_O_14
+            case ( 15 ) 
+              F_O => F_O_15
+          end select
+          
+          fh(1) = T(ix  , iy  , iz,   iv)
+          fh(2) = T(ix-1, iy  , iz,   iv)   
+          fh(3) = T(ix  , iy-1, iz,   iv)   
+          fh(4) = T(ix  , iy  , iz-1, iv)
+          fh(5) = T(ix-1, iy-1, iz,   iv)
+          fh(6) = T(ix-1, iy  , iz-1, iv)
+          fh(7) = T(ix  , iy-1, iz-1, iv)
+          fh(8) = T(ix-1, iy-1, iz-1, iv)
+          
+          !-- set up coefficients of the interpolation polynomial and 
+          !   evaluate function values 
+          a1 = fh(1)
+          a2 = dxi   * ( fh(2) - fh(1) )
+          a3 = dyi   * ( fh(3) - fh(1) )
+          a4 = dzi   * ( fh(4) - fh(1) )
+          a5 = dxyi  * ( fh(5) - fh(2) - fh(3) + fh(1) )
+          a6 = dxzi  * ( fh(6) - fh(2) - fh(4) + fh(1) )
+          a7 = dyzi  * ( fh(7) - fh(3) - fh(4) + fh(1) )
+          a8 = dxyzi * ( fh(8) - fh(1) + fh(2) + fh(3) + &
+               fh(4) - fh(5) - fh(6) - fh(7) )
+
+          F_O ( iValue )  &
+            = a1 +  a2 * delx               &
+               +  a3 * dely                      &  
+               +  a4 * delz                      &  
+               +  a5 * delx * dely               &  
+               +  a6 * delx * delz               &
+               +  a7 * dely * delz               &
+               +  a8 * delx * dely * delz
+          
+          !-- T ( :, :, :, 1 ) and T ( :, :, :, 2 ) is in log space
+          if ( iV == 1 .or. iV == 2 ) then
+            F_O ( iValue ) = 10.0e0_KDR ** F_O ( iValue )
+          end if
+          if ( iV == 2 ) then
+            F_O ( iValue ) = F_O ( iValue ) - E_Shift
+          end if
+                    
+        end do
+        
+  end procedure Interpolate_3D_S_V_Kernel
+  
+  
   module procedure FindTemperature_A_Kernel 
                  
     integer ( KDI ) :: &
@@ -671,6 +817,132 @@ end if
   end procedure FindTemperature_S_Kernel
 
 
+  module procedure FindTemperature_S_V_Kernel 
+                 
+    integer ( KDI ) :: &
+      iI, &   !-- iIteration
+      nIterations
+    real ( KDR ) :: &
+      Shift, &
+      Tolerance, &
+      T_L_T_Max, T_L_T_Min, &
+      L_N, Ye, &
+      SV_R, D2, &
+      L_T, L_T_1, &   !-- LogTemperature (from Fluid input)
+      SV_0, SV_1, &
+      L_DT
+    logical ( KDL ) :: &
+      LogScale
+    
+    Shift = 0.0_KDR
+    if ( present ( ShiftOption ) ) &
+      Shift = ShiftOption
+    
+    nIterations = 20
+    if ( present ( nIterationsOption ) ) &
+      nIterations = nIterationsOption
+    
+    Tolerance = 1e-10_KDR
+    if ( present ( ToleranceOption ) ) &
+      Tolerance = ToleranceOption
+      
+    LogScale = .false.
+    if ( present ( LogScaleOption ) ) &
+      LogScale = LogScaleOption
+      
+    T_L_T_Max = T_L_T ( size ( T_L_T ) )
+    T_L_T_Min = T_L_T ( 1 )
+    
+!call Show ( iV, '>>> iV' )
+        if ( F_1 ( iV )  == 0.0_KDR ) &
+          return
+
+!if ( iV > 35 .and. iV < 42 ) then
+!  call Show ( F ( iV, ia_F_I ( 1 ) ), '>>> N' )
+!  call Show ( F ( iV, ia_F_I ( 2 ) ), '>>> T' )
+!  call Show ( F ( iV, ia_F_I ( 3 ) ), '>>> Ye' )
+!  call Show ( F ( iV, i_SF ) + Shift, '>>> e + shift' )
+!end if        
+        L_N   = log10 ( F_1 ( iV ) )
+        L_T   = log10 ( F_2 ( iV ) )
+        Ye    = F_3 ( iV )
+        
+        L_T_1 = L_T
+        
+        if ( LogScale ) then
+          SV_0 = log10 ( max ( ( F_SF ( iV ) + Shift ), 1.0_KDR ) )
+        else
+          SV_0 = F_SF ( iV ) + Shift
+        end if 
+        SV_1 = SV_0
+
+!if ( iV == 38 ) &        
+!  call Show ( '>>> A' )
+        call InterpolateTableKernel &
+               ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
+
+!if ( iV == 38 ) &        
+!call Show ( '>>> B' )       
+        if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
+          return
+        end if
+        
+        do iI = 1, nIterations
+          
+!if ( iV == 38 ) &        
+!call Show ( iI, '>>> iI' )
+          L_DT  = - ( SV_R - SV_0 ) / D2
+          L_T_1 = L_T
+          L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
+if ( L_T == T_L_T_Min ) then
+!call Show ( '>>> T_Min E', CONSOLE % WARNING )
+!call Show ( iV, '>>> iV', CONSOLE % WARNING )
+  return
+end if
+          SV_1  = SV_R
+          
+!if ( iV == 38 ) &        
+!call Show ( '>>> C' )
+          call InterpolateTableKernel &
+                 ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
+        
+!if ( iV == 38 ) &        
+!call Show ( '>>> D' )
+          if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
+            F_2 ( iV ) = 10.0_KDR ** L_T
+            return
+          endif 
+          
+          ! if we are closer than 10^-2  to the 
+          ! root (eps-eps0)=0, we are switching to 
+          ! the secant method, since the table is rather coarse and the
+          ! derivatives may be garbage.
+
+! if ( iV == 38 ) then        
+! call Show ( '>>> E' )
+! call Show ( SV_0, '>>> SV_0' )
+! call Show ( SV_R, '>>> SV_R' )
+! call Show ( SV_1, '>>> SV_1' )
+! call Show ( L_T, '>>> L_T' )
+! call Show ( L_T_1, '>>> L_T_1' )
+!   call Show ( T_L_T_Max, '>>> T_L_T_Max' )
+!   call Show ( T_L_T_Min, '>>> T_L_T_Min' )
+! end if
+          if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
+            D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
+          end if
+
+!if ( iV == 38 ) &                  
+!call Show ( '>>> F' )
+          !-- FIXME: Need error handling
+          !if ( iI == nIterations ) &
+          !  call Show ( 'Error, Max iteration reached' )
+      
+        end do 
+
+  end procedure FindTemperature_S_V_Kernel
+
+
   module procedure FindTemperatureEnergyEntropyKernel 
                  
     integer ( KDI ) :: &
@@ -988,6 +1260,29 @@ end if
              E_Shift, ia_F_I, ia_F_O, ia_E, iV )
   
   end procedure ComputeFromEnergy_S_Kernel
+
+
+  module procedure ComputeFromEnergy_S_V_Kernel
+  
+    integer ( KDI ) :: &
+      iSelected
+  
+    !$OMP OMP_DECLARE_TARGET
+    
+    call Search ( ia_F_O, iSolve, iSelected )
+    call FindTemperature_S_V_Kernel &
+           ( F_I_1, F_I_2, F_I_3, F_SF, T, T_L_N, T_L_T, T_Ye, ia_F_I, &
+             iSolve, ia_E ( iSelected ), iV, &
+             ShiftOption = E_Shift, LogScaleOption = .true. )
+    call Interpolate_3D_S_V_Kernel &
+           ( F_I_1, F_I_2, F_I_3, F_SF, &  
+             F_O_01, F_O_02, F_O_03, F_O_04, F_O_05, &
+             F_O_06, F_O_07, F_O_08, F_O_09, F_O_10, &
+             F_O_11, F_O_12, F_O_13, F_O_14, F_O_15, &
+             T, T_L_N, T_L_T, T_Ye, &
+             E_Shift, ia_F_I, ia_F_O, ia_E, iV )
+  
+  end procedure ComputeFromEnergy_S_V_Kernel
   
   
 end submodule EOS_P_HN_OConnorOtt__Kernel

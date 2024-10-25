@@ -3,6 +3,8 @@
 submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
 
   use Basics
+  use EOS_P_HN_OConnorOtt__Form, &
+        only: ComputeFromEnergy_S_V_Kernel, ComputeFromEnergy_S_Kernel
   
   implicit none
   
@@ -452,6 +454,29 @@ contains
 
   
   end procedure ComputeFromBalanced_S_Kernel
+
+
+  module procedure ComputeFromBalanced_S_V_Kernel
+  
+    !$OMP OMP_DECLARE_TARGET
+    call Compute_N_V_E_YE_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
+    call Apply_EOS_Prologue_S_Kernel &
+           ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
+             Y_Safe, iV )
+    call ComputeFromEnergy_S_V_Kernel &
+           ( N, T, YE, E, &
+             E, P, SB, SS, X_AA, &
+             X_A, X_N, X_P, A, Z, & 
+             Mu_E, Mu_NP, Mu_N, Mu_P, Gamma, &
+             EOS, T_L_N, T_L_T, T_Ye, E_Shift, ia_F_I, ia_F_O, &
+             ia_E, iSolve, iV = iV )
+    call Apply_EOS_Epilogue_S_Kernel &
+           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
+
+  
+  end procedure ComputeFromBalanced_S_V_Kernel
 
 
 end submodule Fluid_P_HN__Kernel

@@ -67,8 +67,8 @@ module Step_RK_NM_G_1D_C__Form
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
                  E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-                 M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-                 Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
+                 M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
+                 Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
                  EOS, &
@@ -127,8 +127,8 @@ module Step_RK_NM_G_1D_C__Form
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
         N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-        M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-        Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F
+        M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+        Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Error, nIterations, Omega, Residual
       logical ( KDL ), dimension ( : ), intent ( in ) :: &
@@ -197,8 +197,8 @@ module Step_RK_NM_G_1D_C__Form
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
                  E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-                 M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-                 Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
+                 M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
+                 Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
                  EOS, &
@@ -257,8 +257,8 @@ module Step_RK_NM_G_1D_C__Form
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
         N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-        M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-        Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F
+        M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
+        Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Error, nIterations, Omega, Residual
       logical ( KDL ), dimension ( : ), intent ( in ) :: &
@@ -403,8 +403,8 @@ contains
     real ( KDR ), dimension ( : ), pointer :: &
       E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
       M_F, N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-      T_F, P_F, SS_F, X_p_F, X_n_F, X_A_F, &
-      Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F
+      T_F, P_F, SB_F, SS_F, X_AA_F, X_p_F, X_n_F, X_A_F, &
+      Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F
     real ( KDR ), dimension ( : ), pointer :: &
       J_E, H_E_1, H_E_2, H_E_3, N_E, &
       E_E, S_E_1, S_E_2, S_E_3, D_E, &
@@ -606,8 +606,8 @@ integer ( KDI ) :: &
       call SetFieldPointers_F &
              ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
                M_F, N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-               T_F, P_F, SS_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, &
-               Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F )
+               T_F, P_F, SB_F, SS_F, X_AA_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, &
+               Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F )
 
       call SetFieldPointers_R &
              ( R_E, R_E_V, &
@@ -698,8 +698,8 @@ integer ( KDI ) :: &
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
                  E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-                 M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-                 Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
+                 M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
+                 Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  C % ProperCell, &
                  EOS, &
@@ -750,8 +750,8 @@ integer ( KDI ) :: &
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
                  E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
-                 M_F, T_F, P_F, SS_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
-                 Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, &
+                 M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
+                 Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  C % ProperCell, &
                  EOS, &
@@ -1018,8 +1018,8 @@ integer ( KDI ) :: &
 
   subroutine SetFieldPointers_F &
                ( F, F_V, E, S_1, S_2, S_3, D, DB, &
-                 M, N, V_1, V_2, V_3, EC, YE, T, P, SS, &
-                 X_p, X_n, X_A, Z, A, Mu_e, Mu_n_p, Mu_p, Mu_n )
+                 M, N, V_1, V_2, V_3, EC, YE, T, P, SB, SS, &
+                 X_AA, X_p, X_n, X_A, Z, A, Mu_e, Mu_n_p, Mu_p, Mu_n, G )
 
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       F
@@ -1028,8 +1028,8 @@ integer ( KDI ) :: &
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
       E, S_1, S_2, S_3, D, DB, &
       M, N, V_1, V_2, V_3, EC, YE, &
-      T, P, SS, X_p, X_n, X_A, &
-      Z, A, Mu_e, Mu_n_p, Mu_p, Mu_n
+      T, P, SB, SS, X_AA, X_p, X_n, X_A, &
+      Z, A, Mu_e, Mu_n_p, Mu_p, Mu_n, G
 
       E     =>  F_V ( :, F % ENERGY_DENSITY_B )
       S_1   =>  F_V ( :, F % MOMENTUM_DENSITY_D_1 )
@@ -1047,7 +1047,9 @@ integer ( KDI ) :: &
       YE      =>  F_V ( :, F % ELECTRON_FRACTION )
       T       =>  F_V ( :, F % TEMPERATURE )
       P       =>  F_V ( :, F % PRESSURE )
+      SB      =>  F_V ( :, F % ENTROPY_PER_BARYON )
       SS      =>  F_V ( :, F % SOUND_SPEED )
+      X_AA    =>  F_V ( :, F % MASS_FRACTION_ALPHA )
       X_p     =>  F_V ( :, F % MASS_FRACTION_PROTON )
       X_n     =>  F_V ( :, F % MASS_FRACTION_NEUTRON )
       X_A     =>  F_V ( :, F % MASS_FRACTION_HEAVY )
@@ -1057,6 +1059,7 @@ integer ( KDI ) :: &
       Mu_n_p  =>  F_V ( :, F % CHEMICAL_POTENTIAL_N_P )
       Mu_p    =>  F_V ( :, F % CHEMICAL_POTENTIAL_P )
       Mu_n    =>  F_V ( :, F % CHEMICAL_POTENTIAL_N )
+      G       =>  F_V ( :, F % ADIABATIC_INDEX )
 
   end subroutine SetFieldPointers_F
 

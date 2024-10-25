@@ -82,7 +82,8 @@ module Fluid_P_HN__Form
     Compute_N_V_E_YE_G_S_Kernel, &
     Apply_EOS_Prologue_S_Kernel, &
     Apply_EOS_Epilogue_S_Kernel, &
-    ComputeFromBalanced_S_Kernel
+    ComputeFromBalanced_S_Kernel, &
+    ComputeFromBalanced_S_V_Kernel
 
     private :: &
       InitializeModuleVariablesKernel, &
@@ -324,6 +325,65 @@ module Fluid_P_HN__Form
           iSolve, &
           iV
       end subroutine ComputeFromBalanced_S_Kernel
+      
+      module subroutine ComputeFromBalanced_S_V_Kernel &
+               ( M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
+                 SB, SS, DE, X_AA, X_A, X_N, X_P, Z, A, &
+                 Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, &
+                 EOS, &
+                 M_UU_11, M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
+                 E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, &
+                 iSolve, iV )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M, &
+          N, &
+          V_1, V_2, V_3, &
+          D, &
+          G, &
+          S_1, S_2, S_3, &
+          P, &
+          T, &
+          E, &
+          YE, &
+          SB, &
+          SS, &
+          DE, &
+          X_AA, &
+          X_A, &
+          X_N, &
+          X_P, &
+          Z, &
+          A, &
+          Mu_N, &
+          Mu_P, &
+          Mu_NP, &
+          Mu_E, &
+          Gamma
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          EOS
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M_UU_11, M_UU_22, M_UU_33, &
+          T_L_N, &      !-- TableLogDensity
+          T_L_T, &      !-- TableLogTemperature
+          T_Ye          !-- TableElectronFraction
+        real ( KDR ), intent ( in ) :: &
+          M_Ref, &
+          N_Min, &
+          E_Min, &
+          T_Min, &
+          Y_Min, &
+          Y_Safe, &
+          E_Shift
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          ia_F_I, &  !-- iaFluidInput
+          ia_F_O, &  !-- iaFluidOutput
+          ia_E       !-- iaEOS
+        integer ( KDI ), intent ( in ) :: &
+          iSolve, &
+          iV
+      end subroutine ComputeFromBalanced_S_V_Kernel
 
     end interface
 
