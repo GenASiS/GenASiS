@@ -72,6 +72,7 @@ module Measures_F_CC__Form
        V, &
        T, &
        S, &
+       SS, &
        Y
     type ( CollectiveOperation_R_Form ), allocatable, private :: &
       CO
@@ -182,16 +183,18 @@ contains
       oI, &  !-- oIncoming
       nF
     real ( KDR ) :: &
-      N_High, &
-      S_ShockHigh, &
-      S_ShockLow
+      MachNumber, &
+      SqrtTiny
     real ( KDR ), dimension ( : ), pointer :: &
       T_P, &
       S_P, &
+      SS_P, &
       Y_P
     real ( KDR ), dimension ( :, : ), pointer :: &
       Outgoing_2D, &
       Incoming_2D
+    logical ( KDL ) :: &
+      Supersonic
 
     select type ( F_SA  =>  M % Fluid_SA )
       class is ( Fluid_D_Form )
@@ -216,19 +219,23 @@ contains
          N_P  =>  F_SA_V ( :, F_SA % BARYON_DENSITY_C ), &
          V_P  =>  F_SA_V ( :, F_SA % VELOCITY_U_1 ) )
 
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
     !-- Gather spherically averaged fluid fields
     !   (assume decomposition in spherical shells)
 
-    nF   =   4
-    T_P  =>  null ( )
-    S_P  =>  null ( )
-    Y_P  =>  null ( )
+    nF    =   4
+     T_P  =>  null ( )
+     S_P  =>  null ( )
+    SS_P  =>  null ( )
+     Y_P  =>  null ( )
 
     select type ( F_SA )
     class is ( Fluid_P_Form )
-      nF   =   nF + 2
-      T_P  =>  F_SA_V ( :, F_SA % TEMPERATURE )
-      S_P  =>  F_SA_V ( :, F_SA % ENTROPY_PER_BARYON )
+       nF   =   nF + 3
+       T_P  =>  F_SA_V ( :, F_SA % TEMPERATURE )
+       S_P  =>  F_SA_V ( :, F_SA % ENTROPY_PER_BARYON )
+      SS_P  =>  F_SA_V ( :, F_SA % SOUND_SPEED )
     end select !-- F_SA
 
     select type ( F_SA )
@@ -253,8 +260,10 @@ contains
       Outgoing_2D ( 1 : nCB, 5 )  =  T_P ( nGL + 1 : nGL + nCB )
     if ( associated ( S_P ) ) &
       Outgoing_2D ( 1 : nCB, 6 )  =  S_P ( nGL + 1 : nGL + nCB )
+    if ( associated ( SS_P ) ) &
+      Outgoing_2D ( 1 : nCB, 7 )  =  SS_P ( nGL + 1 : nGL + nCB )
     if ( associated ( Y_P ) ) &
-      Outgoing_2D ( 1 : nCB, 7 )  =  Y_P ( nGL + 1 : nGL + nCB )
+      Outgoing_2D ( 1 : nCB, 8 )  =  Y_P ( nGL + 1 : nGL + nCB )
 
     call CO % Gather_V ( )
 
@@ -264,6 +273,8 @@ contains
       allocate ( T ( nC ) )
     if ( associated ( S_P ) .and. .not. allocated ( S ) ) &
       allocate ( S ( nC ) )
+    if ( associated ( SS_P ) .and. .not. allocated ( SS ) ) &
+      allocate ( SS ( nC ) )
     if ( associated ( Y_P ) .and. .not. allocated ( Y ) ) &
       allocate ( Y ( nC ) )
     
@@ -282,11 +293,13 @@ contains
        N ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 3 )
        V ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 4 )
       if ( allocated ( T ) ) &
-        T ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 5 )
+         T ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 5 )
       if ( allocated ( S ) ) &
-        S ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 6 )
+         S ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 6 )
+      if ( allocated ( SS ) ) &
+        SS ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 7 )
       if ( allocated ( Y ) ) &
-        Y ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 7 )
+         Y ( oC + 1 : oC + nCBG_V )  =  Incoming_2D ( : , 8 )
       end associate   !-- nCBG_V
     end do !-- iB
 
@@ -338,32 +351,17 @@ contains
 
     !-- Shock
 
-    associate ( UF  =>  M % Units_F )
-
-    N_High  =  1.0e-6_KDR  *  UNIT % FEMTOMETER ** (-3)
-
-    S_ShockHigh  =  3.0_KDR  *  UF % EnergyDensity &
-                                /  UF % NumberDensity  &
-                                /  UF % Temperature 
-
-    S_ShockLow   =  6.0_KDR  *  UF % EnergyDensity &
-                                /  UF % NumberDensity  &
-                                /  UF % Temperature 
-
-    end associate !-- UF
-
     iR  =  1
+    Supersonic  =  .false.
+
     do iC  =  nC, 1, -1
-      if ( N ( iC )  >  N_High ) then
-        if ( S ( iC )  >  S_ShockHigh ) then
-          iR  =  iC
-          exit
-        end if
-      else !-- N  <  N_High
-        if ( S ( iC )  >  S_ShockLow ) then
-          iR  =  iC
-          exit
-        end if
+      MachNumber  =  abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
+      if ( MachNumber  >  1.0_KDR ) then
+        Supersonic = .true.
+      end if
+      if ( Supersonic .and. MachNumber  <  1.0_KDR ) then
+        iR  =  iC
+        exit
       end if
     end do !-- iC
 
