@@ -714,14 +714,24 @@ contains
     call S % AddFieldSet &
            ( CS, &
              iaSelectedOption &
-               =  [ CS % BARYON_DENSITY_C, CS % VELOCITY_U, &
-                    CS % ENERGY_DENSITY_C, CS % PRESSURE, CS % TEMPERATURE, &
-                    CS % ENTROPY_PER_BARYON,  CS % ELECTRON_FRACTION, &
-                    CS % MASS_FRACTION_PROTON, CS % MASS_FRACTION_NEUTRON, &
-                    CS % MASS_FRACTION_ALPHA, CS % MASS_FRACTION_HEAVY, &
-                    CS % ATOMIC_NUMBER_HEAVY, CS % MASS_NUMBER_HEAVY, &
-                    CS % CHEMICAL_POTENTIAL_N, CS % CHEMICAL_POTENTIAL_P, &
-                    CS % CHEMICAL_POTENTIAL_N_P, CS % CHEMICAL_POTENTIAL_E, &
+               =  [ CS % BARYON_DENSITY_C, &
+                    CS % VELOCITY_U, &
+                    CS % ENERGY_DENSITY_C, &
+                    CS % PRESSURE, &
+                    CS % TEMPERATURE, &
+                    CS % ENTROPY_PER_BARYON, &
+                    CS % SOUND_SPEED, &
+                    CS % ELECTRON_FRACTION, &
+                    CS % MASS_FRACTION_PROTON, &
+                    CS % MASS_FRACTION_NEUTRON, &
+                    CS % MASS_FRACTION_ALPHA, &
+                    CS % MASS_FRACTION_HEAVY, &
+                    CS % ATOMIC_NUMBER_HEAVY, &
+                    CS % MASS_NUMBER_HEAVY, &
+                    CS % CHEMICAL_POTENTIAL_N, &
+                    CS % CHEMICAL_POTENTIAL_P, &
+                    CS % CHEMICAL_POTENTIAL_N_P, &
+                    CS % CHEMICAL_POTENTIAL_E, &
                     CS % ADIABATIC_INDEX ] )
 
   end subroutine SetStream
