@@ -184,6 +184,7 @@ contains
       nF
     real ( KDR ) :: &
       MachNumber, &
+      EntropyShock, &
       SqrtTiny
     real ( KDR ), dimension ( : ), pointer :: &
       T_P, &
@@ -351,6 +352,13 @@ contains
 
     !-- Shock
 
+    associate ( UF  =>  M % Units_F )
+    EntropyShock  =  3.0_KDR  *  UF % EnergyDensity &
+                                 /  UF % NumberDensity  &
+                                 /  UF % Temperature 
+    end associate !-- UF
+
+
     iR  =  1
     Supersonic  =  .false.
 
@@ -359,7 +367,9 @@ contains
       if ( MachNumber  >  1.0_KDR ) then
         Supersonic = .true.
       end if
-      if ( Supersonic .and. MachNumber  <  1.0_KDR ) then
+      if ( Supersonic .and. MachNumber  <  1.0_KDR &
+                      .and.   S ( iC )  >  EntropyShock ) &
+      then
         iR  =  iC
         exit
       end if
