@@ -259,21 +259,39 @@ contains
     integer ( KDI ) :: &
       iV
     real ( KDR ) :: &
-      dTheta
+      dTheta, &
+      CP_Max
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
 
     dTheta  =  CONSTANT % PI  /  C % nCellsPolar
 
     do iV = 1, size ( CP )
+      if ( .not. C % ProperCell ( iV ) ) then
+        CP ( iV )  =  0.0_KDR
+        cycle
+      end if
+      CP ( iV )  =  1.0_KDR
+      CoarsenPolar: do
+        if ( CP ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
+          exit CoarsenPolar
+        CP ( iV )  =  2.0_KDR  *  CP ( iV )
+      end do CoarsenPolar
+    end do !-- iV
+
+    !-- Impose spherical average
+
+    call CO % Initialize ( C % Communicator, [ 1 ], [ 1 ] )
+    CO % Outgoing % Value ( 1 )  =  maxval ( CP )
+    call CO % Reduce ( REDUCTION % MAX )
+    CP_Max  =  CO % Incoming % Value ( 1 )
+!call Show ( CP_Max, '>>> CP_Max' )
+
+    do iV = 1, size ( CP )
       if ( .not. C % ProperCell ( iV ) ) &
         cycle
-      CP ( iV )  =  1.0_KDR
-      !CoarsenPolar: do
-      !  if ( CP ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
-      !    exit CoarsenPolar
-      !  CP ( iV )  =  2.0_KDR  *  CP ( iV )
-      !end do CoarsenPolar
       if ( R ( iV )  *  dTheta  <  C % MinWidth ) &
-        CP ( iV ) = C % nCellsPolar
+        CP ( iV ) = CP_Max
     end do !-- iV
 
   end subroutine SetCoarseningPolar
@@ -292,25 +310,47 @@ contains
     integer ( KDI ) :: &
       iV
     real ( KDR ) :: &
-      dPhi
+      dPhi, &
+      CA_Max
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
 
     dPhi  =  2.0_KDR * CONSTANT % PI  /  ( 2  *  C % nCellsPolar )
 
     do iV = 1, size ( CA )
-      if ( .not. C % ProperCell ( iV ) ) &
+      if ( .not. C % ProperCell ( iV ) ) then
+        CA ( iV )  =  0.0_KDR
         cycle
+      end if
       CA ( iV )  =  1.0_KDR
       if ( C % nDimensions  ==  3 ) then
-        !CoarsenAzimuthal: do
-        !  if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
-        !       >  C % MinWidth ) &
-        !    exit CoarsenAzimuthal
-        !  CA ( iV )  =  2.0_KDR  *  CA ( iV )
-        !end do CoarsenAzimuthal
-        if ( R ( iV )  *  sin ( Th ( iV ) )  * dPhi >  C % MinWidth ) &
-          CA ( iV ) = 2  *  C % nCellsPolar
+        CoarsenAzimuthal: do
+          if ( CA ( iV )  *  R ( iV )  *  sin ( Th ( iV ) )  * dPhi  &
+               >  C % MinWidth ) &
+            exit CoarsenAzimuthal
+          CA ( iV )  =  2.0_KDR  *  CA ( iV )
+        end do CoarsenAzimuthal
       end if !-- nDimensions == 3
     end do !-- iV
+
+    if ( C % nDimensions  ==  3 ) then
+
+      !-- Impose spherical average
+
+      call CO % Initialize ( C % Communicator, [ 1 ], [ 1 ] )
+      CO % Outgoing % Value ( 1 )  =  maxval ( CA )
+      call CO % Reduce ( REDUCTION % MAX )
+      CA_Max  =  CO % Incoming % Value ( 1 )
+!call Show ( CA_Max, '>>> CA_Max' )
+
+      do iV = 1, size ( CA )
+        if ( .not. C % ProperCell ( iV ) ) &
+          cycle
+        if ( R ( iV )  *  sin ( Th ( iV ) )  *  dPhi  <  C % MinWidth ) &
+          CA ( iV )  =  CA_Max
+      end do !-- iV
+
+    end if
 
   end subroutine SetCoarseningAzimuthal
 
