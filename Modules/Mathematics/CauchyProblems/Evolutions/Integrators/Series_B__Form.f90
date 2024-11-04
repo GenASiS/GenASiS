@@ -115,7 +115,7 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
     !-- Safe margin for cases where nWrite is only an estimate
-    nTimes  =  max ( 50 * nWrite, 2000 )
+    nTimes  =  max ( 50 * nWrite, 5000 )
 
     !-- SeriesBasic
 
