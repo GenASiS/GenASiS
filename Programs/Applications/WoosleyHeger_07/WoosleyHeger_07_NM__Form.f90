@@ -59,7 +59,7 @@ contains
     real ( KDR ) :: &
       FinishTime
 
-    FinishTime  =  0.7_KDR  *  UNIT % SECOND
+    FinishTime  =  1.5_KDR  *  UNIT % SECOND
     call PROGRAM_HEADER % GetParameter ( FinishTime, 'FinishTime' )
 
     allocate ( Interactions_NM_G_Form :: WH % Interactions_NM_G ( 3 ) )
