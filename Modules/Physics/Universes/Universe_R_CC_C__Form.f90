@@ -731,9 +731,11 @@ contains
       U
 
     call U % Universe_F_CC_Form % ShowParameters ( )
-
-    call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
-    call Show ( U % RadiationType, 'RadiationType', U % IGNORABILITY )
+    
+    if ( allocated ( U % RadiationName ) ) &
+      call Show ( U % RadiationName, 'RadiationName', U % IGNORABILITY )
+    if ( allocated ( U % RadiationType ) ) &
+      call Show ( U % RadiationType, 'RadiationType', U % IGNORABILITY )
     call Show ( U % FormalismType, 'FormalismType', U % IGNORABILITY )
 
   end subroutine ShowParameters
