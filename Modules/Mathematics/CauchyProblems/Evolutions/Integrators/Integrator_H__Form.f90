@@ -115,6 +115,8 @@ module Integrator_H__Form
       Show => Show_I
     procedure, public, pass :: &   !-- 1
       Evolve
+    procedure, public, pass :: &   !-- 1
+      Reanalyze
     final :: &                     !-- 1
       Finalize
     procedure, public, pass :: &  !-- 2
@@ -573,6 +575,61 @@ contains
     call T_E % Stop ( )   
 
   end subroutine Evolve
+  
+  
+  subroutine Reanalyze ( I )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+      
+    integer ( KDI ) :: &
+      iC, &
+      ReanalyzeFrom, &
+      ReanalyzeTo
+    type ( QuantityForm ) :: &
+      T_Reanalyze
+    
+    ReanalyzeFrom  =  0
+    call PROGRAM_HEADER % GetParameter ( ReanalyzeFrom, 'ReanalyzeFrom' )
+    
+    ReanalyzeTo  =  ReanalyzeFrom
+    call PROGRAM_HEADER % GetParameter ( ReanalyzeTo, 'ReanalyzeTo' )
+        
+    if ( .not. associated ( I % ResetInitial ) ) then
+      call Show ( 'ResetInitial method unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'Reanalyze', 'subroutine', CONSOLE % WARNING )
+      I % ResetInitial  =>  ResetInitial_H
+    end if
+    
+    if ( .not. associated ( I % ShowSystem ) ) then
+      call Show ( 'ShowSystem method unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'Reanalyze', 'subroutine', CONSOLE % WARNING )
+      I % ShowSystem  =>  ShowSystem_H
+    end if
+    
+    if ( .not. associated ( I % Read ) ) then
+      call Show ( 'Read method unset', CONSOLE % WARNING )
+      call Show ( 'Integrator_H__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'Reanalyze', 'subroutine', CONSOLE % WARNING )
+      I % Read  =>  Read_H
+    end if
+    
+    call I % ShowSystem ( )
+    
+    call Show ( 'Reanalyzing', I % IGNORABILITY )
+    call Show ( ReanalyzeFrom, 'ReanalyzeFrom', I % IGNORABILITY )
+    call Show ( ReanalyzeTo, 'ReanalyzeTo', I % IGNORABILITY )
+    
+    do iC = ReanalyzeFrom, ReanalyzeTo
+    
+      call I % ResetInitial ( iC, T_Reanalyze )
+      call I % PrepareEvolution ( )
+    
+    end do
+  
+  end subroutine Reanalyze
 
 
   subroutine Show_I ( I )
@@ -1048,21 +1105,22 @@ contains
   end subroutine SetInitial_H
 
 
-  subroutine ResetInitial_H ( I, RestartFrom, T_Restart )
+  subroutine ResetInitial_H ( I, ResetFrom, T_Reset )
 
     class ( Integrator_H_Form ), intent ( inout ) :: &
       I
     integer ( KDI ), intent ( in ) :: &
-      RestartFrom
+      ResetFrom
     type ( QuantityForm ), intent ( out ) :: &
-      T_Restart
+      T_Reset
 
-    call I % Read ( RestartFrom, T_Restart )
+    call Show ( 'ResetInitial', I % IGNORABILITY )
     
-    call Show ( 'Restarting', I % IGNORABILITY )
-    call Show ( I % iCheckpoint, 'RestartFrom', I % IGNORABILITY )
+    call I % Read ( ResetFrom, T_Reset )
+    
+    call Show ( I % iCheckpoint, 'ResetFrom', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
-    call Show ( T_Restart, I % Unit_T, 'T', I % IGNORABILITY )
+    call Show ( T_Reset, I % Unit_T, 'T', I % IGNORABILITY )
 
   end subroutine ResetInitial_H
 

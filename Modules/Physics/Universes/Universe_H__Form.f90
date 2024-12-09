@@ -35,6 +35,8 @@ module Universe_H__Form
       Show => Show_U
     procedure, public, pass :: &
       Evolve
+    procedure, public, pass :: &
+      Reanalyze
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -125,6 +127,21 @@ contains
     call U % Integrator % Evolve ( )
 
   end subroutine Evolve
+
+
+  subroutine Reanalyze ( U )
+
+    class ( Universe_H_Form ), intent ( inout ) :: &
+      U
+
+    associate ( I  =>  U % Integrator )
+    if ( .not. associated ( I % ShowSystem ) ) &
+      I % ShowSystem  =>  ShowSystem
+    end associate !-- I
+
+    call U % Integrator % Reanalyze ( )
+
+  end subroutine Reanalyze
 
 
   subroutine Finalize ( U )
