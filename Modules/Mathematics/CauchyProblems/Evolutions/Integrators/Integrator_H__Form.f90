@@ -92,6 +92,8 @@ module Integrator_H__Form
       ResolveCycle => null ( )
     procedure ( A ), public, pointer :: &
       Analyze => null ( )
+    procedure ( RaC ), public, pointer :: &
+      ReanalyzeCheckpoint => null ( )
     procedure ( W ), public, pointer :: &
       Write => null ( )
     procedure ( R ), public, pointer :: &
@@ -203,6 +205,19 @@ module Integrator_H__Form
       type ( TimerForm ), intent ( in ), optional :: &
         T_Option
     end subroutine A
+
+    subroutine RaC ( I, CI, nR, iR )
+      use Basics
+      import Integrator_H_Form
+      implicit none
+      class ( Integrator_H_Form ), intent ( inout ) :: &
+        I
+      type ( CurveImageForm ), intent ( inout ), allocatable :: &
+        CI
+      integer ( KDI ), intent ( in ) :: &
+        nR, &
+        iR
+    end subroutine RaC
     
     subroutine W ( I, T_Option )
       use Basics
@@ -586,14 +601,23 @@ contains
       iC, &
       ReanalyzeFrom, &
       ReanalyzeTo
+    real ( KDR ), dimension ( : ), allocatable :: &
+      T_RS      !-- T_ReanalyzeSeries
     type ( QuantityForm ) :: &
       T_Reanalyze
+    type ( GridImageStreamForm ), allocatable :: &
+      GIS_RS     !-- GridImageStream_ReanalyzeSeries
+    type ( CurveImageForm ), allocatable :: &
+      CI_RS      !-- CurveImage_ReanalyzeSeries
+    
     
     ReanalyzeFrom  =  0
     call PROGRAM_HEADER % GetParameter ( ReanalyzeFrom, 'ReanalyzeFrom' )
     
     ReanalyzeTo  =  ReanalyzeFrom
     call PROGRAM_HEADER % GetParameter ( ReanalyzeTo, 'ReanalyzeTo' )
+    
+    allocate ( T_RS ( ReanalyzeFrom : ReanalyzeTo ) )
         
     if ( .not. associated ( I % ResetInitial ) ) then
       call Show ( 'ResetInitial method unset', CONSOLE % WARNING )
@@ -622,12 +646,44 @@ contains
     call Show ( ReanalyzeFrom, 'ReanalyzeFrom', I % IGNORABILITY )
     call Show ( ReanalyzeTo, 'ReanalyzeTo', I % IGNORABILITY )
     
+    if ( I % Communicator % Rank  ==  CONSOLE % DisplayRank ) then
+      associate ( GIS => I % GridImageStream )
+      allocate ( GIS_RS )
+      allocate ( CI_RS )
+      call GIS_RS % Initialize &
+              ( trim ( GIS % Name ) // '_ReanalyzeSeries', &
+                WorkingDirectoryOption = GIS % WorkingDirectory )
+      call CI_RS % Initialize ( GIS_RS )
+      end associate  !-- GIS
+    end if
+    
+    associate ( nR => ReanalyzeTo - ReanalyzeFrom + 1 )
+
     do iC = ReanalyzeFrom, ReanalyzeTo
     
       call I % ResetInitial ( iC, T_Reanalyze )
+      T_RS ( iC ) = T_Reanalyze
       call I % PrepareEvolution ( )
-    
+      call I % ReanalyzeCheckpoint ( CI_RS, nR, iR = iC - ReanalyzeFrom + 1 )
+      
     end do
+    
+    if ( .not. allocated ( GIS_RS ) ) &
+      return
+    
+    call GIS_RS % Open ( GIS_RS % ACCESS_CREATE, SeriesOption = .false. )
+    call Show ( 'Writing ReanalyzeSeries', I % IGNORABILITY )
+    call CI_RS % SetGridWrite  &
+           ( Directory = 'Series', &
+             NodeCoordinate = T_RS, &
+             nProperCells = nR, &
+             oValue = 0, &
+             CoordinateUnitOption = I % Unit_T, &
+             CoordinateLabelOption = 't' )
+    call CI_RS % Write ( )
+    call GIS_RS % Close ( )
+    
+    end associate !-- nR
   
   end subroutine Reanalyze
 
