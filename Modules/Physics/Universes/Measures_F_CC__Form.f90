@@ -367,8 +367,9 @@ contains
       if ( MachNumber  >  1.0_KDR ) then
         Supersonic = .true.
       end if
-      if ( Supersonic .and. MachNumber  <  1.0_KDR &
+      if ( ( Supersonic .and. MachNumber  <  1.0_KDR &
                       .and.   S ( iC )  >  EntropyShock ) &
+           .or. V ( iC ) > 0.002_KDR * CONSTANT % SPEED_OF_LIGHT ) &
       then
         iR  =  iC
         exit
