@@ -65,6 +65,8 @@ module Measures_F_CC__Form
       Finalize
   end type Measures_F_CC_Form
 
+    real ( KDR ), private :: &
+      S0_Max = 0.0_KDR    !-- Initial Maximum Entropy
     real ( KDR ), dimension ( : ), allocatable, private :: &
        R, &
       dV, &
@@ -351,6 +353,10 @@ contains
     if ( allocated ( Y ) )  Y_C  =  Y ( 1 )
 
     !-- Shock
+    
+    if ( S0_Max == 0.0_KDR ) then
+      S0_Max = maxval ( S )
+    end if
 
     associate ( UF  =>  M % Units_F )
     EntropyShock  =  3.0_KDR  *  UF % EnergyDensity &
@@ -367,10 +373,11 @@ contains
       if ( MachNumber  >  1.0_KDR ) then
         Supersonic = .true.
       end if
-      if ( ( Supersonic .and. MachNumber  <  1.0_KDR &
-                      .and.   S ( iC )  >  EntropyShock ) &
-           .or. V ( iC ) > 0.002_KDR * CONSTANT % SPEED_OF_LIGHT ) &
-      then
+      !if ( ( Supersonic .and. MachNumber  <  1.0_KDR &
+      !                .and.   S ( iC )  >  EntropyShock ) &
+      !     .or. V ( iC ) > 0.002_KDR * CONSTANT % SPEED_OF_LIGHT ) &
+      !then
+      if ( S ( iC ) > 1.2 * S0_Max ) then
         iR  =  iC
         exit
       end if
