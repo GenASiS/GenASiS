@@ -34,6 +34,8 @@ module Coarsening_C__Form
     !  D_iRadius, &
     !  D_iTheta, &
     !  D_iPhi
+    logical ( KDL ) :: &
+      SphericalCoarsening
     class ( Geometry_F_Form ), pointer :: &
       Geometry => null ( )
   contains
@@ -103,6 +105,10 @@ contains
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
+    C % SphericalCoarsening  =  .false.
+    call PROGRAM_HEADER % GetParameter &
+      ( C % SphericalCoarsening, 'SphericalCoarsening' )
+
     C % COARSENING_POLAR     =  1
     C % COARSENING_AZIMUTHAL =  2
     C % N_BLOCKS_POLAR       =  3
@@ -135,11 +141,13 @@ contains
       call SetCoarseningPolar &
              ( C  = A % Chart_GS_C, &
                R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
+               SphericalCoarsening = C % SphericalCoarsening, &
                CP = C % Storage_GS % Value ( :, C % COARSENING_POLAR ) )
       call SetCoarseningAzimuthal &
              ( C  = A % Chart_GS_C, &
                R  = G % Storage_GS % Value ( :, G % CENTER_U_1 ), &
                Th = G % Storage_GS % Value ( :, G % CENTER_U_2 ), &
+               SphericalCoarsening = C % SphericalCoarsening, &
                CA = C % Storage_GS % Value ( :, C % COARSENING_AZIMUTHAL ) )
       
       call SetBlocks &
@@ -247,12 +255,14 @@ contains
   end subroutine Finalize
 
   
-  subroutine SetCoarseningPolar ( C, R, CP )
+  subroutine SetCoarseningPolar ( C, R, SphericalCoarsening, CP )
     
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R
+    logical ( KDL ), intent ( in ) :: &
+      SphericalCoarsening
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       CP
 
@@ -279,31 +289,37 @@ contains
       end do CoarsenPolar
     end do !-- iV
 
-    !-- Impose spherical average
+    if ( SphericalCoarsening ) then
 
-    call CO % Initialize ( C % Communicator, [ 1 ], [ 1 ] )
-    CO % Outgoing % Value ( 1 )  =  maxval ( CP )
-    call CO % Reduce ( REDUCTION % MAX )
-    CP_Max  =  CO % Incoming % Value ( 1 )
-!call Show ( CP_Max, '>>> CP_Max' )
+      !-- Impose spherical average
 
-    do iV = 1, size ( CP )
-      if ( .not. C % ProperCell ( iV ) ) &
-        cycle
-      if ( R ( iV )  *  dTheta  <  C % MinWidth ) &
-        CP ( iV ) = CP_Max
-    end do !-- iV
+      call CO % Initialize ( C % Communicator, [ 1 ], [ 1 ] )
+      CO % Outgoing % Value ( 1 )  =  maxval ( CP )
+      call CO % Reduce ( REDUCTION % MAX )
+      CP_Max  =  CO % Incoming % Value ( 1 )
+  !call Show ( CP_Max, '>>> CP_Max' )
+
+      do iV = 1, size ( CP )
+        if ( .not. C % ProperCell ( iV ) ) &
+          cycle
+        if ( R ( iV )  *  dTheta  <  C % MinWidth ) &
+          CP ( iV ) = CP_Max
+      end do !-- iV
+
+    end if !-- SphericalCoarsening
 
   end subroutine SetCoarseningPolar
 
 
-  subroutine SetCoarseningAzimuthal ( C, R, Th, CA )
+  subroutine SetCoarseningAzimuthal ( C, R, Th, SphericalCoarsening, CA )
     
     class ( Chart_GS_C_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R, &
       Th
+    logical ( KDL ), intent ( in ) :: &
+      SphericalCoarsening
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       CA
 
@@ -335,22 +351,26 @@ contains
 
     if ( C % nDimensions  ==  3 ) then
 
-      !-- Impose spherical average
+      if ( SphericalCoarsening ) then
 
-      call CO % Initialize ( C % Communicator, [ 1 ], [ 1 ] )
-      CO % Outgoing % Value ( 1 )  =  maxval ( CA )
-      call CO % Reduce ( REDUCTION % MAX )
-      CA_Max  =  CO % Incoming % Value ( 1 )
-!call Show ( CA_Max, '>>> CA_Max' )
+        !-- Impose spherical average
 
-      do iV = 1, size ( CA )
-        if ( .not. C % ProperCell ( iV ) ) &
-          cycle
-        if ( R ( iV )  *  sin ( Th ( iV ) )  *  dPhi  <  C % MinWidth ) &
-          CA ( iV )  =  CA_Max
-      end do !-- iV
+        call CO % Initialize ( C % Communicator, [ 1 ], [ 1 ] )
+        CO % Outgoing % Value ( 1 )  =  maxval ( CA )
+        call CO % Reduce ( REDUCTION % MAX )
+        CA_Max  =  CO % Incoming % Value ( 1 )
+  !call Show ( CA_Max, '>>> CA_Max' )
 
-    end if
+        do iV = 1, size ( CA )
+          if ( .not. C % ProperCell ( iV ) ) &
+            cycle
+          if ( R ( iV )  *  sin ( Th ( iV ) )  *  dPhi  <  C % MinWidth ) &
+            CA ( iV )  =  CA_Max
+        end do !-- iV
+
+      end if !-- SphericalCoarsening
+
+    end if !-- nDimensions == 3
 
   end subroutine SetCoarseningAzimuthal
 

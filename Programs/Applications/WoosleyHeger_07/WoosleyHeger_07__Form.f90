@@ -153,9 +153,9 @@ contains
     call Show ( 'Preparing Interpolation' )
 
     Path = '../Parameters/'
-    Filename = 'WH07.d.stripped'
+!    Filename = 'WH07.d.stripped'
 !    Filename = 'WH07_S12_08.d.stripped'
-!    Filename = 'WH07_S30_08.d.stripped'
+    Filename = 'WH07_S40_08.d.stripped'
 
     call TS % Initialize &
            ( Filename, PROGRAM_HEADER % Communicator % Rank, &
