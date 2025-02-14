@@ -51,7 +51,8 @@ module Measures_F_CC__Form
       Atlas_SA => null ( )
     class ( FieldSet_BM_Form ), pointer :: &
       Geometry_SA => null ( ), &
-      Fluid_SA    => null ( )
+      Fluid_SA    => null ( ), &
+      Fluid       => null ( )
     class ( Units_F_Form ), pointer :: &
       Units_F => null ( )
   contains
@@ -64,7 +65,9 @@ module Measures_F_CC__Form
     final :: &
       Finalize
   end type Measures_F_CC_Form
-
+  
+    private :: &
+      ComputeShockRadius
     
     integer ( KDR ), private :: &
       iShock      = 1, &
@@ -83,18 +86,20 @@ module Measures_F_CC__Form
        SS, &
        Y
     type ( CollectiveOperation_R_Form ), allocatable, private :: &
-      CO
+      CO, &
+      CO_SR
 
 
 contains
 
 
   subroutine Initialize_F_CC &
-               ( M, F_SA, G_SA, A_SA, Units_F, nMeasuresAddOption )
+               ( M, F, F_SA, G_SA, A_SA, Units_F, nMeasuresAddOption )
 
     class ( Measures_F_CC_Form ), intent ( inout ) :: &
       M
     class ( FieldSet_BM_Form ), intent ( in ), target :: &
+      F, &
       F_SA, &
       G_SA
     class ( Atlas_H_Form ), intent ( in ), target :: &
@@ -103,7 +108,9 @@ contains
       Units_F
     integer ( KDI ), intent ( in ), optional :: &
       nMeasuresAddOption
-
+    
+    M % Fluid        =>  F
+    
     M % Atlas_SA     =>  A_SA
     M % Fluid_SA     =>  F_SA
     M % Geometry_SA  =>  G_SA
@@ -594,8 +601,8 @@ contains
     end select !-- F_SA
 
   end subroutine Compute
-
-
+  
+  
   impure elemental subroutine Finalize ( M )
 
     type ( Measures_F_CC_Form ), intent ( inout ) :: &
@@ -609,16 +616,100 @@ contains
       deallocate ( M % Value )
     if ( allocated ( M % Radius ) ) &
       deallocate ( M % Radius )
-
+    
+    if ( allocated ( CO_SR ) ) &
+      deallocate ( CO_SR )
     if ( allocated ( CO ) ) &
-      deallocate ( CO )    
-
+      deallocate ( CO ) 
+    
     nullify ( M % Units_F )
     nullify ( M % Fluid_SA )
     nullify ( M % Geometry_SA )
     nullify ( M % Atlas_SA )
+    
+    nullify ( M % Fluid )
 
   end subroutine Finalize
+  
+  
+  subroutine ComputeShockRadius ( M )
+    
+    class ( Measures_F_CC_Form ), intent ( inout ) :: &
+      M
+      
+    integer ( KDI ) :: &
+      iA, &
+      iP, &
+      iR
+    real ( KDR ) :: &
+      MN_L, MN_C, MN_R
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      OV_2D
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      SS_3D, &    !-- SoundSpeed
+      V_R_3D, &
+      R_3D
+      
+    select type ( F => M % Fluid )
+    class is ( Fluid_P_Form )
+    
+    select type ( A => F % Atlas ) 
+    class is ( Atlas_SCG_CC_Form )
+    
+    associate ( C => A % Chart_GS_CC )
+    associate &
+      ( nCB => C % nCellsBrick, &
+        G   => F % Geometry, &
+        FV  => F % Storage_GS % Value, &
+        GV  => F % Geometry % Storage_GS % Value )
+        
+    if ( .not. allocated ( CO_SR ) ) then
+      allocate ( CO_SR )
+      call CO_SR % Initialize &
+             ( C % Communicator, &
+               nOutgoing = [ nCB ( 2 )  *  nCB ( 3 ) ], &
+               nIncoming = [ nCB ( 2 )  *  nCB ( 3 ) ], &
+               RootOption = 0 )
+    end if
+    
+    OV_2D ( 1 : nCB ( 2 ), 1 : nCB ( 3 ) ) => CO_SR % Outgoing % Value
+    
+    call C % SetFieldPointer ( FV ( :, F % SOUND_SPEED ), SS_3D )
+    call C % SetFieldPointer ( FV ( :, F % VELOCITY_U_1 ), V_R_3D )
+    call C % SetFieldPointer ( GV ( :, G % CENTER_U_1 ), R_3D )
+    
+    do iA = 1, nCB ( 3 )
+      do iP = 1, nCB ( 2 )
+        do iR = nCB ( 1 ), 1, -1 
+        
+          MN_L = SS_3D ( iR - 1, iP, iA ) / abs ( V_R_3D ( iR - 1, iP, iA ) )
+          MN_C = SS_3D ( iR,     iP, iA ) / abs ( V_R_3D ( iR,     iP, iA ) )
+          MN_R = SS_3D ( iR + 1, iP, iA ) / abs ( V_R_3D ( iR + 1, iP, iA ) )
+          
+          if ( MN_L < MN_C  .and.  MN_C > MN_R ) then
+            OV_2D ( iP, iA ) = R_3D ( iR, iP, iA )
+            exit
+          end if
+        
+        end do
+      end do
+    end do
+    
+    call CO_SR % Reduce ( REDUCTION % MAX )
+    
+    if ( C % Communicator % Rank == 0 ) then
+      M % RadiusShock &
+        = sum ( CO_SR % Incoming % Value ) / (  nCB ( 2 ) * nCB ( 3 )  )
+    end if
+    
+    end associate !-- nCB, FV
+    end associate !-- C
+    
+    end select !-- A
+    
+    end select  !-- F
+      
+  end subroutine ComputeShockRadius 
 
 
 end module Measures_F_CC__Form

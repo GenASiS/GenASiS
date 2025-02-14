@@ -49,13 +49,14 @@ contains
 
 
   subroutine Initialize_R_CC_C &
-               ( M, R_SA_1D, F_SA, G_SA, A_SA, Units_R, Units_F )
+               ( M, R_SA_1D, F, F_SA, G_SA, A_SA, Units_R, Units_F )
 
     class ( Measures_R_CC_C_Form ), intent ( inout ) :: &
       M
     class ( FieldSet_BM_Pointer ), dimension ( : ), intent ( in ) :: &
       R_SA_1D
     class ( FieldSet_BM_Form ), intent ( in ), target :: &
+      F, &
       F_SA, &
       G_SA
     class ( Atlas_H_Form ), intent ( in ), target :: &
@@ -73,7 +74,8 @@ contains
     M % nMeasures_R  =  M % nRadiations  *  M % N_MEASURES_NM
 
     call M % Measures_F_CC_Form % Initialize &
-           ( F_SA, G_SA, A_SA, Units_F, nMeasuresAddOption = M % nMeasures_R )
+           ( F, F_SA, G_SA, A_SA, Units_F, &
+             nMeasuresAddOption = M % nMeasures_R )
 
     M % Units_R  =>  Units_R
 

@@ -686,7 +686,8 @@ contains
       A_SA
     class ( FieldSet_BM_Form ), pointer :: &
       G_SA, &
-      F_SA
+      F_SA, &
+      F
     type ( FieldSet_BM_Pointer ), dimension ( : ), allocatable :: &
       R_SA_1D
 
@@ -697,6 +698,7 @@ contains
       A_SA     =>  U % PositionSpace_SA
       G_SA     =>  U % SA_Gravitation % FieldSet_SA
       F_SA     =>  U % SA_Fluid % FieldSet_SA
+      F        =>  U % SA_Fluid % FieldSet
       do iR  =  1, nR
         R_SA_1D ( iR ) % Pointer  =>  U % SA_Radiation ( iR ) % FieldSet_SA
       end do !-- iR
@@ -706,6 +708,7 @@ contains
       A_SA     =>  I % X
       G_SA     =>  I % Geometry_X
       F_SA     =>  I % CurrentSet_X
+      F        =>  I % CurrentSet_X
       do iR  =  1, nR
         R_SA_1D ( iR ) % Pointer  =>  I % CurrentSet_X_1D ( iR )
       end do !-- iR
@@ -716,7 +719,7 @@ contains
     select type ( M  =>  U % Measures )
       class is ( Measures_R_CC_C_Form )
     call M % Initialize &
-          ( R_SA_1D, F_SA, G_SA, A_SA, &
+          ( R_SA_1D, F, F_SA, G_SA, A_SA, &
             Units_R = U % Units_R ( 1 ), Units_F = U % Units_F ( 1 ) )
     end select !-- M
 

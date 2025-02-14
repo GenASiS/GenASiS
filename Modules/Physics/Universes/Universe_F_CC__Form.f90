@@ -164,27 +164,31 @@ contains
       U
 
     class ( Atlas_H_Form ), pointer :: &
-      A_SA
+      A_SA, &
+      A
     class ( FieldSet_BM_Form ), pointer :: &
       G_SA, &
-      F_SA      
+      F_SA, &
+      F
 
     if ( allocated ( U % PositionSpace_SA ) ) then
       A_SA  =>  U % PositionSpace_SA
       G_SA  =>  U % SA_Gravitation % FieldSet_SA
       F_SA  =>  U % SA_Fluid % FieldSet_SA
+      F     =>  U % SA_Fluid % FieldSet
     else !-- 1D
       select type ( I  =>  U % Integrator )
         class is ( Integrator_CS_Form )
       A_SA  =>  I % X
       G_SA  =>  I % Geometry_X
       F_SA  =>  I % CurrentSet_X
+      F     =>  I % CurrentSet_X
       end select !-- I
     end if
 
     allocate ( U % Measures )
     associate ( M  =>  U % Measures )
-    call M % Initialize ( F_SA, G_SA, A_SA, Units_F = U % Units_F ( 1 ) )
+    call M % Initialize ( F, F_SA, G_SA, A_SA, Units_F = U % Units_F ( 1 ) )
     end associate !-- M
 
   end subroutine SetMeasures
