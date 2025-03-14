@@ -69,13 +69,6 @@ module Measures_F_CC__Form
     private :: &
       ComputeShockRadius
     
-    integer ( KDR ), private :: &
-      iShock      = 1, &
-      iShockLeft  = 0, &
-      iShockRight = 0
-    real ( KDR ), private :: &
-      S_Search = 0.0_KDR, &    !-- Initial Shock Threshold
-      R_Search
     real ( KDR ), dimension ( : ), allocatable, private :: &
        R, &
       dV, &
@@ -198,18 +191,12 @@ contains
       oC, &  !-- oCell
       oI, &  !-- oIncoming
       nF
+    integer ( KDI ), save :: &
+      iShock = 1
     real ( KDR ) :: &
-      MN_L, &
-      MN_C, &
-      MN_R, &
-      dS_dLnR, &
-      dMachShock, &
+      MachNumber, &
       EntropyShock, &
-      SqrtTiny, &
-      SearchWidth
-    real ( KDR ), dimension ( : ), allocatable :: &
-      dMN_1, &
-      dMN_2
+      SqrtTiny
     real ( KDR ), dimension ( : ), pointer :: &
       T_P, &
       S_P, &
@@ -219,9 +206,7 @@ contains
       Outgoing_2D, &
       Incoming_2D
     logical ( KDL ) :: &
-      Supersonic, &
-      Fallback, &
-      ConcaveDown
+      Supersonic
 
     select type ( F_SA  =>  M % Fluid_SA )
       class is ( Fluid_D_Form )
@@ -248,10 +233,6 @@ contains
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
     
-    allocate ( dMN_1 ( nC ), dMN_2 ( nC ) )
-    call Clear ( dMN_1 ) 
-    call Clear ( dMN_2 ) 
-
     !-- Gather spherically averaged fluid fields
     !   (assume decomposition in spherical shells)
 
@@ -382,186 +363,29 @@ contains
 
     !-- Shock
     
-    if ( S_Search == 0.0_KDR ) then
-      S_Search = maxval ( S )
-      R_Search = 100.0_KDR * UNIT % KILOMETER
-    end if
-
     associate ( UF  =>  M % Units_F )
     EntropyShock  =  3.0_KDR  *  UF % EnergyDensity &
                                  /  UF % NumberDensity  &
                                  /  UF % Temperature 
-    dMachShock = 10.0_KDR
-
-    iR  =  1
     Supersonic  =  .false.
-    
-    SearchWidth = 20.0_KDR * UNIT % KILOMETER
-
-    !do iC  =  1, nC - 1
-    do iC  =  2, nC - 1
-      MN_L = abs ( V ( iC - 1 ) ) / max ( SS ( iC - 1 ), SqrtTiny )
-      MN_C = abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
-      MN_R = abs ( V ( iC + 1 ) ) / max ( SS ( iC + 1 ), SqrtTiny )
-      dMN_1 ( iC ) = MN_R - MN_L
-      dMN_2 ( iC ) = MN_L  -  2 * MN_C  +  MN_R
-      !dMN_dLnR ( iC ) = MN_1 
-    end do
-    
     if ( iShock == 1 ) then
       do iC  =  nC - 1, 1, -1
-        !MachNumber  =  abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
-        MN_C = abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
-        
-        !dS_dLnR  = (  S ( iC + 1 ) -  S ( iC )  )  &
-        !              /  (  R ( iC + 1 ) - R ( iC )  ) *  R ( iC ) 
-        
-        if ( MN_C  >  1.0_KDR ) then
+        MachNumber = abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
+        if ( MachNumber  >  1.0_KDR ) then
           Supersonic = .true.
         end if
-        if ( ( Supersonic .and. MN_C  <  1.0_KDR &
-                        .and.   S ( iC )  >  EntropyShock ) ) &
-        !if ( dMN_dLnR ( iC ) > dMachShock  .and.  S ( iC )  >  EntropyShock ) &
-             !.or. V ( iC ) > 0.002_KDR * CONSTANT % SPEED_OF_LIGHT ) &
-        !if ( dMN_dLnR > MachShock  .and.  dS_dLnR  <  -0.5_KDR ) &
+        if ( ( Supersonic .and. MachNumber  <  1.0_KDR &
+               .and.   S ( iC )  >  EntropyShock ) ) &
         then
-        !if ( R ( iC ) < R_Search ) then
-        !  if ( S ( iC ) > 1.1_KDR * S_Search ) then
-            !call Show ( dMN_dLnR, 'dMN_dLnR' )
-            !call Show ( dS_dLnR,  'dS_dLnR' )
-            iShock  =  iC
-            exit
-        !  end if
+          iShock  =  iC
+          exit
         end if
       end do !-- iC
-      Fallback = .false.
+      R_S  =  R ( iShock )
     else
       call ComputeShockRadius ( M )
-!--      !do iC = min ( iShock + 20, nC - 5 ), max ( iShock - 10, 1 ), -1
-!--      
-!--      Fallback = .true. 
-!--      call Show ( [ iShockLeft, iShockRight ], '<< iSL, iSR >>' )
-!--      call Show ( [ R ( iShockLeft ), R ( iShockRight ) ], &
-!--                  UNIT % KILOMETER, '<< Radius search' )
-!--                  
-!--      do iC = iShockRight, iShockLeft, -1 
-!--        call Show ( iC, '<< iC' )
-!--        call Show ( dMN_1 ( iC ), '<< dMN_1' )
-!--        
-!--        if ( dMN_1 ( iC ) > 0.0_KDR ) then
-!--          iShock = iC
-!--          Fallback = .false.
-!--          exit
-!--        end if
-!--      end do 
-!--                  
-!--      if ( Fallback ) then
-!--        call Show ( 'Shock not detected. Fallback to 2nd derivative.', &
-!--                    CONSOLE % WARNING)
-!--        ConcaveDown = .false.
-!--        do iC = iShockRight, iShockLeft, -1 
-!--          call Show ( iC, '<< iC' )
-!--          call Show ( dMN_2 ( iC ), '<< dMN_2' )
-!--        
-!--          if ( dMN_2 ( iC ) < 0.0_KDR ) &
-!--            ConcaveDown = .true.
-!--          if ( ConcaveDown ) then
-!--            if ( dMN_2 ( iC ) > 0.0_KDR ) then  !-- ConcaveUp
-!--              iShock = iC 
-!--              exit
-!--            end if
-!--          end if
-!--        end do
-!--      end if
-!--          
-!--        !-- S12 is bad with this condition
-!--        !if ( dMN_dLnR ( iC ) > 0.0_KDR ) then
-!--        !  if ( dMN_dLnR ( iC - 1 ) < dMN_dLnR ( iC ) ) then
-!--        !    iShock = iC
-!--        !    Fallback = .false.
-!--        !    exit
-!--        !  end if
-!--        !end if
-!--
-!--      !if ( Fallback .and. R ( iShock ) > 3.0e3_KDR * UNIT % KILOMETER ) then
-!--      !  call Show ( 'Shock not detected. Fallback', CONSOLE % WARNING )
-!--      !  associate ( dMN_Search => dMN_dLnR ( iShockLeft : iShockRight ) )
-!--      !  iShock = maxloc ( dMN_Search, dim = 1 ) + iShockLeft - 1 
-!--      !  end associate 
-!--      !end if
     end if
 
-!--    R_S  =  R ( iShock )
-!--    
-!--    !if ( Fallback ) then
-!--    !  iShockLeft = iShock - 3
-!--    !  iShockRight = min ( iShock + 10, nC - 5 )
-!--    !else
-!--    
-!--    if ( .not. Fallback ) then
-!--      iShockLeft = 2
-!--      do iC = iShock, 2, -1
-!--        if ( dMN_1 ( iC ) < 0.0_KDR ) then
-!--          iShockLeft = iC
-!--          exit
-!--        end if
-!--      end do
-!--      iShockRight = nC - 1
-!--      do iC = iShock + 1, nC - 1
-!--        if ( dMN_1 ( iC ) < 0.0_KDR ) then
-!--          iShockRight = iC 
-!--          exit
-!--        end if
-!--      end do
-!--    else
-!--      iShockLeft = 2
-!--      do iC = iShock, 2, -1
-!--        if ( dMN_2 ( iC ) < 0.0_KDR ) then
-!--          iShockLeft = iC
-!--          exit
-!--        end if
-!--      end do
-!--      iShockRight = nC - 1
-!--      do iC = iShock + 1, nC - 1
-!--        if ( dMN_2 ( iC ) > 0.0_KDR ) then
-!--          iShockRight = iC 
-!--          exit
-!--        end if
-!--      end do
-!--    end if
-!--      
-!--    !if ( R_S > 2.0_KDR * UNIT % KILOMETER ) then  !-- Shock detected
-!--    !  do iCS = qnC, 1, -1
-!--    !    if ( R ( iCS ) < ( R_S + SearchWidth ) ) then
-!--    !      iS = iCS + 1
-!--    !      exit
-!--    !    end if
-!--    !  end do
-!--    !  S_Search = S ( iS )
-!--    !  R_Search = R ( iS )
-!--    !end if
-!--    
-!--    call Show ( [ iShockLeft, iShockRight ], 'iSL, iSR Next' )
-!--    call Show ( iShock, 'iShock' )
-!--    call Show ( R_S, UNIT % KILOMETER, 'R_Shock' )
-!--    !call Show ( R_Search, UNIT % KILOMETER, 'R_Search' )
-!--    !call Show ( S_Search, UF % EnergyDensity &
-!--    !                      /  UF % NumberDensity  &
-!--    !                      /  UF % Temperature, &
-!--    !            'S_Search' )
-!--    
-!--    !do iC = max ( iR - 5, 1 ), min ( iR + 5, nC - 1 )
-!--    !  MN_1 = abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
-!--    !  MN_2 = abs ( V ( iC + 1 ) ) / max ( SS ( iC + 1 ), SqrtTiny )
-!--    !  dMN_dLnR = ( MN_2 - MN_1 )  &
-!--    !               /  (  R ( iC + 1 ) - R ( iC )  ) *  R ( iC )
-!--    !  call Show ( iC, 'iC' )
-!--    !  call Show ( [ MN_1, MN_2 ], 'MN_1, MN_2' )
-!--    !  call Show ( [ R ( iC ), R ( iC + 1 ) ], UNIT % KILOMETER, 'R_1, R_2' )
-!--    !  call Show ( dMN_dLnR, 'dMN_dLnR' )
-!--    !end do
-!--    
-    
     end associate !-- UF
     
     !-- Record
@@ -592,8 +416,6 @@ contains
 
     !-- Cleanup
     
-    deallocate ( dMN_2, dMN_1 )
-
     end associate !-- V_Max, etc.
     end associate !-- nGL, etc.
     end associate !-- C_SA, etc.
@@ -643,16 +465,12 @@ contains
       iP, &
       iR
     real ( KDR ) :: &
-      S_L, S_R, &
       P_L, P_R, &
-      V_L, V_R, &
-      MN_L, MN_C, MN_R
+      V_L, V_R
     real ( KDR ), dimension ( :, : ), pointer :: &
       OV_2D
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      S_3D, &     !-- Entropy
       P_3D, &     !-- Pressure
-      SS_3D, &    !-- SoundSpeed
       V_R_3D, &
       R_3D
       
@@ -681,9 +499,7 @@ contains
     OV_2D ( 1 : nCB ( 2 ), 1 : nCB ( 3 ) ) => CO_SR % Outgoing % Value
     call Clear ( OV_2D )
     
-    call C % SetFieldPointer ( FV ( :, F % ENTROPY_PER_BARYON ), S_3D )
     call C % SetFieldPointer ( FV ( :, F % PRESSURE ), P_3D )
-    call C % SetFieldPointer ( FV ( :, F % SOUND_SPEED ), SS_3D )
     call C % SetFieldPointer ( FV ( :, F % VELOCITY_U_1 ), V_R_3D )
     call C % SetFieldPointer ( GV ( :, G % CENTER_U_1 ), R_3D )
     
@@ -691,25 +507,11 @@ contains
       do iP = 1, nCB ( 2 )
         do iR = nCB ( 1 ), 1, -1 
         
-          MN_L = SS_3D ( iR - 1, iP, iA ) / abs ( V_R_3D ( iR - 1, iP, iA ) )
-          MN_C = SS_3D ( iR,     iP, iA ) / abs ( V_R_3D ( iR,     iP, iA ) )
-          MN_R = SS_3D ( iR + 1, iP, iA ) / abs ( V_R_3D ( iR + 1, iP, iA ) )
-          
-          S_L = S_3D ( iR - 1, iP, iA )
-          S_R = S_3D (     iR, iP, iA )
-          
           P_L = P_3D ( iR - 1, iP, iA )
           P_R = P_3D (     iR, iP, iA )
           
           V_L = V_R_3D ( iR - 1, iP, iA )
           V_R = V_R_3D (     iR, iP, iA )
-          
-          !if ( MN_L < MN_C  .and.  MN_C > MN_R ) then
-          !  if ( ( MN_L  -  2 * MN_C  +  MN_R ) < -100.0_KDR ) then
-          !if ( ( S_L - S_R ) / S_R > 0.01_KDR ) then
-          
-          !if ( ( V_L - V_R ) / abs ( V_R ) > 0.05_KDR &
-          !     .and. ( S_L - S_R ) / S_R > 0.001_KDR ) then
           
           associate &
             ( V_T => ( V_L - V_R ) / min ( abs ( V_R ), abs ( V_R ) ), &
@@ -717,21 +519,9 @@ contains
           
           if ( V_T  > 0.05_KDR  .and.  P_T > 0.05_KDR ) then
             OV_2D ( iP, iA ) = R_3D ( iR, iP, iA )
-            if ( iP == nCB ( 2 ) / 2 ) then
-              print*, 'V_3D', &
-                      R_3D ( iR, iP, iA ) / UNIT % KILOMETER % Number, &
-                      V_L, V_R, ( ( V_L - V_R ) / abs ( V_R ) )
-              !print*, 'S_3D', &
-              !        R_3D ( iR, iP, iA ) / UNIT % KILOMETER % Number, &
-              !        S_L, S_R, ( ( S_L - S_R ) /  S_R )
-              print*, 'P_3D', &
-                      R_3D ( iR, iP, iA ) / UNIT % KILOMETER % Number, &
-                      P_L, P_R, ( ( P_L - P_R ) /  P_R )
-            end if 
             exit
-          !  end if
           end if
-          
+
           end associate   !-- V_T, P_T 
         
         end do
@@ -741,12 +531,9 @@ contains
     call CO_SR % Reduce ( REDUCTION % MAX )
     
     if ( C % Communicator % Rank == 0 ) then
-      call Show ( CO_SR % Incoming % Value, UNIT % KILOMETER, 'CO % Incoming' )
       M % RadiusShock &
         = sum ( CO_SR % Incoming % Value ) / (  nCB ( 2 ) * nCB ( 3 )  )
     end if
-    
-    call Show ( M % RadiusShock, UNIT % KILOMETER, 'R_Shock' )
     
     end associate !-- nCB, FV
     end associate !-- C
