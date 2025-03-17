@@ -261,10 +261,10 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     associate &
-      ( DT  =>  S % DivergencePart ) 
+      ( DP  =>  S % DivergencePart ) 
     associate &
       ( S_UD  =>   S % Stress_UD, &
-        G     =>  DT % CurrentSet % Geometry )
+        G     =>   DP % CurrentSet % Geometry )
 
     if ( present ( T_Option ) ) then
       T_S   =>  PROGRAM_HEADER % Timer &
@@ -288,7 +288,7 @@ contains
       iMomentum_2  =  -1
 
       if ( associated ( T_S ) ) call T_S % Start ( )
-      call DT % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
+      call DP % ComputeStresses ( S_UD, iC, iMomentum_1, iMomentum_2 )
       if ( associated ( T_S ) ) call T_S % Stop ( )
 
       if ( iMomentum_1  <  0  .or.  iMomentum_2  <  0 ) &
@@ -339,7 +339,7 @@ contains
     end do !-- iC
 
     end associate !-- S_UD, etc.
-    end associate !-- DT
+    end associate !-- DP
 
   end subroutine Compute
 
