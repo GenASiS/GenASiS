@@ -368,23 +368,23 @@ contains
                                  /  UF % NumberDensity  &
                                  /  UF % Temperature 
     Supersonic  =  .false.
-    if ( iShock == 1 ) then
-      do iC  =  nC - 1, 1, -1
-        MachNumber = abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
-        if ( MachNumber  >  1.0_KDR ) then
-          Supersonic = .true.
-        end if
-        if ( ( Supersonic .and. MachNumber  <  1.0_KDR &
-               .and.   S ( iC )  >  EntropyShock ) ) &
-        then
-          iShock  =  iC
-          exit
-        end if
-      end do !-- iC
-      R_S  =  R ( iShock )
-    else
+!    if ( iShock == 1 ) then
+!      do iC  =  nC - 1, 1, -1
+!        MachNumber = abs ( V ( iC ) ) / max ( SS ( iC ), SqrtTiny )
+!        if ( MachNumber  >  1.0_KDR ) then
+!          Supersonic = .true.
+!        end if
+!        if ( ( Supersonic .and. MachNumber  <  1.0_KDR &
+!               .and.   S ( iC )  >  EntropyShock ) ) &
+!        then
+!          iShock  =  iC
+!          exit
+!        end if
+!      end do !-- iC
+!      R_S  =  R ( iShock )
+!    else
       call ComputeShockRadius ( M )
-    end if
+!    end if
 
     end associate !-- UF
     
