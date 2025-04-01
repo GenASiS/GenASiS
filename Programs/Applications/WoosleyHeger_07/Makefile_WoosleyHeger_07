@@ -1,6 +1,7 @@
 PATH_GENASIS = ../../../..
 
-all: WoosleyHeger_07_A WoosleyHeger_07_G WoosleyHeger_07_G_Reanalyze
+all: WoosleyHeger_07_A WoosleyHeger_07_G \
+     WoosleyHeger_07_A_Reanalyze WoosleyHeger_07_G_Reanalyze
 #WoosleyHeger_07_D WoosleyHeger_07_S #GreyDegeneracySolver_Test
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -26,12 +27,20 @@ WoosleyHeger_07_G: GenASiS.a WoosleyHeger_07_G.o
            WoosleyHeger_07__Form.o \
            GenASiS.a $(LIBRARIES)
 
+WoosleyHeger_07_A_Reanalyze: GenASiS.a WoosleyHeger_07_A_Reanalyze.o
+	$(LINK) $(FLAGS) \
+           -o WoosleyHeger_07_A_Reanalyze_$(MACHINE) \
+           WoosleyHeger_07_A_Reanalyze.o WoosleyHeger_07_A__Form.o \
+           WoosleyHeger_07__Form.o \
+           GenASiS.a $(LIBRARIES)
+
 WoosleyHeger_07_G_Reanalyze: GenASiS.a WoosleyHeger_07_G_Reanalyze.o
 	$(LINK) $(FLAGS) \
            -o WoosleyHeger_07_G_Reanalyze_$(MACHINE) \
            WoosleyHeger_07_G_Reanalyze.o WoosleyHeger_07_NM__Form.o \
            WoosleyHeger_07__Form.o \
            GenASiS.a $(LIBRARIES)
+
 
 # WoosleyHeger_07_S: ThirdParty.a GenASiS.a WoosleyHeger_07_S.o
 # 	$(LINK) $(FLAGS) \
