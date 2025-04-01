@@ -5,7 +5,7 @@ FORTRAN_COMPILE      = ftn -c -eF -M878
 FORTRAN_FIXEDFORM    = -ffixed
 FORTRAN_BOUND_CHECK  = #-R bcp #-- FIXME: bound checking causes issue with
                                #          OpenMP. Reported to Cray.
-FORTRAN_DEBUG        = -g -hdevelop -eF -hfp0 -K trap=fp
+FORTRAN_DEBUG        = -g -O0 -eF -hfp0 -K trap=fp
 FORTRAN_OPTIMIZE     = #-Oipa2 #-- Default optimization (O2) but with lower ipa
 FORTRAN_PROFILE      = 
 

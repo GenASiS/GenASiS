@@ -4,7 +4,9 @@ include $(PATH_BUILD)/Machines/Makefile_$(MACHINE)
 include $(PATH_BUILD)/Makefile_Path
 include $(PATH_BUILD)/Makefile_ObjectFiles
 
-FFLAGS = $(FORTRAN_$(PURPOSE))
+COMMIT_HASH := $(shell git describe --dirty --always)
+
+FFLAGS = $(FORTRAN_$(PURPOSE)) -D__COMMIT_HASH__=\'$(COMMIT_HASH)\'
 CFLAGS = $(CC_$(PURPOSE))
 FLAGS  = $(DEFINES)
 

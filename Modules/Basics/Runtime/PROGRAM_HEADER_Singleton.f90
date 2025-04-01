@@ -15,6 +15,7 @@ module PROGRAM_HEADER_Singleton
   use CommandLineOptions_Form
   use Timer_Form
   use Timer_1D__Form
+  use KernelsCompilerOptions_Function
   use MemoryUsage_Form
   !  use petsc
 
@@ -84,6 +85,7 @@ module PROGRAM_HEADER_Singleton
     PROGRAM_HEADER
 
     private :: &
+      PrepareAndShow_ProgramInfo, &
       PrepareAndShow_OMP_Environment, &
       ReadTimers
       
@@ -166,6 +168,7 @@ contains
     call PH % Communicator % Synchronize ( )
     call CONSOLE % SetDisplayRank ( DisplayRank )
     
+    call PrepareAndShow_ProgramInfo ( )
     call PrepareAndShow_OMP_Environment ( )
     
     !call InitializeRandomSeed ( PH % Communicator )
@@ -887,6 +890,22 @@ contains
       deallocate ( PH % Communicator )
 
   end subroutine Finalize
+  
+  
+  subroutine PrepareAndShow_ProgramInfo ( )
+    
+    type ( ProgramHeaderSingleton ), pointer :: &
+      PH
+    
+    PH => PROGRAM_HEADER 
+    
+    call Show ( 'Program environment', CONSOLE % INFO_1 )
+    call Show ( __COMMIT_HASH__ , 'Commit hash', CONSOLE % INFO_1 )
+    call Show ( compiler_version ( ), 'Compiler', CONSOLE % INFO_1 )
+    call Show ( compiler_options ( ), 'Base compiler options', CONSOLE % INFO_1 )
+    call Show ( KernelsCompilerOptions ( ), 'Kernels compiler options', CONSOLE % INFO_1 )
+  
+  end subroutine PrepareAndShow_ProgramInfo
   
   
   subroutine PrepareAndShow_OMP_Environment ( )

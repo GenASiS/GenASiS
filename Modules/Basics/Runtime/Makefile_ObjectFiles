@@ -5,6 +5,7 @@ RUNTIME = \
   GetMemoryUsage_Command.o \
   GetMemoryUsage_macOS_Command.o \
   GetMemoryUsage_macOS_C.o \
+  KernelsCompilerOptions_Function.o \
   Timer_1D__Form.o \
   Timer_Form.o \
   WallTime_Function.o \

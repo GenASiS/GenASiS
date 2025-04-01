@@ -5,7 +5,6 @@ program GetMemoryUsage_Command_Test
   use Display
   use MessagePassing
   use CommandLineOptions_Form
-  use MemoryUsage_C_macOS
   use GetMemoryUsage_Command
 
   implicit none

@@ -5,6 +5,7 @@ module Runtime
   use WallTime_Function
   use Timer_Form
   use Timer_1D__Form
+  use KernelsCompilerOptions_Function
   use GetMemoryUsage_Command
   use MemoryUsage_Form
   use PROGRAM_HEADER_Singleton
