@@ -9,8 +9,6 @@ FORTRAN_DEBUG        = -g -O0 -eF -hfp0 -K trap=fp
 FORTRAN_OPTIMIZE     = #-Oipa2 #-- Default optimization (O2) but with lower ipa
 FORTRAN_PROFILE      = 
 
-FORTRAN_BASEFLAG    ?= $(FORTRAN_$(PURPOSE))
-
 CC_COMPILE           = cc -c
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
