@@ -18,43 +18,43 @@ INTERACTIONS_EXAMPLES = \
   Interactions_C__Kernel.o \
   Interactions_C__Form.o
 
-SineWaveStreaming_G: ThirdParty.a GenASiS.a SineWaveStreaming_G.o
+SineWaveStreaming_G: GenASiS.a SineWaveStreaming_G.o
 	$(LINK) $(FLAGS) \
           -o SineWaveStreaming_G_$(MACHINE) \
           SineWaveStreaming_G.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-SineWaveStreaming_S: ThirdParty.a GenASiS.a SineWaveStreaming_S.o
+SineWaveStreaming_S: GenASiS.a SineWaveStreaming_S.o
 	$(LINK) $(FLAGS) \
           -o SineWaveStreaming_S_$(MACHINE) \
           SineWaveStreaming_S.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-Thermalization_G: ThirdParty.a GenASiS.a Thermalization_G.o \
+Thermalization_G: GenASiS.a Thermalization_G.o \
   $(INTERACTIONS_EXAMPLES)
 	$(LINK) $(FLAGS) \
           -o Thermalization_G_$(MACHINE) \
           Thermalization_G.o Thermalization_Form.o \
           $(INTERACTIONS_EXAMPLES) \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-MarshakThermalization_G: ThirdParty.a GenASiS.a MarshakThermalization_G.o \
+MarshakThermalization_G: GenASiS.a MarshakThermalization_G.o \
   $(INTERACTIONS_EXAMPLES)
 	$(LINK) $(FLAGS) \
           -o MarshakThermalization_G_$(MACHINE) \
           MarshakThermalization_G.o MarshakThermalization_Form.o \
           $(INTERACTIONS_EXAMPLES) \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-MarshakWave_G: ThirdParty.a GenASiS.a MarshakWave_G.o \
+MarshakWave_G: GenASiS.a MarshakWave_G.o \
   $(INTERACTIONS_EXAMPLES)
 	$(LINK) $(FLAGS) \
           -o MarshakWave_G_$(MACHINE) \
           MarshakWave_G.o MarshakWave_Form.o \
           $(INTERACTIONS_EXAMPLES) \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
