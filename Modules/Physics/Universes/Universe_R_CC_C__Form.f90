@@ -212,7 +212,7 @@ contains
     case default
       call Show ( 'FormalismType not recognized', CONSOLE % ERROR )
       call Show ( U % FormalismType, 'FormalismType', CONSOLE % ERROR )
-      call Show ( 'Universe_R_CC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Universe_R_CC_C_Form', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateIntegrator', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- FormalismType
