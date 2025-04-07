@@ -82,6 +82,14 @@ Universe_F_CC__Kernel.o: \
   Universe_F_CC__Form.o \
   Universe_F_CC__Kernel.f90
 
+Universe_R_B_C__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluids.o \
+  Radiations.o \
+  Universe_F_B__Form.o \
+  Universe_R_B_C__Form.f90
+
 Universe_R_B__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -131,6 +139,7 @@ Universes.o: \
   Universe_F_C__Form.o \
   Universe_F_CE__Form.o \
   Universe_F_CC__Form.o \
+  Universe_R_B_C__Form.o \
   Universe_R_B__Form.o \
   Universe_R_CC_C__Form.o \
   Universe_R_CC__Form.o \
