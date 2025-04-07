@@ -6,61 +6,61 @@ all: SineWaveAdvection SawtoothWaveAdvection OppenheimerSnyder LinMestelShu \
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-SineWaveAdvection: ThirdParty.a GenASiS.a SineWaveAdvection.o
+SineWaveAdvection: GenASiS.a SineWaveAdvection.o
 	$(LINK) $(FLAGS) \
            -o SineWaveAdvection_$(MACHINE) \
            SineWaveAdvection.o SineWaveAdvection_Form.o \
            PlaneWaveAdvection_Form.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+           GenASiS.a $(LIBRARIES)
 
-SawtoothWaveAdvection: ThirdParty.a GenASiS.a SawtoothWaveAdvection.o
+SawtoothWaveAdvection: GenASiS.a SawtoothWaveAdvection.o
 	$(LINK) $(FLAGS) \
           -o SawtoothWaveAdvection_$(MACHINE) \
           SawtoothWaveAdvection.o SawtoothWaveAdvection_Form.o \
           PlaneWaveAdvection_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
+OppenheimerSnyder: GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FLAGS) \
            -o OppenheimerSnyder_$(MACHINE) \
            OppenheimerSnyder.o OppenheimerSnyder_Form.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+           GenASiS.a $(LIBRARIES)
 
-LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
+LinMestelShu: GenASiS.a LinMestelShu.o
 	$(LINK) $(FLAGS) \
            -o LinMestelShu_$(MACHINE) \
            LinMestelShu.o LinMestelShu_Form.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+           GenASiS.a $(LIBRARIES)
 
-RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
+RiemannProblem: GenASiS.a RiemannProblem.o
 	$(LINK) $(FLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-RayleighTaylor: ThirdParty.a GenASiS.a RayleighTaylor.o
+RayleighTaylor: GenASiS.a RayleighTaylor.o
 	$(LINK) $(FLAGS) \
            -o RayleighTaylor_$(MACHINE) \
            RayleighTaylor.o RayleighTaylor_Form.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+           GenASiS.a $(LIBRARIES)
 
-SedovTaylor: ThirdParty.a GenASiS.a SedovTaylor.o
+SedovTaylor: GenASiS.a SedovTaylor.o
 	$(LINK) $(FLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
-FishboneMoncrief: ThirdParty.a GenASiS.a FishboneMoncrief.o
+FishboneMoncrief: GenASiS.a FishboneMoncrief.o
 	$(LINK) $(FLAGS) \
            -o FishboneMoncrief_$(MACHINE) \
            FishboneMoncrief.o FishboneMoncrief_Form.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+           GenASiS.a $(LIBRARIES)
 
-YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
+YahilLattimer: GenASiS.a YahilLattimer.o
 	$(LINK) $(FLAGS) \
           -o YahilLattimer_$(MACHINE) \
           YahilLattimer.o YahilLattimer_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+          GenASiS.a $(LIBRARIES)
 
 # SASI: ThirdParty.a GenASiS.a SASI.o
 # 	$(LINK) $(FLAGS) \
