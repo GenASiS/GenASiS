@@ -25,10 +25,10 @@ module Universe_R_B_C__Form
       RadiationType
 ! !    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
 ! !      CO_SplitSource
-!     type ( Units_R_Form ), dimension ( : ), allocatable :: &
-!       Units_R
-!     class ( Interactions_BM_Form ), allocatable :: &
-!       Interactions_BM
+    type ( Units_R_Form ), dimension ( : ), allocatable :: &
+      Units_R
+    class ( Interactions_BM_Form ), dimension ( : ), allocatable :: &
+      Interactions_BM
   contains
     procedure, private, pass :: &
       Initialize_R_B_C
@@ -38,10 +38,10 @@ module Universe_R_B_C__Form
       Finalize
     procedure, private, pass :: &
       AllocateIntegrator
-!     procedure, public, pass :: &
-!       InitializeRadiation
-!     procedure, public, pass :: &
-!       InitializeInteractions
+    procedure, public, pass :: &
+      InitializeRadiation
+    procedure, public, pass :: &
+      InitializeInteractions
 ! !    procedure, public, pass :: &
 ! !      InitializeSteps
 !     procedure, public, pass :: &
@@ -140,10 +140,10 @@ contains
            ( GravitationType = 'GALILEO' )
     call U % InitializeFluid &
            ( FluidType = 'IDEAL' )
-!     call U % InitializeRadiation &
-!            ( )
-!     call U % InitializeInteractions &
-!            ( )
+    call U % InitializeRadiation &
+           ( )
+    call U % InitializeInteractions &
+           ( )
 !  !   call U % InitializeSteps &
 !  !          ( )
 !     call U % InitializeStep &
@@ -168,10 +168,10 @@ contains
     type ( Universe_R_B_C_Form ), intent ( inout ) :: &
       U
 
-!     if ( allocated ( U % Interactions_BM ) ) &
-!       deallocate ( U % Interactions_BM )
-!     if ( allocated ( U % Units_R ) ) &
-!       deallocate ( U % Units_R )
+    if ( allocated ( U % Interactions_BM ) ) &
+      deallocate ( U % Interactions_BM )
+    if ( allocated ( U % Units_R ) ) &
+      deallocate ( U % Units_R )
 !    if ( allocated ( U % CO_SplitSource ) ) &
 !      deallocate ( U % CO_SplitSource )
     if ( allocated ( U % RadiationType ) ) &
@@ -199,6 +199,118 @@ contains
     end select !-- FormalismType
 
   end subroutine AllocateIntegrator
+
+
+  subroutine InitializeRadiation ( U )
+
+    class ( Universe_R_B_C_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      iR
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_C_CS_Form )
+    associate &
+      ( G  =>  I % Geometry_X )
+
+      select type ( A  =>  I % X )
+      class is ( Atlas_SCG_Form )
+      associate ( C  =>  A % Chart_GS )
+        allocate ( U % Units_R ( 1 ) )
+        call U % Units_R ( 1 ) % Initialize &
+               ( C % CoordinateUnit, TypeOption = U % UnitsType )
+      end associate !-- C
+      end select !-- A
+
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_Form )
+
+      associate ( nR  =>  U % nRadiations )
+
+      select case ( trim ( U % RadiationType ( 1 ) ) )
+      case ( 'GENERIC' )
+
+        allocate ( RadiationMoments_BM_Form :: I % CurrentSet_X_1D ( nR ) )
+
+        do iR  =  1, nR
+
+          select type ( R  =>  I % CurrentSet_X_1D ( iR ) )
+          class is ( RadiationMoments_BM_Form )
+
+            call R % Initialize &
+                   ( F, U % Units_R, U % RadiationType ( iR ), &
+                     NameOption = U % RadiationName ( iR ) )
+
+          end select !-- R
+
+        end do !-- iR
+
+      case ( 'PHOTONS' )
+
+        allocate ( PhotonMoments_G_Form :: I % CurrentSet_X_1D ( nR ) )
+
+        do iR  =  1, nR
+
+          select type ( R  =>  I % CurrentSet_X_1D ( iR ) )
+          class is ( PhotonMoments_G_Form )
+
+            call R % Initialize &
+                   ( F, U % Units_R, U % RadiationType ( iR ), &
+                     NameOption = U % RadiationName ( iR ) )
+
+          end select !-- R
+
+        end do !-- iR
+
+      case default
+        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+        call Show ( U % RadiationType ( iR ), 'RadiationType', &
+                    CONSOLE % ERROR )
+        call Show ( 'Universe_R_B_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- RadiationType
+
+      end associate !-- nR
+      end select !-- F
+
+    end associate !-- G
+    end select !-- I
+
+  end subroutine InitializeRadiation
+
+
+  subroutine InitializeInteractions ( U )
+
+    class ( Universe_R_B_C_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      iR
+
+    select type ( I  =>  U % Integrator )
+      class is ( Integrator_CS_1D_C_CS_Form )
+    select type ( R  =>  I % CurrentSet_X_1D )
+      class is ( RadiationMoments_BM_Form )
+    select type ( F  =>  I % CurrentSet_X )
+      class is ( Fluid_P_Form )
+    associate &
+      ( nR  =>  U % nRadiations )
+
+   if ( allocated ( U % Interactions_BM ) ) then
+      do iR  =  1,  nR
+        call U % Interactions_BM ( iR ) % Initialize &
+               ( R ( iR ), U % Units_R, F )
+      end do !-- iR
+    end if
+
+    end associate !-- nR
+    end select !-- F
+    end select !-- R
+    end select !-- I
+
+  end subroutine InitializeInteractions
 
 
 end module Universe_R_B_C__Form
