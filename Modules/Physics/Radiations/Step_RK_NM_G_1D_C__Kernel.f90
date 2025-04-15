@@ -322,11 +322,21 @@ integer ( KDI ) :: &
 
             !-- Fluid updates
 
-            KK_F_E ( iV )  &
-              =  - KK_E_E ( iV )  -  KK_EB_E ( iV )  -  KK_X_E ( iV )
+            if ( ApplyImplicit_F ) then
 
-            KK_F_D ( iV )  &
-              =  - KK_E_D ( iV )  +  KK_EB_D ( iV )
+              KK_F_E ( iV )  &
+                =  - KK_E_E ( iV )  -  KK_EB_E ( iV )  -  KK_X_E ( iV )
+
+              KK_F_D ( iV )  &
+                =  - KK_E_D ( iV )  +  KK_EB_D ( iV )
+
+            else
+
+              KK_F_E ( iV )  =  0.0_KDR
+
+              KK_F_D ( iV )  =  0.0_KDR
+
+            end if
 
             !-- New fluid values
 
@@ -498,12 +508,18 @@ integer ( KDI ) :: &
 !   call Show ( KK_X_S_1 ( iV ), '>>> KK_X_S_1' )
 ! end if
 
-          KK_F_S_1 ( iV )  &
-            =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )  -  KK_X_S_1 ( iV )
-          KK_F_S_2 ( iV )  &
-            =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )  -  KK_X_S_2 ( iV )
-          KK_F_S_3 ( iV )  &
-            =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )  -  KK_X_S_3 ( iV )
+          if ( ApplyImplicit_F ) then
+            KK_F_S_1 ( iV )  &
+              =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )  -  KK_X_S_1 ( iV )
+            KK_F_S_2 ( iV )  &
+              =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )  -  KK_X_S_2 ( iV )
+            KK_F_S_3 ( iV )  &
+              =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )  -  KK_X_S_3 ( iV )
+          else
+            KK_F_S_1 ( iV )  =  0.0_KDR
+            KK_F_S_2 ( iV )  =  0.0_KDR
+            KK_F_S_3 ( iV )  =  0.0_KDR
+          end if
 
 !        end if !-- Error = 0
 
@@ -849,11 +865,21 @@ integer ( KDI ) :: &
 
             !-- Fluid updates
 
-            KK_F_E ( iV )  &
-              =  - KK_E_E ( iV )  -  KK_EB_E ( iV )  -  KK_X_E ( iV )
+            if ( ApplyImplicit_F ) then
 
-            KK_F_D ( iV )  &
-              =  - KK_E_D ( iV )  +  KK_EB_D ( iV )
+              KK_F_E ( iV )  &
+                =  - KK_E_E ( iV )  -  KK_EB_E ( iV )  -  KK_X_E ( iV )
+
+              KK_F_D ( iV )  &
+                =  - KK_E_D ( iV )  +  KK_EB_D ( iV )
+
+            else
+
+              KK_F_E ( iV )  =  0.0_KDR
+
+              KK_F_D ( iV )  =  0.0_KDR
+
+            end if
 
             !-- New fluid values
 
@@ -1026,12 +1052,18 @@ integer ( KDI ) :: &
 !   call Show ( KK_X_S_1 ( iV ), '>>> KK_X_S_1' )
 ! end if
 
-          KK_F_S_1 ( iV )  &
-            =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )  -  KK_X_S_1 ( iV )
-          KK_F_S_2 ( iV )  &
-            =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )  -  KK_X_S_2 ( iV )
-          KK_F_S_3 ( iV )  &
-            =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )  -  KK_X_S_3 ( iV )
+          if ( ApplyImplicit_F ) then
+            KK_F_S_1 ( iV )  &
+              =  - KK_E_S_1 ( iV )  -  KK_EB_S_1 ( iV )  -  KK_X_S_1 ( iV )
+            KK_F_S_2 ( iV )  &
+              =  - KK_E_S_2 ( iV )  -  KK_EB_S_2 ( iV )  -  KK_X_S_2 ( iV )
+            KK_F_S_3 ( iV )  &
+              =  - KK_E_S_3 ( iV )  -  KK_EB_S_3 ( iV )  -  KK_X_S_3 ( iV )
+          else
+            KK_F_S_1 ( iV )  =  0.0_KDR
+            KK_F_S_2 ( iV )  =  0.0_KDR
+            KK_F_S_3 ( iV )  =  0.0_KDR
+          end if
 
 !        end if !-- Error = 0
 

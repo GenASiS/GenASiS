@@ -71,6 +71,7 @@ module Step_RK_NM_G_1D_C__Form
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
+                 ApplyImplicit_F, &
                  EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
@@ -133,6 +134,8 @@ module Step_RK_NM_G_1D_C__Form
         Error, nIterations, Omega, Residual
       logical ( KDL ), dimension ( : ), intent ( in ) :: &
         ProperCell
+      logical ( KDL ), intent ( in ) :: &
+        ApplyImplicit_F
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -201,6 +204,7 @@ module Step_RK_NM_G_1D_C__Form
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  ProperCell, &
+                 ApplyImplicit_F, &
                  EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
@@ -263,6 +267,8 @@ module Step_RK_NM_G_1D_C__Form
         Error, nIterations, Omega, Residual
       logical ( KDL ), dimension ( : ), intent ( in ) :: &
         ProperCell
+      logical ( KDL ), intent ( in ) :: &
+        ApplyImplicit_F
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -306,6 +312,8 @@ contains
 
   subroutine Initialize_CS_1D_C_CS &
                ( S, CS_1D, CS, NameOption, ImplicitExplicitOption, &
+                 ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
+                 ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option, &
                  nStagesOption )
 
     class ( Step_RK_NM_G_1D_C_Form ), intent ( inout ) :: &
@@ -317,7 +325,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ImplicitExplicitOption
+      ImplicitExplicitOption, &
+      ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
+      ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
@@ -325,7 +335,10 @@ contains
       S % Type  =  'a Step_RK_NM_G_1D_C'
 
     call S % Step_RK_CS_1D_C_CS_Form % Initialize &
-           ( CS_1D, CS, NameOption, ImplicitExplicitOption, nStagesOption )
+           ( CS_1D, CS, NameOption, ImplicitExplicitOption, &
+             ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
+             ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option, &
+             nStagesOption )
 
     associate ( mII  =>  S % MaxImplicitIterations )
 
@@ -366,10 +379,12 @@ contains
   end subroutine Finalize
 
 
-  subroutine SolveUpdateImplicit  ( S, T, dT, iS )
+  subroutine SolveUpdateImplicit  ( S, ApplyImplicit_CS, T, dT, iS )
 
     class ( Step_RK_NM_G_1D_C_Form ), intent ( inout ), target :: &
       S
+    logical ( KDL ), intent ( in ) :: &
+      ApplyImplicit_CS
     real ( KDR ), intent ( in ) :: &
        T, &
       dT
@@ -702,6 +717,7 @@ integer ( KDI ) :: &
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  C % ProperCell, &
+                 ApplyImplicit_CS, &
                  EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &
@@ -754,6 +770,7 @@ integer ( KDI ) :: &
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
                  Error, nIterations, Omega, Residual, &
                  C % ProperCell, &
+                 ApplyImplicit_CS, &
                  EOS, &
                  E_E_0,  S_E_1_0,  S_E_2_0,  S_E_3_0,  D_E_0, &
                  E_EB_0, S_EB_1_0, S_EB_2_0, S_EB_3_0, D_EB_0, &

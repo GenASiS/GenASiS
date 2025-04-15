@@ -18,6 +18,9 @@ module Step_RK_CS_1D_C_CS__Form
       MaxRelaxationIterations
     real ( KDR ) :: &
       ImplicitTolerance
+    logical ( KDL ) :: &
+      ComputeExplicit_CS, ComputeExplicit_CS_1D, &
+      ComputeImplicit_CS, ComputeImplicit_CS_1D
     class ( ImplicitDiagnosticsForm ), dimension ( : ), allocatable :: &
       ImplicitDiagnostics
     class ( Step_RK_CS_Form ), allocatable :: &
@@ -61,6 +64,8 @@ contains
 
   subroutine Initialize_CS_1D_C_CS &
                ( S, CS_1D, CS, NameOption, ImplicitExplicitOption, &
+                 ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
+                 ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option, &
                  nStagesOption )
 
     class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
@@ -72,7 +77,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ImplicitExplicitOption
+      ImplicitExplicitOption, &
+      ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
+      ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
@@ -94,6 +101,24 @@ contains
              NameOption = Name, &
              ImplicitExplicitOption = ImplicitExplicitOption, &
              nStagesOption = nStagesOption )
+
+    !-- Operator control
+
+    S % ComputeExplicit_CS  =  .true.
+    if ( present ( ComputeExplicit_CS_Option ) ) &
+      S % ComputeExplicit_CS  =  ComputeExplicit_CS_Option
+
+    S % ComputeExplicit_CS_1D  =  .true.
+    if ( present ( ComputeExplicit_CS_1D_Option ) ) &
+      S % ComputeExplicit_CS_1D  =  ComputeExplicit_CS_1D_Option
+
+    S % ComputeImplicit_CS  =  .true.
+    if ( present ( ComputeImplicit_CS_Option ) ) &
+      S % ComputeImplicit_CS  =  ComputeImplicit_CS_Option
+
+    S % ComputeImplicit_CS_1D  =  .true.
+    if ( present ( ComputeImplicit_CS_1D_Option ) ) &
+      S % ComputeImplicit_CS_1D  =  ComputeImplicit_CS_1D_Option
 
     !-- Storage used in implicit solver
 
@@ -302,6 +327,9 @@ contains
     integer ( KDI ) :: &
       iCS
 
+    if ( .not. S % ComputeImplicit_CS_1D ) &
+      return !-- Skip implicit operator
+
     if ( iS  ==  1 ) &
       return !-- Member AA below is indexed starting with 2
 
@@ -317,7 +345,7 @@ contains
     !-- Upon entry, Y_I = Q_(I-1)
 
     !-- Solve for KK
-    call S % SolveUpdateImplicit ( T, dT, iS )
+    call S % SolveUpdateImplicit ( S % ComputeImplicit_CS, T, dT, iS )
 
     !-- CS
 
@@ -394,31 +422,35 @@ contains
       iCS
     type ( TimerForm ), pointer :: &
       T_CS
-    
-    associate ( S_CS  =>  S % Step_CS )
-    if ( present ( T_Option ) ) then
-      T_CS  =>  S_CS % TimerComputeExplicit ( Level = T_Option % Level + 1 )
-    else
-      T_CS  => null ( )
-    end if
-    if ( associated ( T_CS ) ) call T_CS % Start ( )
-    call S_CS % ComputeUpdateExplicit ( T, dT, iS, T_Option = T_CS )
-    if ( associated ( T_CS ) ) call T_CS % Stop ( )
-    end associate !-- S_CS
 
-    do iCS  =  1,  S % nCurrentSets_1D
-      associate ( S_CS  =>  S % Step_CS_1D ( iCS ) )
+    if ( S % ComputeExplicit_CS ) then
+      associate ( S_CS  =>  S % Step_CS )
       if ( present ( T_Option ) ) then
         T_CS  =>  S_CS % TimerComputeExplicit ( Level = T_Option % Level + 1 )
       else
         T_CS  => null ( )
       end if
       if ( associated ( T_CS ) ) call T_CS % Start ( )
-      call S_CS % ComputeUpdateExplicit &
-             ( T, dT, iS, T_Option )
+      call S_CS % ComputeUpdateExplicit ( T, dT, iS, T_Option = T_CS )
       if ( associated ( T_CS ) ) call T_CS % Stop ( )
       end associate !-- S_CS
-    end do 
+    end if !-- ComputeExplicit_CS
+
+    if ( S % ComputeExplicit_CS_1D ) then
+      do iCS  =  1,  S % nCurrentSets_1D
+        associate ( S_CS  =>  S % Step_CS_1D ( iCS ) )
+        if ( present ( T_Option ) ) then
+          T_CS  =>  S_CS % TimerComputeExplicit ( Level = T_Option % Level + 1 )
+        else
+          T_CS  => null ( )
+        end if
+        if ( associated ( T_CS ) ) call T_CS % Start ( )
+        call S_CS % ComputeUpdateExplicit &
+               ( T, dT, iS, T_Option )
+        if ( associated ( T_CS ) ) call T_CS % Stop ( )
+        end associate !-- S_CS
+      end do 
+    end if !-- ComputeExplicit_CS_1D
 
   end subroutine ComputeUpdateExplicit
 
@@ -463,10 +495,12 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine SolveUpdateImplicit  ( S, T, dT, iS )
+  subroutine SolveUpdateImplicit  ( S, ApplyImplicit_CS, T, dT, iS )
 
     class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ), target :: &
       S
+    logical ( KDL ), intent ( in ) :: &
+      ApplyImplicit_CS
     real ( KDR ), intent ( in ) :: &
        T, &
       dT
