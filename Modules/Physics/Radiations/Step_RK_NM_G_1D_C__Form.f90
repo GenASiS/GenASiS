@@ -312,8 +312,8 @@ contains
 
   subroutine Initialize_CS_1D_C_CS &
                ( S, CS_1D, CS, NameOption, ImplicitExplicitOption, &
-                 ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
-                 ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option, &
+                 ComputeImplicit_CS_1D_Option, ComputeImplicit_CS_Option, &
+                 ComputeExplicit_CS_1D_Option, ComputeExplicit_CS_Option, &
                  nStagesOption )
 
     class ( Step_RK_NM_G_1D_C_Form ), intent ( inout ) :: &
@@ -326,8 +326,8 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ImplicitExplicitOption, &
-      ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
-      ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option
+      ComputeImplicit_CS_1D_Option, ComputeImplicit_CS_Option, &
+      ComputeExplicit_CS_1D_Option, ComputeExplicit_CS_Option
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
@@ -336,8 +336,8 @@ contains
 
     call S % Step_RK_CS_1D_C_CS_Form % Initialize &
            ( CS_1D, CS, NameOption, ImplicitExplicitOption, &
-             ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
-             ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option, &
+             ComputeImplicit_CS_1D_Option, ComputeImplicit_CS_Option, &
+             ComputeExplicit_CS_1D_Option, ComputeExplicit_CS_Option, &
              nStagesOption )
 
     associate ( mII  =>  S % MaxImplicitIterations )

@@ -23,8 +23,6 @@ module Universe_R_B_C__Form
     character ( LDL ), dimension ( : ), allocatable :: &
       RadiationName, &
       RadiationType
-! !    type ( CollectiveOperation_R_Form ), dimension ( : ), allocatable :: &
-! !      CO_SplitSource
     type ( Units_R_Form ), dimension ( : ), allocatable :: &
       Units_R
     class ( Interactions_BM_Form ), dimension ( : ), allocatable :: &
@@ -42,10 +40,8 @@ module Universe_R_B_C__Form
       InitializeRadiation
     procedure, public, pass :: &
       InitializeInteractions
-! !    procedure, public, pass :: &
-! !      InitializeSteps
-!     procedure, public, pass :: &
-!       InitializeStep
+    procedure, public, pass :: &
+      InitializeStep
 !     procedure, public, pass :: &
 !       InitializeIntegrator
 !     procedure, public, pass :: &
@@ -144,10 +140,8 @@ contains
            ( )
     call U % InitializeInteractions &
            ( )
-!  !   call U % InitializeSteps &
-!  !          ( )
-!     call U % InitializeStep &
-!            ( )
+    call U % InitializeStep &
+           ( )
 !     call U % InitializeIntegrator &
 !            ( FinishTimeOption = FinishTimeOption, &
 !              nWriteOption = nWriteOption )
@@ -172,8 +166,6 @@ contains
       deallocate ( U % Interactions_BM )
     if ( allocated ( U % Units_R ) ) &
       deallocate ( U % Units_R )
-!    if ( allocated ( U % CO_SplitSource ) ) &
-!      deallocate ( U % CO_SplitSource )
     if ( allocated ( U % RadiationType ) ) &
       deallocate ( U % RadiationType )
     if ( allocated ( U % RadiationName ) ) &
@@ -311,6 +303,97 @@ contains
     end select !-- I
 
   end subroutine InitializeInteractions
+
+
+  subroutine InitializeStep ( U )
+
+    class ( Universe_R_B_C_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      iR
+    character ( LDL ) :: &
+      RiemannSolverType
+
+    select type ( I  =>  U % Integrator )
+    class is ( Integrator_CS_1D_C_CS_Form )
+
+!      allocate ( Step_RK_NM_G_1D_C_Form :: I % Step_X )
+!      select type ( S  =>  I % Step_X )
+!        class is ( Step_RK_NM_G_1D_C_Form )
+      allocate ( Step_RK_CS_1D_C_CS_Form :: I % Step_X )
+      select type ( S  =>  I % Step_X )
+        class is ( Step_RK_CS_1D_C_CS_Form )
+
+      associate ( nR  =>  U % nRadiations )
+
+      allocate ( S % Step_CS_1D ( nR ) )
+      allocate ( S % Step_CS )
+      associate &
+        ( S_R  =>  S % Step_CS_1D ( : ), &
+          S_F  =>  S % Step_CS )
+
+      !-- Radiation
+      select type ( R  =>  I % CurrentSet_X_1D )
+        class is ( RadiationMoments_BM_Form )
+
+      do iR  =  1, nR
+ 
+        allocate ( DivergencePart_RM_Form :: S_R ( iR ) % DivergenceTotal )
+        associate ( DT  =>  S_R ( iR ) % DivergenceTotal )
+        call DT % Initialize ( R ( iR ) )
+        end associate !-- DT
+
+        allocate ( DiffusionFactor_RM_Form :: S_R ( iR ) % DiffusionFactor )
+        select type ( DF  =>  S_R ( iR ) % DiffusionFactor )
+        class is ( DiffusionFactor_RM_Form )
+          call DF % Initialize ( U % Interactions_BM ( iR ) )
+        end select !-- DF
+
+      end do !-- iR
+
+      !-- Fluid
+      select type ( F  =>  I % CurrentSet_X )
+        class is ( Fluid_P_HN_Form )
+
+      allocate ( DivergencePart_F_P_T_Form :: S_F % DivergenceTotal )
+      associate ( DT  =>  S_F % DivergenceTotal )
+        call DT % Initialize ( F )
+      end associate !-- DT
+
+      RiemannSolverType = 'HLLC'
+      call PROGRAM_HEADER % GetParameter &
+             ( RiemannSolverType, 'RiemannSolverType' )
+      if ( trim ( RiemannSolverType ) == 'HLLC' ) then
+        allocate ( RiemannSolver_HLLC_P_Form :: S_F % RiemannSolver )
+        associate ( RS  =>  S_F % RiemannSolver )
+        call RS % Initialize ( F )
+        end associate !-- RS
+      end if
+
+      !-- Combined step
+      call S % Initialize &
+             ( R, F, ImplicitExplicitOption = .true., &
+               ComputeImplicit_CS_1D_Option = U % ApplyInteractions, &
+               ComputeImplicit_CS_Option    = U % EvolveFluid, &
+               ComputeExplicit_CS_1D_Option = U % ApplyStreaming, &
+               ComputeExplicit_CS_Option    = U % EvolveFluid, &
+               nStagesOption = 3 )
+
+      class default
+        call Show ( 'Fluid type not recognized', CONSOLE % ERROR )
+        call Show ( 'Universe_R_B_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'InitializeStep', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select    !-- F
+      end select    !-- R
+      end associate !-- S_R, S_F
+      end associate !-- nR
+      end select    !-- S
+
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
 end module Universe_R_B_C__Form

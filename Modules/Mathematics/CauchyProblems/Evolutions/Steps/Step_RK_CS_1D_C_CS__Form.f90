@@ -64,8 +64,8 @@ contains
 
   subroutine Initialize_CS_1D_C_CS &
                ( S, CS_1D, CS, NameOption, ImplicitExplicitOption, &
-                 ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
-                 ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option, &
+                 ComputeImplicit_CS_1D_Option, ComputeImplicit_CS_Option, &
+                 ComputeExplicit_CS_1D_Option, ComputeExplicit_CS_Option, &
                  nStagesOption )
 
     class ( Step_RK_CS_1D_C_CS_Form ), intent ( inout ) :: &
@@ -78,8 +78,8 @@ contains
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
       ImplicitExplicitOption, &
-      ComputeExplicit_CS_Option, ComputeExplicit_CS_1D_Option, &
-      ComputeImplicit_CS_Option, ComputeImplicit_CS_1D_Option
+      ComputeImplicit_CS_1D_Option, ComputeImplicit_CS_Option, &
+      ComputeExplicit_CS_1D_Option, ComputeExplicit_CS_Option
     integer ( KDI ), intent ( in ), optional :: &
       nStagesOption
 
@@ -205,6 +205,15 @@ contains
     call Show ( S % MaxRelaxationIterations, 'MaxRelaxationIterations', &
                 S % IGNORABILITY )
     call Show ( S % ImplicitTolerance, 'ImplicitTolerance', &
+                S % IGNORABILITY )
+
+    call Show ( S % ComputeExplicit_CS, 'ComputeExplicit_CS', &
+                S % IGNORABILITY )
+    call Show ( S % ComputeExplicit_CS_1D, 'ComputeExplicit_CS_1D', &
+                S % IGNORABILITY )
+    call Show ( S % ComputeImplicit_CS, 'ComputeImplicit_CS', &
+                S % IGNORABILITY )
+    call Show ( S % ComputeImplicit_CS_1D, 'ComputeImplicit_CS_1D', &
                 S % IGNORABILITY )
 
     call S % Step_CS % Show ( )
