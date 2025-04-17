@@ -236,7 +236,8 @@ module Fluid_P_HN__Form
       end subroutine Compute_N_V_E_YE_G_S_Kernel
 
       module subroutine Apply_EOS_Epilogue_A_Kernel &
-               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, UseDeviceOption )
+               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
+                 UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -250,13 +251,14 @@ module Fluid_P_HN__Form
           Mu_NP, &
           Mu_E
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          M
+          M, &
+          Gamma
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Apply_EOS_Epilogue_A_Kernel
 
       module subroutine Apply_EOS_Epilogue_S_Kernel &
-               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
+               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, iV )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -270,14 +272,15 @@ module Fluid_P_HN__Form
           Mu_NP, &
           Mu_E
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          M
+          M, &
+          Gamma
         integer ( KDI ), intent ( in ) :: &
           iV
       end subroutine Apply_EOS_Epilogue_S_Kernel
       
       module subroutine ComputeFromBalanced_S_Kernel &
                ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-                 SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, EOS, &
+                 SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, &
                  M_UU_11, M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
                  E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, &
                  iSolve, iV )
@@ -301,7 +304,8 @@ module Fluid_P_HN__Form
           Mu_N, &
           Mu_P, &
           Mu_NP, &
-          Mu_E
+          Mu_E, &
+          Gamma
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
           EOS
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -794,7 +798,8 @@ contains
           Mu_N  =>  FV ( :, F % CHEMICAL_POTENTIAL_N ), &
           Mu_P  =>  FV ( :, F % CHEMICAL_POTENTIAL_P ), &
           Mu_NP =>  FV ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-          Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ) )
+          Mu_E  =>  FV ( :, F % CHEMICAL_POTENTIAL_E ), &
+          Gamma =>  FV ( :, F % ADIABATIC_INDEX ) )
 
       call Apply_EOS_Prologue_A_Kernel &
              ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
@@ -810,7 +815,7 @@ contains
       end associate !-- FS
 
       call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, &
+             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
                UseDeviceOption = F % DeviceMemory )
 
       select type ( Gn  =>  F % Geometry )
@@ -890,7 +895,8 @@ contains
           Mu_N  =>  FV ( :, CS % CHEMICAL_POTENTIAL_N ), &
           Mu_P  =>  FV ( :, CS % CHEMICAL_POTENTIAL_P ), &
           Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
-          Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
+          Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ), &
+          Gamma =>  FV ( :,  CS % ADIABATIC_INDEX ) )
 
       associate ( CSV  =>  CS % Storage ( iC ) % Value )
       call Copy ( CSV ( :, CS % PRESSURE ), P, &
@@ -914,7 +920,7 @@ contains
       end associate !-- FS
 
       call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, &
+             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
                UseDeviceOption = CS % DeviceMemory )
 
       select type ( Gn  =>  CS % Geometry )
@@ -1007,7 +1013,8 @@ contains
           Mu_N  =>  FV ( :, CS % CHEMICAL_POTENTIAL_N ), &
           Mu_P  =>  FV ( :, CS % CHEMICAL_POTENTIAL_P ), &
           Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
-          Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
+          Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ), &
+          Gamma =>  FV ( :, CS % ADIABATIC_INDEX ) )
 
       select type ( Gn  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -1049,7 +1056,7 @@ contains
       end associate !-- FS
 
       call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, &
+             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
                UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
@@ -1120,7 +1127,8 @@ contains
         Mu_N  =>  FV ( :, CS % CHEMICAL_POTENTIAL_N ), &
         Mu_P  =>  FV ( :, CS % CHEMICAL_POTENTIAL_P ), &
         Mu_NP =>  FV ( :, CS % CHEMICAL_POTENTIAL_N_P ), &
-        Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ) )
+        Mu_E  =>  FV ( :, CS % CHEMICAL_POTENTIAL_E ), &
+        Gamma =>  FV ( :, CS % ADIABATIC_INDEX ) )
 
     select type ( Gn  =>  CS % Geometry )
     class is ( Gravitation_G_Form )
@@ -1150,7 +1158,7 @@ contains
       
       call ComputeFromBalanced_S_Kernel &
              ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-               SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, EOS, M_UU_11, M_UU_22, &
+               SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, M_UU_11, M_UU_22, &
                M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, &
                Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
       

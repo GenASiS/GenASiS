@@ -10,6 +10,7 @@ submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
   
   real ( KDR ) :: &
       OR_Shift, &
+      GammaMin, &
       MassDensity_CGS, &
       SpecificEnergy_CGS, &
       Pressure_CGS, &
@@ -18,8 +19,8 @@ submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
 
 #ifdef ENABLE_OMP_OFFLOAD
   !$OMP declare target to &
-  !$OMP   ( OR_Shift, MassDensity_CGS, SpecificEnergy_CGS, Pressure_CGS, &
-  !$OMP     Speed_CGS, MeV )
+  !$OMP   ( OR_Shift, GammaMin, MassDensity_CGS, SpecificEnergy_CGS, &
+  !$OMP     Pressure_CGS, Speed_CGS, MeV )
 #endif
     
 contains
@@ -30,6 +31,8 @@ contains
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
                  / CONSTANT % ATOMIC_MASS_UNIT
+    
+    GammaMin = 1.0_KDR
       
     MassDensity_CGS     =  UNIT % MASS_DENSITY_CGS
     SpecificEnergy_CGS  =  UNIT % ERG  /  UNIT % GRAM
@@ -38,8 +41,9 @@ contains
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
 
 #ifdef ENABLE_OMP_OFFLOAD
-    !$OMP target update to ( OR_Shift, MassDensity_CGS, SpecificEnergy_CGS, &
-    !$OMP Pressure_CGS, Speed_CGS, MeV )
+    !$OMP target update to &
+    !$OMP   ( OR_Shift, GammaMin, MassDensity_CGS, SpecificEnergy_CGS, &
+    !$OMP     Pressure_CGS, Speed_CGS, MeV )
 #endif
     
   end procedure InitializeModuleVariablesKernel
@@ -375,7 +379,9 @@ contains
         N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
-        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        !SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
+                                *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
         Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
         Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
@@ -399,7 +405,9 @@ contains
         N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
-        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        !SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
+                                *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
         Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
         Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
@@ -426,7 +434,9 @@ contains
         N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
-        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        !SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
+                                *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
         Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
         Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
@@ -450,7 +460,7 @@ contains
            ( FV, EOS, T_L_N, T_L_T, T_Ye, E_Shift, ia_F_I, ia_F_O, &
              ia_E, iSolve, iV = iV )
     call Apply_EOS_Epilogue_S_Kernel &
-           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
+           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, iV )
 
   
   end procedure ComputeFromBalanced_S_Kernel
@@ -473,7 +483,7 @@ contains
              EOS, T_L_N, T_L_T, T_Ye, E_Shift, ia_F_I, ia_F_O, &
              ia_E, iSolve, iV = iV )
     call Apply_EOS_Epilogue_S_Kernel &
-           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, iV )
+           ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, iV )
 
   
   end procedure ComputeFromBalanced_S_V_Kernel
