@@ -1710,9 +1710,18 @@ contains
     select type ( U  =>  I % System )
       class is ( Universe_R_CC_Form )
 
-    call U % Analyze_F_CC ( I, Ignorability, T_Option )
+    call U % Average_F_C ( )
+
+    associate ( M  =>  U % Measures )
+    call M % Compute ( )
+    end associate !-- M
 
     end select !-- U
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    call I % Analyze_CS ( I, Ignorability, T_Option )
+    end select !-- I
 
   end subroutine Analyze
 

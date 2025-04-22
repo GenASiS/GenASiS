@@ -61,13 +61,14 @@ module Universe_F_C__Form
       ShowDiagnostics
     procedure, public, pass ( U ) :: &
       Compute_dT_CS_CGS_C
-    procedure, public, nopass :: &
-      Analyze_F_C
+    procedure, public, pass :: &
+      Average_F_C
     procedure, public, nopass :: &
       Write_F_C
   end type Universe_F_C_Form
 
     private :: &
+      Analyze_F_C, &
       SetSlope_N
 
     private :: &
@@ -1117,22 +1118,10 @@ contains
   end subroutine Compute_dT_CS_CGS_C
 
 
-  subroutine Analyze_F_C ( I, Ignorability, T_Option )
+  subroutine Average_F_C ( U )
 
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ) :: &
-      Ignorability
-    type ( TimerForm ), intent ( in ), optional :: &
-      T_Option
-
-    select type ( I )
-      class is ( Integrator_CS_Form )
-    call I % Analyze_CS ( I, Ignorability, T_Option )
-    end select !-- I
-
-    select type ( U  =>  I % System )
-      class is ( Universe_F_C_Form )
+    class ( Universe_F_C_Form ), intent ( inout ) :: &
+      U
 
     !-- Azimuthal average
 
@@ -1166,9 +1155,7 @@ contains
       end select !-- F_SA
     end if !-- allocated PositionSpace_SA
 
-    end select !-- U
-
-  end subroutine Analyze_F_C
+  end subroutine Average_F_C
 
 
   subroutine Write_F_C ( I, T_Option )
@@ -1245,6 +1232,28 @@ contains
     end select !-- U
 
   end subroutine Write_F_C
+
+
+  subroutine Analyze_F_C ( I, Ignorability, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      Ignorability
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_C_Form )
+    call U % Average_F_C ( )
+    end select !-- U
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    call I % Analyze_CS ( I, Ignorability, T_Option )
+    end select !-- I
+
+  end subroutine Analyze_F_C
 
 
   subroutine SetSlope_N ( S, K )

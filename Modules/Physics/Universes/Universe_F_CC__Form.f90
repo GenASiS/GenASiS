@@ -34,12 +34,11 @@ module Universe_F_CC__Form
     procedure, public, nopass :: &
       InitializeSeries_CC      
     procedure, public, nopass :: &
-      Analyze_F_CC
-    procedure, public, nopass :: &
       Set_T_CheckpointInterval_F_CC
   end type Universe_F_CC_Form
 
     private :: &
+      Analyze_F_CC, &
       Compute_dT_Local
 
       private :: &
@@ -374,29 +373,6 @@ contains
   end subroutine InitializeSeries_CC
 
 
-  subroutine Analyze_F_CC ( I, Ignorability, T_Option )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ) :: &
-      Ignorability
-    type ( TimerForm ), intent ( in ), optional :: &
-      T_Option
-
-    select type ( U  =>  I % System )
-      class is ( Universe_F_CC_Form )
-
-    call U % Analyze_F_C ( I, Ignorability, T_Option )
-
-    associate ( M  =>  U % Measures )
-    call M % Compute ( )
-    end associate !-- M
-
-    end select !-- U
-
-  end subroutine Analyze_F_CC
-
-
   subroutine Set_T_CheckpointInterval_F_CC ( I )
 
     class ( Integrator_H_Form ), intent ( inout ), target :: &
@@ -457,6 +433,34 @@ contains
     end select !-- U
 
   end subroutine Set_T_CheckpointInterval_F_CC
+
+
+  subroutine Analyze_F_CC ( I, Ignorability, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      Ignorability
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( U  =>  I % System )
+      class is ( Universe_F_CC_Form )
+
+    call U % Average_F_C ( )
+
+    associate ( M  =>  U % Measures )
+    call M % Compute ( )
+    end associate !-- M
+
+    end select !-- U
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    call I % Analyze_CS ( I, Ignorability, T_Option )
+    end select !-- I
+
+  end subroutine Analyze_F_CC
 
 
   subroutine Compute_dT_Local ( I, dT_Candidate, iC, T_Option )

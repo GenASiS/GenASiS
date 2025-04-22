@@ -68,6 +68,7 @@ module Universe_R_CC_C__Form
       InitializeSeries, &
       Analyze, &
       Write, &
+      Average, &
       Set_T_CheckpointInterval, &
       SetSlope_F_P_DFV_N
 
@@ -895,8 +896,50 @@ contains
     select type ( U  =>  I % System )
       class is ( Universe_R_CC_C_Form )
 
+    call Average ( U )
+
+    !-- Measures
+    associate ( M  =>  U % Measures )
+    call M % Compute ( )
+    end associate !-- M
+
+    end select !-- U
+
+    select type ( I )
+      class is ( Integrator_CS_Form )
+    call I % Analyze_CS ( I, Ignorability, T_Option )
+    end select !-- I
+
+  end subroutine Analyze
+
+
+  subroutine Write ( I, T_Option )
+
+    class ( Integrator_H_Form ), intent ( inout ) :: &
+      I
+    type ( TimerForm ), intent ( in ), optional :: &
+      T_Option
+
+    select type ( U  =>  I % System )
+      class is ( Universe_R_CC_C_Form )
+
+    call U % Write_F_C ( I, T_Option )
+
+    end select !-- U
+
+  end subroutine Write
+
+
+  subroutine Average ( U )
+
+    class ( Universe_R_CC_C_Form ), intent ( inout ) :: &
+      U
+
+    integer ( KDI ) :: &
+      iR
+
     !-- Fluid and gravity
-    call U % Analyze_F_C ( I, Ignorability, T_Option )
+    call U % Average_F_C ( )
 
     !-- Azimuthal average
     if ( allocated ( U % PositionSpace_AA ) ) then
@@ -928,31 +971,7 @@ contains
       end do !-- iR
     end if !-- allocated PositionSpace_SA
 
-    !-- Measures
-    associate ( M  =>  U % Measures )
-    call M % Compute ( )
-    end associate !-- M
-
-    end select !-- U
-
-  end subroutine Analyze
-
-
-  subroutine Write ( I, T_Option )
-
-    class ( Integrator_H_Form ), intent ( inout ) :: &
-      I
-    type ( TimerForm ), intent ( in ), optional :: &
-      T_Option
-
-    select type ( U  =>  I % System )
-      class is ( Universe_R_CC_C_Form )
-
-    call U % Write_F_C ( I, T_Option )
-
-    end select !-- U
-
-  end subroutine Write
+  end subroutine Average
 
 
   subroutine Set_T_CheckpointInterval ( I )
