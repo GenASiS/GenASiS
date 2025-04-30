@@ -73,7 +73,7 @@ contains
     real ( KDR ) :: &
       FinishTime
 
-    FinishTime  =  0.7_KDR  *  UNIT % SECOND
+    FinishTime  =  1.5_KDR  *  UNIT % SECOND
 
     call WH % Initialize &
            ( RadiationName = [ 'None' ], &
