@@ -672,7 +672,10 @@ contains
     REV_1 ( :, 3 ) = abs ( DV ( :, 3 ) ) / Norm_R_3
     REV_1 ( :, 4 ) = abs ( DV ( :, 4 ) ) / Norm_R_4
     
-    REV_2 = abs ( DV / RV )
+    !-- Workaround for GCC 13.2.0
+    !REV_2 = abs ( DV / RV )
+    REV_2 = abs ( Difference % Storage_GS % Value &
+                  / RelativeError_2 % Storage_GS % Value )
     
     end associate !-- Norm_D_1, etc.
 
@@ -684,8 +687,6 @@ contains
                 nTrailingLinesOption = 2 )
     call Show ( L1_4, '*** L1_4 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
-
-    ! Difference % Value = abs ( Difference % Value / Reference % Value )
 
     end associate !-- C, etc.
     end select !-- A
