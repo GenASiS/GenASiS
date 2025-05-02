@@ -675,7 +675,7 @@ contains
     !-- Workaround for GCC 13.2.0
     !REV_2 = abs ( DV / RV )
     REV_2 = abs ( Difference % Storage_GS % Value &
-                  / RelativeError_2 % Storage_GS % Value )
+                  / Reference % Storage_GS % Value )
     
     end associate !-- Norm_D_1, etc.
 
