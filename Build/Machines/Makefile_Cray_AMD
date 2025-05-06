@@ -1,76 +1,87 @@
-# Makefile for Cray (XT5, XE/XK, XC90) with Cray Compiling Environment (CCE)
-# If PrgEnv-cray is not the default, use "module swap" to PrgEnv-cray
+# Makefile for Cray (XT5, XE/XK, XC90) with GNU compiler (PrgEnv-gnu)
+# If PrgEnv-gnu is not the default, use "module swap" to PrgEnv-gnu
 
-FORTRAN_COMPILE      = ftn -c -Mpreprocess
-FORTRAN_FIXEDFORM    = -ffixed
-FORTRAN_BOUND_CHECK  = #-R bcp #-- FIXME: bound checking causes issue with
-                               #          OpenMP. Reported to Cray.
-FORTRAN_DEBUG        = -g -O0 #-hdevelop -eF -hfp0 -K trap=fp
-FORTRAN_OPTIMIZE     = -O1
+FORTRAN_COMPILE      = flang-new ${CRAY_MPICH_INC} -c -cpp -fPIC
+FORTRAN_FIXEDFORM    = -ffixed-form
+FORTRAN_BOUND_CHECK  = #-fbounds-check
+FORTRAN_DEBUG        = -g -O0 #-ffpe-trap=invalid,zero,overflow #-Wall
+#FORTRAN_OPTIMIZE     = -O3 -fallow-store-data-races -fstack-arrays \
+#                       -fno-protect-parens -fno-semantic-interposition
+#FORTRAN_OPTIMIZE     = -O2 -ffast-math
+FORTRAN_OPTIMIZE     = -O2 -fstack-arrays #-fno-unsafe-math-optimizations
+
 FORTRAN_PROFILE      = 
 
-CC_COMPILE           = cc -c
+CC_COMPILE           = amdclang -c -fPIC
 CC_DEBUG             = -g
-CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
+CC_OPTIMIZE          = -O2
 
-#-- Default and may be overwritten below
+#-- Default to AMD HIP for GCC on current Cray machine
 DEVICE_HIP           = 1
-DEVICE_COMPILE       = 
+DEVICE_COMPILE       = hipcc -c -D__HIP_PLATFORM_AMD__
 
-LINK = ftn -fopenmp -craype-verbose
+LINK = flang-new -fopenmp --offload-arch=gfx90a
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
 ENABLE_OMP          ?= 1
-ENABLE_OMP_OFFLOAD  ?= 0
+ENABLE_OMP_OFFLOAD  ?= 1
 USE_ISO_10646       ?= 0
 
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-SILO_DIR ?= ${HOME}/localsw/poplar/silo/4.10.2_cce9.1.3
+SILO_DIR    ?= /home/users/coe0021/localsw/poplar/silo/4.10.2_gcc9.1.0
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-HDF5_DIR ?= ${HOME}/localsw/poplar/hdf5/1.10.12_cce10
+HDF5_DIR ?= ${HOME}/public/localsw/frontier/hdf5/1.14.6/amd
 INCLUDE_HDF5 = -I${HDF5_DIR}/include
 LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
 
 #-- if empty, don't link to HDF5
-ifeq ($(strip $(HDF5_DIR)),)  
-  INCLUDE_HDF5 = 
-  LIBRARY_HDF5 = 
+ifeq ($(strip $(HDF5_DIR)),)
+  INCLUDE_HDF5 =
+  LIBRARY_HDF5 =
+endif
+
+#-- LAPACK library link line flag and location
+LAPACK_DIR    ?= ${OLCF_NETLIB_LAPACK_ROOT}
+LIBRARY_LAPACK = -L${LAPACK_DIR}/lib -llapack -lblas
+
+#-- if empty, don't link to LAPACK
+ifeq ($(strip $(LAPACK_DIR)),)
+  LIBRARY_LAPACK =
+endif
+
+#-- Hack for manual MPI linking with Flang
+LIBRARY_LAPACK = ${CRAY_MPICH_LIB}
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  INCLUDE_DEVICE = -I${OLCF_AFAR_ROOT}/include
+  LIBRARY_DEVICE = -L${OLCF_AFAR_ROOT}/lib -lamdhip64 \
+                   -lomp -lomptarget 
 endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- The following stanzas check whether we are building with CUDA or HIP
-ifeq ($(findstring nvidia,${CRAY_ACCEL_TARGET}), nvidia)
-  DEVICE_CUDA    = 1
-  DEVICE_COMPILE = nvcc -c
-  INCLUDE_DEVICE = -I${CUDA_ROOT}/include
-  LIBRARY_DEVICE = -L${CUDA_ROOT}/lib64 -lcudart
-endif
-
-ifeq ($(findstring amd,${CRAY_ACCEL_TARGET}), amd)
-  DEFINES       += -D__HIP_PLATFORM_HCC__
-  DEVICE_HIP     = 1
-  DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
-  INCLUDE_DEVICE = -I${ROCM_PATH}/include
-  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lamdhip64
-endif
-
 ifeq ($(ENABLE_OMP), 1)
-  DEFINES += -fopenmp
+  #DEFINES += -fopenmp
+  FORTRAN_COMPILE += -fopenmp
 else
   ENABLE_OMP_OFFLOAD = 0
 endif
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  DEFINES += -DENABLE_OMP_OFFLOAD
+  DEFINES       +=  --offload-arch=gfx90a -D__HIP_PLATFORM_AMD__ 
+  DEFINES       +=  -DENABLE_OMP_OFFLOAD
+  #-- Flang segfault if this is not consistently done for all files
+  FORTRAN_COMPILE += --offload-arch=gfx90a -D__HIP_PLATFORM_AMD__
+else
+  DEFINES       += #-foffload=disable
 endif
 
-DEFINES += -D$(GENASIS_MACHINE)
+DEFINES   += -D$(GENASIS_MACHINE)
