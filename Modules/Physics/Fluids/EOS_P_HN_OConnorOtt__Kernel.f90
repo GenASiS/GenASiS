@@ -1248,7 +1248,7 @@ end if
     integer ( KDI ) :: &
       iSelected
   
-    !$OMP OMP_DECLARE_TARGET
+    !OMP_DECLARE_TARGET
     
     call Search ( ia_F_O, iSolve, iSelected )
     call FindTemperature_S_Kernel &
@@ -1267,7 +1267,7 @@ end if
     integer ( KDI ) :: &
       iSelected
   
-    !$OMP OMP_DECLARE_TARGET
+    !OMP_DECLARE_TARGET
     
     call Search ( ia_F_O, iSolve, iSelected )
     call FindTemperature_S_V_Kernel &

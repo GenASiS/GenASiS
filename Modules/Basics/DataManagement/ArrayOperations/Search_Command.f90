@@ -40,7 +40,7 @@ contains
     logical ( KDL )  :: &
       Ascending
       
-    !$OMP OMP_DECLARE_TARGET
+    !OMP_DECLARE_TARGET
       
     select type ( A )
     

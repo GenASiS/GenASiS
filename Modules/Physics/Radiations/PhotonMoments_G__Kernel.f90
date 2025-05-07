@@ -57,7 +57,7 @@ contains
     real ( KDR ) :: &
       a
 
-    !$OMP OMP_DECLARE_TARGET
+    !OMP_DECLARE_TARGET
       
     a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
 
@@ -122,7 +122,7 @@ contains
       SqrtTiny, &
       a
     
-    !$OMP OMP_DECLARE_TARGET
+    !OMP_DECLARE_TARGET
       
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
