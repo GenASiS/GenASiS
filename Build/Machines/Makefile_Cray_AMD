@@ -1,7 +1,7 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with GNU compiler (PrgEnv-gnu)
 # If PrgEnv-gnu is not the default, use "module swap" to PrgEnv-gnu
 
-FORTRAN_COMPILE      = flang-new ${CRAY_MPICH_INC} -c -cpp -fPIC
+FORTRAN_COMPILE      = amdflang ${CRAY_MPICH_INC} -c -cpp -fPIC
 FORTRAN_FIXEDFORM    = -ffixed-form
 FORTRAN_BOUND_CHECK  = #-fbounds-check
 FORTRAN_DEBUG        = -g -O0 #-ffpe-trap=invalid,zero,overflow #-Wall
@@ -20,7 +20,7 @@ CC_OPTIMIZE          = -O2
 DEVICE_HIP           = 1
 DEVICE_COMPILE       = hipcc -c -D__HIP_PLATFORM_AMD__
 
-LINK = flang-new -fopenmp --offload-arch=gfx90a
+LINK = amdflang -fopenmp --offload-arch=gfx90a
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
@@ -40,7 +40,7 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 #-- link line flag &  location below
 HDF5_DIR ?= ${HOME}/public/localsw/frontier/hdf5/1.14.6/amd
 INCLUDE_HDF5 = -I${HDF5_DIR}/include
-LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
+LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5 -lz
 
 #-- if empty, don't link to HDF5
 ifeq ($(strip $(HDF5_DIR)),)
@@ -69,7 +69,7 @@ endif
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 ifeq ($(ENABLE_OMP), 1)
-  #DEFINES += -fopenmp
+  DEFINES         += -fopenmp
   FORTRAN_COMPILE += -fopenmp
 else
   ENABLE_OMP_OFFLOAD = 0
@@ -78,7 +78,8 @@ endif
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
   DEFINES       +=  --offload-arch=gfx90a -D__HIP_PLATFORM_AMD__ 
   DEFINES       +=  -DENABLE_OMP_OFFLOAD
-  #-- Flang segfault if this is not consistently done for all files
+  
+#-- Flang segfault if this is not consistently done for all files
   FORTRAN_COMPILE += --offload-arch=gfx90a -D__HIP_PLATFORM_AMD__
 else
   DEFINES       += #-foffload=disable
