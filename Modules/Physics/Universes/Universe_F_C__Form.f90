@@ -53,7 +53,7 @@ module Universe_F_C__Form
       InitializeIntegrator
     procedure, public, pass :: &
       InitializeDiagnostics
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAtlas
     procedure, public, pass :: &
       ShowParameters

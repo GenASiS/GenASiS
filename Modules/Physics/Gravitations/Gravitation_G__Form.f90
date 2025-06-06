@@ -10,7 +10,7 @@ module Gravitation_G__Form
 
   type, public, extends ( Geometry_F_Form ) :: Gravitation_G_Form
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_FS
     final :: &
       Finalize

@@ -55,7 +55,7 @@ module CurrentSet_Form
     class ( Tally_CS_Element ), dimension ( : ), allocatable :: &
       TallyBoundary
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_CS
     generic, public :: &
       Initialize => InitializeAllocate_CS
@@ -67,16 +67,16 @@ module CurrentSet_Form
       ComputeFromInitial
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedSingle
     generic, public :: &
       ComputeFromBalanced => ComputeFromBalancedAll, &
                              ComputeFromBalancedSingle
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       AccumulateBoundaryFluence_SCG
     generic, public :: &
       AccumulateBoundaryFluence &
@@ -161,7 +161,7 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Field, &
       Vector
-
+      
     if ( CS % Type  ==  '' ) &
       CS % Type  =  'a CurrentSet' 
     
@@ -292,9 +292,9 @@ contains
     AllocateTally = .true.
     if ( present ( AllocateTallyOption ) ) &
       AllocateTally = AllocateTallyOption
-
+      
     if ( .not. allocated ( CS % TallyInterior ) .and. AllocateTally ) then
-
+      
       allocate ( CS % TallyInterior )
       allocate ( CS % TallyTotal )
       allocate ( CS % TallyChange )
@@ -531,11 +531,9 @@ contains
     end do !-- iB
 
     !-- Interior
-
     call CS % TallyInterior % ComputeInterior ( CS )
 
     !-- Boundary
-
     call CS % BoundaryFluence_SCG % UpdateHost ( )
 
     associate ( iExtent => 1 )  !-- only boundary for Atlas_SCG
@@ -546,7 +544,6 @@ contains
     call CS % BoundaryFluence_SCG % Clear ( )
 
     !-- Total
-
     CS % TallyTotal % Value  =  CS % TallyInterior % Value
 
     do iB  =  1,  CS % nBoundaries
@@ -558,7 +555,6 @@ contains
     end do !-- iB
 
     !-- Change
-
     if ( Change ) then
       CS % TallyChange % Value &
         =  CS % TallyChange % Value &

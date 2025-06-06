@@ -15,7 +15,7 @@ module SedovTaylor_Form
       DiscreteBlastVolume, &
       EnergyDensity
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     final :: &
       Finalize

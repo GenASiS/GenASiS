@@ -23,7 +23,7 @@ module Slope_H__Form
     type ( Slope_H_Element ), dimension ( : ), pointer :: &
       Component => null ( )
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_FS
     procedure, public, pass :: &
       SetStream

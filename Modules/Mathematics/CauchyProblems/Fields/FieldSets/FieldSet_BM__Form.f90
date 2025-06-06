@@ -49,9 +49,9 @@ module FieldSet_BM__Form
     class ( FieldSet_BM_Form ), pointer :: &
       Primary => null ( )
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_FS
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeClone
     generic, public :: &
       Initialize => InitializeAllocate_FS, InitializeClone

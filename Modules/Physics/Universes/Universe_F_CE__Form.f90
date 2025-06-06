@@ -21,7 +21,7 @@ module Universe_F_CE__Form
       Finalize
     procedure, public, pass :: &
       SetBoundaryConditions
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAtlas
   end type Universe_F_CE_Form
 

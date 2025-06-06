@@ -43,7 +43,7 @@ module RiemannSolver_HLL__Form
     class ( ReconstructionForm ), allocatable :: &
       Reconstruction_PS
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RS
     generic, public :: &
       Initialize => InitializeAllocate_RS

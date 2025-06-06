@@ -33,7 +33,7 @@ module Integrator_CS_1D_C_CS__Form
       PrepareEvolution
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CS_1D
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeTally_1D
   end type Integrator_CS_1D_C_CS_Form
 

@@ -25,7 +25,7 @@ module Integrator_CS_1D_BM_CS__Form
       class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
         EigenspeedSet_X_1D
   contains
-    procedure, private, pass :: &  !-- 1
+    procedure, public, pass :: &  !-- 1
       Initialize_H      
     final :: &
       Finalize
@@ -39,7 +39,7 @@ module Integrator_CS_1D_BM_CS__Form
       SetCommunicator_1D
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CS_1D
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeTally_1D
   end type Integrator_CS_1D_BM_CS_Form
 

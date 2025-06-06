@@ -183,12 +183,12 @@ contains
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  DP % Timer_F ( Level = 1 )
-    call T % Start ( )
+    !T  =>  DP % Timer_F ( Level = 1 )
+    !call T % Start ( )
     do iC  =  1,  nCompute
       call DP % ComputeFluxes ( FS_F, CS, iC = 1, iD = iD )
     end do
-    call T % Stop ( )
+    !call T % Stop ( )
 
     T  =>  S % TimerWrite ( Level = 1 )
     call T % Start ( )

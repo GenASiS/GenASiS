@@ -41,13 +41,13 @@ module NeutrinoMoments_G__Form
       SetStream
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedSingle
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSpectralParametersAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSpectralParametersSingle
     procedure, public, pass :: &
       ComputeEquilibriumAll

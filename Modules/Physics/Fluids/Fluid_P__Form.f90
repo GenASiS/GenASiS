@@ -38,7 +38,7 @@ module Fluid_P__Form
     type ( FieldSet_BM_Form ), allocatable :: &
       SplitSource
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_F
     procedure, private, pass :: &
       SetEnergyDensityMinValue

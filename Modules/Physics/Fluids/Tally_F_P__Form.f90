@@ -22,7 +22,7 @@ module Tally_F_P__Form
       INTERNAL_ENERGY = 0, &
       ENTROPY         = 0
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeFluid
     procedure, public, pass :: &
       SelectVariables

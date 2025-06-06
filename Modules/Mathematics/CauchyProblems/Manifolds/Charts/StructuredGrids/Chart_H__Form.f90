@@ -34,7 +34,7 @@ module Chart_H__Form
       Initialize_H
     procedure, public, pass :: &
       SetDimensionality
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_C
     generic, public :: &
       Show => Show_C

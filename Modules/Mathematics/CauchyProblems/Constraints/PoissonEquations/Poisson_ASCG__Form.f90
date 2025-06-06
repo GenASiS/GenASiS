@@ -21,11 +21,11 @@ module Poisson_ASCG__Form
       Initialize
     final :: &
       Finalize
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       CombineMomentsLocal
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ExchangeSolution
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ApplyBoundarySolution
   end type Poisson_ASCG_Form
 
@@ -174,6 +174,7 @@ contains
         oR =  sum ( C % nCellsBrickGlobal ( 1 ) &
                       % Value ( 1 : C % iaBrick ( 1 )  -  1 ) )
       end if
+      
       call CombineMoments_CGS_S_Kernel &
              ( P % Solution_4D, L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
                L % AngularFunction_3D, L % RadialFunctions_R % Value, &

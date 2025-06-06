@@ -28,7 +28,7 @@ module RiemannSolver_HLLC_P__Form
       Metric_I, &
       CurrentSet_ICL, CurrentSet_ICR
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RS
     procedure, public, pass :: &
       Compute

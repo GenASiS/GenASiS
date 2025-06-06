@@ -31,7 +31,7 @@ module Fluid_P_I__Form
       FiducialBaryonDensity, &
       FiducialPressure
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_F
     procedure, public, pass :: &
       SetAdiabaticIndex
@@ -49,9 +49,9 @@ module Fluid_P_I__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedSingle
     final :: &
       Finalize

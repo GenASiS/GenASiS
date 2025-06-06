@@ -42,7 +42,7 @@ module Fluid_D__Form
       BaryonMass, &
       BaryonDensityMin
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_F
     generic, public :: &
       Initialize => InitializeAllocate_F
@@ -60,7 +60,7 @@ module Fluid_D__Form
       ComputeFromInitial
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedAll
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds

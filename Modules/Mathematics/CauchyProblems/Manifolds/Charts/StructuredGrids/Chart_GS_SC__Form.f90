@@ -14,11 +14,11 @@ module Chart_GS_SC__Form
     real ( KDR ) :: &
       RadiusMax
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_GS_SC
     generic, public :: &
       Initialize => Initialize_GS_SC
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_C
     final :: &
       Finalize

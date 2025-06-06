@@ -11,7 +11,7 @@ module SawtoothWaveAdvection_Form
       Offset, &
       Amplitude
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     final :: &
       Finalize

@@ -18,7 +18,7 @@ module Chart_GS_CC__Form
       Initialize_GS_CC
     generic, public :: &
       Initialize => Initialize_GS_CC
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_C
     final :: &
       Finalize

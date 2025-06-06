@@ -17,11 +17,11 @@ module Chart_GS_C__Form
       RadialRatio, &  !-- nCellsRadial / nCellsPolar
       MinWidth
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_GS_C
     generic, public :: &
       Initialize => Initialize_GS_C
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_C
     final :: &
       Finalize

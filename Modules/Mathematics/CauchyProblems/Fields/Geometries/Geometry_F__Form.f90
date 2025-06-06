@@ -58,7 +58,7 @@ module Geometry_F__Form
       METRIC_F_DD, &
       METRIC_F_UU
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_FS
     procedure, public, pass ( G ) :: &
       SetStream
@@ -239,7 +239,7 @@ contains
     Name  =  'Geometry'
     if ( present ( NameOption ) ) &
       Name  =  NameOption
-
+      
     !-- Field indices
 
     FS % EDGE_I_U_1      =   1
@@ -288,7 +288,7 @@ contains
       =  [ FS % METRIC_F_DD_11, FS % METRIC_F_DD_22, FS % METRIC_F_DD_33 ]
     FS % METRIC_F_UU  &
       =  [ FS % METRIC_F_UU_11, FS % METRIC_F_UU_22, FS % METRIC_F_UU_33 ]
-
+    
     !-- Field names
 
     if ( present ( FieldOption ) ) then
@@ -331,11 +331,10 @@ contains
     else
       allocate ( Unit ( nFields, A % nCharts ) )
     end if !-- FieldOption
-
+    
     call SetUnits ( Unit, FS, A )
 
     !-- FieldSet
-
     call FS % FieldSet_BM_Form % Initialize &
            ( A, &
              FieldOption = Field, &
@@ -392,11 +391,10 @@ contains
     integer ( KDI ) :: &
       iC, &  !-- iChart
       iD     !-- iDimension
-
+      
     associate ( A  =>  G % Atlas )
     do iC  =  1,  A % nCharts
       associate ( C  =>  A % Chart ( iC ) % Element )
-
       do iD  =  1,  C % nDimensions
         call SetCoordinates ( G, iC, iD )
       end do !-- iD
@@ -602,9 +600,10 @@ contains
     associate &
       (  A  =>  G % Atlas, &
         GV  =>  G % Storage ( iCt ) % Value )
+    
     select type ( C  =>  A % Chart ( iCt ) % Element )
       class is ( Chart_GS_Form )
-
+      
     iaF  =  1  -  C % nGhostLayers ( iD ) 
     if ( C % Distributed ) then
       iaL  =  C % nCellsBrick ( iD )  +  C % nGhostLayers ( iD )
@@ -625,7 +624,7 @@ contains
            ( GV ( :, G % WIDTH_U ( iD ) ),  Width_3D )
     call C % SetFieldPointer &
            ( GV ( :, G % CENTER_U ( iD ) ), Center_3D )
-
+    
     associate &
       (   Edge_1D  =>  C %   Edge ( iD ) % Value, &
          Width_1D  =>  C %  Width ( iD ) % Value, &
@@ -647,7 +646,7 @@ contains
       end select !-- iD
     end do !-- iC
     end associate !-- Edge_1D, etc.
-
+    
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'Geometry_F__Form', 'module', CONSOLE % ERROR )

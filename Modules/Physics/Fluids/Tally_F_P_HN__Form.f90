@@ -20,7 +20,7 @@ module Tally_F_P_HN__Form
       N_INTEGRALS_HN = N_INTEGRALS_HN, &
       ELECTRON_NUMBER = 0
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeFluid
     procedure, public, pass :: &
       SelectVariables

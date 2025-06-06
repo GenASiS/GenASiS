@@ -12,11 +12,11 @@ module Chart_GS_CE__Form
     real ( KDR ) :: &
       RadiusExcision
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_GS_CE
     generic, public :: &
       Initialize => Initialize_GS_CE
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_C
     final :: &
       Finalize

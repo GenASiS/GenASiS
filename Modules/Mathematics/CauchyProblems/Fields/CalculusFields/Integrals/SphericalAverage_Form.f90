@@ -273,9 +273,6 @@ contains
       F_SA ( :, 1, 1, iF )  =  0.0_KDR
     end do !-- iS
 
-    !$OMP parallel do collapse ( 4 ) &
-    !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF ) &
-    !$OMP reduction ( + : F_SA )
     do iS  =  1, size ( iaAvg )
       do iP  =  1,  nC ( 3 )
         do iT  =  1,  nC ( 2 )
@@ -295,7 +292,6 @@ contains
         end do !-- iT
       end do !-- iP
     end do !-- iS
-    !$OMP  end parallel do      
 
     !-- Normalize variables to be averaged
     do iS  =  1, size ( iaAvg )

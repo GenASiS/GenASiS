@@ -50,7 +50,7 @@ module Fluid_P_HN__Form
     type ( EOS_P_HN_OConnorOtt_Form ), public, pointer :: &
       EOS => null ( )
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_F
     procedure, public, pass :: &
       SetElectronFractionMin
@@ -64,9 +64,9 @@ module Fluid_P_HN__Form
       ComputeFromTemperature
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedSingle
     final :: &
       Finalize

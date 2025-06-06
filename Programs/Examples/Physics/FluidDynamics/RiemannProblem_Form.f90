@@ -18,7 +18,7 @@ module RiemannProblem_Form
       DP_1, DP_2, DP_3, &  !-- DiscontinuityPoint_1, etc.
       UnitNormal
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     final :: &
       Finalize
@@ -225,7 +225,7 @@ contains
     end select !-- F
     end select !-- I
     end select !-- RP
-
+    
   end subroutine SetInitial
 
 
@@ -267,7 +267,7 @@ contains
 
     end associate !-- FV, etc.
     end associate !-- G
-
+    
   end subroutine SetFluid
 
 

@@ -35,7 +35,7 @@ module YahilLattimer_Form
       Reference, &
       Difference
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     procedure, public, pass :: &
       ComputeError

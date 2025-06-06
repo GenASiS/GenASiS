@@ -27,7 +27,7 @@ module Gravitation_N_H__Form
     integer ( KDI ) :: &
       iTimer = 0
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_FS
     procedure, public, pass ( G ) :: &
       SetStream

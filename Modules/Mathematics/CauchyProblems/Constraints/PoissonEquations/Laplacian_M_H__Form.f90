@@ -77,13 +77,13 @@ module Laplacian_M_H__Form
       Finalize
     procedure, private, pass :: &
       SetParameters
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       SetParameters_A
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       SetKernelFunctions
     procedure, private, pass :: &
       AllocateMoments
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeAngularMomentsLocal
     procedure, private, pass :: &
       ComputeRadialMoments

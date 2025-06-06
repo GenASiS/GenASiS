@@ -16,7 +16,7 @@ module FishboneMoncrief_Form
       DensityMax, &
       AtmosphereParameter
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     final :: &
       Finalize

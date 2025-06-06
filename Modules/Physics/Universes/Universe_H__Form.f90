@@ -27,7 +27,7 @@ module Universe_H__Form
     class ( Integrator_H_Form ), allocatable :: &
       Integrator
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     generic, public :: &
       Initialize => Initialize_H

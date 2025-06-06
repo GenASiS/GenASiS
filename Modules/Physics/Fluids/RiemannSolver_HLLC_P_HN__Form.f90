@@ -13,7 +13,7 @@ module RiemannSolver_HLLC_P_HN__Form
   type, public, extends ( RiemannSolver_HLLC_P_Form ) :: &
     RiemannSolver_HLLC_P_HN_Form
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RS
     final :: &
       Finalize

@@ -61,7 +61,7 @@ module Chart_GS__Form
       Initialize => Initialize_GS
     procedure, public, pass :: &
       ComputeCoordinateData
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_C
     procedure, public, pass :: &
       SetFieldPointer_1D_3D
@@ -1008,7 +1008,6 @@ contains
     associate &
       ( lB  =>  C % iaFirst  +  C % nGhostLayers, &
         uB  =>  C % iaLast   -  C % nGhostLayers )
-    !$OMP parallel do private collapse ( 3 )
     do kC = lB ( 3 ), uB ( 3 )
       do jC = lB ( 2 ), uB ( 2 )
         do iC = lB ( 1 ), uB ( 1 )
@@ -1016,7 +1015,6 @@ contains
         end do
       end do
     end do
-    !$OMP end parallel do
     end associate !-- lB, etc.
 
     end associate !-- iaF, etc.

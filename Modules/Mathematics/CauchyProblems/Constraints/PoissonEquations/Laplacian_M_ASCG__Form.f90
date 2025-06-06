@@ -27,11 +27,11 @@ module Laplacian_M_ASCG__Form
       Initialize
     final :: &
       Finalize
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       SetParameters_A
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       SetKernelFunctions
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeAngularMomentsLocal
   end type Laplacian_M_ASCG_Form
 

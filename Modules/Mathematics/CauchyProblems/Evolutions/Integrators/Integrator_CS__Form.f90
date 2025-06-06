@@ -22,7 +22,7 @@ module Integrator_CS__Form
     class ( EigenspeedSet_F_Form ), dimension ( : ), allocatable :: &
       EigenspeedSet_X
   contains
-    procedure, private, pass :: &  !-- 1
+    procedure, public, pass :: &  !-- 1
       Initialize_H      
     final :: &
       Finalize
@@ -34,7 +34,7 @@ module Integrator_CS__Form
       PrepareEvolution
     procedure, public, pass :: &   !-- 3
       UpdateHost => UpdateHost_CS
-    procedure, private, pass :: &  !-- 3
+    procedure, public, pass :: &  !-- 3
       ComputeTally
     procedure, public, nopass :: &   !-- 3
       Analyze_CS

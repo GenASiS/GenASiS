@@ -25,7 +25,7 @@ module Tally_F_D__Form
       MOMENTUM = 0, &
       ANGULAR_MOMENTUM = 0
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeFluid
     generic, public :: &
       Initialize => InitializeFluid

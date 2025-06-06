@@ -17,7 +17,7 @@ module Universe_F_CC__Form
     class ( Measures_F_CC_Form ), allocatable :: &
       Measures
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_F_CC
     generic, public :: &
       Initialize => Initialize_F_CC
@@ -27,7 +27,7 @@ module Universe_F_CC__Form
       SetBoundaryConditions
     procedure, public, pass :: &
       SetMeasures
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAtlas
     procedure, public, pass :: &
       Compute_dT_G_CGS

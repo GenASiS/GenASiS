@@ -42,7 +42,7 @@ module Tally_CS__Form
       ComputeInterior
     procedure, public, pass :: &
       ComputeBoundary
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Show_T
     generic :: &
       Show => Show_T

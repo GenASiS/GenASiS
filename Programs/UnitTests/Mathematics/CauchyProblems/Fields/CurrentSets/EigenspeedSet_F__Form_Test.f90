@@ -176,12 +176,12 @@ contains
     call Show ( iD, 'iDimension' )
     call Show ( nCompute, 'nCompute' )
 
-    T  =>  ES % Timer ( Level = 1 )
+    !T  =>  ES % Timer ( Level = 1 )
     call T % Start ( )
     do iC  =  1,  nCompute
       call ES % Compute ( iC = 1, iD = iD )
     end do
-    call T % Stop ( )
+    !call T % Stop ( )
 
     T  =>  S % TimerWrite ( Level = 1 )
     call T % Start ( )

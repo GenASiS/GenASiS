@@ -27,16 +27,16 @@ module PhotonMoments_G__Form
       Finalize
     procedure, public, pass ( CS ) :: &
       SetStream
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSpectralParametersAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSpectralParametersSingle
     generic, public :: &
       ComputeSpectralParameters => ComputeSpectralParametersAll, &
                                    ComputeSpectralParametersSingle
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeEquilibriumAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeEquilibriumSingle
   end type PhotonMoments_G_Form
 

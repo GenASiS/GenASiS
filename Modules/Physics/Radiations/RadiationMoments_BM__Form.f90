@@ -69,15 +69,15 @@ module RadiationMoments_BM__Form
       SetStream
     procedure, public, pass ( CS ) :: &
       ComputeFromPrimitive
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeFromBalancedSingle
     procedure, public, pass ( CS ) :: &
       ComputeEigenspeeds
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeEquilibriumAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeEquilibriumSingle
     generic, public :: &
       ComputeEquilibrium => ComputeEquilibriumAll, &

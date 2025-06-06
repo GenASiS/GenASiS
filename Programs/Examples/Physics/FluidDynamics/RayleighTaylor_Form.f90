@@ -12,7 +12,7 @@ module RayleighTaylor_Form
       PressureBase, &   
       AdiabaticIndex
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     final :: &
       Finalize

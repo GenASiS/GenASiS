@@ -109,7 +109,7 @@ module Integrator_H__Form
     procedure ( IS ), pointer :: &
       InitializeSeries => null ( )
   contains
-    procedure, private, pass :: &  !-- 1
+    procedure, public, pass :: &  !-- 1
       Initialize_H
     generic, public :: &           
       Initialize => Initialize_H
@@ -131,7 +131,7 @@ module Integrator_H__Form
       ShowSteps
     procedure, public, pass :: &  !-- 2
       ShowCheckpointing
-    procedure, private, pass :: &   !-- 2
+    procedure, public, pass :: &   !-- 2
       PrepareInitial
     procedure, public, pass :: &   !-- 2
       PrepareEvolution
@@ -477,7 +477,7 @@ contains
       T_WC
     type ( CollectiveOperation_R_Form ) :: &
       CO
-
+     
     call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
     call I % ResolveCycle ( )
@@ -1022,6 +1022,7 @@ contains
 
     !-- Initialize series
 
+
     if ( .not. I % Start .and. .not. I % Restart ) then
 
       if ( .not. allocated ( I % Series ) ) then
@@ -1051,7 +1052,7 @@ contains
     end if
 
     !-- Write
-
+    
     if ( .not. I % NoWrite .and. .not. I % Restart ) then
       if ( present ( T_Option ) ) then
         T_W  =>  PROGRAM_HEADER % Timer &
@@ -1089,7 +1090,7 @@ contains
     
     I % Start    =  .false.
     I % Restart  =  .false.
-
+    
   end subroutine AdministerCheckpoint
 
 
@@ -1223,7 +1224,7 @@ contains
     type ( TimerForm ), pointer :: &
       T_SR, &
       T_R
-
+      
     !-- Reference
 
     if ( associated ( I % SetReference ) ) then

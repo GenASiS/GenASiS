@@ -44,13 +44,13 @@ module Poisson_H__Form
       Finalize
     procedure, private, pass :: &
       Solve_M
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       CombineMoments
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       CombineMomentsLocal
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ExchangeSolution
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ApplyBoundarySolution
   end type Poisson_H_Form
 
@@ -150,12 +150,12 @@ contains
       Source
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
-
+    
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
 
       call P % Solve_M ( Solution, Source, T_Option = T_Option )
-   
+      
     case default
       call Show ( 'Solver type not supported', CONSOLE % ERROR )
       call Show ( P % SolverType, 'Type', CONSOLE % ERROR )

@@ -23,7 +23,7 @@ module Integrator_CS_1D_CS__Form
 !    class ( Step_RK_H_Form ), allocatable :: &
 !      Step_1D
   contains
-    procedure, private, pass :: &  !-- 1
+    procedure, public, pass :: &  !-- 1
       Initialize_H      
     final :: &
       Finalize
@@ -33,9 +33,9 @@ module Integrator_CS_1D_CS__Form
 !      ShowSteps
 !    procedure, private, pass :: &  !-- 2
 !      ComputeCycle
-    procedure, private, pass :: &  !-- 3
+    procedure, public, pass :: &  !-- 3
       ComputeTally
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeTally_1D
   end type Integrator_CS_1D_CS_Form
 
