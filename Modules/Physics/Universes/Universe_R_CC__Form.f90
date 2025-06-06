@@ -42,7 +42,7 @@ module Universe_R_CC__Form
       Finalize
     procedure, private, pass :: &
       SetCommunicator
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       AllocateIntegrator
     procedure, public, pass :: &
       InitializeRadiation

@@ -59,7 +59,7 @@ module RadiationMoments_BM__Form
     class ( * ), pointer :: &
       Interactions => null ( )
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RM
     generic, public :: &
       Initialize => InitializeAllocate_RM

@@ -21,7 +21,7 @@ module PhotonMoments_G__Form
     integer ( KDI ) :: &
       TEMPERATURE_GREY = 0
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RM
     final :: &
       Finalize

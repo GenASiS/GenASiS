@@ -43,7 +43,7 @@ module Universe_R_B__Form
       Finalize
     procedure, private, pass :: &
       SetCommunicator
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       AllocateIntegrator
     procedure, public, pass :: &
       InitializePositionSpace

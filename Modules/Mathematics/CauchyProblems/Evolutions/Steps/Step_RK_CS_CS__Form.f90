@@ -51,7 +51,7 @@ module Step_RK_CS_CS__Form
       Step_CS_1, &
       Step_CS_2
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_CS_CS
     generic, public :: &
       Initialize => Initialize_CS_CS

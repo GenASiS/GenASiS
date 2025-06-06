@@ -37,7 +37,7 @@ module Universe_F_C__Form
       Initialize_F_C
     final :: &
       Finalize
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       AllocateIntegrator
     procedure, public, pass :: &
       InitializePositionSpace

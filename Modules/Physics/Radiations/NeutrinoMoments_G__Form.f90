@@ -33,7 +33,7 @@ module NeutrinoMoments_G__Form
       ENERGY_AVERAGE, &
       OCCUPANCY_AVERAGE
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RM
     final :: &
       Finalize

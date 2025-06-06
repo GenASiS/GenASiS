@@ -23,7 +23,7 @@ module Step_RK_NM_G__Form
       Residual_J_Eq, &
       Residual_N_Eq
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_CS_CS
     final :: &
       Finalize

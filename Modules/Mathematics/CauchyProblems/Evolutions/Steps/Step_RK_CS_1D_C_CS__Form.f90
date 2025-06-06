@@ -28,7 +28,7 @@ module Step_RK_CS_1D_C_CS__Form
     class ( Step_RK_CS_Form ), dimension ( : ), allocatable :: &
       Step_CS_1D
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_CS_1D_C_CS
     generic, public :: &
       Initialize => Initialize_CS_1D_C_CS

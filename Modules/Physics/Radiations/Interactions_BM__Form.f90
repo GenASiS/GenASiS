@@ -32,9 +32,9 @@ module Interactions_BM__Form
       Initialize => InitializeAllocate_I
     procedure, public, pass ( I ) :: &
       SetStream
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSingle
     generic, public :: &
       Compute  =>  ComputeAll, &

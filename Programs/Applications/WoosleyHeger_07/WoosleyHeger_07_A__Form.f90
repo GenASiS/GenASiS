@@ -14,7 +14,7 @@ module WoosleyHeger_07_A__Form
     type ( GradientForm ), allocatable :: &
       GradientPressure
  contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_H
     final :: &
       Finalize

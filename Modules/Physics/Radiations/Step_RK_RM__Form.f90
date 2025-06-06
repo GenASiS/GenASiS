@@ -18,7 +18,7 @@ module Step_RK_RM__Form
       Residual_R_E, &
       Residual_F_E
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Initialize_CS_CS
     final :: &
       Finalize

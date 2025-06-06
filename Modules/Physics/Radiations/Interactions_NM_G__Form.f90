@@ -47,9 +47,9 @@ module Interactions_NM_G__Form
       Initialize => InitializeAllocate_NM_G
     procedure, public, pass ( I ) :: &
       SetStream
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeAll
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSingle
     final :: &
       Finalize

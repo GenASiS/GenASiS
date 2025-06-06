@@ -34,7 +34,7 @@ module Universe_R_B_C__Form
       Initialize => Initialize_R_B_C
     final :: &
       Finalize
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       AllocateIntegrator
     procedure, public, pass :: &
       InitializeRadiation
