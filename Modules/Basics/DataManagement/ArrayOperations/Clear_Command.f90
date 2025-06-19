@@ -44,26 +44,61 @@ module Clear_Command
 contains
 
 
-  subroutine ClearInteger_1D ( A )
+  subroutine ClearInteger_1D ( A, UseDeviceOption )
 
     integer ( KDI ), dimension ( : ), intent ( out ) :: &
       A
 
-    !$OMP parallel workshare
-    A = 0_KDI
-    !$OMP end parallel workshare
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nV = size ( A )
+    
+    if ( UseDevice ) then
+      !$OMP OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        A ( iV ) = 0_KDI
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nV
+        A ( iV ) = 0_KDI
+      end do
+      !$OMP end parallel do
+    end if
+
 
   end subroutine ClearInteger_1D
 
   
-  subroutine ClearInteger_2D ( A )
+  subroutine ClearInteger_2D ( A, UseDeviceOption )
 
     integer ( KDI ), dimension ( :, : ), intent ( out ) :: &
       A
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
-    !$OMP parallel workshare
-    A = 0_KDI
-    !$OMP end parallel workshare
+    integer ( KDI ) :: &
+      iV, &
+      nV
+      
+    nV = size ( A, dim = 2 )
+
+    do iV = 1, nV
+      call Clear ( A ( :, iV ), UseDeviceOption )
+    end do
 
   end subroutine ClearInteger_2D
 

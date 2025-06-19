@@ -19,7 +19,8 @@ module Real_3D__Form
     real ( KDR ), dimension ( :, :, : ), allocatable :: &
       Value
     logical ( KDL ) :: &
-      AllocatedDevice = .false. 
+      AllocatedDevice = .false., &
+      ClearRequested  = .false.
   contains
     procedure, private, pass :: &
       Initialize_R_3D
@@ -73,8 +74,8 @@ contains
       return
     end if 
     
-    ClearRequested = .false.
-    if ( present ( ClearOption ) ) ClearRequested = ClearOption
+    if ( present ( ClearOption ) ) &
+      A % ClearRequested = ClearOption
 
     iaLB = 1
     if ( present ( iaLowerBoundOption ) ) iaLB = iaLowerBoundOption
@@ -85,7 +86,8 @@ contains
             iaLB ( 2 ) : iaLB ( 2 ) + nValues ( 2 ) - 1, &
             iaLB ( 3 ) : iaLB ( 3 ) + nValues ( 3 ) - 1 ) )
     
-    if ( ClearRequested ) call Clear ( A % Value )
+    if ( A % ClearRequested ) &
+      call Clear ( A % Value )
 
   end subroutine Initialize_R_3D
   
@@ -139,6 +141,9 @@ contains
     call AllocateDevice ( size ( A % Value ), A % D_Value )
     A % AllocatedDevice = .true.
     call AssociateHost ( A % D_Value, A % Value )
+    
+    if ( A % ClearRequested ) &
+      call Clear ( A % Value, UseDeviceOption = .true. )
   
   end subroutine AllocateDevice_R_3D
   

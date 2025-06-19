@@ -18,7 +18,8 @@ module Integer_1D__Form
     integer ( KDI ), dimension ( : ), allocatable :: &
       Value
     logical ( KDL ) :: &
-      AllocatedDevice = .false.
+      AllocatedDevice = .false., &
+      ClearRequested  = .false. 
   contains
     procedure, private, pass :: &
       Initialize_I_1D
@@ -55,8 +56,6 @@ contains
 
     integer ( KDI ) :: &
       iLB
-    logical ( KDL ) :: &
-      ClearRequested
 
     if ( nValues < 0 ) return
     
@@ -65,15 +64,16 @@ contains
       return
     end if 
     
-    ClearRequested = .false.
-    if ( present ( ClearOption ) ) ClearRequested = ClearOption
+    if ( present ( ClearOption ) ) &
+      A % ClearRequested = ClearOption
 
     iLB = 1
     if ( present ( iLowerBoundOption ) ) iLB = iLowerBoundOption
     
     allocate ( A % Value ( iLB : iLB + nValues - 1 ) )
     
-    if ( ClearRequested ) call Clear ( A % Value )
+    if ( A % ClearRequested ) &
+      call Clear ( A % Value )
 
   end subroutine Initialize_I_1D
   
@@ -130,6 +130,9 @@ contains
     call AllocateDevice ( size ( A % Value ), A % D_Value )
     A % AllocatedDevice = .true.
     call AssociateHost ( A % D_Value, A % Value )
+    
+    if ( A % ClearRequested ) &
+      call Clear ( A % Value, UseDeviceOption = .true. )
   
   end subroutine AllocateDevice_I_1D
   
