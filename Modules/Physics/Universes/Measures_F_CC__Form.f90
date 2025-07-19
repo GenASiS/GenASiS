@@ -492,8 +492,7 @@ contains
       call CO_SR % Initialize &
              ( C % Communicator, &
                nOutgoing = [ nCB ( 2 )  *  nCB ( 3 ) ], &
-               nIncoming = [ nCB ( 2 )  *  nCB ( 3 ) ], &
-               RootOption = 0 )
+               nIncoming = [ nCB ( 2 )  *  nCB ( 3 ) ] )
     end if
     
     OV_2D ( 1 : nCB ( 2 ), 1 : nCB ( 3 ) ) => CO_SR % Outgoing % Value
@@ -530,11 +529,9 @@ contains
     
     call CO_SR % Reduce ( REDUCTION % MAX )
     
-    if ( C % Communicator % Rank == 0 ) then
-      M % RadiusShock &
-        = sum ( CO_SR % Incoming % Value ) / (  nCB ( 2 ) * nCB ( 3 )  )
-    end if
-    
+    M % RadiusShock &
+      = sum ( CO_SR % Incoming % Value ) / (  nCB ( 2 ) * nCB ( 3 )  )
+  
     end associate !-- nCB, FV
     end associate !-- C
     
