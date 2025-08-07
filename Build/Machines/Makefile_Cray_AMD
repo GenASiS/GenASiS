@@ -61,9 +61,14 @@ endif
 LIBRARY_LAPACK = ${CRAY_MPICH_LIB}
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  INCLUDE_DEVICE = -I${OLCF_AFAR_ROOT}/include
-  LIBRARY_DEVICE = -L${OLCF_AFAR_ROOT}/lib -lamdhip64 \
-                   -lomp -lomptarget 
+  #-- Add hostdevice runtime if needed (slow but sometime needed)
+  ifeq ($(ENABLE_HOSTDEVICE), 1)
+    LIBRARY_DEVICE += -lflang_rt.hostdevice
+  endif
+
+  INCLUDE_DEVICE += -I${OLCF_AFAR_ROOT}/include
+  LIBRARY_DEVICE += -L${OLCF_AFAR_ROOT}/lib -lamdhip64 \
+                    -lomp -lomptarget 
 endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
