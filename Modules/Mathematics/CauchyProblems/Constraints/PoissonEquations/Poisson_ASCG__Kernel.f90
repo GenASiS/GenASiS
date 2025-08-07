@@ -36,7 +36,8 @@ contains
           !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
           !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
           !$OMP private ( RM_R_C, RM_I_C ) &
-          !$OMP firstprivate ( iE, iAM )
+          !$OMP shared ( iE, iAM )
+          !--$OMP firstprivate ( iE, iAM )
           do iP  =  1,  nC ( 3 )
             do iT  =  1,  nC ( 2 )
               do iR  =  1,  nC ( 1 )
@@ -71,7 +72,8 @@ contains
           !$OMP parallel do collapse ( 3 ) &
           !$OMP schedule ( OMP_SCHEDULE_HOST ) &
           !$OMP private ( RM_R_C, RM_I_C ) &
-          !$OMP firstprivate ( iE, iAM )
+          !$OMP shared ( iE, iAM )
+          !--$OMP firstprivate ( iE, iAM )
           do iP  =  1,  nC ( 3 )
             do iT  =  1,  nC ( 2 )
               do iR  =  1,  nC ( 1 )

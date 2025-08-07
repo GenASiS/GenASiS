@@ -28,7 +28,8 @@ contains
     if ( UseDevice ) then
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP firstprivate ( M_Ref )
+      !$OMP shared ( M_Ref )
+      !--$OMP firstprivate ( M_Ref )
       do iV = 1, nV
         M ( iV )  =  M_Ref
       end do !-- iV
@@ -36,7 +37,8 @@ contains
     else
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP firstprivate ( M_Ref )
+      !$OMP shared ( M_Ref )
+      !--$OMP firstprivate ( M_Ref )
       do iV = 1, nV
         M ( iV )  =  M_Ref
       end do !-- iV
@@ -66,7 +68,8 @@ contains
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP firstprivate ( N_Min )
+      !$OMP shared ( N_Min )
+      !--$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( N ( iV )  <  N_Min ) then
@@ -89,7 +92,8 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP firstprivate ( N_Min )
+      !$OMP shared ( N_Min )
+      !--$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( N ( iV )  <  N_Min ) then
@@ -133,7 +137,8 @@ contains
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP firstprivate ( N_Min )
+      !$OMP shared ( N_Min )
+      !--$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( D ( iV )  <  N_Min ) then
@@ -158,7 +163,8 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP firstprivate ( N_Min )
+      !$OMP shared ( N_Min )
+      !--$OMP firstprivate ( N_Min )
       do iV = 1, nV
 
         if ( D ( iV )  <  N_Min ) then

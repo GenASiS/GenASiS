@@ -41,7 +41,7 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP private ( AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
       !$OMP private ( V_D_IL, V_D_IR, S_D_IL, S_D_IR, S_D_ICL, S_D_ICR ) &
-      !$OMP firstprivate ( SqrtTiny )
+      !$OMP shared ( SqrtTiny )
       do iV  =  1,  nV
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )
@@ -150,7 +150,7 @@ contains
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP private ( AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
       !$OMP private ( V_D_IL, V_D_IR, S_D_IL, S_D_IR, S_D_ICL, S_D_ICR ) &
-      !$OMP firstprivate ( SqrtTiny )
+      !$OMP shared ( SqrtTiny )
       do iV  =  1,  nV
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )

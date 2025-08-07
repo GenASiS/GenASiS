@@ -110,7 +110,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) firstprivate ( dJ )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) shared ( dJ )
       do kV  =  lV ( 3 ),  uV ( 3 ) 
         do jV  =  lV ( 2 ),  uV ( 2 )
           do iV  =  lV ( 1 ),  uV ( 1 )
@@ -134,7 +134,7 @@ contains
     else !-- use host
               
       !$OMP parallel do collapse ( 3 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) firstprivate ( dJ )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) shared ( dJ )
       do kV  =  lV ( 3 ),  uV ( 3 ) 
         do jV  =  lV ( 2 ),  uV ( 2 )
           do iV  =  lV ( 1 ),  uV ( 1 )

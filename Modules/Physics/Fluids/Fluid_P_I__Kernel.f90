@@ -30,7 +30,8 @@ contains
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
+      !$OMP shared ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
+      !--$OMP firstprivate ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
@@ -56,7 +57,8 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
+      !$OMP shared ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
+      !--$OMP firstprivate ( M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
@@ -101,7 +103,8 @@ contains
       
       !$OMP OMP_TARGET_DIRECTIVE parallel do &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
+      !$OMP shared ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
+      !--$OMP firstprivate ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref
@@ -127,7 +130,8 @@ contains
 
       !$OMP parallel do &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
-      !$OMP firstprivate ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
+      !$OMP shared ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
+      !--$OMP firstprivate ( M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0 )
       do iV = 1, nValues
 
         M ( iV )  =  M_Ref

@@ -29,7 +29,8 @@ contains
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 3 ) &
-      !$OMP OMP_TARGET_DISTRIBUTE_SCHEDULE private ( MyAME )
+      !$OMP private ( MyAME )
+      !--$OMP OMP_TARGET_DISTRIBUTE_SCHEDULE 
       do iE  =  1, nE
         do iAM  =  1, nAM
           do iR  =  1,  nC ( 1 )
@@ -38,6 +39,7 @@ contains
              
             !$OMP parallel do collapse ( 2 ) &
             !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
+            !$OMP shared ( iR , iAM, iE ) &
             !--$OMP firstprivate ( iR, iAM, iE ) &
             !$OMP reduction ( + : MyAME )
             do iP  =  1,  nC ( 3 )

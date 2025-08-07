@@ -365,7 +365,7 @@ contains
       !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
       !$OMP private ( xI, xO, xE, xIM, xC, xOP ) &
       !$OMP private ( c0, c1, c2, c2_S, d ) &
-      !$OMP firstprivate ( SqrtTiny )
+      !$OMP shared ( SqrtTiny )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
@@ -566,7 +566,7 @@ contains
       !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
       !$OMP private ( xI, xO, xE, xIM, xC, xOP ) &
       !$OMP private ( c0, c1, c2, c2_S, d ) &
-      !$OMP firstprivate ( SqrtTiny )
+      !$OMP shared ( SqrtTiny )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
