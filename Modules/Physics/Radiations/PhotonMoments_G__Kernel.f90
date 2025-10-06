@@ -57,8 +57,10 @@ contains
     real ( KDR ) :: &
       a
 
-    !OMP_DECLARE_TARGET
-      
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
+
     a  =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
 
     T_R ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
@@ -121,8 +123,10 @@ contains
     real ( KDR ) :: &
       SqrtTiny, &
       a
-    
-    !OMP_DECLARE_TARGET
+
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif  
       
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 

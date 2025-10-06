@@ -40,7 +40,9 @@ contains
     logical ( KDL )  :: &
       Ascending
       
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD
+    !$OMP declare target
+#endif
       
     select type ( A )
     

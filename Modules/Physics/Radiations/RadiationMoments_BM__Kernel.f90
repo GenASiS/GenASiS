@@ -395,7 +395,9 @@ contains
       H, &
       SqrtTiny
       
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 

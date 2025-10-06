@@ -419,8 +419,10 @@ contains
       H, &
       SqrtTiny
       
-    !OMP_DECLARE_TARGET
-    
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
+        
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     if ( E ( iV )  >  0.0_KDR  .and.  N ( iV )  >  0.0_KDR ) then
@@ -772,8 +774,9 @@ contains
       Bracket, &
       Converge
     
-    !OMP_DECLARE_TARGET
-    
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif    
           
     ! OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
 
@@ -975,7 +978,9 @@ contains
 !      fdtheta, fdtheta2, &
 !      fdetadtheta
 
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
@@ -1125,7 +1130,9 @@ contains
 !      fdtheta, fdtheta2, &
 !      fdetadtheta
 
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
@@ -1261,7 +1268,9 @@ contains
       AbsolutePrecision, &
       RelativePrecision
       
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
       
     MaxIterations  =  50
     Tolerance      =  1.0e-9_KDR !epsilon ( 1.0_KDR ) * 10.0_KDR 
@@ -1411,7 +1420,9 @@ contains
       Factor, &
       F_2, F_3
       
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
 
     FourThirds  =  4.0_KDR / 3.0_KDR
     Factor      =  ( 2 * Pi_2 ) ** ( 1.0_KDR / 3.0_KDR )
@@ -1431,7 +1442,9 @@ contains
     real ( KDR ) :: &
       F_2
       
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
 
     if ( Eta  >  0.0_KDR ) then
       F_2  =  Eta**3 / 3.  +  4. * Eta  +  2. * exp ( -Eta )
@@ -1449,7 +1462,9 @@ contains
     real ( KDR ) :: &
       F_3
       
-    !OMP_DECLARE_TARGET
+#ifdef ENABLE_OMP_OFFLOAD  
+    !$OMP declare target
+#endif
 
     if ( Eta  >  0.0_KDR ) then
       F_3  =  Eta**4 / 4.  +  Pi_2 * Eta**2 / 2.  +  12.  -  6. * exp ( -Eta )
