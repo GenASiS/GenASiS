@@ -1,6 +1,6 @@
 
-#module load cpe/25.03
-#module load PrgEnv-amd
+module load cpe/25.09
+module load PrgEnv-amd
 
 export GENASIS_MACHINE=Cray_AMD
 
@@ -8,10 +8,15 @@ export GENASIS_MACHINE=Cray_AMD
 #export OLCF_AFAR_ROOT=/autofs/nccs-svm1_sw/crusher/ums/compilers/afar/rocm-afar-6356-drop-4.1.0
 #export OLCF_AFAR_ROOT=/autofs/nccs-svm1_sw/crusher/ums/compilers/afar/rocm-afar-7450-drop-6.0.0
 #export OLCF_AFAR_ROOT=/autofs/nccs-svm1_sw/crusher/ums/compilers/afar/rocm-afar-7702-drop-6.1.0
-export OLCF_AFAR_ROOT=/lustre/orion/world-shared/stf006/reubendb/sw/frontier/afar/rocm-afar-8248-drop-7.0.0
+#export OLCF_AFAR_ROOT=/lustre/orion/world-shared/stf006/reubendb/sw/frontier/afar/rocm-afar-8473-drop-7.1.0
+
+AFAR_UMS_BASEDIR=/sw/crusher/ums/compilers/afar
+AFAR_UMS_LATEST=$(ls -d --color=never ${AFAR_UMS_BASEDIR}/*/ | tail -n1)
+export OLCF_AFAR_ROOT=${AFAR_UMS_LATEST}
 
 export PATH=${OLCF_AFAR_ROOT}/lib/llvm/bin:${PATH}
 export LD_LIBRARY_PATH=${OLCF_AFAR_ROOT}/lib:${OLCF_AFAR_ROOT}/lib/llvm/lib:${LD_LIBRARY_PATH}
+
 #module use /sw/crusher/ums/compilers/modulefiles
 #module load afar/19.0.0-4106.lua
 
