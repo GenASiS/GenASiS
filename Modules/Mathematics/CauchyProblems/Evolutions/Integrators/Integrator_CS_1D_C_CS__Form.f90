@@ -14,8 +14,8 @@ module Integrator_CS_1D_C_CS__Form
 
   type, public, extends ( Integrator_CS_1D_CS_Form ) :: &
     Integrator_CS_1D_C_CS_Form
-      class ( CurrentSetForm ), dimension ( : ), allocatable :: &
-        CurrentSet_X_1D
+      class ( CurrentSetForm ), dimension ( : ), pointer :: &
+        CurrentSet_X_1D => null ( )
       class ( EigenspeedSet_F_Form ), dimension ( :, : ), allocatable :: &
         EigenspeedSet_X_1D
   contains
@@ -93,7 +93,8 @@ contains
 
     !-- CurrentSet, if necessary
 
-    if ( .not. allocated ( I % CurrentSet_X_1D ) ) then
+    !if ( .not. allocated ( I % CurrentSet_X_1D ) ) then
+    if ( .not. associated ( I % CurrentSet_X_1D ) ) then
       allocate ( I % CurrentSet_X_1D ( nCurrentSets_1D ) )
       do iCS  =  1,  nCurrentSets_1D
       associate &
@@ -155,9 +156,12 @@ contains
 
     if ( allocated ( I % EigenspeedSet_X_1D ) ) &
       deallocate ( I % EigenspeedSet_X_1D )
-    if ( allocated ( I % CurrentSet_X_1D ) ) &
+    !if ( allocated ( I % CurrentSet_X_1D ) ) &
+    if ( associated ( I % CurrentSet_X_1D ) ) then
       deallocate ( I % CurrentSet_X_1D )
-
+      nullify ( I % CurrentSet_X_1D )
+    end if
+    
   end subroutine Finalize
 
 
@@ -208,7 +212,8 @@ contains
 
     call I % Integrator_CS_Form % PrepareEvolution ( )
 
-    if ( .not. allocated ( I % CurrentSet_X_1D ) ) &
+    !if ( .not. allocated ( I % CurrentSet_X_1D ) ) &
+    if ( .not. associated ( I % CurrentSet_X_1D ) ) &
       return
 
     do iCS  =  1,  I % nCurrentSets
@@ -255,7 +260,8 @@ contains
     integer ( KDI ) :: &
       iCS
 
-    if ( .not. allocated ( I % CurrentSet_X_1D ) ) &
+    !if ( .not. allocated ( I % CurrentSet_X_1D ) ) &
+    if ( .not. associated ( I % CurrentSet_X_1D ) ) &
       return
 
     do iCS  =  1,  I % nCurrentSets
