@@ -17,6 +17,9 @@ contains
       iE     !-- iEquation
     logical ( KDL ) :: &
       UseDevice
+    
+    !-- WAR for CCE bug causing wrong answer
+    !DIR$ INLINENEVER ComputeRadialMomentsKernel
 
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
