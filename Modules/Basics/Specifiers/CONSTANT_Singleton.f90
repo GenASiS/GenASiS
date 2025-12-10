@@ -28,7 +28,7 @@ module CONSTANT_Singleton
       AVOGADRO_SI           =  6.02214076e23_KDR, &
       BOLTZMANN_SI          =  1.380649e-23_KDR, &
       FERMI_HBAR_C_3_GEV_2  =  1.1663788e-5_KDR, &
-      SIN_2_WEINBERG        =  0.23121, &
+      SIN_2_WEINBERG        =  0.23121_KDR, &
       !-- Astrophysical SI
       !   https://pdg.lbl.gov/2022/reviews
       !           /rpp2022-rev-astrophysical-constants.pdf
