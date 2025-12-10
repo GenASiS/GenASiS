@@ -30,7 +30,7 @@ contains
       
     if ( OnDevice ( Value ) ) then
 #ifdef ENABLE_OMP_OFFLOAD
-      !$OMP target data use_device_ptr ( Value )
+      !$OMP target data use_device_addr ( Value )
 #endif
       DA = c_loc ( Value )
 #ifdef ENABLE_OMP_OFFLOAD
