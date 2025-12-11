@@ -27,41 +27,66 @@ contains
       UseDevice = UseDeviceOption
 
     if ( UseDevice ) then
+      !-- FIXME:  AMD Flang incorrect TEAM privatization (wrong answer):
+      !   workaround is to serialize reduction for MyAM
 
-      !$OMP OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 3 ) &
-      !$OMP private ( MyAME )
-      !--$OMP OMP_TARGET_DISTRIBUTE_SCHEDULE 
+!--      !$OMP OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 3 ) &
+!--      !$OMP private ( MyAME )
+!--      !--$OMP OMP_TARGET_DISTRIBUTE_SCHEDULE 
+!--      do iE  =  1, nE
+!--        do iAM  =  1, nAM
+!--          do iR  =  1,  nC ( 1 )
+!--            
+!--            MyAME = 0.0_KDR
+!--             
+!--            !$OMP parallel do collapse ( 2 ) &
+!--            !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
+!--            !$OMP shared ( iR , iAM, iE ) &
+!--            !--$OMP firstprivate ( iR, iAM, iE ) &
+!--            !$OMP reduction ( + : MyAME )
+!--            do iP  =  1,  nC ( 3 )
+!--              do iT  =  1,  nC ( 2 )
+!--
+!--                MyAME  =  MyAME &
+!--                          +  dSA ( iT, iP )  * AF ( iT, iP, iAM )  &
+!--                             *  S ( oC ( 1 )  +  iR, &
+!--                                    oC ( 2 )  +  iT, &
+!--                                    oC ( 3 )  +  iP, &
+!--                                    iE )
+!--
+!--              end do !-- iT
+!--            end do !-- iP
+!--            !$OMP end parallel do
+!--
+!--            MyAM ( oR + iR, iAM, iE )  =  MyAME
+!--
+!--          end do !-- iR
+!--        end do !-- iAM
+!--      end do !-- iE
+!--      !$OMP end OMP_TARGET_DISTRIBUTE_DIRECTIVE
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET )
       do iE  =  1, nE
         do iAM  =  1, nAM
-          do iR  =  1,  nC ( 1 )
-            
-            MyAME = 0.0_KDR
-             
-            !$OMP parallel do collapse ( 2 ) &
-            !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
-            !$OMP shared ( iR , iAM, iE ) &
-            !--$OMP firstprivate ( iR, iAM, iE ) &
-            !$OMP reduction ( + : MyAME )
-            do iP  =  1,  nC ( 3 )
-              do iT  =  1,  nC ( 2 )
+          do iP  =  1,  nC ( 3 )
+            do iT  =  1,  nC ( 2 )
+              do iR  =  1,  nC ( 1 )
 
-                MyAME  =  MyAME &
-                          +  dSA ( iT, iP )  * AF ( iT, iP, iAM )  &
-                             *  S ( oC ( 1 )  +  iR, &
-                                    oC ( 2 )  +  iT, &
-                                    oC ( 3 )  +  iP, &
-                                    iE )
+                MyAM ( oR + iR, iAM, iE )  &
+                  =  MyAM ( oR + iR, iAM, iE )  &
+                     +  dSA ( iT, iP )  * AF ( iT, iP, iAM )  &
+                        *  S ( oC ( 1 )  +  iR, &
+                               oC ( 2 )  +  iT, &
+                               oC ( 3 )  +  iP, &
+                               iE )
 
-              end do !-- iT
-            end do !-- iP
-            !$OMP end parallel do
-
-            MyAM ( oR + iR, iAM, iE )  =  MyAME
-
-          end do !-- iR
+              end do !-- iR
+            end do !-- iT
+          end do !-- iP
         end do !-- iAM
       end do !-- iE
-      !$OMP end OMP_TARGET_DISTRIBUTE_DIRECTIVE
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do      
 
     else  !-- use host
 
