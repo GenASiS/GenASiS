@@ -1211,7 +1211,7 @@ contains
       iC  !-- iCell
     real ( KDR ) :: &
       Width
-
+    
     if ( nEqual == 0 ) then
       Edge ( 1 )  =  MinCoordinate
     else
@@ -1220,11 +1220,14 @@ contains
     
     Width  =  Ratio  *  Edge ( nEqual + 1 )
 
+    !DIR$ NOINLINE
     do iC = nEqual + 2, nC + 1
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
       Width        =  Ratio  *  Edge ( iC )
+      !--Width        =  Ratio  *  ( Edge ( iC - 1 )  +  Width ) 
     end do
-
+    !DIR$ RESETINLINE
+  
   end subroutine ComputeEdgeProportional
 
 
