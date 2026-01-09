@@ -19,6 +19,12 @@ DEVICE_COMPILE       =
 
 LINK = ftn -homp
 
+#-- Workaround for producing wrong result with default optimization flag
+ifeq (${PURPOSE}, OPTIMIZE)
+  BASE_FLAG = -O1
+  KERNEL_FLAG = ${FORTRAN_OPTIMIZE}
+endif
+
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
 ENABLE_OMP          ?= 1
