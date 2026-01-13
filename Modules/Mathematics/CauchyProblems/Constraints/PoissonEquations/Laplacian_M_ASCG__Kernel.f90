@@ -90,9 +90,11 @@ contains
 
     else  !-- use host
 
-      !$OMP parallel do collapse ( 5 ) &
+      !-- !$OMP parallel do collapse ( 5 ) &
+      !$OMP parallel do collapse ( 3 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP reduction ( + : MyAM )
+      !$OMP
+      !-- $OMP reduction ( + : MyAM )
       do iE  =  1, nE
         do iAM  =  1, nAM
           do iP  =  1,  nC ( 3 )

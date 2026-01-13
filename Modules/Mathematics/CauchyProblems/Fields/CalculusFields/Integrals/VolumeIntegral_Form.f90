@@ -171,12 +171,12 @@ contains
     
     I  =  0.0_KDR
 
-    !$OMP parallel do reduction ( + : I )
+    !-- $OMP parallel do reduction ( + : I )
     do iV  =  1, nV
       if ( ProperCell ( iV ) ) &
         I  =  I  +  dIdV ( iV, : ) * dV ( iV )
     end do
-    !$OMP end parallel do
+    !-- $OMP end parallel do
 
   end subroutine ComputeIntegral_SCG
 
