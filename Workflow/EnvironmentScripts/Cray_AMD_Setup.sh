@@ -11,7 +11,7 @@ export GENASIS_MACHINE=Cray_AMD
 #export OLCF_AFAR_ROOT=/lustre/orion/world-shared/stf006/reubendb/sw/frontier/afar/rocm-afar-8473-drop-7.1.0
 
 AFAR_UMS_BASEDIR=/sw/crusher/ums/compilers/afar
-AFAR_UMS_LATEST=$(ls -d --color=never ${AFAR_UMS_BASEDIR}/*/ | tail -n1)
+AFAR_UMS_LATEST=$(ls -v -d --color=never ${AFAR_UMS_BASEDIR}/*/ | tail -n1)
 export OLCF_AFAR_ROOT=${AFAR_UMS_LATEST}
 
 export PATH=${OLCF_AFAR_ROOT}/lib/llvm/bin:${PATH}
