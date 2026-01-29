@@ -12,9 +12,9 @@ module Fluid_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_P = 1, &
-      N_BALANCED_P  = 1, &
-      N_FIELDS_P    = 7, &
+      N_PRIMITIVE_P = 2, &
+      N_BALANCED_P  = 2, &
+      N_FIELDS_P    = 8, &
       N_VECTORS_P   = 0
 
   type, public, extends ( Fluid_D_Form ) :: Fluid_P_Form
@@ -29,6 +29,7 @@ module Fluid_P__Form
       PRESSURE           = 0, &
       TEMPERATURE        = 0, &
       ENTROPY_PER_BARYON = 0, &
+      ENTROPY_DENSITY_B  = 0, &
       SOUND_SPEED        = 0, &
       ADIABATIC_INDEX    = 0
     real ( KDR ) :: &
@@ -229,8 +230,9 @@ contains
     F % PRESSURE            =  oF + 3
     F % TEMPERATURE         =  oF + 4
     F % ENTROPY_PER_BARYON  =  oF + 5
-    F % SOUND_SPEED         =  oF + 6
-    F % ADIABATIC_INDEX     =  oF + 7
+    F % ENTROPY_DENSITY_B   =  oF + 6
+    F % SOUND_SPEED         =  oF + 7
+    F % ADIABATIC_INDEX     =  oF + 8
 
     nFields  =  oF  +  F % N_FIELDS_P
     if ( present ( nFieldsOption ) ) &
@@ -250,6 +252,7 @@ contains
           'Pressure        ', &
           'Temperature     ', &
           'EntropyPerBaryon', &
+          'EntropyDensity_B', &
           'SoundSpeed      ', &
           'AdiabaticIndex  ' ]
 
@@ -275,6 +278,9 @@ contains
       FieldUnit ( F % ENTROPY_PER_BARYON, iC ) &
         =  Units_F ( iC ) % EnergyDensity  /  Units_F ( iC ) % NumberDensity  &
            /  Units_F ( iC ) % Temperature
+      FieldUnit ( F % ENTROPY_DENSITY_B, iC ) &
+        =  Units_F ( iC ) % SqrtDet_M  *  Units_F ( iC ) % EnergyDensity  &
+           /  Units_F ( iC ) % Temperature
       FieldUnit ( F % SOUND_SPEED, iC ) &
         =  Units_F ( iC ) % Velocity_U ( 1 )
     end do !-- iC
@@ -298,7 +304,7 @@ contains
     end if !-- iaPrimitiveOption
 
     iaPrimitive ( oP  +  1 : oP  +  F % N_PRIMITIVE_P )  &
-      =  [ F % ENERGY_DENSITY_C ]
+      =  [ F % ENERGY_DENSITY_C, F % ENTROPY_PER_BARYON ]
 
     !-- Balanced fields
 
@@ -313,7 +319,7 @@ contains
     end if !-- iaPrimitiveOption
 
     iaBalanced ( oB  +  1 : oB  +  F % N_BALANCED_P )  &
-      =  [ F % ENERGY_DENSITY_B ]
+      =  [ F % ENERGY_DENSITY_B, F % ENTROPY_DENSITY_B ]
 
     !-- Fluid_D
 
