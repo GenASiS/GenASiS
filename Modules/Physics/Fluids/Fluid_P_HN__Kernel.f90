@@ -236,9 +236,10 @@ contains
   end procedure Compute_D_S_G_DS_DE_G_Kernel 	 	 
 
 
-  module procedure Compute_N_V_E_YE_G_A_Kernel
+  module procedure Compute_N_V_E_SB_YE_G_A_Kernel
 
-    !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_All_Galileo
+    !-- Compute_DensityC_Velocity_EnergyC_EntropyPerBaryon_ElectronFraction
+    !   _All_Galileo
 
     integer ( KDI ) :: &
       iV, &
@@ -280,6 +281,8 @@ contains
                                                 +  S_2 ( iV ) * V_2 ( iV ) &
                                                 +  S_3 ( iV ) * V_3 ( iV ) )
 
+        SB ( iV )   =  DS ( iV )  /  N ( iV )
+
         YE ( iV )   =  DE ( iV )  /  N ( iV )
 
       end do !-- iV
@@ -313,6 +316,8 @@ contains
                                                 +  S_2 ( iV ) * V_2 ( iV ) &
                                                 +  S_3 ( iV ) * V_3 ( iV ) )
 
+        SB ( iV )   =  DS ( iV )  /  N ( iV )
+
         YE ( iV )   =  DE ( iV )  /  N ( iV )
 
       end do !-- iV
@@ -320,14 +325,15 @@ contains
     
     end if
 
-  end procedure Compute_N_V_E_YE_G_A_Kernel
+  end procedure Compute_N_V_E_SB_YE_G_A_Kernel
 
 
-  module procedure Compute_N_V_E_YE_G_S_Kernel
+  module procedure Compute_N_V_E_SB_YE_G_S_Kernel
     
     !OMP_DECLARE_TARGET
 
-    !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Single_Galileo
+    !-- Compute_DensityC_Velocity_EnergyC_EntropyPerBaryon_ElectronFraction
+    !   _Single_Galileo
 
     if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
       D   ( iV )  =  N_Min
@@ -351,9 +357,11 @@ contains
                                             +  S_2 ( iV ) * V_2 ( iV ) &
                                             +  S_3 ( iV ) * V_3 ( iV ) )
 
+    SB ( iV )   =  DS ( iV )  /  N ( iV )
+
     YE ( iV )   =  DE ( iV )  /  N ( iV )
 
-  end procedure Compute_N_V_E_YE_G_S_Kernel
+  end procedure Compute_N_V_E_SB_YE_G_S_Kernel
 
 
   module procedure Apply_EOS_Epilogue_A_Kernel
@@ -454,9 +462,9 @@ contains
   module procedure ComputeFromBalanced_S_Kernel
   
     !OMP_DECLARE_TARGET
-    call Compute_N_V_E_YE_G_S_Kernel &
-             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
+    call Compute_N_V_E_SB_YE_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, DS, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, SB, YE )
     call Apply_EOS_Prologue_S_Kernel &
            ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
              Y_Safe, iV )
@@ -466,16 +474,15 @@ contains
     call Apply_EOS_Epilogue_S_Kernel &
            ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, iV )
 
-  
   end procedure ComputeFromBalanced_S_Kernel
 
 
   module procedure ComputeFromBalanced_S_V_Kernel
   
     !OMP_DECLARE_TARGET
-    call Compute_N_V_E_YE_G_S_Kernel &
-             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
+    call Compute_N_V_E_SB_YE_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, DS, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, SB, YE )
     call Apply_EOS_Prologue_S_Kernel &
            ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, &
              Y_Safe, iV )
@@ -488,7 +495,6 @@ contains
              ia_E, iSolve, iV = iV )
     call Apply_EOS_Epilogue_S_Kernel &
            ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, iV )
-
   
   end procedure ComputeFromBalanced_S_V_Kernel
 

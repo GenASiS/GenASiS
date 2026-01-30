@@ -69,9 +69,9 @@ module Fluid_P__Form
     procedure, public, nopass :: &
       Compute_D_S_G_DS_G_Kernel
     procedure, public, nopass :: &
-      Compute_N_V_E_G_A_Kernel
+      Compute_N_V_E_SB_G_A_Kernel
     procedure, public, nopass :: &
-      Compute_N_V_E_G_S_Kernel
+      Compute_N_V_E_SB_G_S_Kernel
   end type Fluid_P_Form
 
     private :: &
@@ -106,16 +106,17 @@ module Fluid_P__Form
         UseDeviceOption
     end subroutine Compute_D_S_G_DS_G_Kernel 	 	 
 
-    module subroutine Compute_N_V_E_G_A_Kernel &
-             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, N, V_1, V_2, V_3, E, UseDeviceOption )
+    module subroutine Compute_N_V_E_SB_G_A_Kernel &
+             ( D, S_1, S_2, S_3, G, DS, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, N, V_1, V_2, V_3, E, SB, UseDeviceOption )
       !-- Compute_DensityC_Velocity_EnergyC_Galileo_All_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         D, &
         S_1, S_2, S_3, &
-        G
+        G, &
+        DS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         M_UU_11, M_UU_22, M_UU_33
@@ -125,21 +126,23 @@ module Fluid_P__Form
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         N, &
         V_1, V_2, V_3, &
-        E
+        E, &
+        SB
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Compute_N_V_E_G_A_Kernel
+    end subroutine Compute_N_V_E_SB_G_A_Kernel
 
-    module subroutine Compute_N_V_E_G_S_Kernel &
-             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, iV, N, V_1, V_2, V_3, E )
+    module subroutine Compute_N_V_E_SB_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, DS, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, iV, N, V_1, V_2, V_3, E, SB )
       !-- Compute_DensityC_Velocity_EnergyC_Galileo_Single_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         D, &
         S_1, S_2, S_3, &
-        G
+        G, &
+        DS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         M_UU_11, M_UU_22, M_UU_33
@@ -151,8 +154,9 @@ module Fluid_P__Form
       real ( KDR ), dimension ( : ), intent ( out ) :: &
         N, &
         V_1, V_2, V_3, &
-        E
-    end subroutine Compute_N_V_E_G_S_Kernel
+        E, &
+        SB
+    end subroutine Compute_N_V_E_SB_G_S_Kernel
 
     module subroutine Compute_ES_G_Kernel &
              ( V_Dim, SS, M_UU_Dim, EF_P, EF_M, UseDeviceOption )

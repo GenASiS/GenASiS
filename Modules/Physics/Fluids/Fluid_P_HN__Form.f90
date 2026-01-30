@@ -79,7 +79,7 @@ module Fluid_P_HN__Form
   end type Fluid_P_HN_Form
   
   public :: &
-    Compute_N_V_E_YE_G_S_Kernel, &
+    Compute_N_V_E_SB_YE_G_S_Kernel, &
     Apply_EOS_Prologue_S_Kernel, &
     Apply_EOS_Epilogue_S_Kernel, &
     ComputeFromBalanced_S_Kernel, &
@@ -89,7 +89,7 @@ module Fluid_P_HN__Form
       InitializeModuleVariablesKernel, &
       Apply_EOS_Prologue_A_Kernel, &
       Compute_D_S_G_DS_DE_G_Kernel, &
-      Compute_N_V_E_YE_G_A_Kernel, &
+      Compute_N_V_E_SB_YE_G_A_Kernel, &
       Apply_EOS_Epilogue_A_Kernel
 
 
@@ -178,18 +178,19 @@ module Fluid_P_HN__Form
           UseDeviceOption
       end subroutine Compute_D_S_G_DS_DE_G_Kernel 	 	 
 
-      module subroutine Compute_N_V_E_YE_G_A_Kernel &
-               ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-                 N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, YE, &
+      module subroutine Compute_N_V_E_SB_YE_G_A_Kernel &
+               ( D, S_1, S_2, S_3, G, DS, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, SB, YE, &
                  UseDeviceOption )
-        !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo
-        !    _All_Kernel
+        !-- Compute_DensityC_Velocity_EnergyC_EntropyPerBaryon
+        !   _ElectronFraction_Galileo_All_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           D, &
           S_1, S_2, S_3, &
           G, &
+          DS, &
           DE
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           M, &
@@ -203,22 +204,24 @@ module Fluid_P_HN__Form
           N, &
           V_1, V_2, V_3, &
           E, &
+          SB, &
           YE
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_N_V_E_YE_G_A_Kernel
+      end subroutine Compute_N_V_E_SB_YE_G_A_Kernel
 
-      module subroutine Compute_N_V_E_YE_G_S_Kernel &
-               ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-                 N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
-        !-- Compute_DensityC_Velocity_EnergyC_ElectronFraction_Galileo
-        !    _Single_Kernel
+      module subroutine Compute_N_V_E_SB_YE_G_S_Kernel &
+               ( D, S_1, S_2, S_3, G, DS, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, SB, YE )
+        !-- Compute_DensityC_Velocity_EnergyC_EntropyPerBaryon
+        !   _ElectronFraction_Galileo_Single_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           D, &
           S_1, S_2, S_3, &
           G, &
+          DS, &
           DE
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           M, &
@@ -234,8 +237,9 @@ module Fluid_P_HN__Form
           N, &
           V_1, V_2, V_3, &
           E, &
+          SB, &
           YE
-      end subroutine Compute_N_V_E_YE_G_S_Kernel
+      end subroutine Compute_N_V_E_SB_YE_G_S_Kernel
 
       module subroutine Apply_EOS_Epilogue_A_Kernel &
                ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
@@ -281,8 +285,8 @@ module Fluid_P_HN__Form
       end subroutine Apply_EOS_Epilogue_S_Kernel
       
       module subroutine ComputeFromBalanced_S_Kernel &
-               ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-                 SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, &
+               ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, &
+                 YE, SB, SS, DE, DS, Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, &
                  M_UU_11, M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
                  E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, &
                  iSolve, iV )
@@ -301,8 +305,10 @@ module Fluid_P_HN__Form
           T, &
           E, &
           YE, &
+          SB, &
           SS, &
           DE, &
+          DS, &
           Mu_N, &
           Mu_P, &
           Mu_NP, &
@@ -333,10 +339,9 @@ module Fluid_P_HN__Form
       end subroutine ComputeFromBalanced_S_Kernel
       
       module subroutine ComputeFromBalanced_S_V_Kernel &
-               ( M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-                 SB, SS, DE, X_AA, X_A, X_N, X_P, Z, A, &
-                 Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, &
-                 EOS, &
+               ( M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, &
+                 YE, SB, SS, DE, DS, X_AA, X_A, X_N, X_P, Z, A, &
+                 Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, &
                  M_UU_11, M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
                  E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, &
                  iSolve, iV )
@@ -356,6 +361,7 @@ module Fluid_P_HN__Form
           SB, &
           SS, &
           DE, &
+          DS, &
           X_AA, &
           X_A, &
           X_N, &
@@ -1028,6 +1034,7 @@ contains
           P     =>  FV ( :, CS % PRESSURE ), &
           T     =>  FV ( :, CS % TEMPERATURE ), &
           SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
+          DS    =>  FV ( :, CS % ENTROPY_DENSITY_B ), &
           SS    =>  FV ( :, CS % SOUND_SPEED ), &
           YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
@@ -1047,9 +1054,9 @@ contains
             M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
             M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
 
-        call Compute_N_V_E_YE_G_A_Kernel &
-               ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
-                 N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, YE, &
+        call Compute_N_V_E_SB_YE_G_A_Kernel &
+               ( D, S_1, S_2, S_3, G, DS, DE, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, SB, YE, &
                  UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_UU_11, etc.
@@ -1148,6 +1155,7 @@ contains
         P     =>  FV ( :, CS % PRESSURE ), &
         T     =>  FV ( :, CS % TEMPERATURE ), &
         SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
+        DS    =>  FV ( :, CS % ENTROPY_DENSITY_B ), &
         SS    =>  FV ( :, CS % SOUND_SPEED ), &
         YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
         DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
@@ -1179,15 +1187,16 @@ contains
           iSolve  => CS % ENERGY_DENSITY_C )
         
 
-!--      call Compute_N_V_E_YE_G_S_Kernel &
+!--      call Compute_N_V_E_SB_YE_G_S_Kernel &
 !--             ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
 !--               N_Min, E_Min, Y_Min, Y_Safe, iV, N, V_1, V_2, V_3, E, YE )
       
       call ComputeFromBalanced_S_Kernel &
-             ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, YE, &
-               SS, DE, Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, M_UU_11, M_UU_22, &
-               M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, E_Min, T_Min, &
-               Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, iSolve, iV )
+             ( FV, M, N, V_1, V_2, V_3, D, G, S_1, S_2, S_3, P, T, E, &
+               YE, SB, SS, DE, DS, Mu_N, Mu_P, Mu_NP, Mu_E, Gamma, EOS, &
+               M_UU_11, M_UU_22, M_UU_33, T_L_N, T_L_T, T_Ye, M_Ref, N_Min, &
+               E_Min, T_Min, Y_Min, Y_Safe, E_Shift, ia_F_I, ia_F_O, ia_E, &
+               iSolve, iV )
       
       end associate !-- EOS, etc.
       end associate !-- M_UU_11, etc.

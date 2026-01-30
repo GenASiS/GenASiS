@@ -88,9 +88,9 @@ contains
   end procedure Compute_D_S_G_DS_G_Kernel 	 	 
 
 
-  module procedure Compute_N_V_E_G_A_Kernel
+  module procedure Compute_N_V_E_SB_G_A_Kernel
 
-    !-- Compute_DensityC_Velocity_EnergyC_Galileo_All
+    !-- Compute_DensityC_Velocity_EnergyC_EntropyPerBaryon_Galileo_All
 
     integer ( KDI ) :: &
       iV, &
@@ -131,6 +131,8 @@ contains
                                                 +  S_2 ( iV ) * V_2 ( iV ) &
                                                 +  S_3 ( iV ) * V_3 ( iV ) )
 
+        SB ( iV )   =  DS ( iV )  /  N ( iV )
+
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
       
@@ -161,17 +163,19 @@ contains
                                                 +  S_2 ( iV ) * V_2 ( iV ) &
                                                 +  S_3 ( iV ) * V_3 ( iV ) )
 
+        SB ( iV )   =  DS ( iV )  /  N ( iV )
+
       end do !-- iV
       !$OMP end parallel do
     
     end if
 
-  end procedure Compute_N_V_E_G_A_Kernel
+  end procedure Compute_N_V_E_SB_G_A_Kernel
 
 
-  module procedure Compute_N_V_E_G_S_Kernel
+  module procedure Compute_N_V_E_SB_G_S_Kernel
 
-    !-- Compute_DensityC_Velocity_EnergyC_Galileo_Single
+    !-- Compute_DensityC_Velocity_EnergyC_EntropyPerBaryon_Galileo_Single
 
     if ( D ( iV )  <=  N_Min  .or.  G ( iV )  <=  E_Min ) then
       D   ( iV )  =  N_Min
@@ -194,7 +198,9 @@ contains
                                             +  S_2 ( iV ) * V_2 ( iV ) &
                                             +  S_3 ( iV ) * V_3 ( iV ) )
 
-  end procedure Compute_N_V_E_G_S_Kernel
+    SB ( iV )   =  DS ( iV )  /  N ( iV )
+
+  end procedure Compute_N_V_E_SB_G_S_Kernel
 
 
   module procedure Compute_ES_G_Kernel

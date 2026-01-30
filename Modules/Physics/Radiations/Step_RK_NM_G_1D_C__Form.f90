@@ -65,7 +65,7 @@ module Step_RK_NM_G_1D_C__Form
                  E_X, S_X_1, S_X_2, S_X_3, D_X, &
                  J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
-                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
                  M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
@@ -126,7 +126,7 @@ module Step_RK_NM_G_1D_C__Form
         J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
         T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
-        E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+        E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
         N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
         M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
         Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F
@@ -198,7 +198,7 @@ module Step_RK_NM_G_1D_C__Form
                  E_X, S_X_1, S_X_2, S_X_3, D_X, &
                  J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
-                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
                  M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
@@ -259,7 +259,7 @@ module Step_RK_NM_G_1D_C__Form
         J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
         T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
-        E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+        E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
         N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
         M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, Z_F, A_F, &
         Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F
@@ -416,7 +416,7 @@ contains
       M_DD_11, M_DD_22, M_DD_33, &
       M_UU_11, M_UU_22, M_UU_33
     real ( KDR ), dimension ( : ), pointer :: &
-      E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+      E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
       M_F, N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
       T_F, P_F, SB_F, SS_F, X_AA_F, X_p_F, X_n_F, X_A_F, &
       Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F
@@ -619,7 +619,7 @@ integer ( KDI ) :: &
                S_X_1_0, S_X_2_0, S_X_3_0, E_X_0, D_X_0 )
 
       call SetFieldPointers_F &
-             ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+             ( F_HN, F_V, E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
                M_F, N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
                T_F, P_F, SB_F, SS_F, X_AA_F, X_p_F, X_n_F, X_A_F, Z_F, A_F, &
                Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F )
@@ -711,7 +711,7 @@ integer ( KDI ) :: &
                  E_X, S_X_1, S_X_2, S_X_3, D_X, &
                  J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
-                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
                  M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
@@ -764,7 +764,7 @@ integer ( KDI ) :: &
                  E_X, S_X_1, S_X_2, S_X_3, D_X, &
                  J_Eq_X, N_Eq_X, J_Rd_X, N_Rd_X, &
                  T_Nu_X, Eta_Nu_X, E_Ave_X, F_Ave_X, &
-                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, &
+                 E_F, S_F_1, S_F_2, S_F_3, D_F, DB_F, DS_F, &
                  N_F, V_F_1, V_F_2, V_F_3, EC_F, YE_F, &
                  M_F, T_F, P_F, SB_F, SS_F, X_AA_F, X_n_F, X_p_F, X_A_F, &
                  Z_F, A_F, Mu_e_F, Mu_n_p_F, Mu_p_F, Mu_n_F, G_F, &
@@ -1034,7 +1034,7 @@ integer ( KDI ) :: &
 
 
   subroutine SetFieldPointers_F &
-               ( F, F_V, E, S_1, S_2, S_3, D, DB, &
+               ( F, F_V, E, S_1, S_2, S_3, D, DB, DS, &
                  M, N, V_1, V_2, V_3, EC, YE, T, P, SB, SS, &
                  X_AA, X_p, X_n, X_A, Z, A, Mu_e, Mu_n_p, Mu_p, Mu_n, G )
 
@@ -1043,7 +1043,7 @@ integer ( KDI ) :: &
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       F_V
     real ( KDR ), dimension ( : ), intent ( out ), pointer :: &
-      E, S_1, S_2, S_3, D, DB, &
+      E, S_1, S_2, S_3, D, DB, DS, &
       M, N, V_1, V_2, V_3, EC, YE, &
       T, P, SB, SS, X_AA, X_p, X_n, X_A, &
       Z, A, Mu_e, Mu_n_p, Mu_p, Mu_n, G
@@ -1054,6 +1054,7 @@ integer ( KDI ) :: &
       S_3   =>  F_V ( :, F % MOMENTUM_DENSITY_D_3 )
       D     =>  F_V ( :, F % ELECTRON_DENSITY_B )
       DB    =>  F_V ( :, F % BARYON_DENSITY_B )
+      DS    =>  F_V ( :, F % ENTROPY_DENSITY_B )
       
       M       =>  F_V ( :, F % BARYON_MASS )
       N       =>  F_V ( :, F % BARYON_DENSITY_C )

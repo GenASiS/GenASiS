@@ -610,6 +610,7 @@ contains
           P    =>  CSV ( :, CS % PRESSURE ), &
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+          DS   =>  CSV ( :, CS % ENTROPY_DENSITY_B ), &
           SS   =>  CSV ( :, CS % SOUND_SPEED ), &
           Gmm  =>  CSV ( :, CS % ADIABATIC_INDEX ) )
    
@@ -623,9 +624,9 @@ contains
             M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
             M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
 
-        call CS % Compute_N_V_E_G_A_Kernel &
-               ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
-                 N_Min, E_Min, N, V_1, V_2, V_3, E, &
+        call CS % Compute_N_V_E_SB_G_A_Kernel &
+               ( D, S_1, S_2, S_3, G, DS, M, M_UU_11, M_UU_22, M_UU_33, &
+                 N_Min, E_Min, N, V_1, V_2, V_3, E, SB, &
                  UseDeviceOption = CS % DeviceMemory )
 
         call Apply_EOS_I_E_A_Kernel &
@@ -709,6 +710,7 @@ contains
         P    =>  CSV ( :, CS % PRESSURE ), &
         T    =>  CSV ( :, CS % TEMPERATURE ), &
         SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+        DS   =>  CSV ( :, CS % ENTROPY_DENSITY_B ), &
         SS   =>  CSV ( :, CS % SOUND_SPEED ) )
  
     select type ( Gn  =>  CS % Geometry )
@@ -721,9 +723,9 @@ contains
           M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
           M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
 
-      call CS % Compute_N_V_E_G_S_Kernel &
-             ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &
-               N_Min, E_Min, iV, N, V_1, V_2, V_3, E )
+      call CS % Compute_N_V_E_SB_G_S_Kernel &
+             ( D, S_1, S_2, S_3, G, DS, M, M_UU_11, M_UU_22, M_UU_33, &
+               N_Min, E_Min, iV, N, V_1, V_2, V_3, E, SB )
 
       end associate !-- M_UU_11, etc.
       end associate !-- GSV
