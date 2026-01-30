@@ -433,6 +433,7 @@ contains
           P    =>  FV ( :, F % PRESSURE ), &
           T    =>  FV ( :, F % TEMPERATURE ), &
           SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
+          DS   =>  FV ( :, F % ENTROPY_DENSITY_B ), &
           SS   =>  FV ( :, F % SOUND_SPEED ), &
           Gmm  =>  FV ( :, F % ADIABATIC_INDEX ) )
    
@@ -450,9 +451,9 @@ contains
             M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
-        call F % Compute_D_S_G_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, D, S_1, S_2, S_3, G, &
+        call F % Compute_D_S_G_DS_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, SB, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, DS, &
                  UseDeviceOption = F % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
@@ -512,6 +513,7 @@ contains
           P    =>  CSV ( :, CS % PRESSURE ), &
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
+          DS   =>  CSV ( :, CS % ENTROPY_DENSITY_B ), &
           SS   =>  CSV ( :, CS % SOUND_SPEED ), &
           Gmm  =>  CSV ( :, CS % ADIABATIC_INDEX ) )
 
@@ -529,9 +531,9 @@ contains
             M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
-        call CS % Compute_D_S_G_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, D, S_1, S_2, S_3, G, &
+        call CS % Compute_D_S_G_DS_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, SB, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                 N_Min, E_Min, D, S_1, S_2, S_3, G, DS, &
                  UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_DD_11, etc.

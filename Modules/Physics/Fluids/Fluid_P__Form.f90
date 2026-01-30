@@ -67,7 +67,7 @@ module Fluid_P__Form
     final :: &
       Finalize
     procedure, public, nopass :: &
-      Compute_D_S_G_G_Kernel
+      Compute_D_S_G_DS_G_Kernel
     procedure, public, nopass :: &
       Compute_N_V_E_G_A_Kernel
     procedure, public, nopass :: &
@@ -79,16 +79,17 @@ module Fluid_P__Form
 
   interface
 
-    module subroutine Compute_D_S_G_G_Kernel & 	 	 
-             ( N, V_1, V_2, V_3, E, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-               N_Min, E_Min, D, S_1, S_2, S_3, G, UseDeviceOption )
+    module subroutine Compute_D_S_G_DS_G_Kernel & 	 	 
+             ( N, V_1, V_2, V_3, E, SB, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+               N_Min, E_Min, D, S_1, S_2, S_3, G, DS, UseDeviceOption )
       !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
         N, & 	 	 
         V_1, V_2, V_3, &
-        E
+        E, &
+        SB
       real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
         M, &
         SS, &
@@ -99,10 +100,11 @@ module Fluid_P__Form
       real ( KDR ), dimension ( : ), intent ( out ) :: & 	 	 
         D, & 	 	 
         S_1, S_2, S_3, &
-        G
+        G, &
+        DS
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine Compute_D_S_G_G_Kernel 	 	 
+    end subroutine Compute_D_S_G_DS_G_Kernel 	 	 
 
     module subroutine Compute_N_V_E_G_A_Kernel &
              ( D, S_1, S_2, S_3, G, M, M_UU_11, M_UU_22, M_UU_33, &

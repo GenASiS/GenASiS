@@ -9,7 +9,7 @@ submodule ( Fluid_P__Form ) Fluid_P__Kernel
 contains
 
 
-  module procedure Compute_D_S_G_G_Kernel
+  module procedure Compute_D_S_G_DS_G_Kernel
  	 
     !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
 
@@ -49,6 +49,8 @@ contains
                                               +  S_2 ( iV ) * V_2 ( iV )  &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
 
+        DS ( iV )  =  SB ( iV )  *  N ( iV )
+
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
@@ -76,12 +78,14 @@ contains
                                               +  S_2 ( iV ) * V_2 ( iV )  &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
 
+        DS ( iV )  =  SB ( iV )  *  N ( iV )
+
       end do !-- iV
       !$OMP end parallel do
 
     end if
 
-  end procedure Compute_D_S_G_G_Kernel 	 	 
+  end procedure Compute_D_S_G_DS_G_Kernel 	 	 
 
 
   module procedure Compute_N_V_E_G_A_Kernel

@@ -88,7 +88,7 @@ module Fluid_P_HN__Form
     private :: &
       InitializeModuleVariablesKernel, &
       Apply_EOS_Prologue_A_Kernel, &
-      Compute_D_S_G_DE_G_Kernel, &
+      Compute_D_S_G_DS_DE_G_Kernel, &
       Compute_N_V_E_YE_G_A_Kernel, &
       Apply_EOS_Epilogue_A_Kernel
 
@@ -146,17 +146,18 @@ module Fluid_P_HN__Form
           iV
       end subroutine Apply_EOS_Prologue_S_Kernel
     
-      module subroutine Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, Y_Min, Y_Safe, D, S_1, S_2, S_3, G, DE, &
-                 UseDeviceOption )
-        !-- Compute_DensityB_Momentum_EnergyB_Galileo_Kernel
+      module subroutine Compute_D_S_G_DS_DE_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, SB, YE, M, SS, &
+                 M_DD_11, M_DD_22, M_DD_33, N_Min, E_Min, Y_Min, Y_Safe, &
+                 D, S_1, S_2, S_3, G, DS, DE, UseDeviceOption )
+        !-- Compute_DensityB_Momentum_EnergyB_EntropyB_ElectronB_Galileo_Kernel
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
           N, & 	 	 
           V_1, V_2, V_3, &
           E, &
+          SB, &
           YE
         real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
           M,  &
@@ -171,10 +172,11 @@ module Fluid_P_HN__Form
           D, & 	 	 
           S_1, S_2, S_3, &
           G, &
+          DS, &
           DE
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_D_S_G_DE_G_Kernel 	 	 
+      end subroutine Compute_D_S_G_DS_DE_G_Kernel 	 	 
 
       module subroutine Compute_N_V_E_YE_G_A_Kernel &
                ( D, S_1, S_2, S_3, G, DE, M, M_UU_11, M_UU_22, M_UU_33, &
@@ -803,6 +805,7 @@ contains
           P     =>  FV ( :, F % PRESSURE ), &
           T     =>  FV ( :, F % TEMPERATURE ), &
           SB    =>  FV ( :, F % ENTROPY_PER_BARYON ), &
+          DS    =>  FV ( :, F % ENTROPY_DENSITY_B ), &
           SS    =>  FV ( :, F % SOUND_SPEED ), &
           YE    =>  FV ( :, F % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, F % ELECTRON_DENSITY_B ), &
@@ -839,9 +842,10 @@ contains
             M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
-        call Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, Y_Min, Y_Safe, D, S_1, S_2, S_3, G, DE, &
+        call Compute_D_S_G_DS_DE_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, SB, YE, M, SS, &
+                 M_DD_11, M_DD_22, M_DD_33, N_Min, E_Min, Y_Min, Y_Safe, &
+                 D, S_1, S_2, S_3, G, DS, DE, &
                  UseDeviceOption = F % DeviceMemory )
 
         end associate !-- M_DD_11, etc.
@@ -900,6 +904,7 @@ contains
           P     =>  FV ( :, CS % PRESSURE ), &
           T     =>  FV ( :, CS % TEMPERATURE ), &
           SB    =>  FV ( :, CS % ENTROPY_PER_BARYON ), &
+          DS    =>  FV ( :, CS % ENTROPY_DENSITY_B ), &
           SS    =>  FV ( :, CS % SOUND_SPEED ), &
           YE    =>  FV ( :, CS % ELECTRON_FRACTION ), &
           DE    =>  FV ( :, CS % ELECTRON_DENSITY_B ), &
@@ -944,9 +949,10 @@ contains
             M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
             M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
-        call Compute_D_S_G_DE_G_Kernel & 	 	 
-               ( N, V_1, V_2, V_3, E, YE, M, SS, M_DD_11, M_DD_22, M_DD_33, &
-                 N_Min, E_Min, Y_Min, Y_Safe, D, S_1, S_2, S_3, G, DE, &
+        call Compute_D_S_G_DS_DE_G_Kernel & 	 	 
+               ( N, V_1, V_2, V_3, E, SB, YE, M, SS, &
+                 M_DD_11, M_DD_22, M_DD_33, N_Min, E_Min, Y_Min, Y_Safe, &
+                 D, S_1, S_2, S_3, G, DS, DE, &
                  UseDeviceOption = CS % DeviceMemory )
 
         end associate !-- M_DD_11, etc.

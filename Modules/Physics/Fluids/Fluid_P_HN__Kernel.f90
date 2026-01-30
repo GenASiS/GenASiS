@@ -151,9 +151,9 @@ contains
   end procedure Apply_EOS_Prologue_S_Kernel
   
   
-  module procedure Compute_D_S_G_DE_G_Kernel
+  module procedure Compute_D_S_G_DS_DE_G_Kernel
  	 
-    !-- Compute_DensityB_Momentum_EnergyB_DensityElectronB_Galileo_Kernel
+    !-- Compute_DensityB_Momentum_EnergyB_EntropyB_ElectronB_Galileo_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -192,6 +192,8 @@ contains
                                               +  S_2 ( iV ) * V_2 ( iV )  &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
 
+        DS ( iV )  =  SB ( iV )  *  N ( iV )
+
         DE ( iV )  =  YE ( iV )  *  N ( iV ) 	 	 
        
       end do !-- iV
@@ -222,6 +224,8 @@ contains
                                               +  S_2 ( iV ) * V_2 ( iV )  &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
 
+        DS ( iV )  =  SB ( iV )  *  N ( iV )
+
         DE ( iV )  =  YE ( iV )  *  N ( iV ) 	 	 
        
       end do !-- iV
@@ -229,7 +233,7 @@ contains
 
     end if
 
-  end procedure Compute_D_S_G_DE_G_Kernel 	 	 
+  end procedure Compute_D_S_G_DS_DE_G_Kernel 	 	 
 
 
   module procedure Compute_N_V_E_YE_G_A_Kernel
