@@ -377,8 +377,8 @@ contains
       T_Option
 
     associate ( Y_I  =>  S % Intermediate )
-!    call StoreBalanced_CS ( S, Y_I, T_Option )
-    call StoreBalanced_CS ( S, Y_I )
+!    call StoreBalanced_CS ( S, Y_I, DetectFeatures = .false., T_Option )
+    call StoreBalanced_CS ( S, Y_I, DetectFeatures = .false. )
     end associate !-- Y
   
   end subroutine StoreIntermediate
@@ -529,8 +529,8 @@ contains
       T_Option
 
     associate ( Y  =>  S % Solution )
-!    call StoreBalanced_CS ( S, Y, T_Option )
-    call StoreBalanced_CS ( S, Y )
+!    call StoreBalanced_CS ( S, Y, DetectFeatures = .true., T_Option )
+    call StoreBalanced_CS ( S, Y, DetectFeatures = .true. )
     end associate !-- Y
   
   end subroutine StoreSolution
@@ -602,12 +602,14 @@ contains
   end subroutine SetSlopeStage_CS
 
 
-  subroutine StoreBalanced_CS ( S, Y, T_Option )
+  subroutine StoreBalanced_CS ( S, Y, DetectFeatures, T_Option )
 
     class ( Step_RK_CS_Form ), intent ( inout ) :: &
       S
     type ( FieldSet_BM_Form ), intent ( in ) :: &
       Y
+    logical ( KDL ), intent ( in ) :: &
+      DetectFeatures
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
 
