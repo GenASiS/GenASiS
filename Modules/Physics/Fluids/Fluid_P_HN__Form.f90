@@ -967,6 +967,8 @@ contains
 
     integer ( KDI ) :: &
       iC
+    logical ( KDL ) :: &
+      DetectFeatures
     type ( TimerForm ), pointer :: &
       T_G, &
       T_K
@@ -1066,6 +1068,12 @@ contains
 
     end do !-- iC
     if ( associated ( T_K ) ) call T_K % Stop ( )
+
+    DetectFeatures = .false.
+    if ( present ( DetectFeaturesOption ) ) &
+      DetectFeatures = DetectFeaturesOption
+    if ( DetectFeatures .and. associated ( CS % Features ) ) &
+      call CS % Features % Detect ( )
 
   end subroutine ComputeFromBalancedAll
 
