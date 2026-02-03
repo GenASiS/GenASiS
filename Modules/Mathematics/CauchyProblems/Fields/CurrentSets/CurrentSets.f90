@@ -1,6 +1,7 @@
 module CurrentSets
 
   use Tally_CS__Form
+  use Features_CS__Form
   use CurrentSet_Form
   use DivergencePart_CS__Form
   use DiffusionFactor_CS__Form

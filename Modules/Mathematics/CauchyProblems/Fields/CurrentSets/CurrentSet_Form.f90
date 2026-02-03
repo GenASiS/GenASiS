@@ -5,6 +5,7 @@ module CurrentSet_Form
   use FieldSets
   use Geometries
   use Tally_CS__Form
+  use Features_CS__Form
 
   implicit none
   private
@@ -54,6 +55,9 @@ module CurrentSet_Form
       TallyChange
     class ( Tally_CS_Element ), dimension ( : ), allocatable :: &
       TallyBoundary
+    !-- Features
+    class ( Features_CS_Form ), pointer :: &
+      Features => null ( )
   contains
     procedure, public, pass :: &
       InitializeAllocate_CS
@@ -61,6 +65,8 @@ module CurrentSet_Form
       Initialize => InitializeAllocate_CS
     procedure, public, pass ( CS ) :: &
       SetStream
+    procedure, public, pass :: &
+      SetFeatures
     procedure, public, pass :: &
       Show => Show_CS
     procedure, public, pass :: &
@@ -356,6 +362,22 @@ contains
   end subroutine SetStream
 
 
+  subroutine SetFeatures ( CS, Features )
+
+    class ( CurrentSetForm ), intent ( inout ) :: &
+      CS
+    class ( Features_CS_Form ), intent ( in ), target :: &
+      Features
+
+    call Show ( 'Setting Features', CS % IGNORABILITY )
+    call Show ( CS % Name, 'Name', CS % IGNORABILITY )
+    call Show ( Features % Name, 'Features', CS % IGNORABILITY )
+
+    CS % Features => Features
+
+  end subroutine SetFeatures
+
+
   subroutine Show_CS ( FS )
 
     class ( CurrentSetForm ), intent ( in ) :: &
@@ -600,6 +622,7 @@ contains
     type ( CurrentSetForm ), intent ( inout ) :: &
       CS
 
+    nullify ( CS % Features )
     nullify ( CS % Geometry )
 
     if ( allocated ( CS % TallyBoundary ) ) &
