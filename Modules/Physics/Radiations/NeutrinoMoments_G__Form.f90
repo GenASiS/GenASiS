@@ -546,12 +546,14 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalancedAll ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option, DetectFeaturesOption )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       CS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
 
     integer ( KDI ) :: &
       iC

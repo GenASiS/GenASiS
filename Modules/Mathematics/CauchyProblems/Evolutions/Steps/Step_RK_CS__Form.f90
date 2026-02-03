@@ -644,10 +644,12 @@ contains
     end if
     if ( associated ( T_CFB ) ) then
       call T_CFB % Start ( )
-      call CS % ComputeFromBalanced ( T_Option = T_CFB )
+      call CS % ComputeFromBalanced &
+             ( T_Option = T_CFB, DetectFeaturesOption = DetectFeatures )
       call T_CFB % Stop ( )
     else
-      call CS % ComputeFromBalanced ( )
+      call CS % ComputeFromBalanced &
+             ( DetectFeaturesOption = DetectFeatures )
     end if
 
     if ( present ( T_Option ) ) then

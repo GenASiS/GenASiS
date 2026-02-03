@@ -585,12 +585,14 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalancedAll ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option, DetectFeaturesOption )
 
     class ( RadiationMoments_BM_Form ), intent ( inout ) :: &
       CS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
 
     integer ( KDI ) :: &
       iC

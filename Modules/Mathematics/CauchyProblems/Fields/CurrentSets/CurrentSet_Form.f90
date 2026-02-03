@@ -405,12 +405,14 @@ contains
   end subroutine ComputeFromPrimitive
 
 
-  subroutine ComputeFromBalancedAll ( CS, T_Option )
+  subroutine ComputeFromBalancedAll ( CS, T_Option, DetectFeaturesOption )
 
     class ( CurrentSetForm ), intent ( inout ) :: &
       CS
     type ( TimerForm ), intent ( in ), optional :: &
       T_Option
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
 
     call Show ( 'Should be replaced by extension', CONSOLE % ERROR )
     call Show ( 'CurrentSet_Form', 'module', CONSOLE % ERROR )
