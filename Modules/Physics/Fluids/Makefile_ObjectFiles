@@ -25,6 +25,8 @@ FLUIDS = \
   RiemannSolver_HLLC_P_HN__Form.o \
   RiemannSolver_HLLC_P__Kernel.o \
   RiemannSolver_HLLC_P__Form.o \
+  Features_F_P__Kernel.o \
+  Features_F_P__Form.o \
   Tally_F_P_HN__Form.o \
   Tally_F_P__Form.o \
   Tally_F_D__Form.o \

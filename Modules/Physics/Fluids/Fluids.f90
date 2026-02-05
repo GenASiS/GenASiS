@@ -9,6 +9,7 @@ module Fluids
   use Tally_F_D__Form
   use Tally_F_P__Form
   use Tally_F_P_HN__Form
+  use Features_F_P__Form
   use RiemannSolver_HLLC_P_HN__Form
   use RiemannSolver_HLLC_P__Form
   use DivergencePart_F_D_T__Form
