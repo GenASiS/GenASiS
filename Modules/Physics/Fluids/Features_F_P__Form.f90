@@ -28,6 +28,8 @@ module Features_F_P__Form
       InitializeAllocate_P
     generic, public :: &
       Initialize => InitializeAllocate_P
+    procedure, public, pass ( F ) :: &
+      SetStream
     procedure, public, pass :: &
       Detect
     final :: &
