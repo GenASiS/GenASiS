@@ -346,6 +346,9 @@ contains
                     CS % ENERGY_DENSITY_C, CS % PRESSURE, CS % TEMPERATURE, &
                     CS % ENTROPY_PER_BARYON ] )
 
+    if ( allocated ( CS % Features ) ) &
+      call CS % Features % SetStream ( S )
+
   end subroutine SetStream
 
 

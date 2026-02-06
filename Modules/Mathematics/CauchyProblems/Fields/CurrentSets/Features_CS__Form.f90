@@ -28,6 +28,8 @@ module Features_CS__Form
       InitializeAllocate_CS
     generic, public :: &
       Initialize => InitializeAllocate_CS
+    procedure, public, pass ( F ) :: &
+      SetStream
     procedure, public, pass :: &
       Detect
     final :: &
@@ -77,7 +79,7 @@ contains
     if ( F % Type  ==  '' ) &
       F % Type  =  'a Features_CS' 
     
-    Name  =  'Features' // trim ( CS % Name )
+    Name  =  'Features_' // trim ( CS % Name )
     if ( present ( NameOption ) ) &
       Name  =  NameOption
 
@@ -151,6 +153,21 @@ contains
              IgnorabilityOption = IgnorabilityOption )
 
   end subroutine InitializeAllocate_CS
+
+
+  subroutine SetStream ( S, F )
+
+    class ( Stream_BM_Form ), intent ( inout ) :: &
+      S
+    class ( Features_CS_Form ), intent ( in ) :: &
+      F
+
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaSelected
+
+    call S % AddFieldSet ( F, iaSelectedOption = [ F % DIFFUSIVE_FLUX_I ] )
+
+  end subroutine SetStream
 
 
   subroutine Detect ( F )

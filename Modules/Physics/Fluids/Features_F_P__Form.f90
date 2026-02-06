@@ -292,6 +292,19 @@ contains
   end subroutine Detect
 
 
+  subroutine SetStream ( S, F )
+
+    class ( Stream_BM_Form ), intent ( inout ) :: &
+      S
+    class ( Features_F_P_Form ), intent ( in ) :: &
+      F
+
+    call S % AddFieldSet &
+           ( F, iaSelectedOption = [ F % DIFFUSIVE_FLUX_I, F % SHOCK ] )
+
+  end subroutine SetStream
+
+
   impure elemental subroutine Finalize ( F )
 
     type ( Features_F_P_Form ), intent ( inout ) :: &

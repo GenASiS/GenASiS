@@ -738,6 +738,9 @@ contains
                     CS % CHEMICAL_POTENTIAL_E, &
                     CS % ADIABATIC_INDEX ] )
 
+    if ( allocated ( CS % Features ) ) &
+      call CS % Features % SetStream ( S )
+
   end subroutine SetStream
 
 
