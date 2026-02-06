@@ -471,7 +471,7 @@ contains
              iBaryonDensity = CS % BARYON_DENSITY_B )
     end select !-- G
 
-    if ( associated ( CS % Features ) ) &
+    if ( allocated ( CS % Features ) ) &
       call CS % Features % Detect ( )
 
   end subroutine ComputeFromInitial

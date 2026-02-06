@@ -484,7 +484,7 @@ contains
              iBaryonDensity = CS % BARYON_DENSITY_B )
     end select !-- G
 
-    if ( associated ( CS % Features ) ) &
+    if ( allocated ( CS % Features ) ) &
       call CS % Features % Detect ( )
 
   end subroutine ComputeFromInitial
@@ -637,7 +637,7 @@ contains
     DetectFeatures = .false.
     if ( present ( DetectFeaturesOption ) ) &
       DetectFeatures = DetectFeaturesOption
-    if ( DetectFeatures .and. associated ( CS % Features ) ) &
+    if ( DetectFeatures .and. allocated ( CS % Features ) ) &
       call CS % Features % Detect ( )
 
   end subroutine ComputeFromBalancedAll

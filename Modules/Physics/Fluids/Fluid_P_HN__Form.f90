@@ -1072,7 +1072,7 @@ contains
     DetectFeatures = .false.
     if ( present ( DetectFeaturesOption ) ) &
       DetectFeatures = DetectFeaturesOption
-    if ( DetectFeatures .and. associated ( CS % Features ) ) &
+    if ( DetectFeatures .and. allocated ( CS % Features ) ) &
       call CS % Features % Detect ( )
 
   end subroutine ComputeFromBalancedAll

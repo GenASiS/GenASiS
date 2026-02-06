@@ -56,8 +56,8 @@ module CurrentSet_Form
     class ( Tally_CS_Element ), dimension ( : ), allocatable :: &
       TallyBoundary
     !-- Features
-    class ( Features_CS_Form ), pointer :: &
-      Features => null ( )
+    class ( Features_CS_Form ), allocatable :: &
+      Features
   contains
     procedure, public, pass :: &
       InitializeAllocate_CS
@@ -65,8 +65,6 @@ module CurrentSet_Form
       Initialize => InitializeAllocate_CS
     procedure, public, pass ( CS ) :: &
       SetStream
-    procedure, public, pass :: &
-      SetFeatures
     procedure, public, pass :: &
       Show => Show_CS
     procedure, public, pass :: &
@@ -362,22 +360,6 @@ contains
   end subroutine SetStream
 
 
-  subroutine SetFeatures ( CS, Features )
-
-    class ( CurrentSetForm ), intent ( inout ) :: &
-      CS
-    class ( Features_CS_Form ), intent ( in ), target :: &
-      Features
-
-    call Show ( 'Setting Features', CS % IGNORABILITY )
-    call Show ( CS % Name, 'Name', CS % IGNORABILITY )
-    call Show ( Features % Name, 'Features', CS % IGNORABILITY )
-
-    CS % Features => Features
-
-  end subroutine SetFeatures
-
-
   subroutine Show_CS ( FS )
 
     class ( CurrentSetForm ), intent ( in ) :: &
@@ -622,9 +604,10 @@ contains
     type ( CurrentSetForm ), intent ( inout ) :: &
       CS
 
-    nullify ( CS % Features )
     nullify ( CS % Geometry )
 
+    if ( allocated ( CS % Features ) ) &
+      deallocate ( CS % Features )
     if ( allocated ( CS % TallyBoundary ) ) &
       deallocate ( CS % TallyBoundary )
     if ( allocated ( CS % TallyChange ) ) &
