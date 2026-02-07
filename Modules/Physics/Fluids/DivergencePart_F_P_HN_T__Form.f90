@@ -29,8 +29,8 @@ module DivergencePart_F_P_HN_T__Form
     interface
 
       module subroutine Compute_FS_G_Kernel &
-               ( D, S_1, S_2, S_3, G, P, DE, V_Dim, iDim, &
-                 F_D, F_S_1, F_S_2, F_S_3, F_G, F_DE, UseDeviceOption )
+               ( D, S_1, S_2, S_3, G, P, DS, DE, V_Dim, iDim, &
+                 F_D, F_S_1, F_S_2, F_S_3, F_G, F_DS, F_DE, UseDeviceOption )
         !-- Compute_FluxSet_Galileo_Kernel
         use Basics
         implicit none
@@ -39,6 +39,7 @@ module DivergencePart_F_P_HN_T__Form
           S_1, S_2, S_3, &
           G, &
           P, &
+          DS, &
           DE, &
           V_Dim
         integer ( KDI ), intent ( in ) :: &
@@ -47,6 +48,7 @@ module DivergencePart_F_P_HN_T__Form
           F_D, &
           F_S_1, F_S_2, F_S_3, &
           F_G, &
+          F_DS, &
           F_DE
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -116,6 +118,7 @@ contains
     integer ( KDI ) :: &
       iDensity, &
       iEnergy, &
+      iEntropy, &
       iElectron
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum
@@ -134,6 +137,8 @@ contains
     call Search &
            ( CS % iaBalanced, CS % ENERGY_DENSITY_B, iEnergy )
     call Search &
+           ( CS % iaBalanced, CS % ENTROPY_DENSITY_B, iEntropy )
+    call Search &
            ( CS % iaBalanced, CS % ELECTRON_DENSITY_B, iElectron )
 
     associate &
@@ -145,6 +150,7 @@ contains
         F_S_2    =>  FSV ( :, iMomentum ( 2 ) ), &
         F_S_3    =>  FSV ( :, iMomentum ( 3 ) ), &
         F_G      =>  FSV ( :, iEnergy ), &
+        F_DS     =>  FSV ( :, iEntropy ), &
         F_DE     =>  FSV ( :, iElectron ), &
           D      =>  CSV ( :, CS % BARYON_DENSITY_B ), &
           S_1    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_1 ), &
@@ -152,12 +158,13 @@ contains
           S_3    =>  CSV ( :, CS % MOMENTUM_DENSITY_D_3 ), &
           G      =>  CSV ( :, CS % ENERGY_DENSITY_B ), &
           P      =>  CSV ( :, CS % PRESSURE ), &
+          DS     =>  CSV ( :, CS % ENTROPY_DENSITY_B ), &
           DE     =>  CSV ( :, CS % ELECTRON_DENSITY_B ), &
           V_Dim  =>  CSV ( :, CS % VELOCITY_U ( iD ) ) )
  
     call Compute_FS_G_Kernel &
-           ( D, S_1, S_2, S_3, G, P, DE, V_Dim, iD, &
-             F_D, F_S_1, F_S_2, F_S_3, F_G, F_DE, &
+           ( D, S_1, S_2, S_3, G, P, DS, DE, V_Dim, iD, &
+             F_D, F_S_1, F_S_2, F_S_3, F_G, F_DS, F_DE, &
              UseDeviceOption = CS % DeviceMemory )
   
     end associate !-- F_D, etc.

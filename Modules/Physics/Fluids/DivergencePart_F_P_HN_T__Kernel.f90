@@ -51,6 +51,8 @@ contains
 
         F_G ( iV )  =  ( G ( iV )  +  P ( iV ) )  *  V_Dim ( iV )
 
+        F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
+
         F_DE ( iV )  =  DE ( iV )  *  V_Dim ( iV ) 
 
       end do !-- iV
@@ -70,6 +72,8 @@ contains
         F_S_3 ( iV )  =  S_3 ( iV )  *  V_Dim ( iV )  +  Delta_3  *  P ( iV )
 
         F_G ( iV )  =  ( G ( iV )  +  P ( iV ) )  *  V_Dim ( iV )
+
+        F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
 
         F_DE ( iV )  =  DE ( iV )  *  V_Dim ( iV ) 
 
