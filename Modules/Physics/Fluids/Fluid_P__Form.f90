@@ -36,7 +36,8 @@ module Fluid_P__Form
       EnergyDensityMin, &
       TemperatureMin
     logical ( KDL ) :: &
-      UseInitialTemperature
+      UseInitialTemperature, &
+      UseEntropy
     type ( FieldSet_BM_Form ), allocatable :: &
       SplitSource
   contains
@@ -52,6 +53,8 @@ module Fluid_P__Form
       SetTemperatureMin
     procedure, public, pass :: &
       SetUseInitialTemperature
+    procedure, public, pass :: &
+      SetUseEntropy
     procedure, public, pass :: &
       Show => Show_FS
     procedure, public, pass :: &
@@ -348,6 +351,9 @@ contains
 
     F % UseInitialTemperature  =  .false.
 
+    F % UseEntropy  =  .false.
+    call PROGRAM_HEADER % GetParameter ( F % UseEntropy, 'UseEntropy' )
+
   end subroutine InitializeAllocate_F
 
 
@@ -445,6 +451,24 @@ contains
   end subroutine SetUseInitialTemperature
 
 
+  subroutine SetUseEntropy ( F, UseEntropy )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+    logical ( KDL ), intent ( in ) :: &
+      UseEntropy
+
+    F % UseEntropy  =  UseEntropy
+
+    call Show ( 'Setting UseEntropy of a Fluid_P', &
+                F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % UseEntropy, 'UseEntropy', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetUseEntropy
+
+
   subroutine Show_FS ( FS )
 
     class ( Fluid_P_Form ), intent ( in ) :: &
@@ -459,6 +483,8 @@ contains
                 FS % Unit ( FS % TEMPERATURE, 1 ), 'TemperatureMin', &
                 FS % IGNORABILITY )
     call Show ( FS % UseInitialTemperature, 'UseInitialTemperature', &
+                FS % IGNORABILITY )
+    call Show ( FS % UseEntropy, 'UseEntropy', &
                 FS % IGNORABILITY )
 
   end subroutine Show_FS

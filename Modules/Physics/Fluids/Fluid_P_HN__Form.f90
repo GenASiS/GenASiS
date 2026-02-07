@@ -596,6 +596,9 @@ contains
       end select !-- FFP
     end if
 
+    call F % SetUseEntropy ( .true. )
+    call PROGRAM_HEADER % GetParameter ( F % UseEntropy, 'UseEntropy' )
+
     !-- Equation of state
 
     if ( .not. EOS_Initialized ) then
