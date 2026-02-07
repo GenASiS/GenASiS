@@ -61,7 +61,8 @@ module Fluid_P_I__Form
     private :: &
       Apply_EOS_I_T_Kernel, &
       Apply_EOS_I_E_A_Kernel, &
-      Apply_EOS_I_E_S_Kernel
+      Apply_EOS_I_E_S_Kernel, &
+      Apply_EOS_I_E_SB_A_Kernel
       
   interface
   
@@ -141,6 +142,34 @@ module Fluid_P_I__Form
       integer ( KDI ), intent ( in ) :: &
         iV
     end subroutine Apply_EOS_I_E_S_Kernel
+
+    module subroutine Apply_EOS_I_E_SB_A_Kernel &
+             ( M, N, E, P, T, SB, SS, Gmm, &
+               Shock, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
+               UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M, &
+        N, &
+        E, &
+        P, &
+        T, &
+        SB, &
+        SS, &
+        Gmm
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        Shock
+      real ( KDR ), intent ( in ) :: &
+        M_Ref, &
+        N_Min, &
+        E_Min, &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_E_SB_A_Kernel
 
   end interface
 
@@ -622,17 +651,38 @@ contains
         associate &
           ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
             M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
-            M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+            M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ), &
+            M_DD_11  =>  GSV ( :, Gn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call CS % Compute_N_V_E_SB_G_A_Kernel &
                ( D, S_1, S_2, S_3, G, DS, M, M_UU_11, M_UU_22, M_UU_33, &
                  N_Min, E_Min, N, V_1, V_2, V_3, E, SB, &
                  UseDeviceOption = CS % DeviceMemory )
 
-        call Apply_EOS_I_E_A_Kernel &
-               ( M, N, E, P, T, SB, SS, Gmm, &
-                 M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
-                 UseDeviceOption = CS % DeviceMemory )
+        if ( CS % UseEntropy ) then
+          select type ( F  =>  CS % Features )
+            class is ( Features_F_P_Form )
+          associate ( FV  =>  CS % Features % Storage ( iC ) % Value )
+          associate ( Shock  =>  FV ( :, F % SHOCK ) )
+          call Apply_EOS_I_E_SB_A_Kernel &
+                 ( M, N, E, P, T, SB, SS, Gmm, &
+                   Shock, M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
+                   UseDeviceOption = CS % DeviceMemory )
+          call CS % Compute_D_S_G_DS_G_Kernel & 	 	 
+                 ( N, V_1, V_2, V_3, E, SB, M, SS, M_DD_11, M_DD_22, M_DD_33, &
+                   N_Min, E_Min, D, S_1, S_2, S_3, G, DS, &
+                   UseDeviceOption = CS % DeviceMemory )
+          end associate !-- Shock
+          end associate !-- FV
+          end select !-- F
+        else
+          call Apply_EOS_I_E_A_Kernel &
+                 ( M, N, E, P, T, SB, SS, Gmm, &
+                   M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
+                   UseDeviceOption = CS % DeviceMemory )
+        end if
 
         end associate !-- M_UU_11, etc.
         end associate !-- GSV

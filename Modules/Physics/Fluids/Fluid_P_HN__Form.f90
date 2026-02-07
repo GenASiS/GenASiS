@@ -599,6 +599,16 @@ contains
     call F % SetUseEntropy ( .true. )
     call PROGRAM_HEADER % GetParameter ( F % UseEntropy, 'UseEntropy' )
 
+    !-- Features
+
+    if ( .not. allocated ( F % Features ) ) then
+      allocate ( Features_F_P_Form :: F % Features )
+      select type ( FFP  =>  F % Features )
+      type is ( Features_F_P_Form )
+        call FFP % Initialize ( F, ShockThreshold = 0.1_KDR )
+      end select !-- FFP
+    end if
+
     !-- Equation of state
 
     if ( .not. EOS_Initialized ) then
