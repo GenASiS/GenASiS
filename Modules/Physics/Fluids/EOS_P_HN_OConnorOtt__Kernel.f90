@@ -147,8 +147,6 @@ contains
       do  iValue = 1, nValues
         do iS = 1, size ( ia_E )
 
-!call Show ( iValue, '>>> iValue' )
-!call Show ( iS, '>>> iS' )          
           if ( F ( iValue, ia_F_I ( 1 ) ) == 0.0_KDR ) &
             cycle
           
@@ -263,8 +261,6 @@ contains
     
         do iS = 1, size ( ia_E )
 
-!call Show ( iValue, '>>> iValue' )
-!call Show ( iS, '>>> iS' )          
           if ( F ( iValue, ia_F_I ( 1 ) ) == 0.0_KDR ) &
             cycle
           
@@ -376,8 +372,6 @@ contains
     
         do iS = 1, size ( ia_E )
 
-!call Show ( iValue, '>>> iValue' )
-!call Show ( iS, '>>> iS' )          
           if ( F_I_1 ( iValue ) == 0.0_KDR ) &
             cycle
           
@@ -596,16 +590,9 @@ contains
       !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
       Value_Host: do iV = 1, nValues
         
-!call Show ( iV, '>>> iV' )
         if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
           cycle Value_Host
 
-!if ( iV > 35 .and. iV < 42 ) then
-!  call Show ( F ( iV, ia_F_I ( 1 ) ), '>>> N' )
-!  call Show ( F ( iV, ia_F_I ( 2 ) ), '>>> T' )
-!  call Show ( F ( iV, ia_F_I ( 3 ) ), '>>> Ye' )
-!  call Show ( F ( iV, i_SF ) + Shift, '>>> e + shift' )
-!end if        
         L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
         L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
         Ye    = F ( iV, ia_F_I ( 3 )  )
@@ -619,21 +606,15 @@ contains
         end if 
         SV_1 = SV_0
 
-!if ( iV == 38 ) &        
-!  call Show ( '>>> A' )
         call InterpolateTableKernel &
                ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
 
-!if ( iV == 38 ) &        
-!call Show ( '>>> B' )       
         if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
           cycle Value_Host
         end if
         
         do iI = 1, nIterations
           
-!if ( iV == 38 ) &        
-!call Show ( iI, '>>> iI' )
           L_DT  = - ( SV_R - SV_0 ) / D2
           L_T_1 = L_T
           L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
@@ -644,13 +625,9 @@ if ( L_T == T_L_T_Min ) then
 end if
           SV_1  = SV_R
           
-!if ( iV == 38 ) &        
-!call Show ( '>>> C' )
           call InterpolateTableKernel &
                  ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
         
-!if ( iV == 38 ) &        
-!call Show ( '>>> D' )
           if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
             F ( iV, ia_F_I ( 2 ) ) = 10.0_KDR ** L_T
             cycle Value_Host
@@ -661,22 +638,10 @@ end if
           ! the secant method, since the table is rather coarse and the
           ! derivatives may be garbage.
 
-! if ( iV == 38 ) then        
-! call Show ( '>>> E' )
-! call Show ( SV_0, '>>> SV_0' )
-! call Show ( SV_R, '>>> SV_R' )
-! call Show ( SV_1, '>>> SV_1' )
-! call Show ( L_T, '>>> L_T' )
-! call Show ( L_T_1, '>>> L_T_1' )
-!   call Show ( T_L_T_Max, '>>> T_L_T_Max' )
-!   call Show ( T_L_T_Min, '>>> T_L_T_Min' )
-! end if
           if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
             D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
           end if
 
-!if ( iV == 38 ) &                  
-!call Show ( '>>> F' )
           !-- FIXME: Need error handling
           !if ( iI == nIterations ) &
           !  call Show ( 'Error, Max iteration reached' )
@@ -727,16 +692,9 @@ end if
     T_L_T_Max = T_L_T ( size ( T_L_T ) )
     T_L_T_Min = T_L_T ( 1 )
     
-!call Show ( iV, '>>> iV' )
         if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
           return
 
-!if ( iV > 35 .and. iV < 42 ) then
-!  call Show ( F ( iV, ia_F_I ( 1 ) ), '>>> N' )
-!  call Show ( F ( iV, ia_F_I ( 2 ) ), '>>> T' )
-!  call Show ( F ( iV, ia_F_I ( 3 ) ), '>>> Ye' )
-!  call Show ( F ( iV, i_SF ) + Shift, '>>> e + shift' )
-!end if        
         L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
         L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
         Ye    = F ( iV, ia_F_I ( 3 )  )
@@ -750,21 +708,15 @@ end if
         end if 
         SV_1 = SV_0
 
-!if ( iV == 38 ) &        
-!  call Show ( '>>> A' )
         call InterpolateTableKernel &
                ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
 
-!if ( iV == 38 ) &        
-!call Show ( '>>> B' )       
         if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
           return
         end if
         
         do iI = 1, nIterations
           
-!if ( iV == 38 ) &        
-!call Show ( iI, '>>> iI' )
           L_DT  = - ( SV_R - SV_0 ) / D2
           L_T_1 = L_T
           L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
@@ -775,13 +727,9 @@ if ( L_T == T_L_T_Min ) then
 end if
           SV_1  = SV_R
           
-!if ( iV == 38 ) &        
-!call Show ( '>>> C' )
           call InterpolateTableKernel &
                  ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
         
-!if ( iV == 38 ) &        
-!call Show ( '>>> D' )
           if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
             F ( iV, ia_F_I ( 2 ) ) = 10.0_KDR ** L_T
             return
@@ -792,22 +740,10 @@ end if
           ! the secant method, since the table is rather coarse and the
           ! derivatives may be garbage.
 
-! if ( iV == 38 ) then        
-! call Show ( '>>> E' )
-! call Show ( SV_0, '>>> SV_0' )
-! call Show ( SV_R, '>>> SV_R' )
-! call Show ( SV_1, '>>> SV_1' )
-! call Show ( L_T, '>>> L_T' )
-! call Show ( L_T_1, '>>> L_T_1' )
-!   call Show ( T_L_T_Max, '>>> T_L_T_Max' )
-!   call Show ( T_L_T_Min, '>>> T_L_T_Min' )
-! end if
           if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
             D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
           end if
 
-!if ( iV == 38 ) &                  
-!call Show ( '>>> F' )
           !-- FIXME: Need error handling
           !if ( iI == nIterations ) &
           !  call Show ( 'Error, Max iteration reached' )
@@ -853,16 +789,9 @@ end if
     T_L_T_Max = T_L_T ( size ( T_L_T ) )
     T_L_T_Min = T_L_T ( 1 )
     
-!call Show ( iV, '>>> iV' )
         if ( F_1 ( iV )  == 0.0_KDR ) &
           return
 
-!if ( iV > 35 .and. iV < 42 ) then
-!  call Show ( F ( iV, ia_F_I ( 1 ) ), '>>> N' )
-!  call Show ( F ( iV, ia_F_I ( 2 ) ), '>>> T' )
-!  call Show ( F ( iV, ia_F_I ( 3 ) ), '>>> Ye' )
-!  call Show ( F ( iV, i_SF ) + Shift, '>>> e + shift' )
-!end if        
         L_N   = log10 ( F_1 ( iV ) )
         L_T   = log10 ( F_2 ( iV ) )
         Ye    = F_3 ( iV )
@@ -876,21 +805,15 @@ end if
         end if 
         SV_1 = SV_0
 
-!if ( iV == 38 ) &        
-!  call Show ( '>>> A' )
         call InterpolateTableKernel &
                ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
 
-!if ( iV == 38 ) &        
-!call Show ( '>>> B' )       
         if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
           return
         end if
         
         do iI = 1, nIterations
           
-!if ( iV == 38 ) &        
-!call Show ( iI, '>>> iI' )
           L_DT  = - ( SV_R - SV_0 ) / D2
           L_T_1 = L_T
           L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
@@ -901,13 +824,9 @@ if ( L_T == T_L_T_Min ) then
 end if
           SV_1  = SV_R
           
-!if ( iV == 38 ) &        
-!call Show ( '>>> C' )
           call InterpolateTableKernel &
                  ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
         
-!if ( iV == 38 ) &        
-!call Show ( '>>> D' )
           if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
             F_2 ( iV ) = 10.0_KDR ** L_T
             return
@@ -918,22 +837,10 @@ end if
           ! the secant method, since the table is rather coarse and the
           ! derivatives may be garbage.
 
-! if ( iV == 38 ) then        
-! call Show ( '>>> E' )
-! call Show ( SV_0, '>>> SV_0' )
-! call Show ( SV_R, '>>> SV_R' )
-! call Show ( SV_1, '>>> SV_1' )
-! call Show ( L_T, '>>> L_T' )
-! call Show ( L_T_1, '>>> L_T_1' )
-!   call Show ( T_L_T_Max, '>>> T_L_T_Max' )
-!   call Show ( T_L_T_Min, '>>> T_L_T_Min' )
-! end if
           if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
             D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
           end if
 
-!if ( iV == 38 ) &                  
-!call Show ( '>>> F' )
           !-- FIXME: Need error handling
           !if ( iI == nIterations ) &
           !  call Show ( 'Error, Max iteration reached' )
@@ -1120,8 +1027,8 @@ end if
           L_T_1 = L_T
           L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
 if ( L_T == T_L_T_Min ) then
-call Show ( '>>> T_Min E,S', CONSOLE % WARNING )
-call Show ( iV, '>>> iV', CONSOLE % WARNING )
+!call Show ( '>>> T_Min E,S', CONSOLE % WARNING )
+!call Show ( iV, '>>> iV', CONSOLE % WARNING )
   cycle Value_Host
 end if
           SV_1  = SV_R
