@@ -204,6 +204,9 @@ contains
       nFieldsOption, &
       IgnorabilityOption
 
+    real ( KDR ) :: &
+      ShockThreshold
+
     if ( F % Type  ==  '' ) &
       F % Type  =  'a Fluid_P_I' 
     
@@ -238,11 +241,16 @@ contains
     !-- Features
 
     if ( .not. allocated ( F % Features ) ) then
+
+      ShockThreshold  =  0.1_KDR
+      call PROGRAM_HEADER % GetParameter ( ShockThreshold, 'ShockThreshold' )
+
       allocate ( Features_F_P_Form :: F % Features )
       select type ( FFP  =>  F % Features )
       type is ( Features_F_P_Form )
-        call FFP % Initialize ( F, ShockThreshold = 0.1_KDR )
+        call FFP % Initialize ( F, ShockThreshold = ShockThreshold )
       end select !-- FFP
+
     end if
 
     !-- Parameters
@@ -677,12 +685,12 @@ contains
           end associate !-- Shock
           end associate !-- FV
           end select !-- F
-        else
+        else !-- use only energy
           call Apply_EOS_I_E_A_Kernel &
                  ( M, N, E, P, T, SB, SS, Gmm, &
                    M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
                    UseDeviceOption = CS % DeviceMemory )
-        end if
+        end if !-- UseEntropy
 
         end associate !-- M_UU_11, etc.
         end associate !-- GSV

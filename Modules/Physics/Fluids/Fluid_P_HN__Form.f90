@@ -460,6 +460,8 @@ contains
       iaSelected_EOS
     type ( QuantityForm ), dimension ( :, : ), allocatable :: &
       FieldUnit
+    real ( KDR ) :: &
+      ShockThreshold
     character ( LDF ) :: &
       EOS_Filename
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -602,11 +604,16 @@ contains
     !-- Features
 
     if ( .not. allocated ( F % Features ) ) then
+
+      ShockThreshold  =  0.1_KDR
+      call PROGRAM_HEADER % GetParameter ( ShockThreshold, 'ShockThreshold' )
+
       allocate ( Features_F_P_Form :: F % Features )
       select type ( FFP  =>  F % Features )
       type is ( Features_F_P_Form )
-        call FFP % Initialize ( F, ShockThreshold = 0.1_KDR )
+        call FFP % Initialize ( F, ShockThreshold = ShockThreshold )
       end select !-- FFP
+
     end if
 
     !-- Equation of state
@@ -1065,13 +1072,61 @@ contains
         associate &
           ( M_UU_11  =>  GSV ( :, Gn % METRIC_F_UU_11 ), &
             M_UU_22  =>  GSV ( :, Gn % METRIC_F_UU_22 ), &
-            M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ) )
+            M_UU_33  =>  GSV ( :, Gn % METRIC_F_UU_33 ), &
+            M_DD_11  =>  GSV ( :, Gn % METRIC_F_DD_11 ), &
+            M_DD_22  =>  GSV ( :, Gn % METRIC_F_DD_22 ), &
+            M_DD_33  =>  GSV ( :, Gn % METRIC_F_DD_33 ) )
 
         call Compute_N_V_E_SB_YE_G_A_Kernel &
                ( D, S_1, S_2, S_3, G, DS, DE, M, M_UU_11, M_UU_22, M_UU_33, &
                  N_Min, E_Min, Y_Min, Y_Safe, N, V_1, V_2, V_3, E, SB, YE, &
                  UseDeviceOption = CS % DeviceMemory )
 
+        call Apply_EOS_Prologue_A_Kernel &
+               ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
+                 UseDeviceOption = CS % DeviceMemory )
+
+        associate ( FS  =>  CS % Storage ( iC ) )
+        call FS % ReassociateHost ( AssociateVariablesOption = .false. )
+
+        if ( CS % UseEntropy ) then
+          select type ( F  =>  CS % Features )
+            class is ( Features_F_P_Form )
+          associate ( FV  =>  CS % Features % Storage ( iC ) % Value )
+          associate ( Shock  =>  FV ( :, F % SHOCK ) )
+          call CS % EOS % ComputeFromEnergyEntropy &
+                 ( FS, Mask = Shock, Threshold = 0.0_KDR, &
+                   iaFluidInput = [ CS % BARYON_DENSITY_C, &
+                                    CS % TEMPERATURE, &
+                                    CS % ELECTRON_FRACTION ], &
+                   iEnergy = CS % ENERGY_DENSITY_C, &
+                   iEntropy = CS % ENTROPY_PER_BARYON )
+          end associate !-- Shock
+          end associate !-- FV
+          end select !-- F
+        else !-- use only energy
+          call CS % EOS % ComputeFromEnergy &
+                 ( FS, &
+                   iaFluidInput = [ CS % BARYON_DENSITY_C, &
+                                    CS % TEMPERATURE, &
+                                    CS % ELECTRON_FRACTION ], &
+                   iSolve = CS % ENERGY_DENSITY_C )
+        end if !-- UseEntropy
+
+        call FS % ReassociateHost ( AssociateVariablesOption = .true. )
+        end associate !-- FS
+
+        call Apply_EOS_Epilogue_A_Kernel &
+               ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
+                 UseDeviceOption = CS % DeviceMemory )
+
+        if ( CS % UseEntropy ) &
+          call Compute_D_S_G_DS_DE_G_Kernel & 	 	 
+                  ( N, V_1, V_2, V_3, E, SB, YE, M, SS, &
+                    M_DD_11, M_DD_22, M_DD_33, N_Min, E_Min, Y_Min, Y_Safe, &
+                    D, S_1, S_2, S_3, G, DS, DE, &
+                    UseDeviceOption = CS % DeviceMemory )
+ 
         end associate !-- M_UU_11, etc.
         end associate !-- GSV
 
@@ -1081,24 +1136,6 @@ contains
         call Show ( 'ComputeFromBalancedAll', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
-
-      call Apply_EOS_Prologue_A_Kernel &
-             ( M, N, P, T, E, YE, M_Ref, N_Min, E_Min, T_Min, Y_Min, Y_Safe, &
-               UseDeviceOption = CS % DeviceMemory )
-
-      associate ( FS  =>  CS % Storage ( iC ) )
-      call FS % ReassociateHost ( AssociateVariablesOption = .false. )
-      call CS % EOS % ComputeFromEnergy &
-             ( FS, &
-               iaFluidInput = [ CS % BARYON_DENSITY_C, &
-                                CS % TEMPERATURE, CS % ELECTRON_FRACTION ], &
-               iSolve = CS % ENERGY_DENSITY_C )
-      call FS % ReassociateHost ( AssociateVariablesOption = .true. )
-      end associate !-- FS
-
-      call Apply_EOS_Epilogue_A_Kernel &
-             ( N, P, T, SS, E, Mu_N, Mu_P, Mu_NP, Mu_E, M, Gamma, &
-               UseDeviceOption = CS % DeviceMemory )
 
       end associate !-- M, etc.
       end associate !-- FV, etc.
