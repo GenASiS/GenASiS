@@ -9,6 +9,8 @@ module Gradient_Form
   private
 
   type, public, extends ( FieldSet_BM_Form ) :: GradientForm
+    logical ( KDL ) :: &
+      FromDivergence
     class ( FieldSet_BM_Form ), pointer :: &
       FieldSet  => null ( )
     class ( Geometry_F_Form ), pointer :: &
@@ -29,7 +31,8 @@ module Gradient_Form
   end type GradientForm
 
     private :: &
-      Compute_CGS_Kernel
+      Compute_CGS_Kernel, &
+      ComputeFromDivergence_CGS_Kernel
 
     interface
 
@@ -52,13 +55,35 @@ module Gradient_Form
           UseDeviceOption
       end subroutine Compute_CGS_Kernel
 
+      module subroutine ComputeFromDivergence_CGS_Kernel &
+               ( F, A_I, V, iaSlctd, iD, oV, dFdX, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          F
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          A_I, &
+          V
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSlctd
+        integer ( KDI ), intent ( in ) :: &
+          iD, &
+          oV   
+        real ( KDR ), dimension ( :, :, :, : ), intent ( out ) :: &
+          dFdX
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeFromDivergence_CGS_Kernel
+
     end interface
 
 
 contains
 
 
-  subroutine InitializeAllocate_G ( G, Gy, FS, NameOption, IgnorabilityOption )
+  subroutine InitializeAllocate_G &
+               ( G, Gy, FS, NameOption, FromDivergenceOption, &
+                 IgnorabilityOption )
 
     class ( GradientForm ), intent ( inout ) :: &
       G
@@ -68,6 +93,8 @@ contains
       FS
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      FromDivergenceOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
  
@@ -108,6 +135,12 @@ contains
              DevicesCommunicateOption = FS % DevicesCommunicate, &
              nFieldsOption = FS % nFields, &
              IgnorabilityOption = Ignorability )
+
+    G % FromDivergence  =  .false.
+    if ( present ( FromDivergenceOption ) ) &
+      G % FromDivergence  =  FromDivergenceOption
+
+    call Show ( G % FromDivergence, 'FromDivergence', G % IGNORABILITY )
 
   end subroutine InitializeAllocate_G
 
@@ -155,7 +188,9 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      X
+      X, &
+      A_I, &
+      V
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
        F, &
       dFdX
@@ -176,7 +211,6 @@ contains
         GyV  =>  Gy % Storage ( iC ) % Value, &
          FV  =>  FS % Storage ( iC ) % Value )
 
-      call C % SetFieldPointer ( GyV ( :, Gy % AVERAGE_1_U ( iD ) ), X )
       call C % SetFieldPointer (  FV,  F   )
       call C % SetFieldPointer (  GV, dFdX )
 
@@ -185,10 +219,19 @@ contains
       call FS % Storage ( iC ) % ReassociateHost &
             ( AssociateVariablesOption = .false. )
       
-      call Compute_CGS_Kernel &
-             ( F, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), dFdX, &
-               UseDeviceOption = FS % DeviceMemory )
-      
+      if ( G % FromDivergence ) then
+        call C % SetFieldPointer (  GyV ( :, Gy % AREA_I_D ( iD ) ), A_I )
+        call C % SetFieldPointer (  GyV ( :, Gy % VOLUME ), V )
+        call ComputeFromDivergence_CGS_Kernel &
+               ( F, A_I, V, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
+                 dFdX, UseDeviceOption = FS % DeviceMemory )
+      else !-- standard central difference
+        call C % SetFieldPointer ( GyV ( :, Gy % AVERAGE_1_U ( iD ) ), X )
+        call Compute_CGS_Kernel &
+               ( F, X, FS % iaSelected, iD, C % nGhostLayers ( iD ), dFdX, &
+                 UseDeviceOption = FS % DeviceMemory )
+      end if !-- FromDivergence
+
       call FS % Storage ( iC ) % ReassociateHost &
             ( AssociateVariablesOption = .true. )
       call G % Storage ( iC ) % ReassociateHost &

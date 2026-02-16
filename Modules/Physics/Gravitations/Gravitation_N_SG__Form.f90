@@ -169,7 +169,7 @@ contains
 
     allocate ( G % Gradient )
     associate ( Gt  =>  G % Gradient )
-    call Gt % Initialize ( G, G % Solution )
+    call Gt % Initialize ( G, G % Solution, FromDivergenceOption = .true. )
     end associate !-- Gt
 
     !-- Poisson
