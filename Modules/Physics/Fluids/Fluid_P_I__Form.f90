@@ -7,6 +7,7 @@ module Fluid_P_I__Form
   use Gravitations
   use Units_F__Form
   use Fluid_P__Form
+  use Features_F_P__Form
 
   implicit none
   private
@@ -59,7 +60,8 @@ module Fluid_P_I__Form
 
     private :: &
       Apply_EOS_I_T_Kernel, &
-      Apply_EOS_I_E_A_Kernel
+      Apply_EOS_I_E_A_Kernel, &
+      Apply_EOS_I_E_S_Kernel
       
   interface
   
@@ -112,7 +114,8 @@ module Fluid_P_I__Form
     end subroutine Apply_EOS_I_E_A_Kernel
 
     module subroutine Apply_EOS_I_E_S_Kernel &
-             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
+             ( M, N, E, P, T, SB, SS, &
+               M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
                iV )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -135,7 +138,7 @@ module Fluid_P_I__Form
         iV
     end subroutine Apply_EOS_I_E_S_Kernel
 
- end interface
+  end interface
 
 
 contains
@@ -198,6 +201,16 @@ contains
              iaBalancedOption = iaBalancedOption, &
              nFieldsOption = nFieldsOption, &
              IgnorabilityOption = IgnorabilityOption )
+
+    !-- Features
+
+    if ( .not. allocated ( F % Features ) ) then
+      allocate ( Features_F_P_Form :: F % Features )
+      select type ( FFP  =>  F % Features )
+      type is ( Features_F_P_Form )
+        call FFP % Initialize ( F, ShockThreshold = 0.1_KDR )
+      end select !-- FFP
+    end if
 
     !-- Parameters
 
@@ -606,6 +619,11 @@ contains
                  N_Min, E_Min, N, V_1, V_2, V_3, E, &
                  UseDeviceOption = CS % DeviceMemory )
 
+        call Apply_EOS_I_E_A_Kernel &
+               ( M, N, E, P, T, SB, SS, &
+                 M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
+                 UseDeviceOption = CS % DeviceMemory )
+
         end associate !-- M_UU_11, etc.
         end associate !-- GSV
 
@@ -616,10 +634,6 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- Gn
 
-      call Apply_EOS_I_E_A_Kernel &
-             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
-               N_0, P_0, UseDeviceOption = CS % DeviceMemory )
-
       end associate !-- M, etc.
       end associate !-- CSV, etc.
 
@@ -629,7 +643,7 @@ contains
     DetectFeatures = .false.
     if ( present ( DetectFeaturesOption ) ) &
       DetectFeatures = DetectFeaturesOption
-    if ( DetectFeatures .and. allocated ( CS % Features ) ) &
+    if ( DetectFeatures ) &
       call CS % Features % Detect ( )
 
   end subroutine ComputeFromBalancedAll

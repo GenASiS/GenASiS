@@ -7,6 +7,7 @@ module Fluid_P_HN__Form
   use Gravitations
   use Units_F__Form
   use Fluid_P__Form
+  use Features_F_P__Form
   use EOS_P_HN_OConnorOtt__Form
   
   implicit none
@@ -580,6 +581,16 @@ contains
 
     call F % SetUseInitialTemperature ( .true. )
 
+    !-- Features
+
+    if ( .not. allocated ( F % Features ) ) then
+      allocate ( Features_F_P_Form :: F % Features )
+      select type ( FFP  =>  F % Features )
+      type is ( Features_F_P_Form )
+        call FFP % Initialize ( F, ShockThreshold = 0.1_KDR )
+      end select !-- FFP
+    end if
+
     !-- Equation of state
 
     if ( .not. EOS_Initialized ) then
@@ -1075,7 +1086,7 @@ contains
     DetectFeatures = .false.
     if ( present ( DetectFeaturesOption ) ) &
       DetectFeatures = DetectFeaturesOption
-    if ( DetectFeatures .and. allocated ( CS % Features ) ) &
+    if ( DetectFeatures ) &
       call CS % Features % Detect ( )
 
   end subroutine ComputeFromBalancedAll

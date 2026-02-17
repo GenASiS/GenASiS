@@ -23,6 +23,8 @@ module Features_F_P__Form
       SHOCK_I = 0
     real ( KDR ) :: &
       ShockThreshold
+    type ( FieldSet_BM_Form ), allocatable :: &
+      FeaturesExchange
   contains
     procedure, public, pass :: &
       InitializeAllocate_P
@@ -167,7 +169,12 @@ contains
              VectorIndicesOption = VectorIndicesOption, &
              nFieldsOption = nFields, &
              IgnorabilityOption = IgnorabilityOption )
-             
+     
+    !-- FeaturesExchange
+
+    allocate ( F % FeaturesExchange )
+    call F % FeaturesExchange % Initialize ( F, [ F % SHOCK ] )
+
     !-- Parameters
 
     F % ShockThreshold  =  ShockThreshold
@@ -201,20 +208,6 @@ contains
     select type ( FP  =>  F % CurrentSet )
     class is ( Fluid_P_Form )
 
-    ! select type ( Grid => FF % Grid )
-    ! class is ( Chart_SL_Template )
-
-    !   call DetectShocks_CSL ( FF, F, Grid )
-
-    ! class default
-    !   call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-    !   call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
-    !   call Show ( 'DetectFeaturesTemplate_P', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- Grid
-
-    ! end select !-- F
-    
     do iC  =  1, F % Atlas % nCharts
 
       select type ( C  =>  F % Atlas % Chart ( iC ) % Element )
@@ -289,6 +282,8 @@ contains
 
     end select !-- FP
 
+    call F % FeaturesExchange % ExchangeGhostData ( )
+
     nullify ( DF_I_jD, DF_I_kD, S, S_I_iD, P, V_iD )
 
   end subroutine Detect
@@ -312,7 +307,8 @@ contains
     type ( Features_F_P_Form ), intent ( inout ) :: &
       F
 
-    !-- trigger finalization of parent
+    if ( allocated ( F % FeaturesExchange ) ) &
+      deallocate ( F % FeaturesExchange )
 
   end subroutine Finalize
 
