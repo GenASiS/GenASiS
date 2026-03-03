@@ -56,14 +56,19 @@ module Gradient_Form
       end subroutine Compute_CGS_Kernel
 
       module subroutine ComputeFromDivergence_CGS_Kernel &
-               ( F, A_I, V, iaSlctd, iD, oV, dFdX, UseDeviceOption )
+               ( F, A_I, V, X, dX, XA, X2A, iaSlctd, iD, oV, dFdX, &
+                 UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
           F
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-          A_I, &
-          V
+           A_I, &
+           V, &
+           X, &
+          dX, &
+           XA, &
+           X2A
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           iaSlctd
         integer ( KDI ), intent ( in ) :: &
@@ -188,9 +193,12 @@ contains
     integer ( KDI ) :: &
       iC  !-- iChart
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      X, &
-      A_I, &
-      V
+       A_I, &
+       V, &
+       X, &
+      dX, &
+       XA, &
+       X2A
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
        F, &
       dFdX
@@ -220,10 +228,15 @@ contains
             ( AssociateVariablesOption = .false. )
       
       if ( G % FromDivergence ) then
-        call C % SetFieldPointer (  GyV ( :, Gy % AREA_I_D ( iD ) ), A_I )
-        call C % SetFieldPointer (  GyV ( :, Gy % VOLUME ), V )
+        call C % SetFieldPointer ( GyV ( :, Gy % AREA_I_D ( iD ) ), A_I )
+        call C % SetFieldPointer ( GyV ( :, Gy % VOLUME ), V )
+        call C % SetFieldPointer ( GyV ( :, Gy % CENTER_U ( iD ) ),    X )
+        call C % SetFieldPointer ( GyV ( :, Gy % WIDTH_U  ( iD ) ),   dX )
+        call C % SetFieldPointer ( GyV ( :, Gy % AVERAGE_1_U ( iD ) ), XA )
+        call C % SetFieldPointer ( GyV ( :, Gy % AVERAGE_2_U ( iD ) ), X2A )
         call ComputeFromDivergence_CGS_Kernel &
-               ( F, A_I, V, FS % iaSelected, iD, C % nGhostLayers ( iD ), &
+               ( F, A_I, V, X, dX, XA, X2A, &
+                 FS % iaSelected, iD, C % nGhostLayers ( iD ), &
                  dFdX, UseDeviceOption = FS % DeviceMemory )
       else !-- standard central difference
         call C % SetFieldPointer ( GyV ( :, Gy % AVERAGE_1_U ( iD ) ), X )

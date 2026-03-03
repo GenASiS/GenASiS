@@ -117,9 +117,13 @@ contains
       iaVP, iaVM, &
       lV, uV
     real ( KDR ) :: &
-       fM, fC, fP, &  !-- f_Minus, f_Center, f_Plus
-       fI, fO         !-- f_Inner, f_Outer
-!      xAM, xAP
+       fM, fC, fP,       &  !-- f_Minus, f_Center, f_Plus
+       fI,   fO,         &  !-- f_Inner, f_Outer
+       xAM,  xAC,  xAP,  & 
+      x2AM, x2AC, x2AP,  & 
+        xI,   xO,        &  !-- X_Inner, X_Outer
+         d,              &  !-- Determinant / Denominator
+        c0,   c1,   c2      !-- Parabola coefficients
     logical ( KDL ) :: &
       UseDevice
       
@@ -145,7 +149,9 @@ contains
     
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO )
+      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO ) &
+      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
+      !$OMP private ( xI, xO, c0, c1, c2, d )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
@@ -160,8 +166,38 @@ contains
               fC  =  F ( iV        , jV        , kV        , iF )
               fP  =  F ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF )
 
-              fI  =  0.5_KDR * ( fM + fC )
-              fO  =  0.5_KDR * ( fC + fP )
+!              fI  =  0.5_KDR * ( fM + fC )
+!              fO  =  0.5_KDR * ( fC + fP )
+
+              xAM  =  XA ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              xAC  =  XA ( iV, jV, kV )
+              xAP  =  XA ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+              x2AM  =  X2A ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              x2AC  =  X2A ( iV, jV, kV )
+              x2AP  =  X2A ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+              xI  =  X ( iV, jV, kV )  -  0.5 * dX ( iV, jV, kV )
+              xO  =  X ( iV, jV, kV )  +  0.5 * dX ( iV, jV, kV )
+
+              d  =     x2AP * ( -xAC + xAM ) &
+                    +  x2AM * (  xAC - xAP ) &
+                    +  x2AC * ( -xAM + xAP )
+
+              c0  =  (    fP * (   x2AM * xAC   -  x2AC * xAM ) &
+                       +  fM * ( -(x2AP * xAC)  +  x2AC * xAP ) &
+                       +  fC * (   x2AP * xAM   -  x2AM * xAP ) )  /  d
+
+              c1  =  (    fP * (  x2AC - x2AM ) &
+                       +  fC * (  x2AM - x2AP ) & 
+                       +  fM * ( -x2AC + x2AP ) )  /  d
+
+              c2  =  (    fP * ( -xAC + xAM ) &
+                       +  fM * (  xAC - xAP ) &
+                       +  fC * ( -xAM + xAP ) )  /  d
+
+              fI  =  c0  +  c1 * xI  +  c2 * xI**2
+              fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
               dFdX ( iV, jV, kV, iS )  &
                 =  (    A_I ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  *  fO  &
@@ -181,7 +217,9 @@ contains
               
       !$OMP parallel do collapse ( 4 ) &
       !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO )
+      !$OMP private ( iF, iaVP, iaVM, fM, fC, fP, fI, fO ) &
+      !$OMP private ( xAM, xAC, xAP, x2AM, x2AC, x2AP ) &
+      !$OMP private ( xI, xO, c0, c1, c2, d )
       do iS  =  1,  size ( iaSlctd )
         do kV  =  lV ( 3 ),  uV ( 3 ) 
           do jV  =  lV ( 2 ),  uV ( 2 )
@@ -196,8 +234,38 @@ contains
               fC  =  F ( iV        , jV        , kV        , iF )
               fP  =  F ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ), iF )
 
-              fI  =  0.5_KDR * ( fM + fC )
-              fO  =  0.5_KDR * ( fC + fP )
+!              fI  =  0.5_KDR * ( fM + fC )
+!              fO  =  0.5_KDR * ( fC + fP )
+
+              xAM  =  XA ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              xAC  =  XA ( iV, jV, kV )
+              xAP  =  XA ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+              x2AM  =  X2A ( iaVM ( 1 ), iaVM ( 2 ), iaVM ( 3 ) )
+              x2AC  =  X2A ( iV, jV, kV )
+              x2AP  =  X2A ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )
+
+              xI  =  X ( iV, jV, kV )  -  0.5 * dX ( iV, jV, kV )
+              xO  =  X ( iV, jV, kV )  +  0.5 * dX ( iV, jV, kV )
+
+              d  =     x2AP * ( -xAC + xAM ) &
+                    +  x2AM * (  xAC - xAP ) &
+                    +  x2AC * ( -xAM + xAP )
+
+              c0  =  (    fP * (   x2AM * xAC   -  x2AC * xAM ) &
+                       +  fM * ( -(x2AP * xAC)  +  x2AC * xAP ) &
+                       +  fC * (   x2AP * xAM   -  x2AM * xAP ) )  /  d
+
+              c1  =  (    fP * (  x2AC - x2AM ) &
+                       +  fC * (  x2AM - x2AP ) & 
+                       +  fM * ( -x2AC + x2AP ) )  /  d
+
+              c2  =  (    fP * ( -xAC + xAM ) &
+                       +  fM * (  xAC - xAP ) &
+                       +  fC * ( -xAM + xAP ) )  /  d
+
+              fI  =  c0  +  c1 * xI  +  c2 * xI**2
+              fO  =  c0  +  c1 * xO  +  c2 * xO**2
 
               dFdX ( iV, jV, kV, iS )  &
                 =  (    A_I ( iaVP ( 1 ), iaVP ( 2 ), iaVP ( 3 ) )  *  fO  &
