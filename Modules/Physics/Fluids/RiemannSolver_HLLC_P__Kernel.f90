@@ -358,9 +358,9 @@ contains
       do iF  =  1,  nF
         do iV  =  1,  nV
 
-        !   !-- If flagged for diffusive flux, leave HLL flux in place
-        !   if ( DF_I ( iV ) > 0.0_KDR ) &
-        !     cycle
+          !-- If flagged for diffusive flux, leave HLL flux in place
+          if ( DF_I ( iV ) > 0.0_KDR ) &
+            cycle
 
           iF_F  =  iaFluxes ( iF )
 
@@ -386,9 +386,9 @@ contains
       do iF  =  1,  nF
         do iV  =  1,  nV
 
-        !   !-- If flagged for diffusive flux, leave HLL flux in place
-        !   if ( DF_I ( iV ) > 0.0_KDR ) &
-        !     cycle
+          !-- If flagged for diffusive flux, leave HLL flux in place
+          if ( DF_I ( iV ) > 0.0_KDR ) &
+            cycle
 
           iF_F  =  iaFluxes ( iF )
 

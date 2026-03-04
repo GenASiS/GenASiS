@@ -106,13 +106,16 @@ module RiemannSolver_HLLC_P__Form
       end subroutine ComputeCenterStatesKernel
 
       module subroutine ComputeKernel &
-               ( RSV, F_ICL, F_ICR, iaFluxes, iAP, iAM, iAC, UseDeviceOption )
+               ( RSV, F_ICL, F_ICR, DF_I, iaFluxes, iAP, iAM, iAC, &
+                 UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
           RSV     !-- RiemannSolver Value
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
           F_ICL, F_ICR
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          DF_I
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           iaFluxes
         integer ( KDI ), intent ( in ) :: &
@@ -283,8 +286,9 @@ contains
         CS_IR   =>  RS % CurrentSet_IR, &
         CS_ICL  =>  RS % CurrentSet_ICL, &
         CS_ICR  =>  RS % CurrentSet_ICR, &
-         M_I    =>  RS % Metric_I )
-    
+         M_I    =>  RS % Metric_I, &
+        FF      =>  CS % Features )
+            
     if ( present ( T_Option ) ) then
       T_GR  =>  PROGRAM_HEADER % Timer &
                   ( Handle = RS % iTimer_GR, &
@@ -303,7 +307,8 @@ contains
         FS_IL_V  =>  FS_IL % Storage ( iC ) % Value, &
         FS_IR_V  =>  FS_IR % Storage ( iC ) % Value, &
         CS_IL_V  =>  CS_IL % Storage ( iC ) % Value, &
-        CS_IR_V  =>  CS_IR % Storage ( iC ) % Value )
+        CS_IR_V  =>  CS_IR % Storage ( iC ) % Value, &
+        FFV      =>  FF    % Storage ( iC ) % Value )
     associate &
       ( M_DD_11  =>  M_I % Storage ( iC ) % Value ( :, 1 ), &
         M_DD_22  =>  M_I % Storage ( iC ) % Value ( :, 2 ), &
@@ -406,10 +411,12 @@ contains
     call FSS_IL % ReassociateHost ( AssociateVariablesOption = .false. )
     call FSS_IR % ReassociateHost ( AssociateVariablesOption = .false. )
 
+    associate ( DF_I  =>  FFV ( :, FF % DIFFUSIVE_FLUX_I ( iD ) ) )
     call ComputeKernel &
-           ( RSV, F_IL, F_IR, iaFluxes, &
+           ( RSV, F_IL, F_IR, DF_I, iaFluxes, &
              RS % ALPHA_PLUS_U, RS % ALPHA_MINUS_U, RS % ALPHA_CENTER_U, &
              UseDeviceOption = RS % DeviceMemory )
+    end associate !-- DF_I
 
     call FSS_IR % ReassociateHost ( AssociateVariablesOption = .true. )
     call FSS_IL % ReassociateHost ( AssociateVariablesOption = .true. )
