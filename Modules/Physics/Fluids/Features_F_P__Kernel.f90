@@ -85,9 +85,9 @@ contains
               S_I_iD ( iV, jV, kV )  &
                 =  1.0_KDR
               S ( iV, jV, kV )  &
-                =  S ( iV, jV, kV )  +  1.0_KDR
+                =  1.0_KDR
               S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  &
-                =  S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  +  1.0_KDR
+                =  1.0_KDR
 
               !-- Use diffuse flux in transverse directions, on both sides of 
               !   the shock
@@ -149,9 +149,9 @@ contains
               S_I_iD ( iV, jV, kV )  &
                 =  1.0_KDR
               S ( iV, jV, kV )  &
-                =  S ( iV, jV, kV )  +  1.0_KDR
+                =  1.0_KDR
               S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  &
-                =  S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  +  1.0_KDR
+                =  1.0_KDR
 
               !-- Use diffuse flux in transverse directions, on both sides of 
               !   the shock
