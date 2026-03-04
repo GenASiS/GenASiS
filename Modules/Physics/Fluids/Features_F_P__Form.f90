@@ -282,7 +282,7 @@ contains
 
     end select !-- FP
 
-    call F % FeaturesExchange % ExchangeGhostData ( )
+!    call F % FeaturesExchange % ExchangeGhostData ( )
 
     nullify ( DF_I_jD, DF_I_kD, S, S_I_iD, P, V_iD )
 
