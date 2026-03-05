@@ -14,7 +14,7 @@ module Fluid_P__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_P = 1, &
       N_BALANCED_P  = 1, &
-      N_FIELDS_P    = 6, &
+      N_FIELDS_P    = 7, &
       N_VECTORS_P   = 0
 
   type, public, extends ( Fluid_D_Form ) :: Fluid_P_Form
@@ -29,7 +29,8 @@ module Fluid_P__Form
       PRESSURE           = 0, &
       TEMPERATURE        = 0, &
       ENTROPY_PER_BARYON = 0, &
-      SOUND_SPEED        = 0
+      SOUND_SPEED        = 0, &
+      ADIABATIC_INDEX    = 0
     real ( KDR ) :: &
       EnergyDensityMin, &
       TemperatureMin
@@ -229,6 +230,7 @@ contains
     F % TEMPERATURE         =  oF + 4
     F % ENTROPY_PER_BARYON  =  oF + 5
     F % SOUND_SPEED         =  oF + 6
+    F % ADIABATIC_INDEX     =  oF + 7
 
     nFields  =  oF  +  F % N_FIELDS_P
     if ( present ( nFieldsOption ) ) &
@@ -248,7 +250,8 @@ contains
           'Pressure        ', &
           'Temperature     ', &
           'EntropyPerBaryon', &
-          'SoundSpeed      ' ]
+          'SoundSpeed      ', &
+          'AdiabaticIndex  ' ]
 
     !-- Units
 

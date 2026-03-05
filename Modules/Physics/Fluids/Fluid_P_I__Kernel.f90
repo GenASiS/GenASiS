@@ -49,6 +49,8 @@ contains
 
         SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
+        Gmm ( iV )  =  Gamma
+
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
@@ -74,6 +76,8 @@ contains
                                     *  ( N0 / N ( iV ) ) ** Gamma ) 
 
         SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+
+        Gmm ( iV )  =  Gamma
 
       end do !-- iV
       !$OMP end parallel do
@@ -120,6 +124,8 @@ contains
 
         SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
 
+        Gmm ( iV )  =  Gamma
+
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
@@ -145,6 +151,8 @@ contains
                                     *  ( N0 / N ( iV ) ) ** Gamma ) 
 
         SS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+
+        Gmm ( iV )  =  Gamma
 
       end do !-- iV
       !$OMP end parallel do

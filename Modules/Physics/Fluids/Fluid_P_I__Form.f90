@@ -66,7 +66,8 @@ module Fluid_P_I__Form
   interface
   
     module subroutine Apply_EOS_I_T_Kernel &
-             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0, &
+             ( M, N, E, P, T, SB, SS, Gmm, &
+               M_Ref, N_Min, T_Min, Gamma, C_V, N0, P0, &
                UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -76,7 +77,8 @@ module Fluid_P_I__Form
         P, &
         T, &
         SB, &
-        SS
+        SS, &
+        Gmm
       real ( KDR ), intent ( in ) :: &
         M_Ref, &
         N_Min, &
@@ -90,7 +92,8 @@ module Fluid_P_I__Form
     end subroutine Apply_EOS_I_T_Kernel
 
     module subroutine Apply_EOS_I_E_A_Kernel &
-             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
+             ( M, N, E, P, T, SB, SS, Gmm, &
+               M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
                UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -100,7 +103,8 @@ module Fluid_P_I__Form
         P, &
         T, &
         SB, &
-        SS
+        SS, &
+        Gmm
       real ( KDR ), intent ( in ) :: &
         M_Ref, &
         N_Min, &
@@ -429,10 +433,11 @@ contains
           P    =>  FV ( :, F % PRESSURE ), &
           T    =>  FV ( :, F % TEMPERATURE ), &
           SB   =>  FV ( :, F % ENTROPY_PER_BARYON ), &
-          SS   =>  FV ( :, F % SOUND_SPEED ) )
+          SS   =>  FV ( :, F % SOUND_SPEED ), &
+          Gmm  =>  FV ( :, F % ADIABATIC_INDEX ) )
    
       call Apply_EOS_I_T_Kernel &
-             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, T_Min, Gamma, C_V, &
+             ( M, N, E, P, T, SB, Gmm, SS, M_Ref, N_Min, T_Min, Gamma, C_V, &
                N_0, P_0, UseDeviceOption = F % DeviceMemory )
 
       select type ( Gn  =>  F % Geometry )
@@ -507,10 +512,11 @@ contains
           P    =>  CSV ( :, CS % PRESSURE ), &
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
-          SS   =>  CSV ( :, CS % SOUND_SPEED ) )
+          SS   =>  CSV ( :, CS % SOUND_SPEED ), &
+          Gmm  =>  CSV ( :, CS % ADIABATIC_INDEX ) )
 
       call Apply_EOS_I_E_A_Kernel &
-             ( M, N, E, P, T, SB, SS, M_Ref, N_Min, E_Min, Gamma, C_V, &
+             ( M, N, E, P, T, SB, SS, Gmm, M_Ref, N_Min, E_Min, Gamma, C_V, &
                N_0, P_0, UseDeviceOption = CS % DeviceMemory )
 
       select type ( Gn  =>  CS % Geometry )
@@ -602,7 +608,8 @@ contains
           P    =>  CSV ( :, CS % PRESSURE ), &
           T    =>  CSV ( :, CS % TEMPERATURE ), &
           SB   =>  CSV ( :, CS % ENTROPY_PER_BARYON ), &
-          SS   =>  CSV ( :, CS % SOUND_SPEED ) )
+          SS   =>  CSV ( :, CS % SOUND_SPEED ), &
+          Gmm  =>  CSV ( :, CS % ADIABATIC_INDEX ) )
    
       select type ( Gn  =>  CS % Geometry )
       class is ( Gravitation_G_Form )
@@ -620,7 +627,7 @@ contains
                  UseDeviceOption = CS % DeviceMemory )
 
         call Apply_EOS_I_E_A_Kernel &
-               ( M, N, E, P, T, SB, SS, &
+               ( M, N, E, P, T, SB, SS, Gmm, &
                  M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
                  UseDeviceOption = CS % DeviceMemory )
 

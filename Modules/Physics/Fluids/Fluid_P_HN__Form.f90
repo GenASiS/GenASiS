@@ -16,7 +16,7 @@ module Fluid_P_HN__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_HN = 1, &
       N_BALANCED_HN  = 1, &
-      N_FIELDS_HN    = 13, &
+      N_FIELDS_HN    = 12, &
       N_VECTORS_HN   = 0
     
   type, public, extends ( Fluid_P_Form ) :: Fluid_P_HN_Form
@@ -40,8 +40,7 @@ module Fluid_P_HN__Form
       CHEMICAL_POTENTIAL_N_P = 0, &  
         !-- a.k.a. mu_hat. Includes m_n - m_p. (mu_n and mu_p both
         !   measured relative to m_n.)
-      CHEMICAL_POTENTIAL_E   = 0, &
-      ADIABATIC_INDEX        = 0
+      CHEMICAL_POTENTIAL_E   = 0
         !-- Includes m_e.
     real ( KDR ) :: &
       ElectronFractionMin, &
@@ -477,7 +476,6 @@ contains
     F % CHEMICAL_POTENTIAL_P    =  oF + 10
     F % CHEMICAL_POTENTIAL_N_P  =  oF + 11
     F % CHEMICAL_POTENTIAL_E    =  oF + 12
-    F % ADIABATIC_INDEX         =  of + 13
 
     nFields  =  oF  +  F % N_FIELDS_HN
     if ( present ( nFieldsOption ) ) &
@@ -503,8 +501,7 @@ contains
           'ChemicalPotential_N  ', &
           'ChemicalPotential_P  ', &
           'ChemicalPotential_N_P', &
-          'ChemicalPotential_E  ', &
-          'AdiabaticIndex       ' ]
+          'ChemicalPotential_E  ' ]
 
     !-- Units
 
@@ -611,17 +608,17 @@ contains
             F % PRESSURE, &
             F % ENTROPY_PER_BARYON, &
             F % SOUND_SPEED, &
+            F % ADIABATIC_INDEX, &
             F % MASS_FRACTION_ALPHA, &
             F % MASS_FRACTION_HEAVY, &
             F % MASS_FRACTION_NEUTRON, &
             F % MASS_FRACTION_PROTON, &
             F % MASS_NUMBER_HEAVY, &
             F % ATOMIC_NUMBER_HEAVY, &
-            F % CHEMICAL_POTENTIAL_E, &
             F % CHEMICAL_POTENTIAL_N_P, &
             F % CHEMICAL_POTENTIAL_N, &
             F % CHEMICAL_POTENTIAL_P, &
-            F % ADIABATIC_INDEX ]
+            F % CHEMICAL_POTENTIAL_E ]
 
       iaSelected_EOS &
         = [ F % EOS % LOG_ENERGY, &
