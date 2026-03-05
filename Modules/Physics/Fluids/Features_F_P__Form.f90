@@ -10,15 +10,16 @@ module Features_F_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_P  = 5, &
+      N_FIELDS_P  = 6, &
       N_VECTORS_P = 0
 
   type, public, extends ( Features_CS_Form ) :: Features_F_P_Form
     integer ( KDI ) :: &
       N_FIELDS_P  = N_FIELDS_P, &
       N_VECTORS_P = N_VECTORS_P, &
-      EOS_ERROR = 0, &
-      SHOCK     = 0
+      EOS_ERROR        = 0, &
+      SHOCK            = 0, &
+      PHASE_TRANSITION = 0
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I = 0
     real ( KDR ) :: &
@@ -39,6 +40,10 @@ module Features_F_P__Form
   !   procedure, public, pass :: &
   !     SetOutput
   end type Features_F_P_Form
+
+    private :: &
+      DetectShocksKernel, &
+      DetectPhaseTransitionKernel
 
   interface
   
@@ -62,14 +67,35 @@ module Features_F_P__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine DetectShocksKernel
-    
+
+    module subroutine DetectPhaseTransitionKernel &
+             ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, PTT, iD, jD, kD, oV, &
+               UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        PT, &
+        DF_I_iD, &
+        DF_I_jD, &
+        DF_I_kD
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        Gamma
+      real ( KDR ), intent ( in ) :: &
+        PTT
+      integer ( KDI ), intent ( in ) :: &
+        iD, jD, kD, &
+        oV
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine DetectPhaseTransitionKernel
+
     module subroutine ClearBoundaryKernel &
-               ( S, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, &
+               ( S, PT, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, &
                  InnerBoundary, OuterBoundary, iD, jD, kD, oV, &
                  UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         S, &
+        PT, &
         S_I_iD, &
         DF_I_iD, &
         DF_I_jD, &
@@ -128,9 +154,10 @@ contains
 
     oF = F % N_FIELDS_CS
 
-    F % EOS_ERROR  =  oF + 1
-    F % SHOCK      =  oF + 2
-    F % SHOCK_I    =  oF + [ 3, 4, 5 ]
+    F % EOS_ERROR        =  oF + 1
+    F % SHOCK            =  oF + 2
+    F % PHASE_TRANSITION =  oF + 3
+    F % SHOCK_I          =  oF + [ 4, 5, 6 ]
 
     nFields  =  oF  +  F % N_FIELDS_P
     if ( present ( nFieldsOption ) ) &
@@ -145,11 +172,12 @@ contains
     end if !-- FieldOption
 
     Field ( oF + 1 : oF + F % N_FIELDS_P ) &
-      = [ 'EOS_Error          ', &
-          'Shock              ', &
-          'Shock_I_1          ', &
-          'Shock_I_2          ', &
-          'Shock_I_3          ' ]
+      = [ 'EOS_Error      ', &
+          'Shock          ', &
+          'PhaseTransition', &
+          'Shock_I_1      ', &
+          'Shock_I_2      ', &
+          'Shock_I_3      ' ]
 
     !-- Units: none
 
@@ -197,7 +225,9 @@ contains
       DF_I_kD, &
       S, &
       S_I_iD, &
+      PT, &
       P, &
+      Gamma, &
       V_iD
 
     call Show ( 'Detecting Fluid features', CONSOLE % INFO_6 )
@@ -217,14 +247,18 @@ contains
         ( FV   =>  F  % Storage ( iC ) % Value, &
           FPV  =>  FP % Storage ( iC ) % Value )
 
-      call C % SetFieldPointer ( FV  ( :, F  % SHOCK ),    S )
-      call C % SetFieldPointer ( FPV ( :, FP % PRESSURE ), P )
+      call C % SetFieldPointer ( FV  ( :, F  % SHOCK ),            S )
+      call C % SetFieldPointer ( FV  ( :, F  % PHASE_TRANSITION ), PT )
+      call C % SetFieldPointer ( FPV ( :, FP % PRESSURE ),         P )
+      call C % SetFieldPointer ( FPV ( :, FP % ADIABATIC_INDEX ),  Gamma )
 
       do iD = 1, C % nDimensions
 
         jD = mod ( iD, 3 ) + 1
         kD = mod ( jD, 3 ) + 1
 
+        call C % SetFieldPointer &
+               ( FV ( :, F % DIFFUSIVE_FLUX_I ( iD ) ), DF_I_iD )
         call C % SetFieldPointer &
                ( FV ( :, F % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
         call C % SetFieldPointer &
@@ -237,8 +271,11 @@ contains
 
         call DetectShocksKernel &
                ( S, S_I_iD, DF_I_jD, DF_I_kD, P, V_iD, &
-                 F % ShockThreshold, iD, jD, kD, &
-                 C % nGhostLayers ( iD ), &
+                 F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
+                 UseDeviceOption = F % DeviceMemory )
+        call DetectPhaseTransitionKernel &
+               ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
+                 F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
 
       end do !-- iD
@@ -260,7 +297,7 @@ contains
                ( FV ( :, F % SHOCK_I ( iD ) ), S_I_iD )
 
         call ClearBoundaryKernel &
-               ( S, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, &
+               ( S, PT, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, &
                  InnerBoundary = ( C % iaBrick ( iD ) == 1 ), &
                  OuterBoundary = ( C % iaBrick ( iD ) &
                                      == C % nBricks ( iD ) ), &
@@ -297,7 +334,8 @@ contains
       F
 
     call S % AddFieldSet &
-           ( F, iaSelectedOption = [ F % DIFFUSIVE_FLUX_I, F % SHOCK ] )
+           ( F, iaSelectedOption &
+                  = [ F % DIFFUSIVE_FLUX_I, F % SHOCK, F % PHASE_TRANSITION ] )
 
   end subroutine SetStream
 

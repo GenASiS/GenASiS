@@ -186,6 +186,245 @@ contains
   end procedure DetectShocksKernel
 
   
+  module procedure DetectPhaseTransitionKernel
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS_im, iaS_ip, iaS_jp, iaS_kp, &  !-- iaShift
+      iaV_im, iaV_ip, iaV_jp, iaV_kp, iaV_im_jp, iaV_im_kp, &  !--iaValue
+      lV, uV
+    real ( KDR ) :: &
+      dGamma, &
+      GammaMin, &
+      dLnGamma, &
+      SqrtTiny
+    logical ( KDL ) :: &
+      UseDevice
+         
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+    UseDevice = UseDeviceOption
+
+    lV = 1
+    where ( shape ( PT ) > 1 )
+      lV = oV
+    end where
+
+    uV = 1
+    where ( shape ( PT ) > 1 )
+      uV = shape ( PT ) - oV + 1
+    end where
+    
+    iaS_im = 0
+    iaS_im ( iD ) = -1
+      
+    iaS_ip = 0
+    iaS_ip ( iD ) = +1
+      
+    iaS_jp = 0
+    if ( size ( PT, dim = jD ) > 1 ) &
+      iaS_jp ( jD ) = +1
+
+    iaS_kp = 0
+    if ( size ( PT, dim = kD ) > 1 ) &
+      iaS_kp ( kD ) = +1
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+    
+    if ( UseDevice ) then
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP private ( iV, jV, kV, iaV_im, iaV_ip, iaV_jp, iaV_kp ) &
+      !$OMP private ( iaV_im_jp, iaV_im_kp ) &
+      !$OMP private ( dGamma, GammaMin, dLnGamma ) &
+      !$OMP firstprivate ( SqrtTiny, lV, uV )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+            iaV_im    = [ iV, jV, kV ] + iaS_im
+            iaV_ip    = [ iV, jV, kV ] + iaS_ip
+            iaV_jp    = [ iV, jV, kV ] + iaS_jp
+            iaV_kp    = [ iV, jV, kV ] + iaS_kp
+            iaV_im_jp = [ iV, jV, kV ] + iaS_im + iaS_jp
+            iaV_im_kp = [ iV, jV, kV ] + iaS_im + iaS_kp
+
+            dGamma  =  abs ( Gamma ( iV, jV, kV )  &
+                         -  Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) )
+            GammaMin  &
+              =  max ( &
+                   min ( Gamma ( iV, jV, kV ), &
+                         Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
+                   SqrtTiny )
+            dLnGamma  =  dGamma / GammaMin
+
+            !-- Fractional difference across inner face
+            if ( dLnGamma > PTT ) then
+
+              PT ( iV, jV, kV )  &
+                =  1.0_KDR
+              PT ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+                =  1.0_KDR
+
+              !-- Use diffuse flux in longitudinal direction
+
+              DF_I_iD ( iV, jV, kV ) &
+                =  1.0_KDR
+
+              !-- Use diffuse flux in transverse directions, on both sides of 
+              !   the shock
+
+              DF_I_jD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+                =  1.0_KDR
+
+              DF_I_kD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+                =  1.0_KDR
+
+            end if !-- Fractional difference
+
+            !-- Absolute value
+            if ( Gamma ( iV, jV, kV ) < 1.0_KDR ) then
+
+              PT ( iV, jV, kV )  &
+                =  1.0_KDR
+
+              !-- Use diffuse flux on all faces
+
+              DF_I_iD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                =  1.0_KDR
+
+              DF_I_jD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+                =  1.0_KDR
+
+              DF_I_kD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+                =  1.0_KDR
+
+            end if !-- Absolute value
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+    
+      !$OMP parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP private ( iV, jV, kV, iaV_im, iaV_ip, iaV_jp, iaV_kp ) &
+      !$OMP private ( iaV_im_jp, iaV_im_kp ) &
+      !$OMP private ( dGamma, GammaMin, dLnGamma ) &
+      !$OMP firstprivate ( SqrtTiny, lV, uV )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+            iaV_im    = [ iV, jV, kV ] + iaS_im
+            iaV_ip    = [ iV, jV, kV ] + iaS_ip
+            iaV_jp    = [ iV, jV, kV ] + iaS_jp
+            iaV_kp    = [ iV, jV, kV ] + iaS_kp
+            iaV_im_jp = [ iV, jV, kV ] + iaS_im + iaS_jp
+            iaV_im_kp = [ iV, jV, kV ] + iaS_im + iaS_kp
+
+            dGamma  =  abs ( Gamma ( iV, jV, kV )  &
+                         -  Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) )
+            GammaMin  &
+              =  max ( &
+                   min ( Gamma ( iV, jV, kV ), &
+                         Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
+                   SqrtTiny )
+            dLnGamma  =  dGamma / GammaMin
+
+            !-- Fractional difference across inner face
+            if ( dLnGamma > PTT ) then
+
+              PT ( iV, jV, kV )  &
+                =  1.0_KDR
+              PT ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+                =  1.0_KDR
+
+              !-- Use diffuse flux in longitudinal direction
+
+              DF_I_iD ( iV, jV, kV ) &
+                =  1.0_KDR
+
+              !-- Use diffuse flux in transverse directions, on both sides of 
+              !   the shock
+
+              DF_I_jD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+                =  1.0_KDR
+
+              DF_I_kD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+                =  1.0_KDR
+
+            end if !-- Fractional difference
+
+            !-- Absolute value
+            if ( Gamma ( iV, jV, kV ) < 1.0_KDR ) then
+
+              PT ( iV, jV, kV )  &
+                =  1.0_KDR
+
+              !-- Use diffuse flux on all faces
+
+              DF_I_iD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                =  1.0_KDR
+
+              DF_I_jD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+                =  1.0_KDR
+
+              DF_I_kD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+                =  1.0_KDR
+
+            end if !-- Absolute value
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP  end parallel do
+    
+    end if
+        
+  end procedure DetectPhaseTransitionKernel
+
+  
   module procedure ClearBoundaryKernel 
 
     integer ( KDI ) :: &
@@ -223,6 +462,7 @@ contains
             do iV = lV ( 1 ), uV ( 1 )
 
                     S ( iV, jV, kV )  =  0.0_KDR
+                   PT ( iV, jV, kV )  =  0.0_KDR
                S_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_jD ( iV, jV, kV )  =  0.0_KDR
@@ -242,6 +482,7 @@ contains
             do iV = lV ( 1 ), uV ( 1 )
 
                     S ( iV, jV, kV )  =  0.0_KDR
+                   PT ( iV, jV, kV )  =  0.0_KDR
                S_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_jD ( iV, jV, kV )  =  0.0_KDR
@@ -278,6 +519,7 @@ contains
             do iV = lV ( 1 ), uV ( 1 )
 
                     S ( iV, jV, kV )  =  0.0_KDR
+                   PT ( iV, jV, kV )  =  0.0_KDR
                S_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_jD ( iV, jV, kV )  =  0.0_KDR
@@ -297,6 +539,7 @@ contains
             do iV = lV ( 1 ), uV ( 1 )
 
                     S ( iV, jV, kV )  =  0.0_KDR
+                   PT ( iV, jV, kV )  =  0.0_KDR
                S_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_iD ( iV, jV, kV )  =  0.0_KDR
               DF_I_jD ( iV, jV, kV )  =  0.0_KDR
