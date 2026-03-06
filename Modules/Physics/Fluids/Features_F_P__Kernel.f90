@@ -272,6 +272,10 @@ contains
 
               DF_I_iD ( iV, jV, kV ) &
                 =  1.0_KDR
+              DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+                =  1.0_KDR
+              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                =  1.0_KDR
 
               !-- Use diffuse flux in transverse directions, on both sides of 
               !   the shock
@@ -365,6 +369,10 @@ contains
               !-- Use diffuse flux in longitudinal direction
 
               DF_I_iD ( iV, jV, kV ) &
+                =  1.0_KDR
+              DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+                =  1.0_KDR
+              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
                 =  1.0_KDR
 
               !-- Use diffuse flux in transverse directions, on both sides of 
