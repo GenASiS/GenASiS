@@ -433,6 +433,238 @@ contains
   end procedure DetectPhaseTransitionKernel
 
   
+  module procedure DetectJaggedEntropyKernel
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS_im,    iaS_ip,    iaS_jp,    iaS_kp, &  !-- iaShift
+      iaV_im,    iaV_ip,    iaV_jp,    iaV_kp, &
+      iaV_im_jp, iaV_im_kp, iaV_ip_jp, iaV_ip_kp, &  !--iaValue
+      lV, uV
+    real ( KDR ) :: &
+      dSB_I, dSB_O, &
+      SB_Min_I, sB_Min_O, &
+      dLnSB_I, dLnSB_O, &
+      SqrtTiny
+    logical ( KDL ) :: &
+      UseDevice
+         
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+    UseDevice = UseDeviceOption
+
+    lV = 1
+    where ( shape ( JE ) > 1 )
+      lV = oV
+    end where
+
+    uV = 1
+    where ( shape ( JE ) > 1 )
+      uV = shape ( JE ) - oV + 1
+    end where
+    
+    iaS_im = 0
+    iaS_im ( iD ) = -1
+      
+    iaS_ip = 0
+    iaS_ip ( iD ) = +1
+      
+    iaS_jp = 0
+    if ( size ( JE, dim = jD ) > 1 ) &
+      iaS_jp ( jD ) = +1
+
+    iaS_kp = 0
+    if ( size ( JE, dim = kD ) > 1 ) &
+      iaS_kp ( kD ) = +1
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+    
+    if ( UseDevice ) then
+
+      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP private ( iV, jV, kV, iaV_im, iaV_ip, iaV_jp, iaV_kp ) &
+      !$OMP private ( iaV_im_jp, iaV_im_kp, iaV_ip_jp, iaV_ip_kp ) &
+      !$OMP private ( dSB_I, dSB_O, SB_Min_I, SB_Min_O, dLnSB_I, dLnSB_O ) &
+      !$OMP firstprivate ( SqrtTiny, lV, uV )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+            iaV_im    = [ iV, jV, kV ] + iaS_im
+            iaV_ip    = [ iV, jV, kV ] + iaS_ip
+            iaV_jp    = [ iV, jV, kV ] + iaS_jp
+            iaV_kp    = [ iV, jV, kV ] + iaS_kp
+            iaV_im_jp = [ iV, jV, kV ] + iaS_im + iaS_jp
+            iaV_im_kp = [ iV, jV, kV ] + iaS_im + iaS_kp
+            iaV_ip_jp = [ iV, jV, kV ] + iaS_ip + iaS_jp
+            iaV_ip_kp = [ iV, jV, kV ] + iaS_ip + iaS_kp
+
+            dSB_I  =  SB ( iV, jV, kV )  &
+                      -  SB ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )
+            dSB_O  =  SB ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                      -  SB ( iV, jV, kV )
+
+            if ( dSB_I * dSB_O  <  0.0_KDR ) then  !-- local extremum
+
+              SB_Min_I  &
+                =  max ( &
+                     min ( SB ( iV, jV, kV ), &
+                           SB ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
+                     SqrtTiny )
+              SB_Min_O  &
+                =  max ( &
+                     min ( SB ( iV, jV, kV ), &
+                           SB ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) ), &
+                     SqrtTiny )
+
+              dLnSB_I  =  abs ( dSB_I / SB_Min_I )
+              dLnSB_O  =  abs ( dSB_O / SB_Min_O )
+
+              !-- fractional differences
+              if ( dLnSB_I > JET .or. dLnSB_O > JET ) then
+
+                JE ( iV, jV, kV )  &
+                  =  1.0_KDR
+
+                !-- Use diffuse flux in longitudinal direction
+
+                DF_I_iD ( iV, jV, kV ) &
+                  =  1.0_KDR
+                DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+                  =  1.0_KDR
+                DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                  =  1.0_KDR
+
+                !-- Use diffuse flux in transverse directions, on both sides
+
+                DF_I_jD ( iV, jV, kV ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_ip_jp ( 1 ), iaV_ip_jp ( 2 ), iaV_ip_jp ( 3 ) ) &
+                  =  1.0_KDR
+
+                DF_I_kD ( iV, jV, kV ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_ip_kp ( 1 ), iaV_ip_kp ( 2 ), iaV_ip_kp ( 3 ) ) &
+                  =  1.0_KDR
+
+              end if !-- Fractional differences
+
+            end if !-- local extremum
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+    
+      !$OMP parallel do collapse ( 3 ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP private ( iV, jV, kV, iaV_im, iaV_ip, iaV_jp, iaV_kp ) &
+      !$OMP private ( iaV_im_jp, iaV_im_kp, iaV_ip_jp, iaV_ip_kp ) &
+      !$OMP private ( dSB_I, dSB_O, SB_Min_I, SB_Min_O, dLnSB_I, dLnSB_O ) &
+      !$OMP firstprivate ( SqrtTiny, lV, uV )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+            iaV_im    = [ iV, jV, kV ] + iaS_im
+            iaV_ip    = [ iV, jV, kV ] + iaS_ip
+            iaV_jp    = [ iV, jV, kV ] + iaS_jp
+            iaV_kp    = [ iV, jV, kV ] + iaS_kp
+            iaV_im_jp = [ iV, jV, kV ] + iaS_im + iaS_jp
+            iaV_im_kp = [ iV, jV, kV ] + iaS_im + iaS_kp
+            iaV_ip_jp = [ iV, jV, kV ] + iaS_ip + iaS_jp
+            iaV_ip_kp = [ iV, jV, kV ] + iaS_ip + iaS_kp
+
+            dSB_I  =  SB ( iV, jV, kV )  &
+                      -  SB ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )
+            dSB_O  =  SB ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                      -  SB ( iV, jV, kV )
+
+            if ( dSB_I * dSB_O  <  0.0_KDR ) then  !-- local extremum
+
+              SB_Min_I  &
+                =  max ( &
+                     min ( SB ( iV, jV, kV ), &
+                           SB ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
+                     SqrtTiny )
+              SB_Min_O  &
+                =  max ( &
+                     min ( SB ( iV, jV, kV ), &
+                           SB ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) ), &
+                     SqrtTiny )
+
+              dLnSB_I  =  abs ( dSB_I / SB_Min_I )
+              dLnSB_O  =  abs ( dSB_O / SB_Min_O )
+
+              !-- fractional differences
+              if ( dLnSB_I > JET .or. dLnSB_O > JET ) then
+
+                JE ( iV, jV, kV )  &
+                  =  1.0_KDR
+
+                !-- Use diffuse flux in longitudinal direction
+
+                DF_I_iD ( iV, jV, kV ) &
+                  =  1.0_KDR
+                DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+                  =  1.0_KDR
+                DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+                  =  1.0_KDR
+
+                !-- Use diffuse flux in transverse directions, on both sides
+
+                DF_I_jD ( iV, jV, kV ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_jD ( iaV_ip_jp ( 1 ), iaV_ip_jp ( 2 ), iaV_ip_jp ( 3 ) ) &
+                  =  1.0_KDR
+
+                DF_I_kD ( iV, jV, kV ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+                  =  1.0_KDR
+                DF_I_kD ( iaV_ip_kp ( 1 ), iaV_ip_kp ( 2 ), iaV_ip_kp ( 3 ) ) &
+                  =  1.0_KDR
+
+              end if !-- Fractional differences
+
+            end if !-- local extremum
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP  end parallel do
+    
+    end if
+        
+  end procedure DetectJaggedEntropyKernel
+
+  
   module procedure ClearBoundaryKernel 
 
     integer ( KDI ) :: &

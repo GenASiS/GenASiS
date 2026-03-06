@@ -10,7 +10,7 @@ module Features_F_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_P  = 6, &
+      N_FIELDS_P  = 7, &
       N_VECTORS_P = 0
 
   type, public, extends ( Features_CS_Form ) :: Features_F_P_Form
@@ -19,7 +19,8 @@ module Features_F_P__Form
       N_VECTORS_P = N_VECTORS_P, &
       EOS_ERROR        = 0, &
       SHOCK            = 0, &
-      PHASE_TRANSITION = 0
+      PHASE_TRANSITION = 0, &
+      JAGGED_ENTROPY   = 0
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I = 0
     real ( KDR ) :: &
@@ -43,7 +44,8 @@ module Features_F_P__Form
 
     private :: &
       DetectShocksKernel, &
-      DetectPhaseTransitionKernel
+      DetectPhaseTransitionKernel, &
+      DetectJaggedEntropyKernel
 
   interface
   
@@ -87,6 +89,26 @@ module Features_F_P__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine DetectPhaseTransitionKernel
+
+    module subroutine DetectJaggedEntropyKernel &
+             ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, JET, iD, jD, kD, oV, &
+               UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        JE, &
+        DF_I_iD, &
+        DF_I_jD, &
+        DF_I_kD
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        SB
+      real ( KDR ), intent ( in ) :: &
+        JET
+      integer ( KDI ), intent ( in ) :: &
+        iD, jD, kD, &
+        oV
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine DetectJaggedEntropyKernel
 
     module subroutine ClearBoundaryKernel &
                ( S, PT, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, &
@@ -157,7 +179,8 @@ contains
     F % EOS_ERROR        =  oF + 1
     F % SHOCK            =  oF + 2
     F % PHASE_TRANSITION =  oF + 3
-    F % SHOCK_I          =  oF + [ 4, 5, 6 ]
+    F % JAGGED_ENTROPY   =  oF + 4
+    F % SHOCK_I          =  oF + [ 5, 6, 7 ]
 
     nFields  =  oF  +  F % N_FIELDS_P
     if ( present ( nFieldsOption ) ) &
@@ -175,6 +198,7 @@ contains
       = [ 'EOS_Error      ', &
           'Shock          ', &
           'PhaseTransition', &
+          'JaggedEntropy  ', &
           'Shock_I_1      ', &
           'Shock_I_2      ', &
           'Shock_I_3      ' ]
@@ -226,8 +250,10 @@ contains
       S, &
       S_I_iD, &
       PT, &
+      JE, &
       P, &
       Gamma, &
+      SB, &
       V_iD
 
     call Show ( 'Detecting Fluid features', CONSOLE % INFO_6 )
@@ -247,10 +273,12 @@ contains
         ( FV   =>  F  % Storage ( iC ) % Value, &
           FPV  =>  FP % Storage ( iC ) % Value )
 
-      call C % SetFieldPointer ( FV  ( :, F  % SHOCK ),            S )
-      call C % SetFieldPointer ( FV  ( :, F  % PHASE_TRANSITION ), PT )
-      call C % SetFieldPointer ( FPV ( :, FP % PRESSURE ),         P )
-      call C % SetFieldPointer ( FPV ( :, FP % ADIABATIC_INDEX ),  Gamma )
+      call C % SetFieldPointer ( FV  ( :, F  % SHOCK ),              S )
+      call C % SetFieldPointer ( FV  ( :, F  % PHASE_TRANSITION ),   PT )
+      call C % SetFieldPointer ( FV  ( :, F  % JAGGED_ENTROPY ),     JE )
+      call C % SetFieldPointer ( FPV ( :, FP % PRESSURE ),           P )
+      call C % SetFieldPointer ( FPV ( :, FP % ADIABATIC_INDEX ),    Gamma )
+      call C % SetFieldPointer ( FPV ( :, FP % ENTROPY_PER_BARYON ), SB )
 
       do iD = 1, C % nDimensions
 
@@ -275,6 +303,10 @@ contains
                  UseDeviceOption = F % DeviceMemory )
         call DetectPhaseTransitionKernel &
                ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
+                 F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
+                 UseDeviceOption = F % DeviceMemory )
+        call DetectJaggedEntropyKernel &
+               ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
                  F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
 
