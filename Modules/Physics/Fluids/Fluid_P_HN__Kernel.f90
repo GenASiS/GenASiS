@@ -379,9 +379,9 @@ contains
         N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
-        !SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
-        SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
-                                *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        !SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
+        !                        *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
         Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
         Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
@@ -405,9 +405,9 @@ contains
         N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
-        !SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
-        SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
-                                *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        !SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
+        !                        *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
         Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
         Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
@@ -434,9 +434,9 @@ contains
         N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
         E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
                            * M ( iV ) * N ( iV )
-        !SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
-        SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
-                                *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+        SS ( iV )     =  sqrt ( SS ( iV ) ) * Speed_CGS
+        !SS ( iV )     =  sqrt ( max ( GammaMin, Gamma ( iV ) )  &
+        !                        *  P ( iV ) / ( M ( iV ) * N ( iV ) ) )
         Mu_N  ( iV )  =  Mu_N  ( iV ) * MeV
         Mu_P  ( iV )  =  Mu_P  ( iV ) * MeV
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
