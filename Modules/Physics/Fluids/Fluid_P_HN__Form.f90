@@ -625,17 +625,17 @@ contains
             F % EOS % LOG_PRESSURE, &
             F % EOS % ENTROPY, &
             F % EOS % SOUND_SPEED_SQUARE, &
+            F % EOS % GAMMA, &
             F % EOS % MASS_FRACTION_A, &
             F % EOS % MASS_FRACTION_H, &
             F % EOS % MASS_FRACTION_N, &
             F % EOS % MASS_FRACTION_P, &
             F % EOS % MASS_NUMBER_BAR, &
             F % EOS % ATOMIC_NUMBER_BAR, &
-            F % EOS % CHEMICAL_POTENTIAL_E, &
             F % EOS % CHEMICAL_POTENTIAL_HAT, &
             F % EOS % CHEMICAL_POTENTIAL_N, &
             F % EOS % CHEMICAL_POTENTIAL_P, &
-            F % EOS % GAMMA ]
+            F % EOS % CHEMICAL_POTENTIAL_E ]
       
       call F % EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
 
