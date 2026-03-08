@@ -335,11 +335,11 @@ iHeavy = 22
                  UseDeviceOption = F % DeviceMemory )
         call DetectPhaseTransitionKernel &
                ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
-                 F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
+                 0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
         call DetectJaggedEntropyKernel &
                ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
-                 F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
+                 0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
         call DetectHeavyNucleusKernel &
                ( HN, DF_I_iD, DF_I_jD, DF_I_kD, XA, &
