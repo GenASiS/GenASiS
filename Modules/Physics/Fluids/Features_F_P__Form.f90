@@ -341,10 +341,10 @@ iHeavy = 22
                ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
                  0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
-        call DetectHeavyNucleusKernel &
-               ( HN, DF_I_iD, DF_I_jD, DF_I_kD, XA, &
-                 0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
-                 UseDeviceOption = F % DeviceMemory )
+        ! call DetectHeavyNucleusKernel &
+        !        ( HN, DF_I_iD, DF_I_jD, DF_I_kD, XA, &
+        !          0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
+        !          UseDeviceOption = F % DeviceMemory )
 
       end do !-- iD
 
