@@ -237,7 +237,13 @@ contains
 
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
       RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  5.9_KDR
+
+!-- 40 nCellsCore for 128 nCellsPolar, polar/radial aspect ratio close to 1
+!      RadialRatio  =  2.4_KDR  !-- RadiusCore = 16.0 km
+
+!-- 100 nCellsCore for 128 nCellsPolar, polar/radial aspect ratio close to 2.5  
+      RadialRatio  =  5.9_KDR  !-- RadiusCore = 16.0 km
+
       if ( present ( RadiusMaxOption ) ) &
         RadiusMax  =  RadiusMaxOption
       if ( present ( RadiusCoreOption ) ) &
