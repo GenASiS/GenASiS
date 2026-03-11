@@ -520,45 +520,45 @@ contains
             dLnSB_I  =  abs ( dSB_I / SB_Min_I )
 !            dLnSB_O  =  abs ( dSB_O / SB_Min_O )
 
-            !-- Fractional difference across inner face
-            if ( dLnSB_I > JET ) then
+            ! !-- Fractional difference across inner face
+            ! if ( dLnSB_I > JET ) then
 
-              JE ( iV, jV, kV )  &
-                =  1.0_KDR
-              JE ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
-                =  1.0_KDR
+            !   JE ( iV, jV, kV )  &
+            !     =  1.0_KDR
+            !   JE ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+            !     =  1.0_KDR
 
-              !-- Use diffuse flux in longitudinal direction
+            !   !-- Use diffuse flux in longitudinal direction
 
-              DF_I_iD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
-                =  1.0_KDR
-              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_iD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+            !     =  1.0_KDR
+            !   DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+            !     =  1.0_KDR
 
-              !-- Use diffuse flux in transverse directions, on both sides of 
-              !   the shock
+            !   !-- Use diffuse flux in transverse directions, on both sides of 
+            !   !   the shock
 
-              DF_I_jD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_jD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+            !     =  1.0_KDR
 
-              DF_I_kD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_kD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+            !     =  1.0_KDR
 
-            end if !-- Fractional difference
+            ! end if !-- Fractional difference
 
             if ( dSB_I * dSB_O  <  0.0_KDR ) then  !-- local extremum
 
@@ -650,45 +650,45 @@ contains
             dLnSB_I  =  abs ( dSB_I / SB_Min_I )
 !            dLnSB_O  =  abs ( dSB_O / SB_Min_O )
 
-            !-- Fractional difference across inner face
-            if ( dLnSB_I > JET ) then
+            ! !-- Fractional difference across inner face
+            ! if ( dLnSB_I > JET ) then
 
-              JE ( iV, jV, kV )  &
-                =  1.0_KDR
-              JE ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
-                =  1.0_KDR
+            !   JE ( iV, jV, kV )  &
+            !     =  1.0_KDR
+            !   JE ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+            !     =  1.0_KDR
 
-              !-- Use diffuse flux in longitudinal direction
+            !   !-- Use diffuse flux in longitudinal direction
 
-              DF_I_iD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
-                =  1.0_KDR
-              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_iD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+            !     =  1.0_KDR
+            !   DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+            !     =  1.0_KDR
 
-              !-- Use diffuse flux in transverse directions, on both sides of 
-              !   the shock
+            !   !-- Use diffuse flux in transverse directions, on both sides of 
+            !   !   the shock
 
-              DF_I_jD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_jD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+            !     =  1.0_KDR
 
-              DF_I_kD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_kD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+            !     =  1.0_KDR
 
-            end if !-- Fractional difference
+            ! end if !-- Fractional difference
 
             if ( dSB_I * dSB_O  <  0.0_KDR ) then  !-- local extremum
 
