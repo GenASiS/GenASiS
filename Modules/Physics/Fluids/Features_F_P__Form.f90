@@ -10,7 +10,7 @@ module Features_F_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_P  = 8, &
+      N_FIELDS_P  = 7, &
       N_VECTORS_P = 0
 
   type, public, extends ( Features_CS_Form ) :: Features_F_P_Form
@@ -20,8 +20,7 @@ module Features_F_P__Form
       EOS_ERROR        = 0, &
       SHOCK            = 0, &
       PHASE_TRANSITION = 0, &
-      JAGGED_ENTROPY   = 0, &
-      HEAVY_NUCLEUS    = 0
+      JAGGED_ENTROPY   = 0
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I = 0
     real ( KDR ) :: &
@@ -46,8 +45,7 @@ module Features_F_P__Form
     private :: &
       DetectShocksKernel, &
       DetectPhaseTransitionKernel, &
-      DetectJaggedEntropyKernel, &
-      DetectHeavyNucleusKernel
+      DetectJaggedEntropyKernel
 
   interface
   
@@ -111,26 +109,6 @@ module Features_F_P__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine DetectJaggedEntropyKernel
-
-    module subroutine DetectHeavyNucleusKernel &
-             ( HN, DF_I_iD, DF_I_jD, DF_I_kD, XA, HNT, iD, jD, kD, oV, &
-               UseDeviceOption )
-      use Basics
-      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-        HN, &
-        DF_I_iD, &
-        DF_I_jD, &
-        DF_I_kD
-      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-        XA
-      real ( KDR ), intent ( in ) :: &
-        HNT
-      integer ( KDI ), intent ( in ) :: &
-        iD, jD, kD, &
-        oV
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine DetectHeavyNucleusKernel
 
     module subroutine ClearBoundaryKernel &
                ( S, PT, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, &
@@ -202,8 +180,7 @@ contains
     F % SHOCK            =  oF + 2
     F % PHASE_TRANSITION =  oF + 3
     F % JAGGED_ENTROPY   =  oF + 4
-    F % HEAVY_NUCLEUS    =  oF + 5
-    F % SHOCK_I          =  oF + [ 6, 7, 8 ]
+    F % SHOCK_I          =  oF + [ 5, 6, 7 ]
 
     nFields  =  oF  +  F % N_FIELDS_P
     if ( present ( nFieldsOption ) ) &
@@ -222,7 +199,6 @@ contains
           'Shock          ', &
           'PhaseTransition', &
           'JaggedEntropy  ', &
-          'HeavyNucleus   ', &
           'Shock_I_1      ', &
           'Shock_I_2      ', &
           'Shock_I_3      ' ]
@@ -275,14 +251,10 @@ contains
       S_I_iD, &
       PT, &
       JE, &
-      HN, &
       P, &
       Gamma, &
       SB, &
-      XA, &
       V_iD
-integer ( KDI ) :: &
-  iHeavy
 
     call Show ( 'Detecting Fluid features', CONSOLE % INFO_6 )
     call Show ( F % Name, 'Features', CONSOLE % INFO_6 )
@@ -301,16 +273,13 @@ integer ( KDI ) :: &
         ( FV   =>  F  % Storage ( iC ) % Value, &
           FPV  =>  FP % Storage ( iC ) % Value )
 
-iHeavy = 22
       call C % SetFieldPointer ( FV  ( :, F  % SHOCK ),              S )
       call C % SetFieldPointer ( FV  ( :, F  % PHASE_TRANSITION ),   PT )
       call C % SetFieldPointer ( FV  ( :, F  % JAGGED_ENTROPY ),     JE )
-      call C % SetFieldPointer ( FV  ( :, F  % HEAVY_NUCLEUS ),      HN )
       call C % SetFieldPointer ( FPV ( :, FP % PRESSURE ),           P )
       call C % SetFieldPointer ( FPV ( :, FP % ADIABATIC_INDEX ),    Gamma )
       call C % SetFieldPointer ( FPV ( :, FP % ENTROPY_PER_BARYON ), SB )
       call C % SetFieldPointer ( FPV ( :, FP % ENTROPY_PER_BARYON ), SB )
-      call C % SetFieldPointer ( FPV ( :, iHeavy ), XA )
 
       do iD = 1, C % nDimensions
 
@@ -341,10 +310,6 @@ iHeavy = 22
                ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
                  0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
-        ! call DetectHeavyNucleusKernel &
-        !        ( HN, DF_I_iD, DF_I_jD, DF_I_kD, XA, &
-        !          0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
-        !          UseDeviceOption = F % DeviceMemory )
 
       end do !-- iD
 
@@ -407,8 +372,7 @@ iHeavy = 22
                   = [ F % DIFFUSIVE_FLUX_I, &
                       F % SHOCK, &
                       F % PHASE_TRANSITION, &
-                      F % JAGGED_ENTROPY, &
-                      F % HEAVY_NUCLEUS ] )
+                      F % JAGGED_ENTROPY ] )
 
   end subroutine SetStream
 
