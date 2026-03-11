@@ -302,14 +302,14 @@ contains
                ( S, S_I_iD, DF_I_jD, DF_I_kD, P, V_iD, &
                  F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
-        call DetectPhaseTransitionKernel &
-               ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
-                 0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
-                 UseDeviceOption = F % DeviceMemory )
-        call DetectJaggedEntropyKernel &
-               ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
-                 0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
-                 UseDeviceOption = F % DeviceMemory )
+        ! call DetectPhaseTransitionKernel &
+        !        ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
+        !          0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
+        !          UseDeviceOption = F % DeviceMemory )
+        ! call DetectJaggedEntropyKernel &
+        !        ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
+        !          0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
+        !          UseDeviceOption = F % DeviceMemory )
 
       end do !-- iD
 
