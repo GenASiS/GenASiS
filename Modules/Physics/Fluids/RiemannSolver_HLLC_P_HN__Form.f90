@@ -33,12 +33,12 @@ module RiemannSolver_HLLC_P_HN__Form
                ( M_IL, M_IR, D_IL, D_IR, &
                  V_1_IL, V_2_IL, V_3_IL, V_1_IR, V_2_IR, V_3_IR, &
                  S_1_IL, S_2_IL, S_3_IL, S_1_IR, S_2_IR, S_3_IR, &
-                 G_IL, G_IR, P_IL, P_IR, DE_IL, DE_IR, &
+                 G_IL, G_IR, P_IL, P_IR, DS_IL, DS_IR, DE_IL, DE_IR, &
                  AP_I, AM_I, AC_I, M_DD_11, M_DD_22, M_DD_33, iD, &
                  M_ICL, M_ICR, D_ICL, D_ICR, &
                  V_1_ICL, V_2_ICL, V_3_ICL, V_1_ICR, V_2_ICR, V_3_ICR, &
                  S_1_ICL, S_2_ICL, S_3_ICL, S_1_ICR, S_2_ICR, S_3_ICR, &
-                 G_ICL, G_ICR, P_ICL, P_ICR, DE_ICL, DE_ICR, &
+                 G_ICL, G_ICR, P_ICL, P_ICR, DS_ICL, DS_ICR, DE_ICL, DE_ICR, &
                  UseDeviceOption )
         use Basics
         implicit none
@@ -49,6 +49,7 @@ module RiemannSolver_HLLC_P_HN__Form
           S_1_IL, S_2_IL, S_3_IL, S_1_IR, S_2_IR, S_3_IR, &
           G_IL, G_IR, &
           P_IL, P_IR, &
+          DS_IL, DS_IR, &
           DE_IL, DE_IR, &
           AP_I, &
           AM_I, &
@@ -63,6 +64,7 @@ module RiemannSolver_HLLC_P_HN__Form
           S_1_ICL, S_2_ICL, S_3_ICL, S_1_ICR, S_2_ICR, S_3_ICR, &
           G_ICL, G_ICR, &
           P_ICL, P_ICR, &
+          DS_ICL, DS_ICR, &
           DE_ICL, DE_ICR
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
@@ -168,6 +170,8 @@ contains
                G_IR   = CS_IR_V ( :, CS % ENERGY_DENSITY_B ), &
                P_IL   = CS_IL_V ( :, CS % PRESSURE ), &
                P_IR   = CS_IR_V ( :, CS % PRESSURE ), &
+               DS_IL  = CS_IL_V ( :, CS % ENTROPY_DENSITY_B ), &
+               DS_IR  = CS_IR_V ( :, CS % ENTROPY_DENSITY_B ), &
                DE_IL  = CS_IL_V ( :, CS % ELECTRON_DENSITY_B ), &
                DE_IR  = CS_IR_V ( :, CS % ELECTRON_DENSITY_B ), &
                AP_I   = RSV ( :, RS % ALPHA_PLUS_U ), &
@@ -197,6 +201,8 @@ contains
                G_ICR   = CS_ICR_V ( :, CS % ENERGY_DENSITY_B ), &
                P_ICL   = CS_ICL_V ( :, CS % PRESSURE ), &
                P_ICR   = CS_ICR_V ( :, CS % PRESSURE ), &
+               DS_ICL  = CS_ICL_V ( :, CS % ENTROPY_DENSITY_B ), &
+               DS_ICR  = CS_ICR_V ( :, CS % ENTROPY_DENSITY_B ), &
                DE_ICL  = CS_ICL_V ( :, CS % ELECTRON_DENSITY_B ), &
                DE_ICR  = CS_ICR_V ( :, CS % ELECTRON_DENSITY_B ), &
                UseDeviceOption = RS % DeviceMemory )

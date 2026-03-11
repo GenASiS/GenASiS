@@ -138,6 +138,9 @@ contains
                            +  AC_I ( iV )  *  P_ICR ( iV ) ) &
                          *  AP_AC_Inv
 
+        DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
+        DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
+
         DE_ICL ( iV )  =  DE_IL ( iV ) * AM_VL * AM_AC_Inv
         DE_ICR ( iV )  =  DE_IR ( iV ) * AP_VR * AP_AC_Inv
 
@@ -246,6 +249,9 @@ contains
                            -  V_D_IR  *  P_IR ( iV ) &
                            +  AC_I ( iV )  *  P_ICR ( iV ) ) &
                          *  AP_AC_Inv
+
+        DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
+        DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
 
         DE_ICL ( iV )  =  DE_IL ( iV ) * AM_VL * AM_AC_Inv
         DE_ICR ( iV )  =  DE_IR ( iV ) * AP_VR * AP_AC_Inv

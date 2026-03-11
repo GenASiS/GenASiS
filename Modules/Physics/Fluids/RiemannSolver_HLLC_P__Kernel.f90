@@ -213,6 +213,9 @@ contains
                            +  AC_I ( iV )  *  P_ICR ( iV ) ) &
                          *  AP_AC_Inv
 
+        DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
+        DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
+
       end do !-- iV
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
@@ -318,6 +321,9 @@ contains
                            -  V_D_IR  *  P_IR ( iV ) &
                            +  AC_I ( iV )  *  P_ICR ( iV ) ) &
                          *  AP_AC_Inv
+
+        DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
+        DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
 
       end do !-- iV
       !$OMP end parallel do
