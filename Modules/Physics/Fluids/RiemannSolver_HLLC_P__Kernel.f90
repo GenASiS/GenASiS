@@ -341,6 +341,9 @@ contains
       iF_F, &
       nV, &
       nF
+    real ( KDR ) :: &
+      F_HLL, &
+      F_HLLC
     logical ( KDL ) :: &  
       UseDevice
 
@@ -360,26 +363,29 @@ contains
     if ( UseDevice ) then
 
       !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
-      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iF_F )
+      !$OMP schedule ( OMP_SCHEDULE_TARGET ) private ( iF_F, F_HLL, F_HLLC )
       do iF  =  1,  nF
         do iV  =  1,  nV
 
-          !-- If flagged for diffusive flux, leave HLL flux in place
-          if ( DF_I ( iV ) > 0.0_KDR ) &
-            cycle
-
           iF_F  =  iaFluxes ( iF )
+
+          F_HLL  =  F_I ( iV, iF_F )
 
           if ( AP_I ( iV )  /=  0.0_KDR .and. AM_I ( iV )  /=  0.0_KDR ) then
             !-- Use the appropriate center state flux
             if ( AC_I ( iV )  >=  0.0_KDR ) then
-              F_I ( iV, iF_F )  =  F_ICL ( iV, iF_F )
+              F_HLLC  =  F_ICL ( iV, iF_F )
             else !-- AC < 0
-              F_I ( iV, iF_F )  =  F_ICR ( iV, iF_F )
+              F_HLLC  =  F_ICR ( iV, iF_F )
             end if !-- AC >= 0
           else  !-- AP or AM == 0
             !-- Leave HLL flux in place (which is upwind in this case)
+            F_HLLC  =  F_HLL
           end if !-- AP and AM /= 0
+
+          F_I ( iV, iF_F )  &
+            =    ( 1.0_KDR  -  DF_I ( iV ) )  *  F_HLLC  &
+                            +  DF_I ( iV )    *  F_HLL
 
         end do !-- iV
       end do !-- iF
@@ -388,26 +394,29 @@ contains
     else
 
       !$OMP parallel do collapse ( 2 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF_F )
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iF_F, F_HLL, F_HLLC )
       do iF  =  1,  nF
         do iV  =  1,  nV
 
-          !-- If flagged for diffusive flux, leave HLL flux in place
-          if ( DF_I ( iV ) > 0.0_KDR ) &
-            cycle
-
           iF_F  =  iaFluxes ( iF )
+
+          F_HLL  =  F_I ( iV, iF_F )
 
           if ( AP_I ( iV )  /=  0.0_KDR .and. AM_I ( iV )  /=  0.0_KDR ) then
             !-- Use the appropriate center state flux
             if ( AC_I ( iV )  >=  0.0_KDR ) then
-              F_I ( iV, iF_F )  =  F_ICL ( iV, iF_F )
+              F_HLLC  =  F_ICL ( iV, iF_F )
             else !-- AC < 0
-              F_I ( iV, iF_F )  =  F_ICR ( iV, iF_F )
+              F_HLLC  =  F_ICR ( iV, iF_F )
             end if !-- AC >= 0
           else  !-- AP or AM == 0
             !-- Leave HLL flux in place (which is upwind in this case)
+            F_HLLC  =  F_HLL
           end if !-- AP and AM /= 0
+
+          F_I ( iV, iF_F )  &
+            =    ( 1.0_KDR  -  DF_I ( iV ) )  *  F_HLLC  &
+                            +  DF_I ( iV )    *  F_HLL
 
         end do !-- iV
       end do !-- iF
