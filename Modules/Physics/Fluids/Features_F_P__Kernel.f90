@@ -147,11 +147,17 @@ contains
             if ( dLnP > ST .and. dV_iD <= 0.0_KDR ) then
 
               S_I_iD ( iV, jV, kV )  &
-                =  1.0_KDR
+                = max ( min ( dLnP, 1.0_KDR ), S_I_iD ( iV, jV, kV ) )
               S ( iV, jV, kV )  &
-                =  1.0_KDR
+                = max ( min ( dLnP, 1.0_KDR ), S ( iV, jV, kV ) )
               S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  &
-                =  1.0_KDR
+                = max ( min ( dLnP, 1.0_KDR ), &
+                        S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) )
+
+              ! !-- Use a degree of diffusive flux in the longitudinal direction
+
+              !  DF_I_iD ( iV, jV, kV ) &
+              !    =  max ( min ( dLnP, 1.0_KDR ), DF_I_iD ( iV, jV, kV ) )
 
               !-- Use diffuse flux in transverse directions, on both sides of 
               !   the shock
@@ -351,75 +357,91 @@ contains
 
             dGamma  =  abs ( Gamma ( iV, jV, kV )  &
                          -  Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) )
+            ! GammaMin  &
+            !   =  max ( &
+            !        min ( Gamma ( iV, jV, kV ), &
+            !              Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
+            !        SqrtTiny )
             GammaMin  &
               =  max ( &
-                   min ( Gamma ( iV, jV, kV ), &
-                         Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
+                   0.5_KDR * ( Gamma ( iV, jV, kV ) &
+                      + Gamma ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) ), &
                    SqrtTiny )
             dLnGamma  =  dGamma / GammaMin
 
-            !-- Fractional difference across inner face
-            if ( dLnGamma > PTT ) then
 
-              PT ( iV, jV, kV )  &
-                =  1.0_KDR
-              PT ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
-                =  1.0_KDR
+!            !-- Fractional difference across inner face
+!            if ( dLnGamma > 1.e-1_KDR ) then
 
-              !-- Use diffuse flux in longitudinal direction
+             PT ( iV, jV, kV )  &
+               =  max ( min ( dLnGamma, 1.0_KDR ), PT ( iV, jV, kV ) )
+             PT ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+               =  max ( min ( dLnGamma, 1.0_KDR ), &
+                        PT ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) )
+!             DF_I_iD ( iV, jV, kV ) &
+!               =  max ( min ( dLnGamma, 1.0_KDR ), DF_I_iD ( iV, jV, kV ) )
 
-              DF_I_iD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
-                =  1.0_KDR
-              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
-                =  1.0_KDR
+              ! PT ( iV, jV, kV )  &
+              !   =  1.0_KDR
+              ! PT ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+              !   =  1.0_KDR
 
-              !-- Use diffuse flux in transverse directions, on both sides of 
-              !   the shock
+            !   !-- Use diffuse flux in longitudinal direction
 
-              DF_I_jD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
-                =  1.0_KDR
+            !   DF_I_iD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_iD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) )  &
+            !     =  1.0_KDR
+            !   DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+            !     =  1.0_KDR
 
-              DF_I_kD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
-                =  1.0_KDR
+            !   !-- Use diffuse flux in transverse directions, on both sides of 
+            !   !   the shock
 
-            end if !-- Fractional difference
+            !   DF_I_jD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_jD ( iaV_im_jp ( 1 ), iaV_im_jp ( 2 ), iaV_im_jp ( 3 ) ) &
+            !     =  1.0_KDR
+
+            !   DF_I_kD ( iV, jV, kV ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_im ( 1 ), iaV_im ( 2 ), iaV_im ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+            !     =  1.0_KDR
+            !   DF_I_kD ( iaV_im_kp ( 1 ), iaV_im_kp ( 2 ), iaV_im_kp ( 3 ) ) &
+            !     =  1.0_KDR
+
+!           end if !-- Fractional difference
 
             !-- Absolute value
             if ( Gamma ( iV, jV, kV ) < 1.0_KDR ) then
 
               PT ( iV, jV, kV )  &
                 =  1.0_KDR
+!              PT ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) )  &
+!                =  1.0_KDR
 
               !-- Use diffuse flux on all faces
 
-              DF_I_iD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
-                =  1.0_KDR
+              ! DF_I_iD ( iV, jV, kV ) &
+              !   =  1.0_KDR
+              ! DF_I_iD ( iaV_ip ( 1 ), iaV_ip ( 2 ), iaV_ip ( 3 ) ) &
+              !   =  1.0_KDR
 
-              DF_I_jD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
-                =  1.0_KDR
+              ! DF_I_jD ( iV, jV, kV ) &
+              !   =  1.0_KDR
+              ! DF_I_jD ( iaV_jp ( 1 ), iaV_jp ( 2 ), iaV_jp ( 3 ) ) &
+              !   =  1.0_KDR
 
-              DF_I_kD ( iV, jV, kV ) &
-                =  1.0_KDR
-              DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
-                =  1.0_KDR
+              ! DF_I_kD ( iV, jV, kV ) &
+              !   =  1.0_KDR
+              ! DF_I_kD ( iaV_kp ( 1 ), iaV_kp ( 2 ), iaV_kp ( 3 ) ) &
+              !   =  1.0_KDR
 
             end if !-- Absolute value
 

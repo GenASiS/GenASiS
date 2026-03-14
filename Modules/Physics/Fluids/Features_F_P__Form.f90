@@ -50,12 +50,13 @@ module Features_F_P__Form
   interface
   
     module subroutine DetectShocksKernel &
-                 ( S, S_I_iD, DF_I_jD, DF_I_kD, P, V_iD, ST, &
+                 ( S, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, P, V_iD, ST, &
                    iD, jD, kD, oV, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         S, &
         S_I_iD, &
+        DF_I_iD, &
         DF_I_jD, &
         DF_I_kD
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -299,13 +300,13 @@ contains
                ( FPV ( :, FP % VELOCITY_U ( iD ) ), V_iD )
 
         call DetectShocksKernel &
-               ( S, S_I_iD, DF_I_jD, DF_I_kD, P, V_iD, &
+               ( S, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, P, V_iD, &
                  F % ShockThreshold, iD, jD, kD, C % nGhostLayers ( iD ), &
                  UseDeviceOption = F % DeviceMemory )
-        ! call DetectPhaseTransitionKernel &
-        !        ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
-        !          0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
-        !          UseDeviceOption = F % DeviceMemory )
+        call DetectPhaseTransitionKernel &
+               ( PT, DF_I_iD, DF_I_jD, DF_I_kD, Gamma, &
+                 0.1_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
+                 UseDeviceOption = F % DeviceMemory )
         ! call DetectJaggedEntropyKernel &
         !        ( JE, DF_I_iD, DF_I_jD, DF_I_kD, SB, &
         !          0.01_KDR, iD, jD, kD, C % nGhostLayers ( iD ), &
