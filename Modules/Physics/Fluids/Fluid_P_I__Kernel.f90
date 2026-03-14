@@ -209,7 +209,7 @@ contains
         if ( N ( iV )  <  N_Min ) &
           N ( iV )  =  N_Min
 
-        if ( Shock ( iV ) > 0.0_KDR ) then
+        if ( Shock ( iV ) > Threshold ) then
 
           if ( E ( iV )  <  E_Min ) &
             E ( iV )  =  E_Min
@@ -249,7 +249,7 @@ contains
         if ( N ( iV )  <  N_Min ) &
           N ( iV )  =  N_Min
 
-        if ( Shock ( iV ) > 0.0_KDR ) then
+        if ( Shock ( iV ) > Threshold ) then
 
           if ( E ( iV )  <  E_Min ) &
             E ( iV )  =  E_Min

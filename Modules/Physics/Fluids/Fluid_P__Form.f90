@@ -34,7 +34,8 @@ module Fluid_P__Form
       ADIABATIC_INDEX    = 0
     real ( KDR ) :: &
       EnergyDensityMin, &
-      TemperatureMin
+      TemperatureMin, &
+      EntropyEnergyThreshold
     logical ( KDL ) :: &
       UseInitialTemperature, &
       UseEntropy
@@ -51,6 +52,8 @@ module Fluid_P__Form
       SetEnergyDensityMin => SetEnergyDensityMinValue, SetEnergyDensityMinFind
     procedure, public, pass :: &
       SetTemperatureMin
+    procedure, public, pass :: &
+      SetEntropyEnergyThreshold
     procedure, public, pass :: &
       SetUseInitialTemperature
     procedure, public, pass :: &
@@ -346,8 +349,9 @@ contains
 
     !-- Parameters
 
-    F % EnergyDensityMin  =  1.0e-10_KDR  *  F % BaryonDensityMin
-    F % TemperatureMin    =  F % EnergyDensityMin  /  F % BaryonDensityMin
+    F % EnergyDensityMin        =  1.0e-10_KDR  *  F % BaryonDensityMin
+    F % TemperatureMin          =  F % EnergyDensityMin  /  F % BaryonDensityMin
+    F % EntropyEnergyThreshold  =  0.2_KDR
 
     F % UseInitialTemperature  =  .false.
 
@@ -433,6 +437,24 @@ contains
   end subroutine SetTemperatureMin
 
 
+  subroutine SetEntropyEnergyThreshold ( F, EntropyEnergyThreshold )
+
+    class ( Fluid_P_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      EntropyEnergyThreshold
+
+    F % EntropyEnergyThreshold  =  EntropyEnergyThreshold
+
+    call Show ( 'Setting EntropyEnergyThreshold of a Fluid', &
+                F % IGNORABILITY + 1 )
+    call Show ( F % Name, 'Name', F % IGNORABILITY + 1 )
+    call Show ( F % EntropyEnergyThreshold, 'EntropyEnergyThreshold', &
+                F % IGNORABILITY + 1 )
+
+  end subroutine SetEntropyEnergyThreshold
+
+
   subroutine SetUseInitialTemperature ( F, UseInitialTemperature )
 
     class ( Fluid_P_Form ), intent ( inout ) :: &
@@ -481,6 +503,8 @@ contains
                 FS % IGNORABILITY )
     call Show ( FS % TemperatureMin, &
                 FS % Unit ( FS % TEMPERATURE, 1 ), 'TemperatureMin', &
+                FS % IGNORABILITY )
+    call Show ( FS % EntropyEnergyThreshold, 'EntropyEnergyThreshold', &
                 FS % IGNORABILITY )
     call Show ( FS % UseInitialTemperature, 'UseInitialTemperature', &
                 FS % IGNORABILITY )

@@ -144,8 +144,8 @@ module Fluid_P_I__Form
     end subroutine Apply_EOS_I_E_S_Kernel
 
     module subroutine Apply_EOS_I_E_SB_A_Kernel &
-             ( M, N, E, P, T, SB, SS, Gmm, &
-               Shock, M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
+             ( M, N, E, P, T, SB, SS, Gmm, Shock, Threshold, &
+               M_Ref, N_Min, E_Min, Gamma, C_V, N0, P0, &
                UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -160,6 +160,7 @@ module Fluid_P_I__Form
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         Shock
       real ( KDR ), intent ( in ) :: &
+        Threshold, &
         M_Ref, &
         N_Min, &
         E_Min, &
@@ -631,7 +632,8 @@ contains
           Gamma  =>  CS % AdiabaticIndex, &
           C_V    =>  CS % SpecificHeatVolume, &
           N_0    =>  CS % FiducialBaryonDensity, &
-          P_0    =>  CS % FiducialPressure )
+          P_0    =>  CS % FiducialPressure, &
+          Threshold  =>  CS % EntropyEnergyThreshold )
       associate &
         ( M    =>  CSV ( :, CS % BARYON_MASS ), &
           N    =>  CSV ( :, CS % BARYON_DENSITY_C ), &
@@ -675,8 +677,8 @@ contains
           associate ( FV  =>  CS % Features % Storage ( iC ) % Value )
           associate ( Shock  =>  FV ( :, F % SHOCK ) )
           call Apply_EOS_I_E_SB_A_Kernel &
-                 ( M, N, E, P, T, SB, SS, Gmm, &
-                   Shock, M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
+                 ( M, N, E, P, T, SB, SS, Gmm, Shock, Threshold, &
+                   M_Ref, N_Min, E_Min, Gamma, C_V, N_0, P_0, &
                    UseDeviceOption = CS % DeviceMemory )
           call CS % Compute_D_S_G_DS_G_Kernel & 	 	 
                  ( N, V_1, V_2, V_3, E, SB, M, SS, M_DD_11, M_DD_22, M_DD_33, &
