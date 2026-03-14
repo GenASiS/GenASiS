@@ -1095,7 +1095,7 @@ contains
           associate ( FV  =>  CS % Features % Storage ( iC ) % Value )
           associate ( Shock  =>  FV ( :, F % SHOCK ) )
           call CS % EOS % ComputeFromEnergyEntropy &
-                 ( FS, Mask = Shock, Threshold = 0.0_KDR, &
+                 ( FS, Mask = Shock, Threshold = 0.2_KDR, &
                    iaFluidInput = [ CS % BARYON_DENSITY_C, &
                                     CS % TEMPERATURE, &
                                     CS % ELECTRON_FRACTION ], &
