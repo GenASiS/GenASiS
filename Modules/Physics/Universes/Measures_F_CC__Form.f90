@@ -516,7 +516,8 @@ contains
             ( V_T => ( V_L - V_R ) / min ( abs ( V_R ), abs ( V_R ) ), &
               P_T => ( P_L - P_R ) / min ( abs ( P_R ), abs ( P_L ) ) )
           
-          if ( V_T  > 0.05_KDR  .and.  P_T > 0.05_KDR ) then
+!          if ( V_T  > 0.05_KDR  .and.  P_T > 0.05_KDR ) then
+          if ( V_T  > 0.05_KDR  .and.  P_T > 0.2_KDR ) then
             OV_2D ( iP, iA ) = R_3D ( iR, iP, iA )
             exit
           end if

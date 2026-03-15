@@ -243,7 +243,7 @@ contains
 
     if ( .not. allocated ( F % Features ) ) then
 
-      ShockThreshold  =  0.1_KDR
+      ShockThreshold  =  0.2_KDR
       call PROGRAM_HEADER % GetParameter ( ShockThreshold, 'ShockThreshold' )
 
       allocate ( Features_F_P_Form :: F % Features )

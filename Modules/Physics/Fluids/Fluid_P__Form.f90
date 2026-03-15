@@ -351,7 +351,10 @@ contains
 
     F % EnergyDensityMin        =  1.0e-10_KDR  *  F % BaryonDensityMin
     F % TemperatureMin          =  F % EnergyDensityMin  /  F % BaryonDensityMin
+
     F % EntropyEnergyThreshold  =  0.2_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( F % EntropyEnergyThreshold, 'EntropyEnergyThreshold' )
 
     F % UseInitialTemperature  =  .false.
 
