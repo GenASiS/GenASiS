@@ -141,10 +141,10 @@ contains
     end if
 
 !-- 40 nCellsCore for 128 nCellsPolar, polar/radial aspect ratio close to 1
-!    C % nCellsCore  =  10 * ( C % nCellsPolar / 32 )
+    C % nCellsCore  =  10 * ( C % nCellsPolar / 32 )
 
 !-- 100 nCellsCore for 128 nCellsPolar, polar/radial aspect ratio close to 2.5  
-    C % nCellsCore  =  25 * ( C % nCellsPolar / 32 )  
+!    C % nCellsCore  =  25 * ( C % nCellsPolar / 32 )  
 
     C % RadiusCore  =  RadiusCore
 
