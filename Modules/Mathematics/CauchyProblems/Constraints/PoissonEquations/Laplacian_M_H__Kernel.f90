@@ -10,6 +10,7 @@ contains
 
 
   module procedure ComputeRadialMomentsKernel
+    !DIR$ INLINENEVER ComputeRadialMomentsKernel
 
     integer ( KDI ) :: &
       iR, &  !-- iRadius
@@ -19,8 +20,7 @@ contains
       UseDevice
     
     !-- WAR for CCE bug causing wrong answer
-    !DIR$ INLINENEVER ComputeRadialMomentsKernel
-
+    
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
