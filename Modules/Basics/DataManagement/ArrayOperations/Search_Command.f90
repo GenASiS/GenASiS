@@ -19,15 +19,20 @@ module Search_Command
 
   public :: &
     Search
+    
+  interface Search
+    module procedure SearchInteger
+    module procedure SearchReal
+  end interface Search
 
 contains
 
 
-  pure subroutine Search ( A, Value, iValue ) 
-
-    class ( * ), dimension ( : ), intent ( in )  :: &
+  pure subroutine SearchInteger ( A, Value, iValue ) 
+    
+    integer ( KDI ), dimension ( : ), intent ( in )  :: &
       A
-    class ( * ), intent ( in )  :: &
+    integer ( KDI ), intent ( in )  :: &
       Value
     integer ( KDI ), intent ( out )  :: &
       iValue
@@ -42,61 +47,145 @@ contains
       
     !OMP_DECLARE_TARGET
       
-    select type ( A )
+    nValues = size ( A ) 
+    Ascending = ( A ( nValues )  >= A ( 1 )  ) 
+    iLow = 0
+    iHigh = nValues + 1
+    do while ( iHigh - iLow > 1 ) 
+      iMiddle =  ( iHigh + iLow )  / 2
+      if ( Ascending .and. ( Value >= A ( iMiddle )  )  ) then
+        iLow = iMiddle
+      else
+        iHigh = iMiddle
+      end if
+    end do
+    if ( Value == A ( 1 ) ) then
+      iValue = 1
+    else if ( Value == A ( nValues ) ) then
+      iValue = nValues  !-- modification from Numerical Recipes
+    else
+      iValue = iLow
+    end if
+  
+  end subroutine SearchInteger
+
+
+  pure subroutine SearchReal ( A, Value, iValue ) 
+  
+    real ( KDR ), dimension ( : ), intent ( in )  :: &
+      A
+    real ( KDR ), intent ( in )  :: &
+      Value
+    integer ( KDI ), intent ( out )  :: &
+      iValue
     
-    type is ( integer ( KDI ) )
+    integer ( KDI )  :: &
+      nValues, &
+      iLow, &
+      iMiddle, &
+      iHigh
+    logical ( KDL )  :: &
+      Ascending
       
-      select type ( Value )
-      type is ( integer ( KDI ) )
-        nValues = size ( A ) 
-        Ascending = ( A ( nValues )  >= A ( 1 )  ) 
-        iLow = 0
-        iHigh = nValues + 1
-        do while ( iHigh - iLow > 1 ) 
-          iMiddle =  ( iHigh + iLow )  / 2
-          if ( Ascending .and. ( Value >= A ( iMiddle )  )  ) then
-            iLow = iMiddle
-          else
-            iHigh = iMiddle
-          end if
-        end do
-        if ( Value == A ( 1 ) ) then
-          iValue = 1
-        else if ( Value == A ( nValues ) ) then
-          iValue = nValues  !-- modification from Numerical Recipes
-        else
-          iValue = iLow
-        end if
-      end select
-    
-    type is ( real ( KDR ) )
+    !OMP_DECLARE_TARGET
       
-      select type ( Value )
-      type is ( real ( KDR ) )
-        nValues = size ( A ) 
-        Ascending = ( A ( nValues )  >= A ( 1 )  ) 
-        iLow = 0
-        iHigh = nValues + 1
-        do while ( iHigh - iLow > 1 ) 
-          iMiddle =  ( iHigh + iLow )  / 2
-          if ( Ascending .and. ( Value >= A ( iMiddle )  )  ) then
-            iLow = iMiddle
-          else
-            iHigh = iMiddle
-          end if
-        end do
-        if ( Value == A ( 1 ) ) then
-          iValue = 1
-        else if ( Value == A ( nValues ) ) then
-          iValue = nValues  !-- modification from Numerical Recipes
-        else
-          iValue = iLow
-        end if
-      end select
-    
-    end select
-    
-  end subroutine Search
+    nValues = size ( A ) 
+    Ascending = ( A ( nValues )  >= A ( 1 )  ) 
+    iLow = 0
+    iHigh = nValues + 1
+    do while ( iHigh - iLow > 1 ) 
+      iMiddle =  ( iHigh + iLow )  / 2
+      if ( Ascending .and. ( Value >= A ( iMiddle )  )  ) then
+        iLow = iMiddle
+      else
+        iHigh = iMiddle
+      end if
+    end do
+    if ( Value == A ( 1 ) ) then
+      iValue = 1
+    else if ( Value == A ( nValues ) ) then
+      iValue = nValues  !-- modification from Numerical Recipes
+    else
+      iValue = iLow
+    end if
+  
+  end subroutine SearchReal
+
+
+!--  pure subroutine Search ( A, Value, iValue ) 
+!--
+!--    class ( * ), dimension ( : ), intent ( in )  :: &
+!--      A
+!--    class ( * ), intent ( in )  :: &
+!--      Value
+!--    integer ( KDI ), intent ( out )  :: &
+!--      iValue
+!--    
+!--    integer ( KDI )  :: &
+!--      nValues, &
+!--      iLow, &
+!--      iMiddle, &
+!--      iHigh
+!--    logical ( KDL )  :: &
+!--      Ascending
+!--      
+!--    !OMP_DECLARE_TARGET
+!--      
+!--    select type ( A )
+!--    
+!--    type is ( integer ( KDI ) )
+!--      
+!--      select type ( Value )
+!--      type is ( integer ( KDI ) )
+!--        nValues = size ( A ) 
+!--        Ascending = ( A ( nValues )  >= A ( 1 )  ) 
+!--        iLow = 0
+!--        iHigh = nValues + 1
+!--        do while ( iHigh - iLow > 1 ) 
+!--          iMiddle =  ( iHigh + iLow )  / 2
+!--          if ( Ascending .and. ( Value >= A ( iMiddle )  )  ) then
+!--            iLow = iMiddle
+!--          else
+!--            iHigh = iMiddle
+!--          end if
+!--        end do
+!--        if ( Value == A ( 1 ) ) then
+!--          iValue = 1
+!--        else if ( Value == A ( nValues ) ) then
+!--          iValue = nValues  !-- modification from Numerical Recipes
+!--        else
+!--          iValue = iLow
+!--        end if
+!--      end select
+!--    
+!--    type is ( real ( KDR ) )
+!--      
+!--      select type ( Value )
+!--      type is ( real ( KDR ) )
+!--        nValues = size ( A ) 
+!--        Ascending = ( A ( nValues )  >= A ( 1 )  ) 
+!--        iLow = 0
+!--        iHigh = nValues + 1
+!--        do while ( iHigh - iLow > 1 ) 
+!--          iMiddle =  ( iHigh + iLow )  / 2
+!--          if ( Ascending .and. ( Value >= A ( iMiddle )  )  ) then
+!--            iLow = iMiddle
+!--          else
+!--            iHigh = iMiddle
+!--          end if
+!--        end do
+!--        if ( Value == A ( 1 ) ) then
+!--          iValue = 1
+!--        else if ( Value == A ( nValues ) ) then
+!--          iValue = nValues  !-- modification from Numerical Recipes
+!--        else
+!--          iValue = iLow
+!--        end if
+!--      end select
+!--    
+!--    end select
+!--    
+!--  end subroutine Search
 
 
 end module Search_Command
