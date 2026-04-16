@@ -384,7 +384,8 @@ contains
 
   subroutine ComputeAngularFunctions &
                ( LM, Theta_E, Phi_E, L, M, nTheta, nPhi, oTheta, oPhi, AF, dSA )
-
+    !DIR$ OPTIMIZE (-O0)
+    
     class ( Laplacian_M_ASCG_Form ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
