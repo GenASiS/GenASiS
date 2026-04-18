@@ -1194,6 +1194,10 @@ contains
 
   subroutine ComputeEdgeProportional &
                ( Edge, MinCoordinate, Ratio, Scale, nC, nEqual )
+    
+    !DIR$ OPTIMIZE (-O1)
+    
+    !-- higher level opt than O1 causes wrong answer in CCE 18+
 
     !-- Width proportional to the inner edge coordinate of the cell
 
