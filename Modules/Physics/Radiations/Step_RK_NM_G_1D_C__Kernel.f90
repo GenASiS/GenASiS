@@ -356,13 +356,21 @@ integer ( KDI ) :: &
 
             if ( iI  >  1 ) then
 
+              !associate &
+              !  ( dJ_Eq_E   =>  Res_J_Eq_E  ( iI ), &
+              !    dN_Eq_E   =>  Res_N_Eq_E  ( iI ), &
+              !    dJ_Eq_EB  =>  Res_J_Eq_EB ( iI ), &
+              !    dN_Eq_EB  =>  Res_N_Eq_EB ( iI ), &
+              !    dJ_Eq_X   =>  Res_J_Eq_X  ( iI ), &
+              !    dN_Eq_X   =>  Res_N_Eq_X  ( iI ) )
+              
               associate &
-                ( dJ_Eq_E   =>  Res_J_Eq_E  ( iI ), &
-                  dN_Eq_E   =>  Res_N_Eq_E  ( iI ), &
-                  dJ_Eq_EB  =>  Res_J_Eq_EB ( iI ), &
-                  dN_Eq_EB  =>  Res_N_Eq_EB ( iI ), &
-                  dJ_Eq_X   =>  Res_J_Eq_X  ( iI ), &
-                  dN_Eq_X   =>  Res_N_Eq_X  ( iI ) )
+                ( dJ_Eq_E   =>  Res_J_Eq_E, &
+                  dN_Eq_E   =>  Res_N_Eq_E, &
+                  dJ_Eq_EB  =>  Res_J_Eq_EB, &
+                  dN_Eq_EB  =>  Res_N_Eq_EB, &
+                  dJ_Eq_X   =>  Res_J_Eq_X, &
+                  dN_Eq_X   =>  Res_N_Eq_X )
  
               dJ_Eq_E  =  abs ( J_Eq_E ( iV )  -  J_Eq_E_P )  &
                           /  max ( abs ( J_Eq_E_0 ), SqrtTiny )
@@ -899,13 +907,21 @@ integer ( KDI ) :: &
 
             if ( iI  >  1 ) then
 
+              !associate &
+              !  ( dJ_Eq_E   =>  Res_J_Eq_E  ( iI ), &
+              !    dN_Eq_E   =>  Res_N_Eq_E  ( iI ), &
+              !    dJ_Eq_EB  =>  Res_J_Eq_EB ( iI ), &
+              !    dN_Eq_EB  =>  Res_N_Eq_EB ( iI ), &
+              !    dJ_Eq_X   =>  Res_J_Eq_X  ( iI ), &
+              !    dN_Eq_X   =>  Res_N_Eq_X  ( iI ) )
+              
               associate &
-                ( dJ_Eq_E   =>  Res_J_Eq_E  ( iI ), &
-                  dN_Eq_E   =>  Res_N_Eq_E  ( iI ), &
-                  dJ_Eq_EB  =>  Res_J_Eq_EB ( iI ), &
-                  dN_Eq_EB  =>  Res_N_Eq_EB ( iI ), &
-                  dJ_Eq_X   =>  Res_J_Eq_X  ( iI ), &
-                  dN_Eq_X   =>  Res_N_Eq_X  ( iI ) )
+                ( dJ_Eq_E   =>  Res_J_Eq_E, &
+                  dN_Eq_E   =>  Res_N_Eq_E, &
+                  dJ_Eq_EB  =>  Res_J_Eq_EB, &
+                  dN_Eq_EB  =>  Res_N_Eq_EB, &
+                  dJ_Eq_X   =>  Res_J_Eq_X, &
+                  dN_Eq_X   =>  Res_N_Eq_X  )
  
               dJ_Eq_E  =  abs ( J_Eq_E ( iV )  -  J_Eq_E_P )  &
                           /  max ( abs ( J_Eq_E_0 ), SqrtTiny )

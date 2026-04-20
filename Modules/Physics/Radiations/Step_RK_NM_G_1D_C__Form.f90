@@ -13,7 +13,8 @@ module Step_RK_NM_G_1D_C__Form
   private
 
   type, public, extends ( Step_RK_CS_1D_C_CS_Form ) :: Step_RK_NM_G_1D_C_Form
-    real ( KDR ), dimension ( : ), allocatable :: &
+    !real ( KDR ), dimension ( : ), allocatable :: &
+    real ( KDR ) :: &
       Residual_J_Eq_E,  Residual_N_Eq_E, &
       Residual_J_Eq_EB, Residual_N_Eq_EB, &
       Residual_J_Eq_X,  Residual_N_Eq_X
@@ -165,7 +166,8 @@ module Step_RK_NM_G_1D_C__Form
         KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
         KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
         KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
-      real ( KDR ), dimension ( : ), intent ( out ) :: &
+      !real ( KDR ), dimension ( : ), intent ( out ) :: &
+      real ( KDR ), intent ( out ) :: &
         Res_J_Eq_E,  Res_N_Eq_E, &
         Res_J_Eq_EB, Res_N_Eq_EB, &
         Res_J_Eq_X,  Res_N_Eq_X
@@ -298,7 +300,8 @@ module Step_RK_NM_G_1D_C__Form
         KK_EB_E, KK_EB_S_1, KK_EB_S_2, KK_EB_S_3, KK_EB_D, & 
         KK_X_E,  KK_X_S_1,  KK_X_S_2,  KK_X_S_3,  KK_X_D, & 
         KK_F_E,  KK_F_S_1,  KK_F_S_2,  KK_F_S_3,  KK_F_D
-      real ( KDR ), dimension ( : ), intent ( out ) :: &
+      !real ( KDR ), dimension ( : ), intent ( out ) :: &
+      real ( KDR ), intent ( out ) :: &
         Res_J_Eq_E,  Res_N_Eq_E, &
         Res_J_Eq_EB, Res_N_Eq_EB, &
         Res_J_Eq_X,  Res_N_Eq_X
@@ -342,14 +345,14 @@ contains
 
     associate ( mII  =>  S % MaxImplicitIterations )
 
-    allocate ( S % Residual_J_Eq_E ( mII ) )
-    allocate ( S % Residual_N_Eq_E ( mII ) )
+    !allocate ( S % Residual_J_Eq_E ( mII ) )
+    !allocate ( S % Residual_N_Eq_E ( mII ) )
 
-    allocate ( S % Residual_J_Eq_EB ( mII ) )
-    allocate ( S % Residual_N_Eq_EB ( mII ) )
+    !allocate ( S % Residual_J_Eq_EB ( mII ) )
+    !allocate ( S % Residual_N_Eq_EB ( mII ) )
 
-    allocate ( S % Residual_J_Eq_X ( mII ) )
-    allocate ( S % Residual_N_Eq_X ( mII ) )
+    !allocate ( S % Residual_J_Eq_X ( mII ) )
+    !allocate ( S % Residual_N_Eq_X ( mII ) )
 
     end associate !-- nNM, etc.
 
@@ -361,20 +364,20 @@ contains
     type ( Step_RK_NM_G_1D_C_Form ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % Residual_N_Eq_X ) ) &
-      deallocate ( S % Residual_N_Eq_X )
-    if ( allocated ( S % Residual_J_Eq_X ) ) &
-      deallocate ( S % Residual_J_Eq_X )
-
-    if ( allocated ( S % Residual_N_Eq_EB ) ) &
-      deallocate ( S % Residual_N_Eq_EB )
-    if ( allocated ( S % Residual_J_Eq_EB ) ) &
-      deallocate ( S % Residual_J_Eq_EB )
-
-    if ( allocated ( S % Residual_N_Eq_E ) ) &
-      deallocate ( S % Residual_N_Eq_E )
-    if ( allocated ( S % Residual_J_Eq_E ) ) &
-      deallocate ( S % Residual_J_Eq_E )
+!    if ( allocated ( S % Residual_N_Eq_X ) ) &
+!      deallocate ( S % Residual_N_Eq_X )
+!    if ( allocated ( S % Residual_J_Eq_X ) ) &
+!      deallocate ( S % Residual_J_Eq_X )
+!
+!    if ( allocated ( S % Residual_N_Eq_EB ) ) &
+!      deallocate ( S % Residual_N_Eq_EB )
+!    if ( allocated ( S % Residual_J_Eq_EB ) ) &
+!      deallocate ( S % Residual_J_Eq_EB )
+!
+!    if ( allocated ( S % Residual_N_Eq_E ) ) &
+!      deallocate ( S % Residual_N_Eq_E )
+!    if ( allocated ( S % Residual_J_Eq_E ) ) &
+!      deallocate ( S % Residual_J_Eq_E )
 
   end subroutine Finalize
 
