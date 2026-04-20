@@ -104,7 +104,7 @@ contains
                  ScaleOption, nCellsOption, nGhostLayersOption, &
                  nBricksOption, IgnorabilityOption, nDimensionsOption, &
                  nEqualOption, iDimensionalityOption )
-
+    
     class ( Chart_GS_Form ), intent ( inout ) :: &
       C
     type ( CommunicatorForm ), intent ( in ), optional :: &
@@ -160,7 +160,7 @@ contains
     do iD = 1, C % nDimensions
       call ComputeCoordinateData ( C, iD )
     end do !-- iD
-
+    
   end subroutine Initialize_GS
 
 
@@ -243,7 +243,7 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select
     end if
-
+    
     !-- Edge, ghost cells
     associate ( Edge => C % Edge ( iD ) % Value )
     do iC = 1, nGL
@@ -1195,10 +1195,9 @@ contains
   subroutine ComputeEdgeProportional &
                ( Edge, MinCoordinate, Ratio, Scale, nC, nEqual )
     
-    !DIR$ OPTIMIZE (-O1)
+    !DIR$ INLINENEVER ComputeEdgeProportional
+    !DIR$ NOINLINE
     
-    !-- higher level opt than O1 causes wrong answer in CCE 18+
-
     !-- Width proportional to the inner edge coordinate of the cell
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -1224,13 +1223,10 @@ contains
     
     Width  =  Ratio  *  Edge ( nEqual + 1 )
 
-    !DIR$ NOINLINE
     do iC = nEqual + 2, nC + 1
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
       Width        =  Ratio  *  Edge ( iC )
-      !--Width        =  Ratio  *  ( Edge ( iC - 1 )  +  Width ) 
     end do
-    !DIR$ RESETINLINE
   
   end subroutine ComputeEdgeProportional
 
